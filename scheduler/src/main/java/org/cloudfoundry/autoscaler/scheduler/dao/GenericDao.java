@@ -1,18 +1,12 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
-/**
- * 
- *
- * @param <T>
- */
 public interface GenericDao<T> {
 
-	public T create(T entity);
+  public T create(T entity);
 
-	public T update(T entity);
+  public T update(T entity);
 
-	public void delete(T entity);
+  public void delete(T entity);
 
-	public T find(Long id);
-
+  public T find(Long id);
 }

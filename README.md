@@ -1,4 +1,4 @@
-# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry/app-autoscaler.svg?branch=master)](https://travis-ci.org/cloudfoundry/app-autoscaler)
+# App-AutoScaler [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml) [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/mysql.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/mysql.yaml)
 
 The `App-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
@@ -9,7 +9,6 @@ The `App-AutoScaler` has the following components:
 
 * `api` : provides public APIs to manage scaling policy
 * `servicebroker`: implements the [Cloud Foundry service broker API][k]
-* `metricscollector`: collects application performance metrics via loggregator v1 API (beiing deprecated)
 * `metricsgateway` : collects and filters loggregator events via loggregator v2  API
 * `metricsserver`: transforms loggregator events to app-autoscaler performance metrics ( metricsgateway + metricsserver is a replacement of metricscollector)
 * `metricsforwarder`: receives and forwards custom metrics to loggreator via v2 ingress API
@@ -25,10 +24,8 @@ You can follow the development progress on [Pivotal Tracker][t].
 
 * Java 8 or above
 * [Apache Maven][b] 3
-* Node 6.2 or above
-* NPM 3.9.5 or above
 * [Cloud Foundry cf command line][f]
-* Go 1.11 or above
+* Go 1.15 or above
 
 ### Database requirement
 
@@ -42,46 +39,52 @@ To set up the development, firstly clone this project
 ```shell
 $ git clone https://github.com/cloudfoundry/app-autoscaler.git
 $ cd app-autoscaler
-$ git submodule update --init --recursive
 ```
+
+Generate [scheduler test certs](https://github.com/cloudfoundry/app-autoscaler/blob/main/scheduler/README.md#generate-certificates)
 
 
 #### Initialize the Database
 
 * **Postgres**
+
+If you wish to use a docker image for psql then start it using:
 ```shell
+docker run -p 5432:5432  --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=autoscaler -d postgres:9.6
+```
+and stop it using: ```docker rm -f postgres```
+
+```shell
+#Note if your using docker you do not need to do these 3 lines.
 createuser postgres -s
 psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
 psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
-mvn package
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/api/db/servicebroker.db.changelog.yaml update 
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
+mvn package -Dmaven.test.skip=true
+scripts/initialise_db.sh postgres
+
+#TODO: java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/api/db/servicebroker.db.changelog.yaml update 
 ```
 
 * **MySQL**
-```shell 
+
+If you wish to use a docker image for mysql then start it using:
+```shell
+docker run -p 3306:3306  --name mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=true -e MYSQL_DATABASE=autoscaler -d mysql:8
+```
+and stop it using: ```docker rm -f mysql```
+
+```shell
 mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
 mysql -u root -e "CREATE DATABASE autoscaler;"
 
 mvn package
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=api/db/api.db.changelog.yml --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml --username=root update
-java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml --username=root update
+scripts/initialise_db.sh mysql
 ```
 #### Generate TLS Certificates
+create the certificates
 
+**Note**: on macos it will install `certstrap` automatically but on other OS's it needs to be pre-installed
 ```shell
 ./scripts/generate_test_certs.sh
 ```
@@ -100,28 +103,20 @@ rm $TMPDIR/consul-0.7.5.zip
 
 * **Postgres**:
 ```shell
-go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-pushd src/autoscaler
-ginkgo -r -race -randomizeAllSpecs
-popd
+make -C src/autoscaler buildtools
+make -C src/autoscaler test
 
-pushd scheduler
-mvn test
-popd
+mvn test -pl scheduler
 ```
 
 * **MySQL**:
 ```shell
-go install github.com/onsi/ginkgo/ginkgo
 export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-pushd src/autoscaler
-ginkgo -r -race -randomizeAllSpecs
-popd
+make -C src/autoscaler buildtools
+make -C src/autoscaler test
 
-pushd scheduler
-mvn test -Dspring.profiles.active=mysql
-popd
+mvn test -pl scheduler -Dspring.profiles.active=mysql
 ```
 
 
@@ -130,16 +125,17 @@ popd
 
 **Postgres**
 ```shell
-pushd scheduler
 mvn package -DskipTests
-popd
-
-go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-ginkgo -r -race -randomizeAllSpecs src/integration
+make -C src/autoscaler buildtools
+make -C src/autoscaler integration
 ```
-**MySQL**: 
+
+**MySQL**:
 Just replace the $DBURL to `root@tcp(localhost)/autoscaler?tls=false`.
+
+### Coding Standards
+Autoscaler uses Golangci and Checkstyle for its code base. Refer to [style-guide](style-guide/README.md)
 
 ## Deploy and offer Auto-Scaler as a service
 
@@ -147,7 +143,7 @@ Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler
 
 ## Use Auto-Scaler service
 
-Refer to [user guide][u] for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and commond line tool.
+Refer to [user guide][u] for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and command line tool.
 
 ## License
 

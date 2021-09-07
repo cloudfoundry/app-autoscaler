@@ -12,20 +12,12 @@ const (
 	defaultExpireCheckInterval = 30 * time.Second
 )
 
-type Stats []Stat
-type Stat struct {
-	Key       string `json:"key"`
-	Available int    `json:"available"`
-}
-
 type Limiter interface {
 	ExceedsLimit(string) bool
 }
 
 type RateLimiter struct {
-	duration time.Duration
-	store    Store
-	logger   lager.Logger
+	store Store
 }
 
 func DefaultRateLimiter(maxAmount int, validDuration time.Duration, logger lager.Logger) *RateLimiter {
@@ -39,20 +31,9 @@ func NewRateLimiter(bucketCapacity int, maxAmount int, validDuration time.Durati
 }
 
 func (r *RateLimiter) ExceedsLimit(key string) bool {
-	if _, err := r.store.Increment(key); err != nil {
+	if err := r.store.Increment(key); err != nil {
 		return true
 	}
 
 	return false
-}
-
-func (r *RateLimiter) GetStats() Stats {
-	s := Stats{}
-	for k, v := range r.store.Stats() {
-		s = append(s, Stat{
-			Key:       k,
-			Available: v,
-		})
-	}
-	return s
 }

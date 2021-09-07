@@ -24,7 +24,7 @@ func NewTSDCache(capacity int) *TSDCache {
 	}
 	return &TSDCache{
 		lock:     &sync.RWMutex{},
-		data:     make([]TSD, capacity, capacity),
+		data:     make([]TSD, capacity),
 		capacity: capacity,
 		cursor:   0,
 	}
@@ -132,5 +132,4 @@ func (c *TSDCache) Query(start, end int64, labels map[string]string) ([]TSD, boo
 		return result, c.data[0].GetTimestamp() <= start
 	}
 	return result, c.data[c.cursor].GetTimestamp() <= start
-
 }

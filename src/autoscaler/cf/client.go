@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	PathCFInfo                                   = "/v2/info"
-	PathCFAuth                                   = "/oauth/token"
-	GrantTypeClientCredentials                   = "client_credentials"
-	GrantTypeRefreshToken                        = "refresh_token"
-	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
+	PathCFInfo                     = "/v2/info"
+	PathCFAuth                     = "/oauth/token"
+	GrantTypeClientCredentials     = "client_credentials"
+	GrantTypeRefreshToken          = "refresh_token"
+	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
 )
 
 type Tokens struct {
@@ -41,7 +41,7 @@ type Endpoints struct {
 type CFClient interface {
 	Login() error
 	RefreshAuthToken() (string, error)
-	GetTokens() Tokens
+	GetTokens() (Tokens, error)
 	GetEndpoints() Endpoints
 	GetApp(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
@@ -79,6 +79,7 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 
 	c.httpClient = cfhttp.NewClient()
+	// #nosec G402 - this is intentionally configurable
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
 	c.httpClient.Transport.(*http.Transport).DialContext = (&net.Dialer{
 		Timeout: 30 * time.Second,
@@ -177,14 +178,17 @@ func (c *cfClient) RefreshAuthToken() (string, error) {
 	return TokenTypeBearer + " " + c.tokens.AccessToken, nil
 }
 
-func (c *cfClient) GetTokens() Tokens {
+func (c *cfClient) GetTokens() (Tokens, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	if c.isTokenToBeExpired() {
-		c.RefreshAuthToken()
+		_, err := c.RefreshAuthToken()
+		if err != nil {
+			return c.tokens, err
+		}
 	}
-	return c.tokens
+	return c.tokens, nil
 }
 
 func (c *cfClient) isTokenToBeExpired() bool {

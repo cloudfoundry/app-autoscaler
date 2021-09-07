@@ -6,55 +6,55 @@
         <!-- <Property name="LOG_PATH">"logs"</Property> -->
     </Properties>
     <Appenders>
-    	<!-- <RollingFile name="FileLog" fileName="${LOG_PATH}/auto_scaler_scheduler.log"
-		filePattern="${LOG_PATH}/auto_scaler_scheduler-%d{yyyy-MM-dd}.log">
-			<PatternLayout>
-				<pattern>${LOG_PATTERN}</pattern>
-			</PatternLayout>
-			<Policies>
-				<TimeBasedTriggeringPolicy interval="1" modulate="true"/>
-			</Policies>
-		</RollingFile> -->
+        <!-- <RollingFile name="FileLog" fileName="${LOG_PATH}/auto_scaler_scheduler.log"
+        filePattern="${LOG_PATH}/auto_scaler_scheduler-%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <pattern>${LOG_PATTERN}</pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingFile> -->
         <Console name="Console" target="SYSTEM_OUT" follow="true">
             <PatternLayout pattern="${LOG_PATTERN}"/>
         </Console>
     </Appenders>
     <Loggers>
-    <!-- -==========Spring==========  -->
-		<Logger name="org.springframework.web" level="info" />
+        <!-- -==========Spring==========  -->
+        <Logger name="org.springframework.web" level="info"/>
 
-	<!-- -==========Hibernate==========  -->
-		<!-- Log all SQL DML statements as they are executed -->
-		<Logger name="org.hibernate.SQL" level="error" />
-		
-		<!-- Log all JDBC parameters -->
-		<Logger name="org.hibernate.type" level="error" />
-		
-		<!-- Log all SQL DDL statements as they are executed -->
-		<Logger name="org.hibernate.tool.hbm2ddl"  level="error" />
-		
-		<!-- Log the state of all entities (max 20 entities) associated with the session at flush time -->
-		<Logger name="org.hibernate.pretty"  level="error" />
-		
-		<!-- Log all second-level cache activity -->
-		<Logger name="org.hibernate.cache"  level="error" />
-		
-		<!-- Log transaction related activity -->
-		<Logger name="org.hibernate.transaction"  level="error" />
-		
-		<!-- Log all JDBC resource acquisition -->
-		<Logger name="org.hibernate.jdbc" level="error" />
-		
-		<!-- Log HQL and SQL ASTs during query parsing -->
-		<Logger name="org.hibernate.hql.ast.AST"  level="error" />
-		
-		<!-- Log all JAAS authorization requests -->
-		<Logger name="org.hibernate.secure"  level="error" />
-		
-		<!-- Log everything (a lot of information, but very useful for troubleshooting) -->
-		<Logger name="org.hibernate"  level="error" />
-			
-        <Logger name="org.cloudfoundry.autoscaler.scheduler" level="info" />
+        <!-- -==========Hibernate==========  -->
+        <!-- Log all SQL DML statements as they are executed -->
+        <Logger name="org.hibernate.SQL" level="error"/>
+
+        <!-- Log all JDBC parameters -->
+        <Logger name="org.hibernate.type" level="error"/>
+
+        <!-- Log all SQL DDL statements as they are executed -->
+        <Logger name="org.hibernate.tool.hbm2ddl" level="error"/>
+
+        <!-- Log the state of all entities (max 20 entities) associated with the session at flush time -->
+        <Logger name="org.hibernate.pretty" level="error"/>
+
+        <!-- Log all second-level cache activity -->
+        <Logger name="org.hibernate.cache" level="error"/>
+
+        <!-- Log transaction related activity -->
+        <Logger name="org.hibernate.transaction" level="error"/>
+
+        <!-- Log all JDBC resource acquisition -->
+        <Logger name="org.hibernate.jdbc" level="error"/>
+
+        <!-- Log HQL and SQL ASTs during query parsing -->
+        <Logger name="org.hibernate.hql.ast.AST" level="error"/>
+
+        <!-- Log all JAAS authorization requests -->
+        <Logger name="org.hibernate.secure" level="error"/>
+
+        <!-- Log everything (a lot of information, but very useful for troubleshooting) -->
+        <Logger name="org.hibernate" level="error"/>
+
+        <Logger name="org.cloudfoundry.autoscaler.scheduler" level="info"/>
         <Root level="error">
             <AppenderRef ref="Console"/>
         </Root>

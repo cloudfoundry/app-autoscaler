@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/lager"
-	. "github.com/lib/pq"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"database/sql"
 	"time"
@@ -35,13 +35,14 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &AppMetricSQLDB{
 		dbConfig: dbConfig,
@@ -79,38 +80,41 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 
 	switch adb.sqldb.DriverName() {
 	case "postgres":
-		stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
+		stmt, err := txn.Prepare(pq.CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
 		if err != nil {
 			adb.logger.Error("failed-to-prepare-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		for _, appMetric := range appMetrics {
 			_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 			if err != nil {
 				adb.logger.Error("failed-to-execute", err)
-				txn.Rollback()
+				_ = txn.Rollback()
 				return err
 			}
 		}
 		_, err = stmt.Exec()
 		if err != nil {
 			adb.logger.Error("failed-to-execute-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		err = stmt.Close()
 		if err != nil {
 			adb.logger.Error("failed-to-close-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 
 	case "mysql":
-		sqlStr :="INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
+		sqlStr := "INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
 		vals := []interface{}{}
-		if appMetrics == nil || len(appMetrics)==0 {
-			txn.Rollback()
+		if len(appMetrics) == 0 {
+			err = txn.Rollback()
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 		for _, appMetric := range appMetrics {
@@ -122,20 +126,20 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		stmt, err := txn.Prepare(sqlStr)
 		if err != nil {
 			adb.logger.Error("failed-to-prepare-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 
 		_, err = stmt.Exec(vals...)
 		if err != nil {
 			adb.logger.Error("failed-to-execute-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		err = stmt.Close()
 		if err != nil {
 			adb.logger.Error("failed-to-close-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 	}
@@ -143,7 +147,7 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 	err = txn.Commit()
 	if err != nil {
 		adb.logger.Error("failed-to-commit-transaction", err)
-		txn.Rollback()
+		_ = txn.Rollback()
 		return err
 	}
 
@@ -168,7 +172,10 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 		adb.logger.Error("retrieve-app-metric-list-from-app_metric-table", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	var appId string
 	var metricType string
 	var unit string

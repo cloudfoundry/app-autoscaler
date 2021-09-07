@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/locket"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -17,12 +16,7 @@ import (
 )
 
 const (
-	DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
-	DefaultLockTTL                    time.Duration = locket.DefaultSessionTTL
-	DefaultRetryInterval              time.Duration = locket.RetryInterval
-	DefaultDBLockRetryInterval        time.Duration = 5 * time.Second
-	DefaultDBLockTTL                  time.Duration = 15 * time.Second
-	DefaultHttpClientTimeout          time.Duration = 5 * time.Second
+	DefaultHttpClientTimeout = 5 * time.Second
 )
 
 var defaultCFConfig = cf.CFConfig{
@@ -56,10 +50,6 @@ type SynchronizerConfig struct {
 	ActiveScheduleSyncInterval time.Duration `yaml:"active_schedule_sync_interval"`
 }
 
-var defaultSynchronizerConfig = SynchronizerConfig{
-	ActiveScheduleSyncInterval: DefaultActiveScheduleSyncInterval,
-}
-
 type Config struct {
 	CF                  cf.CFConfig           `yaml:"cf"`
 	Logging             helpers.LoggingConfig `yaml:"logging"`
@@ -85,7 +75,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(bytes, conf)
+	err = yaml.UnmarshalStrict(bytes, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -130,5 +120,4 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
-
 }

@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const TestSyncInterval time.Duration = 10 * time.Second
+const TestSyncInterval = 10 * time.Second
 
 var _ = Describe("Sync", func() {
 
@@ -50,10 +50,10 @@ var _ = Describe("Sync", func() {
 		Context("when data are consistent", func() {
 			BeforeEach(func() {
 				schedulerDB.GetActiveSchedulesReturns(map[string]*models.ActiveSchedule{
-					"app-id-1": &models.ActiveSchedule{
+					"app-id-1": {
 						ScheduleId: "schedule-id-1",
 					},
-					"app-id-2": &models.ActiveSchedule{
+					"app-id-2": {
 						ScheduleId: "schedule-id-2",
 					},
 				}, nil)
@@ -73,10 +73,10 @@ var _ = Describe("Sync", func() {
 		Context("there is missing active schedule start", func() {
 			BeforeEach(func() {
 				schedulerDB.GetActiveSchedulesReturns(map[string]*models.ActiveSchedule{
-					"app-id-1": &models.ActiveSchedule{
+					"app-id-1": {
 						ScheduleId: "schedule-id-1",
 					},
-					"app-id-2": &models.ActiveSchedule{
+					"app-id-2": {
 						ScheduleId: "schedule-id-2",
 					},
 				}, nil)
@@ -98,10 +98,10 @@ var _ = Describe("Sync", func() {
 		Context("there is new active schedule in schedule DB for an app", func() {
 			BeforeEach(func() {
 				schedulerDB.GetActiveSchedulesReturns(map[string]*models.ActiveSchedule{
-					"app-id-1": &models.ActiveSchedule{
+					"app-id-1": {
 						ScheduleId: "schedule-id-1",
 					},
-					"app-id-2": &models.ActiveSchedule{
+					"app-id-2": {
 						ScheduleId: "schedule-id-2-2",
 					},
 				}, nil)
@@ -124,7 +124,7 @@ var _ = Describe("Sync", func() {
 		Context("there is missing active schedule end", func() {
 			BeforeEach(func() {
 				schedulerDB.GetActiveSchedulesReturns(map[string]*models.ActiveSchedule{
-					"app-id-1": &models.ActiveSchedule{
+					"app-id-1": {
 						ScheduleId: "schedule-id-1",
 					},
 				}, nil)

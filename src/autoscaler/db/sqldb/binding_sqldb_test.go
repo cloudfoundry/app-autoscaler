@@ -6,6 +6,7 @@ import (
 	"autoscaler/models"
 	"database/sql"
 	"os"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -64,6 +65,7 @@ var _ = Describe("BindingSqldb", func() {
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
+			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 	})
 
@@ -81,6 +83,9 @@ var _ = Describe("BindingSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
+				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+					Skip("Not configured for postgres")
+				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
@@ -90,6 +95,9 @@ var _ = Describe("BindingSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
+				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+					Skip("Not configured for mysql")
+				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {

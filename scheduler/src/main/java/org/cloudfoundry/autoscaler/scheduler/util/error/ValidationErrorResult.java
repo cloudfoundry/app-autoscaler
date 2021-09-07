@@ -2,84 +2,77 @@ package org.cloudfoundry.autoscaler.scheduler.util.error;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
-/**
- * Request scoped object for tracking results of validation (business rules validation mostly).
- *
- */
-
+/** Request scoped object for tracking results of validation (business rules validation mostly). */
 @Component
 @Configurable
 @RequestScope
 public class ValidationErrorResult {
 
-	@Autowired
-	MessageBundleResourceHelper messageBundleResourceHelper;
-	private List<ValidationError> errorList; // NOTE:Leave error list null until, have actual errors
+  @Autowired MessageBundleResourceHelper messageBundleResourceHelper;
+  private List<ValidationError> errorList; // NOTE:Leave error list null until, have actual errors
 
-	public ValidationErrorResult() {
-	}
+  public ValidationErrorResult() {}
 
-	public void addFieldError(Object object, String messageCode, Object... arguments) {
+  public void addFieldError(Object object, String messageCode, Object... arguments) {
 
-		internalAddError(new ValidationError(object, arguments, messageCode));
-	}
+    internalAddError(new ValidationError(object, arguments, messageCode));
+  }
 
-	public void addErrorForDatabaseValidationException(DatabaseValidationException dve, String messageCode,
-			Object... arguments) {
-		addFieldError(dve, messageCode, arguments);
+  public void addErrorForDatabaseValidationException(
+      DatabaseValidationException dve, String messageCode, Object... arguments) {
+    addFieldError(dve, messageCode, arguments);
+  }
 
-	}
+  public void addErrorForQuartzSchedulerException(
+      SchedulerException se, String messageCode, Object... arguments) {
+    addFieldError(se, messageCode, arguments);
+  }
 
-	public void addErrorForQuartzSchedulerException(SchedulerException se, String messageCode, Object... arguments) {
-		addFieldError(se, messageCode, arguments);
+  private void internalAddError(ValidationError error) {
+    if (errorList == null) {
+      errorList = new ArrayList<>();
+    }
+    errorList.add(error);
+  }
 
-	}
+  /**
+   * A list of error messages corresponding to the errors contained in this instance
+   *
+   * @return a List of type String containing the error messages.
+   */
+  public List<String> getAllErrorMessages() {
 
-	private void internalAddError(ValidationError error) {
-		if (errorList == null) {
-			errorList = new ArrayList<ValidationError>();
-		}
-		errorList.add(error);
-	}
+    if (errorList == null || errorList.size() == 0) {
+      return new ArrayList<>();
+    }
 
-	/**
-	 * A list of error messages corresponding to the errors contained in this instance
-	 * @return a List<String> containing the error messages.
-	 */
-	public List<String> getAllErrorMessages() {
+    List<String> errorMessages = new ArrayList<>(errorList.size());
 
-		if (errorList == null || errorList.size() == 0) {
-			return new ArrayList<String>();
-		}
+    for (ValidationError error : errorList) {
 
-		List<String> errorMessages = new ArrayList<String>(errorList.size());
+      String resourceKey = error.getErrorMessageCode();
+      Object[] messageArguments = error.getErrorMessageArguments();
 
-		for (ValidationError error : errorList) {
+      // Lookup error with arguments
+      String errorMessage =
+          messageBundleResourceHelper.lookupMessage(resourceKey, messageArguments);
 
-			String resourceKey = error.getErrorMessageCode();
-			Object[] messageArguments = error.getErrorMessageArguments();
+      errorMessages.add(errorMessage);
+    }
+    return errorMessages;
+  }
 
-			// Lookup error with arguments
-			String errorMessage = messageBundleResourceHelper.lookupMessage(resourceKey, messageArguments);
-
-			errorMessages.add(errorMessage);
-		}
-
-		return errorMessages;
-	}
-
-	/**
-	 * @return - true if this instance contains any errors
-	 */
-	public boolean hasErrors() {
-		return errorList != null && errorList.size() > 0;
-	}
-
+  /**
+   *
+   * @return - true if this instance contains any errors
+   */
+  public boolean hasErrors() {
+    return errorList != null && errorList.size() > 0;
+  }
 }

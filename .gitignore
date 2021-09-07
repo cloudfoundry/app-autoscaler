@@ -6,5 +6,12 @@
 /.recommenders
 /.project
 /.settings/
+test-certs
+scheduler/src/test/resources/certs/
 *.coverprofile
 **/.idea
+src/autoscaler/build
+src/autoscaler/vendor
+workflow
+**/*.iml
+.cache

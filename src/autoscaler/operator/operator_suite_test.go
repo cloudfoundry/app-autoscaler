@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	TestRefreshInterval time.Duration = 12 * time.Hour
+	TestRefreshInterval = 12 * time.Hour
 )
 
 func TestOperators(t *testing.T) {

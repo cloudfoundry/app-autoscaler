@@ -18,35 +18,44 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class SchedulerApplicationTest {
-	@Autowired
-	private BasicDataSource dataSource;
+  @Rule public ExpectedException expectedEx = ExpectedException.none();
+  @Autowired private BasicDataSource dataSource;
 
-	@Rule
-	public ExpectedException expectedEx = ExpectedException.none();
+  @Test
+  public void testTomcatConnectionPoolNameCorrect() {
+    assertThat(
+        dataSource.getClass().getName(),
+        equalToIgnoringCase("org.apache.commons.dbcp2.BasicDataSource"));
+  }
 
-	@Test
-	public void  testTomcatConnectionPoolNameCorrect() {
-		assertThat(dataSource.getClass().getName(), equalToIgnoringCase("org.apache.commons.dbcp2.BasicDataSource"));
-	}
+  @Test
+  public void testApplicationExitsWhenSchedulerDbUnreachable() {
+    expectedEx.expect(BeanCreationException.class);
+    expectedEx.expectCause(isA(DataSourceConfigurationException.class));
+    expectedEx.expectMessage(
+        "Error creating bean with name 'dataSource': Failed to connect to datasource:dataSource");
+    SchedulerApplication.main(
+        new String[] {
+          "--spring.autoconfigure.exclude="
+              + "org.springframework.boot.actuate.autoconfigure.jdbc."
+              + "DataSourceHealthIndicatorAutoConfiguration",
+          "--spring.datasource.url=jdbc:postgresql://127.0.0.1/wrong-scheduler-db"
+        });
+  }
 
-	@Test
-	public void testApplicationExitsWhenSchedulerDBUnreachable() {
-		expectedEx.expect(BeanCreationException.class);
-		expectedEx.expectCause(isA(DataSourceConfigurationException.class));
-		expectedEx.expectMessage("Error creating bean with name 'dataSource': Failed to connect to datasource:dataSource");
-		SchedulerApplication.main(new String[] { 
-				"--spring.datasource.url=jdbc:postgresql://127.0.0.1/wrong-scheduler-db" });
-
-	}
-
-	@Test
-	public void testApplicationExitsWhenPolicyDBUnreachable() {
-		expectedEx.expect(BeanCreationException.class);
-		expectedEx.expectCause(isA(DataSourceConfigurationException.class));
-		expectedEx.expectMessage("Error creating bean with name 'policyDbDataSource': Failed to connect to datasource:policyDbDataSource");
-		SchedulerApplication.main(new String[] { 
-				"--spring.policyDbDataSource.url=jdbc:postgresql://127.0.0.1/wrong-policy-db" });
-
-
-	}
+  @Test
+  public void testApplicationExitsWhenPolicyDbUnreachable() {
+    expectedEx.expect(BeanCreationException.class);
+    expectedEx.expectCause(isA(DataSourceConfigurationException.class));
+    expectedEx.expectMessage(
+        "Error creating bean with name 'policyDbDataSource': Failed to connect to"
+            + " datasource:policyDbDataSource");
+    SchedulerApplication.main(
+        new String[] {
+          "--spring.autoconfigure.exclude="
+              + "org.springframework.boot.actuate.autoconfigure.jdbc."
+              + "DataSourceHealthIndicatorAutoConfiguration",
+          "--spring.policy-db-datasource.url=jdbc:postgresql://127.0.0.1/wrong-policy-db"
+        });
+  }
 }

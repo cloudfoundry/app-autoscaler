@@ -16,7 +16,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 
-  _ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -30,7 +30,6 @@ var (
 	cfg               config.Config
 	configFile        *os.File
 	cfServer          *ghttp.Server
-	appId             string
 	healthHttpClient  *http.Client
 	healthport        int
 	appSummaryRegPath = regexp.MustCompile(`^/v2/apps/.*/summary$`)
@@ -60,7 +59,6 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initConfig() {
-
 	cfServer = ghttp.NewServer()
 	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
@@ -144,7 +142,6 @@ func initConfig() {
 
 	cfg.Health.HealthCheckUsername = "operatorhealthcheckuser"
 	cfg.Health.HealthCheckPassword = "operatorhealthcheckuser"
-
 }
 
 func writeConfig(c *config.Config) *os.File {

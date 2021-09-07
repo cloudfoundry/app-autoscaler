@@ -3,6 +3,7 @@ package sqldb
 import (
 	"autoscaler/models"
 	"database/sql"
+	"errors"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -41,6 +42,7 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &BindingSQLDB{
 		dbConfig: dbConfig,
@@ -67,7 +69,7 @@ func nullableString(s string) interface{} {
 
 func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceInstance) error {
 	existingInstance, err := bdb.GetServiceInstance(serviceInstance.ServiceInstanceId)
-	if err != nil && err != db.ErrDoesNotExist {
+	if err != nil && errors.Is(err, db.ErrDoesNotExist) {
 		bdb.logger.Error("create-service-instance-get-existing", err, lager.Data{"serviceinstance": serviceInstance})
 		return err
 	}
@@ -78,7 +80,6 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceIns
 		} else {
 			return db.ErrConflict
 		}
-
 	}
 
 	query := bdb.sqldb.Rebind("INSERT INTO service_instance" +
@@ -107,7 +108,7 @@ func (bdb *BindingSQLDB) GetServiceInstance(serviceInstanceId string) (*models.S
 	err := bdb.sqldb.Get(&result, query, serviceInstanceId)
 	if err != nil {
 		bdb.logger.Error("get-service-instance", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId})
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, db.ErrDoesNotExist
 		}
 		return nil, err
@@ -129,7 +130,7 @@ func (bdb *BindingSQLDB) GetServiceInstanceByAppId(appId string) (*models.Servic
 	err := bdb.sqldb.Get(&serviceInstanceId, query, appId)
 	if err != nil {
 		bdb.logger.Error("get-service-binding-for-app-id", err, lager.Data{"query": query, "appId": appId})
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, db.ErrDoesNotExist
 		}
 		return nil, err
@@ -164,7 +165,7 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 	}
 
 	if rows.Next() {
-		rows.Close()
+		//rows.Close()
 		query = bdb.sqldb.Rebind("DELETE FROM service_instance WHERE service_instance_id =?")
 		_, err = bdb.sqldb.Exec(query, serviceInstanceId)
 
@@ -173,7 +174,10 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 		}
 		return err
 	}
-	rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return db.ErrDoesNotExist
 }
 
@@ -186,10 +190,12 @@ func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceI
 	}
 
 	if rows.Next() {
-		rows.Close()
 		return db.ErrAlreadyExists
 	}
-	rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	query = bdb.sqldb.Rebind("INSERT INTO binding" +
 		"(binding_id, service_instance_id, app_id, created_at) " +
@@ -210,7 +216,6 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 	}
 
 	if rows.Next() {
-		rows.Close()
 		query = bdb.sqldb.Rebind("DELETE FROM binding WHERE binding_id =?")
 		_, err = bdb.sqldb.Exec(query, bindingId)
 
@@ -219,7 +224,10 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 		}
 		return err
 	}
-	rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	return db.ErrDoesNotExist
 }
@@ -236,7 +244,10 @@ func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(appId string) error {
 func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 	var count int
 	query := bdb.sqldb.Rebind("SELECT COUNT(*) FROM binding WHERE app_id=?")
-	bdb.sqldb.QueryRow(query, appId).Scan(&count)
+	err := bdb.sqldb.QueryRow(query, appId).Scan(&count)
+	if err != nil {
+		bdb.logger.Error("check-service-binding-by-appid", err, lager.Data{"query": query, "appId": appId})
+	}
 	return count > 0
 }
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
@@ -261,7 +272,10 @@ func (bdb *BindingSQLDB) GetAppIdsByInstanceId(instanceId string) ([]string, err
 		bdb.logger.Error("get-appids-from-binding-table", err, lager.Data{"query": query, "instanceId": instanceId})
 		return appIds, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var appId string
 	for rows.Next() {

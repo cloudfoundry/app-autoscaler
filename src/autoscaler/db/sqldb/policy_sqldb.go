@@ -5,6 +5,7 @@ import (
 	"autoscaler/models"
 	"database/sql"
 	"encoding/json"
+	"errors"
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/go-sql-driver/mysql"
@@ -40,6 +41,7 @@ func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQL
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &PolicySQLDB{
 		dbConfig: dbConfig,
@@ -66,7 +68,10 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 		pdb.logger.Error("get-appids-from-policy-table", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var id string
 	for rows.Next() {
@@ -84,12 +89,15 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	policyList := []*models.PolicyJson{}
 	rows, err := pdb.sqldb.Query(query)
 	if err != nil {
-		pdb.logger.Error("retrive-policy-list-from-policy_json-table", err,
+		pdb.logger.Error("retrieve-policy-list-from-policy_json-table", err,
 			lager.Data{"query": query})
 		return policyList, err
 	}
 
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var appId string
 	var policyStr string
@@ -164,7 +172,7 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 			// a rollback was executed!
 			pdb.logger.Info("set-or-update-app-policies-transaction-rollback-executed", lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy, "oldPolicyGuid": oldPolicyGuid})
 		} else {
-			if rollbackErr != sql.ErrTxDone {
+			if errors.Is(err, sql.ErrTxDone) {
 				pdb.logger.Error("set-or-update-app-policies-transaction-rollback-error", err, lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy, "oldPolicyGuid": oldPolicyGuid})
 			}
 		}
@@ -172,7 +180,6 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 
 	// first replace an already existing default policy
 	if oldPolicyGuid != "" {
-
 		// determine which apps had the existing default policy set
 		query := tx.Rebind("SELECT app_id FROM policy_json WHERE guid = ?")
 
@@ -181,11 +188,14 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 			pdb.logger.Error("rollback-set-or-update-app-policies", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid})
 			return nil, err
 		}
+
 		defer func() {
 			if err := rows.Close(); err != nil {
 				pdb.logger.Error("rollback-set-or-update-app-policies-close-rows", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid})
 			}
+			_ = rows.Err()
 		}()
+
 		var id string
 		for rows.Next() {
 			if err = rows.Scan(&id); err != nil {
@@ -214,14 +224,7 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 			pdb.logger.Error("rollback-set-or-update-app-policies", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
 			return nil, err
 		}
-		defer func() {
-			if err := rows.Close(); err != nil {
-				pdb.logger.Error("rollback-set-or-update-app-policies-close-rows", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
-			}
-		}()
-
 	}
-
 	// set the default policy on apps which do not have one
 	for _, appId := range boundApps {
 		var query string
@@ -278,7 +281,7 @@ func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) ([]string,
 			// a rollback was executed!
 			pdb.logger.Info("delete-policies-by-policy-guid-transaction-rollback-executed", lager.Data{"policyGuid": policyGuid})
 		} else {
-			if rollbackErr != sql.ErrTxDone {
+			if errors.Is(rollbackErr, sql.ErrTxDone) {
 				pdb.logger.Error("delete-policies-by-policy-guid-transaction-rollback-error", err, lager.Data{"policyGuid": policyGuid})
 			}
 		}
@@ -292,7 +295,9 @@ func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) ([]string,
 		return nil, err
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
+		_ = rows.Err()
+		err := rows.Close()
+		if err != nil {
 			pdb.logger.Error("delete-policies-by-policy-guid-close-rows", err, lager.Data{"query": query, "policyGuid": policyGuid})
 		}
 	}()

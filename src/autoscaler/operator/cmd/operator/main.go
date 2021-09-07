@@ -8,7 +8,7 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/operator"
 	"autoscaler/operator/config"
-	sync "autoscaler/sync"
+	"autoscaler/sync"
 	"flag"
 	"fmt"
 	"os"
@@ -176,5 +176,4 @@ func main() {
 	}
 
 	logger.Info("exited")
-
 }

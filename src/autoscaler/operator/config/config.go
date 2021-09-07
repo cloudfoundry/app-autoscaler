@@ -11,19 +11,17 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/locket"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	DefaultLoggingLevel        string        = "info"
-	DefaultRefreshInterval     time.Duration = 24 * time.Hour
-	DefaultCutoffDuration      time.Duration = 30 * 24 * time.Hour
-	DefaultSyncInterval        time.Duration = 24 * time.Hour
-	DefaultRetryInterval       time.Duration = locket.RetryInterval
-	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
-	DefaultDBLockTTL           time.Duration = 15 * time.Second
-	DefaultHttpClientTimeout   time.Duration = 5 * time.Second
+	DefaultLoggingLevel        string = "info"
+	DefaultRefreshInterval            = 24 * time.Hour
+	DefaultCutoffDuration             = 30 * 24 * time.Hour
+	DefaultSyncInterval               = 24 * time.Hour
+	DefaultDBLockRetryInterval        = 5 * time.Second
+	DefaultDBLockTTL                  = 15 * time.Second
+	DefaultHttpClientTimeout          = 5 * time.Second
 )
 
 type InstanceMetricsDbPrunerConfig struct {
@@ -129,7 +127,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(bytes, &conf)
+	err = yaml.UnmarshalStrict(bytes, &conf)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +138,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-
 	if c.InstanceMetricsDB.DB.URL == "" {
 		return fmt.Errorf("Configuration error: instance_metrics_db.db.url is empty")
 	}
@@ -209,5 +206,4 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
-
 }

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,11 +33,11 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": &loggregator_v2.GaugeValue{
+						"cpu": {
 							Unit:  "percentage",
 							Value: 33.2,
 						},
-						"memory": &loggregator_v2.GaugeValue{
+						"memory": {
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
@@ -51,19 +51,19 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": &loggregator_v2.GaugeValue{
+						"cpu": {
 							Unit:  "percentage",
 							Value: 20.5,
 						},
-						"disk": &loggregator_v2.GaugeValue{
+						"disk": {
 							Unit:  "bytes",
 							Value: 3000000000,
 						},
-						"memory": &loggregator_v2.GaugeValue{
+						"memory": {
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
-						"memory_quota": &loggregator_v2.GaugeValue{
+						"memory_quota": {
 							Unit:  "bytes",
 							Value: 2000000000,
 						},
@@ -75,7 +75,7 @@ var _ = Describe("Nozzle", func() {
 		customMetricEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			DeprecatedTags: map[string]*loggregator_v2.Value{
-				"origin": &loggregator_v2.Value{
+				"origin": {
 					Data: &loggregator_v2.Value_Text{
 						Text: "autoscaler_metrics_forwarder",
 					},
@@ -84,7 +84,7 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"queue_length": &loggregator_v2.GaugeValue{
+						"queue_length": {
 							Unit:  "number",
 							Value: 100,
 						},
@@ -99,7 +99,7 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"queue_length": &loggregator_v2.GaugeValue{
+						"queue_length": {
 							Unit:  "number",
 							Value: 100,
 						},
@@ -197,7 +197,7 @@ var _ = Describe("Nozzle", func() {
 				LogServerName = "wrong-server-name"
 			})
 			It("should output the err", func() {
-				Eventually(logger.Buffer).Should(Say("certificate is valid for reverselogproxy, not wrong-server-name"))
+				Eventually(logger.Buffer).Should(Say("Error connecting to Logs Provider"))
 			})
 		})
 		Context("when there is no app", func() {
@@ -216,7 +216,7 @@ var _ = Describe("Nozzle", func() {
 				Consistently(envelopChan).ShouldNot(Receive())
 			})
 		})
-		Context("when the guage envelope is not a container metric", func() {
+		Context("when the gauge envelope is not a container metric", func() {
 			BeforeEach(func() {
 				envelopes = []*loggregator_v2.Envelope{
 					&nonContainerMetricGaugeEnvelope,
@@ -249,7 +249,7 @@ var _ = Describe("Nozzle", func() {
 			})
 		})
 
-		Context("when the guage envelope is not a custom metric", func() {
+		Context("when the gauge envelope is not a custom metric", func() {
 			BeforeEach(func() {
 				envelopes = []*loggregator_v2.Envelope{
 					&nonCustomMetricEnvelope,

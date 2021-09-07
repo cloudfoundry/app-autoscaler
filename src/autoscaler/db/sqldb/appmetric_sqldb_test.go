@@ -2,15 +2,17 @@ package sqldb_test
 
 import (
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
+
 	"code.cloudfoundry.org/lager"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -26,8 +28,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 		before            int64
 		appId, metricName string
 		testMetricName    string
-		testMetricUnit    string = "Test-Metric-Unit"
-		testAppId         string = "Test-App-ID"
+		testMetricUnit    = "Test-Metric-Unit"
+		testAppId         = "Test-App-ID"
 		orderType         db.OrderType
 	)
 
@@ -38,6 +40,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
+			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		testMetricName = "Test-Metric-Name"
 
@@ -57,22 +60,28 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
+				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+					Skip("Not configured for postgres")
+				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
 			})
 		})
-		
+
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
+				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+					Skip("Not configured for mysql")
+				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when db url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -128,7 +137,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 				appMetrics := []*models.AppMetric{}
 				err = adb.SaveAppMetricsInBulk(appMetrics)
 			})
-			It("Should return nil", func(){
+			It("Should return nil", func() {
 				Expect(err).To(BeNil())
 			})
 		})
@@ -136,14 +145,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 		Context("When inserting an array of app_metric", func() {
 			BeforeEach(func() {
 				appMetrics := []*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "300",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -161,19 +170,19 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 		Context("When there are errors in transaction", func() {
-			var lock *sync.Mutex = &sync.Mutex{}
-			var count int = 0
+			var lock = &sync.Mutex{}
+			var count = 0
 			BeforeEach(func() {
 				testMetricName = "Test-Metric-Name-this-is-a-too-long-metric-name-too-looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				appMetrics := []*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "300",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -307,25 +316,25 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving all the appMetrics)", func() {
+		Context("when retrieving all the appMetrics)", func() {
 			It("returns all the appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "100",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -335,7 +344,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving part of the appMetrics", func() {
+		Context("when retrieving part of the appMetrics", func() {
 			BeforeEach(func() {
 				start = 22222222
 				end = 66666666
@@ -343,14 +352,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("returns correct appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -360,28 +369,28 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving the appMetrics with descending order)", func() {
+		Context("when retrieving the appMetrics with descending order)", func() {
 			BeforeEach(func() {
 				orderType = db.DESC
 			})
 			It("returns all the appMetrics ordered by timestamp with descending order", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  55555555,
 						Value:      "300",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,

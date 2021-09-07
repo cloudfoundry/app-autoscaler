@@ -37,7 +37,7 @@ type AppNotFoundError struct {
 }
 
 func (ase *ActiveScheduleNotFoundError) Error() string {
-	return fmt.Sprintf("active schedule not found")
+	return "active schedule not found"
 }
 
 func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int) ScalingEngine {
@@ -68,7 +68,9 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		Reason:       getDynamicScalingReason(trigger),
 	}
 
-	defer s.scalingEngineDB.SaveScalingHistory(history)
+	defer func() {
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
+	}()
 
 	result := &models.AppScalingResult{
 		AppId:             appId,
@@ -163,7 +165,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
 		result.Adjustment = 0
-		result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
+		result.CooldownExpiredAt = 0
 		return result, nil
 	}
 
@@ -204,7 +206,6 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 				newInstances = currentInstances - 1
 			}
 		}
-
 	} else {
 		step, err := strconv.ParseInt(adjustment, 10, 32)
 		if err != nil {
@@ -252,7 +253,9 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		NewInstances: -1,
 		Reason:       getScheduledScalingReason(schedule),
 	}
-	defer s.scalingEngineDB.SaveScalingHistory(history)
+	defer func() {
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
+	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {
@@ -327,11 +330,14 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		NewInstances: -1,
 		Reason:       "schedule ends",
 	}
-	defer s.scalingEngineDB.SaveScalingHistory(history)
+	defer func() {
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
+	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
+	var appNotFoundErr *models.AppNotFoundErr
 	if err != nil {
-		if _, ok := err.(*models.AppNotFoundErr); ok {
+		if errors.As(err, &appNotFoundErr) {
 			logger.Info("app-not-found", lager.Data{"appId": appId})
 			history.Status = models.ScalingStatusIgnored
 			return nil

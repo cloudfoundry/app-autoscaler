@@ -16,9 +16,9 @@ import (
 var _ = Describe("DatabaseStatusCollector", func() {
 	var (
 		databaseStatusCollector prometheus.Collector
-		namespace               string = "test_name_space"
-		subSystem               string = "test_sub_system"
-		dbName                  string = "test_db_name"
+		namespace               = "test_name_space"
+		subSystem               = "test_sub_system"
+		dbName                  = "test_db_name"
 		fakeDB                  *fakes.FakeDatabaseStatus
 		descChan                chan *prometheus.Desc
 		metricChan              chan prometheus.Metric

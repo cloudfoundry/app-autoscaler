@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -33,6 +33,7 @@ func NewTestIngressServer(serverCert, serverKey, caCert string) (*TestIngressSer
 		Certificates:       []tls.Certificate{cert},
 		ClientAuth:         tls.RequestClientCert,
 		InsecureSkipVerify: false,
+		MinVersion:         tls.VersionTLS12,
 	}
 	caCertBytes, err := ioutil.ReadFile(caCert)
 	if err != nil {
@@ -86,7 +87,10 @@ func (t *TestIngressServer) Start() error {
 
 	loggregator_v2.RegisterIngressServer(t.grpcServer, t)
 
-	go t.grpcServer.Serve(listener)
+	go func() {
+		_ = t.grpcServer.Serve(listener)
+	}()
+
 	return nil
 }
 

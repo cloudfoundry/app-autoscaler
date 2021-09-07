@@ -19,19 +19,19 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 )
 
 var (
 	egPath     string
-	testAppId  string = "an-app-id"
-	metricType string = "a-metric-type"
-	metricUnit string = "a-metric-unit"
+	testAppId  = "an-app-id"
+	metricType = "a-metric-type"
+	metricUnit = "a-metric-unit"
 
 	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile         *os.File
@@ -42,8 +42,8 @@ var (
 	healthHttpClient   *http.Client
 	metricCollector    *ghttp.Server
 	scalingEngine      *ghttp.Server
-	breachDurationSecs int                         = 10
-	metrics            []*models.AppInstanceMetric = []*models.AppInstanceMetric{
+	breachDurationSecs = 10
+	metrics            = []*models.AppInstanceMetric{
 		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
@@ -83,7 +83,7 @@ var (
 		},
 	}
 
-	scalingResult *models.AppScalingResult = &models.AppScalingResult{
+	scalingResult = &models.AppScalingResult{
 		AppId:             testAppId,
 		Adjustment:        1,
 		Status:            models.ScalingStatusSucceeded,
@@ -152,6 +152,13 @@ func initDB() {
 
 func initHttpEndPoints() {
 	testCertDir := "../../../../../test-certs"
+
+	_, err := ioutil.ReadFile(filepath.Join(testCertDir, "eventgenerator.key"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "eventgenerator.crt"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
 
 	mcTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "metricscollector.crt"),
@@ -267,18 +274,17 @@ func initConfig() {
 			TLSClientConfig: tlsConfig,
 		},
 	}
-
 }
 
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "eg")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
-	configBytes, err1 := yaml.Marshal(c)
-	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
-	Expect(err1).NotTo(HaveOccurred())
+	configBytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
+	err = ioutil.WriteFile(cfg.Name(), configBytes, 0600)
+	Expect(err).NotTo(HaveOccurred())
 	return cfg
-
 }
 
 type EventGeneratorRunner struct {

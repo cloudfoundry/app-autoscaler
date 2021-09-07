@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rubyist/circuitbreaker"
+	circuit "github.com/rubyist/circuitbreaker"
 )
 
 var _ = Describe("AppEvaluationManager", func() {
@@ -25,11 +25,11 @@ var _ = Describe("AppEvaluationManager", func() {
 		manager              *AppEvaluationManager
 		testEvaluateInterval time.Duration
 		triggerArrayChan     chan []*models.Trigger
-		testAppId1           string                      = "testAppId1"
-		testAppId2           string                      = "testAppId2"
-		testMetricName       string                      = "Test-Metric-Name"
-		testBreakerConfig    config.CircuitBreakerConfig = config.CircuitBreakerConfig{}
-		fakeTime             time.Time                   = time.Now()
+		testAppId1           = "testAppId1"
+		testAppId2           = "testAppId2"
+		testMetricName       = "Test-Metric-Name"
+		testBreakerConfig    = config.CircuitBreakerConfig{}
+		fakeTime             = time.Now()
 
 		appPolicy1 = &models.AppPolicy{
 			AppId: testAppId1,
@@ -103,7 +103,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				It("should add triggers to evaluate", func() {
 					fclock.Increment(10 * testEvaluateInterval)
 					var arr []*models.Trigger
-					var triggerArray [][]*models.Trigger = [][]*models.Trigger{}
+					var triggerArray = [][]*models.Trigger{}
 					Eventually(triggerArrayChan).Should(Receive(&arr))
 					triggerArray = append(triggerArray, arr)
 					Eventually(triggerArrayChan).Should(Receive(&arr))
@@ -142,12 +142,12 @@ var _ = Describe("AppEvaluationManager", func() {
 				})
 
 				JustBeforeEach(func() {
-					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(time.Duration(30*testEvaluateInterval)).UnixNano())
+					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(30*testEvaluateInterval).UnixNano())
 				})
 
 				It("should add triggers to evaluate after cooldown expired", func() {
 					var arr []*models.Trigger
-					var triggerArray [][]*models.Trigger = [][]*models.Trigger{}
+					var triggerArray = [][]*models.Trigger{}
 					fclock.Increment(10 * testEvaluateInterval)
 					Consistently(triggerArrayChan).ShouldNot(Receive())
 

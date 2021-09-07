@@ -5,8 +5,8 @@ import (
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 
 	"database/sql"
 	"strconv"
@@ -39,6 +39,7 @@ func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Schedu
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &SchedulerSQLDB{
 		dbConfig: dbConfig,
@@ -63,7 +64,10 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 		sdb.logger.Error("failed-get-active-schedules-query", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	schedules := make(map[string]*models.ActiveSchedule)
 	var id int64
@@ -89,7 +93,6 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 		schedules[appId] = &schedule
 	}
 	return schedules, nil
-
 }
 
 func (sdb *SchedulerSQLDB) GetDBStatus() sql.DBStats {

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/gorilla/websocket"
 	. "github.com/onsi/ginkgo"
@@ -18,10 +18,10 @@ import (
 var _ = Describe("Emitter", func() {
 	var (
 		logger        *lagertest.TestLogger
-		envelopChan   chan *loggregator_v2.Envelope = make(chan *loggregator_v2.Envelope, 10)
-		wsMessageChan chan int                      = make(chan int, 10)
+		envelopChan   = make(chan *loggregator_v2.Envelope, 10)
+		wsMessageChan = make(chan int, 10)
 
-		bufferSize                 int = 500
+		bufferSize                 = 500
 		fakeWSHelper               *fakes.FakeWSHelper
 		emitter                    Emitter
 		testAppId                  = "test-app-id"
@@ -33,19 +33,19 @@ var _ = Describe("Emitter", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": &loggregator_v2.GaugeValue{
+						"cpu": {
 							Unit:  "percentage",
 							Value: 20.5,
 						},
-						"disk": &loggregator_v2.GaugeValue{
+						"disk": {
 							Unit:  "bytes",
 							Value: 3000000000,
 						},
-						"memory": &loggregator_v2.GaugeValue{
+						"memory": {
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
-						"memory_quota": &loggregator_v2.GaugeValue{
+						"memory_quota": {
 							Unit:  "bytes",
 							Value: 2000000000,
 						},
@@ -108,7 +108,8 @@ var _ = Describe("Emitter", func() {
 	Context("Stop", func() {
 		BeforeEach(func() {
 			emitter = NewEnvelopeEmitter(logger, bufferSize, fclock, verifyWSConnectionInterval, fakeWSHelper)
-			emitter.Start()
+			err := emitter.Start()
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(logger.Buffer).Should(Say("started"))
 			emitter.Accept(&testEnvelope)
 			Eventually(envelopChan).Should(Receive())

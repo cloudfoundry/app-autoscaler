@@ -4,7 +4,7 @@ import (
 	"autoscaler/fakes"
 	. "autoscaler/metricsgateway"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,9 +17,9 @@ var _ = Describe("Dispatcher", func() {
 		resultChans []chan *loggregator_v2.Envelope
 		emitters    []Emitter
 		dispatcher  *Dispatcher
-		testAppId1  string = "the-test-appid1"
-		testAppId2  string = "the-test-appid2"
-		testAppId3  string = "the-test-appid3"
+		testAppId1  = "the-test-appid1"
+		testAppId2  = "the-test-appid2"
+		testAppId3  = "the-test-appid3"
 	)
 	BeforeEach(func() {
 		envelopChan = make(chan *loggregator_v2.Envelope, 10)

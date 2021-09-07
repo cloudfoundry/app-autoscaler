@@ -3,6 +3,7 @@ package brokerserver
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"autoscaler/api/config"
 	"autoscaler/db"
@@ -33,7 +34,7 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, authOK := r.BasicAuth()
 
-		if authOK == false || bcrypt.CompareHashAndPassword(bam.usernameHash, []byte(username)) != nil || bcrypt.CompareHashAndPassword(bam.passwordHash, []byte(password)) != nil {
+		if !authOK || bcrypt.CompareHashAndPassword(bam.usernameHash, []byte(username)) != nil || bcrypt.CompareHashAndPassword(bam.passwordHash, []byte(password)) != nil {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -42,7 +43,6 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 }
 
 func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-
 	var usernameHash []byte
 	if conf.BrokerUsernameHash != "" {
 		usernameHash = []byte(conf.BrokerUsernameHash)
@@ -85,7 +85,12 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
 	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
+	var addr string
+	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+		addr = fmt.Sprintf("localhost:%d", conf.BrokerServer.Port)
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
+	}
 
 	var runner ifrit.Runner
 	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {

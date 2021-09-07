@@ -1,14 +1,20 @@
-#!/bin/sh
-
-set -ex
-
-# Install certstrap
-go get -v github.com/square/certstrap
+#!/bin/bash
+set -e
+script_dir="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # Place keys and certificates here
-depot_path="../src/test/resources/certs"
-rm -rf ${depot_path}
-mkdir -p ${depot_path}
+depot_path="${script_dir}/../src/test/resources/certs"
+
+rm -rf "${depot_path}"
+mkdir -p "${depot_path}"
+
+OS=$(uname || "Win")
+if [ "${OS}" = "Darwin" ]; then
+  which certstrap >/dev/null || brew install certstrap
+else
+  # Install certstrap
+  which certstrap >/dev/null || go get -v github.com/square/certstrap
+fi
 
 # CA to distribute to autoscaler certs
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name testCA

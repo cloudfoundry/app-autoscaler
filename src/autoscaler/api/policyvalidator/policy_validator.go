@@ -99,7 +99,6 @@ func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidation
 }
 
 func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, result *gojsonschema.Result) {
-
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
 
 	//check InstanceMinCount and InstanceMaxCount
@@ -249,11 +248,11 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 				result.AddError(err, errDetails)
 			}
 		}
+
 		if recSched.StartDate != "" && recSched.EndDate != "" {
 			startDate, _ = time.ParseInLocation(DateLayout, recSched.StartDate, location)
 			endDate, _ = time.ParseInLocation(DateLayout, recSched.EndDate, location)
 			if endDate.Sub(startDate) < 0 {
-
 				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), recurringScheduleContext)
 				errDetails := gojsonschema.ErrorDetails{
 					"scheduleIndex": scheduleIndex,
@@ -308,7 +307,7 @@ func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingP
 
 		// start_date_time should be after current_date_time and before end_date_time
 		dateTime := newDateTimeRange(specSched.StartDateTime, specSched.EndDateTime, policy.Schedules.Timezone)
-		if dateTime.startDateTime.Sub(time.Now()) <= 0 {
+		if time.Until(dateTime.startDateTime) <= 0 {
 			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
 				"scheduleIndex": scheduleIndex,
@@ -396,11 +395,9 @@ func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *mo
 				formatString := "specific_date[{{.scheduleIndexB}}]:{start_date_time: {{.start_date_time1}}, end_date_time: {{.end_date_time1}}} and specific_date[{{.scheduleIndexA}}]:{start_date_time: {{.start_date_time2}}, end_date_time: {{.end_date_time2}}} are overlapping"
 				err := newPolicyValidationError(context, formatString, errDetails)
 				result.AddError(err, errDetails)
-
 			}
 		}
 	}
-
 }
 
 func getErrorsObject(resErr []gojsonschema.ResultError) *[]PolicyValidationErrors {
@@ -430,10 +427,7 @@ func hasIntersection(a []int, b []int) bool {
 func compareTimesGTEQ(firstTime string, secondTime string) bool {
 	ft, _ := time.Parse(TimeLayout, firstTime)
 	st, _ := time.Parse(TimeLayout, secondTime)
-	if ft.Sub(st) >= 0 {
-		return true
-	}
-	return false
+	return ft.Sub(st) >= 0
 }
 
 func compareDatesGTEQ(endDate string, startDate string) bool {
@@ -445,8 +439,5 @@ func compareDatesGTEQ(endDate string, startDate string) bool {
 	}
 	fd, _ := time.Parse(DateLayout, endDate)
 	sd, _ := time.Parse(DateLayout, startDate)
-	if fd.Sub(sd) >= 0 {
-		return true
-	}
-	return false
+	return fd.Sub(sd) >= 0
 }

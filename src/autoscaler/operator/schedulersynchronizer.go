@@ -38,5 +38,4 @@ func (s ScheduleSynchronizer) Operate() {
 	if err != nil {
 		s.logger.Error("failed-to-send-sync-scheduler-request", err)
 	}
-
 }
