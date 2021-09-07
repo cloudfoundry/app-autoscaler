@@ -2211,7 +2211,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 				})
 
-				Context("when intial_instance_min_count is smaller than instance_min_count", func() {
+				Context("when initial_instance_min_count is smaller than instance_min_count", func() {
 					BeforeEach(func() {
 						policyString = `{
 						"instance_max_count":4,
@@ -2241,7 +2241,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 				})
 
-				Context("when intial_instance_min_count is greater than instance_max_count", func() {
+				Context("when inItial_instance_min_count is greater than instance_max_count", func() {
 					BeforeEach(func() {
 						policyString = `{
 						"instance_max_count":4,

@@ -19,7 +19,7 @@ import (
 
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,7 +35,6 @@ const (
 var (
 	apPath           string
 	cfg              config.Config
-	apPort           int
 	configFile       *os.File
 	apiHttpClient    *http.Client
 	brokerHttpClient *http.Client
@@ -172,7 +171,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CF.Secret = "client-secret"
 	cfg.CF.SkipSSLValidation = true
 	cfg.Health = models.HealthConfig{
-		Port: healthport,
+		Port:                healthport,
 		HealthCheckUsername: "healthcheckuser",
 		HealthCheckPassword: "healthcheckpassword",
 	}
@@ -194,6 +193,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "servicebroker.crt"),
 		filepath.Join(testCertDir, "servicebroker.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
 	brokerHttpClient = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: brokerClientTLSConfig,

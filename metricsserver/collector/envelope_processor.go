@@ -4,12 +4,12 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
-	"math"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 )
 
@@ -92,7 +92,6 @@ func (ep *envelopeProcessor) processEnvelope(e *loggregator_v2.Envelope) {
 		t := e.GetTimer()
 		ep.processHttpStartStop(e.SourceId, uint32(instanceIndex), t)
 	}
-
 }
 
 func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
@@ -137,7 +136,6 @@ func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex
 		}
 		ep.metricChan <- cpuMetric
 	}
-
 }
 
 func (ep *envelopeProcessor) processHttpStartStop(appID string, instanceIndex uint32, t *loggregator_v2.Timer) {
@@ -149,7 +147,7 @@ func (ep *envelopeProcessor) processHttpStartStop(appID string, instanceIndex ui
 	}
 
 	ep.numRequests[appID][instanceIndex]++
-	ep.sumReponseTimes[appID][instanceIndex] += (t.Stop - t.Start)
+	ep.sumReponseTimes[appID][instanceIndex] += t.Stop - t.Start
 }
 
 func (ep *envelopeProcessor) processCustomMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
@@ -171,7 +169,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	ep.logger.Debug("compute-and-save-metrics", lager.Data{"message": "start to compute and save metrics"})
 	for appID := range ep.getAppIDs() {
 		im := ep.numRequests[appID]
-		if im == nil || len(im) == 0 {
+		if len(im) == 0 {
 			if helpers.FNVHash(appID)%uint32(ep.numProcessors) == uint32(ep.processorIndex) {
 				throughputMetric := &models.AppInstanceMetric{
 					AppId:         appID,
@@ -216,7 +214,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 				CollectedAt:   ep.clock.Now().UnixNano(),
 				Name:          models.MetricNameResponseTime,
 				Unit:          models.UnitMilliseconds,
-				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(ep.sumReponseTimes[appID][instanceIdx])/float64((numReq*1000*1000))))),
+				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(ep.sumReponseTimes[appID][instanceIdx])/float64(numReq*1000*1000)))),
 				Timestamp:     ep.clock.Now().UnixNano(),
 			}
 			ep.metricChan <- responseTimeMetric
@@ -224,6 +222,4 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	}
 	ep.numRequests = map[string]map[uint32]int64{}
 	ep.sumReponseTimes = map[string]map[uint32]int64{}
-
 }
-

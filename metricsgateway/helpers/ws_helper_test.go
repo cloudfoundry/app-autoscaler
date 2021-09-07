@@ -9,7 +9,7 @@ import (
 	"autoscaler/routes"
 	"autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -36,19 +36,19 @@ var _ = Describe("WsHelper", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": &loggregator_v2.GaugeValue{
+						"cpu": {
 							Unit:  "percentage",
 							Value: 20.5,
 						},
-						"disk": &loggregator_v2.GaugeValue{
+						"disk": {
 							Unit:  "bytes",
 							Value: 3000000000,
 						},
-						"memory": &loggregator_v2.GaugeValue{
+						"memory": {
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
-						"memory_quota": &loggregator_v2.GaugeValue{
+						"memory_quota": {
 							Unit:  "bytes",
 							Value: 2000000000,
 						},
@@ -108,10 +108,9 @@ var _ = Describe("WsHelper", func() {
 			err = wsHelper.Ping()
 			Expect(err).ShouldNot(HaveOccurred())
 			Eventually(pingPongChan, 5*time.Second, 1*time.Second).Should(Receive(Equal(1)))
-
 		})
 		It("close the websocket connection", func() {
-			wsHelper.CloseConn()
+			err = wsHelper.CloseConn()
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("successfully-close-ws-connection"))
 		})
@@ -150,9 +149,7 @@ var _ = Describe("WsHelper", func() {
 
 			})
 			It("fails to ping and reconnect", func() {
-				Eventually(func() error {
-					return wsHelper.Ping()
-				}).Should(HaveOccurred())
+				Eventually(func() error { return wsHelper.Ping() }, "2s").Should(HaveOccurred())
 				Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("maximum-number-of-close-retries-reached"))
 			})
 		})
@@ -167,7 +164,8 @@ var _ = Describe("WsHelper", func() {
 		})
 		It("write envelops to server", func() {
 			Consistently(messageChan).ShouldNot(Receive())
-			wsHelper.Write(&testEnvelope)
+			err = wsHelper.Write(&testEnvelope)
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(messageChan).Should(Receive())
 		})
 		Context("when server is down", func() {

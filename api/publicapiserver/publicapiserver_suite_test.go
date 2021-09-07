@@ -66,7 +66,7 @@ var (
 	fakePolicyDB     *fakes.FakePolicyDB
 	fakeRateLimiter  *fakes.FakeLimiter
 	checkBindingFunc api.CheckBindingFunc
-	hasBinding       bool = true
+	hasBinding       = true
 
 	testCertDir = "../../../../test-certs"
 	apiPort     = 12000 + GinkgoParallelNode()
@@ -84,6 +84,36 @@ var _ = BeforeSuite(func() {
 	schedulerServer = ghttp.NewServer()
 
 	conf = CreateConfig(true, apiPort)
+
+	// verify MetricCollector certs
+	_, err := ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.KeyFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.CertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	// verify EventGenerator certs
+	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.CertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	// verify ScalingEngine certs
+	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.KeyFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.CertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
 
 	fakePolicyDB = &fakes.FakePolicyDB{}
 	checkBindingFunc = func(appId string) bool {
@@ -105,19 +135,19 @@ var _ = BeforeSuite(func() {
 	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
 	Expect(err).NotTo(HaveOccurred())
 
-	scalingHistoryPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/scaling_histories")
+	scalingHistoryPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/scaling_histories`)
 	Expect(err).NotTo(HaveOccurred())
 	scalingEngineServer.RouteToHandler(http.MethodGet, scalingHistoryPathMatcher, ghttp.RespondWithJSONEncodedPtr(&scalingEngineStatus, &scalingEngineResponse))
 
-	metricsCollectorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/metric_histories/[a-zA-Z0-9_]+")
+	metricsCollectorPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/metric_histories/[a-zA-Z0-9_]+`)
 	Expect(err).NotTo(HaveOccurred())
 	metricsCollectorServer.RouteToHandler(http.MethodGet, metricsCollectorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&metricsCollectorStatus, &metricsCollectorResponse))
 
-	eventGeneratorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+")
+	eventGeneratorPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+`)
 	Expect(err).NotTo(HaveOccurred())
 	eventGeneratorServer.RouteToHandler(http.MethodGet, eventGeneratorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&eventGeneratorStatus, &eventGeneratorResponse))
 
-	schedulerPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/schedules")
+	schedulerPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/schedules`)
 	Expect(err).NotTo(HaveOccurred())
 	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
 	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
@@ -133,7 +163,8 @@ var _ = AfterSuite(func() {
 
 func GetTestHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Success"))
+		_, err := w.Write([]byte("Success"))
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 

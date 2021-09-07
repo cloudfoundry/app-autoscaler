@@ -6,15 +6,15 @@ import (
 	"autoscaler/metricsforwarder/config"
 	. "autoscaler/metricsforwarder/server"
 	"autoscaler/models"
-
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	cache "github.com/patrickmn/go-cache"
+	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
@@ -37,6 +37,16 @@ func TestServer(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+
+	_, err := ioutil.ReadFile("../../../../test-certs/metron.key")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile("../../../../test-certs/metron.crt")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile("../../../../test-certs/loggregator-ca.crt")
+	Expect(err).NotTo(HaveOccurred())
+
 	return nil
 }, func(_ []byte) {
 

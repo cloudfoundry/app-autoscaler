@@ -9,15 +9,13 @@ import (
 	"autoscaler/db/sqldb"
 	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
-	mc_config "autoscaler/metricscollector/config"
-	mc_server "autoscaler/metricscollector/server"
 	"autoscaler/metricsserver/collector"
 	"autoscaler/metricsserver/config"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
@@ -135,14 +133,12 @@ func main() {
 		serverNodeAddrs[i] = fmt.Sprintf("%s:%d", n, conf.Server.Port)
 	}
 
-	httpServerConfig := &mc_config.ServerConfig{
-		Port:      conf.Server.Port,
-		TLS:       conf.Server.TLS,
-		NodeAddrs: serverNodeAddrs,
-		NodeIndex: conf.NodeIndex,
+	httpServerConfig := &config.ServerConfig{
+		Port: conf.Server.Port,
+		TLS:  conf.Server.TLS,
 	}
 
-	httpServer, err := mc_server.NewServer(logger.Session("http_server"), httpServerConfig, coll.QueryMetrics, httpStatusCollector)
+	httpServer, err := collector.NewServer(logger.Session("http_server"), httpServerConfig, conf, coll.QueryMetrics, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)

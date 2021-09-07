@@ -13,7 +13,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  metrics_server_client_tls: 
+  metrics_server_client_tls:
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"

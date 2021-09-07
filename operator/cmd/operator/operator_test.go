@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
 )
@@ -56,7 +55,8 @@ var _ = Describe("Operator", func() {
 				badfile, err := ioutil.TempFile("", "bad-pr-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
-				ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 				runner.Start()
 			})
 
@@ -95,19 +95,19 @@ var _ = Describe("Operator", func() {
 			})
 
 			It("successfully acquired lock and started", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.lock-acquired-in-first-attempt"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.lock-acquired-in-first-attempt"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 			})
 		})
 
 		Context("when operator have the lock", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 			})
 
 			It("should retry acquiring lock to renew it's presence", func() {
-				Eventually(runner.Session.Buffer, 8*time.Second).Should(gbytes.Say("operator.retry-acquiring-lock"))
+				Eventually(runner.Session.Buffer, 8*time.Second).Should(Say("operator.retry-acquiring-lock"))
 
 			})
 		})
@@ -115,21 +115,21 @@ var _ = Describe("Operator", func() {
 		Context("when interrupt occurs", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 			})
 
 			It("successfully release lock and exit", func() {
 				runner.Interrupt()
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.received-interrupt-signal"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.successfully-released-lock"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.exited"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.received-interrupt-signal"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.successfully-released-lock"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.exited"))
 			})
 		})
 
 		Context("When one instance of operator owns lock and the other is waiting to get the lock", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("operator.started"))
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(Say("operator.started"))
 				secondRunner = NewOperatorRunner()
 				secondRunner.startCheck = ""
 				cfg.Health.HealthCheckUsername = ""
@@ -145,8 +145,8 @@ var _ = Describe("Operator", func() {
 			})
 
 			It("Competing instance should not get lock in first attempt", func() {
-				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
-				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.successfully-acquired-lock"))
+				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.lock-acquired-in-first-attempt"))
+				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.successfully-acquired-lock"))
 
 				By("checking the health endpoint of the standing-by instance")
 				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", cfg.Health.Port))
@@ -193,13 +193,13 @@ var _ = Describe("Operator", func() {
 
 			It("Only one instance should get the lock", func() {
 				if runnerAcquiredLock {
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
-					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
-					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.started"))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.lock-acquired-in-first-attempt"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.started"))
 				} else {
-					Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
-					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
-					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.started"))
+					Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.lock-acquired-in-first-attempt"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.started"))
 				}
 			})
 		})
@@ -207,13 +207,13 @@ var _ = Describe("Operator", func() {
 		Context("when the running operator instance stopped", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("operator.started"))
+				Eventually(runner.Session.Buffer, 10*time.Second).Should(Say("operator.started"))
 				secondRunner = NewOperatorRunner()
 				cfg.Health.Port = 9000 + GinkgoParallelNode()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.startCheck = ""
 				secondRunner.Start()
-				Consistently(secondRunner.Session.Buffer, 10*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
+				Consistently(secondRunner.Session.Buffer, 10*time.Second).ShouldNot(Say("operator.lock-acquired-in-first-attempt"))
 			})
 
 			AfterEach(func() {
@@ -223,10 +223,10 @@ var _ = Describe("Operator", func() {
 
 			It("competing operator instance should acquire the lock", func() {
 				runner.Interrupt()
-				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("operator.received-interrupt-signal"))
-				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("operator.successfully-released-lock"))
-				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("operator.successfully-acquired-lock"))
-				Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(gbytes.Say("operator.started"))
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(Say("operator.received-interrupt-signal"))
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(Say("operator.successfully-released-lock"))
+				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(Say("operator.successfully-acquired-lock"))
+				Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(Say("operator.started"))
 			})
 		})
 
@@ -348,7 +348,7 @@ var _ = Describe("Operator", func() {
 			runner.configPath = writeConfig(&basicAuthConfig).Name()
 
 			runner.Start()
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 		})
 
 		AfterEach(func() {
@@ -372,33 +372,13 @@ var _ = Describe("Operator", func() {
 
 			})
 		})
-		Context("when a request to query profile comes", func() {
-			It("returns with a 200", func() {
-				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := ioutil.ReadAll(rsp.Body)
-				profileIndexBody := string(raw)
-				Expect(profileIndexBody).To(ContainSubstring("allocs"))
-				Expect(profileIndexBody).To(ContainSubstring("block"))
-				Expect(profileIndexBody).To(ContainSubstring("cmdline"))
-				Expect(profileIndexBody).To(ContainSubstring("goroutine"))
-				Expect(profileIndexBody).To(ContainSubstring("heap"))
-				Expect(profileIndexBody).To(ContainSubstring("mutex"))
-				Expect(profileIndexBody).To(ContainSubstring("profile"))
-				Expect(profileIndexBody).To(ContainSubstring("threadcreate"))
-				Expect(profileIndexBody).To(ContainSubstring("trace"))
-				rsp.Body.Close()
-
-			})
-		})
 	})
 
 	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
 		BeforeEach(func() {
 			runner.Start()
 
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 		})
 
 		AfterEach(func() {

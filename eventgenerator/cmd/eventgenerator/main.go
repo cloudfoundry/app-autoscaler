@@ -89,6 +89,10 @@ func main() {
 	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 	appMetricChan := make(chan *models.AppMetric, conf.Aggregator.AppMetricChannelSize)
 	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan)
+	if err != nil {
+		logger.Error("failed to create MetricPoller", err)
+		os.Exit(1)
+	}
 	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.SaveInterval,
 		appMonitorsChan, appManager.GetPolicies, appManager.SaveMetricToCache, conf.DefaultStatWindowSecs, appMetricChan, appMetricDB)
 	if err != nil {
@@ -150,23 +154,23 @@ func main() {
 func loadConfig(path string) (*config.Config, error) {
 	configFile, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
 
 	configFileBytes, err := ioutil.ReadAll(configFile)
 	configFile.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read data from config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)
 	}
 
 	conf, err := config.LoadConfig(configFileBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to parse config file %q: %w", path, err)
 	}
 
 	err = conf.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate configuration: %s", err.Error())
+		return nil, fmt.Errorf("failed to validate configuration: %w", err)
 	}
 	return conf, nil
 }
@@ -191,7 +195,6 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 }
 
 func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-
 	client, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": conf.MetricCollector.TLSClientCerts})

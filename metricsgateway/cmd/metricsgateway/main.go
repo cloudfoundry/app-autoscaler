@@ -20,8 +20,8 @@ import (
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
-	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
@@ -131,29 +131,28 @@ func main() {
 func loadConfig(path string) (*config.Config, error) {
 	configFile, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
 
 	configFileBytes, err := ioutil.ReadAll(configFile)
 	configFile.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read data from config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)
 	}
 
 	conf, err := config.LoadConfig(configFileBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to parse config file %q: %w", path, err)
 	}
 
 	err = conf.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate configuration: %s", err.Error())
+		return nil, fmt.Errorf("failed to validate configuration: %w", err)
 	}
 	return conf, nil
 }
 
 func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr string, loggregatorClientTLSConfig *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc metricsgateway.GetAppIDsFunc, envelopeCounterCollector healthendpoint.CounterCollector) []*metricsgateway.Nozzle {
-
 	nozzles := make([]*metricsgateway.Nozzle, nozzleCount)
 	for i := 0; i < nozzleCount; i++ {
 		nozzles[i] = metricsgateway.NewNozzle(logger, i, shardID, rlpAddr, loggregatorClientTLSConfig, envelopChan, getAppIDsFunc, envelopeCounterCollector)

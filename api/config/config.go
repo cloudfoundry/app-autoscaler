@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xeipuuv/gojsonschema"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/helpers"
@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                = "info"
-	DefaultMaxAmount                   = 10
-	DefaultValidDuration time.Duration = 1 * time.Second
+	DefaultLoggingLevel  = "info"
+	DefaultMaxAmount     = 10
+	DefaultValidDuration = 1 * time.Second
 )
 
 type ServerConfig struct {
@@ -113,7 +113,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(bytes, conf)
+	err = yaml.UnmarshalStrict(bytes, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-
 	err := c.CF.Validate()
 	if err != nil {
 		return err

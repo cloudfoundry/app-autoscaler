@@ -62,7 +62,6 @@ func (am *AppManager) startAppIDsRetrieve() {
 		case <-am.doneChan:
 			return
 		case <-tick.C():
-
 		}
 	}
 }

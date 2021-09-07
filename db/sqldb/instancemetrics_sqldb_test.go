@@ -4,9 +4,11 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
+	"strings"
+
 	"code.cloudfoundry.org/lager"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -32,9 +34,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		appId          string
 		instanceIndex  int
 		metricName     string
-		testAppId      string = "Test-App-ID"
-		testMetricName string = "TestMetricType"
-		testMetricUnit string = "TestMetricUnit"
+		testAppId      = "Test-App-ID"
+		testMetricName = "TestMetricType"
+		testMetricUnit = "TestMetricUnit"
 	)
 
 	BeforeEach(func() {
@@ -44,6 +46,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
+			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		instanceIndex = -1
 		testMetricName = "TestMetricType"
@@ -63,6 +66,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
+				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+					Skip("Not configured for postgres")
+				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
@@ -72,13 +78,16 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
+				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+					Skip("Not configured for mysql")
+				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -172,7 +181,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				metrics := []*models.AppInstanceMetric{}
 				err = idb.SaveMetricsInBulk(metrics)
 			})
-			It("Should return nil", func(){
+			It("Should return nil", func() {
 				Expect(err).To(BeNil())
 			})
 		})
@@ -208,8 +217,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 
 		Context("When there are errors in transaction", func() {
-			var lock *sync.Mutex = &sync.Mutex{}
-			var count int = 0
+			var lock = &sync.Mutex{}
+			var count = 0
 			BeforeEach(func() {
 				testMetricName = "This-is-a-too-long-meitrc-name-too-loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				metric1 := models.AppInstanceMetric{
@@ -295,7 +304,6 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			metric.Timestamp = 110000
 			err = idb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
-
 
 			start = 0
 			end = -1
@@ -723,4 +731,3 @@ var _ = Describe("InstancemetricsSqldb", func() {
 	})
 
 })
-

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/helpers"
@@ -13,23 +13,23 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                   string        = "info"
-	DefaultServerPort                     int           = 8080
-	DefaultHealthServerPort               int           = 8081
-	DefaultPolicyPollerInterval           time.Duration = 40 * time.Second
-	DefaultAggregatorExecuteInterval      time.Duration = 40 * time.Second
-	DefaultSaveInterval                   time.Duration = 5 * time.Second
-	DefaultMetricPollerCount              int           = 20
-	DefaultAppMonitorChannelSize          int           = 200
-	DefaultAppMetricChannelSize           int           = 200
-	DefaultEvaluationExecuteInterval      time.Duration = 40 * time.Second
-	DefaultEvaluatorCount                 int           = 20
-	DefaultTriggerArrayChannelSize        int           = 200
-	DefaultBackOffInitialInterval         time.Duration = 5 * time.Minute
-	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
-	DefaultBreakerConsecutiveFailureCount int64         = 3
-	DefaultHttpClientTimeout              time.Duration = 5 * time.Second
-	DefaultMetricCacheSizePerApp                        = 100
+	DefaultLoggingLevel                   string = "info"
+	DefaultServerPort                     int    = 8080
+	DefaultHealthServerPort               int    = 8081
+	DefaultPolicyPollerInterval                  = 40 * time.Second
+	DefaultAggregatorExecuteInterval             = 40 * time.Second
+	DefaultSaveInterval                          = 5 * time.Second
+	DefaultMetricPollerCount              int    = 20
+	DefaultAppMonitorChannelSize          int    = 200
+	DefaultAppMetricChannelSize           int    = 200
+	DefaultEvaluationExecuteInterval             = 40 * time.Second
+	DefaultEvaluatorCount                 int    = 20
+	DefaultTriggerArrayChannelSize        int    = 200
+	DefaultBackOffInitialInterval                = 5 * time.Minute
+	DefaultBackOffMaxInterval                    = 2 * time.Hour
+	DefaultBreakerConsecutiveFailureCount int64  = 3
+	DefaultHttpClientTimeout                     = 5 * time.Second
+	DefaultMetricCacheSizePerApp                 = 100
 )
 
 type ServerConfig struct {
@@ -116,7 +116,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		},
 		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
-	err := yaml.Unmarshal(bytes, &conf)
+	err := yaml.UnmarshalStrict(bytes, &conf)
 	if err != nil {
 		return nil, err
 	}

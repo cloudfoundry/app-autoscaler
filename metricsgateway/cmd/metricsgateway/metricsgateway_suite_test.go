@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"autoscaler/models"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"google.golang.org/grpc/grpclog"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"testing"
@@ -43,8 +42,6 @@ var (
 	loggregatorClientCrtPath = filepath.Join(testCertDir, "reverselogproxy_client.crt")
 	loggregatorClientKeyPath = filepath.Join(testCertDir, "reverselogproxy_client.key")
 
-	metricServerCrtPath       = filepath.Join(testCertDir, "metricserver.crt")
-	metricServerKeyPath       = filepath.Join(testCertDir, "metricserver.key")
 	metricServerClientCrtPath = filepath.Join(testCertDir, "metricserver_client.crt")
 	metricServerClientKeyPath = filepath.Join(testCertDir, "metricserver_client.key")
 
@@ -77,7 +74,7 @@ var (
 )
 
 func TestMetricsgateway(t *testing.T) {
-	grpclog.SetLogger(log.New(GinkgoWriter, "", 0))
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, ioutil.Discard, ioutil.Discard))
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Metricsgateway Suite")
@@ -113,7 +110,7 @@ func initDB() {
 	_, err = mgDB.Exec("DELETE from policy_json")
 	Expect(err).NotTo(HaveOccurred())
 
-	policy := fmt.Sprintf(`
+	policy := `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -127,7 +124,7 @@ func initDB() {
 		         "adjustment":"+1"
 		      }
 		   ]
-		}`)
+		}`
 	query := mgDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = mgDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
@@ -137,7 +134,6 @@ func initDB() {
 }
 
 func initConfig() {
-
 	healthport = 8000 + GinkgoParallelNode()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
@@ -184,7 +180,6 @@ func initConfig() {
 		},
 	}
 	configFile = writeConfig(&conf)
-
 }
 
 func initFakeServers() {
@@ -202,15 +197,16 @@ func initFakeServers() {
 	wsh := testhelpers.NewWebsocketHandler(messageChan, pingPongChan, 5*time.Second)
 	fakeMetricServer.RouteToHandler("GET", "/v1/envelopes", wsh.ServeWebsocket)
 }
+
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "mg")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
-	configBytes, err1 := yaml.Marshal(c)
-	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
-	Expect(err1).NotTo(HaveOccurred())
+	configBytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
+	err = ioutil.WriteFile(cfg.Name(), configBytes, 0600)
+	Expect(err).NotTo(HaveOccurred())
 	return cfg
-
 }
 
 type MetricsGatewayRunner struct {

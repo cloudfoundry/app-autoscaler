@@ -10,7 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var _ = Describe("Config", func() {
@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
- broker_server:
+  broker_server:
 	port: 8080,
 public_api_server:
   port: 8081

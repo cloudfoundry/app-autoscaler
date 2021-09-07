@@ -20,8 +20,8 @@ var _ = Describe("Dblock", func() {
 		lock2       *DatabaseLock
 		lockRunner1 ifrit.Runner
 		lockRunner2 ifrit.Runner
-		lockOwner1  string = "owner1"
-		lockOwner2  string = "owner2"
+		lockOwner1  = "owner1"
+		lockOwner2  = "owner2"
 		resultOwner string
 		dblogger    *lagertest.TestLogger
 		logger1     *lagertest.TestLogger
@@ -33,8 +33,8 @@ var _ = Describe("Dblock", func() {
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		retryInterval          time.Duration = 5 * time.Second
-		lockTTL                time.Duration = 15 * time.Second
+		retryInterval          = 5 * time.Second
+		lockTTL                = 15 * time.Second
 		signalsChan1           chan os.Signal
 		readyChan1             chan struct{}
 		signalsChan2           chan os.Signal
@@ -49,7 +49,8 @@ var _ = Describe("Dblock", func() {
 		err                    error
 	)
 	BeforeEach(func() {
-		cleanLockTable()
+		err = cleanLockTable()
+		Expect(err).NotTo(HaveOccurred())
 		dblogger = lagertest.NewTestLogger("lockdb")
 		ldb, err = sqldb.NewLockSQLDB(dbConfig, lockTableName, dblogger)
 		Expect(err).NotTo(HaveOccurred())
@@ -70,8 +71,8 @@ var _ = Describe("Dblock", func() {
 	JustBeforeEach(func() {
 		lockRunner1 = lock1.InitDBLockRunner(retryInterval, lockTTL, lockOwner1, ldb, callbackOnAcquireLock1, callbackOnLostLock1)
 		lockRunner2 = lock2.InitDBLockRunner(retryInterval, lockTTL, lockOwner2, ldb, callbackOnAcquireLock2, callbackOnLostLock2)
-		go lockRunner1.Run(signalsChan1, readyChan1)
-		go lockRunner2.Run(signalsChan2, readyChan2)
+		go func() { _ = lockRunner1.Run(signalsChan1, readyChan1) }()
+		go func() { _ = lockRunner2.Run(signalsChan2, readyChan2) }()
 		select {
 
 		case <-logger1.Buffer().Detect("lock-acquired-in-first-attempt"):

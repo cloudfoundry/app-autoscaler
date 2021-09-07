@@ -11,10 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 type FakeEventProducer struct {
@@ -48,8 +49,7 @@ func (f *FakeEventProducer) Receiver(
 	*loggregator_v2.EgressRequest,
 	loggregator_v2.Egress_ReceiverServer,
 ) error {
-
-	return grpc.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
+	return status.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
 }
 
 func (f *FakeEventProducer) BatchedReceiver(
@@ -61,7 +61,7 @@ func (f *FakeEventProducer) BatchedReceiver(
 	f.actualReq = req
 	f.mu.Unlock()
 	var i int
-	for range time.Tick(f.emitInterval) {
+	for range time.NewTicker(f.emitInterval).C {
 		fpEnvs := []*loggregator_v2.Envelope{}
 		for _, e := range f.envelops {
 			fpEnvs = append(fpEnvs, &loggregator_v2.Envelope{
@@ -72,9 +72,12 @@ func (f *FakeEventProducer) BatchedReceiver(
 				Timestamp:      time.Now().UnixNano(),
 			})
 		}
-		srv.Send(&loggregator_v2.EnvelopeBatch{
+		err := srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: fpEnvs,
 		})
+		if err != nil {
+			return err
+		}
 		i++
 	}
 	return nil
@@ -145,19 +148,17 @@ func (f *FakeEventProducer) SetEnvelops(envelops []*loggregator_v2.Envelope) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.envelops = envelops
-
 }
 
 func NewServerMutualTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config, error) {
-
 	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %s", err)
+		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
 	certBytes, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read ca cert file: %s", err)
+		return nil, fmt.Errorf("failed to read ca cert file: %w", err)
 	}
 
 	caCertPool := x509.NewCertPool()
@@ -184,12 +185,12 @@ func NewClientMutualTLSConfig(
 ) (*tls.Config, error) {
 	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %s", err)
+		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
 	certBytes, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read ca cert file: %s", err)
+		return nil, fmt.Errorf("failed to read ca cert file: %w", err)
 	}
 
 	caCertPool := x509.NewCertPool()
@@ -209,7 +210,7 @@ func NewClientMutualTLSConfig(
 		},
 	}
 	if _, err := certificate.Verify(verifyOptions); err != nil {
-		return nil, fmt.Errorf("failed to verify certificate: %s", err)
+		return nil, fmt.Errorf("failed to verify certificate: %w", err)
 	}
 
 	tlsConfig := &tls.Config{

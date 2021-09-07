@@ -2,6 +2,9 @@ package healthendpoint_test
 
 import (
 	. "autoscaler/healthendpoint"
+	"strings"
+
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -10,15 +13,15 @@ import (
 
 var _ = Describe("CounterCollector", func() {
 	var (
-		namespace1 string = "test_name_space1"
-		subSystem1 string = "test_sub_system1"
-		name1      string = "test_name1"
-		help1      string = "test_help1"
+		namespace1 = "test_name_space1"
+		subSystem1 = "test_sub_system1"
+		name1      = "test_name1"
+		help1      = "test_help1"
 
-		namespace2 string = "test_name_space2"
-		subSystem2 string = "test_sub_system2"
-		name2      string = "test_name2"
-		help2      string = "test_help2"
+		namespace2 = "test_name_space2"
+		subSystem2 = "test_sub_system2"
+		name2      = "test_name2"
+		help2      = "test_help2"
 
 		counterOpt1 = prometheus.CounterOpts{
 			Namespace: namespace1,
@@ -90,11 +93,19 @@ var _ = Describe("CounterCollector", func() {
 			counterMetric2.Add(float64(100))
 		})
 		It("Receive metrics", func() {
-			var metric1, metric2 prometheus.Metric
-			Expect(metricChan).To(Receive(&metric1))
-			Expect(metricChan).To(Receive(&metric2))
-			Expect([]prometheus.Metric{metric1, metric2}).To(ContainElement(prometheus.Metric(counterMetric1)))
-			Expect([]prometheus.Metric{metric1, metric2}).To(ContainElement(prometheus.Metric(counterMetric2)))
+			numberReceived := testutil.CollectAndCount(counterCollector, "test_name_space1_test_sub_system1_test_name1", "test_name_space2_test_sub_system2_test_name2")
+			Expect(numberReceived).Should(Equal(2))
+
+			expected := `
+				# HELP test_name_space1_test_sub_system1_test_name1 test_help1
+				# TYPE test_name_space1_test_sub_system1_test_name1 counter
+				test_name_space1_test_sub_system1_test_name1 10
+        		# HELP test_name_space2_test_sub_system2_test_name2 test_help2
+        		# TYPE test_name_space2_test_sub_system2_test_name2 counter
+				test_name_space2_test_sub_system2_test_name2 100
+`
+			err := testutil.CollectAndCompare(counterCollector, strings.NewReader(expected))
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 

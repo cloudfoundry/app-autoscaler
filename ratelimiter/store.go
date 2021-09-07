@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/juju/ratelimit"
+	"golang.org/x/time/rate"
 )
 
 type Store interface {
-	Increment(string) (int, error)
-	Stats() map[string]int
+	Increment(string) error
 }
 
 type InMemoryStore struct {
@@ -26,8 +25,8 @@ type InMemoryStore struct {
 }
 
 type entry struct {
-	bucket       *ratelimit.Bucket
-	expiredAt    time.Time
+	limiter   *rate.Limiter
+	expiredAt time.Time
 	sync.RWMutex
 }
 
@@ -59,24 +58,24 @@ func NewStore(bucketCapacity int, maxAmount int, validDuration time.Duration, ex
 }
 
 func newEntry(validDuration time.Duration, bucketCapacity int, maxAmount int) *entry {
+	limit := 1e9 * float64(maxAmount) / float64(validDuration)
 	return &entry{
-		bucket: ratelimit.NewBucketWithQuantum(validDuration, int64(bucketCapacity), int64(maxAmount)),
+		limiter: rate.NewLimiter(rate.Limit(limit), bucketCapacity),
 	}
 }
 
-func (s *InMemoryStore) Increment(key string) (int, error) {
+func (s *InMemoryStore) Increment(key string) error {
 	v, ok := s.get(key)
 	if !ok {
 		v = newEntry(s.validDuration, s.bucketCapacity, s.maxAmount)
 	}
 	v.SetExpire(time.Now().Add(s.expireDuration))
-	if avail := v.bucket.Available(); avail == 0 {
+	if !v.limiter.Allow() {
 		s.set(key, v)
-		return int(avail), errors.New("empty bucket")
+		return errors.New("empty bucket")
 	}
-	v.bucket.Take(1)
 	s.set(key, v)
-	return int(v.bucket.Available()), nil
+	return nil
 }
 
 func (s *InMemoryStore) get(key string) (*entry, bool) {
@@ -95,7 +94,7 @@ func (s *InMemoryStore) set(key string, value *entry) {
 func (s *InMemoryStore) expiryCycle() {
 	ticker := time.NewTicker(s.expireCheckInterval)
 	go func() {
-		for _ = range ticker.C {
+		for range ticker.C {
 			s.Lock()
 			for k, v := range s.storage {
 				if v.Expired() {
@@ -106,22 +105,4 @@ func (s *InMemoryStore) expiryCycle() {
 			s.Unlock()
 		}
 	}()
-}
-
-func (s *InMemoryStore) Available(key string) int {
-	v, ok := s.get(key)
-	if !ok {
-		return 0
-	}
-	return int(v.bucket.Available())
-}
-
-func (s *InMemoryStore) Stats() map[string]int {
-	m := make(map[string]int)
-	s.Lock()
-	for k, v := range s.storage {
-		m[k] = int(v.bucket.Available())
-	}
-	s.Unlock()
-	return m
 }

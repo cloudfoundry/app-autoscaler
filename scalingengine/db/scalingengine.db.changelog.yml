@@ -3,6 +3,7 @@ databaseChangeLog:
       id: 1
       author: byang
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: scalinghistory
@@ -69,6 +70,7 @@ databaseChangeLog:
       id: 3
       author: byang
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: activeschedule
@@ -89,7 +91,7 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
-                  defaultValueComputed: now()  
+                  defaultValueComputed: now()
               - column:
                   name: instancemincount
                   type: integer
@@ -106,32 +108,34 @@ databaseChangeLog:
                   constraints:
                     nullable: false
   - changeSet:
-        id: 4
-        author: cdlliuy
-        changes:
-          - createTable:
-              tableName: scalingengine_lock
-              columns:
-                - column:
-                    name: owner
-                    type: varchar(255)
-                    constraints:
-                      primaryKey: true
-                - column:
-                    name: lock_timestamp
-                    type: timestamp
-                    constraints:
-                      nullable: false
-                - column:
-                    name: ttl
-                    type: bigint
-                    defaultValue: 0
-                    constraints:
-                      nullable: false
+      id: 4
+      author: cdlliuy
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
+      changes:
+        - createTable:
+            tableName: scalingengine_lock
+            columns:
+              - column:
+                  name: owner
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: lock_timestamp
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ttl
+                  type: bigint
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
   - changeSet:
       id: 5
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: scalinghistory
@@ -208,6 +212,7 @@ databaseChangeLog:
       id: 6
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: activeschedule
@@ -228,7 +233,7 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
-                  defaultValueComputed: now()  
+                  defaultValueComputed: now()
               - column:
                   name: instancemincount
                   type: integer
@@ -244,4 +249,15 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 7
+      author: aadeshmisra
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
+      changes:
+        - addPrimaryKey:
+            columnNames: "appid,timestamp"
+            constraintName: "pk_history"
+            chemaName: autoscaler
+            tableName: scalinghistory
 

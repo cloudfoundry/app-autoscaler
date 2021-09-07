@@ -2,9 +2,9 @@
 package fakes
 
 import (
-	cf "autoscaler/cf"
-	models "autoscaler/models"
-	sync "sync"
+	"autoscaler/cf"
+	"autoscaler/models"
+	"sync"
 )
 
 type FakeCFClient struct {
@@ -31,25 +31,17 @@ type FakeCFClient struct {
 	getEndpointsReturnsOnCall map[int]struct {
 		result1 cf.Endpoints
 	}
-	GetTokensStub        func() cf.Tokens
+	GetTokensStub        func() (cf.Tokens, error)
 	getTokensMutex       sync.RWMutex
 	getTokensArgsForCall []struct {
 	}
 	getTokensReturns struct {
 		result1 cf.Tokens
+		result2 error
 	}
 	getTokensReturnsOnCall map[int]struct {
 		result1 cf.Tokens
-	}
-	GetTokensWithRefreshStub        func() cf.Tokens
-	getTokensWithRefreshMutex       sync.RWMutex
-	getTokensWithRefreshArgsForCall []struct {
-	}
-	getTokensWithRefreshReturns struct {
-		result1 cf.Tokens
-	}
-	getTokensWithRefreshReturnsOnCall map[int]struct {
-		result1 cf.Tokens
+		result2 error
 	}
 	IsUserAdminStub        func(string) (bool, error)
 	isUserAdminMutex       sync.RWMutex
@@ -112,17 +104,6 @@ type FakeCFClient struct {
 	setAppInstancesReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetAuthTokenStub        func() (string, error)
-	getAuthTokenMutex       sync.RWMutex
-	getAuthTokenArgsForCall []struct{}
-	getAuthTokenReturns     struct {
-		result1 string
-		result2 error
-	}
-	getAuthTokenReturnsOnCall map[int]struct {
-		result1 string
-		result2 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -133,15 +114,16 @@ func (fake *FakeCFClient) GetApp(arg1 string) (*models.AppEntity, error) {
 	fake.getAppArgsForCall = append(fake.getAppArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.GetAppStub
+	fakeReturns := fake.getAppReturns
 	fake.recordInvocation("GetApp", []interface{}{arg1})
 	fake.getAppMutex.Unlock()
-	if fake.GetAppStub != nil {
-		return fake.GetAppStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getAppReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -195,15 +177,16 @@ func (fake *FakeCFClient) GetEndpoints() cf.Endpoints {
 	ret, specificReturn := fake.getEndpointsReturnsOnCall[len(fake.getEndpointsArgsForCall)]
 	fake.getEndpointsArgsForCall = append(fake.getEndpointsArgsForCall, struct {
 	}{})
+	stub := fake.GetEndpointsStub
+	fakeReturns := fake.getEndpointsReturns
 	fake.recordInvocation("GetEndpoints", []interface{}{})
 	fake.getEndpointsMutex.Unlock()
-	if fake.GetEndpointsStub != nil {
-		return fake.GetEndpointsStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getEndpointsReturns
 	return fakeReturns.result1
 }
 
@@ -242,21 +225,22 @@ func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints)
 	}{result1}
 }
 
-func (fake *FakeCFClient) GetTokens() cf.Tokens {
+func (fake *FakeCFClient) GetTokens() (cf.Tokens, error) {
 	fake.getTokensMutex.Lock()
 	ret, specificReturn := fake.getTokensReturnsOnCall[len(fake.getTokensArgsForCall)]
 	fake.getTokensArgsForCall = append(fake.getTokensArgsForCall, struct {
 	}{})
+	stub := fake.GetTokensStub
+	fakeReturns := fake.getTokensReturns
 	fake.recordInvocation("GetTokens", []interface{}{})
 	fake.getTokensMutex.Unlock()
-	if fake.GetTokensStub != nil {
-		return fake.GetTokensStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getTokensReturns
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeCFClient) GetTokensCallCount() int {
@@ -265,85 +249,36 @@ func (fake *FakeCFClient) GetTokensCallCount() int {
 	return len(fake.getTokensArgsForCall)
 }
 
-func (fake *FakeCFClient) GetTokensCalls(stub func() cf.Tokens) {
+func (fake *FakeCFClient) GetTokensCalls(stub func() (cf.Tokens, error)) {
 	fake.getTokensMutex.Lock()
 	defer fake.getTokensMutex.Unlock()
 	fake.GetTokensStub = stub
 }
 
-func (fake *FakeCFClient) GetTokensReturns(result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensReturns(result1 cf.Tokens, result2 error) {
 	fake.getTokensMutex.Lock()
 	defer fake.getTokensMutex.Unlock()
 	fake.GetTokensStub = nil
 	fake.getTokensReturns = struct {
 		result1 cf.Tokens
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens, result2 error) {
 	fake.getTokensMutex.Lock()
 	defer fake.getTokensMutex.Unlock()
 	fake.GetTokensStub = nil
 	if fake.getTokensReturnsOnCall == nil {
 		fake.getTokensReturnsOnCall = make(map[int]struct {
 			result1 cf.Tokens
+			result2 error
 		})
 	}
 	fake.getTokensReturnsOnCall[i] = struct {
 		result1 cf.Tokens
-	}{result1}
-}
-
-func (fake *FakeCFClient) GetTokensWithRefresh() cf.Tokens {
-	fake.getTokensWithRefreshMutex.Lock()
-	ret, specificReturn := fake.getTokensWithRefreshReturnsOnCall[len(fake.getTokensWithRefreshArgsForCall)]
-	fake.getTokensWithRefreshArgsForCall = append(fake.getTokensWithRefreshArgsForCall, struct {
-	}{})
-	fake.recordInvocation("GetTokensWithRefresh", []interface{}{})
-	fake.getTokensWithRefreshMutex.Unlock()
-	if fake.GetTokensWithRefreshStub != nil {
-		return fake.GetTokensWithRefreshStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	fakeReturns := fake.getTokensWithRefreshReturns
-	return fakeReturns.result1
-}
-
-func (fake *FakeCFClient) GetTokensWithRefreshCallCount() int {
-	fake.getTokensWithRefreshMutex.RLock()
-	defer fake.getTokensWithRefreshMutex.RUnlock()
-	return len(fake.getTokensWithRefreshArgsForCall)
-}
-
-func (fake *FakeCFClient) GetTokensWithRefreshCalls(stub func() cf.Tokens) {
-	fake.getTokensWithRefreshMutex.Lock()
-	defer fake.getTokensWithRefreshMutex.Unlock()
-	fake.GetTokensWithRefreshStub = stub
-}
-
-func (fake *FakeCFClient) GetTokensWithRefreshReturns(result1 cf.Tokens) {
-	fake.getTokensWithRefreshMutex.Lock()
-	defer fake.getTokensWithRefreshMutex.Unlock()
-	fake.GetTokensWithRefreshStub = nil
-	fake.getTokensWithRefreshReturns = struct {
-		result1 cf.Tokens
-	}{result1}
-}
-
-func (fake *FakeCFClient) GetTokensWithRefreshReturnsOnCall(i int, result1 cf.Tokens) {
-	fake.getTokensWithRefreshMutex.Lock()
-	defer fake.getTokensWithRefreshMutex.Unlock()
-	fake.GetTokensWithRefreshStub = nil
-	if fake.getTokensWithRefreshReturnsOnCall == nil {
-		fake.getTokensWithRefreshReturnsOnCall = make(map[int]struct {
-			result1 cf.Tokens
-		})
-	}
-	fake.getTokensWithRefreshReturnsOnCall[i] = struct {
-		result1 cf.Tokens
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCFClient) IsUserAdmin(arg1 string) (bool, error) {
@@ -352,15 +287,16 @@ func (fake *FakeCFClient) IsUserAdmin(arg1 string) (bool, error) {
 	fake.isUserAdminArgsForCall = append(fake.isUserAdminArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.IsUserAdminStub
+	fakeReturns := fake.isUserAdminReturns
 	fake.recordInvocation("IsUserAdmin", []interface{}{arg1})
 	fake.isUserAdminMutex.Unlock()
-	if fake.IsUserAdminStub != nil {
-		return fake.IsUserAdminStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.isUserAdminReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -416,15 +352,16 @@ func (fake *FakeCFClient) IsUserSpaceDeveloper(arg1 string, arg2 string) (bool, 
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.IsUserSpaceDeveloperStub
+	fakeReturns := fake.isUserSpaceDeveloperReturns
 	fake.recordInvocation("IsUserSpaceDeveloper", []interface{}{arg1, arg2})
 	fake.isUserSpaceDeveloperMutex.Unlock()
-	if fake.IsUserSpaceDeveloperStub != nil {
-		return fake.IsUserSpaceDeveloperStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.isUserSpaceDeveloperReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -478,15 +415,16 @@ func (fake *FakeCFClient) Login() error {
 	ret, specificReturn := fake.loginReturnsOnCall[len(fake.loginArgsForCall)]
 	fake.loginArgsForCall = append(fake.loginArgsForCall, struct {
 	}{})
+	stub := fake.LoginStub
+	fakeReturns := fake.loginReturns
 	fake.recordInvocation("Login", []interface{}{})
 	fake.loginMutex.Unlock()
-	if fake.LoginStub != nil {
-		return fake.LoginStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.loginReturns
 	return fakeReturns.result1
 }
 
@@ -530,15 +468,16 @@ func (fake *FakeCFClient) RefreshAuthToken() (string, error) {
 	ret, specificReturn := fake.refreshAuthTokenReturnsOnCall[len(fake.refreshAuthTokenArgsForCall)]
 	fake.refreshAuthTokenArgsForCall = append(fake.refreshAuthTokenArgsForCall, struct {
 	}{})
+	stub := fake.RefreshAuthTokenStub
+	fakeReturns := fake.refreshAuthTokenReturns
 	fake.recordInvocation("RefreshAuthToken", []interface{}{})
 	fake.refreshAuthTokenMutex.Unlock()
-	if fake.RefreshAuthTokenStub != nil {
-		return fake.RefreshAuthTokenStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.refreshAuthTokenReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -587,15 +526,16 @@ func (fake *FakeCFClient) SetAppInstances(arg1 string, arg2 int) error {
 		arg1 string
 		arg2 int
 	}{arg1, arg2})
+	stub := fake.SetAppInstancesStub
+	fakeReturns := fake.setAppInstancesReturns
 	fake.recordInvocation("SetAppInstances", []interface{}{arg1, arg2})
 	fake.setAppInstancesMutex.Unlock()
-	if fake.SetAppInstancesStub != nil {
-		return fake.SetAppInstancesStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.setAppInstancesReturns
 	return fakeReturns.result1
 }
 
@@ -641,49 +581,6 @@ func (fake *FakeCFClient) SetAppInstancesReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCFClient) GetAuthToken() (string, error) {
-	fake.getAuthTokenMutex.Lock()
-	ret, specificReturn := fake.getAuthTokenReturnsOnCall[len(fake.getAuthTokenArgsForCall)]
-	fake.getAuthTokenArgsForCall = append(fake.getAuthTokenArgsForCall, struct{}{})
-	fake.recordInvocation("GetAuthToken", []interface{}{})
-	fake.getAuthTokenMutex.Unlock()
-	if fake.GetAuthTokenStub != nil {
-		return fake.GetAuthTokenStub()
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.getAuthTokenReturns.result1, fake.getAuthTokenReturns.result2
-}
-
-func (fake *FakeCFClient) GetAuthTokenCallCount() int {
-	fake.getAuthTokenMutex.RLock()
-	defer fake.getAuthTokenMutex.RUnlock()
-	return len(fake.getAuthTokenArgsForCall)
-}
-
-func (fake *FakeCFClient) GetAuthTokenReturns(result1 string, result2 error) {
-	fake.GetAuthTokenStub = nil
-	fake.getAuthTokenReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeCFClient) GetAuthTokenReturnsOnCall(i int, result1 string, result2 error) {
-	fake.GetAuthTokenStub = nil
-	if fake.getAuthTokenReturnsOnCall == nil {
-		fake.getAuthTokenReturnsOnCall = make(map[int]struct {
-			result1 string
-			result2 error
-		})
-	}
-	fake.getAuthTokenReturnsOnCall[i] = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -693,8 +590,6 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getEndpointsMutex.RUnlock()
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
-	fake.getTokensWithRefreshMutex.RLock()
-	defer fake.getTokensWithRefreshMutex.RUnlock()
 	fake.isUserAdminMutex.RLock()
 	defer fake.isUserAdminMutex.RUnlock()
 	fake.isUserSpaceDeveloperMutex.RLock()
@@ -705,8 +600,6 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.refreshAuthTokenMutex.RUnlock()
 	fake.setAppInstancesMutex.RLock()
 	defer fake.setAppInstancesMutex.RUnlock()
-	fake.getAuthTokenMutex.RLock()
-	defer fake.getAuthTokenMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

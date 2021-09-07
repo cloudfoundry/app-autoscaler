@@ -1,7 +1,6 @@
 package cf_test
 
 import (
-	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -81,9 +80,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-					urlErr := err.(*url.Error)
-					Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+					IsUrlNetOpError(err)
 				})
 			})
 
@@ -144,8 +141,10 @@ var _ = Describe("Client", func() {
 
 				It("returns the correct tokens", func() {
 					Expect(err).ToNot(HaveOccurred())
-					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
-					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
+					tokens, err = cfc.GetTokens()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(tokens.AccessToken).To(Equal("test-access-token"))
+					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
 				})
 
 			})
@@ -157,9 +156,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-					urlErr := err.(*url.Error)
-					Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+					IsUrlNetOpError(err)
 				})
 			})
 
@@ -220,8 +217,10 @@ var _ = Describe("Client", func() {
 				It("returns valid token", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(authToken).To(Equal("Bearer test-access-token"))
-					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
-					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
+					tokens, err = cfc.GetTokens()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(tokens.AccessToken).To(Equal("test-access-token"))
+					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
 				})
 
 			})
@@ -264,7 +263,7 @@ var _ = Describe("Client", func() {
 						}),
 					),
 				)
-				cfc.Login()
+				err = cfc.Login()
 			})
 
 			Context("when auth fails", func() {
@@ -303,23 +302,22 @@ var _ = Describe("Client", func() {
 							}),
 						),
 					)
-
 				})
 				It("returns valid tokens", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(authToken).To(Equal("Bearer test-access-token"))
-					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
-					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
+					tokens, err = cfc.GetTokens()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(tokens.AccessToken).To(Equal("test-access-token"))
+					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
 				})
-
 			})
-
 		})
 	})
 
 	Describe("GetTokens", func() {
 		JustBeforeEach(func() {
-			tokens = cfc.GetTokens()
+			tokens, err = cfc.GetTokens()
 		})
 
 		BeforeEach(func() {
@@ -343,7 +341,7 @@ var _ = Describe("Client", func() {
 					}),
 				),
 			)
-			cfc.Login()
+			err = cfc.Login()
 		})
 
 		Context("when the token is not going to be expired", func() {

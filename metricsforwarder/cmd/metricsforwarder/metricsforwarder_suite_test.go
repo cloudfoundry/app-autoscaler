@@ -14,13 +14,13 @@ import (
 
 	"testing"
 
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/config"
@@ -81,6 +81,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}`
 	query := policyDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", policy, "1234")
+	Expect(err).NotTo(HaveOccurred())
 
 	username = "username"
 	password = "password"
@@ -100,13 +101,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	testCertDir := "../../../../../test-certs"
 
-	grpcIngressTestServer, _ = testhelpers.NewTestIngressServer(
+	grpcIngressTestServer, err = testhelpers.NewTestIngressServer(
 		filepath.Join(testCertDir, "metron.crt"),
 		filepath.Join(testCertDir, "metron.key"),
 		filepath.Join(testCertDir, "loggregator-ca.crt"),
 	)
+	Expect(err).NotTo(HaveOccurred())
 
-	grpcIngressTestServer.Start()
+	err = grpcIngressTestServer.Start()
+	Expect(err).NotTo(HaveOccurred())
 
 	cfg.LoggregatorConfig.TLS.CACertFile = filepath.Join(testCertDir, "loggregator-ca.crt")
 	cfg.LoggregatorConfig.TLS.CertFile = filepath.Join(testCertDir, "metron.crt")

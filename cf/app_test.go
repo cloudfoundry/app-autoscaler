@@ -3,10 +3,13 @@ package cf_test
 import (
 	. "autoscaler/cf"
 	"autoscaler/models"
+	"errors"
+	"fmt"
 	"io"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -34,7 +37,7 @@ var _ = Describe("App", func() {
 		fakeLoginServer = ghttp.NewServer()
 		fakeCC.RouteToHandler("GET", PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 			AuthEndpoint:    fakeLoginServer.URL(),
-			TokenEndpoint:   "test-token-endpoint",
+			TokenEndpoint:   fakeLoginServer.URL(),
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
 		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
@@ -44,7 +47,8 @@ var _ = Describe("App", func() {
 		conf = &CFConfig{}
 		conf.API = fakeCC.URL()
 		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
-		cfc.Login()
+		err = cfc.Login()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -146,9 +150,7 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(appEntity).To(BeNil())
-				Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-				urlErr := err.(*url.Error)
-				Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+				IsUrlNetOpError(err)
 			})
 
 		})
@@ -215,19 +217,20 @@ var _ = Describe("App", func() {
 				fakeCC = nil
 
 				Eventually(func() error {
+					// #nosec G107
 					resp, err := http.Get(ccURL)
+
 					if err != nil {
 						return err
 					}
-					resp.Body.Close()
+					_ = resp.Body.Close()
+
 					return nil
 				}).Should(HaveOccurred())
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-				urlErr := err.(*url.Error)
-				Expect(urlErr.Err).To(Or(Equal(io.EOF), BeAssignableToTypeOf(&net.OpError{})))
+				IsUrlNetOpError(err)
 			})
 
 		})
@@ -235,3 +238,12 @@ var _ = Describe("App", func() {
 	})
 
 })
+
+func IsUrlNetOpError(err error) {
+	var urlErr *url.Error
+	Expect(errors.As(err, &urlErr)).To(BeTrue(), fmt.Sprintf("Expected a (*url.Error) error in the chan got, %T: %+v", err, err))
+
+	var netOpErr *net.OpError
+	Expect(errors.As(err, &netOpErr) || errors.Is(err, io.EOF)).
+		To(BeTrue(), fmt.Sprintf("Expected a (*net.OpError) or io.EOF error in the chan got, %T: %+v", err, err))
+}

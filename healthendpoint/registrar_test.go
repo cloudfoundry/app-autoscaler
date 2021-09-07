@@ -13,7 +13,7 @@ import (
 var _ = Describe("Health", func() {
 
 	var (
-		logger lager.Logger = lager.NewLogger("test")
+		logger = lager.NewLogger("test")
 	)
 
 	Describe("Health UT with fake Registrar", func() {

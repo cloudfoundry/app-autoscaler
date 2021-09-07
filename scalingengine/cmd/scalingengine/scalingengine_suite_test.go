@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 
 	"code.cloudfoundry.org/cfhttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"fmt"
 	"io/ioutil"
@@ -76,6 +76,9 @@ var _ = SynchronizedBeforeSuite(
 		port = 7000 + GinkgoParallelNode()
 		healthport = 8000 + GinkgoParallelNode()
 		testCertDir := "../../../../../test-certs"
+
+		verifyCertExistence(testCertDir)
+
 		conf.Server.Port = port
 		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
@@ -154,6 +157,15 @@ var _ = SynchronizedBeforeSuite(
 
 	})
 
+func verifyCertExistence(testCertDir string) {
+	_, err := ioutil.ReadFile(filepath.Join(testCertDir, "scalingengine.key"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "scalingengine.crt"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+}
+
 var _ = SynchronizedAfterSuite(
 	func() {
 		ccUAA.Close()
@@ -181,7 +193,6 @@ func writeConfig(c *config.Config) *os.File {
 type ScalingEngineRunner struct {
 	configPath string
 	startCheck string
-	port       int
 	Session    *gexec.Session
 }
 

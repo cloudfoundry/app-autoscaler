@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
- logging:
+  logging:
   level: "debug"
 instance_metrics_db:
   db:
