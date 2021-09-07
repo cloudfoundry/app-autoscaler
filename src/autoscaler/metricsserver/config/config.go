@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/helpers"
@@ -155,7 +155,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: metric_channel_size is less-equal than 0")
 	}
 
-	if err := c.Health.Validate(); err != nil {
+	if err := c.Health.Validate("metricsserver"); err != nil {
 		return err
 	}
 
