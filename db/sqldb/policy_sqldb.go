@@ -33,7 +33,7 @@ func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQL
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
