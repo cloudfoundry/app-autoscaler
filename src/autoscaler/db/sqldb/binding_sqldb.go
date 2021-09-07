@@ -34,7 +34,7 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-binding-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}

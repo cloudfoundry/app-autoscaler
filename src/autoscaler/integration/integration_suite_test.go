@@ -146,7 +146,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
 	if len(tmpDir) > 0 {
-		os.RemoveAll(tmpDir)
+		_ = os.RemoveAll(tmpDir)
 	}
 }, func() {
 
@@ -382,24 +382,24 @@ func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, de
 	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	resp, err = bindService(bindingId, appId, serviceInstanceId, policy, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
 	resp, err := unbindService(bindingId, appId, serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	resp, err = deprovisionServiceInstance(serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
@@ -692,12 +692,12 @@ func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectR
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(actual).To(Equal(expectResponseMap))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
 	Expect(err).NotTo(HaveOccurred())
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := ioutil.ReadAll(resp.Body)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(body).To(HaveLen(0))
@@ -822,7 +822,7 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,
 		func(rw http.ResponseWriter, r *http.Request) {
 			mp := multipart.NewWriter(rw)
-			defer mp.Close()
+			defer func() { _ = mp.Close() }()
 
 			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
 			timestamp := time.Now().UnixNano()
