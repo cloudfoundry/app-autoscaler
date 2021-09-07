@@ -146,7 +146,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: emitter.metrics_server_client_tls.ca_file is empty")
 	}
 
-	if err := c.Health.Validate(); err != nil {
+	if err := c.Health.Validate("metricsgateway"); err != nil {
 		return err
 	}
 
