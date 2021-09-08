@@ -6,7 +6,6 @@ import (
 	"autoscaler/models"
 	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
-
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,7 +16,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +28,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	uuid "github.com/nu7hatch/gouuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -255,7 +254,8 @@ func stopMetricsServer() {
 }
 
 func getRandomId() string {
-	return strconv.FormatInt(time.Now().UnixNano(), 10)
+	v4, _ := uuid.NewV4()
+	return v4.String()
 }
 
 func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
@@ -709,7 +709,7 @@ func assertScheduleContents(appId string, expectHttpStatus int, expectResponseMa
 	resp, err := getSchedules(appId)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus))
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var actual map[string]interface{}
 
 	err = json.NewDecoder(resp.Body).Decode(&actual)
@@ -733,7 +733,7 @@ func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap
 	resp, err := getSchedules(appId)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus))
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var actual map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
