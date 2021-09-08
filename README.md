@@ -62,8 +62,6 @@ psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
 mvn package -Dmaven.test.skip=true
 scripts/initialise_db.sh postgres
-
-#TODO: java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/api/db/servicebroker.db.changelog.yaml update 
 ```
 
 * **MySQL**

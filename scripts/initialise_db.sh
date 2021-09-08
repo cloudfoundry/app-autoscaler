@@ -44,13 +44,14 @@ files="api.db.changelog.yml \
        metricscollector.db.changelog.yml \
        dataaggregator.db.changelog.yml \
        scalingengine.db.changelog.yml \
-       operator.db.changelog.yml"
+       operator.db.changelog.yml \
+       servicebroker.db.changelog.yaml
+       "
 
-class_path="$ROOT/src/autoscaler/api/db/:\
-$ROOT/db/target/lib/*:\
+class_path="$ROOT/db/target/lib/*:\
+$ROOT/scheduler/db/:\
+$ROOT/src/autoscaler/api/db/:\
 $ROOT/src/autoscaler/servicebroker/db/:\
-$ROOT/scheduler/db/:\
-$ROOT/scheduler/db/:\
 $ROOT/src/autoscaler/metricsserver/db/:\
 $ROOT/src/autoscaler/eventgenerator/db/:\
 $ROOT/src/autoscaler/scalingengine/db/:\
