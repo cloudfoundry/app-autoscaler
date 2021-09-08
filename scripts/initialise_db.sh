@@ -38,14 +38,13 @@ esac
 
 
 files="api.db.changelog.yml \
-       servicebroker.db.changelog.json \
+       servicebroker.db.changelog.yaml \
        scheduler.changelog-master.yaml \
        quartz.changelog-master.yaml \
        metricscollector.db.changelog.yml \
        dataaggregator.db.changelog.yml \
        scalingengine.db.changelog.yml \
        operator.db.changelog.yml \
-       servicebroker.db.changelog.yaml \
        "
 
 class_path="$ROOT/db/target/lib/*:\

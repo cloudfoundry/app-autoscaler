@@ -15,6 +15,7 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: ying
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
       preConditions:
         - onFail: MARK_RAN
           not:
@@ -43,6 +44,7 @@ databaseChangeLog:
   - changeSet:
       id: 2
       author: qy
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
       preConditions:
         - onFail: MARK_RAN
           not:
@@ -76,6 +78,7 @@ databaseChangeLog:
   - changeSet:
       id: 3
       author: qy
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
       preConditions:
         - onFail: MARK_RAN
           not:
@@ -95,6 +98,7 @@ databaseChangeLog:
   - changeSet:
       id: 4
       author: silvestre
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
       preConditions:
         - onFail: MARK_RAN
           not:
