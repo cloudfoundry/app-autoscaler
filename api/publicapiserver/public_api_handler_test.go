@@ -2,6 +2,7 @@ package publicapiserver_test
 
 import (
 	. "autoscaler/api/publicapiserver"
+	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
@@ -56,6 +57,7 @@ var _ = Describe("PublicApiHandler", func() {
 	)
 	var (
 		policydb      *fakes.FakePolicyDB
+		bindingdb     *fakes.FakeBindingDB
 		handler       *PublicApiHandler
 		resp          *httptest.ResponseRecorder
 		req           *http.Request
@@ -63,10 +65,13 @@ var _ = Describe("PublicApiHandler", func() {
 	)
 	BeforeEach(func() {
 		policydb = &fakes.FakePolicyDB{}
+		bindingdb = nil
 		resp = httptest.NewRecorder()
 
 		pathVariables = map[string]string{}
-		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb)
+	})
+	JustBeforeEach(func() {
+		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb, bindingdb)
 	})
 
 	Describe("GetInfo", func() {
@@ -110,7 +115,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error retrieving scaling policy"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error retrieving scaling policy"}`))
 			})
 		})
 
@@ -193,7 +198,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error saving policy"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error saving policy"}`))
 			})
 		})
 
@@ -229,7 +234,6 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
-
 	})
 
 	Describe("DetachScalingPolicy", func() {
@@ -252,7 +256,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting policy"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting policy"}`))
 			})
 		})
 
@@ -264,7 +268,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting schedules"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting schedules"}`))
 			})
 		})
 
@@ -276,6 +280,56 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should succeed", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+
+			Context("when the service is offered in brokered mode", func() {
+				BeforeEach(func() {
+					bindingdb = &fakes.FakeBindingDB{}
+				})
+				Context("but there is no service instance", func() {
+					BeforeEach(func() {
+						bindingdb.GetServiceInstanceByAppIdReturns(nil, db.ErrDoesNotExist)
+					})
+					It("should error", func() {
+						Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+						Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error retrieving service instance"}`))
+					})
+				})
+				Context("and there is a service instance without a default policy", func() {
+					BeforeEach(func() {
+						bindingdb.GetServiceInstanceByAppIdReturns(&models.ServiceInstance{}, nil)
+					})
+					It("should still succeed", func() {
+						Expect(resp.Code).To(Equal(http.StatusOK))
+					})
+				})
+				Context("and there is a service instance with a default policy", func() {
+					BeforeEach(func() {
+						bindingdb.GetServiceInstanceByAppIdReturns(&models.ServiceInstance{
+							DefaultPolicy:     VALID_POLICY_STR,
+							DefaultPolicyGuid: "test-policy-guid",
+						}, nil)
+					})
+					Context("and setting the default policy fails", func() {
+						BeforeEach(func() {
+							policydb.SaveAppPolicyReturns(fmt.Errorf("failed to save new (default) policy"))
+						})
+						It("should error", func() {
+							Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+							Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error attaching the default policy"}`))
+						})
+					})
+					Context("and setting the default policy succeeds", func() {
+						It("should succeed and set the default policy", func() {
+							Expect(resp.Code).To(Equal(http.StatusOK))
+							Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
+							a, p, g := policydb.SaveAppPolicyArgsForCall(0)
+							Expect(a).To(Equal(TEST_APP_ID))
+							Expect(p).To(Equal(VALID_POLICY_STR))
+							Expect(g).To(Equal("test-policy-guid"))
+						})
+					})
+				})
 			})
 		})
 
@@ -289,7 +343,6 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
-
 	})
 
 	Describe("GetScalingHistories", func() {
@@ -1673,7 +1726,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating credential"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating credential"}`))
 			})
 		})
 		Context("When successfully save data to policydb", func() {
@@ -1708,7 +1761,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting credential"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting credential"}`))
 			})
 		})
 		Context("When successfully delete data from policydb", func() {

@@ -116,6 +116,20 @@ func hasServiceInstance(serviceInstanceId string) bool {
 	return rows.Next()
 }
 
+func hasServiceInstanceWithNullDefaultPolicy(serviceInstanceId string) bool {
+	query := dbHelper.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ? AND default_policy IS NULL AND default_policy_guid IS NULL")
+	rows, e := dbHelper.Query(query, serviceInstanceId)
+	if e != nil {
+		Fail("can not query table service_instance: " + e.Error())
+	}
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
+
+	return rows.Next()
+}
+
 func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? ")
 	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
@@ -144,6 +158,20 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 
 	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
 	_, e = dbHelper.Exec(query, appId, string(policyJson), "1234")
+
+	if e != nil {
+		Fail("can not insert data to table policy_json: " + e.Error())
+	}
+}
+
+func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, guid string) {
+	policyJson, e := json.Marshal(scalingPolicy)
+	if e != nil {
+		Fail("failed to marshall scaling policy" + e.Error())
+	}
+
+	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
+	_, e = dbHelper.Exec(query, appId, string(policyJson), guid)
 
 	if e != nil {
 		Fail("can not insert data to table policy_json: " + e.Error())
@@ -415,4 +443,12 @@ func formatPolicyString(policyStr string) (string, error) {
 		return "", fmt.Errorf("failed to marshal ScalingPolicy %v", scalingPolicy)
 	}
 	return string(policyJsonStr), nil
+}
+
+func expectServiceInstancesToEqual(actual *models.ServiceInstance, expected *models.ServiceInstance) {
+	ExpectWithOffset(1, actual.ServiceInstanceId).To(Equal(expected.ServiceInstanceId))
+	ExpectWithOffset(1, actual.OrgId).To(Equal(expected.OrgId))
+	ExpectWithOffset(1, actual.SpaceId).To(Equal(expected.SpaceId))
+	ExpectWithOffset(1, actual.DefaultPolicy).To(MatchJSON(expected.DefaultPolicy))
+	ExpectWithOffset(1, actual.DefaultPolicyGuid).To(Equal(expected.DefaultPolicyGuid))
 }

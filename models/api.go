@@ -4,15 +4,39 @@ import (
 	"encoding/json"
 )
 
+type BrokerContext struct {
+	OrgGUID   string `json:"organization_guid"`
+	SpaceGUID string `json:"space_guid"`
+}
+
 type BrokerCommonRequestBody struct {
-	ServiceID string `json:"service_id"`
-	PlanID    string `json:"plan_id"`
+	ServiceID     string        `json:"service_id"`
+	PlanID        string        `json:"plan_id"`
+	BrokerContext BrokerContext `json:"context"`
+}
+
+type InstanceParameters struct {
+	DefaultPolicy *json.RawMessage `json:"default_policy,omitempty"`
 }
 
 type InstanceCreationRequestBody struct {
 	BrokerCommonRequestBody
-	OrgGUID   string `json:"organization_guid"`
-	SpaceGUID string `json:"space_guid"`
+	OrgGUID    string             `json:"organization_guid"`
+	SpaceGUID  string             `json:"space_guid"`
+	Parameters InstanceParameters `json:"parameters,omitempty"`
+}
+
+type InstanceUpdateRequestBody struct {
+	BrokerCommonRequestBody
+	Parameters *InstanceParameters `json:"parameters,omitempty"`
+}
+
+type ServiceInstance struct {
+	ServiceInstanceId string
+	OrgId             string
+	SpaceId           string
+	DefaultPolicy     string
+	DefaultPolicyGuid string
 }
 
 type BindingRequestBody struct {

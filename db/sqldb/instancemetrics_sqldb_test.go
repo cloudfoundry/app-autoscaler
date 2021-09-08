@@ -258,9 +258,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					defer lock.Unlock()
 					return count
 				}, 120*time.Second, 1*time.Second).Should(Equal(100))
-				Eventually(func() int {
-					return idb.GetDBStatus().OpenConnections
-				}, 120*time.Second, 10*time.Millisecond).Should(BeZero())
+				Eventually(func() int { return idb.GetDBStatus().OpenConnections }, 120*time.Second, 10*time.Millisecond).Should(BeZero())
 			})
 		})
 	})

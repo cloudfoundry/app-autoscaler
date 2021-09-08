@@ -1,0 +1,117 @@
+---
+databaseChangeLog:
+  - property:
+      name: policy_json.type
+      value: json
+      dbms: postgresql
+  - property:
+      name: policy_json.type
+      value: text
+      dbms: h2
+  - property:
+      name: policy_json.type
+      value: json
+      dbms: mysql
+  - changeSet:
+      id: 1
+      author: ying
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: service_instance
+      changes:
+        - createTable:
+            tableName: service_instance
+            columns:
+              - column:
+                  name: service_instance_id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: org_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: space_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 2
+      author: qy
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: binding
+      changes:
+        - createTable:
+            tableName: binding
+            columns:
+              - column:
+                  name: binding_id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: service_instance_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: app_id
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 3
+      author: qy
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_binding_service_instance_id
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: service_instance_id
+            baseTableName: binding
+            constraintName: fk_binding_service_instance_id
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+            referencedColumnNames: service_instance_id
+            referencedTableName: service_instance
+  - changeSet:
+      id: 4
+      author: silvestre
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: service_instance
+                columnName: default_policy
+      changes:
+        - addColumn:
+            tableName: service_instance
+            columns:
+              - column:
+                  name: default_policy
+                  type: ${policy_json.type}
+              - column:
+                  name: default_policy_guid
+                  type: varchar(50)

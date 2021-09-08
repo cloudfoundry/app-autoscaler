@@ -4,7 +4,6 @@ import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/fakes"
-	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -28,17 +27,33 @@ const (
 	usernameHash = "$2a$12$S44P8nP0b.wq7kW21anaR.uU1dBMCGHUZxw7pdcy42z6oJK0TFTM." // ruby -r bcrypt -e 'puts BCrypt::Password.create("brokeruser")'
 	password     = "supersecretpassword"
 	// #nosec G101 - only for unit tests
-	passwordHash = "$2a$12$8/xRXDhCyl0I..z76PG5Q.pWNLoVs0aYncx6UU1hToRAuevVjKm6O" // ruby -r bcrypt -e 'puts BCrypt::Password.create("supersecretpassword")'
-	testAppId    = "an-app-id"
+	passwordHash   = "$2a$12$8/xRXDhCyl0I..z76PG5Q.pWNLoVs0aYncx6UU1hToRAuevVjKm6O" // ruby -r bcrypt -e 'puts BCrypt::Password.create("supersecretpassword")'
+	testAppId      = "an-app-id"
+	testInstanceId = "an-instance-id"
+	testOrgId      = "an-org-id"
+	testSpaceId    = "a-space-id"
 )
 
 var (
-	serverProcess   ifrit.Process
-	serverUrl       *url.URL
-	httpClient      *http.Client
-	conf            *config.Config
-	catalogBytes    []byte
-	schedulerServer *ghttp.Server
+	serverProcess     ifrit.Process
+	serverUrl         *url.URL
+	httpClient        *http.Client
+	conf              *config.Config
+	catalogBytes      []byte
+	schedulerServer   *ghttp.Server
+	testDefaultPolicy = `
+						{
+							"instance_min_count":1,
+							"instance_max_count":5,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							}]
+						}`
+	testDefaultGuid = "a-not-so-guid"
 )
 
 func TestServer(t *testing.T) {
@@ -78,11 +93,6 @@ var _ = BeforeSuite(func() {
 
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
-
-	urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
-	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
-	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
-
 })
 
 var _ = AfterSuite(func() {

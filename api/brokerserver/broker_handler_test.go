@@ -5,6 +5,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
+	"autoscaler/routes"
 	"bytes"
 	"database/sql"
 	"encoding/json"
@@ -13,6 +14,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/onsi/gomega/ghttp"
 
 	"code.cloudfoundry.org/lager/lagertest"
 
@@ -56,7 +59,7 @@ var _ = Describe("BrokerHandler", func() {
 		var body []byte
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-			handler.CreateServiceInstance(resp, req, map[string]string{"instanceId": "an-instance-id"})
+			handler.CreateServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
 		})
 		BeforeEach(func() {
 			instanceCreationReqBody = &models.InstanceCreationRequestBody{
@@ -194,12 +197,325 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
 			})
 		})
+		Context("When an invalid default policy is present", func() {
+			BeforeEach(func() {
+				invalidDefaultPolicy := `
+						{
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							}]
+						}`
+				m := json.RawMessage(invalidDefaultPolicy)
+				instanceCreationReqBody = &models.InstanceCreationRequestBody{
+					OrgGUID:   "an-org-guid",
+					SpaceGUID: "an-space-guid",
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: models.InstanceParameters{
+						DefaultPolicy: &m,
+					},
+				}
+				body, err = json.Marshal(instanceCreationReqBody)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
+			})
+		})
+		Context("When a default policy is present", func() {
+			BeforeEach(func() {
+				d := json.RawMessage(testDefaultPolicy)
+				instanceCreationReqBody = &models.InstanceCreationRequestBody{
+					OrgGUID:   "an-org-guid",
+					SpaceGUID: "an-space-guid",
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
+				}
+				body, err = json.Marshal(instanceCreationReqBody)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("succeeds with 201 and saves the default policy", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+				Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
+			})
+		})
 
+	})
+
+	Describe("UpdateServiceInstance", func() {
+		var err error
+		var instanceUpdateRequestBody *models.InstanceUpdateRequestBody
+		var body []byte
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			handler.UpdateServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
+		})
+		BeforeEach(func() {
+			instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+					ServiceID: "a-service-id",
+					PlanID:    "a-plan-id",
+				},
+			}
+		})
+		Context("When request body is not a valid json", func() {
+			BeforeEach(func() {
+				body = []byte("")
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Invalid request body format"}`))
+			})
+		})
+		Context("When mandatory parameters are not provided", func() {
+			Context("When ServiceID is not provided", func() {
+				BeforeEach(func() {
+					instanceUpdateRequestBody.ServiceID = ""
+					body, err = json.Marshal(instanceUpdateRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("fails with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
+				})
+			})
+		})
+		Context("When no default policy update is performed", func() {
+			BeforeEach(func() {
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("fails with 422", func() {
+				Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Unprocessable Entity","message":"Failed to update service instance: Only default_policy updates allowed"}`))
+			})
+		})
+		Context("When an invalid default policy is present", func() {
+			BeforeEach(func() {
+				invalidDefaultPolicy := `
+						{
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							}]
+						}`
+				m := json.RawMessage(invalidDefaultPolicy)
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &m,
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
+			})
+		})
+		Context("When the service instance to be updated does not exist", func() {
+			BeforeEach(func() {
+				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
+				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
+				instanceUpdateRequestBody.Parameters = &parameters
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(nil, db.ErrDoesNotExist)
+			})
+			It("retrieves the service instance", func() {
+				Expect(bindingdb.GetServiceInstanceCallCount()).To(Equal(1))
+				Expect(bindingdb.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
+			})
+			It("fails with 404", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+		Context("When all mandatory parameters are present", func() {
+			BeforeEach(func() {
+				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
+				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
+				instanceUpdateRequestBody.Parameters = &parameters
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
+			})
+			It("succeeds with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+			It("retrieves the service instance", func() {
+				Expect(bindingdb.GetServiceInstanceCallCount()).To(Equal(1))
+				Expect(bindingdb.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
+			})
+		})
+		Context("When a default policy is present and there was previously not a default policy", func() {
+			BeforeEach(func() {
+				d := json.RawMessage(testDefaultPolicy)
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+				}, nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
+				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
+				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+			})
+			It("succeeds with 200, saves the default policy, and sets the default policy on the already bound apps", func() {
+				By("returning 200")
+				Expect(resp.Code).To(Equal(http.StatusOK))
+
+				By("saving the default policy")
+				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.UpdateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
+
+				By("setting the default policy on the already bound apps")
+				Expect(bindingdb.GetAppIdsByInstanceIdCallCount()).To(Equal(1))
+				lookedUpInstance := bindingdb.GetAppIdsByInstanceIdArgsForCall(0)
+				Expect(lookedUpInstance).To(Equal(testInstanceId))
+				Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
+				appsUpdated, oldPolicyGuid, policySet, policySetGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+				Expect(oldPolicyGuid).To(BeEmpty())
+				Expect(policySetGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
+				Expect(policySet).To(Equal(serviceInstance.DefaultPolicy))
+				Expect(appsUpdated).To(Equal([]string{"app-id-1", "app-id-2"}))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+			})
+		})
+		Context("When a default policy is present and there was previously a default policy", func() {
+			BeforeEach(func() {
+				d := json.RawMessage(testDefaultPolicy)
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+					DefaultPolicy:     "a-default-policy",
+					DefaultPolicyGuid: "a-default-policy-guid",
+				}, nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
+				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
+				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+			})
+			It("succeeds with 200, saves the default policy, and updates the default policy", func() {
+				By("returning 200")
+				Expect(resp.Code).To(Equal(http.StatusOK))
+
+				By("saving the default policy")
+				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.UpdateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
+
+				By("setting the default policy on the already bound apps")
+				Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
+				appToUpdate, oldPolicyGuid, newPolicy, newPolicyGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+				Expect(appToUpdate).To(Equal([]string{"app-id-1", "app-id-2"}))
+				Expect(oldPolicyGuid).To(Equal("a-default-policy-guid"))
+				Expect(newPolicyGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
+				Expect(newPolicy).To(Equal(serviceInstance.DefaultPolicy))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+			})
+		})
+		Context("When the default is set to be removed and there was previously a default policy", func() {
+			BeforeEach(func() {
+				emptyJsonObject := json.RawMessage("\n{\n}\n")
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &emptyJsonObject,
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+					DefaultPolicy:     "a-default-policy",
+					DefaultPolicyGuid: "a-default-policy-guid",
+				}, nil)
+				policydb.DeletePoliciesByPolicyGuidReturns([]string{"app-id-2"}, nil)
+				verifyScheduleIsDeletedInScheduler("app-id-2")
+			})
+			It("succeeds with 200 and removes the default policy", func() {
+				By("returning 200")
+				Expect(resp.Code).To(Equal(http.StatusOK))
+
+				By("removing the default policy")
+				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.UpdateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(Equal(""))
+				Expect(serviceInstance.DefaultPolicyGuid).To(Equal(""))
+
+				By("removing the default policy on the already bound apps")
+				Expect(policydb.DeletePoliciesByPolicyGuidCallCount()).To(Equal(1))
+				removedPolicy := policydb.DeletePoliciesByPolicyGuidArgsForCall(0)
+				Expect(removedPolicy).To(Equal("a-default-policy-guid"))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+
+			})
+		})
 	})
 
 	Describe("DeleteServiceInstance", func() {
 		JustBeforeEach(func() {
-			handler.DeleteServiceInstance(resp, req, map[string]string{"instanceId": "an-instance-id"})
+			handler.DeleteServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
 		})
 		Context("When database DeleteServiceInstance call returns ErrDoesnotExist", func() {
 			BeforeEach(func() {
@@ -250,7 +566,7 @@ var _ = Describe("BrokerHandler", func() {
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
 				Expect(err).NotTo(HaveOccurred())
 			})
-			It("fails with 200", func() {
+			It("succeeds with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
@@ -258,17 +574,14 @@ var _ = Describe("BrokerHandler", func() {
 	})
 
 	Describe("BindServiceInstance", func() {
-		var err error
-		var bindingRequestBody *models.BindingRequestBody
-		var body []byte
+		var (
+			err                error
+			bindingRequestBody *models.BindingRequestBody
+			bindingPolicy      string
+			body               []byte
+		)
 		BeforeEach(func() {
-			bindingRequestBody = &models.BindingRequestBody{
-				AppID: "an-app-id",
-				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-					ServiceID: "a-service-id",
-					PlanID:    "a-plan-id",
-				},
-				Policy: json.RawMessage(`{
+			bindingPolicy = `{
 					"instance_max_count":4,
 					"instance_min_count":1,
 					"scaling_rules":[
@@ -278,12 +591,19 @@ var _ = Describe("BrokerHandler", func() {
 						"operator":"<",
 						"adjustment":"-1"
 					}]
-				}`),
+				}`
+			bindingRequestBody = &models.BindingRequestBody{
+				AppID: "an-app-id",
+				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+					ServiceID: "a-service-id",
+					PlanID:    "a-plan-id",
+				},
+				Policy: json.RawMessage(bindingPolicy),
 			}
 		})
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-			handler.BindServiceInstance(resp, req, map[string]string{"instanceId": "an-instance-id", "bindingId": "a-binding-id"})
+			handler.BindServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId, "bindingId": "a-binding-id"})
 		})
 		Context("When request body is not a valid json", func() {
 			BeforeEach(func() {
@@ -337,9 +657,84 @@ var _ = Describe("BrokerHandler", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
+
+				verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 			})
 			It("succeeds with 201", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+			})
+		})
+
+		Context("When a default policy was provided when creating the service instance", func() {
+			BeforeEach(func() {
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{testInstanceId, testOrgId, testSpaceId, testDefaultPolicy, testDefaultGuid}, nil)
+			})
+
+			Context("and a policy is provided while binding to it", func() {
+				const testBindingPolicy = `{
+							"instance_max_count":3,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":99,
+								"operator":"<",
+								"adjustment":"-1"
+							}]
+						}`
+				BeforeEach(func() {
+					bindingRequestBody = &models.BindingRequestBody{
+						AppID: testAppId,
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "a-service-id",
+							PlanID:    "a-plan-id",
+						},
+						Policy: json.RawMessage(testBindingPolicy),
+					}
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+
+					verifyScheduleIsUpdatedInScheduler(testAppId, testBindingPolicy)
+				})
+				It("succeeds with 201 and saves the binding's policy", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
+					appID, policy, _ := policydb.SaveAppPolicyArgsForCall(0)
+					Expect(appID).To(Equal(testAppId))
+					Expect(policy).NotTo(MatchJSON(testDefaultPolicy))
+					Expect(policy).To(MatchJSON(testBindingPolicy))
+
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+				})
+			})
+
+			Context("and no policy is provided while binding to it", func() {
+				BeforeEach(func() {
+					bindingRequestBody = &models.BindingRequestBody{
+						AppID: testAppId,
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "a-service-id",
+							PlanID:    "a-plan-id",
+						},
+					}
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+					verifyScheduleIsUpdatedInScheduler(testAppId, testDefaultPolicy)
+				})
+				It("succeeds with 201 and saves the default policy", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
+					appID, policy, _ := policydb.SaveAppPolicyArgsForCall(0)
+					Expect(appID).To(Equal(testAppId))
+					Expect(policy).To(MatchJSON(testDefaultPolicy))
+
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+				})
 			})
 		})
 
@@ -401,16 +796,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_min_count is required"}]`))
 			})
 		})
-
-		Context("When called with valid policy json", func() {
-			BeforeEach(func() {
-				body, err = json.Marshal(bindingRequestBody)
-				Expect(err).NotTo(HaveOccurred())
-			})
-			It("succeeds with 201", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated))
-			})
-		})
 	})
 
 	Describe("UnBindServiceInstance", func() {
@@ -419,15 +804,17 @@ var _ = Describe("BrokerHandler", func() {
 			bindingdb.GetAppIdByBindingIdReturns(testAppId, nil)
 		})
 		JustBeforeEach(func() {
-			handler.UnbindServiceInstance(resp, req, map[string]string{"instanceId": "an-instance-id", "bindingId": "a-binding-id"})
+			handler.UnbindServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId, "bindingId": "a-binding-id"})
 		})
 		Context("When mandatory parameters are present", func() {
 			BeforeEach(func() {
 				req, err = http.NewRequest(http.MethodDelete, "", nil)
 				Expect(err).NotTo(HaveOccurred())
+				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 		Context("When there is no app with the bindingId", func() {
@@ -463,10 +850,12 @@ var _ = Describe("BrokerHandler", func() {
 				req, err = http.NewRequest(http.MethodDelete, "", nil)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.DeleteServiceBindingReturns(db.ErrDoesNotExist)
+				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("fails with 410", func() {
 				Expect(resp.Code).To(Equal(http.StatusGone))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Service Binding Doesn't Exist"}`))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -475,11 +864,32 @@ var _ = Describe("BrokerHandler", func() {
 				req, err = http.NewRequest(http.MethodDelete, "", nil)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.DeleteServiceBindingReturns(fmt.Errorf("some sql error"))
+				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})
 })
+
+func verifyScheduleIsUpdatedInScheduler(appId string, policy string) {
+	updateSchedulePath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", appId)
+	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.Reset()
+	schedulerServer.AppendHandlers(ghttp.CombineHandlers(
+		ghttp.VerifyRequest("PUT", updateSchedulePath.String()),
+		ghttp.VerifyJSON(policy),
+	))
+}
+
+func verifyScheduleIsDeletedInScheduler(appId string) {
+	deleteSchedulePath, err := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
+	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.Reset()
+	schedulerServer.AppendHandlers(ghttp.CombineHandlers(
+		ghttp.VerifyRequest("DELETE", deleteSchedulePath.String()),
+	))
+}

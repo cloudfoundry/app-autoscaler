@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 
 	"autoscaler/api/config"
 	"autoscaler/api/custom_metrics_cred_helper"
@@ -28,6 +29,8 @@ type BrokerHandler struct {
 	policyValidator *policyvalidator.PolicyValidator
 	schedulerUtil   *schedulerutil.SchedulerUtil
 }
+
+var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
 
 func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *BrokerHandler {
 	return &BrokerHandler{
@@ -82,6 +85,27 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	policyStr := ""
+	if body.Parameters.DefaultPolicy != nil {
+		policyStr = string(*body.Parameters.DefaultPolicy)
+	}
+	policyGuidStr := ""
+	if policyStr != "" {
+		errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
+		if !valid {
+			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": policyStr})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+			return
+		}
+		policyGuid, err := uuid.NewV4()
+		if err != nil {
+			h.logger.Error("failed to create policy guid", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error generating policy guid")
+			return
+		}
+		policyGuidStr = policyGuid.String()
+	}
+
 	successResponse := func() {
 		if h.conf.DashboardRedirectURI == "" {
 			_, err = w.Write([]byte("{}"))
@@ -95,7 +119,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 			}
 		}
 	}
-	err = h.bindingdb.CreateServiceInstance(instanceId, body.OrgGUID, body.SpaceGUID)
+	err = h.bindingdb.CreateServiceInstance(models.ServiceInstance{instanceId, body.OrgGUID, body.SpaceGUID, policyStr, policyGuidStr})
 	switch {
 	case err == nil:
 		w.WriteHeader(http.StatusCreated)
@@ -112,6 +136,132 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 }
 
+func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	instanceId := vars["instanceId"]
+
+	body := &models.InstanceUpdateRequestBody{}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Error("failed to read service update request body", err, lager.Data{"instanceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
+		return
+	}
+	err = json.Unmarshal(bodyBytes, body)
+	if err != nil {
+		h.logger.Error("failed to unmarshal service update body", err, lager.Data{"instanceId": instanceId, "body": string(bodyBytes)})
+		writeErrorResponse(w, http.StatusBadRequest, "Invalid request body format")
+		return
+	}
+
+	if instanceId == "" || body.ServiceID == "" {
+		h.logger.Error("failed to update service instance when trying to get mandatory data", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
+		writeErrorResponse(w, http.StatusBadRequest, "Malformed or missing mandatory data")
+		return
+	}
+
+	if body.Parameters == nil || body.Parameters.DefaultPolicy == nil {
+		h.logger.Error("failed to update instance, only default policy updates allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
+		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default_policy updates allowed")
+		return
+	}
+	updatedDefaultPolicy := string(*body.Parameters.DefaultPolicy)
+
+	if emptyJSONObject.MatchString(updatedDefaultPolicy) {
+		// accept an empty json object "{}" as a default policy update to specify the removal of the default policy
+		updatedDefaultPolicy = ""
+	}
+
+	updatedDefaultPolicyGuid := ""
+	if updatedDefaultPolicy != "" {
+		errResults, valid := h.policyValidator.ValidatePolicy(updatedDefaultPolicy)
+		if !valid {
+			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": updatedDefaultPolicy})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+			return
+		}
+		policyGuid, err := uuid.NewV4()
+		if err != nil {
+			h.logger.Error("failed to create policy guid", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error generating policy guid")
+			return
+		}
+		updatedDefaultPolicyGuid = policyGuid.String()
+	}
+
+	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
+	if err != nil {
+		if errors.Is(err, db.ErrDoesNotExist) {
+			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
+			return
+		} else {
+			h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
+			return
+		}
+	}
+
+	if updatedDefaultPolicyGuid != "" {
+		allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
+		if err != nil {
+			h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+			return
+		}
+		updatedAppIds, err := h.policydb.SetOrUpdateDefaultAppPolicy(allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
+		if err != nil {
+			h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+			return
+		}
+
+		// there is synchronization between policy and schedule, so errors creating schedules should not break
+		// the whole update process
+		for _, appId := range updatedAppIds {
+			if err = h.schedulerUtil.CreateOrUpdateSchedule(appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
+				h.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
+			}
+		}
+	} else {
+		if serviceInstance.DefaultPolicyGuid != "" {
+			// default policy was present and will now be removed
+			updatedAppIds, err := h.policydb.DeletePoliciesByPolicyGuid(serviceInstance.DefaultPolicyGuid)
+			if err != nil {
+				h.logger.Error("failed to delete default policies", err, lager.Data{"instanceId": instanceId})
+				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+				return
+			}
+			// there is synchronization between policy and schedule, so errors creating schedules should not break
+			// the whole update process
+			for _, appId := range updatedAppIds {
+				if err = h.schedulerUtil.DeleteSchedule(appId); err != nil {
+					h.logger.Error("failed to delete schedules", err, lager.Data{"appId": appId})
+				}
+			}
+		}
+	}
+
+	updatedServiceInstance := models.ServiceInstance{
+		ServiceInstanceId: serviceInstance.ServiceInstanceId,
+		OrgId:             serviceInstance.OrgId,
+		SpaceId:           serviceInstance.SpaceId,
+		DefaultPolicy:     updatedDefaultPolicy,
+		DefaultPolicyGuid: updatedDefaultPolicyGuid,
+	}
+
+	err = h.bindingdb.UpdateServiceInstance(updatedServiceInstance)
+	if err != nil {
+		h.logger.Error("failed to update service instance", err, lager.Data{"instanceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+		return
+	}
+
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		h.logger.Error("unable to write body", err)
+	}
+}
+
 func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	if instanceId == "" {
@@ -125,7 +275,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 	if err != nil {
 		if errors.Is(err, db.ErrDoesNotExist) {
 			h.logger.Error("failed to delete service instance: service instance does not exist", err,
-				lager.Data{"instanaceId": instanceId})
+				lager.Data{"instanceId": instanceId})
 			writeErrorResponse(w, http.StatusGone, "Service Instance Doesn't Exist")
 			return
 		}
@@ -144,7 +294,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
-	var policyGuid *uuid.UUID
+	var policyGuidStr string
 	body := &models.BindingRequestBody{}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -164,6 +314,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusBadRequest, "Malformed or missing mandatory data")
 		return
 	}
+
 	policyStr := string(body.Policy)
 	if policyStr != "" {
 		errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
@@ -172,13 +323,27 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
-		policyGuid, err = uuid.NewV4()
+		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"appId": body.AppID})
 			writeErrorResponse(w, http.StatusInternalServerError, "Error generating policy guid")
 			return
 		}
+		policyGuidStr = policyGuid.String()
 	}
+
+	// fallback to default policy if no policy was provided
+	if policyStr == "" {
+		if serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId); err != nil {
+			h.logger.Error("failed to get default policy", err, lager.Data{"appId": body.AppID, "instanceId": instanceId, "bindingId": bindingId})
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, "Error reading the default policy")
+			return
+		} else {
+			policyStr = serviceInstance.DefaultPolicy
+			policyGuidStr = serviceInstance.DefaultPolicyGuid
+		}
+	}
+
 	err = h.bindingdb.CreateServiceBinding(bindingId, instanceId, body.AppID)
 	if err != nil {
 		if errors.Is(err, db.ErrAlreadyExists) {
@@ -205,7 +370,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		h.logger.Info("no policy json provided", lager.Data{})
 	} else {
 		h.logger.Info("saving policy json", lager.Data{"policy": policyStr})
-		err = h.policydb.SaveAppPolicy(body.AppID, policyStr, policyGuid.String())
+		err = h.policydb.SaveAppPolicy(body.AppID, policyStr, policyGuidStr)
 		if err != nil {
 			h.logger.Error("failed to save policy", err, lager.Data{"appId": body.AppID, "policy": policyStr})
 			//failed to save policy, so revert creating binding and custom metrics credential
@@ -222,7 +387,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		}
 
 		h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
-		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, policyStr, policyGuid.String())
+		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, policyStr, policyGuidStr)
 		//while there is synchronization between policy and schedule, so creating schedule error does not break
 		//the whole creating binding process
 		if err != nil {
