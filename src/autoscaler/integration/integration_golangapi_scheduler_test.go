@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -62,7 +63,8 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)
 			Expect(err).NotTo(HaveOccurred())
-			resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
+
 		})
 		AfterEach(func() {
 			stopGolangApiServer()
@@ -289,6 +291,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 					newDefaultPolicy = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 					resp, err = updateServiceInstance(serviceInstanceId, newDefaultPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 					Expect(err).NotTo(HaveOccurred())
+					defer func() { _ = resp.Body.Close() }()
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				})
@@ -310,6 +313,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				resp, err = provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 				Expect(err).NotTo(HaveOccurred())
 			})
+			AfterEach(func() { _ = resp.Body.Close() })
 
 			Context("with an invalid default policy", func() {
 				BeforeEach(func() {
@@ -330,25 +334,32 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 				JustBeforeEach(func() {
 					resp, err = bindService(bindingId, appId, serviceInstanceId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated), ResponseMessage(resp))
+					defer func() { _ = resp.Body.Close() }()
+
 					resp, err = bindService(binding2Id, app2Id, serviceInstanceId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					defer func() { _ = resp.Body.Close() }()
+					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated), ResponseMessage(resp))
 
 					// app with explicit policy
 					resp, err = bindService(binding3Id, app3Id, serviceInstanceId, secondPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					defer func() { _ = resp.Body.Close() }()
+					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated), ResponseMessage(resp))
 				})
 
 				AfterEach(func() {
 					resp, err = unbindService(binding2Id, app2Id, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
+					defer func() { _ = resp.Body.Close() }()
+					Expect(resp.StatusCode).To(Equal(http.StatusOK), ResponseMessage(resp))
+
 					resp, err = unbindService(binding3Id, app3Id, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
+					defer func() { _ = resp.Body.Close() }()
+					Expect(resp.StatusCode).To(Equal(http.StatusOK), ResponseMessage(resp))
 					unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 				})
 
@@ -499,7 +510,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)
 			Expect(err).NotTo(HaveOccurred())
-			resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 		})
 		AfterEach(func() {
 			stopGolangApiServer()
@@ -589,3 +600,9 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 	})
 })
+
+func ResponseMessage(resp *http.Response) string {
+	body, err := ioutil.ReadAll(resp.Body)
+	Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
+	return fmt.Sprintf("Error retrieved status %d - '%s'", resp.StatusCode, body)
+}
