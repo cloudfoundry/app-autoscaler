@@ -69,13 +69,13 @@ func nullableString(s string) interface{} {
 
 func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceInstance) error {
 	existingInstance, err := bdb.GetServiceInstance(serviceInstance.ServiceInstanceId)
-	if err != nil && errors.Is(err, db.ErrDoesNotExist) {
+	if err != nil && !errors.Is(err, db.ErrDoesNotExist) {
 		bdb.logger.Error("create-service-instance-get-existing", err, lager.Data{"serviceinstance": serviceInstance})
 		return err
 	}
 
 	if existingInstance != nil {
-		if existingInstance.OrgId == serviceInstance.OrgId && existingInstance.SpaceId == serviceInstance.SpaceId && existingInstance.DefaultPolicy == serviceInstance.DefaultPolicy && existingInstance.DefaultPolicyGuid == serviceInstance.DefaultPolicyGuid {
+		if *existingInstance == serviceInstance {
 			return db.ErrAlreadyExists
 		} else {
 			return db.ErrConflict
@@ -85,6 +85,7 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceIns
 	query := bdb.sqldb.Rebind("INSERT INTO service_instance" +
 		"(service_instance_id, org_id, space_id, default_policy, default_policy_guid) " +
 		" VALUES(?, ?, ?, ?, ?)")
+
 	_, err = bdb.sqldb.Exec(query, serviceInstance.ServiceInstanceId, serviceInstance.OrgId, serviceInstance.SpaceId, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid))
 
 	if err != nil {
@@ -93,18 +94,17 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceIns
 	return err
 }
 
+type bdServiceInstance struct {
+	ServiceInstanceId string         `db:"service_instance_id"`
+	OrgId             string         `db:"org_id"`
+	SpaceId           string         `db:"space_id"`
+	DefaultPolicy     sql.NullString `db:"default_policy"`
+	DefaultPolicyGuid sql.NullString `db:"default_policy_guid"`
+}
+
 func (bdb *BindingSQLDB) GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error) {
 	query := bdb.sqldb.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ?")
-
-	type serviceInstance struct {
-		ServiceInstanceId string         `db:"service_instance_id"`
-		OrgId             string         `db:"org_id"`
-		SpaceId           string         `db:"space_id"`
-		DefaultPolicy     sql.NullString `db:"default_policy"`
-		DefaultPolicyGuid sql.NullString `db:"default_policy_guid"`
-	}
-
-	result := serviceInstance{}
+	result := bdServiceInstance{}
 	err := bdb.sqldb.Get(&result, query, serviceInstanceId)
 	if err != nil {
 		bdb.logger.Error("get-service-instance", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId})

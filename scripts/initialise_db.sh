@@ -45,7 +45,7 @@ files="api.db.changelog.yml \
        dataaggregator.db.changelog.yml \
        scalingengine.db.changelog.yml \
        operator.db.changelog.yml \
-       servicebroker.db.changelog.yaml
+       servicebroker.db.changelog.yaml \
        "
 
 class_path="$ROOT/db/target/lib/*:\
