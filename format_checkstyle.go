@@ -8,20 +8,20 @@ import (
 )
 
 type Result struct {
-	Files   []File   `xml:"file"`
+	Files []File `xml:"file"`
 }
 
 type File struct {
-	Name    string   `xml:"name,attr"`
-	Errors  []Error  `xml:"error"`
+	Name   string  `xml:"name,attr"`
+	Errors []Error `xml:"error"`
 }
 
 type Error struct {
-	Line     string   `xml:"line,attr"`
-	Column   string   `xml:"column,attr"`
-	Severity string   `xml:"severity,attr"`
-	Message  string   `xml:"message,attr"`
-	Source   string   `xml:"source,attr"`
+	Line     string `xml:"line,attr"`
+	Column   string `xml:"column,attr"`
+	Severity string `xml:"severity,attr"`
+	Message  string `xml:"message,attr"`
+	Source   string `xml:"source,attr"`
 }
 
 func main() {

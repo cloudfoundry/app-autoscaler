@@ -5,7 +5,7 @@
     {
       "metric_type": "memoryutil",
       "breach_duration_secs": 600,
-      "threshold": 30,
+      "threshold": 40,
       "operator": "<",
       "cool_down_secs": 300,
       "adjustment": "-1"

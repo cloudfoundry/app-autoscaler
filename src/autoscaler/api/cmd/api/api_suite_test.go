@@ -54,10 +54,17 @@ func TestApi(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	ap, err := gexec.Build("autoscaler/api/cmd/api", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	dbUrl := os.Getenv("DBURL")
+	if dbUrl == "" {
+		Fail("environment variable $DBURL is not set")
+	}
 
-	database, err := db.GetConnection(os.Getenv("DBURL"))
+	database, e := db.GetConnection(dbUrl)
+	if e != nil {
+		Fail("failed to get database URL and drivername: " + e.Error())
+	}
+
+	ap, err := gexec.Build("autoscaler/api/cmd/api", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	apDB, err := sql.Open(database.DriverName, database.DSN)
@@ -204,8 +211,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	os.Remove(configFile.Name())
-	ccServer.Close()
+	if configFile != nil {
+		_ = os.Remove(configFile.Name())
+	}
+	if ccServer != nil {
+		ccServer.Close()
+	}
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
@@ -213,7 +224,7 @@ var _ = SynchronizedAfterSuite(func() {
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "ap")
 	Expect(err).NotTo(HaveOccurred())
-	defer cfg.Close()
+	defer func() { _ = cfg.Close() }()
 
 	bytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())

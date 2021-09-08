@@ -6,7 +6,6 @@ import (
 	"autoscaler/models"
 	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
-
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,7 +16,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +28,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	uuid "github.com/nu7hatch/gouuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -146,7 +145,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
 	if len(tmpDir) > 0 {
-		os.RemoveAll(tmpDir)
+		_ = os.RemoveAll(tmpDir)
 	}
 }, func() {
 
@@ -255,7 +254,8 @@ func stopMetricsServer() {
 }
 
 func getRandomId() string {
-	return strconv.FormatInt(time.Now().UnixNano(), 10)
+	v4, _ := uuid.NewV4()
+	return v4.String()
 }
 
 func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
@@ -279,9 +279,57 @@ func initializeHttpClientForPublicApi(certFileName string, keyFileName string, c
 	httpClientForPublicApi.Timeout = httpRequestTimeout
 }
 
-func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), strings.NewReader(fmt.Sprintf(`{"organization_guid":"%s","space_guid":"%s","service_id":"app-autoscaler","plan_id":"free"}`, orgId, spaceId)))
+func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	var bindBody map[string]interface{}
+	if defaultPolicy != nil {
+		defaultPolicy := json.RawMessage(defaultPolicy)
+		parameters := map[string]interface{}{
+			"default_policy": &defaultPolicy,
+		}
+		bindBody = map[string]interface{}{
+			"organization_guid": orgId,
+			"space_guid":        spaceId,
+			"service_id":        "app-autoscaler",
+			"plan_id":           "free",
+			"parameters":        parameters,
+		}
+	} else {
+		bindBody = map[string]interface{}{
+			"organization_guid": orgId,
+			"space_guid":        spaceId,
+			"service_id":        "app-autoscaler",
+			"plan_id":           "free",
+		}
+	}
+
+	body, err := json.Marshal(bindBody)
 	Expect(err).NotTo(HaveOccurred())
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), bytes.NewReader(body))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+brokerAuth)
+	return httpClient.Do(req)
+}
+
+func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	var updateBody map[string]interface{}
+	if defaultPolicy != nil {
+		defaultPolicy := json.RawMessage(defaultPolicy)
+		parameters := map[string]interface{}{
+			"default_policy": &defaultPolicy,
+		}
+		updateBody = map[string]interface{}{
+			"service_id": "app-autoscaler",
+			"parameters": parameters,
+		}
+	}
+
+	body, err := json.Marshal(updateBody)
+	Expect(err).NotTo(HaveOccurred())
+
+	req, err := http.NewRequest("PATCH", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), bytes.NewReader(body))
+	Expect(err).NotTo(HaveOccurred())
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
 	return httpClient.Do(req)
@@ -330,28 +378,28 @@ func unbindService(bindingId string, appId string, serviceInstanceId string, bro
 	return httpClient.Do(req)
 }
 
-func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, policy []byte, brokerPort int, httpClient *http.Client) {
-	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, brokerPort, httpClient)
+func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, bindingId string, appId string, policy []byte, brokerPort int, httpClient *http.Client) {
+	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	resp, err = bindService(bindingId, appId, serviceInstanceId, policy, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
 	resp, err := unbindService(bindingId, appId, serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	resp, err = deprovisionServiceInstance(serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
@@ -644,26 +692,51 @@ func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectR
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(actual).To(Equal(expectResponseMap))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
 	Expect(err).NotTo(HaveOccurred())
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := ioutil.ReadAll(resp.Body)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(body).To(HaveLen(0))
 	Expect(resp.StatusCode).To(Equal(expectedStatus))
 }
 
-func checkSchedule(appId string, expectHttpStatus int, expectResponseMap map[string]int) bool {
+func assertScheduleContents(appId string, expectHttpStatus int, expectResponseMap map[string]int) {
+	By("checking the schedule contents")
 	resp, err := getSchedules(appId)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
-	defer resp.Body.Close()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus))
+	defer func() { _ = resp.Body.Close() }()
 	var actual map[string]interface{}
+
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
+
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	var schedules = actual["schedules"].(map[string]interface{})
+	var recurring = schedules["recurring_schedule"].([]interface{})
+	var specificDate = schedules["specific_date"].([]interface{})
+	if len(specificDate) != expectResponseMap["specific_date"] {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Expected %d specific date schedules, but found %d: %#v\n", expectResponseMap["specific_date"], len(specificDate), specificDate)
+	}
+	ExpectWithOffset(1, len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
+	if len(recurring) != expectResponseMap["recurring_schedule"] {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Expected %d recurring schedules, but found %d: %#v\n", expectResponseMap["recurring_schedule"], len(recurring), recurring)
+	}
+	ExpectWithOffset(1, len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
+}
+
+func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap map[string]int) bool {
+	resp, err := getSchedules(appId)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus))
+	defer func() { _ = resp.Body.Close() }()
+	var actual map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&actual)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	var schedules = actual["schedules"].(map[string]interface{})
 	var recurring = schedules["recurring_schedule"].([]interface{})
 	var specificDate = schedules["specific_date"].([]interface{})
@@ -749,7 +822,7 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,
 		func(rw http.ResponseWriter, r *http.Request) {
 			mp := multipart.NewWriter(rw)
-			defer mp.Close()
+			defer func() { _ = mp.Close() }()
 
 			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
 			timestamp := time.Now().UnixNano()
