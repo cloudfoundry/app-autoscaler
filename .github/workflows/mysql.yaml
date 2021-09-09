@@ -11,12 +11,27 @@ jobs:
       matrix:
         go: [1.15]
         java: [8,11]
+        mysql: [8]
     env:
       DB_DATABASE: autoscaler
       DB_USER: root
       DB_PASSWORD: root
     runs-on: ubuntu-latest
-    name: Build golang=${{ matrix.go }}, jdk=${{ matrix.java }}, mysql=latest
+    name: Build golang=${{ matrix.go }}, jdk=${{ matrix.java }}, mysql=${{ matrix.mysql }}
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_DATABASE: autoscaler
+#        options: >-
+#          --health-cmd "bash -c \"[[ ! -z \"\`mysql -h 127.0.0.1 --port 3306 -qfsBe \"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'\"\`\" ]]\""
+#          --health-interval 5s
+#          --health-timeout 5s
+#          --health-retries 5
+        ports:
+          - 3306:3306
+
     steps:
       - name: Check out source code
         uses: actions/checkout@v2
@@ -25,51 +40,21 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
-      
-      - name: Go Build
-        run: |
-          source .envrc
-          make -C src/autoscaler buildtools
-          ./scripts/generate_test_certs.sh
-          ./scheduler/scripts/generate_unit_test_certs.sh
-          make -C src/autoscaler build
 
       - name: Setup Java
         uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java }}
-      
-      - name: Maven Build
-        #Note only db is built here.
-        run: mvn --no-transfer-progress -pl db package
 
-      - name: Setup MySQL
+      - name: Build
         run: |
-          echo -e "[mysqld]\nsql_mode=NO_ENGINE_SUBSTITUTION,STRICT_ALL_TABLES\n[server]\ninnodb_log_file_size=256MB\ninnodb_buffer_pool_size=512MB\nmax_allowed_packet=32MB" | sudo tee -a /etc/mysql/my.cnf
-          sudo /etc/init.d/mysql start
-          mysql --version
-          mysql -e "SET PASSWORD FOR root@localhost='';" -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
-          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }}
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/api/db/api.db.changelog.yml --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/servicebroker/db/servicebroker.db.changelog.json --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/metricsserver/db/metricscollector.db.changelog.yml --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml --username=${{ env.DB_USER }} update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml --username=${{ env.DB_USER }} update
+          make build db_type=mysql
 
       - name: Unit Test
         run: |
-          source .envrc
-          export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-          make -C src/autoscaler test
-          mvn --no-transfer-progress test -Dspring.profiles.include=mysql
+          make test db_type=mysql
 
       - name: Integration Tests
         run: |
-          source .envrc
-          mvn --no-transfer-progress package -DskipTests
-          export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-          make -C src/autoscaler integration
+          make integration db_type=mysql
