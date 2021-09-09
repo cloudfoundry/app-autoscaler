@@ -22,32 +22,6 @@ target/init-db-${db_type}:
 	@./scripts/initialise_db.sh ${db_type}
 	@touch $@
 
-.PHONY: githooks
-githooks: target/githooks
-target/githooks: target/precommit-${OS}
-	@precommit install
-	@touch $@
-target/precommit-Darwin:
-	@which pre-commit &> /dev/null || brew install pre-commit
-	@touch $@
-target/precommit-Ubuntu:
-	@echo " - not installing $@"
-target/precommit-Linux:
-	@echo " - not installing $@"
-
-.PHONY: install-cli
-install-cli: target/install-cli-${OS}
-target/install-cli-Darwin:
-	@bosh --version &> /dev/null || brew install cloudfoundry/tap/bosh-cli
-	@cf --version &> /dev/null || brew install cloudfoundry/tap/cf-cli@7
-	@bbl --version &> /dev/null || brew install bbl
-	@[ $(shell cf plugins | grep AutoScaler | wc -l) -gt 1  ] || cf install-plugin -f -r CF-Community app-autoscaler-plugin
-	@touch $@
-target/install-cli-Ubuntu:
-	@echo " - not installing $@"
-target/install-cli-Linux:
-	@echo " - not installing $@"
-
 .PHONY: init
 init: target/init
 target/init:
@@ -69,14 +43,12 @@ target/build-db:
 	@touch $@
 
 .PHONY: scheduler
-scheduler: target/scheduler
-target/scheduler:
+scheduler: init
 	@mvn --no-transfer-progress package -pl scheduler ${MVN_OPTS}
 	@touch $@
 
 .PHONY: autoscaler
-autoscaler: init target/autoscaler
-target/autoscaler:
+autoscaler: init
 	@make -C src/autoscaler build
 	@touch $@
 
@@ -97,7 +69,9 @@ test-autoscaler: check-db_type init init-db test-certs
 test-scheduler: check-db_type init init-db test-certs
 	@mvn test --no-transfer-progress -Dspring.profiles.include=${db_type}
 
+.PHONY: start-db
 start-db: check-db_type target/start-db-${db_type}_CI_${CI} waitfor_${db_type}_CI_${CI}
+	@echo " SUCCESS"
 
 .PHONY: waitfor_postgres_CI_false waitfor_postgres_CI_true
 target/start-db-postgres_CI_false:
@@ -121,7 +95,8 @@ target/start-db-postgres_CI_false:
 target/start-db-postgres_CI_true:
 	@echo " - $@ already up'"
 waitfor_postgres_CI_false:
-	@until docker exec postgres pg_isready &>/dev/null ; do echo " - Waiting for docker postgres"; sleep 1; done
+	@echo -n " - waiting for ${db_type} ."
+	@until docker exec postgres pg_isready &>/dev/null ; do echo -n "."; sleep 1; done
 waitfor_postgres_CI_true:
 	@echo " - no ci postgres checks"
 
@@ -143,12 +118,16 @@ target/start-db-mysql_CI_false:
 target/start-db-mysql_CI_true:
 	@echo " - $@ already up'"
 waitfor_mysql_CI_false:
-	@until docker exec mysql mysqladmin ping &>/dev/null ; do echo " - Waiting for mysql"; sleep 1; done
-	@until [[ ! -z `docker exec mysql mysql -qfsBe "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'"` ]]; do echo " - Waiting for mysql table creation"; sleep 1; done
+	@echo -n " - waiting for ${db_type} ."
+	@until docker exec mysql mysqladmin ping &>/dev/null ; do echo -n "."; sleep 1; done
+	@echo " SUCCESS"
+	@echo -n " - Waiting for table creation ."
+	@until [[ ! -z `docker exec mysql mysql -qfsBe "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'" 2> /dev/null` ]]; do echo -n "."; sleep 1; done
 waitfor_mysql_CI_true:
-	@which mysql >/dev/null && until [[ ! -z $(shell mysql -u "root" -h `hostname` --port=3306 -qfsBe "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'") ]]; do echo " - Waiting for mysql table creation"; sleep 1; done
+	@echo -n " - Waiting for table creation ."
+	@which mysql >/dev/null && until [[ ! -z $(shell mysql -u "root" -h `hostname` --port=3306 -qfsBe "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'" 2> /dev/null) ]]; do echo -n "."; sleep 1; done
 
-.PHONY: stop
+.PHONY: stop-db
 stop-db: check-db_type
 	@echo " - Stopping ${db_type}"
 	@rm target/start-db-${db_type} &> /dev/null || echo " - Seems the make target was deleted stopping anyway!"
