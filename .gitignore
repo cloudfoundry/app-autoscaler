@@ -6,6 +6,7 @@
 /.recommenders
 /.project
 /.settings/
+target
 test-certs
 scheduler/src/test/resources/certs/
 *.coverprofile

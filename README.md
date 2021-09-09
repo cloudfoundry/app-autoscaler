@@ -22,15 +22,17 @@ You can follow the development progress on [Pivotal Tracker][t].
  
 ### System requirements
 
-* Java 8 or above
+* Java 11 or above
+* Docker
 * [Apache Maven][b] 3
 * [Cloud Foundry cf command line][f]
 * Go 1.15 or above
 
 ### Database requirement
 
-The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the default backend data store. To download and install, refer to [PostgreSQL][p] and [MySQL][m] web site.
-
+The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the default backend 
+data store. These are run up locally with docker images so ensure that docker is working on 
+your system before running up the tests.
 
 ### Setup
 
@@ -38,7 +40,6 @@ To set up the development, firstly clone this project
 
 ```shell
 $ git clone https://github.com/cloudfoundry/app-autoscaler.git
-$ cd app-autoscaler
 ```
 
 Generate [scheduler test certs](https://github.com/cloudfoundry/app-autoscaler/blob/main/scheduler/README.md#generate-certificates)
@@ -47,44 +48,22 @@ Generate [scheduler test certs](https://github.com/cloudfoundry/app-autoscaler/b
 #### Initialize the Database
 
 * **Postgres**
-
-If you wish to use a docker image for psql then start it using:
 ```shell
-docker run -p 5432:5432  --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=autoscaler -d postgres:9.6
-```
-and stop it using: ```docker rm -f postgres```
-
-```shell
-#Note if your using docker you do not need to do these 3 lines.
-createuser postgres -s
-psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
-psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
-
-mvn package -Dmaven.test.skip=true
-scripts/initialise_db.sh postgres
+make init-db
 ```
 
 * **MySQL**
-
-If you wish to use a docker image for mysql then start it using:
 ```shell
-docker run -p 3306:3306  --name mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=true -e MYSQL_DATABASE=autoscaler -d mysql:8
+make init-db db_type=mysql
 ```
-and stop it using: ```docker rm -f mysql```
 
-```shell
-mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
-mysql -u root -e "CREATE DATABASE autoscaler;"
 
-mvn package
-scripts/initialise_db.sh mysql
-```
 #### Generate TLS Certificates
 create the certificates
 
 **Note**: on macos it will install `certstrap` automatically but on other OS's it needs to be pre-installed
 ```shell
-./scripts/generate_test_certs.sh
+make test-certs
 ```
 
 
@@ -101,36 +80,25 @@ rm $TMPDIR/consul-0.7.5.zip
 
 * **Postgres**:
 ```shell
-export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-make -C src/autoscaler buildtools
-make -C src/autoscaler test
-
-mvn test -pl scheduler
+make test
 ```
 
 * **MySQL**:
 ```shell
-export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-make -C src/autoscaler buildtools
-make -C src/autoscaler test
-
-mvn test -pl scheduler -Dspring.profiles.active=mysql
+make test db_type=mysql
 ```
-
-
 
 ### Integration tests
 
 **Postgres**
 ```shell
-mvn package -DskipTests
-export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-make -C src/autoscaler buildtools
-make -C src/autoscaler integration
+make integration
 ```
 
 **MySQL**:
-Just replace the $DBURL to `root@tcp(localhost)/autoscaler?tls=false`.
+```shell
+make test db_type=mysql
+```
 
 ### Coding Standards
 Autoscaler uses Golangci and Checkstyle for its code base. Refer to [style-guide](style-guide/README.md)
