@@ -71,8 +71,8 @@ func main() {
 		httpStatusCollector,
 	}
 	var checkBindingFunc api.CheckBindingFunc
+	var bindingDB db.BindingDB
 	if !conf.UseBuildInMode {
-		var bindingDB db.BindingDB
 		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
 		if err != nil {
 			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
@@ -108,7 +108,7 @@ func main() {
 	}
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter)
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
