@@ -249,6 +249,7 @@ var _ = Describe("BindingSqldb", func() {
 			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
+			cleanServiceBindingTable()
 			cleanServiceInstanceTable()
 		})
 		AfterEach(func() {

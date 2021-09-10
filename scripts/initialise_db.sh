@@ -63,7 +63,7 @@ trap "rm ${LOG_FILE} || echo \"no log file\"" EXIT
 error() {
   [ -e "${LOG_FILE}" ] && cat "${LOG_FILE}"
 }
-echo "# Applying liquibase change sets to: 'mysql://127.0.0.1/autoscaler'"
+echo "# Applying liquibase change sets to: '${URL}'"
 for file in $files; do
   echo "  - applying: '$file'" | tee -a "${LOG_FILE}"
   # shellcheck disable=SC2086
