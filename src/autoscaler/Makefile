@@ -18,7 +18,7 @@ check: fmt lint build test
 
 test:
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs --skipPackage=integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs -cover --skipPackage=integration
 
 testsuite:
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -randomizeAllSpecs $(TEST)
