@@ -53,7 +53,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			})
 			It("should error with status code 500", func() {
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
-					"code":    "Interal-Server-Error",
+					"code":    "Internal-Server-Error",
 					"message": "Failed to check if user is admin",
 				})
 			})
@@ -73,7 +73,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			})
 			It("should error with status code 500", func() {
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
-					"code":    "Interal-Server-Error",
+					"code":    "Internal-Server-Error",
 					"message": "Failed to check if user is admin",
 				})
 			})

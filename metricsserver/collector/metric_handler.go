@@ -142,7 +142,7 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		h.logger.Error("get-metric-histories-retrieve-metrics", err, lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error getting instance metric histories"})
 		return
 	}
@@ -153,7 +153,7 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 		h.logger.Error("get-metric-histories-marshal", err, lager.Data{"appId": appId, "metrictype": metricType, "metrics": mtrcs})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error marshal metric histories"})
 		return
 	}
