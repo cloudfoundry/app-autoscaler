@@ -439,7 +439,7 @@ var _ = Describe("ScalingHandler", func() {
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
-						Code:    "Interal-Server-Error",
+						Code:    "Internal-Server-Error",
 						Message: "Error getting scaling histories from database",
 					}))
 				})
@@ -496,7 +496,7 @@ var _ = Describe("ScalingHandler", func() {
 				err = json.Unmarshal(resp.Body.Bytes(), errJson)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Interal-Server-Error",
+					Code:    "Internal-Server-Error",
 					Message: "Error setting active schedule",
 				}))
 			})
@@ -529,7 +529,7 @@ var _ = Describe("ScalingHandler", func() {
 				err = json.Unmarshal(resp.Body.Bytes(), errJson)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Interal-Server-Error",
+					Code:    "Internal-Server-Error",
 					Message: "Error removing active schedule",
 				}))
 			})
@@ -600,7 +600,7 @@ var _ = Describe("ScalingHandler", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Interal-Server-Error",
+					Code:    "Internal-Server-Error",
 					Message: "Error getting active schedule from database",
 				}))
 			})

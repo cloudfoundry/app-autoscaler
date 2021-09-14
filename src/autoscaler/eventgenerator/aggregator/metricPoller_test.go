@@ -191,7 +191,7 @@ var _ = Describe("MetricPoller", func() {
 			BeforeEach(func() {
 				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
 					models.ErrorResponse{
-						Code:    "Interal-Server-Error",
+						Code:    "Internal-Server-Error",
 						Message: "Error"}))
 			})
 

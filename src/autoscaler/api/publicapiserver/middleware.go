@@ -59,7 +59,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 		if err != nil {
 			mw.logger.Error("failed to check if user is admin", err, nil)
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
+				Code:    "Internal-Server-Error",
 				Message: "Failed to check if user is admin"})
 			return
 		}
@@ -77,7 +77,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 			} else {
 				mw.logger.Error("failed to check space developer permissions", err, nil)
 				handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-					Code:    "Interal-Server-Error",
+					Code:    "Internal-Server-Error",
 					Message: "Failed to check space developer permission"})
 				return
 			}
