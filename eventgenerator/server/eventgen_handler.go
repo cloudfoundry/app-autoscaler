@@ -102,7 +102,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 	if err != nil {
 		h.logger.Error("get-aggregated-metric-histories-retrieve-metrics", err, lager.Data{"appid": appID, "metrictype": metricType, "start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error getting aggregated metric histories"})
 		return
 	}
@@ -113,7 +113,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 		h.logger.Error("get-aggregated-metric-histories-marshal", err, lager.Data{"appid": appID, "metrictype": metricType, "metrics": mtrcs})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error marshaling aggregated metric histories"})
 		return
 	}

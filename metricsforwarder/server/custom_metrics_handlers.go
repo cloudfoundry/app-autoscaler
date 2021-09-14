@@ -75,7 +75,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 			}
 			mh.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appid": appID})
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
+				Code:    "Internal-Server-Error",
 				Message: "Error getting binding crededntials from policyDB"})
 			return
 		}
@@ -97,7 +97,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error reading custom metrics request body"})
 		return
 	}
