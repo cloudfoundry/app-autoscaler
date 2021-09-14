@@ -8,6 +8,7 @@ linters-settings:
     packages-with-error-message:
       - github.com/alecthomas/assert: "use github.com/stretchr/testify/assert"
       - github.com/magiconair/properties/assert: "use github.com/stretchr/testify/assert"
+      - github.com/pkg/errors: "use errors"  
   dupl:
     threshold: 100
   exhaustive:
@@ -73,14 +74,14 @@ linters:
     - deadcode
     - depguard
     - dogsled
-    #- dupl
+    # - dupl
     - errcheck
     - errorlint
     - funlen
-      #    - gocognit
-      #    - goconst
-    #    - gocyclo
-    # - goerr113
+    # - gocognit
+    # - goconst
+    # - gocyclo
+    - goerr113
     - gofmt
     - goimports
     - goprintffuncname
@@ -99,13 +100,13 @@ linters:
     - testpackage
     - typecheck
     - unconvert
-    #    - unparam
+    # - unparam
     - unused
     - varcheck
     - whitespace
-      #    - godox
-      #    - staticcheck
-    #    - prealloc
+    # - godox
+    # - staticcheck
+    # - prealloc
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
