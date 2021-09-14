@@ -156,7 +156,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		logger.Error("failed-to-retrieve-histories", err, lager.Data{"start": start, "end": end, "order": order, "includeAll": includeAll})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error getting scaling histories from database"})
 		return
 	}
@@ -167,7 +167,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 		logger.Error("failed-to-marshal", err, lager.Data{"histories": histories})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error getting scaling histories from database"})
 		return
 	}
@@ -202,7 +202,7 @@ func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		h.logger.Error("failed-to-set-active-schedule", err, lager.Data{"activeSchedule": activeSchedule})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error setting active schedule",
 		})
 	}
@@ -220,7 +220,7 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		logger.Error("failed-to-remove-active-schedule", err)
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error removing active schedule"})
 		return
 	}
@@ -238,7 +238,7 @@ func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		logger.Error("failed-to-get-active-schedule", err, lager.Data{"appid": appId})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error getting active schedule from database"})
 		return
 	}
@@ -257,7 +257,7 @@ func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Reques
 		logger.Error("failed-to-marshal", err, lager.Data{"activeSchedule": activeSchedule})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Internal-Server-Error",
 			Message: "Error getting active schedule from database"})
 		return
 	}
