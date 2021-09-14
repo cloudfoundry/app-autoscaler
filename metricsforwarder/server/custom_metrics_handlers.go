@@ -47,7 +47,7 @@ func (mh *CustomMetricsHandler) VerifyCredentialsAndPublishMetrics(w http.Respon
 	if err != nil {
 		if errors.Is(err, ErrorReadingBody) {
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
+				Code:    "Internal-Server-Error",
 				Message: "error reading custom metrics request body"})
 		} else if errors.Is(err, ErrorUnmarshalingBody) {
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{

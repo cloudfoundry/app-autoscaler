@@ -415,7 +415,7 @@ var _ = Describe("MetricHandler", func() {
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
-						Code:    "Interal-Server-Error",
+						Code:    "Internal-Server-Error",
 						Message: "Error getting instance metric histories",
 					}))
 				})
