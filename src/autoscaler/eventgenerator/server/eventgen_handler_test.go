@@ -290,7 +290,7 @@ var _ = Describe("EventgenHandler", func() {
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
-						Code:    "Interal-Server-Error",
+						Code:    "Internal-Server-Error",
 						Message: "Error getting aggregated metric histories",
 					}))
 				})
