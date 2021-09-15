@@ -30,6 +30,19 @@ type FakeBindingDB struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
+	CountServiceInstancesInOrgStub        func(string) (int, error)
+	countServiceInstancesInOrgMutex       sync.RWMutex
+	countServiceInstancesInOrgArgsForCall []struct {
+		arg1 string
+	}
+	countServiceInstancesInOrgReturns struct {
+		result1 int
+		result2 error
+	}
+	countServiceInstancesInOrgReturnsOnCall map[int]struct {
+		result1 int
+		result2 error
+	}
 	CreateServiceBindingStub        func(string, string, string) error
 	createServiceBindingMutex       sync.RWMutex
 	createServiceBindingArgsForCall []struct {
@@ -276,6 +289,70 @@ func (fake *FakeBindingDB) CloseReturnsOnCall(i int, result1 error) {
 	fake.closeReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeBindingDB) CountServiceInstancesInOrg(arg1 string) (int, error) {
+	fake.countServiceInstancesInOrgMutex.Lock()
+	ret, specificReturn := fake.countServiceInstancesInOrgReturnsOnCall[len(fake.countServiceInstancesInOrgArgsForCall)]
+	fake.countServiceInstancesInOrgArgsForCall = append(fake.countServiceInstancesInOrgArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.CountServiceInstancesInOrgStub
+	fakeReturns := fake.countServiceInstancesInOrgReturns
+	fake.recordInvocation("CountServiceInstancesInOrg", []interface{}{arg1})
+	fake.countServiceInstancesInOrgMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeBindingDB) CountServiceInstancesInOrgCallCount() int {
+	fake.countServiceInstancesInOrgMutex.RLock()
+	defer fake.countServiceInstancesInOrgMutex.RUnlock()
+	return len(fake.countServiceInstancesInOrgArgsForCall)
+}
+
+func (fake *FakeBindingDB) CountServiceInstancesInOrgCalls(stub func(string) (int, error)) {
+	fake.countServiceInstancesInOrgMutex.Lock()
+	defer fake.countServiceInstancesInOrgMutex.Unlock()
+	fake.CountServiceInstancesInOrgStub = stub
+}
+
+func (fake *FakeBindingDB) CountServiceInstancesInOrgArgsForCall(i int) string {
+	fake.countServiceInstancesInOrgMutex.RLock()
+	defer fake.countServiceInstancesInOrgMutex.RUnlock()
+	argsForCall := fake.countServiceInstancesInOrgArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBindingDB) CountServiceInstancesInOrgReturns(result1 int, result2 error) {
+	fake.countServiceInstancesInOrgMutex.Lock()
+	defer fake.countServiceInstancesInOrgMutex.Unlock()
+	fake.CountServiceInstancesInOrgStub = nil
+	fake.countServiceInstancesInOrgReturns = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBindingDB) CountServiceInstancesInOrgReturnsOnCall(i int, result1 int, result2 error) {
+	fake.countServiceInstancesInOrgMutex.Lock()
+	defer fake.countServiceInstancesInOrgMutex.Unlock()
+	fake.CountServiceInstancesInOrgStub = nil
+	if fake.countServiceInstancesInOrgReturnsOnCall == nil {
+		fake.countServiceInstancesInOrgReturnsOnCall = make(map[int]struct {
+			result1 int
+			result2 error
+		})
+	}
+	fake.countServiceInstancesInOrgReturnsOnCall[i] = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeBindingDB) CreateServiceBinding(arg1 string, arg2 string, arg3 string) error {
@@ -962,6 +1039,8 @@ func (fake *FakeBindingDB) Invocations() map[string][][]interface{} {
 	defer fake.checkServiceBindingMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
+	fake.countServiceInstancesInOrgMutex.RLock()
+	defer fake.countServiceInstancesInOrgMutex.RUnlock()
 	fake.createServiceBindingMutex.RLock()
 	defer fake.createServiceBindingMutex.RUnlock()
 	fake.createServiceInstanceMutex.RLock()
