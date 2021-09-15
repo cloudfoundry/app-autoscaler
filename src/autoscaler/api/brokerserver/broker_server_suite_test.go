@@ -4,6 +4,7 @@ import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/fakes"
+	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -41,6 +42,19 @@ var (
 	conf              *config.Config
 	catalogBytes      []byte
 	schedulerServer   *ghttp.Server
+	tokenServer       *ghttp.Server
+	quotaServer       *ghttp.Server
+	testDefaultPolicy string
+	testDefaultGuid   string
+	servers           []*ghttp.Server
+)
+
+func TestServer(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "BrokerServer Suite")
+}
+
+var _ = BeforeSuite(func() {
 	testDefaultPolicy = `
 						{
 							"instance_min_count":1,
@@ -54,15 +68,14 @@ var (
 							}]
 						}`
 	testDefaultGuid = "a-not-so-guid"
-)
 
-func TestServer(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "BrokerServer Suite")
-}
-
-var _ = BeforeSuite(func() {
 	schedulerServer = ghttp.NewServer()
+	servers = append(servers, schedulerServer)
+	tokenServer = ghttp.NewServer()
+	servers = append(servers, tokenServer)
+	quotaServer = ghttp.NewServer()
+	servers = append(servers, quotaServer)
+
 	port := 10000 + GinkgoParallelNode()
 	conf = &config.Config{
 		BrokerServer: config.ServerConfig{
@@ -70,9 +83,15 @@ var _ = BeforeSuite(func() {
 		},
 		BrokerUsernameHash: usernameHash,
 		BrokerPasswordHash: passwordHash,
-		CatalogPath:        "../exampleconfig/catalog-example.json",
-		CatalogSchemaPath:  "../schemas/catalog.schema.json",
-		PolicySchemaPath:   "../policyvalidator/policy_json.schema.json",
+		QuotaManagement: &config.QuotaManagementConfig{
+			API:      quotaServer.URL(),
+			ClientID: "client-id",
+			Secret:   "client-secret",
+			TokenURL: tokenServer.URL(),
+		},
+		CatalogPath:       "../exampleconfig/catalog-example.json",
+		CatalogSchemaPath: "../schemas/catalog.schema.json",
+		PolicySchemaPath:  "../policyvalidator/policy_json.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},
@@ -84,7 +103,7 @@ var _ = BeforeSuite(func() {
 	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
-	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
+	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))
 	Expect(err).NotTo(HaveOccurred())
 
 	serverProcess = ginkgomon.Invoke(httpServer)
@@ -93,8 +112,15 @@ var _ = BeforeSuite(func() {
 
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
+
+	urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
+	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
+	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 })
 
 var _ = AfterSuite(func() {
+	for _, server := range servers {
+		server.Close()
+	}
 	ginkgomon.Interrupt(serverProcess)
 })
