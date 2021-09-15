@@ -100,6 +100,17 @@ make integration
 make test db_type=mysql
 ```
 
+### Build App-AutoScaler
+```shell
+make build
+```
+
+### Clean up
+You can use the  `make clean` to remove:
+
+* database ( postgres or mysql)
+* autoscaler build artifacts
+
 ### Coding Standards
 Autoscaler uses Golangci and Checkstyle for its code base. Refer to [style-guide](style-guide/README.md)
 
