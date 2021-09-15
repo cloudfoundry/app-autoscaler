@@ -275,7 +275,7 @@ func (bdb *BindingSQLDB) GetAppIdsByInstanceId(instanceId string) ([]string, err
 		bdb.logger.Error("get-appids-from-binding-table", err, lager.Data{"query": query, "instanceId": instanceId})
 		return appIds, err
 	}
-	
+
 	defer func() {
 		_ = rows.Close()
 		_ = rows.Err()
