@@ -45,12 +45,10 @@ target/build-db:
 .PHONY: scheduler
 scheduler: init
 	@mvn --no-transfer-progress package -pl scheduler ${MVN_OPTS}
-	@touch $@
 
 .PHONY: autoscaler
 autoscaler: init
 	@make -C src/autoscaler build
-	@touch $@
 
 .PHONY: test-certs
 test-certs: target/autoscaler_test_certs target/scheduler_test_certs
