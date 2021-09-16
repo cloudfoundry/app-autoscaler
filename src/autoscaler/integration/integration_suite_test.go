@@ -37,11 +37,9 @@ import (
 	"github.com/tedsuo/ifrit/grouper"
 )
 
-type APIType uint8
-
 const (
-	INTERNAL APIType = iota
-	PUBLIC
+	serviceId = "autoscaler-guid"
+	planId    = "autoscaler-free-plan-id"
 )
 
 var (
@@ -289,16 +287,16 @@ func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId st
 		bindBody = map[string]interface{}{
 			"organization_guid": orgId,
 			"space_guid":        spaceId,
-			"service_id":        "app-autoscaler",
-			"plan_id":           "free",
+			"service_id":        serviceId,
+			"plan_id":           planId,
 			"parameters":        parameters,
 		}
 	} else {
 		bindBody = map[string]interface{}{
 			"organization_guid": orgId,
 			"space_guid":        spaceId,
-			"service_id":        "app-autoscaler",
-			"plan_id":           "free",
+			"service_id":        serviceId,
+			"plan_id":           planId,
 		}
 	}
 
@@ -319,7 +317,7 @@ func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, broke
 			"default_policy": &defaultPolicy,
 		}
 		updateBody = map[string]interface{}{
-			"service_id": "app-autoscaler",
+			"service_id": serviceId,
 			"parameters": parameters,
 		}
 	}
@@ -335,8 +333,8 @@ func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, broke
 	return httpClient.Do(req)
 }
 
-func deprovisionServiceInstance(serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), strings.NewReader(`{"service_id":"app-autoscaler","plan_id":"free"}`))
+func deProvisionServiceInstance(serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), strings.NewReader(fmt.Sprintf(`{"service_id":"%s","plan_id": "%s"}`, serviceId, planId)))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
@@ -349,15 +347,15 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 		rawParameters := json.RawMessage(policy)
 		bindBody = map[string]interface{}{
 			"app_guid":   appId,
-			"service_id": "app-autoscaler",
-			"plan_id":    "free",
+			"service_id": serviceId,
+			"plan_id":    planId,
 			"parameters": &rawParameters,
 		}
 	} else {
 		bindBody = map[string]interface{}{
 			"app_guid":   appId,
-			"service_id": "app-autoscaler",
-			"plan_id":    "free",
+			"service_id": serviceId,
+			"plan_id":    planId,
 		}
 	}
 
@@ -371,7 +369,7 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 }
 
 func unbindService(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", brokerPort, serviceInstanceId, bindingId), strings.NewReader(fmt.Sprintf(`{"app_guid":"%s","service_id":"app-autoscaler","plan_id":"free"}`, appId)))
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", brokerPort, serviceInstanceId, bindingId), strings.NewReader(fmt.Sprintf(`{"app_guid":"%s","service_id":"%s","plan_id":"%s"}`, appId, serviceId, planId)))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
@@ -390,13 +388,13 @@ func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, de
 	_ = resp.Body.Close()
 }
 
-func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
+func unbindAndDeProvision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
 	resp, err := unbindService(bindingId, appId, serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	_ = resp.Body.Close()
 
-	resp, err = deprovisionServiceInstance(serviceInstanceId, brokerPort, httpClient)
+	resp, err = deProvisionServiceInstance(serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	_ = resp.Body.Close()
