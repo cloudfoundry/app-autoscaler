@@ -4,8 +4,9 @@ import (
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/forwarder"
 	"autoscaler/models"
-	"database/sql"
 	"encoding/json"
+	"fmt"
+
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -14,119 +15,100 @@ import (
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
 	"github.com/patrickmn/go-cache"
-	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrorReadingBody      = errors.New("error reading custom metrics request body")
+	ErrorUnmarshalingBody = errors.New("error unmarshaling custom metrics request body")
+	ErrorParsingBody      = errors.New("error parsing request body")
 )
 
 type CustomMetricsHandler struct {
 	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
-	credentialCache    cache.Cache
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
-		credentialCache:    credentialCache,
 		allowedMetricCache: allowedMetricCache,
-		cacheTTL:           cacheTTL,
 		logger:             logger,
 	}
 }
 
-func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	w.Header().Set("Content-Type", "application/json")
-
-	username, password, authOK := r.BasicAuth()
-
-	if !authOK {
-		mh.logger.Info("error-processing-authorizaion-header")
-		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
-			Code:    "Authorization-Failure-Error",
-			Message: "Incorrect credentials. Basic authorization is not used properly"})
-		return
-	}
-
-	var isValid bool
-
+func (mh *CustomMetricsHandler) VerifyCredentialsAndPublishMetrics(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appID := vars["appid"]
-	res, found := mh.credentialCache.Get(appID)
-	if found {
-		// Credentials found in cache
-		credentials := res.(*models.Credential)
-		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
-	}
 
-	// Credentials not found in cache or
-	// stale cache entry with invalid credential found in cache
-	// search in the database and update the cache
-	if !found || !isValid {
-		credentials, err := mh.policyDB.GetCredential(appID)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				mh.logger.Error("no-credential-found-in-db", err, lager.Data{"appID": appID})
-				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
-					Code:    "Authorization-Failure-Error",
-					Message: "Incorrect credentials. Basic authorization credential does not match"})
-				return
-			}
-			mh.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appid": appID})
+	err := mh.PublishMetrics(w, r, appID)
+	if err != nil {
+		if errors.Is(err, ErrorReadingBody) {
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 				Code:    "Internal-Server-Error",
-				Message: "Error getting binding crededntials from policyDB"})
-			return
+				Message: "error reading custom metrics request body"})
+		} else if errors.Is(err, ErrorUnmarshalingBody) {
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: "Error unmarshaling custom metrics request body"})
+		} else if errors.Is(err, ErrorNoPolicy) {
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: "no policy defined"})
+		} else if errors.Is(err, ErrorStdMetricExists) {
+			var metricError *Error
+			if errors.As(err, &metricError) {
+				handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: fmt.Sprintf("Custom Metric: %s matches with standard metrics name", metricError.GetMetricName()),
+				})
+			}
+		} else if errors.Is(err, ErrorMetricNotInPolicy) {
+			var metricError *Error
+			if errors.As(err, &metricError) {
+				handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: fmt.Sprintf("Custom Metric: %s does not match with metrics defined in policy", metricError.GetMetricName()),
+				})
+			}
+		} else if errors.Is(err, ErrorParsingBody) {
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: "Error parsing request body"})
+		} else {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Unexpected Error",
+				Message: err.Error()})
 		}
-		// update the cache
-		mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
-
-		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
-		// If Credentials in DB is not valid
-		if !isValid {
-			mh.logger.Error("error-validating-authorizaion-header", err)
-			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
-				Code:    "Authorization-Failure-Error",
-				Message: "Incorrect credentials. Basic authorization credential does not match"})
-			return
-		}
+		return
 	}
+}
 
+func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Request, appID string) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Internal-Server-Error",
-			Message: "Error reading custom metrics request body"})
-		return
+		return ErrorReadingBody
 	}
 	var metricsConsumer *models.MetricsConsumer
 	err = json.Unmarshal(body, &metricsConsumer)
 	if err != nil {
 		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Error unmarshaling custom metrics request body"})
-		return
+		return ErrorUnmarshalingBody
 	}
 	err = mh.validateCustomMetricTypes(appID, metricsConsumer)
 	if err != nil {
 		mh.logger.Error("failed-validating-metrictypes", err, lager.Data{"metrics": metricsConsumer})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: err.Error()})
-		return
+		return fmt.Errorf("metric validation Failed %w", err)
 	}
 
 	metrics := mh.getMetrics(appID, metricsConsumer)
 
 	if len(metrics) <= 0 {
 		mh.logger.Debug("failed-parsing-custom-metrics-request-body", lager.Data{"metrics": metrics})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Error parsing request body"})
-		return
+		return ErrorParsingBody
 	}
 
 	mh.logger.Debug("custom-metrics-parsed-successfully", lager.Data{"metrics": metrics})
@@ -134,16 +116,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		mh.metricForwarder.EmitMetric(metric)
 	}
 	w.WriteHeader(http.StatusOK)
-}
-
-func (mh *CustomMetricsHandler) validateCredentials(username string, usernameHash string, password string, passwordHash string) bool {
-	usernameAuthErr := bcrypt.CompareHashAndPassword([]byte(usernameHash), []byte(username))
-	passwordAuthErr := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
-	if usernameAuthErr == nil && passwordAuthErr == nil { // password matching successful
-		return true
-	}
-	mh.logger.Debug("failed-to-authorize-credentials")
-	return false
+	return nil
 }
 
 func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metricsConsumer *models.MetricsConsumer) error {
@@ -168,7 +141,7 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		}
 		if err == nil && scalingPolicy == nil {
 			mh.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
-			return errors.New("no policy defined")
+			return ErrorNoPolicy
 		}
 		for _, metrictype := range scalingPolicy.ScalingRules {
 			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
@@ -182,13 +155,13 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		_, stdMetricsExists := standardMetricsTypes[metric.Name]
 		if stdMetricsExists { //it should fail
 			mh.logger.Info("custom-metric-name-matches-with-standard-metrics-name", lager.Data{"metric": metric.Name})
-			return errors.New("Custom Metric: " + metric.Name + " matches with standard metrics name")
+			return &Error{metric: metric.Name, err: ErrorStdMetricExists}
 		}
 		// check if any of the custom metrics not defined during policy binding
 		_, ok := allowedMetricTypeSet[metric.Name]
 		if !ok { // If any of the custom metrics is not defined during policy binding, it should fail
 			mh.logger.Info("unmatched-custom-metric-type", lager.Data{"metric": metric.Name})
-			return errors.New("Custom Metric: " + metric.Name + " does not match with metrics defined in policy")
+			return &Error{metric: metric.Name, err: ErrorMetricNotInPolicy}
 		}
 	}
 	return nil

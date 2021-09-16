@@ -278,6 +278,52 @@ rate_limit:
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
+
+		Context("metricsforwader certificates are not configured", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+metrics_forwarder:
+  tls:
+    ca_file: ""
+    cert_file: ""
+    key_file: ""
+db:
+  policy_db:
+    url: postgres://pqgotest:password@localhost/pqgotest
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+`)
+				conf, err = LoadConfig(bytes.NewReader(configBytes))
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+			It("should have empty values", func() {
+				Expect(conf.MetricsForwarderConfig.TLS.CACertFile).To(BeEmpty())
+
+			})
+		})
+
+		Context("metricsforwarder certificates are configured", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+metrics_forwarder:
+  tls:
+    ca_file: "../testcerts/ca.crt"    
+db:
+  policy_db:
+    url: postgres://pqgotest:password@localhost/pqgotest
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+`)
+				conf, err = LoadConfig(bytes.NewReader(configBytes))
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+			It("should have the certificate authority property", func() {
+				Expect(conf.MetricsForwarderConfig.TLS.CACertFile).To(Equal("../testcerts/ca.crt"))
+			})
+		})
+
 	})
 
 	Describe("Validate", func() {
