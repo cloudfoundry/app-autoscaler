@@ -1306,13 +1306,16 @@ rate_limit:
 				BeforeEach(func() {
 					conf.DB.BindingDB.URL = ""
 					brokerCred1 := BrokerCredentialsConfig{
-						BrokerUsername: "",
-						BrokerPassword: "",
+						BrokerUsername:     "",
+						BrokerUsernameHash: nil,
+						BrokerPasswordHash: nil,
+						BrokerPassword:     "",
 					}
 					var brokerCreds []BrokerCredentialsConfig
 					brokerCreds = append(brokerCreds, brokerCred1)
 					conf.CatalogPath = ""
 					conf.CatalogSchemaPath = ""
+					conf.BrokerCredentials = brokerCreds
 				})
 				It("should not err", func() {
 					Expect(err).NotTo(HaveOccurred())

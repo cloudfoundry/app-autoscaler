@@ -52,13 +52,13 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 		for _, brokerCredential := range bam.brokerCredentials {
 			usernameHashResult := bcrypt.CompareHashAndPassword(brokerCredential.BrokerUsernameHash, []byte(username))
 			passwordHashResult := bcrypt.CompareHashAndPassword(brokerCredential.BrokerPasswordHash, []byte(password))
-			if authOK == true && usernameHashResult == nil && passwordHashResult == nil {
+			if authOK && usernameHashResult == nil && passwordHashResult == nil {
 				crenditialFoundFlag = true
 				break
 			}
 		}
 
-		if crenditialFoundFlag == false {
+		if !crenditialFoundFlag {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}

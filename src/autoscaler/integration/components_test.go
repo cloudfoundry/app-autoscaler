@@ -6,7 +6,6 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 
-	"autoscaler/api/config"
 	apiConfig "autoscaler/api/config"
 	egConfig "autoscaler/eventgenerator/config"
 	mgConfig "autoscaler/metricsgateway/config"
@@ -198,13 +197,13 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 }
 
 func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, skipSSLValidation bool, cacheTTL int, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, httpClientTimeout time.Duration, tmpDir string) string {
-	brokerCred1 := config.BrokerCredentialsConfig{
+	brokerCred1 := apiConfig.BrokerCredentialsConfig{
 		BrokerUsername: "broker_username",
 		//BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
 		BrokerPassword: "broker_password",
 		//BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
 	}
-	brokerCred2 := config.BrokerCredentialsConfig{
+	brokerCred2 := apiConfig.BrokerCredentialsConfig{
 		BrokerUsername: "broker_username2",
 		//	BrokerUsernameHash: []byte("$2a$10$NK76ms9n/oeD1.IumovhIu2fiiQ/4FIVc81o4rdNS8beJMxYvhTqG"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username2")'
 		BrokerPassword: "broker_password2",
