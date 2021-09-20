@@ -24,11 +24,10 @@ import (
 )
 
 const (
-	username     = "brokeruser"
-	usernameHash = "$2a$12$S44P8nP0b.wq7kW21anaR.uU1dBMCGHUZxw7pdcy42z6oJK0TFTM." // ruby -r bcrypt -e 'puts BCrypt::Password.create("brokeruser")'
-	password     = "supersecretpassword"
-	// #nosec G101 - only for unit tests
-	passwordHash   = "$2a$12$8/xRXDhCyl0I..z76PG5Q.pWNLoVs0aYncx6UU1hToRAuevVjKm6O" // ruby -r bcrypt -e 'puts BCrypt::Password.create("supersecretpassword")'
+	username       = "broker_username"
+	password       = "broker_password"
+	username2      = "broker_username2"
+	password2      = "broker_password2"
 	testAppId      = "an-app-id"
 	testInstanceId = "an-instance-id"
 	testOrgId      = "an-org-id"
@@ -77,12 +76,26 @@ var _ = BeforeSuite(func() {
 	servers = append(servers, quotaServer)
 
 	port := 10000 + GinkgoParallelNode()
+	brokerCred1 := config.BrokerCredentialsConfig{
+		BrokerUsername:     "broker_username",
+		BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
+		BrokerPassword:     "broker_password",
+		BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
+	}
+	brokerCred2 := config.BrokerCredentialsConfig{
+		BrokerUsername:     "broker_username2",
+		BrokerUsernameHash: []byte("$2a$10$NK76ms9n/oeD1.IumovhIu2fiiQ/4FIVc81o4rdNS8beJMxYvhTqG"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username2")'
+		BrokerPassword:     "broker_password2",
+		BrokerPasswordHash: []byte("$2a$10$HZOfLweDfjNfe2h3KItdg.26BxNU6TVKMDwhJMNPPIWpj7T2HCVbW"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password2")'
+	}
+	var brokerCreds []config.BrokerCredentialsConfig
+	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
+
 	conf = &config.Config{
 		BrokerServer: config.ServerConfig{
 			Port: port,
 		},
-		BrokerUsernameHash: usernameHash,
-		BrokerPasswordHash: passwordHash,
+		BrokerCredentials: brokerCreds,
 		QuotaManagement: &config.QuotaManagementConfig{
 			API:      quotaServer.URL(),
 			ClientID: "client-id",

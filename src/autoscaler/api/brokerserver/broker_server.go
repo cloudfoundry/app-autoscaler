@@ -29,16 +29,36 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
+type MiddleWareBrokerCredentials struct {
+	BrokerUsername     string
+	BrokerUsernameHash []byte
+	BrokerPassword     string
+	BrokerPasswordHash []byte
+}
+
 type basicAuthenticationMiddleware struct {
-	usernameHash []byte
-	passwordHash []byte
+	brokerCredentials []MiddleWareBrokerCredentials
 }
 
 func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
 		username, password, authOK := r.BasicAuth()
 
-		if !authOK || bcrypt.CompareHashAndPassword(bam.usernameHash, []byte(username)) != nil || bcrypt.CompareHashAndPassword(bam.passwordHash, []byte(password)) != nil {
+		crenditialFoundFlag := false
+		for _, brokerCredential := range bam.brokerCredentials {
+			usernameHashResult := bcrypt.CompareHashAndPassword(brokerCredential.BrokerUsernameHash, []byte(username))
+			passwordHashResult := bcrypt.CompareHashAndPassword(brokerCredential.BrokerPasswordHash, []byte(password))
+			if authOK == true && usernameHashResult == nil && passwordHashResult == nil {
+				crenditialFoundFlag = true
+				break
+			}
+		}
+
+		if crenditialFoundFlag == false {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -47,28 +67,34 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 }
 
 func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-	var usernameHash []byte
-	if conf.BrokerUsernameHash != "" {
-		usernameHash = []byte(conf.BrokerUsernameHash)
-	} else {
-		var err error
-		usernameHash, err = bcrypt.GenerateFromPassword([]byte(conf.BrokerUsername), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
-		if err != nil {
-			logger.Error("failed-new-server-hashing-broker-username", err)
-			return nil, err
-		}
-	}
+	var middleWareBrokerCredentials []MiddleWareBrokerCredentials
 
-	var passwordHash []byte
-	if conf.BrokerPasswordHash != "" {
-		passwordHash = []byte(conf.BrokerPasswordHash)
-	} else {
-		var err error
-		passwordHash, err = bcrypt.GenerateFromPassword([]byte(conf.BrokerPassword), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
-		if err != nil {
-			logger.Error("failed-new-server-hashing-broker-password", err)
-			return nil, err
+	for _, brokerCredential := range conf.BrokerCredentials {
+		if string(brokerCredential.BrokerUsernameHash) == "" {
+			var err error
+			brokerCredential.BrokerUsernameHash, err = bcrypt.GenerateFromPassword([]byte(brokerCredential.BrokerUsername), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
+			if err != nil {
+				logger.Error("failed-new-server-hashing-broker-username", err)
+				return nil, err
+			}
 		}
+
+		if string(brokerCredential.BrokerPasswordHash) == "" {
+			var err error
+			brokerCredential.BrokerPasswordHash, err = bcrypt.GenerateFromPassword([]byte(brokerCredential.BrokerPassword), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
+			if err != nil {
+				logger.Error("failed-new-server-hashing-broker-password", err)
+				return nil, err
+			}
+		}
+
+		var middleWareBrokerCredential MiddleWareBrokerCredentials
+		middleWareBrokerCredential.BrokerUsername = brokerCredential.BrokerUsername
+		middleWareBrokerCredential.BrokerUsernameHash = brokerCredential.BrokerUsernameHash
+		middleWareBrokerCredential.BrokerPassword = brokerCredential.BrokerPassword
+		middleWareBrokerCredential.BrokerPasswordHash = brokerCredential.BrokerPasswordHash
+
+		middleWareBrokerCredentials = append(middleWareBrokerCredentials, middleWareBrokerCredential)
 	}
 
 	catalogBytes, err := ioutil.ReadFile(conf.CatalogPath)
@@ -86,8 +112,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	}
 
 	basicAuthentication := &basicAuthenticationMiddleware{
-		usernameHash: usernameHash,
-		passwordHash: passwordHash,
+		brokerCredentials: middleWareBrokerCredentials,
 	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services)

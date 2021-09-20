@@ -45,7 +45,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		appId = getRandomId()
 		app2Id = getRandomId()
 		app3Id = getRandomId()
-		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
+		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 	})
 
 	AfterEach(func() {
