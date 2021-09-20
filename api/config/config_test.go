@@ -35,8 +35,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -106,8 +109,11 @@ public_api_server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -192,8 +198,8 @@ cf:
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.BrokerUsername).To(Equal("brokeruser"))
-				Expect(conf.BrokerPassword).To(Equal("supersecretpassword"))
+				Expect(conf.BrokerCredentials[0].BrokerUsername).To(Equal("broker_username"))
+				Expect(conf.BrokerCredentials[0].BrokerPassword).To(Equal("broker_password"))
 				Expect(conf.CatalogPath).To(Equal("../exampleconfig/catalog-example.json"))
 				Expect(conf.CatalogSchemaPath).To(Equal("../schemas/catalog.schema.json"))
 				Expect(conf.PolicySchemaPath).To(Equal("../exampleconfig/policy.schema.json"))
@@ -228,8 +234,11 @@ cf:
 		Context("with partial config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -341,8 +350,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -399,8 +411,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -457,8 +472,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -516,8 +534,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -557,8 +578,11 @@ server:
   port: 8080
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2d
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -593,8 +617,11 @@ server:
   port: 8080
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -630,8 +657,11 @@ server:
   port: 8080
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -695,8 +725,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -760,8 +793,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -825,8 +861,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -893,8 +932,11 @@ public_api_server:
   port: 8081
 logging:
   level: debug
-broker_username: brokeruser
-broker_password: supersecretpassword
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
@@ -970,8 +1012,15 @@ rate_limit:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.BrokerUsernameHash = "$2a$12$BAda.mygPxKmj0StMHZGX.OaezZN73VcRfS8dpaNeBqJ8GS/O16fO"
-			conf.BrokerPasswordHash = "$2a$12$Ksf5cf8sCbpS4WUgMKBMreuxpDhKEBjqwg2Bve.oh03P6iayFux/a"
+
+			brokerCred1 := BrokerCredentialsConfig{
+				BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
+				BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
+			}
+			var brokerCreds []BrokerCredentialsConfig
+			brokerCreds = append(brokerCreds, brokerCred1)
+			conf.BrokerCredentials = brokerCreds
+
 			conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
 			conf.CatalogPath = "../exampleconfig/catalog-example.json"
 			conf.PolicySchemaPath = "../exampleconfig/policy.schema.json"
@@ -1032,8 +1081,13 @@ rate_limit:
 
 		Context("when neither the broker username nor its hash is set", func() {
 			BeforeEach(func() {
-				conf.BrokerUsername = ""
-				conf.BrokerUsernameHash = ""
+				brokerCred1 := BrokerCredentialsConfig{
+					BrokerPasswordHash: []byte(""),
+					BrokerPassword:     "",
+				}
+				var brokerCreds []BrokerCredentialsConfig
+				brokerCreds = append(brokerCreds, brokerCred1)
+				conf.BrokerCredentials = brokerCreds
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")))
@@ -1042,7 +1096,13 @@ rate_limit:
 
 		Context("when both the broker username and its hash are set", func() {
 			BeforeEach(func() {
-				conf.BrokerUsername = "brokeruser"
+				brokerCred1 := BrokerCredentialsConfig{
+					BrokerUsername:     "broker_username",
+					BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"),
+				}
+				var brokerCreds []BrokerCredentialsConfig
+				brokerCreds = append(brokerCreds, brokerCred1)
+				conf.BrokerCredentials = brokerCreds
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")))
@@ -1051,8 +1111,8 @@ rate_limit:
 
 		Context("when just the broker username is set", func() {
 			BeforeEach(func() {
-				conf.BrokerUsername = "brokeruser"
-				conf.BrokerUsernameHash = ""
+				conf.BrokerCredentials[0].BrokerUsername = "broker_username"
+				conf.BrokerCredentials[0].BrokerUsernameHash = []byte("")
 			})
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -1061,7 +1121,7 @@ rate_limit:
 
 		Context("when the broker username hash is set to an invalid value", func() {
 			BeforeEach(func() {
-				conf.BrokerUsernameHash = "not a bcrypt hash"
+				conf.BrokerCredentials[0].BrokerUsernameHash = []byte("not a bcrypt hash")
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_username_hash is not a valid bcrypt hash")))
@@ -1070,8 +1130,8 @@ rate_limit:
 
 		Context("when neither the broker password nor its hash is set", func() {
 			BeforeEach(func() {
-				conf.BrokerPassword = ""
-				conf.BrokerPasswordHash = ""
+				conf.BrokerCredentials[0].BrokerPassword = ""
+				conf.BrokerCredentials[0].BrokerPasswordHash = []byte("")
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")))
@@ -1080,7 +1140,7 @@ rate_limit:
 
 		Context("when both the broker password and its hash are set", func() {
 			BeforeEach(func() {
-				conf.BrokerPassword = "brokeruser"
+				conf.BrokerCredentials[0].BrokerPassword = "broker_password"
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")))
@@ -1089,8 +1149,8 @@ rate_limit:
 
 		Context("when just the broker password is set", func() {
 			BeforeEach(func() {
-				conf.BrokerPassword = "brokeruser"
-				conf.BrokerPasswordHash = ""
+				conf.BrokerCredentials[0].BrokerPassword = "broker_password"
+				conf.BrokerCredentials[0].BrokerPasswordHash = []byte("")
 			})
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -1099,7 +1159,13 @@ rate_limit:
 
 		Context("when the broker password hash is set to an invalid value", func() {
 			BeforeEach(func() {
-				conf.BrokerPasswordHash = "not a bcrypt hash"
+				brokerCred1 := BrokerCredentialsConfig{
+					BrokerUsername:     "broker_username",
+					BrokerPasswordHash: []byte("not a bcrypt hash"),
+				}
+				var brokerCreds []BrokerCredentialsConfig
+				brokerCreds = append(brokerCreds, brokerCred1)
+				conf.BrokerCredentials = brokerCreds
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_password_hash is not a valid bcrypt hash")))
@@ -1239,8 +1305,12 @@ rate_limit:
 			Context("when broker related configs are not set", func() {
 				BeforeEach(func() {
 					conf.DB.BindingDB.URL = ""
-					conf.BrokerPassword = ""
-					conf.BrokerUsername = ""
+					brokerCred1 := BrokerCredentialsConfig{
+						BrokerUsername: "",
+						BrokerPassword: "",
+					}
+					var brokerCreds []BrokerCredentialsConfig
+					brokerCreds = append(brokerCreds, brokerCred1)
 					conf.CatalogPath = ""
 					conf.CatalogSchemaPath = ""
 				})
