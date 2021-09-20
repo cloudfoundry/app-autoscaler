@@ -76,31 +76,42 @@ type QuotaManagementConfig struct {
 	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
 }
 
+type PlanDefinition struct {
+	PlanCheckEnabled  bool `yaml:"planCheckEnabled"`
+	SchedulesCount    int  `yaml:"schedules_count"`
+	ScalingRulesCount int  `yaml:"scaling_rules_count"`
+	PlanUpdateable    bool `yaml:"plan_updateable"`
+}
+
+type BrokerCredentialsConfig struct {
+	BrokerUsername     string `yaml:"broker_username"`
+	BrokerUsernameHash []byte `yaml:"broker_username_hash"`
+	BrokerPassword     string `yaml:"broker_password"`
+	BrokerPasswordHash []byte `yaml:"broker_password_hash"`
+}
+
 type Config struct {
-	Logging              helpers.LoggingConfig  `yaml:"logging"`
-	BrokerServer         ServerConfig           `yaml:"broker_server"`
-	PublicApiServer      ServerConfig           `yaml:"public_api_server"`
-	DB                   DBConfig               `yaml:"db"`
-	BrokerUsername       string                 `yaml:"broker_username"`
-	BrokerUsernameHash   string                 `yaml:"broker_username_hash"`
-	BrokerPassword       string                 `yaml:"broker_password"`
-	BrokerPasswordHash   string                 `yaml:"broker_password_hash"`
-	APIClientId          string                 `yaml:"api_client_id"`
-	QuotaManagement      *QuotaManagementConfig `yaml:"quota_management"`
-	CatalogPath          string                 `yaml:"catalog_path"`
-	CatalogSchemaPath    string                 `yaml:"catalog_schema_path"`
-	DashboardRedirectURI string                 `yaml:"dashboard_redirect_uri"`
-	PolicySchemaPath     string                 `yaml:"policy_schema_path"`
-	Scheduler            SchedulerConfig        `yaml:"scheduler"`
-	ScalingEngine        ScalingEngineConfig    `yaml:"scaling_engine"`
-	MetricsCollector     MetricsCollectorConfig `yaml:"metrics_collector"`
-	EventGenerator       EventGeneratorConfig   `yaml:"event_generator"`
-	CF                   cf.CFConfig            `yaml:"cf"`
-	UseBuildInMode       bool                   `yaml:"use_buildin_mode"`
-	InfoFilePath         string                 `yaml:"info_file_path"`
-	MetricsForwarder     MetricsForwarderConfig `yaml:"metrics_forwarder"`
-	Health               models.HealthConfig    `yaml:"health"`
-	RateLimit            models.RateLimitConfig `yaml:"rate_limit"`
+	Logging              helpers.LoggingConfig     `yaml:"logging"`
+	BrokerServer         ServerConfig              `yaml:"broker_server"`
+	PublicApiServer      ServerConfig              `yaml:"public_api_server"`
+	DB                   DBConfig                  `yaml:"db"`
+	BrokerCredentials    []BrokerCredentialsConfig `yaml:"broker_credentials"`
+	APIClientId          string                    `yaml:"api_client_id"`
+	QuotaManagement      *QuotaManagementConfig    `yaml:"quota_management"`
+	CatalogPath          string                    `yaml:"catalog_path"`
+	CatalogSchemaPath    string                    `yaml:"catalog_schema_path"`
+	DashboardRedirectURI string                    `yaml:"dashboard_redirect_uri"`
+	PolicySchemaPath     string                    `yaml:"policy_schema_path"`
+	Scheduler            SchedulerConfig           `yaml:"scheduler"`
+	ScalingEngine        ScalingEngineConfig       `yaml:"scaling_engine"`
+	MetricsCollector     MetricsCollectorConfig    `yaml:"metrics_collector"`
+	EventGenerator       EventGeneratorConfig      `yaml:"event_generator"`
+	CF                   cf.CFConfig               `yaml:"cf"`
+	UseBuildInMode       bool                      `yaml:"use_buildin_mode"`
+	InfoFilePath         string                    `yaml:"info_file_path"`
+	MetricsForwarder     MetricsForwarderConfig    `yaml:"metrics_forwarder"`
+	Health               models.HealthConfig       `yaml:"health"`
+	RateLimit            models.RateLimitConfig    `yaml:"rate_limit"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -177,28 +188,34 @@ func (c *Config) Validate() error {
 		if c.DB.BindingDB.URL == "" {
 			return fmt.Errorf("Configuration error: BindingDB URL is empty")
 		}
-		if c.BrokerUsername == "" && c.BrokerUsernameHash == "" {
-			return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")
-		}
-		if c.BrokerUsername != "" && c.BrokerUsernameHash != "" {
-			return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")
-		}
-		if c.BrokerUsernameHash != "" {
-			if _, err := bcrypt.Cost([]byte(c.BrokerUsernameHash)); err != nil {
-				return fmt.Errorf("Configuration error: broker_username_hash is not a valid bcrypt hash")
+
+		for _, brokerCredential := range c.BrokerCredentials {
+			if brokerCredential.BrokerUsername == "" && string(brokerCredential.BrokerUsernameHash) == "" {
+				return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")
+			}
+			if brokerCredential.BrokerUsername != "" && string(brokerCredential.BrokerUsernameHash) != "" {
+				return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")
+			}
+			if string(brokerCredential.BrokerUsernameHash) != "" {
+				if _, err := bcrypt.Cost(brokerCredential.BrokerUsernameHash); err != nil {
+					return fmt.Errorf("Configuration error: broker_username_hash is not a valid bcrypt hash")
+				}
+			}
+			if brokerCredential.BrokerPassword == "" && string(brokerCredential.BrokerPasswordHash) == "" {
+				return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")
+			}
+
+			if brokerCredential.BrokerPassword != "" && string(brokerCredential.BrokerPasswordHash) != "" {
+				return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")
+			}
+
+			if string(brokerCredential.BrokerPasswordHash) != "" {
+				if _, err := bcrypt.Cost(brokerCredential.BrokerPasswordHash); err != nil {
+					return fmt.Errorf("Configuration error: broker_password_hash is not a valid bcrypt hash")
+				}
 			}
 		}
-		if c.BrokerPassword == "" && c.BrokerPasswordHash == "" {
-			return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")
-		}
-		if c.BrokerPassword != "" && c.BrokerPasswordHash != "" {
-			return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")
-		}
-		if c.BrokerPasswordHash != "" {
-			if _, err := bcrypt.Cost([]byte(c.BrokerPasswordHash)); err != nil {
-				return fmt.Errorf("Configuration error: broker_password_hash is not a valid bcrypt hash")
-			}
-		}
+
 		if c.CatalogSchemaPath == "" {
 			return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
 		}
