@@ -65,9 +65,9 @@ var _ = Describe("BrokerServer", func() {
 
 				req.SetBasicAuth(username, password)
 
-			rsp, err = httpClient.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-		})
+				rsp, err = httpClient.Do(req)
+				Expect(err).NotTo(HaveOccurred())
+			})
 
 			It("should get the catalog", func() {
 				Expect(err).ToNot(HaveOccurred())
@@ -88,10 +88,10 @@ var _ = Describe("BrokerServer", func() {
 				req.SetBasicAuth(username2, password2)
 
 				rsp, err = httpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("should get the catalog", func() {
-				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
 				bodyBytes, err := ioutil.ReadAll(rsp.Body)
@@ -110,6 +110,7 @@ var _ = Describe("BrokerServer", func() {
 			req.SetBasicAuth(username, password)
 
 			rsp, err = httpClient.Do(req)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -128,7 +129,6 @@ var _ = Describe("BrokerServer", func() {
 		})
 
 		It("should get 404", func() {
-			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
 		})
 	})
@@ -142,10 +142,10 @@ var _ = Describe("BrokerServer", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			rsp, err = httpClient.Do(req)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should get 200", func() {
-			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 		})
 	})

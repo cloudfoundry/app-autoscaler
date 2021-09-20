@@ -197,7 +197,7 @@ func (c *Config) Validate() error {
 				return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")
 			}
 			if string(brokerCredential.BrokerUsernameHash) != "" {
-				if _, err := bcrypt.Cost([]byte(brokerCredential.BrokerUsernameHash)); err != nil {
+				if _, err := bcrypt.Cost(brokerCredential.BrokerUsernameHash); err != nil {
 					return fmt.Errorf("Configuration error: broker_username_hash is not a valid bcrypt hash")
 				}
 			}
@@ -210,7 +210,7 @@ func (c *Config) Validate() error {
 			}
 
 			if string(brokerCredential.BrokerPasswordHash) != "" {
-				if _, err := bcrypt.Cost([]byte(brokerCredential.BrokerPasswordHash)); err != nil {
+				if _, err := bcrypt.Cost(brokerCredential.BrokerPasswordHash); err != nil {
 					return fmt.Errorf("Configuration error: broker_password_hash is not a valid bcrypt hash")
 				}
 			}
