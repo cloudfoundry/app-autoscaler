@@ -110,9 +110,9 @@ github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJm
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
 github.com/bkielbasa/cyclop v1.2.0 h1:7Jmnh0yL2DjKfw28p86YTd/B4lRGcNuu12sKE35sM7A=
 github.com/bkielbasa/cyclop v1.2.0/go.mod h1:qOI0yy6A7dYC4Zgsa72Ppm9kONl0RoIlPbzot9mhmeI=
-github.com/blend/go-sdk v1.20210826.18 h1:zWsGs09RPXIFSeHJp/luNnI82ov7yaAFE/Jf6Gqw7U4=
-github.com/blend/go-sdk v1.20210826.18/go.mod h1:S74F5c2Ps2heAEJS865XN4behrdblHlu68hZ10sK4FA=
-github.com/blend/sentry-go v1.0.0/go.mod h1:hgyX3WXen2YBiA0NitlfsXsvS+9ly2YlEBmmmYDgrWY=
+github.com/blend/go-sdk v1.20210918.2 h1:YH7wBDTNPCFUr4W3cVVwp31LsEYFBSLriXE/oqzDxPs=
+github.com/blend/go-sdk v1.20210918.2/go.mod h1:nbmX7cdPm66JOqg6M3cKMtuqj6RzkE72sHZue61T5c0=
+github.com/blend/sentry-go v1.0.1/go.mod h1:hgyX3WXen2YBiA0NitlfsXsvS+9ly2YlEBmmmYDgrWY=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 h1:DDGfHa7BWjL4YnC6+E63dPcxHo2sUxDIu8g3QgEJdRY=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869/go.mod h1:Ekp36dRnpXw/yCqJaO+ZrUyxD+3VXMFFr56k5XYrpB4=
 github.com/bmizerany/pat v0.0.0-20170815010413-6226ea591a40 h1:y4B3+GPxKlrigF1ha5FFErxK+sr6sWxQovRMzwMhejo=
