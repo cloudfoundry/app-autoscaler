@@ -52,8 +52,6 @@ var (
 	operatorConfPath        string
 	metricsGatewayConfPath  string
 	metricsServerConfPath   string
-	brokerUserName          = "username"
-	brokerPassword          = "password"
 	brokerAuth              string
 	dbUrl                   string
 	LOGLEVEL                string

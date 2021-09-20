@@ -197,6 +197,21 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 }
 
 func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, skipSSLValidation bool, cacheTTL int, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, httpClientTimeout time.Duration, tmpDir string) string {
+	brokerCred1 := apiConfig.BrokerCredentialsConfig{
+		BrokerUsername: "broker_username",
+		//BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
+		BrokerPassword: "broker_password",
+		//BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
+	}
+	brokerCred2 := apiConfig.BrokerCredentialsConfig{
+		BrokerUsername: "broker_username2",
+		//	BrokerUsernameHash: []byte("$2a$10$NK76ms9n/oeD1.IumovhIu2fiiQ/4FIVc81o4rdNS8beJMxYvhTqG"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username2")'
+		BrokerPassword: "broker_password2",
+		//	BrokerPasswordHash: []byte("$2a$10$HZOfLweDfjNfe2h3KItdg.26BxNU6TVKMDwhJMNPPIWpj7T2HCVbW"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password2")'
+	}
+	var brokerCreds []apiConfig.BrokerCredentialsConfig
+	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
+
 	cfg := apiConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
@@ -225,8 +240,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				URL: dbURI,
 			},
 		},
-		BrokerUsername:       brokerUserName,
-		BrokerPassword:       brokerPassword,
+		BrokerCredentials:    brokerCreds,
 		CatalogPath:          golangServiceCatalogPath,
 		CatalogSchemaPath:    golangSchemaValidationPath,
 		DashboardRedirectURI: "",
