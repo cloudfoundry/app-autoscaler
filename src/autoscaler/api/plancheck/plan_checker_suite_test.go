@@ -1,4 +1,4 @@
-package plancheck
+package plancheck_test
 
 import (
 	. "github.com/onsi/ginkgo"

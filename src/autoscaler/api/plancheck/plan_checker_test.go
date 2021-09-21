@@ -1,4 +1,4 @@
-package plancheck
+package plancheck_test
 
 import (
 	"autoscaler/api/config"
@@ -57,19 +57,19 @@ var _ = Describe("PlanCheck", func() {
 				quotaConfig = &config.PlanCheckConfig{
 					PlanDefinitions: map[string]config.PlanDefinition{
 						"not-checked-plan-id": {
-							false,
-							0,
-							0,
+							PlanCheckEnabled:  false,
+							SchedulesCount:    0,
+							ScalingRulesCount: 0,
 						},
 						"small-plan-id": {
-							true,
-							1,
-							1,
+							PlanCheckEnabled:  true,
+							SchedulesCount:    1,
+							ScalingRulesCount: 1,
 						},
 						"large-plan-id": {
-							true,
-							10,
-							10,
+							PlanCheckEnabled:  true,
+							SchedulesCount:    10,
+							ScalingRulesCount: 10,
 						},
 					},
 				}
