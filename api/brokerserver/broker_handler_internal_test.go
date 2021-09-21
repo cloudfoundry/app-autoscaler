@@ -33,8 +33,10 @@ var (
 )
 
 var _ = Describe("BrokerHandler", func() {
+
 	BeforeEach(func() {
-		urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
+		urlPath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
+		Expect(err).ToNot(HaveOccurred())
 		schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 		schedulerServer = ghttp.NewServer()
 		quotaServer = ghttp.NewServer()
@@ -89,6 +91,7 @@ var _ = Describe("BrokerHandler", func() {
 			},
 		}
 		bindingdb = &fakes.FakeBindingDB{}
+		policydb = &fakes.FakePolicyDB{}
 	})
 
 	JustBeforeEach(func() {
