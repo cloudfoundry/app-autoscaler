@@ -23,8 +23,6 @@ var (
 	bindingdb             *fakes.FakeBindingDB
 	policydb              *fakes.FakePolicyDB
 	handler               *BrokerHandler
-	sbssdb                *fakes.FakeSbssDB
-	fakecfClient          *fakes.FakeCFClient
 	conf                  *config.Config
 	schedulerServer       = ghttp.NewServer()
 	quotaServer           = ghttp.NewServer()
@@ -91,20 +89,17 @@ var _ = Describe("BrokerHandler", func() {
 			},
 		}
 		bindingdb = &fakes.FakeBindingDB{}
-		policydb = &fakes.FakePolicyDB{}
-		sbssdb = &fakes.FakeSbssDB{}
-		fakecfClient = &fakes.FakeCFClient{}
 	})
 
 	JustBeforeEach(func() {
-		handler = NewBrokerHandler(lagertest.NewTestLogger("test"), conf, bindingdb, policydb, sbssdb, []domain.Service{{
+		handler = NewBrokerHandler(lagertest.NewTestLogger("test"), conf, bindingdb, policydb, []domain.Service{{
 			ID:   "a-service-id",
 			Name: "autoscaler",
 			Plans: []domain.ServicePlan{{
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}}, fakecfClient)
+		}})
 	})
 	Describe("test delete binding", func() {
 		var err error
@@ -114,15 +109,14 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			JustBeforeEach(func() {
 				err = deleteBinding(handler, testBindingId, testServiceInstanceId)
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("sql.ErrNoRows error occurs", func() {
 				Expect(err.Error()).To(Equal("Service binding does not exist"))
 				Expect(policydb.DeletePolicyCallCount()).To(Equal(0))
 				Expect(bindingdb.DeleteServiceBindingCallCount()).To(Equal(0))
-
 			})
-
 		})
 
 		Context("when app is bound to the service instance", func() {
@@ -134,10 +128,11 @@ var _ = Describe("BrokerHandler", func() {
 				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			JustBeforeEach(func() {
-				deleteBinding(handler, testBindingId, testServiceInstanceId)
+				err = deleteBinding(handler, testBindingId, testServiceInstanceId)
 			})
 
 			It("service binding should be deleted", func() {
+				Expect(err).ToNot(HaveOccurred())
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 				Expect(policydb.DeletePolicyCallCount()).To(Equal(1))
 				Expect(policydb.DeletePolicyArgsForCall(0)).To(Equal(testAppId))

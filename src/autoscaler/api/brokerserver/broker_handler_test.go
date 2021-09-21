@@ -681,6 +681,7 @@ var _ = Describe("BrokerHandler", func() {
 				body, err := json.Marshal(instanceDeletionRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				Expect(err).ToNot(HaveOccurred())
 				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("if it has been deleted", func() {
