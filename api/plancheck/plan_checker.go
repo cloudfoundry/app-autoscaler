@@ -38,7 +38,6 @@ func (pc PlanChecker) CheckPlan(policy models.ScalingPolicy, planID string) (boo
 		numSchedules := len(policy.Schedules.RecurringSchedules) + len(policy.Schedules.SpecificDateSchedules)
 		if numSchedules > definition.SchedulesCount {
 			validationResult += fmt.Sprintf("Too many schedules: Found %d schedules, but a maximum of %d schedules are allowed for this service plan. ", numSchedules, definition.SchedulesCount)
-
 		}
 	}
 
