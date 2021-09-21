@@ -98,6 +98,7 @@ type Config struct {
 	BrokerCredentials    []BrokerCredentialsConfig `yaml:"broker_credentials"`
 	APIClientId          string                    `yaml:"api_client_id"`
 	QuotaManagement      *QuotaManagementConfig    `yaml:"quota_management"`
+	PlanCheck            *PlanCheckConfig          `yaml:"plan_check"`
 	CatalogPath          string                    `yaml:"catalog_path"`
 	CatalogSchemaPath    string                    `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                    `yaml:"dashboard_redirect_uri"`
@@ -112,6 +113,10 @@ type Config struct {
 	MetricsForwarder     MetricsForwarderConfig    `yaml:"metrics_forwarder"`
 	Health               models.HealthConfig       `yaml:"health"`
 	RateLimit            models.RateLimitConfig    `yaml:"rate_limit"`
+}
+
+type PlanCheckConfig struct {
+	PlanDefinitions map[string]PlanDefinition `yaml:"plan_definitions"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
