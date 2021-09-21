@@ -306,13 +306,16 @@ func (bdb *BindingSQLDB) CountServiceInstancesInOrg(orgId string) (int, error) {
 
 func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(instanceId string) ([]string, error) {
 	var bindingIds []string
-	query := "SELECT binding_id FROM binding WHERE service_instance_id=$1"
+	query := "SELECT binding_id FROM binding WHERE service_instance_id=?"
 	rows, err := bdb.sqldb.Query(query, instanceId)
 	if err != nil {
 		bdb.logger.Error("get-appids-from-binding-table", err, lager.Data{"query": query, "instanceId": instanceId})
 		return bindingIds, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var appId string
 	for rows.Next() {

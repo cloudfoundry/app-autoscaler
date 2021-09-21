@@ -35,7 +35,14 @@ type BrokerHandler struct {
 	catalog               []domain.Service
 }
 
-var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
+var (
+	emptyJSONObject                 = regexp.MustCompile(`^\s*{\s*}\s*$`)
+	errorBindingDoesNotExist        = errors.New("Binding does not exist")
+	errorDeletingBinding            = errors.New("Error deleting service binding")
+	errorFailedToDeletePolicy       = errors.New("Failed to delete policy for unbinding")
+	errorFailedToDeleteSchedules    = errors.New("Failed to delete schedules for unbinding")
+	errorServiceBindingDoesNotExist = errors.New("Service Binding Doesn't Exist")
+)
 
 func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service) *BrokerHandler {
 	return &BrokerHandler{
@@ -157,7 +164,6 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service instance")
 	}
 }
-
 
 func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreationRequestBody, instanceId string, w http.ResponseWriter) bool {
 	logger := h.logger.Session("quota-check", lager.Data{"instanceId": instanceId})
@@ -376,7 +382,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 	// fetch and delete service bindings
 	bindingIds, err := h.bindingdb.GetBindingIdsByInstanceId(instanceId)
 	if err != nil {
-		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanaceId": instanceId})
+		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
 		return
 	}
@@ -406,7 +412,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 			writeErrorResponse(w, http.StatusGone, "Service Instance Doesn't Exist")
 			return
 		}
-		h.logger.Error("failed to delete service instance", err, lager.Data{"instanaceId": instanceId})
+		h.logger.Error("failed to delete service instance", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
 		return
 	}
@@ -476,7 +482,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	// fetch and all service bindings for the service instance
 	bindingIds, err := h.bindingdb.GetBindingIdsByInstanceId(instanceId)
 	if err != nil {
-		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanaceId": instanceId})
+		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
 		return
 	}
@@ -575,22 +581,19 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, _ *http.Req
 	}
 
 	err := deleteBinding(h, bindingId, instanceId)
-	if err != nil && err.Error() == "Binding does not exist" {
+	if err != nil && errors.Is(err, errorBindingDoesNotExist) {
 		writeErrorResponse(w, http.StatusGone, err.Error())
 		return
-	} else if err != nil && err.Error() == "Error deleting service binding" {
+	} else if err != nil && errors.Is(err, errorDeletingBinding) {
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
-	} else if err != nil && err.Error() == "Failed to delete policy for unbinding" {
+	} else if err != nil && errors.Is(err, errorFailedToDeletePolicy) {
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
-	} else if err != nil && err.Error() == "Error deleting service binding" {
+	} else if err != nil && errors.Is(err, errorFailedToDeleteSchedules) {
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
-	} else if err != nil && err.Error() == "Failed to delete schedules for unbinding" {
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	} else if err != nil && err.Error() == "Service Binding Doesn't Exist" {
+	} else if err != nil && errors.Is(err, errorServiceBindingDoesNotExist) {
 		writeErrorResponse(w, http.StatusGone, err.Error())
 		return
 	}
@@ -606,37 +609,38 @@ func deleteBinding(h *BrokerHandler, bindingId string, instanceId string) error 
 	appId, err := h.bindingdb.GetAppIdByBindingId(bindingId)
 	if errors.Is(err, sql.ErrNoRows) {
 		h.logger.Info("binding does not exist", nil, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
-			return errors.New("Binding does not exist")
+		return errorBindingDoesNotExist
 	}
 	if err != nil {
 		h.logger.Error("failed to get appId by bindingId", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
-		return errors.New("Error deleting service binding")
+		return errorDeletingBinding
 
 	}
 	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
 	err = h.policydb.DeletePolicy(appId)
 	if err != nil {
 		h.logger.Error("failed to delete policy for unbinding", err, lager.Data{"appId": appId})
-		return errors.New("Failed to delete policy for unbinding")
+		return errorFailedToDeletePolicy
 	}
 	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
 	err = h.schedulerUtil.DeleteSchedule(appId)
 	if err != nil {
 		h.logger.Info("failed to delete schedules for unbinding", lager.Data{"appId": appId})
-		return errors.New("Failed to delete schedules for unbinding")
+		return errorFailedToDeleteSchedules
 	}
 	err = h.bindingdb.DeleteServiceBinding(bindingId)
 	if err != nil {
 		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": appId})
 		if errors.Is(err, db.ErrDoesNotExist) {
-			return errors.New("Service Binding Doesn't Exist")
+			return errorServiceBindingDoesNotExist
 		}
-		return errors.New("Error deleting service binding")
+		return errorDeletingBinding
 
 	}
 	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": appId})
+		// FIXME should this error?
 		return nil
 	}
 	return nil
