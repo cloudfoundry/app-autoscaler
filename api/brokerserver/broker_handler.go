@@ -38,10 +38,10 @@ type BrokerHandler struct {
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
-var serviceBindingDoesnotExistError = errors.New("Service binding does not exist")
-var deleteSchedulesForUnbindingError = errors.New("Failed to delete schedules for unbinding")
-var deletePolicyForUnbindingError = errors.New("Failed to delete policy for unbinding")
-var deleteServiceBindingError = errors.New("Error deleting service binding")
+var errorBindingDoesNotExist = errors.New("Service binding does not exist")
+var errorDeleteSchedulesForUnbinding = errors.New("Failed to delete schedules for unbinding")
+var errorDeletePolicyForUnbinding = errors.New("Failed to delete policy for unbinding")
+var errorDeleteServiceBinding = errors.New("Error deleting service binding")
 
 func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service) *BrokerHandler {
 	return &BrokerHandler{
@@ -370,21 +370,22 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 	// fetch and delete service bindings
 	bindingIds, err := h.bindingdb.GetBindingIdsByInstanceId(instanceId)
 	if err != nil {
-		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanaceId": instanceId})
+		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
 		return
 	}
 
 	for _, bindingId := range bindingIds {
 		err = deleteBinding(h, bindingId, instanceId)
-		if err != nil && errors.Is(err, deleteServiceBindingError) {
-			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+		wrappedError := fmt.Errorf("service instance deletion failed: %w", err)
+		if err != nil && errors.Is(err, errorDeleteServiceBinding) {
+			writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 			return
-		} else if err != nil && errors.Is(err, deletePolicyForUnbindingError) {
-			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+		} else if err != nil && errors.Is(err, errorDeletePolicyForUnbinding) {
+			writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 			return
-		} else if err != nil && errors.Is(err, deleteSchedulesForUnbindingError) {
-			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+		} else if err != nil && errors.Is(err, errorDeleteSchedulesForUnbinding) {
+			writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 			return
 		}
 	}
@@ -397,7 +398,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 			writeErrorResponse(w, http.StatusGone, "Service Instance Doesn't Exist")
 			return
 		}
-		h.logger.Error("failed to delete service instance", err, lager.Data{"instanaceId": instanceId})
+		h.logger.Error("failed to delete service instance", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
 		return
 	}
@@ -470,7 +471,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	// fetch and all service bindings for the service instance
 	bindingIds, err := h.bindingdb.GetBindingIdsByInstanceId(instanceId)
 	if err != nil {
-		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanaceId": instanceId})
+		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
 		return
 	}
@@ -478,18 +479,24 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	for _, bindingId := range bindingIds {
 		// get the service binding for the app
 		fetchedAppID, err := h.bindingdb.GetAppIdByBindingId(bindingId)
+		if err != nil {
+			h.logger.Error("unable to get appId for bindingId", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
+			return
+		}
 
 		//select the binding-id for the app
 		if fetchedAppID == body.AppID {
 			err = deleteBinding(h, bindingId, instanceId)
-			if err != nil && errors.Is(err, deleteServiceBindingError) {
-				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			wrappedError := fmt.Errorf("Failed to bind service: %w", err)
+			if err != nil && errors.Is(err, errorDeleteServiceBinding) {
+				writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 				return
-			} else if err != nil && errors.Is(err, deletePolicyForUnbindingError) {
-				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			} else if err != nil && errors.Is(err, errorDeletePolicyForUnbinding) {
+				writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 				return
-			} else if err != nil && errors.Is(err, deleteSchedulesForUnbindingError) {
-				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			} else if err != nil && errors.Is(err, errorDeleteSchedulesForUnbinding) {
+				writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 				return
 			}
 		}
@@ -566,57 +573,61 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, _ *http.Req
 	}
 
 	err := deleteBinding(h, bindingId, instanceId)
-	if err != nil && errors.Is(err, serviceBindingDoesnotExistError) {
-		writeErrorResponse(w, http.StatusGone, err.Error())
+	wrappedError := fmt.Errorf("Failed to unbind service: %w", err)
+	if err != nil && errors.Is(err, errorBindingDoesNotExist) {
+		writeErrorResponse(w, http.StatusGone, wrappedError.Error())
 		return
-	} else if err != nil && errors.Is(err, deleteServiceBindingError) {
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+	} else if err != nil && errors.Is(err, errorDeleteServiceBinding) {
+		writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 		return
-	} else if err != nil && errors.Is(err, deletePolicyForUnbindingError) {
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+	} else if err != nil && errors.Is(err, errorDeletePolicyForUnbinding) {
+		writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 		return
-	} else if err != nil && errors.Is(err, deleteSchedulesForUnbindingError) {
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+	} else if err != nil && errors.Is(err, errorDeleteSchedulesForUnbinding) {
+		writeErrorResponse(w, http.StatusInternalServerError, wrappedError.Error())
 		return
-	} else if err != nil && errors.Is(err, deleteServiceBindingError) {
-		writeErrorResponse(w, http.StatusGone, err.Error())
+	} else if err != nil && errors.Is(err, errorDeleteServiceBinding) {
+		writeErrorResponse(w, http.StatusGone, wrappedError.Error())
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		h.logger.Error("unable to write body", err)
+	}
 }
 
 func deleteBinding(h *BrokerHandler, bindingId string, serviceInstanceId string) error {
 	appId, err := h.bindingdb.GetAppIdByBindingId(bindingId)
 	if errors.Is(err, sql.ErrNoRows) {
 		h.logger.Info("binding does not exist", nil, lager.Data{"instanceId": serviceInstanceId, "bindingId": bindingId})
-		return serviceBindingDoesnotExistError
+		return errorBindingDoesNotExist
 	}
 	if err != nil {
 		h.logger.Error("failed to get appId by bindingId", err, lager.Data{"instanceId": serviceInstanceId, "bindingId": bindingId})
-		return deleteServiceBindingError
+		return errorDeleteServiceBinding
 	}
 	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
 	err = h.policydb.DeletePolicy(appId)
 	if err != nil {
 		h.logger.Error("failed to delete policy for unbinding", err, lager.Data{"appId": appId})
-		return deletePolicyForUnbindingError
+		return errorDeletePolicyForUnbinding
 	}
 	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
 	err = h.schedulerUtil.DeleteSchedule(appId)
 	if err != nil {
 		h.logger.Info("failed to delete schedules for unbinding", lager.Data{"appId": appId})
-		return deleteSchedulesForUnbindingError
+		return errorDeleteSchedulesForUnbinding
 	}
 	err = h.bindingdb.DeleteServiceBinding(bindingId)
 	if err != nil {
 		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": appId})
 		if errors.Is(err, db.ErrDoesNotExist) {
-			return serviceBindingDoesnotExistError
+			return errorBindingDoesNotExist
 		}
 
-		return deleteServiceBindingError
+		return errorDeleteServiceBinding
 	}
 
 	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
