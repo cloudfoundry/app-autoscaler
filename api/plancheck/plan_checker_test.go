@@ -2,6 +2,7 @@ package plancheck_test
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/api/plancheck"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager/lagertest"
@@ -11,42 +12,32 @@ import (
 )
 
 var _ = Describe("PlanCheck", func() {
-	const (
-		testDefaultPolicy = `
-						{
-							"instance_min_count":1,
-							"instance_max_count":5,
-							"scaling_rules":[
-							{
-								"metric_type":"memoryused",
-								"threshold":30,
-								"operator":"<",
-								"adjustment":"-1"
-							}]
-						}`
-	)
 	var (
 		quotaConfig      *config.PlanCheckConfig
 		validationResult string
-		qmc              *PlanChecker
+		qmc              *plancheck.PlanChecker
 		ok               bool
 		err              error
-		testPolicy       = models.ScalingPolicy{
-			InstanceMin:  1,
-			InstanceMax:  4,
-			ScalingRules: nil,
-			Schedules:    nil,
-		}
-		testPlanId = "test-plan"
+		testPolicy       models.ScalingPolicy
+		testPlanId       string
 	)
-	BeforeEach(func() {
-	})
+	BeforeEach(func() {})
 	Context("CheckPlan", func() {
 		JustBeforeEach(func() {
-			qmc = NewPlanChecker(quotaConfig, lagertest.NewTestLogger("Quota"))
+			qmc = plancheck.NewPlanChecker(quotaConfig, lagertest.NewTestLogger("Quota"))
 			ok, validationResult, err = qmc.CheckPlan(testPolicy, testPlanId)
 		})
 		Context("when not configured", func() {
+			BeforeEach(func() {
+				testPolicy = models.ScalingPolicy{
+					InstanceMin:  1,
+					InstanceMax:  4,
+					ScalingRules: nil,
+					Schedules:    nil,
+				}
+				testPlanId = "test-plan"
+				quotaConfig = nil
+			})
 			It("returns -1", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ok).To(BeTrue())
@@ -54,6 +45,13 @@ var _ = Describe("PlanCheck", func() {
 		})
 		Context("when configured", func() {
 			BeforeEach(func() {
+				testPolicy = models.ScalingPolicy{
+					InstanceMin:  1,
+					InstanceMax:  4,
+					ScalingRules: nil,
+					Schedules:    nil,
+				}
+				testPlanId = "test-plan"
 				quotaConfig = &config.PlanCheckConfig{
 					PlanDefinitions: map[string]config.PlanDefinition{
 						"not-checked-plan-id": {
