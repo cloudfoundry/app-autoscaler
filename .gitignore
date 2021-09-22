@@ -16,3 +16,5 @@ src/autoscaler/vendor
 workflow
 **/*.iml
 .cache
+scripts/.srl
+privkey.pem

@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	username = "brokeruser"
-	password = "supersecretpassword"
+	username = "broker_username"
+	password = "broker_password"
 )
 
 var (
@@ -133,8 +133,23 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.BrokerUsername = username
-	cfg.BrokerPassword = password
+
+	brokerCred1 := config.BrokerCredentialsConfig{
+		BrokerUsername:     "broker_username",
+		BrokerUsernameHash: nil,
+		BrokerPassword:     "broker_password",
+		BrokerPasswordHash: nil,
+	}
+	brokerCred2 := config.BrokerCredentialsConfig{
+		BrokerUsername:     "broker_username2",
+		BrokerUsernameHash: nil,
+		BrokerPassword:     "broker_password2",
+		BrokerPasswordHash: nil,
+	}
+	var brokerCreds []config.BrokerCredentialsConfig
+	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
+	cfg.BrokerCredentials = brokerCreds
+
 	cfg.CatalogPath = "../../exampleconfig/catalog-example.json"
 	cfg.CatalogSchemaPath = "../../schemas/catalog.schema.json"
 	cfg.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"

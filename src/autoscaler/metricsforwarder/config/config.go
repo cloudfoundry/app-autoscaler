@@ -22,15 +22,16 @@ const (
 )
 
 type Config struct {
-	Logging              helpers.LoggingConfig  `yaml:"logging"`
-	Server               ServerConfig           `yaml:"server"`
-	LoggregatorConfig    LoggregatorConfig      `yaml:"loggregator"`
-	Db                   DbConfig               `yaml:"db"`
-	CacheTTL             time.Duration          `yaml:"cache_ttl"`
-	CacheCleanupInterval time.Duration          `yaml:"cache_cleanup_interval"`
-	PolicyPollerInterval time.Duration          `yaml:"policy_poller_interval"`
-	Health               models.HealthConfig    `yaml:"health"`
-	RateLimit            models.RateLimitConfig `yaml:"rate_limit"`
+	Logging                helpers.LoggingConfig  `yaml:"logging"`
+	Server                 ServerConfig           `yaml:"server"`
+	LoggregatorConfig      LoggregatorConfig      `yaml:"loggregator"`
+	MetricsForwarderConfig MetricsForwarderConfig `yaml:"metrics_forwarder"`
+	Db                     DbConfig               `yaml:"db"`
+	CacheTTL               time.Duration          `yaml:"cache_ttl"`
+	CacheCleanupInterval   time.Duration          `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval   time.Duration          `yaml:"policy_poller_interval"`
+	Health                 models.HealthConfig    `yaml:"health"`
+	RateLimit              models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 type ServerConfig struct {
@@ -56,6 +57,10 @@ type LoggingConfig struct {
 type LoggregatorConfig struct {
 	MetronAddress string          `yaml:"metron_address"`
 	TLS           models.TLSCerts `yaml:"tls"`
+}
+
+type MetricsForwarderConfig struct {
+	TLS models.TLSCerts `yaml:"tls"`
 }
 
 type DbConfig struct {

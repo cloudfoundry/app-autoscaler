@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         go: [1.16]
-        java: [11]
+        java: [11, 16]
         postgres: [9.6, 12]
     env:
       DB_DATABASE: autoscaler
@@ -34,7 +34,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-  
+
     steps:
       - name: Check out source code
         uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
 
       - name: act only - Install Maven

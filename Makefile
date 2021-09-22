@@ -45,12 +45,10 @@ target/build-db:
 .PHONY: scheduler
 scheduler: init
 	@mvn --no-transfer-progress package -pl scheduler ${MVN_OPTS}
-	@touch $@
 
 .PHONY: autoscaler
 autoscaler: init
 	@make -C src/autoscaler build
-	@touch $@
 
 .PHONY: test-certs
 test-certs: target/autoscaler_test_certs target/scheduler_test_certs
@@ -75,8 +73,8 @@ start-db: check-db_type target/start-db-${db_type}_CI_${CI} waitfor_${db_type}_C
 
 .PHONY: waitfor_postgres_CI_false waitfor_postgres_CI_true
 target/start-db-postgres_CI_false:
-	@if [ ! "$(shell docker ps -q -f name=${db_type})" ]; then \
-		if [ "$(shell docker ps -aq -f status=exited -f name=${db_type})" ]; then \
+	@if [ ! "$(shell docker ps -q -f name="^${db_type}")" ]; then \
+		if [ "$(shell docker ps -aq -f status=exited -f name="^${db_type}")" ]; then \
 			docker rm ${db_type}; \
 		fi;\
 		echo " - starting docker for ${db_type}";\
@@ -102,8 +100,8 @@ waitfor_postgres_CI_true:
 
 .PHONY: waitfor_mysql_CI_false waitfor_mysql_CI_true
 target/start-db-mysql_CI_false:
-	@if [  ! "$(shell docker ps -q -f name=${db_type})" ]; then \
-		if [ "$(shell docker ps -aq -f status=exited -f name=${db_type})" ]; then \
+	@if [  ! "$(shell docker ps -q -f name="^${db_type}")" ]; then \
+		if [ "$(shell docker ps -aq -f status=exited -f name="^${db_type}")" ]; then \
 			docker rm ${db_type}; \
 		fi;\
 		echo " - starting docker for ${db_type}";\

@@ -5,7 +5,7 @@ jobs:
   generate:
     name: ensure fakes are up to date
     env:
-      GO_VERSION: 1.15
+      GO_VERSION: 1.16
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

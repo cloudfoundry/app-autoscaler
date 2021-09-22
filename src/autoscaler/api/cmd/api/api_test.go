@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"autoscaler/api/config"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -71,8 +72,10 @@ var _ = Describe("Api", func() {
 
 				missingConfig.DB.PolicyDB.URL = ""
 				missingConfig.DB.BindingDB.URL = ""
-				missingConfig.BrokerUsername = ""
-				missingConfig.BrokerPassword = ""
+
+				var brokerCreds []config.BrokerCredentialsConfig
+				missingConfig.BrokerCredentials = brokerCreds
+
 				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelNode()
 				missingConfig.Logging.Level = "debug"
 				runner.configPath = writeConfig(&missingConfig).Name()

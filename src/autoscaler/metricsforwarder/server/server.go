@@ -1,30 +1,22 @@
 package server
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-
 	"autoscaler/db"
 	"autoscaler/healthendpoint"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/forwarder"
+	"autoscaler/metricsforwarder/server/auth"
+	"autoscaler/metricsforwarder/server/common"
 	"autoscaler/ratelimiter"
 	"autoscaler/routes"
+	"fmt"
+	"os"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 )
-
-type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
-
-func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	vh(w, r, vars)
-}
 
 func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
 	metricForwarder, err := forwarder.NewMetricForwarder(logger, conf)
@@ -33,7 +25,8 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 		os.Exit(1)
 	}
 
-	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, credentialCache, allowedMetricCache, conf.CacheTTL)
+	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, allowedMetricCache)
+	authenticator := auth.New(logger, policyDB, credentialCache, conf.CacheTTL, conf.MetricsForwarderConfig.TLS.CACertFile)
 
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appid", rateLimiter, logger.Session("metricforwarder-ratelimiter-middleware"))
@@ -41,7 +34,8 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	r := routes.MetricsForwarderRoutes()
 	r.Use(rateLimiterMiddleware.CheckRateLimit)
 	r.Use(httpStatusCollectMiddleware.Collect)
-	r.Get(routes.PostCustomMetricsRouteName).Handler(VarsFunc(mh.PublishMetrics))
+	r.Use(authenticator.Authenticate)
+	r.Get(routes.PostCustomMetricsRouteName).Handler(common.VarsFunc(mh.VerifyCredentialsAndPublishMetrics))
 
 	var addr string
 	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {

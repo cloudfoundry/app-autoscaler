@@ -45,7 +45,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		appId = getRandomId()
 		app2Id = getRandomId()
 		app3Id = getRandomId()
-		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
+		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 	})
 
 	AfterEach(func() {
@@ -238,7 +238,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
-				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			Context("public api", func() {
 				Context("Policies with schedules", func() {
@@ -278,7 +278,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
-				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			Context("and then setting a default policy", func() {
 				var (
@@ -360,7 +360,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
 					defer func() { _ = resp.Body.Close() }()
 					Expect(resp.StatusCode).To(Equal(http.StatusOK), ResponseMessage(resp))
-					unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 				})
 
 				It("creates a policy and associated schedules", func() {
@@ -443,7 +443,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
-				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			Context("public api", func() {
 				Context("Update policies with schedules", func() {
@@ -472,7 +472,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
-				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 
 			Context("public api", func() {

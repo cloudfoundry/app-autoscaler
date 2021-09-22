@@ -114,7 +114,7 @@ var _ = Describe("Middleware", func() {
 			})
 			It("should fail with 500", func() {
 				CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
-					Code:    "Interal-Server-Error",
+					Code:    "Internal-Server-Error",
 					Message: "Failed to check if user is admin",
 				})
 			})
@@ -142,7 +142,7 @@ var _ = Describe("Middleware", func() {
 			})
 			It("should fail with 500", func() {
 				CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
-					Code:    "Interal-Server-Error",
+					Code:    "Internal-Server-Error",
 					Message: "Failed to check space developer permission",
 				})
 			})

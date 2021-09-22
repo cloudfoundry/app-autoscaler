@@ -92,7 +92,7 @@ linters:
     - ineffassign
     - misspell
     - nakedret
-    - nolintlint
+    # - nolintlint
     - rowserrcheck
     - staticcheck
     - structcheck
