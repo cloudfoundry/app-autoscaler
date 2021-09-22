@@ -126,6 +126,19 @@ type FakeBindingDB struct {
 		result1 []string
 		result2 error
 	}
+	GetBindingIdsByInstanceIdStub        func(string) ([]string, error)
+	getBindingIdsByInstanceIdMutex       sync.RWMutex
+	getBindingIdsByInstanceIdArgsForCall []struct {
+		arg1 string
+	}
+	getBindingIdsByInstanceIdReturns struct {
+		result1 []string
+		result2 error
+	}
+	getBindingIdsByInstanceIdReturnsOnCall map[int]struct {
+		result1 []string
+		result2 error
+	}
 	GetDBStatusStub        func() sql.DBStats
 	getDBStatusMutex       sync.RWMutex
 	getDBStatusArgsForCall []struct {
@@ -790,6 +803,70 @@ func (fake *FakeBindingDB) GetAppIdsByInstanceIdReturnsOnCall(i int, result1 []s
 	}{result1, result2}
 }
 
+func (fake *FakeBindingDB) GetBindingIdsByInstanceId(arg1 string) ([]string, error) {
+	fake.getBindingIdsByInstanceIdMutex.Lock()
+	ret, specificReturn := fake.getBindingIdsByInstanceIdReturnsOnCall[len(fake.getBindingIdsByInstanceIdArgsForCall)]
+	fake.getBindingIdsByInstanceIdArgsForCall = append(fake.getBindingIdsByInstanceIdArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetBindingIdsByInstanceIdStub
+	fakeReturns := fake.getBindingIdsByInstanceIdReturns
+	fake.recordInvocation("GetBindingIdsByInstanceId", []interface{}{arg1})
+	fake.getBindingIdsByInstanceIdMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdCallCount() int {
+	fake.getBindingIdsByInstanceIdMutex.RLock()
+	defer fake.getBindingIdsByInstanceIdMutex.RUnlock()
+	return len(fake.getBindingIdsByInstanceIdArgsForCall)
+}
+
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdCalls(stub func(string) ([]string, error)) {
+	fake.getBindingIdsByInstanceIdMutex.Lock()
+	defer fake.getBindingIdsByInstanceIdMutex.Unlock()
+	fake.GetBindingIdsByInstanceIdStub = stub
+}
+
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdArgsForCall(i int) string {
+	fake.getBindingIdsByInstanceIdMutex.RLock()
+	defer fake.getBindingIdsByInstanceIdMutex.RUnlock()
+	argsForCall := fake.getBindingIdsByInstanceIdArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdReturns(result1 []string, result2 error) {
+	fake.getBindingIdsByInstanceIdMutex.Lock()
+	defer fake.getBindingIdsByInstanceIdMutex.Unlock()
+	fake.GetBindingIdsByInstanceIdStub = nil
+	fake.getBindingIdsByInstanceIdReturns = struct {
+		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdReturnsOnCall(i int, result1 []string, result2 error) {
+	fake.getBindingIdsByInstanceIdMutex.Lock()
+	defer fake.getBindingIdsByInstanceIdMutex.Unlock()
+	fake.GetBindingIdsByInstanceIdStub = nil
+	if fake.getBindingIdsByInstanceIdReturnsOnCall == nil {
+		fake.getBindingIdsByInstanceIdReturnsOnCall = make(map[int]struct {
+			result1 []string
+			result2 error
+		})
+	}
+	fake.getBindingIdsByInstanceIdReturnsOnCall[i] = struct {
+		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeBindingDB) GetDBStatus() sql.DBStats {
 	fake.getDBStatusMutex.Lock()
 	ret, specificReturn := fake.getDBStatusReturnsOnCall[len(fake.getDBStatusArgsForCall)]
@@ -1055,6 +1132,8 @@ func (fake *FakeBindingDB) Invocations() map[string][][]interface{} {
 	defer fake.getAppIdByBindingIdMutex.RUnlock()
 	fake.getAppIdsByInstanceIdMutex.RLock()
 	defer fake.getAppIdsByInstanceIdMutex.RUnlock()
+	fake.getBindingIdsByInstanceIdMutex.RLock()
+	defer fake.getBindingIdsByInstanceIdMutex.RUnlock()
 	fake.getDBStatusMutex.RLock()
 	defer fake.getDBStatusMutex.RUnlock()
 	fake.getServiceInstanceMutex.RLock()
