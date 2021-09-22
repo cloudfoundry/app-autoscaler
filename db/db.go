@@ -75,6 +75,7 @@ type BindingDB interface {
 	GetAppIdByBindingId(bindingId string) (string, error)
 	GetAppIdsByInstanceId(instanceId string) ([]string, error)
 	CountServiceInstancesInOrg(orgId string) (int, error)
+	GetBindingIdsByInstanceId(instanceId string) ([]string, error)
 	Close() error
 }
 
