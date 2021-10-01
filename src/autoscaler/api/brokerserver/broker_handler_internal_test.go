@@ -22,6 +22,7 @@ import (
 var (
 	bindingdb             *fakes.FakeBindingDB
 	policydb              *fakes.FakePolicyDB
+	cfClient              *fakes.FakeCFClient
 	handler               *BrokerHandler
 	conf                  *config.Config
 	schedulerServer       = ghttp.NewServer()
@@ -92,6 +93,7 @@ var _ = Describe("BrokerHandler", func() {
 		}
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
+		cfClient = &fakes.FakeCFClient{}
 	})
 
 	JustBeforeEach(func() {
@@ -102,7 +104,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}})
+		}}, cfClient)
 	})
 	Describe("test delete binding", func() {
 		var err error

@@ -21,12 +21,12 @@ import (
 )
 
 const (
-	PathCFInfo                                   = "/v2/info"
-	PathCFAuth                                   = "/oauth/token"
-	PathIntrospectToken                          = "/introspect"
-	GrantTypeClientCredentials                   = "client_credentials"
-	GrantTypeRefreshToken                        = "refresh_token"
-	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
+	PathCFInfo                     = "/v2/info"
+	PathCFAuth                     = "/oauth/token"
+	PathIntrospectToken            = "/introspect"
+	GrantTypeClientCredentials     = "client_credentials"
+	GrantTypeRefreshToken          = "refresh_token"
+	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
 )
 
 type Tokens struct {
@@ -113,7 +113,8 @@ func (c *cfClient) retrieveEndpoints() error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
+
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("Error requesting endpoints: %s [%d] %s", c.infoURL, resp.StatusCode, resp.Status)
 		c.logger.Error("retrieve-endpoints-response", err)
@@ -139,6 +140,7 @@ func (c *cfClient) requestClientCredentialGrant(formData *url.Values) error {
 		c.logger.Error("request-client-credential-grant-new-request", err)
 		return err
 	}
+
 	req.Header.Set("Authorization", c.authHeader)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
@@ -149,7 +151,8 @@ func (c *cfClient) requestClientCredentialGrant(formData *url.Values) error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
+
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("request client credential grant failed: %s [%d] %s", c.tokenURL, resp.StatusCode, resp.Status)
 		c.logger.Error("request-client-credential-grant-response", err)
@@ -227,10 +230,11 @@ func (c *cfClient) IsTokenAuthorized(token, clientId string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer func() { _ = resp.Body.Close() }()
+
 	if resp.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("received status code %v while calling /introspect endpoint", resp.Status)
 	}
-	defer resp.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

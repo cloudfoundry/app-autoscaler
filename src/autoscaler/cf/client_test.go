@@ -49,7 +49,6 @@ var _ = Describe("Client", func() {
 		JustBeforeEach(func() {
 			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
 			err = cfc.Login()
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Context("when retrieving endpoints succeeds", func() {
