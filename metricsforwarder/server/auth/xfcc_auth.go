@@ -2,47 +2,37 @@ package auth
 
 import (
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	"github.com/blend/go-sdk/envoyutil"
 )
 
 var ErrorMTLSHeaderNotFound = errors.New("mTLS authentication method not found")
 var ErrorDecodingFailed = errors.New("certificate decoding in XFCC header failed")
-var ErrorLoadingCAFailed = errors.New("loading ca cert failed")
 var ErrorNoAppIDFound = errors.New("certificate does not contain an app id")
 var ErrorAppIDWrong = errors.New("app id in certificate is not valid")
-var ErrorExpired = errors.New("certificate expired")
-var ErrorUnknownCA = errors.New("unknown certificate authority(CA)")
-var ErrorParsingXFCCHeaderFailed = errors.New("certificate parsing in XFCC header failed")
-var ErrorMalformedCertificate = errors.New("malformed certificate")
-var ErrorCertificateExpired = x509.CertificateInvalidError{}
 
-func (a *Auth) XFCCAuth(w http.ResponseWriter, r *http.Request, appID string) error {
-	if r.Header.Get("X-Forwarded-Client-Cert") == "" {
+func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
+	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
+	if xfccHeader == "" {
 		return ErrorMTLSHeaderNotFound
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	XFCCCert, err := envoyutil.ParseXFCC(r.Header.Get("X-Forwarded-Client-Cert"))
-
-	if err != nil {
-		return ErrorMalformedCertificate
+	if xfccHeader[0] == '"' {
+		xfccHeader = xfccHeader[1 : len(xfccHeader)-1]
 	}
 
-	block, _ := pem.Decode([]byte(XFCCCert[0].Cert))
-	if block == nil {
-		return ErrorDecodingFailed
+	data, err := base64.StdEncoding.DecodeString(xfccHeader)
+	if err != nil {
+		return fmt.Errorf("base64 parsing failed: %w", err)
 	}
 
-	cert, err := x509.ParseCertificate(block.Bytes)
+	cert, err := x509.ParseCertificate(data)
 	if err != nil {
-		return ErrorParsingXFCCHeaderFailed
+		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	var certAppId string
@@ -61,17 +51,15 @@ func (a *Auth) XFCCAuth(w http.ResponseWriter, r *http.Request, appID string) er
 		return ErrorAppIDWrong
 	}
 
+	//TODO consider caching this in mem
 	ca, err := a.LoadCACert()
 	if err != nil {
-		return ErrorLoadingCAFailed
+		return fmt.Errorf("loading cert failed: %w", err)
 	}
 
 	_, err = a.IsCertificateAuthorityValid(cert, ca)
 	if err != nil {
-		if errors.As(err, &ErrorCertificateExpired) {
-			return ErrorExpired
-		}
-		return ErrorUnknownCA
+		return fmt.Errorf("cert CA check failed: %w", err)
 	}
 	return nil
 }
@@ -90,17 +78,17 @@ func (a *Auth) IsCertificateAuthorityValid(cert, ca *x509.Certificate) (bool, er
 func (a *Auth) LoadCACert() (*x509.Certificate, error) {
 	file, err := ioutil.ReadFile(a.metricsForwarderMtlsCACert)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not load mtls cert %s: %w", a.metricsForwarderMtlsCACert, err)
 	}
 
 	block, _ := pem.Decode(file)
 	if block == nil {
-		return nil, errors.New("unable to decode pem")
+		return nil, fmt.Errorf("failed to decode local mtls cert: %w", ErrorDecodingFailed)
 	}
 
 	ca, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse local mtls cert: %w", err)
 	}
 
 	return ca, nil

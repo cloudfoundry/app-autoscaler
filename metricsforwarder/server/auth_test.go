@@ -6,7 +6,10 @@ import (
 	"autoscaler/metricsforwarder/server/auth"
 	"autoscaler/models"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"path"
 	"time"
@@ -118,7 +121,7 @@ var _ = Describe("Authentication", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Unauthorized",
-						Message: "basic authorization credential does not match",
+						Message: "Unauthorized",
 					}))
 					Expect(nextCalled).To(Equal(0))
 				})
@@ -150,7 +153,25 @@ var _ = Describe("Authentication", func() {
 		When("correct xfcc header with correct CA is supplied", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", "Cert="+MustReadXFCCcert("../../../../test-certs/validmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/validmtls_client.crt"))
+				vars["appid"] = "an-app-id"
+				nextCalled := 0
+				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					nextCalled = nextCalled + 1
+				})
+
+				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
+
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(nextCalled).To(Equal(1))
+			})
+		})
+
+		Context("correct xfcc header including \"'s around the cert", func() {
+			It("should call next handler", func() {
+				req = CreateRequest(body)
+				req.Header.Add("X-Forwarded-Client-Cert", fmt.Sprintf("%q", MustReadXFCCcert("../../../../test-certs/validmtls_client.crt")))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +189,7 @@ var _ = Describe("Authentication", func() {
 		When("correct xfcc header with invalid CA is supplied", func() {
 			It("should return status code 401", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", "Cert="+MustReadXFCCcert("../../../../test-certs/invalidmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/invalidmtls_client.crt"))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -179,7 +200,7 @@ var _ = Describe("Authentication", func() {
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
 				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Unauthorized","message":"unknown certificate authority(CA)"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Unauthorized","message":"Unauthorized"}`))
 				Expect(nextCalled).To(Equal(0))
 			})
 		})
@@ -187,7 +208,7 @@ var _ = Describe("Authentication", func() {
 		When("correct xfcc header with no CA is supplied", func() {
 			It("should return status code 401", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", "Cert="+MustReadXFCCcert("../../../../test-certs/nosignmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/nosignmtls_client.crt"))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +219,7 @@ var _ = Describe("Authentication", func() {
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
 				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Unauthorized","message":"unknown certificate authority(CA)"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Unauthorized","message":"Unauthorized"}`))
 				Expect(nextCalled).To(Equal(0))
 			})
 		})
@@ -206,7 +227,7 @@ var _ = Describe("Authentication", func() {
 		When("valid cert with wrong app-id is supplied", func() {
 			It("should return status code 403", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", "Cert="+MustReadXFCCcert("../../../../test-certs/validmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/validmtls_client.crt"))
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					nextCalled = nextCalled + 1
@@ -217,7 +238,7 @@ var _ = Describe("Authentication", func() {
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
 				Expect(resp.Code).To(Equal(http.StatusForbidden))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Forbidden","message":"app id in certificate is not valid"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Forbidden","message":"Unauthorized"}`))
 				Expect(nextCalled).To(Equal(0))
 			})
 		})
@@ -225,7 +246,7 @@ var _ = Describe("Authentication", func() {
 		When("expired cert with correct app-id is supplied", func() {
 			It("should return status code 401", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", "Cert="+MustReadXFCCcert("../../../../test-certs/expiredmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/expiredmtls_client.crt"))
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					nextCalled = nextCalled + 1
@@ -246,5 +267,7 @@ var _ = Describe("Authentication", func() {
 func MustReadXFCCcert(fileName string) string {
 	file, err := ioutil.ReadFile(fileName)
 	Expect(err).ShouldNot(HaveOccurred())
-	return string(file)
+	block, _ := pem.Decode(file)
+	Expect(block).ShouldNot(BeNil())
+	return base64.StdEncoding.EncodeToString(block.Bytes)
 }

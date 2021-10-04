@@ -1,13 +1,13 @@
 package auth
 
 import (
+	"autoscaler/db"
 	"autoscaler/metricsforwarder/server/common"
 	"autoscaler/models"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
-
-	"autoscaler/db"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
@@ -34,17 +34,17 @@ func (a *Auth) Authenticate(next http.Handler) http.Handler {
 
 func (a *Auth) AuthenticateHandler(next http.Handler) func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	return func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-		err := a.CheckAuth(w, r, a.metricsForwarderMtlsCACert, vars["appid"])
+		err := a.CheckAuth(r, a.metricsForwarderMtlsCACert, vars["appid"])
 		if err != nil {
-			a.logger.Info("Authentication Failed:", lager.Data{"error": err})
+			a.logger.Info("Authentication Failed:", lager.Data{"error": err.Error()})
 			if errors.Is(err, ErrorAppIDWrong) {
 				handlers.WriteJSONResponse(w, http.StatusForbidden, models.ErrorResponse{
 					Code:    http.StatusText(http.StatusForbidden),
-					Message: err.Error()})
+					Message: "Unauthorized"})
 			} else {
 				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 					Code:    http.StatusText(http.StatusUnauthorized),
-					Message: err.Error()})
+					Message: "Unauthorized"})
 			}
 			return
 		}
@@ -52,17 +52,17 @@ func (a *Auth) AuthenticateHandler(next http.Handler) func(w http.ResponseWriter
 	}
 }
 
-func (a *Auth) CheckAuth(w http.ResponseWriter, r *http.Request, metricsForwarderMtlsCACert string, appID string) error {
+func (a *Auth) CheckAuth(r *http.Request, metricsForwarderMtlsCACert string, appID string) error {
 	var errAuth error
 	isMtlsConfigured := isMtlsConfigured(metricsForwarderMtlsCACert)
 
 	if isMtlsConfigured {
-		errAuth = a.XFCCAuth(w, r, appID)
+		errAuth = a.XFCCAuth(r, appID)
 	}
 	if errors.Is(errAuth, ErrorMTLSHeaderNotFound) || !isMtlsConfigured {
-		errAuth = a.BasicAuth(w, r, appID)
+		a.logger.Info("Trying basic auth", lager.Data{"error": fmt.Sprintf("%+v", errAuth), "isMtlsConfigured": isMtlsConfigured})
+		errAuth = a.BasicAuth(r, appID)
 	}
-
 	return errAuth
 }
 

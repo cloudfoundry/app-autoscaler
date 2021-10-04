@@ -11,9 +11,7 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-func (a *Auth) BasicAuth(w http.ResponseWriter, r *http.Request, appID string) error {
-	w.Header().Set("Content-Type", "application/json")
-
+func (a *Auth) BasicAuth(r *http.Request, appID string) error {
 	username, password, parseOK := r.BasicAuth()
 
 	if !parseOK {
