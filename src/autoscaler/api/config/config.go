@@ -65,7 +65,8 @@ type EventGeneratorConfig struct {
 	TLSClientCerts    models.TLSCerts `yaml:"tls"`
 }
 type MetricsForwarderConfig struct {
-	MetricsForwarderUrl string `yaml:"metrics_forwarder_url"`
+	MetricsForwarderUrl     string `yaml:"metrics_forwarder_url"`
+	MetricsForwarderMtlsUrl string `yaml:"metrics_forwarder_mtls_url"`
 }
 
 type QuotaManagementConfig struct {
