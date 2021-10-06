@@ -154,6 +154,7 @@ event_generator:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_forwarder:
   metrics_forwarder_url: https://localhost:8088
+  metrics_forwarder_mtls_url: https://mtlssdsdds:8084
 
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
@@ -215,7 +216,8 @@ cf:
 				))
 				Expect(conf.MetricsForwarder).To(Equal(
 					MetricsForwarderConfig{
-						MetricsForwarderUrl: "https://localhost:8088",
+						MetricsForwarderUrl:     "https://localhost:8088",
+						MetricsForwarderMtlsUrl: "https://mtlssdsdds:8084",
 					},
 				))
 				Expect(conf.UseBuildInMode).To(BeFalse())

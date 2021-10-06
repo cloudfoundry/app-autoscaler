@@ -816,7 +816,6 @@ var _ = Describe("BrokerHandler", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-
 				verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 			})
 			It("succeeds with 201", func() {
@@ -824,6 +823,25 @@ var _ = Describe("BrokerHandler", func() {
 
 				By("updating the scheduler")
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+			})
+			It("returns the correct binding parameters", func() {
+				creds := &models.CredentialResponse{}
+				responseString := resp.Body.String()
+				err := json.Unmarshal([]byte(responseString), creds)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(creds).To(Equal(
+					&models.CredentialResponse{
+						Credentials: models.Credentials{
+							CustomMetrics: models.CustomMetricsCredentials{
+								Credential: &models.Credential{
+									Username: "fred",
+									Password: "password",
+								},
+								URL:     "someURL",
+								MtlsUrl: "Mtls-someURL",
+							},
+						},
+					}))
 			})
 		})
 

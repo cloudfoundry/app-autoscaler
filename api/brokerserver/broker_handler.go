@@ -552,6 +552,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			CustomMetrics: models.CustomMetricsCredentials{
 				Credential: cred,
 				URL:        h.conf.MetricsForwarder.MetricsForwarderUrl,
+				MtlsUrl:    h.conf.MetricsForwarder.MetricsForwarderMtlsUrl,
 			},
 		},
 	})
