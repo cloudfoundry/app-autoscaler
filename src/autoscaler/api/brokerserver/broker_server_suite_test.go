@@ -119,6 +119,10 @@ var _ = BeforeSuite(func() {
 			SchedulerURL: schedulerServer.URL(),
 		},
 		InfoFilePath: "../exampleconfig/info-file.json",
+		MetricsForwarder: config.MetricsForwarderConfig{
+			MetricsForwarderUrl:     "someURL",
+			MetricsForwarderMtlsUrl: "Mtls-someURL",
+		},
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
