@@ -43,6 +43,14 @@ fmt: importfmt
 	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
+buildtools-force:
+	@echo "# Installing build tools"
+	$(GO) mod download
+	$(GO) get github.com/square/certstrap
+	$(GO) get github.com/onsi/ginkgo/ginkgo
+	$(GO) get github.com/maxbrunsfeld/counterfeiter/v6
+	$(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint
+
 buildtools:
 	@echo "# Installing build tools"
 	@$(GO) mod download
