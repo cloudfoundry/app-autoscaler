@@ -829,19 +829,8 @@ var _ = Describe("BrokerHandler", func() {
 				responseString := resp.Body.String()
 				err := json.Unmarshal([]byte(responseString), creds)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(creds).To(Equal(
-					&models.CredentialResponse{
-						Credentials: models.Credentials{
-							CustomMetrics: models.CustomMetricsCredentials{
-								Credential: &models.Credential{
-									Username: "fred",
-									Password: "password",
-								},
-								URL:     "someURL",
-								MtlsUrl: "Mtls-someURL",
-							},
-						},
-					}))
+				Expect(creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
 			})
 		})
 
