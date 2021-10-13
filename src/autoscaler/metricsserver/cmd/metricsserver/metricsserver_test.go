@@ -66,7 +66,7 @@ var _ = Describe("MetricsServer", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingConfig := cfg
-				missingConfig.Server.Port = 7000 + GinkgoParallelNode()
+				missingConfig.Server.Port = 7000 + GinkgoParallelProcess()
 				missingConfig.Logging.Level = "debug"
 				missingConfig.Collector.EnvelopeChannelSize = 0
 				runner.configPath = writeConfig(&missingConfig).Name()

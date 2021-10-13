@@ -49,7 +49,7 @@ var _ = Describe("MetricForwarder", func() {
 			},
 		}
 		serverConfig := config.ServerConfig{
-			Port: 10000 + GinkgoParallelNode(),
+			Port: 10000 + GinkgoParallelProcess(),
 		}
 
 		loggerConfig := helpers.LoggingConfig{

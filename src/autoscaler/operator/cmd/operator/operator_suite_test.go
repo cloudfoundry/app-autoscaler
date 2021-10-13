@@ -77,7 +77,7 @@ func initConfig() {
 		ClientID: "client-id",
 		Secret:   "secret",
 	}
-	healthport = 8000 + GinkgoParallelNode()
+	healthport = 8000 + GinkgoParallelProcess()
 	cfg.Health.Port = healthport
 	cfg.Logging.Level = "debug"
 	dbURL := os.Getenv("DBURL")

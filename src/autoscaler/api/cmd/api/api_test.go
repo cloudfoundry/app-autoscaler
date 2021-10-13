@@ -76,7 +76,7 @@ var _ = Describe("Api", func() {
 				var brokerCreds []config.BrokerCredentialsConfig
 				missingConfig.BrokerCredentials = brokerCreds
 
-				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelNode()
+				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelProcess()
 				missingConfig.Logging.Level = "debug"
 				runner.configPath = writeConfig(&missingConfig).Name()
 				runner.Start()

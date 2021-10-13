@@ -29,7 +29,7 @@ func TestServer(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	port := 1111 + GinkgoParallelNode()
+	port := 1111 + GinkgoParallelProcess()
 	conf := &config.Config{
 		Server: config.ServerConfig{
 			Port: port,

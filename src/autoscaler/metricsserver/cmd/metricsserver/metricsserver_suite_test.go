@@ -70,8 +70,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	msPath = string(pathsByte)
 
 	testCertDir := "../../../../../test-certs"
-	msPort = 7000 + GinkgoParallelNode()
-	healthport = 8000 + GinkgoParallelNode()
+	msPort = 7000 + GinkgoParallelProcess()
+	healthport = 8000 + GinkgoParallelProcess()
 	cfg.Server.Port = msPort
 
 	cfg.Health.Port = healthport
