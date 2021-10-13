@@ -31,7 +31,7 @@ var (
 var _ = SynchronizedBeforeSuite(func() []byte {
 	return nil
 }, func(_ []byte) {
-	port := 2222 + GinkgoParallelNode()
+	port := 2222 + GinkgoParallelProcess()
 	conf := &config.Config{
 		Server: config.ServerConfig{
 			Port: port,

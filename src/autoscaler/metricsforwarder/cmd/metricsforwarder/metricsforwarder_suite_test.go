@@ -123,8 +123,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Health.HealthCheckUsername = "metricsforwarderhealthcheckuser"
 	cfg.Health.HealthCheckPassword = "metricsforwarderhealthcheckpassword"
 
-	cfg.Server.Port = 10000 + GinkgoParallelNode()
-	healthport = 8000 + GinkgoParallelNode()
+	cfg.Server.Port = 10000 + GinkgoParallelProcess()
+	healthport = 8000 + GinkgoParallelProcess()
 	cfg.Health.Port = healthport
 	cfg.CacheCleanupInterval = 10 * time.Minute
 	cfg.PolicyPollerInterval = 40 * time.Second

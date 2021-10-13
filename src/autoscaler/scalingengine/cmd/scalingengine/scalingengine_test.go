@@ -129,7 +129,7 @@ var _ = Describe("Main", func() {
 					API: ccUAA.URL(),
 				}
 
-				missingParamConf.Server.Port = 7000 + GinkgoParallelNode()
+				missingParamConf.Server.Port = 7000 + GinkgoParallelProcess()
 				missingParamConf.Logging.Level = "debug"
 
 				cfg := writeConfig(&missingParamConf)

@@ -188,8 +188,8 @@ func initHttpEndPoints() {
 func initConfig() {
 	testCertDir := "../../../../../test-certs"
 
-	egPort = 7000 + GinkgoParallelNode()
-	healthport = 8000 + GinkgoParallelNode()
+	egPort = 7000 + GinkgoParallelProcess()
+	healthport = 8000 + GinkgoParallelProcess()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "debug",

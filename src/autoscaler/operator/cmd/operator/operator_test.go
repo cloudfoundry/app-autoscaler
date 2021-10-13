@@ -134,7 +134,7 @@ var _ = Describe("Operator", func() {
 				secondRunner.startCheck = ""
 				cfg.Health.HealthCheckUsername = ""
 				cfg.Health.HealthCheckPassword = ""
-				cfg.Health.Port = 9000 + GinkgoParallelNode()
+				cfg.Health.Port = 9000 + GinkgoParallelProcess()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.Start()
 
@@ -167,7 +167,7 @@ var _ = Describe("Operator", func() {
 
 				cfg.Health.HealthCheckUsername = ""
 				cfg.Health.HealthCheckPassword = ""
-				cfg.Health.Port = 9000 + GinkgoParallelNode()
+				cfg.Health.Port = 9000 + GinkgoParallelProcess()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.Start()
 			})
@@ -209,7 +209,7 @@ var _ = Describe("Operator", func() {
 				runner.Start()
 				Eventually(runner.Session.Buffer, 10*time.Second).Should(Say("operator.started"))
 				secondRunner = NewOperatorRunner()
-				cfg.Health.Port = 9000 + GinkgoParallelNode()
+				cfg.Health.Port = 9000 + GinkgoParallelProcess()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.startCheck = ""
 				secondRunner.Start()

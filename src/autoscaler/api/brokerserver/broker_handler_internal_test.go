@@ -26,7 +26,7 @@ var (
 	conf                  *config.Config
 	schedulerServer       = ghttp.NewServer()
 	quotaServer           = ghttp.NewServer()
-	port                  = 10000 + GinkgoParallelNode()
+	port                  = 10000 + GinkgoParallelProcess()
 	testBindingId         = "a-binding-id"
 	testServiceInstanceId = "a-service-instance-id"
 	testAppId             = "an-app-id"

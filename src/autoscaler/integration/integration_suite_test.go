@@ -174,14 +174,14 @@ func CompileTestedExecutables() Executables {
 
 func PreparePorts() Ports {
 	return Ports{
-		GolangAPIServer:     22000 + GinkgoParallelNode(),
-		GolangServiceBroker: 23000 + GinkgoParallelNode(),
-		Scheduler:           15000 + GinkgoParallelNode(),
-		MetricsCollector:    16000 + GinkgoParallelNode(),
-		MetricsServerHTTP:   20000 + GinkgoParallelNode(),
-		MetricsServerWS:     21000 + GinkgoParallelNode(),
-		EventGenerator:      17000 + GinkgoParallelNode(),
-		ScalingEngine:       18000 + GinkgoParallelNode(),
+		GolangAPIServer:     22000 + GinkgoParallelProcess(),
+		GolangServiceBroker: 23000 + GinkgoParallelProcess(),
+		Scheduler:           15000 + GinkgoParallelProcess(),
+		MetricsCollector:    16000 + GinkgoParallelProcess(),
+		MetricsServerHTTP:   20000 + GinkgoParallelProcess(),
+		MetricsServerWS:     21000 + GinkgoParallelProcess(),
+		EventGenerator:      17000 + GinkgoParallelProcess(),
+		ScalingEngine:       18000 + GinkgoParallelProcess(),
 	}
 }
 

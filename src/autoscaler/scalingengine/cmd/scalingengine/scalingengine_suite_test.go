@@ -61,7 +61,7 @@ var _ = SynchronizedBeforeSuite(
 
 		ccUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-		appId = fmt.Sprintf("%s-%d", "app-id", GinkgoParallelNode())
+		appId = fmt.Sprintf("%s-%d", "app-id", GinkgoParallelProcess())
 		appState := models.AppStatusStarted
 		ccUAA.RouteToHandler("GET", "/v2/apps/"+appId+"/summary", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			models.AppEntity{Instances: 2, State: &appState}))
@@ -73,8 +73,8 @@ var _ = SynchronizedBeforeSuite(
 			Secret:   "autoscaler_client_secret",
 		}
 
-		port = 7000 + GinkgoParallelNode()
-		healthport = 8000 + GinkgoParallelNode()
+		port = 7000 + GinkgoParallelProcess()
+		healthport = 8000 + GinkgoParallelProcess()
 		testCertDir := "../../../../../test-certs"
 
 		verifyCertExistence(testCertDir)
