@@ -99,9 +99,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	apPath = string(pathsByte)
 
-	brokerPort = 8000 + GinkgoParallelNode()
-	publicApiPort = 9000 + GinkgoParallelNode()
-	healthport = 7000 + GinkgoParallelNode()
+	brokerPort = 8000 + GinkgoParallelProcess()
+	publicApiPort = 9000 + GinkgoParallelProcess()
+	healthport = 7000 + GinkgoParallelProcess()
 	testCertDir := "../../../../../test-certs"
 
 	cfg.BrokerServer = config.ServerConfig{

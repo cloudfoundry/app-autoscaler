@@ -76,7 +76,7 @@ var _ = BeforeSuite(func() {
 	quotaServer = ghttp.NewServer()
 	servers = append(servers, quotaServer)
 
-	port := 10000 + GinkgoParallelNode()
+	port := 10000 + GinkgoParallelProcess()
 	brokerCred1 := config.BrokerCredentialsConfig{
 		BrokerUsername:     "broker_username",
 		BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'

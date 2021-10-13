@@ -134,7 +134,7 @@ func initDB() {
 }
 
 func initConfig() {
-	healthport = 8000 + GinkgoParallelNode()
+	healthport = 8000 + GinkgoParallelProcess()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "info",

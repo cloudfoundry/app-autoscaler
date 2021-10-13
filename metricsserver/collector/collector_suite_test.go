@@ -38,7 +38,7 @@ func TestCollector(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 
-	port := 1111 + GinkgoParallelNode()
+	port := 1111 + GinkgoParallelProcess()
 	serverConf := &config.ServerConfig{
 		Port: port,
 	}

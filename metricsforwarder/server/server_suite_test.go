@@ -59,7 +59,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	}
 	serverConfig := config.ServerConfig{
-		Port: 2222 + GinkgoParallelNode(),
+		Port: 2222 + GinkgoParallelProcess(),
 	}
 
 	loggerConfig := helpers.LoggingConfig{
