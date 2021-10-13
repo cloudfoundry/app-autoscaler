@@ -28,8 +28,14 @@ mv -f ${depot_path}/loggregatorCA.key ${depot_path}/loggregator-ca.key
 
 # CA for local testing mTLS certs
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name validMTLSLocalCA --years "20"
-mv -f ${depot_path}/validMTLSLocalCA.crt ${depot_path}/valid-mtls-local-ca.crt
-mv -f ${depot_path}/validMTLSLocalCA.key ${depot_path}/valid-mtls-local-ca.key
+mv -f ${depot_path}/validMTLSLocalCA.crt ${depot_path}/valid-mtls-local-ca-1.crt
+mv -f ${depot_path}/validMTLSLocalCA.key ${depot_path}/valid-mtls-local-ca-1.key
+rm -f ${depot_path}/validMTLSLocalCA.crl
+certstrap --depot-path ${depot_path} init --passphrase '' --common-name validMTLSLocalCA --years "20"
+mv -f ${depot_path}/validMTLSLocalCA.crt ${depot_path}/valid-mtls-local-ca-2.crt
+mv -f ${depot_path}/validMTLSLocalCA.key ${depot_path}/valid-mtls-local-ca-2.key
+cat ${depot_path}/valid-mtls-local-ca-1.crt > ${depot_path}/valid-mtls-local-ca-combined.crt
+cat ${depot_path}/valid-mtls-local-ca-2.crt >> ${depot_path}/valid-mtls-local-ca-combined.crt
 
 # CA for local testing mTLS certs (another CA for validating verification)
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name invalidMTLSLocalCA --years "20"
@@ -102,8 +108,10 @@ if [[ "$OPENSSL_VERSION" == LibreSSL* ]]; then
 fi
 # valid certificate
 echo ${depot_path}
-openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out ${depot_path}/validmtls_client.csr
-openssl x509 -req -in "${depot_path}"/validmtls_client.csr -CA "${depot_path}"/valid-mtls-local-ca.crt -CAkey "${depot_path}"/valid-mtls-local-ca.key -CAcreateserial -out "${depot_path}"/validmtls_client.crt -days 365 -sha256
+openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out ${depot_path}/validmtls_client-1.csr
+openssl x509 -req -in "${depot_path}"/validmtls_client-1.csr -CA "${depot_path}"/valid-mtls-local-ca-1.crt -CAkey "${depot_path}"/valid-mtls-local-ca-1.key -CAcreateserial -out "${depot_path}"/validmtls_client-1.crt -days 365 -sha256
+openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out ${depot_path}/validmtls_client-2.csr
+openssl x509 -req -in "${depot_path}"/validmtls_client-2.csr -CA "${depot_path}"/valid-mtls-local-ca-2.crt -CAkey "${depot_path}"/valid-mtls-local-ca-2.key -CAcreateserial -out "${depot_path}"/validmtls_client-2.crt -days 365 -sha256
 
 ## invalid certificate ( with invalid CA)
 openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out "${depot_path}"/invalidmtls_client.csr
@@ -114,7 +122,7 @@ openssl  req -x509 -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=
 #
 ## expired certificate
 openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out "${depot_path}"/expiredmtls_client.csr
-openssl x509 -req -in "${depot_path}"/expiredmtls_client.csr -CA "${depot_path}"/valid-mtls-local-ca.crt -CAkey "${depot_path}"/valid-mtls-local-ca.key -CAcreateserial -out "${depot_path}"/expiredmtls_client.crt -days 0 -sha256
+openssl x509 -req -in "${depot_path}"/expiredmtls_client.csr -CA "${depot_path}"/valid-mtls-local-ca-1.crt -CAkey "${depot_path}"/valid-mtls-local-ca-1.key -CAcreateserial -out "${depot_path}"/expiredmtls_client.crt -days 0 -sha256
 
 # remove the generated key
 rm privkey.pem

@@ -45,7 +45,7 @@ var _ = Describe("Authentication", func() {
 		resp = httptest.NewRecorder()
 		metricsForwarderMtlsConfig = config.MetricsForwarderConfig{
 			TLS: models.TLSCerts{
-				CACertFile: path.Join("..", "..", "..", "..", "test-certs", "valid-mtls-local-ca.crt"),
+				CACertFile: path.Join("..", "..", "..", "..", "test-certs", "valid-mtls-local-ca-combined.crt"),
 			}}
 		authTest = auth.New(logger, policyDB, credentialCache, 10*time.Minute, metricsForwarderMtlsConfig.TLS.CACertFile)
 		credentialCache.Flush()
@@ -150,10 +150,11 @@ var _ = Describe("Authentication", func() {
 	})
 
 	Describe("MTLS Auth tests for publish metrics endpoint", func() {
-		When("correct xfcc header with correct CA is supplied", func() {
+		const validClientCert1 = "../../../../test-certs/validmtls_client-1.crt"
+		When("correct xfcc header with correct CA is supplied for cert 1", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/validmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -168,10 +169,29 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		Context("correct xfcc header including \"'s around the cert", func() {
+		When("correct xfcc header with correct CA is supplied for cert 2", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", fmt.Sprintf("%q", MustReadXFCCcert("../../../../test-certs/validmtls_client.crt")))
+				const validClientCert2 = "../../../../test-certs/validmtls_client-2.crt"
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
+				vars["appid"] = "an-app-id"
+				nextCalled := 0
+				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					nextCalled = nextCalled + 1
+				})
+
+				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
+
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(nextCalled).To(Equal(1))
+			})
+		})
+
+		When("correct xfcc header including \"'s around the cert", func() {
+			It("should call next handler", func() {
+				req = CreateRequest(body)
+				req.Header.Add("X-Forwarded-Client-Cert", fmt.Sprintf("%q", MustReadXFCCcert(validClientCert1)))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -227,7 +247,7 @@ var _ = Describe("Authentication", func() {
 		When("valid cert with wrong app-id is supplied", func() {
 			It("should return status code 403", func() {
 				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/validmtls_client.crt"))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					nextCalled = nextCalled + 1

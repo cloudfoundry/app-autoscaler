@@ -52,21 +52,27 @@ func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
 	}
 
 	//TODO consider caching this in mem
-	ca, err := a.LoadCACert()
+	certificates, err := a.LoadCACerts()
 	if err != nil {
 		return fmt.Errorf("loading cert failed: %w", err)
 	}
 
-	_, err = a.IsCertificateAuthorityValid(cert, ca)
+	if len(certificates) == 0 {
+		return fmt.Errorf("did not find any certifcate authorities")
+	}
+
+	_, err = a.IsCertificateAuthorityValid(cert, certificates)
 	if err != nil {
 		return fmt.Errorf("cert CA check failed: %w", err)
 	}
 	return nil
 }
 
-func (a *Auth) IsCertificateAuthorityValid(cert, ca *x509.Certificate) (bool, error) {
+func (a *Auth) IsCertificateAuthorityValid(cert *x509.Certificate, certificates []*x509.Certificate) (bool, error) {
 	roots := x509.NewCertPool()
-	roots.AddCert(ca)
+	for _, ca := range certificates {
+		roots.AddCert(ca)
+	}
 	opts := x509.VerifyOptions{
 		Roots: roots,
 	}
@@ -75,21 +81,29 @@ func (a *Auth) IsCertificateAuthorityValid(cert, ca *x509.Certificate) (bool, er
 	return true, err
 }
 
-func (a *Auth) LoadCACert() (*x509.Certificate, error) {
+func (a *Auth) LoadCACerts() ([]*x509.Certificate, error) {
 	file, err := ioutil.ReadFile(a.metricsForwarderMtlsCACert)
 	if err != nil {
 		return nil, fmt.Errorf("could not load mtls cert %s: %w", a.metricsForwarderMtlsCACert, err)
 	}
 
-	block, _ := pem.Decode(file)
-	if block == nil {
-		return nil, fmt.Errorf("failed to decode local mtls cert: %w", ErrorDecodingFailed)
+	rest := file
+	var certificates []*x509.Certificate
+
+	for len(rest) > 0 {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			return nil, fmt.Errorf("failed to decode local mtls cert: %w", ErrorDecodingFailed)
+		}
+
+		ca, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse local mtls cert: %w", err)
+		}
+
+		certificates = append(certificates, ca)
 	}
 
-	ca, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse local mtls cert: %w", err)
-	}
-
-	return ca, nil
+	return certificates, nil
 }
