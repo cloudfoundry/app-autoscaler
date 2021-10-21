@@ -34,8 +34,14 @@ rm -f ${depot_path}/validMTLSLocalCA.crl
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name validMTLSLocalCA --years "20"
 mv -f ${depot_path}/validMTLSLocalCA.crt ${depot_path}/valid-mtls-local-ca-2.crt
 mv -f ${depot_path}/validMTLSLocalCA.key ${depot_path}/valid-mtls-local-ca-2.key
-cat ${depot_path}/valid-mtls-local-ca-1.crt > ${depot_path}/valid-mtls-local-ca-combined.crt
-cat ${depot_path}/valid-mtls-local-ca-2.crt >> ${depot_path}/valid-mtls-local-ca-combined.crt
+
+#The \n\n is to enable testing of extra white space in the multiple pem cert files
+{ printf "\n\n"; \
+  cat "${depot_path}/valid-mtls-local-ca-1.crt";\
+  printf "\t\n\n" ; \
+  cat "${depot_path}/valid-mtls-local-ca-2.crt";\
+  printf "\n  \n"; } > "${depot_path}/valid-mtls-local-ca-combined.crt"
+
 
 # CA for local testing mTLS certs (another CA for validating verification)
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name invalidMTLSLocalCA --years "20"

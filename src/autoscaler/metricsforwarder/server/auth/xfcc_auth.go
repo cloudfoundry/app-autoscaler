@@ -12,7 +12,6 @@ import (
 )
 
 var ErrorMTLSHeaderNotFound = errors.New("mTLS authentication method not found")
-var ErrorDecodingFailed = errors.New("certificate decoding in XFCC header failed")
 var ErrorNoAppIDFound = errors.New("certificate does not contain an app id")
 var ErrorAppIDWrong = errors.New("app id in certificate is not valid")
 
@@ -87,14 +86,17 @@ func (a *Auth) LoadCACerts() ([]*x509.Certificate, error) {
 		return nil, fmt.Errorf("could not load mtls cert %s: %w", a.metricsForwarderMtlsCACert, err)
 	}
 
-	rest := file
-	var certificates []*x509.Certificate
+	return decodePems(file)
+}
 
+func decodePems(file []byte) ([]*x509.Certificate, error) {
+	var certificates []*x509.Certificate
+	rest := file
 	for len(rest) > 0 {
 		var block *pem.Block
 		block, rest = pem.Decode(rest)
 		if block == nil {
-			return nil, fmt.Errorf("failed to decode local mtls cert: %w", ErrorDecodingFailed)
+			break
 		}
 
 		ca, err := x509.ParseCertificate(block.Bytes)
@@ -104,6 +106,5 @@ func (a *Auth) LoadCACerts() ([]*x509.Certificate, error) {
 
 		certificates = append(certificates, ca)
 	}
-
 	return certificates, nil
 }
