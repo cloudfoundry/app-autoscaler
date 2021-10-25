@@ -41,7 +41,8 @@ func (c *cfClient) GetServiceInstancesInOrg(orgGUID, brokerServicePlanGuid strin
 		c.logger.Error("get-service-instances-new-request", err)
 		return 0, fmt.Errorf("cf-client-get-service-instances-in-org: failed to create request to CF API: %w", err)
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokens().AccessToken)
+	tokens, _ := c.GetTokens()
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
@@ -124,7 +125,8 @@ func (c *cfClient) getCCServicePlanGuid(brokerPlanGuid string) (string, error) {
 		logger.Error("new-request", err)
 		return "", fmt.Errorf("cf-client-get-service-plan-guid: failed to create request to CF API: %w", err)
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokens().AccessToken)
+	tokens, _ := c.GetTokens()
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
@@ -185,7 +187,9 @@ func (c *cfClient) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 		logger.Error("new-request", err)
 		return "", fmt.Errorf("cf-client-get-broker-plan-guid: failed to create request to CF API: %w", err)
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokens().AccessToken)
+
+	tokens, _ := c.GetTokens()
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
@@ -240,7 +244,9 @@ func (c *cfClient) GetServicePlan(serviceInstanceGuid string) (string, error) {
 		logger.Error("new-request", err)
 		return "", fmt.Errorf("cf-client-get-service-plan: failed to create request to CF API: %w", err)
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokens().AccessToken)
+
+	tokens, _ := c.GetTokens()
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
