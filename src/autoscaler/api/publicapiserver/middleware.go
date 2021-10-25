@@ -142,12 +142,6 @@ func (mw *Middleware) isValidUserToken(userToken string) bool {
 	return true
 }
 
-func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	handlers.WriteJSONResponse(w, statusCode, models.ErrorResponse{
-		Code:    http.StatusText(statusCode),
-		Message: message})
-}
-
 func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if mw.clientId == "" {
