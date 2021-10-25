@@ -100,7 +100,6 @@ type Config struct {
 	APIClientId          string                    `yaml:"api_client_id"`
 	QuotaManagement      *QuotaManagementConfig    `yaml:"quota_management"`
 	PlanCheck            *PlanCheckConfig          `yaml:"plan_check"`
-	APIClientId          string                 `yaml:"api_client_id"`
 	CatalogPath          string                    `yaml:"catalog_path"`
 	CatalogSchemaPath    string                    `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                    `yaml:"dashboard_redirect_uri"`
