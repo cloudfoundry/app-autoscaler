@@ -12,21 +12,6 @@ import (
 )
 
 var _ = Describe("PlanCheck", func() {
-
-	const (
-		testDefaultPolicy = `
-						{
-							"instance_min_count":1,
-							"instance_max_count":5,
-							"scaling_rules":[
-							{
-								"metric_type":"memoryused",
-								"threshold":30,
-								"operator":"<",
-								"adjustment":"-1"
-							}]
-						}`
-	)
 	var (
 		quotaConfig      *config.PlanCheckConfig
 		validationResult string
