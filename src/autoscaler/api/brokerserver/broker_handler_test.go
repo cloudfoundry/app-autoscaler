@@ -30,8 +30,8 @@ import (
 var _ = Describe("BrokerHandler", func() {
 	var (
 		fakecfClient *fakes.FakeCFClient
-		bindingdb *fakes.FakeBindingDB
-		policydb  *fakes.FakePolicyDB
+		bindingdb    *fakes.FakeBindingDB
+		policydb     *fakes.FakePolicyDB
 
 		handler *BrokerHandler
 		resp    *httptest.ResponseRecorder

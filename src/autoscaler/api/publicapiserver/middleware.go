@@ -156,7 +156,7 @@ func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 		}
 		isTokenAuthorized, err := mw.cfClient.IsTokenAuthorized(clientToken, mw.clientId)
 		if err != nil {
-			if err == cf.ErrUnauthrorized {
+			if errors.Is(err, cf.ErrUnauthrorized) {
 				writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
 				return
 			} else {
@@ -164,7 +164,6 @@ func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 				writeErrorResponse(w, http.StatusInternalServerError, "failed to check if token is authorized")
 				return
 			}
-
 		}
 		if isTokenAuthorized {
 			next.ServeHTTP(w, r)
@@ -172,6 +171,5 @@ func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 		}
 
 		writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
-		return
 	})
 }

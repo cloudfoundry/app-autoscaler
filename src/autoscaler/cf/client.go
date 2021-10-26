@@ -248,7 +248,7 @@ func (c *cfClient) IsTokenAuthorized(token, clientId string) (bool, error) {
 		return false, err
 	}
 
-	if introspectionResponse.Active == true && introspectionResponse.ClientId == clientId {
+	if introspectionResponse.Active && introspectionResponse.ClientId == clientId {
 		return true, nil
 	}
 

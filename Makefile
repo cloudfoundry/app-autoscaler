@@ -137,3 +137,7 @@ build: init init-db test-certs scheduler autoscaler
 .PHONY: integration
 integration: build
 	make -C src/autoscaler integration DBURL="${DBURL}"
+
+.PHONY: lint
+lint:
+	@make -C src/autoscaler lint
