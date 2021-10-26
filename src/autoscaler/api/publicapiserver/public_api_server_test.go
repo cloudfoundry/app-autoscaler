@@ -525,11 +525,11 @@ var _ = Describe("PublicApiServer", func() {
 			Context("when calling attach policy endpoint", func() {
 				BeforeEach(func() {
 					schedulerStatus = http.StatusOK
-
 				})
+
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
 				})
 
 			})
