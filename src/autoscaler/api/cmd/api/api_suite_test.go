@@ -213,9 +213,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "servicebroker.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	brokerHttpClient = &http.Client{Transport:helpers.NewTransport( brokerClientTLSConfig)}
-	healthHttpClient = &http.Client{Transport:helpers.NewTransport( nil)}
-
+	brokerHttpClient = &http.Client{Transport: helpers.NewTransport(brokerClientTLSConfig)}
+	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 })
 
 var _ = SynchronizedAfterSuite(func() {

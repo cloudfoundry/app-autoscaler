@@ -147,7 +147,7 @@ func initDB() {
 
 	err = egDB.Close()
 	Expect(err).NotTo(HaveOccurred())
-	healthHttpClient =  &http.Client{Transport: helpers.NewTransport(nil)}
+	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 }
 
 func initHttpEndPoints() {

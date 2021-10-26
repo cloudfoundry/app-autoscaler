@@ -36,7 +36,7 @@ func NewTransport(tlsConfig *tls.Config) *http.Transport {
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		TLSClientConfig: tlsConfig,
+		TLSClientConfig:       tlsConfig,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100000,
 		MaxIdleConnsPerHost:   100000,

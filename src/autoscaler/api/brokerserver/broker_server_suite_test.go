@@ -136,7 +136,7 @@ var _ = BeforeSuite(func() {
 
 	serverProcess = ginkgomon.Invoke(httpServer)
 
-	httpClient = &http.Client{ Transport: helpers.NewTransport(nil)}
+	httpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
