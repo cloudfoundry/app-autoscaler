@@ -58,19 +58,19 @@ var _ = Describe("PlanCheck", func() {
 							PlanCheckEnabled:  false,
 							SchedulesCount:    0,
 							ScalingRulesCount: 0,
-							PlanUpdateable: true,
+							PlanUpdateable:    true,
 						},
 						"small-plan-id": {
 							PlanCheckEnabled:  true,
 							SchedulesCount:    1,
 							ScalingRulesCount: 1,
-							PlanUpdateable: false,
+							PlanUpdateable:    false,
 						},
 						"large-plan-id": {
 							PlanCheckEnabled:  true,
 							SchedulesCount:    10,
 							ScalingRulesCount: 10,
-							PlanUpdateable: false,
+							PlanUpdateable:    false,
 						},
 					},
 				}
@@ -179,17 +179,17 @@ var _ = Describe("PlanCheck", func() {
 					}
 				})
 				It("is plan updatable", func() {
-					isPlanUpdatable, err:=qmc.IsPlanUpdatable("updatable-plan")
+					isPlanUpdatable, err := qmc.IsPlanUpdatable("updatable-plan")
 					Expect(isPlanUpdatable).To(Equal(true))
 					Expect(err).To(BeNil())
 				})
 				It("is plan not updatable", func() {
-					isPlanUpdatable, err:=qmc.IsPlanUpdatable("non-updatable-plan")
+					isPlanUpdatable, err := qmc.IsPlanUpdatable("non-updatable-plan")
 					Expect(isPlanUpdatable).To(Equal(false))
 					Expect(err).To(BeNil())
 				})
 				It("if plan does not exist", func() {
-					isPlanUpdatable, err:=qmc.IsPlanUpdatable("non-existent-plan")
+					isPlanUpdatable, err := qmc.IsPlanUpdatable("non-existent-plan")
 					Expect(isPlanUpdatable).To(Equal(false))
 					Expect(err.Error()).To(Equal("unknown plan id \"non-existent-plan\""))
 				})

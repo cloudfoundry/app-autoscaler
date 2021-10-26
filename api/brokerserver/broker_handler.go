@@ -210,12 +210,12 @@ func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreati
 	}
 	quota, err := h.quotaManagementClient.GetQuota(creationRequestBody.OrgGUID, serviceName, planName)
 	if err != nil {
-		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID	, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": creationRequestBody.ServiceID, "planName": planName})
+		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": creationRequestBody.ServiceID, "planName": planName})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available quota. Try again later.")
 		return true
 	}
 	if quota == 0 {
-		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID	, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": creationRequestBody.ServiceID, "planName": planName})
+		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": creationRequestBody.ServiceID, "planName": planName})
 		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("No quota for this service (%s) or service plan (%s) has been assigned to your org. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your subaccount.", serviceName, planName))
 		return true
 	}
@@ -267,7 +267,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	// validate service instance here
 	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
 	if err != nil {
-		if err == db.ErrDoesNotExist {
+		if errors.Is(err, db.ErrDoesNotExist) {
 			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
 			writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
 			return
@@ -386,7 +386,6 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				return
 			}
 		}
-
 	}
 
 	updatedServiceInstance := models.ServiceInstance{

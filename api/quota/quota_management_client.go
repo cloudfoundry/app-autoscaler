@@ -17,10 +17,10 @@ import (
 )
 
 type Client struct {
-	client *http.Client
+	client   *http.Client
 	cfClient cf.CFClient
-	conf   *config.Config
-	logger lager.Logger
+	conf     *config.Config
+	logger   lager.Logger
 }
 
 func NewClient(config *config.Config, logger lager.Logger, cfClient cf.CFClient) *Client {
