@@ -147,7 +147,7 @@ func initDB() {
 
 	err = egDB.Close()
 	Expect(err).NotTo(HaveOccurred())
-	healthHttpClient = &http.Client{}
+	healthHttpClient =  &http.Client{Transport: helpers.NewTransport(nil)}
 }
 
 func initHttpEndPoints() {
@@ -269,11 +269,7 @@ func initConfig() {
 		filepath.Join(testCertDir, "api.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
+	httpClient = &http.Client{Transport: helpers.NewTransport(tlsConfig)}
 }
 
 func writeConfig(c *config.Config) *os.File {

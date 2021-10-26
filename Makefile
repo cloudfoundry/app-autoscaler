@@ -137,3 +137,7 @@ build: init init-db test-certs scheduler autoscaler
 .PHONY: integration
 integration: build
 	make -C src/autoscaler integration DBURL="${DBURL}"
+
+.PHONY: testsuite
+testsuite: check-db_type init init-db test-certs
+	make -C src/autoscaler testsuite TEST=${TEST} DBURL="${DBURL}"

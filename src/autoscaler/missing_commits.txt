@@ -1,0 +1,1297 @@
+* 9ad3530c - (HEAD -> main, origin/main, origin/HEAD) Fix for white space between Pem files. (5 days ago)
+* 95416779 - Remove ginkgo deprecation warnings in preparation for 2.0 (13 days ago)
+* 091cd2fd - go mod tidy (13 days ago)
+* f7bb7178 - Handle mulitple certificates during rotation for MTLS (13 days ago)
+* 1a508a1a - Add a buildtools-force target (13 days ago)
+* 84bd9c65 - Assertion changes due to generated creds (13 days ago)
+* b5b412ab - go mod tidy (13 days ago)
+* 767fdb0e - add mtls routes to the vcap information. (13 days ago)
+* a90e4a2b - Adding integration fixes for mtls auth. (13 days ago)
+*   82db0123 - Merge pull request #744 from cloudfoundry/dependabot/maven/org.projectlombok-lombok-1.18.22 (2 weeks ago)
+|\  
+| * 5d92bb12 - Bump lombok from 1.18.20 to 1.18.22 (2 weeks ago)
+|/  
+* 1c5ab854 - Bump java from 16 to 17 (#739) (2 weeks ago)
+*   57cb252d - Merge pull request #742 from cloudfoundry/dependabot/maven/com.puppycrawl.tools-checkstyle-9.0.1 (3 weeks ago)
+|\  
+| * 98c36b41 - Bump checkstyle from 9.0 to 9.0.1 (3 weeks ago)
+|/  
+*   bfb0b4c7 - Merge pull request #736 from cloudfoundry/dependabot/maven/org.postgresql-postgresql-42.2.24 (4 weeks ago)
+|\  
+| * 01bd0f89 - Bump postgresql from 42.2.23 to 42.2.24 (4 weeks ago)
+* |   b2003c68 - Merge pull request #737 from cloudfoundry/dependabot/maven/org.springframework.boot-spring-boot-starter-parent-2.5.5 (4 weeks ago)
+|\ \  
+| * | f8b34b44 - Bump spring-boot-starter-parent from 2.5.4 to 2.5.5 (4 weeks ago)
+| |/  
+* |   2316fa6a - Merge pull request #738 from cloudfoundry/dependabot/go_modules/src/autoscaler/google.golang.org/grpc-1.41.0 (4 weeks ago)
+|\ \  
+| |/  
+|/|   
+| * 700a0793 - Bump google.golang.org/grpc from 1.40.0 to 1.41.0 in /src/autoscaler (4 weeks ago)
+|/  
+*   40a7776a - Merge pull request #733 from garethjevans/handle-orphan-binding2 (5 weeks ago)
+|\  
+| * b4edd067 - Add custom error and handling in case of failed credentials deletion. (5 weeks ago)
+| * 9a640a1c - Fixed test after merge (5 weeks ago)
+| * ac77e549 - Handle orphaned bindings - attempt 2 (5 weeks ago)
+| * c757d8f1 - error types introduced (5 weeks ago)
+| * c0d07ac8 - delete bindings before service instance deletion (5 weeks ago)
+|/  
+*   fcef5b88 - Merge pull request #732 from garethjevans/plan-check (5 weeks ago)
+|\  
+| * eb0daf31 - Fixed race condition in test (5 weeks ago)
+| * d214c161 - Use labels on struct creation (5 weeks ago)
+| * ed3e1698 - Re-implement plan check in golang service broker (5 weeks ago)
+|/  
+*   4329247d - Merge pull request #729 from cloudfoundry/dependabot/go_modules/src/autoscaler/github.com/blend/go-sdk-1.20210918.2 (5 weeks ago)
+|\  
+| * 7cd534c6 - Bump github.com/blend/go-sdk in /src/autoscaler (5 weeks ago)
+* |   da4064f6 - Merge pull request #731 from cloudfoundry/multiple-broker-credentials (5 weeks ago)
+|\ \  
+| * | 25f01790 - fix linter issues (5 weeks ago)
+| * | 6b69d347 - support multiple broker credentials for credentials rotation (5 weeks ago)
+| * | 986be885 - fix linting errors (5 weeks ago)
+| * | ac47886c - Add health endpoint to service broker (5 weeks ago)
+| |/  
+* / 7b4e2af3 - Add health endpoint to service broker (#730) (5 weeks ago)
+|/  
+*   d7d95be3 - Merge pull request #726 from garethjevans/temurin (6 weeks ago)
+|\  
+| * c4c48ebe - Also build with JDK 16 in preparation for 17 LTS (6 weeks ago)
+| * fc94ca1d - Switch to temurin as the java dist (6 weeks ago)
+* |   9f174886 - Merge pull request #723 from garethjevans/envrc (6 weeks ago)
+|\ \  
+| * | 988739f9 - Experimental .envrc file to configure golang asdf path (6 weeks ago)
+| |/  
+* |   f2497061 - Merge pull request #724 from garethjevans/defer (6 weeks ago)
+|\ \  
+| * | 1ba9cbeb - gofmt (6 weeks ago)
+| * | 0520a861 - Ensure defer is called before rows.Next() (6 weeks ago)
+| |/  
+* |   09f2e42d - Merge pull request #713 from cloudfoundry/quota-api (6 weeks ago)
+|\ \  
+| * | d866f76d - Adds Quota Api support (6 weeks ago)
+* | |   5d4e4add - Merge pull request #722 from garethjevans/touch (6 weeks ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * | e8b4c0dd - Only touch files in the target folder (6 weeks ago)
+| |/  
+* |   a340adbb - Merge pull request #696 from cloudfoundry/mtls (6 weeks ago)
+|\ \  
+| * \   7fe74770 - Merge branch 'main' into mtls (6 weeks ago)
+| |\ \  
+| * | | f66c767c - Enabling custum metrics handler to autheticate clients by mTLS (6 weeks ago)
+* | | |   36d7412f - Merge pull request #725 from asalan316/fix-make-syntax-error (6 weeks ago)
+|\ \ \ \  
+| |_|_|/  
+|/| | |   
+| * | | f9a5b5d0 - fix syntax error in make file (6 weeks ago)
+|/ / /  
+* | |   55656ce4 - Merge pull request #720 from garethjevans/fix-tool-versions (6 weeks ago)
+|\ \ \  
+| |_|/  
+|/| |   
+| * | 05cebe21 - Use jdk rather than jre in tool-versions (6 weeks ago)
+|/ /  
+* |   5dbd828b - Merge pull request #718 from garethjevans/interal (6 weeks ago)
+|\ \  
+| * | 21d1c29a - Corrected spelling of Interal -> Internal (6 weeks ago)
+| |/  
+* |   1b6effd3 - Merge pull request #715 from garethjevans/tool-versions (6 weeks ago)
+|\ \  
+| * | 821c5a82 - Adding a .tool-versions to control developer versions (6 weeks ago)
+| |/  
+* |   aa0e99a2 - Merge pull request #716 from garethjevans/coverage (6 weeks ago)
+|\ \  
+| * | c239bcf7 - Display coverage when running golang unit tests (6 weeks ago)
+| |/  
+* / c2650547 - fix for the docker name being a regex. (#717) (6 weeks ago)
+|/  
+*   ff8f976b - Merge pull request #714 from garethjevans/gha-updates (7 weeks ago)
+|\  
+| * 9ced5a13 - Cleanup for service_instance tables (7 weeks ago)
+| * e4fd1edf - Updates to allow GitHub actions to run locally (7 weeks ago)
+|/  
+* 4014aaac - Feature: Creating a main makefile to encapsulate common build actions. (#688) (7 weeks ago)
+*   57e8ee77 - Merge pull request #535 from silvestre/add-default-policy (7 weeks ago)
+|\  
+| * db6283e9 - (silvertre/add-default-policy, add-default-policy) Fix up the ID clash if the tests run quickly (7 weeks ago)
+| * 21aa8bfa - Fix up the ID clash if the tests run quickly (7 weeks ago)
+| * 14ee9676 - fix up the github ci pipeline locations (7 weeks ago)
+| * 7c0682ef - fixup of the yaml files (7 weeks ago)
+| * dff94d62 - pass all postgress and mysql unit tests (7 weeks ago)
+| * 71bec9bb - added fixes to the init file (7 weeks ago)
+| * fa37294e - re-generate fakes (7 weeks ago)
+| *   6a5b7884 - apply cherry-pick history (7 weeks ago)
+| |\  
+| | * 39851917 - initial work for the default policy (7 weeks ago)
+| * | d58557d2 - merge up recent main (7 weeks ago)
+| |\| 
+| * | 6137c891 - (internal/add-default-policy) Fix tests (1 year, 4 months ago)
+| * | ee03385b - Add mysql support (1 year, 4 months ago)
+| * | 182a0433 - Integration tests: Check the new default_policy beaviour (1 year, 4 months ago)
+| * | 22678280 - fix typos (1 year, 4 months ago)
+| * | 2e5df727 - Deattach leads to attach of default policy (1 year, 4 months ago)
+| * | 63634f39 - public_api_handler: User writeErrorResponse helper (1 year, 4 months ago)
+| * | f59e815d - Tests were flaky due to scheduler server mock usage (1 year, 4 months ago)
+| * | bdc385a8 - rollback policy operations on failure, update service instance afterwards (1 year, 4 months ago)
+| * | 5e938aaa - close rows (1 year, 4 months ago)
+| * | 0572881a - Split tests of current and legacy components (1 year, 4 months ago)
+| * | 60442561 - Add scheduler policy update/deletion assertions to unit tests (1 year, 4 months ago)
+| * | d3807062 - remove GetAppIdsWithPolicyGuid by returning affected apps in ReplaceAppPolicies and DeletePoliciesByPolicyGuid (1 year, 4 months ago)
+| * | d3f8633f - Add GetAppIdByInstanceId unit tests (1 year, 4 months ago)
+| * | 798c4355 - Add UpdateServiceInstance unit test (1 year, 4 months ago)
+| * | 4ed25a4a - Add unit test for GetServiceInstance usage in UpdateServiceInstance (1 year, 4 months ago)
+| * | cb610b36 - validate updated policy before accessing the DB (1 year, 4 months ago)
+| * | 8c313db8 - Also update readme (1 year, 4 months ago)
+| * | 880fe444 - ServiceBroker: Allow to specify a default policy on instance level (1 year, 4 months ago)
+* | |   38b05302 - Merge pull request #711 from garethjevans/basic-auth2 (7 weeks ago)
+|\ \ \  
+| |_|/  
+|/| |   
+| * | 0531104e - Updated go.sum (7 weeks ago)
+| * | 7af3cd6b - basic authentication added to healthcheck (7 weeks ago)
+|/ /  
+* | 26c17047 - Increased the timeout value for the ws_helper test (#709) (7 weeks ago)
+* | 23efc20d - Feature: Added basic auth options to the prometheus metrics endpoint. (#692) (7 weeks ago)
+* | 2a24c156 - improved the pre-commit java format shell scripts (#707) (7 weeks ago)
+* |   189c0abb - Merge pull request #708 from cloudfoundry/added_ioEOF (7 weeks ago)
+|\ \  
+| * \   858afa59 - Merge branch 'main' of github.com:cloudfoundry/app-autoscaler into added_ioEOF (7 weeks ago)
+| |\ \  
+| * | | 48f101a2 - added or io.EOF to fix the tests (7 weeks ago)
+* | | |   030d5a3f - Merge pull request #706 from cloudfoundry/dependabot/go_modules/src/autoscaler/github.com/lib/pq-1.10.3 (7 weeks ago)
+|\ \ \ \  
+| |_|/ /  
+|/| | |   
+| * | | 25736230 - Bump github.com/lib/pq from 1.10.2 to 1.10.3 in /src/autoscaler (7 weeks ago)
+* | | |   27a0f9b0 - Merge pull request #703 from cloudfoundry/dependabot/maven/com.puppycrawl.tools-checkstyle-9.0 (7 weeks ago)
+|\ \ \ \  
+| |_|/ /  
+|/| | |   
+| * | | 2e55e31e - Bump checkstyle from 8.45.1 to 9.0 (7 weeks ago)
+| |/ /  
+* | |   4dc7c2e4 - Merge pull request #702 from cloudfoundry/more_debug_info (7 weeks ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * |   f5f5e02c - Merge branch 'main' of github.com:cloudfoundry/app-autoscaler into more_debug_info (7 weeks ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   15d973c7 - Merge pull request #698 from cloudfoundry/fix_for_lock_modified_time (7 weeks ago)
+|\ \ \  
+| * | | 27e57dd5 - fixed test modified time (8 weeks ago)
+* | | |   e57e6dcc - Merge pull request #701 from garethjevans/revert-to-liquibase-3 (8 weeks ago)
+|\ \ \ \  
+| * | | | 2aa7417c - Revert to liquibase 3 to ensure absolute paths can be used (8 weeks ago)
+|/ / / /  
+* | | |   372be068 - Merge pull request #700 from garethjevans/logical-file-path (8 weeks ago)
+|\ \ \ \  
+| * | | | 0e9213e2 - added logicalFilePath to api changeset (8 weeks ago)
+| * | | | 52ffa5d8 - Updated changesets with logicalFilePath (8 weeks ago)
+| * | | | 67fa1a9f - added logicalFilePath to servicebroker changeset (8 weeks ago)
+| * | | | c6ced61e - Updated changesets with logicalFilePath (8 weeks ago)
+| * | | | 318302db - Setting logicalFilePath for liquibase migrations to handle upgrade (8 weeks ago)
+|/ / / /  
+* | | |   60b47d69 - Merge pull request #699 from asalan316/fail-test-if-certs-are-not-present (8 weeks ago)
+|\ \ \ \  
+| |/ / /  
+|/| | |   
+| * | | 508f5b55 - correct typo (8 weeks ago)
+| * | | e2091fb0 - check if certs are present-> metricsforwarder (8 weeks ago)
+| * | | ff2647b5 - check if certs are present-> eventgenerator (8 weeks ago)
+| * | | 9c157db2 - check if certs are present-> scalingengine (8 weeks ago)
+| * | | f5f88c34 - check if certs are present-> publicapiserver (8 weeks ago)
+| * | | b13aa5ec - check if certs are present-> metricforwarder (8 weeks ago)
+| | * | 46cffe6d - Added more debug around the error tests that are failing. (7 weeks ago)
+| |/ /  
+|/| |   
+* | | 4e983745 - Added Initalise db script (#693) (8 weeks ago)
+|/ /  
+* | 0775eca4 - Remove scheduler as it is now a module of the root POM (8 weeks ago)
+* |   45f75422 - Merge pull request #694 from cloudfoundry/dependabot/maven/scheduler/io.prometheus.simpleclient.version-0.12.0 (8 weeks ago)
+|\ \  
+| * | ad4f6444 - Bump io.prometheus.simpleclient.version in /scheduler (8 weeks ago)
+* | |   5947f721 - Merge pull request #695 from cloudfoundry/dependabot/maven/io.prometheus.simpleclient.version-0.12.0 (8 weeks ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * | 7d55c239 - Bump io.prometheus.simpleclient.version from 0.11.0 to 0.12.0 (8 weeks ago)
+|/ /  
+* | c8aac6f9 - Fix: enabled the prometheus metrics endpoint and fixed tests to properly assert (#684) (9 weeks ago)
+* |   84863b3c - Merge pull request #691 from cloudfoundry/dependabot/go_modules/src/autoscaler/github.com/onsi/gomega-1.16.0 (9 weeks ago)
+|\ \  
+| * | f67a01af - Bump github.com/onsi/gomega from 1.15.0 to 1.16.0 in /src/autoscaler (9 weeks ago)
+* | |   4484017a - Merge pull request #690 from cloudfoundry/dependabot/maven/org.springframework.boot-spring-boot-starter-parent-2.5.4 (9 weeks ago)
+|\ \ \  
+| * | | c89163a5 - Bump spring-boot-starter-parent from 2.5.3 to 2.5.4 (9 weeks ago)
+| |/ /  
+* | |   01f5e327 - Merge pull request #689 from cloudfoundry/dependabot/maven/scheduler/org.springframework.boot-spring-boot-starter-parent-2.5.4 (9 weeks ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * | 0097d449 - Bump spring-boot-starter-parent from 2.5.3 to 2.5.4 in /scheduler (9 weeks ago)
+|/ /  
+* |   98294e97 - (internal/upstream, internal/common) Merge pull request #687 from cloudfoundry/update-docs (10 weeks ago)
+|\ \  
+| * | 753a1caf - Update to build instructions (10 weeks ago)
+* | |   b140c8bb - Merge pull request #686 from garethjevans/primary-key (10 weeks ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * | 06daeaf2 - Add primary key on scalinghistory table (10 weeks ago)
+|/ /  
+* |   ca519377 - Merge pull request #685 from asalan316/aas-82-update-docs (10 weeks ago)
+|\ \  
+| * | 2934aa35 - [AAS-82] update docs (10 weeks ago)
+|/ /  
+* | e51e7bc7 - AAS-75: Slight improvement github actions and test-cert scripts. (#683) (10 weeks ago)
+* |   a232145e - Merge pull request #682 from asalan316/aas82-verify-linters (2 months ago)
+|\ \  
+| * | a1760344 - aas82 corrected typo (2 months ago)
+| * | a14f2373 - aas82 removed unwanted variable (2 months ago)
+| * | c12c4a99 - aas82 updated Readme (2 months ago)
+| * |   09bed2d4 - Merge branch 'main' into aas82-verify-linters (2 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   5b95063f - Merge pull request #679 from cloudfoundry/dependabot/maven/scheduler/com.puppycrawl.tools-checkstyle-8.45.1 (2 months ago)
+|\ \ \  
+| * | | 69923c19 - Bump checkstyle from 8.44 to 8.45.1 in /scheduler (2 months ago)
+|/ / /  
+* | |   426191ae - Merge pull request #680 from cloudfoundry/dependabot/maven/scheduler/org.apache.maven.plugins-maven-jxr-plugin-3.1.1 (2 months ago)
+|\ \ \  
+| * | | 28585e1f - Bump maven-jxr-plugin from 2.5 to 3.1.1 in /scheduler (2 months ago)
+|/ / /  
+* | |   e67da266 - Merge pull request #681 from cloudfoundry/dependabot/go_modules/src/autoscaler/google.golang.org/grpc-1.40.0 (2 months ago)
+|\ \ \  
+| * | | 815ec624 - Bump google.golang.org/grpc from 1.39.1 to 1.40.0 in /src/autoscaler (2 months ago)
+|/ / /  
+* | |   68cefb77 - Merge pull request #678 from garethjevans/disable-keep-going (2 months ago)
+|\ \ \  
+| * \ \   fabdf984 - Merge branch 'main' into disable-keep-going (2 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+| * | | a4d25fd2 - Disable keepGoing in test suite to make them fail fast (2 months ago)
+| | * | cff357fa - aas82 fix GHA linter:  Golang and Java - local (2 months ago)
+| | * | d4d07d5f - aas82 test Golang and Java - local (2 months ago)
+| | * | 4230e1f8 - aas82 test Golang and Java GHA (2 months ago)
+| |/ /  
+|/| |   
+* | |   ea432183 - Merge pull request #674 from asalan316/aas-82-add-java-checkstyle-linter (2 months ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * | b7b11c89 - aas82 correct typo (2 months ago)
+| * | fdc673e3 - aas82 remove unnessary files (2 months ago)
+| * |   5a7e7879 - Merge branch 'main' into aas-82-add-java-checkstyle-linter (2 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   62a9c657 - Merge pull request #677 from cloudfoundry/enable-local-test-run (2 months ago)
+|\ \ \  
+| * | | 48916353 - Stopping macos firewall from triggering (2 months ago)
+|/ / /  
+* | |   3660fb76 - Merge pull request #662 from cloudfoundry/dependabot/maven/mysql-mysql-connector-java-8.0.26 (3 months ago)
+|\ \ \  
+| * \ \   b3e34634 - Merge branch 'main' into dependabot/maven/mysql-mysql-connector-java-8.0.26 (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   da0e9cb9 - Merge pull request #670 from cloudfoundry/dependabot/maven/scheduler/org.apache.commons-commons-dbcp2-2.9.0 (3 months ago)
+|\ \ \ \  
+| * \ \ \   08571db8 - Merge branch 'main' into dependabot/maven/scheduler/org.apache.commons-commons-dbcp2-2.9.0 (3 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+* | | | |   d7f2a376 - Merge pull request #676 from garethjevans/do-not-run-tests-after-merge (3 months ago)
+|\ \ \ \ \  
+| * \ \ \ \   682c459c - Merge branch 'main' into do-not-run-tests-after-merge (3 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+| * | | | | ff95c1ab - Do not run tests after merge (3 months ago)
+| | * | | |   f04f750a - Merge branch 'main' into dependabot/maven/scheduler/org.apache.commons-commons-dbcp2-2.9.0 (3 months ago)
+| | |\ \ \ \  
+| |_|/ / / /  
+|/| | | | |   
+* | | | | |   08ddc673 - Merge pull request #664 from cloudfoundry/dont-trigger-cooldown-if-scaling-was-ignored (3 months ago)
+|\ \ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+| * | | | |   b15a10e9 - Merge branch 'main' into dont-trigger-cooldown-if-scaling-was-ignored (3 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+* | | | | |   ed70f675 - Merge pull request #672 from cloudfoundry/dependabot/go_modules/src/autoscaler/google.golang.org/grpc-1.39.1 (3 months ago)
+|\ \ \ \ \ \  
+| * \ \ \ \ \   dcbc274d - Merge branch 'main' into dependabot/go_modules/src/autoscaler/google.golang.org/grpc-1.39.1 (3 months ago)
+| |\ \ \ \ \ \  
+| |/ / / / / /  
+|/| | | | | |   
+* | | | | | |   89c30933 - Merge pull request #671 from cloudfoundry/dependabot/maven/org.liquibase-liquibase-core-4.4.3 (3 months ago)
+|\ \ \ \ \ \ \  
+| * \ \ \ \ \ \   97a98a29 - Merge branch 'main' into dependabot/maven/org.liquibase-liquibase-core-4.4.3 (3 months ago)
+| |\ \ \ \ \ \ \  
+| |/ / / / / / /  
+|/| | | | | | |   
+| * | | | | | | dc084629 - Bump liquibase-core from 4.4.2 to 4.4.3 (3 months ago)
+| | * | | | | |   5f22afd0 - Merge branch 'main' into dependabot/go_modules/src/autoscaler/google.golang.org/grpc-1.39.1 (3 months ago)
+| | |\ \ \ \ \ \  
+| | * | | | | | | b9cd5ea4 - Bump google.golang.org/grpc from 1.39.0 to 1.39.1 in /src/autoscaler (3 months ago)
+| |/ / / / / / /  
+| | | * | | | |   59ea1591 - Merge branch 'main' into dont-trigger-cooldown-if-scaling-was-ignored (3 months ago)
+| | | |\ \ \ \ \  
+| |_|_|/ / / / /  
+|/| | | | | | |   
+* | | | | | | |   72b507e0 - Merge pull request #673 from cloudfoundry/dependabot/go_modules/src/autoscaler/github.com/onsi/gomega-1.15.0 (3 months ago)
+|\ \ \ \ \ \ \ \  
+| |_|/ / / / / /  
+|/| | | | | | |   
+| * | | | | | |   e4742da4 - Merge branch 'main' into dependabot/go_modules/src/autoscaler/github.com/onsi/gomega-1.15.0 (3 months ago)
+| |\ \ \ \ \ \ \  
+| |/ / / / / / /  
+|/| | | | | | |   
+* | | | | | | |   18b56377 - Merge pull request #675 from cloudfoundry/revert-657-tests-on-macos (3 months ago)
+|\ \ \ \ \ \ \ \  
+| |_|/ / / / / /  
+|/| | | | | | |   
+| * | | | | | | 3becfc11 - Revert "Stops the tests from triggering the firewall on macos" (3 months ago)
+|/ / / / / / /  
+| * / / / / / a7987051 - Bump github.com/onsi/gomega from 1.14.0 to 1.15.0 in /src/autoscaler (3 months ago)
+|/ / / / / /  
+| * | | | | e7ccfd52 - (internal/dont-trigger-cooldown-if-scaling-was-ignored) Don't trigger cooldown if scaling was ignored (3 months ago)
+| | * | | | a4dd0ead - Bump commons-dbcp2 from 2.8.0 to 2.9.0 in /scheduler (3 months ago)
+| |/ / / /  
+|/| | | |   
+| | * | |   aed9b601 - Merge branch 'main' into dependabot/maven/mysql-mysql-connector-java-8.0.26 (3 months ago)
+| | |\ \ \  
+| |_|/ / /  
+|/| | | |   
+| | * | | 063c4d79 - Bump mysql-connector-java from 8.0.25 to 8.0.26 (3 months ago)
+| | | * | c1c8b424 - Stopping macos firewall from triggering (2 months ago)
+| | | * | 7d9fab95 - Do not run tests after merge (2 months ago)
+| | | * | 5afe53a0 - Bump liquibase-core from 4.4.2 to 4.4.3 (2 months ago)
+| | | * | c31c23ac - Bump google.golang.org/grpc from 1.39.0 to 1.39.1 in /src/autoscaler (2 months ago)
+| | | * | 0d79e740 - Revert "Stops the tests from triggering the firewall on macos" (2 months ago)
+| | | * | 4c4cba9c - Bump github.com/onsi/gomega from 1.14.0 to 1.15.0 in /src/autoscaler (2 months ago)
+| | | * | 3cc8b22d - Don't trigger cooldown if scaling was ignored (2 months ago)
+| | | * | fc2c65ae - Bump commons-dbcp2 from 2.8.0 to 2.9.0 in /scheduler (2 months ago)
+| | | * | a91d9466 - Bump mysql-connector-java from 8.0.25 to 8.0.26 (2 months ago)
+| | | * | 6208587e - aas82 test git hoo (2 months ago)
+| | | * | f36fec20 - aas82 test git hook (2 months ago)
+| | | * | f2525808 - aas82 cleanup git pre commit hook (2 months ago)
+| | | * | 1ce37384 - aas82 add google format script (2 months ago)
+| | | * | dc425800 - aas82 use provided Google Formatter (2 months ago)
+| | | * | 72c3e28b - aas82 use provided Google Formatter (2 months ago)
+| | | * | 96fd885b - aas82 skip java reflection warnings (2 months ago)
+| | | * | 7fe6b011 - aas82 skip java reflection warnings (2 months ago)
+| | | * | cb06a6f3 - aas82 change order of checks (2 months ago)
+| | | * | 0cc36320 - aas-82 test let checkstyle fail (2 months ago)
+| | | * | ef0c88cd - aas82 add back suppress file (3 months ago)
+| | | * | dc88d2e3 - aas-82 test checkstyle uses defined configs (3 months ago)
+| | | * | 32c25bfb - aas-82 fail formatter if there are formatting changes (3 months ago)
+| | | * | ce5d7ea9 - aas-82 test google formattter action (3 months ago)
+| | | * | ad9bdf9a - add google formatter action (3 months ago)
+| | | * | e490fa72 - aas-82 corrected yaml (3 months ago)
+| | | * | 4153d344 - aas-82 corrected yaml (3 months ago)
+| | | * | c24afd85 - aas-82 publish checkstyle result on PR (3 months ago)
+| | | * | 3dbe028e - aas-82 add checkstyle as GHA (3 months ago)
+| | | * | 0309c59d - aas-82 add checkstyle support using maven plugin (3 months ago)
+| |_|/ /  
+|/| | |   
+* | | |   cad030f4 - Merge pull request #663 from cloudfoundry/dependabot/maven/org.liquibase-liquibase-core-4.4.2 (3 months ago)
+|\ \ \ \  
+| * \ \ \   5559ed5b - Merge branch 'main' into dependabot/maven/org.liquibase-liquibase-core-4.4.2 (3 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+* | | | |   8ac54662 - Merge pull request #661 from cloudfoundry/dependabot/maven/scheduler/mysql-mysql-connector-java-8.0.26 (3 months ago)
+|\ \ \ \ \  
+| |_|_|/ /  
+|/| | | |   
+| * | | | bd5ba74c - Bump mysql-connector-java from 8.0.25 to 8.0.26 in /scheduler (3 months ago)
+|/ / / /  
+| * | |   fd68f30f - Merge branch 'main' into dependabot/maven/org.liquibase-liquibase-core-4.4.2 (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   48c6e0d4 - Merge pull request #667 from cloudfoundry/lint_errors (3 months ago)
+|\ \ \ \  
+| * \ \ \   f2de80c6 - Merge branch 'main' into lint_errors (3 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+| * | | |   07c43930 - Merge branch 'main' into lint_errors (3 months ago)
+| |\ \ \ \  
+| * | | | | 6ae15d88 - added the errorlint option to the linter. (3 months ago)
+| | |_|/ /  
+| |/| | |   
+| | | * | b876516e - Bump liquibase-core from 4.4.1 to 4.4.2 (3 months ago)
+| |_|/ /  
+|/| | |   
+* | | |   8242f600 - Merge pull request #660 from cloudfoundry/dependabot/maven/scheduler/org.springframework.boot-spring-boot-starter-parent-2.5.3 (3 months ago)
+|\ \ \ \  
+| * \ \ \   ff8dc543 - Merge branch 'main' into dependabot/maven/scheduler/org.springframework.boot-spring-boot-starter-parent-2.5.3 (3 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+* | | | |   0eb70010 - Merge pull request #666 from asalan316/aas-82-add-java-checkstyle-linter (3 months ago)
+|\ \ \ \ \  
+| * \ \ \ \   68a5539e - Merge branch 'main' into aas-82-add-java-checkstyle-linter (3 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+| * | | | |   e49ce220 - Merge branch 'main' into aas-82-add-java-checkstyle-linter (3 months ago)
+| |\ \ \ \ \  
+| | | |_|/ /  
+| | |/| | |   
+| * | | | | 57685265 - aas-82 suppress [EmptyLineSeparater] (3 months ago)
+| * | | | | eeb19647 - aas-82 fix [RCurlySame] (3 months ago)
+| * | | | | 8e966ae0 - aas-82 fix [localVariableName] (3 months ago)
+| * | | | | 77950323 - Suppress VariableDeclarartionUsageDistance (3 months ago)
+| * | | | | 0562057e - fix [ParameterName] Parameter must match pattern (3 months ago)
+| * | | | | 960e34a8 - fix LocalVariableName] local variable name (3 months ago)
+| * | | | | 8a6d4093 - fix [LineLength] and formatting (3 months ago)
+| * | | | | f8058f56 - fix [MultipleVariableDeclarations] Each variable declaration must be in its own statement (3 months ago)
+| * | | | | 3ac6575d - aas82 fix Javadoc (3 months ago)
+| * | | | | 6b4e8e9d - aas82 git-hook -> skip javadoc formatting (3 months ago)
+| * | | | | 953ebced - aas82 fix  Single-line Javadoc comment should be multi-line. [SingleLineJavadoc] [RequireEmptyLineBeforeBlockTagGroup] (3 months ago)
+| * | | | | 52768816 - aas82 fix  Single-line Javadoc comment should be multi-line. [SingleLineJavadoc] [RequireEmptyLineBeforeBlockTagGroup] (3 months ago)
+| * | | | | 2792c120 - aas82 fix [TypeName]- class names (3 months ago)
+| * | | | | 74e52a15 - aas82 fix [TypeName]- class names (3 months ago)
+| * | | | | 87ae1fe4 - aas82 fix [array brackets at illegal position] (3 months ago)
+| * | | | | 30ee5a98 - aas82 fix [NeedBraces] (3 months ago)
+| * | | | | 1ad7c89c - aas82 fix [AbbreviationAsWordInName] (3 months ago)
+| * | | | | 256c4686 - aas82 fix [FileTabCharacter] (3 months ago)
+| * | | | | 50ecdda0 - aas82 add java formatter git-hook (3 months ago)
+| * | | | | 4588744e - aas82 add checkstyle configs (3 months ago)
+| | |_|/ /  
+| |/| | |   
+| | | * | 1d875bd3 - Bump spring-boot-starter-parent from 2.5.2 to 2.5.3 in /scheduler (3 months ago)
+| |_|/ /  
+|/| | |   
+* | | |   ff1664a0 - Merge pull request #657 from garethjevans/tests-on-macos (3 months ago)
+|\ \ \ \  
+| |_|/ /  
+|/| | |   
+| * | |   655b6566 - Merge branch 'main' into tests-on-macos (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   6a8737fd - Merge pull request #665 from cloudfoundry/lint_unconvert (3 months ago)
+|\ \ \ \  
+| |_|/ /  
+|/| | |   
+| * | | 838e8d96 - added the unconvert linter (3 months ago)
+| * | | 8358426a - added the unconvert linter (3 months ago)
+|/ / /  
+| * |   69b265f6 - Merge branch 'main' into tests-on-macos (3 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   c4f9b185 - Merge pull request #658 from asalan316/st1023-fixes (3 months ago)
+|\ \ \  
+| * | | bce15c55 - fix unused imports (3 months ago)
+| * | | 27381a31 - run golangci lint only in src/autoscaler directory (3 months ago)
+| * | | 00d52966 - avoid precommit to run multiple times (3 months ago)
+| * | | bcf9ebd3 - fix st1023 (3 months ago)
+|/ / /  
+| * / ae6c9a0b - Stops the tests from triggering the firewall on macos (3 months ago)
+|/ /  
+* |   335ccd86 - Merge pull request #648 from garethjevans/gosec (3 months ago)
+|\ \  
+| * | 3092b13f - Remove tests for /debug/pprof endpoint (3 months ago)
+| * |   dd17518f - Merge branch 'main' into gosec (3 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   100905d7 - Merge pull request #654 from garethjevans/staticcheck (3 months ago)
+|\ \ \  
+| * \ \   a85a07c9 - Merge branch 'main' into staticcheck (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   9da8b2f6 - Merge pull request #653 from garethjevans/structcheck (3 months ago)
+|\ \ \ \  
+| * \ \ \   2f5a636d - Merge branch 'main' into structcheck (3 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+* | | | |   1eaaef9d - Merge pull request #652 from garethjevans/typecheck (3 months ago)
+|\ \ \ \ \  
+| * \ \ \ \   6a98ef6c - Merge branch 'main' into typecheck (3 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+* | | | | |   8ed4f29f - Merge pull request #651 from garethjevans/varcheck (3 months ago)
+|\ \ \ \ \ \  
+| * \ \ \ \ \   1238b131 - Merge branch 'main' into varcheck (3 months ago)
+| |\ \ \ \ \ \  
+| |/ / / / / /  
+|/| | | | | |   
+| * | | | | | ba06c561 - Enabled varcheck linter (3 months ago)
+| | * | | | |   6f6bae47 - Merge branch 'main' into typecheck (3 months ago)
+| | |\ \ \ \ \  
+| |_|/ / / / /  
+|/| | | | | |   
+| | * | | | | 5d999771 - Enabled typecheck linter (3 months ago)
+| |/ / / / /  
+| | * | | |   ccc723d3 - Merge branch 'main' into structcheck (3 months ago)
+| | |\ \ \ \  
+| |_|/ / / /  
+|/| | | | |   
+| | * | | | d84e5764 - Enable structcheck linter (3 months ago)
+| |/ / / /  
+| | * / / 353c59ad - Enabled staticcheck linter (3 months ago)
+| |/ / /  
+| | * |   c4146153 - Merge branch 'main' into gosec (3 months ago)
+| | |\ \  
+| |_|/ /  
+|/| | |   
+* | | |   d0e0ec7e - Merge pull request #646 from garethjevans/errcheck (3 months ago)
+|\ \ \ \  
+| |/ / /  
+|/| | |   
+| * | |   5da5c693 - Merge remote-tracking branch 'origin/main' into errcheck (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+| * | | 4e501b01 - remove extra logging of error (3 months ago)
+| * | | 3f127b4b - Logging on save scaling history failure (3 months ago)
+| * | | 3044dd2d - Return error on rollback (3 months ago)
+| * | |   0b4566b6 - Merge branch 'errcheck' of https://github.com/garethjevans/app-autoscaler into errcheck (3 months ago)
+| |\ \ \  
+| | * \ \   0cb4a977 - Merge branch 'main' into errcheck (3 months ago)
+| | |\ \ \  
+| | * \ \ \   666a74a2 - Merge branch 'main' into errcheck (3 months ago)
+| | |\ \ \ \  
+| * | | | | | a1a01959 - Reenable caching for golangci-lint (3 months ago)
+| |/ / / / /  
+| * | | | | 589e322f - revert introduction of logrus for logging (3 months ago)
+| * | | | |   25435ce4 - Merge branch 'main' into errcheck (3 months ago)
+| |\ \ \ \ \  
+| * | | | | | b5e0954f - chore: go mod tidy (3 months ago)
+| * | | | | | edb12fb0 - chore: bump golang to latest 1.15 (3 months ago)
+| * | | | | | 1456f851 - fix: error checking in integration tests (3 months ago)
+| * | | | | | 6e886862 - fix: err is now defined (3 months ago)
+| * | | | | | 5d5357b5 - fix: errcheck failures (3 months ago)
+| * | | | | | abc795e2 - fix: linter issues (3 months ago)
+| * | | | | | 8ee9e0f8 - fix: linter issues (3 months ago)
+| * | | | | | 331ead7a - fix: enable errcheck linter (3 months ago)
+| | | | | * |   bc63c06a - Merge remote-tracking branch 'origin/main' into gosec (3 months ago)
+| | | | | |\ \  
+| |_|_|_|_|/ /  
+|/| | | | | |   
+* | | | | | |   ca7ca5a5 - Merge pull request #650 from garethjevans/testpackage (3 months ago)
+|\ \ \ \ \ \ \  
+| |_|_|_|/ / /  
+|/| | | | | |   
+| * | | | | |   091c565f - Merge branch 'testpackage' of https://github.com/garethjevans/app-autoscaler into testpackage (3 months ago)
+| |\ \ \ \ \ \  
+| | * \ \ \ \ \   7766a91d - Merge branch 'main' into testpackage (3 months ago)
+| | |\ \ \ \ \ \  
+| |_|/ / / / / /  
+|/| | | | | | |   
+| * | | | | | | 4cc54d19 - reordering of checks to statisfy linter (3 months ago)
+| |/ / / / / /  
+| * | | / / / 1b979448 - Enabled testpackage linter (3 months ago)
+| | |_|/ / /  
+| |/| | | |   
+| | | | * |   2bbb7782 - Merge branch 'gosec' of https://github.com/garethjevans/app-autoscaler into gosec (3 months ago)
+| | | | |\ \  
+| | | | | * \   5bbfdc04 - Merge branch 'main' into gosec (3 months ago)
+| | | | | |\ \  
+| |_|_|_|_|/ /  
+|/| | | | | |   
+* | | | | | |   ac7d6c1f - Merge pull request #649 from garethjevans/stylecheck (3 months ago)
+|\ \ \ \ \ \ \  
+| |/ / / / / /  
+|/| | | | | |   
+| * | | | | | 8ade5f12 - Enable stylecheck linter (3 months ago)
+|/ / / / / /  
+* | | | | |   c3f8a2c6 - Merge pull request #647 from garethjevans/latest-golang (3 months ago)
+|\ \ \ \ \ \  
+| |_|/ / / /  
+|/| | | | |   
+| * | | | | 9d951db1 - Bump golang to latest 1.15 release (3 months ago)
+|/ / / / /  
+| | * / / 06d15932 - Remove the /debug/pprof endpoint (3 months ago)
+| | |/ /  
+| | * / 9ab3c2f1 - Enable gosec linter (3 months ago)
+| |/ /  
+|/| |   
+* | |   0b5fab64 - Merge pull request #645 from asalan316/add-golang-ci-lint-hook (3 months ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * |   c915c9b4 - Merge branch 'main' into add-golang-ci-lint-hook (3 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   77c832c4 - Merge pull request #644 from garethjevans/ineffassign (3 months ago)
+|\ \ \  
+| * \ \   4690a5c7 - Merge branch 'main' into ineffassign (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+| * | | 4b452304 - ineffassign fixes (3 months ago)
+| * | | 13e66371 - fix: enable ineffassign linter (3 months ago)
+| | * | c6149282 - add golangci-lint in git pre- commit hooks (3 months ago)
+| |/ /  
+|/| |   
+* | |   9fd3e667 - Merge pull request #643 from garethjevans/gosimple (3 months ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * | f128aee0 - Removed unused import (3 months ago)
+| * | 3928f624 - Removed unused import (3 months ago)
+| * | 875e1b28 - gosimple fixes (3 months ago)
+| * | 14fc9be5 - gosimple fixes (3 months ago)
+| * | 291323aa - fix: enabled gosimple linter (3 months ago)
+|/ /  
+* |   f918ddc8 - Merge pull request #640 from asalan316/code-style-guide (3 months ago)
+|\ \  
+| * | 4fad6043 - correct scalingeingine main.go (3 months ago)
+| * |   f4568279 - Merge branch 'main' into code-style-guide (3 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   a64915c9 - Merge pull request #639 from cloudfoundry/dependabot/go_modules/src/autoscaler/github.com/onsi/gomega-1.14.0 (3 months ago)
+|\ \ \  
+| * \ \   c5eee9a9 - Merge branch 'main' into dependabot/go_modules/src/autoscaler/github.com/onsi/gomega-1.14.0 (3 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+| * | |   6badb2a1 - Merge branch 'main' into dependabot/go_modules/src/autoscaler/github.com/onsi/gomega-1.14.0 (4 months ago)
+| |\ \ \  
+| * | | | be11e577 - Bump github.com/onsi/gomega from 1.13.0 to 1.14.0 in /src/autoscaler (4 months ago)
+| | | * |   3932cc9a - Merge branch 'main' into code-style-guide (3 months ago)
+| | | |\ \  
+| |_|_|/ /  
+|/| | | |   
+* | | | |   c753763f - Merge pull request #641 from garethjevans/fix-spelling (3 months ago)
+|\ \ \ \ \  
+| * \ \ \ \   93dc75d7 - Merge branch 'main' into fix-spelling (3 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+* | | | | |   f683b535 - Merge pull request #642 from garethjevans/rowerrcheck (3 months ago)
+|\ \ \ \ \ \  
+| |_|_|/ / /  
+|/| | | | |   
+| * | | | | 178e5e2d - fix: enable the rowserrcheck linter (3 months ago)
+|/ / / / /  
+| * / / / e5f4c2dc - fix: correct spelling in golang src (3 months ago)
+|/ / / /  
+| | * | 069c2b45 - format java files (3 months ago)
+| | * | 530280ce - update docs (3 months ago)
+| | * | 4dda49fd - add documentation (3 months ago)
+| | * | 72c594c0 - correct usage (3 months ago)
+| | * | 9aa39402 - improve java format (3 months ago)
+| | * | a8409c09 - format-java (3 months ago)
+| | * | 5b6aedae - add pre-commit config-> java-format hook (3 months ago)
+| | * | fa77e534 - verify pre-commit (3 months ago)
+| | * | a41804c5 - check git pre-commit formatting settings (3 months ago)
+| | * | 91cedde7 - test fomatting using git pre-hook:on-commit (3 months ago)
+| | * |   6656f1bf - Merge branch 'cloudfoundry:main' into main (3 months ago)
+| | |\ \  
+| |_|/ /  
+|/| | |   
+* | | |   f659c9cb - Merge pull request #638 from cloudfoundry/dependabot/maven/org.liquibase-liquibase-core-4.4.1 (4 months ago)
+|\ \ \ \  
+| |/ / /  
+|/| | |   
+| * | | dd040d75 - Bump liquibase-core from 4.4.0 to 4.4.1 (4 months ago)
+|/ / /  
+* | |   19969179 - Merge pull request #637 from cloudfoundry/dependabot/maven/org.postgresql-postgresql-42.2.23 (4 months ago)
+|\ \ \  
+| * | | 0ad848d7 - Bump postgresql from 42.2.22 to 42.2.23 (4 months ago)
+|/ / /  
+* | |   75f93f5c - Merge pull request #636 from cloudfoundry/dependabot/maven/scheduler/org.postgresql-postgresql-42.2.23 (4 months ago)
+|\ \ \  
+| * | | 70eb2788 - Bump postgresql from 42.2.22 to 42.2.23 in /scheduler (4 months ago)
+|/ / /  
+* | |   9a14c97e - Merge pull request #634 from asalan316/refactor-application-context (4 months ago)
+|\ \ \  
+| * | | 3fc37b51 - add scheduler config also in integration (4 months ago)
+| * | | feb83f5a - remove unused code (4 months ago)
+| * | | a281a6ab - replace application context with Java beans (4 months ago)
+| * | | d219c50e - add quartz java config (4 months ago)
+| * | | fb55d934 - add quartz configs (4 months ago)
+| * | | 8e9064d3 - cleanup application.properties file (4 months ago)
+| * | | e66c9563 - fix health endpoint test (4 months ago)
+| * | | a8670b64 - remove unused imports (4 months ago)
+| * | | 17c1628b - simply application context (4 months ago)
+|/ / /  
+| * / 9a141167 - add IntelliJ project config (4 months ago)
+|/ /  
+* |   5da771ce - Merge pull request #633 from cloudfoundry/dependabot/go_modules/src/autoscaler/google.golang.org/grpc-1.39.0 (4 months ago)
+|\ \  
+| * | e4c02f64 - Bump google.golang.org/grpc from 1.38.0 to 1.39.0 in /src/autoscaler (4 months ago)
+|/ /  
+* |   d15aeb50 - Merge pull request #632 from garethjevans/fix-vendoring (4 months ago)
+|\ \  
+| * | 28df9fe3 - tools.go imports the correct package to fix vendoring (4 months ago)
+|/ /  
+* |   8815a36d - Merge pull request #631 from cloudfoundry/dependabot/github_actions/UnicornGlobal/has-changes-action-1.0.12 (4 months ago)
+|\ \  
+| * | b6bdff1c - Bump UnicornGlobal/has-changes-action from 1.0.11 to 1.0.12 (4 months ago)
+|/ /  
+* |   be18dfa8 - Merge pull request #629 from cloudfoundry/dependabot/maven/scheduler/org.springframework.boot-spring-boot-starter-parent-2.5.2 (4 months ago)
+|\ \  
+| * | a8e2238c - Bump spring-boot-starter-parent from 2.5.1 to 2.5.2 in /scheduler (4 months ago)
+|/ /  
+* |   03cb0d21 - Merge pull request #630 from cloudfoundry/dependabot/maven/scheduler/org.postgresql-postgresql-42.2.22 (4 months ago)
+|\ \  
+| * | eac9e097 - Bump postgresql from 42.2.5 to 42.2.22 in /scheduler (4 months ago)
+|/ /  
+* |   8b64626f - Merge pull request #626 from garethjevans/remove-metricscollector (4 months ago)
+|\ \  
+| * \   2436eb3b - Merge branch 'main' into remove-metricscollector (4 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   bb755c43 - Merge pull request #601 from cloudfoundry/dependabot/maven/mysql-mysql-connector-java-8.0.25 (4 months ago)
+|\ \ \  
+| * | | ad550ceb - Bump mysql-connector-java from 8.0.18 to 8.0.25 (4 months ago)
+|/ / /  
+| * |   33f87fa2 - Merge branch 'main' into remove-metricscollector (4 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   4e590409 - Merge pull request #628 from garethjevans/bump-liquibase (4 months ago)
+|\ \ \  
+| * \ \   9168b91f - Merge branch 'main' into bump-liquibase (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   36be6d9f - Merge pull request #627 from cloudfoundry/fix-golangci-lint-installation (4 months ago)
+|\ \ \ \  
+| * \ \ \   1b2a9fa7 - Merge branch 'main' into fix-golangci-lint-installation (4 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+| * | | | 47dbf6b3 - (internal/fix-golangci-lint-installation) Fix golangci-lint installation (4 months ago)
+| | * | | 4d98b921 - Bump liquibase to 4.4.0 (4 months ago)
+| |/ / /  
+|/| | |   
+| | * | ddb94b10 - Updated README with new paths to metricscollector changelog (4 months ago)
+| | * |   2e110dca - Merge branch 'main' into remove-metricscollector (4 months ago)
+| | |\ \  
+| |_|/ /  
+|/| | |   
+* | | |   3dec3177 - Merge pull request #624 from garethjevans/remove-deadwood (4 months ago)
+|\ \ \ \  
+| |/ / /  
+|/| | |   
+| * | |   3f2867bd - Merge branch 'main' into remove-deadwood (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   6ec580dd - Merge pull request #622 from garethjevans/bump-springfox (4 months ago)
+|\ \ \ \  
+| * \ \ \   b9eb314d - Merge branch 'main' into bump-springfox (4 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+* | | | |   17bc07ff - Merge pull request #621 from garethjevans/bump-simpleclient (4 months ago)
+|\ \ \ \ \  
+| * \ \ \ \   9e058e33 - Merge branch 'main' into bump-simpleclient (4 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+| * | | | |   0ba44abd - Merge branch 'main' into bump-simpleclient (4 months ago)
+| |\ \ \ \ \  
+| | | * | | | d72a2524 - Bump springfox to 3.0.0 (4 months ago)
+| | |/ / / /  
+| |/| | | |   
+| * | | | | 43fe7956 - Bump simpleclient to 0.11.0 (4 months ago)
+| | | | * | c4985c0c - Removed metrics collector (4 months ago)
+| | | |/ /  
+| | | * | e617ea4b - Corrected path to catalog.json (4 months ago)
+| | | * | f84d28de - Revert deletion of metricscollector for later PR (4 months ago)
+| | | * | 0c0ac3d1 - Disable metrics-histories tests onto metricscollector (4 months ago)
+| | | * | 83ff5a4e - Remove dependency on metricscollector (4 months ago)
+| | | * | 5aaeb55a - Corrected paths to metricscollector liquibase changelog (4 months ago)
+| | | * | 47bc37b9 - Removed dependency on metricscollector from metricsserver (4 months ago)
+| | | * | 7b89e365 - Stop trying to build the metricscollector (4 months ago)
+| | | * | d22bbbe9 - Correct path to servicebroker catalog.json (4 months ago)
+| | | * | 7e0017a0 - Removed code referencing the deprecated metricscollector (4 months ago)
+| | | * | a81f9a4c - Removed metricscollector fakes (4 months ago)
+| | | * | f3154693 - Removed deprecated metricscollector (4 months ago)
+| | | * | 7ada1e96 - Remove integration_legacy code as its unused (4 months ago)
+| | | * | 69bbaa67 - Remove node implementations of api & broker (4 months ago)
+| |_|/ /  
+|/| | |   
+* | | |   8653a490 - Merge pull request #625 from garethjevans/linter (4 months ago)
+|\ \ \ \  
+| |_|/ /  
+|/| | |   
+| * | | 8532b035 - Correct ginkgo go get path (4 months ago)
+| * | | 5554c952 - Marked golangci-lint as non indirect dep (4 months ago)
+| * | | 821f260e - Removing dead/unused code (4 months ago)
+| * | | 619b2842 - Added golangci-lint under go mods control (4 months ago)
+|/ / /  
+* | |   8e8e62ad - Merge pull request #620 from garethjevans/sb-upgrade-to-2.5 (4 months ago)
+|\ \ \  
+| * \ \   97483a01 - Merge branch 'main' into sb-upgrade-to-2.5 (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| / /   
+| |/ /    
+* | |   9d15fd28 - Merge pull request #619 from garethjevans/sb-upgrade-to-2.4 (4 months ago)
+|\ \ \  
+| * \ \   9e4d9e8e - Merge branch 'main' into sb-upgrade-to-2.4 (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   2d258cd6 - Merge pull request #618 from garethjevans/banner (4 months ago)
+|\ \ \ \  
+| * \ \ \   6aee16f4 - Merge branch 'main' into banner (4 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+| * | | | c20e0ee1 - Added a better spring-boot banner (4 months ago)
+| | | * | b971f093 - Upgrade to Spring Boot 2.5.1 (4 months ago)
+| | |/ /  
+| | * / e9274747 - Upgrade to Spring Boot 2.4.7 (4 months ago)
+| |/ /  
+|/| |   
+* | |   5f11edce - Merge pull request #617 from garethjevans/sb-upgrade-to-2.3 (4 months ago)
+|\ \ \  
+| |/ /  
+|/| |   
+| * |   41bdacd6 - Merge branch 'main' into sb-upgrade-to-2.3 (4 months ago)
+| |\ \  
+| |/ /  
+|/| |   
+* | |   e86cf439 - Merge pull request #616 from asalan316/doc-update (4 months ago)
+|\ \ \  
+| * \ \   c4375f8b - Merge branch 'main' into doc-update (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+| * | |   a3525f24 - Merge branch 'main' into doc-update (4 months ago)
+| |\ \ \  
+| * | | | 12d11296 - update postgres documentation (4 months ago)
+| | | * | fef4db02 - Upgrade Spring Boot to 2.3.12.RELEASE (4 months ago)
+| |_|/ /  
+|/| | |   
+* | | |   fdd0d5ad - Merge pull request #614 from asalan316/main (4 months ago)
+|\ \ \ \  
+| |_|/ /  
+|/| | |   
+| * | |   b8a20d9f - Merge branch 'main' into main (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+* | | |   05ff6c1c - Merge pull request #615 from garethjevans/sb-upgrade-to-2.2 (4 months ago)
+|\ \ \ \  
+| * \ \ \   5d951528 - Merge branch 'main' into sb-upgrade-to-2.2 (4 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+| * | | | 744a09f0 - Upgrade Spring Boot to 2.2.13.RELEASE (4 months ago)
+| | * | |   eb82395d - Merge branch 'main' into main (4 months ago)
+| | |\ \ \  
+| |_|/ / /  
+|/| | / /   
+| | |/ /    
+* | | |   bbf37ee9 - Merge pull request #605 from garethjevans/check-fakes (4 months ago)
+|\ \ \ \  
+| |/ / /  
+|/| | |   
+| * | |   5d87fd54 - Merge branch 'main' into check-fakes (4 months ago)
+| |\ \ \  
+| |/ / /  
+|/| | |   
+| * | |   eb7ef088 - Merge branch 'main' into check-fakes (4 months ago)
+| |\ \ \  
+| * \ \ \   07e93f52 - Merge branch 'main' into check-fakes (4 months ago)
+| |\ \ \ \  
+| * | | | | 7caad9bf - Fail the build if there are differences (4 months ago)
+| * | | | | 59d62b16 - Check that fakes are up to date (4 months ago)
+| | | | * | 279148b0 - update test to work with java 11 (4 months ago)
+| | | | * |   aecec533 - Merge branch 'main' into main (4 months ago)
+| | | | |\ \  
+| |_|_|_|/ /  
+|/| | | | |   
+* | | | | |   4f4f7e4a - Merge pull request #613 from garethjevans/sb-upgrade-to-2.1 (4 months ago)
+|\ \ \ \ \ \  
+| * \ \ \ \ \   86e93a6e - Merge branch 'main' into sb-upgrade-to-2.1 (4 months ago)
+| |\ \ \ \ \ \  
+| |/ / / / / /  
+|/| | | | | |   
+* | | | | | |   8af10ea2 - Merge pull request #575 from daviddob/client_credentials_auth_fix (4 months ago)
+|\ \ \ \ \ \ \  
+| * \ \ \ \ \ \   87744942 - Merge branch 'main' into client_credentials_auth_fix (4 months ago)
+| |\ \ \ \ \ \ \  
+| |/ / / / / / /  
+|/| | | | | | |   
+| * | | | | | | 779ae4ea - fix to integration tests (4 months ago)
+| * | | | | | |   90802501 - Merge branch 'main' into client_credentials_auth_fix (4 months ago)
+| |\ \ \ \ \ \ \  
+| * | | | | | | | 081499e7 - Allow uaa clients with cloud_controller.admin to interact with autoscaler (1 year, 3 months ago)
+| | | * | | | | | cdf3108f - Remove properties migrator, no longer required (4 months ago)
+| | | * | | | | | ace64854 - Enable Datasource health checking for app (4 months ago)
+| | | * | | | | | a2db0899 - Correct list parameters in generated application.properties (4 months ago)
+| | | * | | | | | dda9126d - Allow bean overridding for ginkgo integration tests (4 months ago)
+| | | * | | | | |   28650bc9 - Merge branch 'sb-upgrade-to-2.1' of https://github.com/garethjevans/app-autoscaler into sb-upgrade-to-2.1 (4 months ago)
+| | | |\ \ \ \ \ \  
+| | | | * \ \ \ \ \   f850b381 - Merge branch 'main' into sb-upgrade-to-2.1 (4 months ago)
+| | | | |\ \ \ \ \ \  
+| |_|_|_|/ / / / / /  
+|/| | | | | | | | |   
+| | | * | | | | | | d353876d - Disable database health checking (4 months ago)
+| | | |/ / / / / /  
+| | | * | | / / / b424bb27 - Upgrade spring-boot to 2.1.10.RELEASE (4 months ago)
+| | | | |_|/ / /  
+| | | |/| | | |   
+| | | | | | * | 49fb6383 - add java 11 support to github actions (4 months ago)
+| |_|_|_|_|/ /  
+|/| | | | | |   
+* | | | | | |   199e31c6 - Merge pull request #609 from cloudfoundry/dependabot/maven/scheduler/org.apache.commons-commons-dbcp2-2.8.0 (4 months ago)
+|\ \ \ \ \ \ \  
+| * | | | | | | 8d1b12dd - Bump commons-dbcp2 from 2.7.0 to 2.8.0 in /scheduler (4 months ago)
+|/ / / / / / /  
+* | | | | | |   adb9a02d - Merge pull request #608 from cloudfoundry/dependabot/maven/scheduler/mysql-mysql-connector-java-8.0.25 (4 months ago)
+|\ \ \ \ \ \ \  
+| * | | | | | | 852c580b - Bump mysql-connector-java from 8.0.18 to 8.0.25 in /scheduler (4 months ago)
+|/ / / / / / /  
+* | | | | | |   6c4a8364 - Merge pull request #603 from cloudfoundry/dependabot/maven/scheduler/org.hibernate-hibernate-core-5.5.2.Final (4 months ago)
+|\ \ \ \ \ \ \  
+| * | | | | | | 8f42a4e7 - Bump hibernate-core from 5.2.18.Final to 5.5.2.Final in /scheduler (4 months ago)
+|/ / / / / / /  
+* | | | | | |   7ee47600 - Merge pull request #600 from cloudfoundry/dependabot/maven/org.apache.maven.plugins-maven-surefire-plugin-2.22.2 (4 months ago)
+|\ \ \ \ \ \ \  
+| |_|_|/ / / /  
+|/| | | | | |   
+| * | | | | | e825fc84 - Bump maven-surefire-plugin from 2.19.1 to 2.22.2 (4 months ago)
+|/ / / / / /  
+* | | | | |   c2e2f427 - Merge pull request #598 from cloudfoundry/dependabot/maven/org.apache.maven.plugins-maven-compiler-plugin-3.8.1 (4 months ago)
+|\ \ \ \ \ \  
+| |_|_|_|/ /  
+|/| | | | |   
+| * | | | | c64d8309 - Bump maven-compiler-plugin from 3.5.1 to 3.8.1 (4 months ago)
+|/ / / / /  
+* | | | |   63b205ca - Merge pull request #595 from cloudfoundry/dependabot/maven/org.postgresql-postgresql-42.2.22 (4 months ago)
+|\ \ \ \ \  
+| * | | | | 8a23c331 - Bump postgresql from 42.2.5 to 42.2.22 (4 months ago)
+|/ / / / /  
+* | | | |   cb8c87c4 - Merge pull request #596 from cloudfoundry/dependabot/maven/scheduler/com.sun.xml.bind-jaxb-impl-3.0.1 (4 months ago)
+|\ \ \ \ \  
+| * | | | | 88f1b445 - Bump jaxb-impl from 2.3.0.1 to 3.0.1 in /scheduler (4 months ago)
+|/ / / / /  
+* | | | |   3b22d74a - Merge pull request #604 from cloudfoundry/dependabot/go_modules/src/autoscaler/code.cloudfoundry.org/go-loggregator/v8-8.0.5 (4 months ago)
+|\ \ \ \ \  
+| * \ \ \ \   29cbadb8 - Merge branch 'main' into dependabot/go_modules/src/autoscaler/code.cloudfoundry.org/go-loggregator/v8-8.0.5 (4 months ago)
+| |\ \ \ \ \  
+| |/ / / / /  
+|/| | | | |   
+* | | | | |   f61f2795 - Merge pull request #594 from cloudfoundry/dependabot/maven/scheduler/javax.xml.bind-jaxb-api-2.3.1 (4 months ago)
+|\ \ \ \ \ \  
+| |_|_|_|/ /  
+|/| | | | |   
+| * | | | | 1b02ca99 - Bump jaxb-api from 2.3.0 to 2.3.1 in /scheduler (4 months ago)
+|/ / / / /  
+| * / / / 7c3f2ab7 - Bump code.cloudfoundry.org/go-loggregator/v8 in /src/autoscaler (4 months ago)
+|/ / / /  
+* | | |   f713c7a2 - Merge pull request #593 from garethjevans/dependabot-config (4 months ago)
+|\ \ \ \  
+| * \ \ \   c003217b - Merge branch 'main' into dependabot-config (4 months ago)
+| |\ \ \ \  
+| |/ / / /  
+|/| | | |   
+* | | | |   a92a3351 - Merge pull request #592 from garethjevans/compatible-imports (4 months ago)
+|\ \ \ \ \  
+| |_|_|/ /  
+|/| | | |   
+| * | | | 8975de4b - Added gomodguard & gomoddirectives linters (4 months ago)
+| * | | | f9ca4d40 - Linter fixes (4 months ago)
+| * | | | d6fbc800 - Added linter config, fixed issues (4 months ago)
+| * | | | 6ad00c77 - Switched to using compatible imports where possible (4 months ago)
+|/ / / /  
+| * / / b7489e9e - Added dependabot configuration for Java/Golang & GitHub Action updates (4 months ago)
+|/ / /  
+* | |   8252a6c9 - Merge pull request #588 from garethjevans/gomods (4 months ago)
+|\ \ \  
+| * | | 45d2d4ab - Remove commented out code (4 months ago)
+| * | | 1c8b44b9 - Updated instructions unit/integration tests (4 months ago)
+| * | | e6310f45 - Corrected path to service broker catalog (4 months ago)
+| * | | 265ba75e - Moving integration tests so they come under go mod control (4 months ago)
+| * | | b01a5651 - Test fixes for gomodules (4 months ago)
+| * | | 47308e63 - Fixes prometheus assertions (4 months ago)
+| * | | a1e868bb - Revert formatting changes for a future PR (4 months ago)
+| * | | 560cee1d - Revert formatting changes for a future PR (4 months ago)
+| * | | 55e427b9 - Formatting fixes (4 months ago)
+| * | | e1df1fa7 - Formatting and imports (4 months ago)
+| * | | 795b880d - Revert fmt changes for a later PR (4 months ago)
+| * | | fad45c66 - Use strict mode when unmarshalling to fix tests (4 months ago)
+| * | | a50d128b - Configure certstrap & ginkgo as build tools (4 months ago)
+| * | | 75e1ea60 - Formatting fixes (4 months ago)
+| * | | f0482bc5 - Disable gopath mode for golang (4 months ago)
+| * | | f01f94da - Specify version when installing certstrap (4 months ago)
+| * | | f7105134 - Disable gomods when generating test certificates (4 months ago)
+| * | | 33727ccc - Go Mod Tidy (4 months ago)
+| * | | 666596b8 - Formatting and imports (4 months ago)
+| * | | dc224c2c - Conversion to go modules (4 months ago)
+|/ / /  
+* | |   c3c695b6 - Merge pull request #591 from cloudfoundry/garethjevans-patch-1 (4 months ago)
+|\ \ \  
+| * | | 42055894 - (origin/garethjevans-patch-1) Add the MySQL badge to the readme (4 months ago)
+|/ / /  
+* | |   b894f438 - Merge pull request #589 from silvestre/switch-to-v3-api-in-space-developer-check (4 months ago)
+|\ \ \  
+| * | | 9dc43000 - [AAS-1] Switch to v3 API for space developer check (4 months ago)
+|/ / /  
+* | |   c49cd4b1 - Merge pull request #590 from silvestre/replace-badge (4 months ago)
+|\ \ \  
+| * | | da1d0b20 - Replace Travis with GHA badge (4 months ago)
+|/ / /  
+* | |   eb991762 - Merge pull request #585 from garethjevans/gha (4 months ago)
+|\ \ \  
+| * | | 362636c0 - Also enable testing on Postgres 12 (4 months ago)
+| * | | 0b0accf3 - (origin/gha) Also run on push to main (4 months ago)
+| * | | a22d7544 - Add a workflow dispatch trigger to allow manual triggering (4 months ago)
+| * | | 238d4ce2 - Source .env before integration tests (4 months ago)
+| * | | af4254b5 - Use localhost for unit/integration tests (4 months ago)
+| * | | b9eb05b3 - Specify user when running postgres liquibase update (4 months ago)
+| * | | 1b275a34 - Revert using postgres host for liquibase (4 months ago)
+| * | | 7b2fa248 - Use a default username/password for postgres (4 months ago)
+| * | | c180e655 - Remove PSQL call to allow it to create the db (4 months ago)
+| * | | 9430812a - Default postgress password (4 months ago)
+| * | | e1917a4a - Update postgres password (4 months ago)
+| * | | ca4b5478 - Added pipeline for postgres (4 months ago)
+| * | | cf838763 - Regenerate certificates on build (4 months ago)
+| * | | b1c8b779 - Remove updated certificates (4 months ago)
+| * | | 5a972c11 - Remove updated certificates (4 months ago)
+| * | | a3be0a8f - Using a matrix build to test different java/golang versions (4 months ago)
+| * | | bb32d5bc - GitHub Action configuration to build pull requests (4 months ago)
+|/ / /  
+* | |   03362ae7 - Merge pull request #580 from aqan213/update_doc (11 months ago)
+|\ \ \  
+| * | | 90657656 - update golang version from 1.13 to 1.15 in the doc (12 months ago)
+|/ / /  
+* | | b0a8fdde - update to go1.15.1 (#579) (1 year, 1 month ago)
+* | | d7e48cd6 - Fix typo in custom metric docs (#577) (1 year, 1 month ago)
+* | | 63d0b22e - replace juju/ratelimit due to license (#576) (1 year, 1 month ago)
+* | | 36cb50ef - Update Documentation (#574) (1 year, 2 months ago)
+|/ /  
+* |   2824ff52 - Merge pull request #572 from cloudfoundry/dependabot/maven/scheduler/org.quartz-scheduler-quartz-2.3.2 (1 year, 4 months ago)
+|\ \  
+| |/  
+|/|   
+| * a2e73f2a - Bump quartz from 2.3.1 to 2.3.2 in /scheduler (1 year, 4 months ago)
+|/  
+* 03aae5ef - basic authentication added to healthcheck (#561) (1 year, 4 months ago)
+* f32b96ba - update readme to add mysql build and test (#568) (1 year, 5 months ago)
+* ebd9c353 - ###Description: (#567) (1 year, 5 months ago)
+* f1d64d9e - Set metrics value between 0 and 1 to 1 (#564) (1 year, 6 months ago)
+* 8aef7430 - add mysql support for golang components (#555) (1 year, 7 months ago)
+* 06b4121e - metricsgateway ut panics because of testhelpers/websocket_handler #558 (#559) (1 year, 8 months ago)
+* e3fddcbe - golangapiserver: Actually test detach policy endpoint (#560) (1 year, 8 months ago)
+* c654d325 - Revert "upgrade prometheus client_golang to v1.2.1" (#557) (1 year, 9 months ago)
+* bfc7be96 - bug fix: Schedules can not be removed in synchronization when an application is deleted directly #553 (#554) (1 year, 10 months ago)
+* c2479e26 - MetricsCollector: Only process HTTPStartStopEvents with peerType client (#541) (1 year, 10 months ago)
+* c383315d - Change all the sql statements and import sqlx libary (#549) (1 year, 10 months ago)
+* 12d173b4 - Merge pull request #552 from qibobo/dev_qy_upgrade_prometheusgo (1 year, 10 months ago)
+* 994eab53 - upgrade prometheus client_golang to v1.2.1 (1 year, 10 months ago)
+*   283bb7ee - (internal/sap3) Merge pull request #38 from autoscaler/fix_pems_decode (5 days ago)
+|\  
+| * 581fd488 - Fix for white space between Pem files. (5 days ago)
+|/  
+*   9120baf7 - Merge pull request #37 from autoscaler/handle-cert-rotation (13 days ago)
+|\  
+| * d0765e28 - (internal/handle-cert-rotation) Handle mulitple certificates during rotation for MTLS (13 days ago)
+|/  
+*   1b8fab37 - Merge pull request #35 from autoscaler/AAS-112_mtls_routes (2 weeks ago)
+|\  
+| * 4e62d3da - (internal/AAS-112_mtls_routes) add mtls routes to the vcap information. (3 weeks ago)
+|/  
+*   a97ff99a - AAS-112 MTLS integration fixes #33 (3 weeks ago)
+|\  
+| * 9d8ead1e - AS-112 Adding integration fixes for mtls auth. (3 weeks ago)
+* | db9db728 - Update travis worker to bionic and update the ca-certificates and GnuTLS (#34) (3 weeks ago)
+|/  
+*   18b666ee - Merge pull request #32 from autoscaler/D068269-patch-1 (4 weeks ago)
+|\  
+| * b13968f7 - (internal/D068269-patch-1) Link new Travis (4 weeks ago)
+|/  
+*   21c33945 - Merge pull request #29 from autoscaler/merge-oss-mtls-feature (5 weeks ago)
+|\  
+| * f1797b02 - [AAS-112] Removing incorrectly added test certs (5 weeks ago)
+| * 3d80191d - [AAS-112] Updates tests to validate SBSS with middleware (5 weeks ago)
+| * 9e85e111 - Regenerated fakes, removed duplicates (5 weeks ago)
+| * da57e68f - add SBSS Test back again (5 weeks ago)
+| * 158c08fa - generate test-certs in CI (5 weeks ago)
+| * d4b6479b - expired certicate (days flag) (5 weeks ago)
+| * ae02366a - upgrade openssl for expired certicate (days flag) (5 weeks ago)
+| * 202edc10 - generate test-certs in CI (5 weeks ago)
+| * 60092e0e - generate test-certs in CI (6 weeks ago)
+| * f08d0129 - add yaml.v3 as git submodule (6 weeks ago)
+| * 46f6002e - add envoyutil as git submodule (6 weeks ago)
+| * 6394f77b - add sbss auth check again (6 weeks ago)
+| * e30aca3c - add envoyutil library as submodule (6 weeks ago)
+| * a89fbaa3 - add alias for envoyutil library for TravisCI (6 weeks ago)
+| * c5caa266 - Enabling custum metrics handler to autheticate clients by mTLS     Cherry Pick from OSS f66c767c7c94de8b6cdd5cef64806898c01f7c0a (6 weeks ago)
+|/  
+*   4dd013b1 - (sap3, internal_sap3) Merge pull request #26 from autoscaler/fix-scalinghistory-issue (10 weeks ago)
+|\  
+| * 06a635c0 - Change how scalinghistories are created (10 weeks ago)
+| * 58ab044d - [NGPBUG-160118] add appid and timestamp as composite primary key to scalinghistory table (10 weeks ago)
+|/  
+*   1471164d - Merge pull request #21 from autoscaler/AAS-22-orphan-binding-deletion (3 months ago)
+|\  
+| *   afdf8781 - Merge branch 'sap3' into AAS-22-orphan-binding-deletion (3 months ago)
+| |\  
+| |/  
+|/|   
+* |   587e1439 - Merge pull request #24 from autoscaler/NGPBUG-155879 (3 months ago)
+|\ \  
+| * | bbd7ae65 - Don't trigger cooldown if scaling was ignored (3 months ago)
+|/ /  
+| * 3ccaf5f4 - [AAS-22] error types introduced (3 months ago)
+| * c6e9ff1c - [AAS-22] delete bindings before service instance deletion (4 months ago)
+|/  
+*   2b5d9efc - Merge pull request #23 from autoscaler/NGPBUG-150770 (5 months ago)
+|\  
+| * a3c8b707 - Revert "integration tests fixed" (5 months ago)
+| * d35c935d - Revert "Misc fixes" (5 months ago)
+| * 5798973c - [NGPBUG-150770] Revert "[TECHCOREXS2-2103]: Ratelimiter introduced for all components for healthchecks" (5 months ago)
+|/  
+*   27f14fb5 - Merge pull request #22 from autoscaler/AAS-33 (5 months ago)
+|\  
+| * 18e00b62 - [AAS-33] Also test with PostgreSQL 12 (6 months ago)
+|/  
+*   727f7772 - Merge pull request #15 from autoscaler/switch-to-v3-api-in-space-developer-check (6 months ago)
+|\  
+| * b66ac005 - Remove ratelimiter debugging output and increase default (6 months ago)
+| * 6b30e9c6 - [AAS-1] Switch to v3 API for space developer check (6 months ago)
+|/  
+*   260289c9 - Merge pull request #20 from autoscaler/change-message-for-app-guid-not-found-custom-metric (6 months ago)
+|\  
+| * f0071266 - (internal/change-message-for-app-guid-not-found-custom-metric) modify the app message to include that authorization failure can also happen because of invalid appid (6 months ago)
+| * eac1eced - Update src/autoscaler/metricsforwarder/server/custom_metrics_handlers.go (6 months ago)
+| * 550f5cc0 - Update src/autoscaler/metricsforwarder/server/custom_metrics_handlers.go (6 months ago)
+| * 8880fe98 - modify the app message to include that authorization failure can also happen because of invalid appid (6 months ago)
+|/  
+*   0ab424c2 - Merge pull request #17 from autoscaler/AAS-21 (7 months ago)
+|\  
+| * 587006d5 - Fix broken operator tests (7 months ago)
+| * 359002aa - [AAS-21] Update lib/pq to v1.10.0 (7 months ago)
+|/  
+*   fcc3d691 - Merge pull request #16 from autoscaler/new-certs (7 months ago)
+|\  
+| * f1bdd011 - certificates updated (7 months ago)
+|/  
+*   e34809e5 - Merge pull request #7 from autoscaler/ratelimiter-for-healthcheck (7 months ago)
+|\  
+| * 4dc43dc8 - (internal/ratelimiter-for-healthcheck) integration tests fixed (8 months ago)
+| * 5c105599 - unit test fixed (8 months ago)
+| * 949c4683 - Misc fixes (8 months ago)
+| * b6aabf78 - [TECHCOREXS2-2103]: Ratelimiter introduced for all components for healthchecks (8 months ago)
+|/  
+*   bd5663c9 - Merge pull request #14 from autoscaler/revert-12-fix-space-developer-check (9 months ago)
+|\  
+| *   27e58c96 - Merge branch 'sap3' into revert-12-fix-space-developer-check (9 months ago)
+| |\  
+| |/  
+|/|   
+* | 3b1669cd - Switch build status icon to our internal travis (9 months ago)
+| * 7cdcc144 - Revert "API: Fix handling of q parameter in oauth.go" (9 months ago)
+|/  
+*   cdb420b1 - Merge pull request #13 from autoscaler/support-multiple-broker-credentials (10 months ago)
+|\  
+| * 6d83e2ce - (internal/support-multiple-broker-credentials) [TECHCOREXS2-2111] support multiple broker credentials for credentials rotation (10 months ago)
+|/  
+*   ee5b57d5 - Merge pull request #12 from autoscaler/fix-space-developer-check (11 months ago)
+|\  
+| * d65cea9e - API: Fix handling of q parameter in oauth.go (11 months ago)
+|/  
+*   c0745700 - Merge pull request #10 from autoscaler/make-lite-plan-updateable (11 months ago)
+|\  
+| * 82ca2a56 - (internal/make-lite-plan-updateable) test and changes made for existing policy (11 months ago)
+| * 193d34dd - [TECHCOREXS2-2098] make service plan lite updateable (11 months ago)
+|/  
+*   e43bd993 - Merge pull request #11 from autoscaler/add-github-key (11 months ago)
+|\  
+| * 867c4931 - (internal/add-github-key) use .netrc to authenticate to github.wdf.sap.corp (11 months ago)
+|/  
+* 586d8896 - bump sbss to 1.6.15 (11 months ago)
+*   54699e85 - Merge pull request #9 from autoscaler/update-to-go1.15.1 (1 year, 1 month ago)
+|\  
+| * babce98c - (internal/update-to-go1.15.1) Update to Go 1.15 (1 year, 1 month ago)
+|/  
+*   0277ba7f - Merge pull request #4 from autoscaler/basic-auth-healthcheck (1 year, 7 months ago)
+|\  
+| * 52a3658d - basic authentication added to healthcheck (1 year, 7 months ago)
+* |   12af1a6d - Merge pull request #5 from autoscaler/merge-upstream-master-2019-12-04 (1 year, 8 months ago)
+|\ \  
+| * | 67e1a549 - golangapiserver: Fix test broken by client token check change (1 year, 8 months ago)
+| * |   847c6b2d - Merge remote-tracking branch 'upstream/master' into update-travis-to-java-11 (1 year, 8 months ago)
+| |\ \  
+| | * | 7fdf7d1e - Merge pull request #537 from cloudfoundry/develop (1 year, 11 months ago)
+| |  /  
+* | / ceb0feee - [Fix] certstrap command calls updated as the arguments have been from --expired to --years (1 year, 8 months ago)
+|/ /  
+* | cab58dcc - Integration tests: Fix for policy check in update (1 year, 8 months ago)
+* | 5a438b1f - Use Java 11 instead of 8 (1 year, 8 months ago)
+|/  
+* ec4b42b2 - Wrap maps with locks for concurrent access (1 year, 11 months ago)
+* 2cfa708e - Also check default policy against plan in update (1 year, 11 months ago)
+* a350ba04 - quotas: fix service instance counting (1 year, 11 months ago)
+* af5969a8 - Fix quota management broker responses (1 year, 11 months ago)
+* 59c75d8e - ensure that /health is reachable without authentication (1 year, 11 months ago)
+* 6c66a559 - Add health endpoint to service broker (1 year, 11 months ago)
+* fac7fc8d - fix tests (1 year, 11 months ago)
+* 9c1dd85b - MetricsCollector: Only process HTTPStartStopEvents with peerType client (1 year, 11 months ago)
+* 7ab8f4fe - Unflake tests (1 year, 11 months ago)
+* cfe59a64 - Fix ratelimiter config in tests (1 year, 11 months ago)
+* 25d2ae24 - Integration tests: Use service and plan from catalog (1 year, 11 months ago)
+* 69335510 - Reduce test flakiness (1 year, 11 months ago)
+* 12275a34 - Fix tests (1 year, 11 months ago)
+* 254f229a - quota management: add plain (non-oauth2) test mode (1 year, 11 months ago)
+* afc75899 - Fix integration test (1 year, 11 months ago)
+* 67192253 - TECHCOREXS2-1757 Re-implement plan check in golang service broker (1 year, 11 months ago)
+* 2621f9f1 - Revert "remove `default_policy` substructure" (1 year, 11 months ago)
+* 0df0f1e5 - wip: more output (1 year, 11 months ago)
+*   2a079837 - Merge branch 'add-default-policy' into TECHCOREXS2-1756-quota-API-support-in-golang-service-broker (2 years ago)
+|\  
+| * 6decf0fa - remove `default_policy` substructure (2 years ago)
+| * 4ce570c5 - rollback policy operations on failure, update service instance afterwards (2 years ago)
+| * cfe0065d - close rows (2 years ago)
+| * f052895b - Forgotten file (2 years ago)
+| * 37b28f3f - duplicate Integration_Operator_Others tests (2 years ago)
+| * 8904e44f - Split tests of current and legacy components (2 years ago)
+| * 0cce93ec - Add scheduler policy update/deletion assertions to unit tests (2 years ago)
+| * 36073bd9 - remove GetAppIdsWithPolicyGuid by returning affected apps in ReplaceAppPolicies and DeletePoliciesByPolicyGuid (2 years ago)
+| * d896121b - Add GetAppIdByInstanceId unit tests (2 years ago)
+| * f829e845 - Add UpdateServiceInstance unit test (2 years ago)
+| * f7f0476e - Add unit test for GetServiceInstance usage in UpdateServiceInstance (2 years ago)
+| * c46b9861 - validate updated policy before accessing the DB (2 years ago)
+| * 4b3c60c2 - Also update readme (2 years ago)
+| * 02ba69fa - ServiceBroker: Allow to specify a default policy on instance level (2 years ago)
+* 48bd7662 - Add Quota API check (2 years ago)
+* 413a58e5 - (internal/TECHCOREXS2-1758-auditlog-token-check-in-golang-API-server) golangapiserver: Implement client token check (2 years ago)
+* a7499e10 - (internal/TECHCOREXS2-1563-instance-default-policy) ServiceBroker: Allow to specify a default policy on instance level (2 years ago)
+* f584ca68 - (internal/sap2) metricsforwarder: Add SBSS support (2 years, 1 month ago)
+* c58c7a2d - Golang Broker: Add SBSS support (2 years, 1 month ago)
+* 86457f9c - DB: Add SBSS DB util (2 years, 1 month ago)
+* ae6dadf2 - fix parameter parse bug (#531) (2 years, 1 month ago)
+* 55a810a9 - update health endpoint ut (2 years, 1 month ago)
+* d45e94e3 - add pprof endpoints for all golang components (2 years, 1 month ago)
+* 04afc27f - fix errors in integration_golangapi_scheduler_test (2 years, 1 month ago)
+* 5f8a5125 - remove related limitation from docs (2 years, 1 month ago)
+* 436ec3d2 - fix ut error (2 years, 1 month ago)
+* 9a360d42 - append more fix in integration test (2 years, 1 month ago)
+* c70d2fed - fix integration test issue (2 years, 1 month ago)
+* 2b1c7d91 - add an extra trigger for recurring schedule when its start time prior to now (2 years, 1 month ago)
+* 5ff616e5 - update document for golang version (#525) (2 years, 1 month ago)
+* 71e49663 - [api] add validation on the length of the metric type (#526) (2 years, 1 month ago)
+* e4b8fa2b - upgrade pq (2 years, 1 month ago)
+* 366e77dd - add integration test for golangapiserver-metricsserver (2 years, 1 month ago)
+* 1b7cc8d2 - add integration tests for golang apiserver (2 years, 1 month ago)

@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"autoscaler/helpers"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -118,13 +119,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "metricserver.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
-
-	healthHttpClient = &http.Client{}
+	httpClient = &http.Client{Transport: helpers.NewTransport(tlsConfig)}
+	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 })
 
 var _ = SynchronizedAfterSuite(func() {

@@ -130,7 +130,7 @@ var _ = BeforeSuite(func() {
 
 	serverProcess = ginkgomon.Invoke(httpServer)
 
-	httpClient = &http.Client{}
+	httpClient = &http.Client{Transport:helpers.NewTransport( nil)}
 
 	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
 	Expect(err).NotTo(HaveOccurred())

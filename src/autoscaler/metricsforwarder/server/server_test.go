@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"autoscaler/helpers"
 	"bytes"
 	"database/sql"
 	"encoding/json"
@@ -48,7 +49,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
-			client := &http.Client{}
+			client := &http.Client{Transport: helpers.NewTransport(nil)}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
@@ -71,7 +72,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
-			client := &http.Client{}
+			client := &http.Client{Transport: helpers.NewTransport(nil)}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			resp, err = client.Do(req)
@@ -93,7 +94,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
-			client := &http.Client{}
+			client := &http.Client{Transport: helpers.NewTransport(nil)}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/san-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "dXNlcm5hbWU6cGFzc3dvcmQ=")
@@ -117,7 +118,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			policyDB.GetCredentialReturns(nil, sql.ErrNoRows)
-			client := &http.Client{}
+			client := &http.Client{Transport: helpers.NewTransport(nil)}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic M2YxZWY2MTJiMThlYTM5YmJlODRjZjUxMzY4MWYwYjc6YWYyNjk1Y2RmZDE0MzA4NThhMWY3MzJhYTI5NTQ2ZTk=")
@@ -140,7 +141,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
-			client := &http.Client{}
+			client := &http.Client{Transport: helpers.NewTransport(nil)}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
@@ -180,7 +181,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
-			client := &http.Client{}
+			client := &http.Client{Transport: helpers.NewTransport(nil)}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")

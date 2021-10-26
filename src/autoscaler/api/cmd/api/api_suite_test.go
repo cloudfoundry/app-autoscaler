@@ -4,6 +4,7 @@ import (
 	"autoscaler/api/config"
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	"database/sql"
 	"io/ioutil"
@@ -206,22 +207,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "api.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	apiHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: apiClientTLSConfig,
-		},
-	}
+	apiHttpClient = &http.Client{Transport: helpers.NewTransport(apiClientTLSConfig)}
 	brokerClientTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "servicebroker.crt"),
 		filepath.Join(testCertDir, "servicebroker.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	brokerHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: brokerClientTLSConfig,
-		},
-	}
-	healthHttpClient = &http.Client{}
+	brokerHttpClient = &http.Client{Transport:helpers.NewTransport( brokerClientTLSConfig)}
+	healthHttpClient = &http.Client{Transport:helpers.NewTransport( nil)}
 
 })
 

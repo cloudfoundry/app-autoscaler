@@ -4,6 +4,7 @@ import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/fakes"
+	"autoscaler/helpers"
 	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
@@ -135,7 +136,7 @@ var _ = BeforeSuite(func() {
 
 	serverProcess = ginkgomon.Invoke(httpServer)
 
-	httpClient = &http.Client{}
+	httpClient = &http.Client{ Transport: helpers.NewTransport(nil)}
 
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())

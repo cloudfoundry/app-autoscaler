@@ -3,6 +3,7 @@ package main_test
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	"autoscaler/scalingengine/config"
 	"path/filepath"
@@ -148,13 +149,8 @@ var _ = SynchronizedBeforeSuite(
 			filepath.Join(testCertDir, "eventgenerator.key"),
 			filepath.Join(testCertDir, "autoscaler-ca.crt"))
 		Expect(err).NotTo(HaveOccurred())
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
-			},
-		}
-		healthHttpClient = &http.Client{}
-
+		httpClient = &http.Client{Transport: helpers.NewTransport(tlsConfig)}
+		healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 	})
 
 func verifyCertExistence(testCertDir string) {

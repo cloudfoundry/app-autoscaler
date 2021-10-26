@@ -89,7 +89,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mgPath = string(pathByte)
 	initFakeServers()
 	initConfig()
-	healthHttpClient = &http.Client{}
+	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 })
 
 var _ = SynchronizedAfterSuite(func() {

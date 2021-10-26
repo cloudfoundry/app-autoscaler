@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"autoscaler/helpers"
 	"database/sql"
 	"io/ioutil"
 	"net/http"
@@ -48,7 +49,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(pathsByte []byte) {
 	prPath = string(pathsByte)
 	initConfig()
-	healthHttpClient = &http.Client{}
+	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
 	configFile = writeConfig(&cfg)
 })
 
