@@ -264,6 +264,7 @@ var _ = Describe("Client", func() {
 					),
 				)
 				err = cfc.Login()
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when auth fails", func() {
@@ -342,6 +343,7 @@ var _ = Describe("Client", func() {
 				),
 			)
 			err = cfc.Login()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the token is not going to be expired", func() {
@@ -422,7 +424,8 @@ var _ = Describe("Client", func() {
 					}),
 				),
 			)
-			cfc.Login()
+			err = cfc.Login()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		const (

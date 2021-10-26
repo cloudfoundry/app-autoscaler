@@ -13,7 +13,7 @@ linters-settings:
   exhaustive:
     default-signifies-exhaustive: false
   funlen:
-    lines: 200
+    lines: 210
     statements: 150
   goconst:
     min-len: 3
