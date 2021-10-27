@@ -14,8 +14,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.cloudfoundry.org/cfhttp"
-
 	"github.com/onsi/gomega/ghttp"
 
 	"github.com/onsi/gomega/gbytes"
@@ -202,19 +200,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.RateLimit.ValidDuration = 1 * time.Second
 
 	configFile = writeConfig(&cfg)
-	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "api.crt"),
-		filepath.Join(testCertDir, "api.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	apiHttpClient = &http.Client{Transport: helpers.NewTransport(apiClientTLSConfig)}
-	brokerClientTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "servicebroker.crt"),
-		filepath.Join(testCertDir, "servicebroker.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	brokerHttpClient = &http.Client{Transport: helpers.NewTransport(brokerClientTLSConfig)}
-	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
+	apiHttpClient = helpers.Clients().Api()
+	brokerHttpClient = helpers.Clients().Broker()
+	healthHttpClient = helpers.Clients().Plain()
 })
 
 var _ = SynchronizedAfterSuite(func() {

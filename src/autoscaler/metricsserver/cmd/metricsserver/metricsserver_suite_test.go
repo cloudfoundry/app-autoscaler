@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
@@ -113,14 +112,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Health.HealthCheckPassword = "metricsserverhealthcheckpassword"
 
 	configFile = writeConfig(&cfg)
-
-	tlsConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "metricserver.crt"),
-		filepath.Join(testCertDir, "metricserver.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	httpClient = &http.Client{Transport: helpers.NewTransport(tlsConfig)}
-	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
+	httpClient = helpers.Clients().MetricServer()
+	healthHttpClient = helpers.Clients().Plain()
 })
 
 var _ = SynchronizedAfterSuite(func() {

@@ -40,7 +40,7 @@ var _ = Describe("Quota", func() {
 				quotaConfig.QuotaManagement = &config.QuotaManagementConfig{}
 				quotaConfig.QuotaManagement.API = quotaServer.URL()
 				qmc = quota.NewClient(quotaConfig, lagertest.NewTestLogger("Quota"))
-				qmc.SetClient(&http.Client{Transport: helpers.NewTransport(nil)})
+				qmc.SetClient(helpers.Clients().Plain())
 
 				quotaServer.AppendHandlers(
 					ghttp.CombineHandlers(

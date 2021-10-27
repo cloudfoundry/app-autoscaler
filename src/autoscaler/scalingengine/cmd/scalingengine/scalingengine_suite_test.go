@@ -8,7 +8,6 @@ import (
 	"autoscaler/scalingengine/config"
 	"path/filepath"
 
-	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
@@ -143,14 +142,8 @@ var _ = SynchronizedBeforeSuite(
 
 		err = testDB.Close()
 		Expect(err).NotTo(HaveOccurred())
-
-		tlsConfig, err := cfhttp.NewTLSConfig(
-			filepath.Join(testCertDir, "eventgenerator.crt"),
-			filepath.Join(testCertDir, "eventgenerator.key"),
-			filepath.Join(testCertDir, "autoscaler-ca.crt"))
-		Expect(err).NotTo(HaveOccurred())
-		httpClient = &http.Client{Transport: helpers.NewTransport(tlsConfig)}
-		healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
+		httpClient = helpers.Clients().EventGenerator()
+		healthHttpClient = helpers.Clients().Plain()
 	})
 
 func verifyCertExistence(testCertDir string) {

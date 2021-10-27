@@ -49,7 +49,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(pathsByte []byte) {
 	prPath = string(pathsByte)
 	initConfig()
-	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
+	healthHttpClient = helpers.Clients().Plain()
 	configFile = writeConfig(&cfg)
 })
 

@@ -138,8 +138,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	configFile = writeConfig(&cfg)
 
-	httpClient = &http.Client{Transport: helpers.NewTransport(nil)}
-	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
+	httpClient = helpers.Clients().Plain()
+	healthHttpClient = helpers.Clients().Plain()
 })
 
 var _ = SynchronizedAfterSuite(func() {

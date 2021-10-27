@@ -147,7 +147,7 @@ func initDB() {
 
 	err = egDB.Close()
 	Expect(err).NotTo(HaveOccurred())
-	healthHttpClient = &http.Client{Transport: helpers.NewTransport(nil)}
+	healthHttpClient = helpers.Clients().Plain()
 }
 
 func initHttpEndPoints() {
@@ -263,13 +263,7 @@ func initConfig() {
 		},
 	}
 	configFile = writeConfig(&conf)
-
-	tlsConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "api.crt"),
-		filepath.Join(testCertDir, "api.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	httpClient = &http.Client{Transport: helpers.NewTransport(tlsConfig)}
+	httpClient = helpers.Clients().Api()
 }
 
 func writeConfig(c *config.Config) *os.File {
