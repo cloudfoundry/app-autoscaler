@@ -54,8 +54,12 @@ func (pc PlanChecker) CheckPlan(policy models.ScalingPolicy, planID string) (boo
 }
 
 func (pc PlanChecker) IsPlanUpdatable(planID string) (bool, error) {
-	definition, ok := pc.conf.PlanDefinitions[planID]
-	if !ok {
+	if pc.conf == nil {
+		return true, nil
+	}
+
+	definition, exists := pc.conf.PlanDefinitions[planID]
+	if !exists {
 		return false, fmt.Errorf(`unknown plan id "%s"`, planID)
 	}
 
