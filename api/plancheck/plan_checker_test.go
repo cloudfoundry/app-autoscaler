@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("PlanCheck", func() {
+var _ = Describe("Plan check operations", func() {
 	var (
 		quotaConfig      *config.PlanCheckConfig
 		validationResult string
@@ -22,28 +22,47 @@ var _ = Describe("PlanCheck", func() {
 		testPlanId       string
 	)
 	BeforeEach(func() {})
-	Context("CheckPlan", func() {
+
+	JustBeforeEach(func() {
+		qmc = plancheck.NewPlanChecker(quotaConfig, lagertest.NewTestLogger("Quota"))
+	})
+
+	Context("when not configured", func() {
 		JustBeforeEach(func() {
-			qmc = plancheck.NewPlanChecker(quotaConfig, lagertest.NewTestLogger("Quota"))
 			ok, validationResult, err = qmc.CheckPlan(testPolicy, testPlanId)
 		})
-		Context("when not configured", func() {
-			BeforeEach(func() {
-				testPolicy = models.ScalingPolicy{
-					InstanceMin:  1,
-					InstanceMax:  4,
-					ScalingRules: nil,
-					Schedules:    nil,
-				}
-				testPlanId = "test-plan"
-				quotaConfig = nil
-			})
+		BeforeEach(func() {
+			testPolicy = models.ScalingPolicy{
+				InstanceMin:  1,
+				InstanceMax:  4,
+				ScalingRules: nil,
+				Schedules:    nil,
+			}
+			testPlanId = "test-plan"
+			quotaConfig = nil
+
+		})
+
+		Context("CheckPlan", func() {
 			It("returns -1", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ok).To(BeTrue())
 			})
 		})
-		Context("when configured", func() {
+
+		Context("IsUpdatable", func() {
+			It("it should return true", func() {
+				isPlanUpdatable, err := qmc.IsPlanUpdatable("any-plan")
+				Expect(isPlanUpdatable).To(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+	Context("when configured", func() {
+		Context("CheckPlan", func() {
+			JustBeforeEach(func() {
+				ok, validationResult, err = qmc.CheckPlan(testPolicy, testPlanId)
+			})
 			BeforeEach(func() {
 				testPolicy = models.ScalingPolicy{
 					InstanceMin:  1,
@@ -158,41 +177,41 @@ var _ = Describe("PlanCheck", func() {
 					Expect(ok).To(BeTrue())
 				})
 			})
+		})
 
-			Context("IsUpdatable", func() {
-				BeforeEach(func() {
-					quotaConfig = &config.PlanCheckConfig{
-						PlanDefinitions: map[string]config.PlanDefinition{
-							"updatable-plan": {
-								false,
-								0,
-								0,
-								true,
-							},
-							"non-updatable-plan": {
-								true,
-								1,
-								1,
-								false,
-							},
+		Context("IsUpdatable", func() {
+			BeforeEach(func() {
+				quotaConfig = &config.PlanCheckConfig{
+					PlanDefinitions: map[string]config.PlanDefinition{
+						"updatable-plan": {
+							false,
+							0,
+							0,
+							true,
 						},
-					}
-				})
-				It("is plan updatable", func() {
-					isPlanUpdatable, err := qmc.IsPlanUpdatable("updatable-plan")
-					Expect(isPlanUpdatable).To(Equal(true))
-					Expect(err).To(BeNil())
-				})
-				It("is plan not updatable", func() {
-					isPlanUpdatable, err := qmc.IsPlanUpdatable("non-updatable-plan")
-					Expect(isPlanUpdatable).To(Equal(false))
-					Expect(err).To(BeNil())
-				})
-				It("if plan does not exist", func() {
-					isPlanUpdatable, err := qmc.IsPlanUpdatable("non-existent-plan")
-					Expect(isPlanUpdatable).To(Equal(false))
-					Expect(err.Error()).To(Equal("unknown plan id \"non-existent-plan\""))
-				})
+						"non-updatable-plan": {
+							true,
+							1,
+							1,
+							false,
+						},
+					},
+				}
+			})
+			It("is plan updatable", func() {
+				isPlanUpdatable, err := qmc.IsPlanUpdatable("updatable-plan")
+				Expect(isPlanUpdatable).To(Equal(true))
+				Expect(err).To(BeNil())
+			})
+			It("is plan not updatable", func() {
+				isPlanUpdatable, err := qmc.IsPlanUpdatable("non-updatable-plan")
+				Expect(isPlanUpdatable).To(Equal(false))
+				Expect(err).To(BeNil())
+			})
+			It("if plan does not exist", func() {
+				isPlanUpdatable, err := qmc.IsPlanUpdatable("non-existent-plan")
+				Expect(isPlanUpdatable).To(Equal(false))
+				Expect(err.Error()).To(Equal("unknown plan id \"non-existent-plan\""))
 			})
 		})
 	})
