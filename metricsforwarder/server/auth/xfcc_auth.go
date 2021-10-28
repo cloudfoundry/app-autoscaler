@@ -3,10 +3,8 @@ package auth
 import (
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -20,11 +18,8 @@ func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
 	if xfccHeader == "" {
 		return ErrorMTLSHeaderNotFound
 	}
-	if xfccHeader[0] == '"' {
-		xfccHeader = xfccHeader[1 : len(xfccHeader)-1]
-	}
 
-	data, err := base64.StdEncoding.DecodeString(xfccHeader)
+	data, err := base64.StdEncoding.DecodeString(removeQuotes(xfccHeader))
 	if err != nil {
 		return fmt.Errorf("base64 parsing failed: %w", err)
 	}
@@ -34,13 +29,7 @@ func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
 		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
-	var certAppId string
-	for _, ou := range cert.Subject.OrganizationalUnit {
-		if strings.Contains(ou, "app:") {
-			certAppId = strings.Split(ou, ":")[1]
-			break
-		}
-	}
+	certAppId := getAppId(cert)
 
 	if len(certAppId) == 0 {
 		return ErrorNoAppIDFound
@@ -50,61 +39,28 @@ func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
 		return ErrorAppIDWrong
 	}
 
-	//TODO consider caching this in mem
-	certificates, err := a.LoadCACerts()
-	if err != nil {
-		return fmt.Errorf("loading cert failed: %w", err)
-	}
-
-	if len(certificates) == 0 {
-		return fmt.Errorf("did not find any certifcate authorities")
-	}
-
-	_, err = a.IsCertificateAuthorityValid(cert, certificates)
+	_, err = cert.Verify(*a.certVerifyOpts)
 	if err != nil {
 		return fmt.Errorf("cert CA check failed: %w", err)
 	}
+
 	return nil
 }
 
-func (a *Auth) IsCertificateAuthorityValid(cert *x509.Certificate, certificates []*x509.Certificate) (bool, error) {
-	roots := x509.NewCertPool()
-	for _, ca := range certificates {
-		roots.AddCert(ca)
-	}
-	opts := x509.VerifyOptions{
-		Roots: roots,
-	}
-	opts.Roots = roots
-	_, err := cert.Verify(opts)
-	return true, err
-}
-
-func (a *Auth) LoadCACerts() ([]*x509.Certificate, error) {
-	file, err := ioutil.ReadFile(a.metricsForwarderMtlsCACert)
-	if err != nil {
-		return nil, fmt.Errorf("could not load mtls cert %s: %w", a.metricsForwarderMtlsCACert, err)
-	}
-
-	return decodePems(file)
-}
-
-func decodePems(file []byte) ([]*x509.Certificate, error) {
-	var certificates []*x509.Certificate
-	rest := file
-	for len(rest) > 0 {
-		var block *pem.Block
-		block, rest = pem.Decode(rest)
-		if block == nil {
+func getAppId(cert *x509.Certificate) string {
+	var certAppId string
+	for _, ou := range cert.Subject.OrganizationalUnit {
+		if strings.Contains(ou, "app:") {
+			certAppId = strings.Split(ou, ":")[1]
 			break
 		}
-
-		ca, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse local mtls cert: %w", err)
-		}
-
-		certificates = append(certificates, ca)
 	}
-	return certificates, nil
+	return certAppId
+}
+
+func removeQuotes(xfccHeader string) string {
+	if xfccHeader[0] == '"' {
+		xfccHeader = xfccHeader[1 : len(xfccHeader)-1]
+	}
+	return xfccHeader
 }

@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -38,7 +39,6 @@ var _ = Describe("Authentication", func() {
 	)
 
 	BeforeEach(func() {
-		logger := lager.NewLogger("auth-test")
 		policyDB = &fakes.FakePolicyDB{}
 		credentialCache = *cache.New(10*time.Minute, -1)
 		vars = make(map[string]string)
@@ -47,8 +47,14 @@ var _ = Describe("Authentication", func() {
 			TLS: models.TLSCerts{
 				CACertFile: path.Join("..", "..", "..", "..", "test-certs", "valid-mtls-local-ca-combined.crt"),
 			}}
-		authTest = auth.New(logger, policyDB, credentialCache, 10*time.Minute, metricsForwarderMtlsConfig.TLS.CACertFile)
 		credentialCache.Flush()
+	})
+
+	JustBeforeEach(func() {
+		logger := lager.NewLogger("auth-test")
+		var err error
+		authTest, err = auth.New(logger, policyDB, credentialCache, 10*time.Minute, metricsForwarderMtlsConfig.TLS.CACertFile)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Describe("Basic Auth tests for publish metrics endpoint", func() {
@@ -58,8 +64,8 @@ var _ = Describe("Authentication", func() {
 			Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 		}
 
-		When("a valid request to publish custom metrics comes", func() {
-			When("credentials exists in the cache", func() {
+		Context("a valid request to publish custom metrics comes", func() {
+			Context("credentials exists in the cache", func() {
 				It("should get the credentials from cache without searching from database and calls next handler", func() {
 					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 					req = CreateRequest(body)
@@ -78,7 +84,7 @@ var _ = Describe("Authentication", func() {
 
 			})
 
-			When("credentials do not exists in the cache but exist in the database", func() {
+			Context("credentials do not exists in the cache but exist in the database", func() {
 				It("should: get the credentials from database, add it to the cache and calls next handler", func() {
 					req = CreateRequest(body)
 					req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
@@ -151,7 +157,7 @@ var _ = Describe("Authentication", func() {
 
 	Describe("MTLS Auth tests for publish metrics endpoint", func() {
 		const validClientCert1 = "../../../../test-certs/validmtls_client-1.crt"
-		When("correct xfcc header with correct CA is supplied for cert 1", func() {
+		Context("correct xfcc header with correct CA is supplied for cert 1", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
 				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
@@ -169,7 +175,7 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("correct xfcc header with correct CA is supplied for cert 2", func() {
+		Context("correct xfcc header with correct CA is supplied for cert 2", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
 				const validClientCert2 = "../../../../test-certs/validmtls_client-2.crt"
@@ -188,7 +194,15 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("correct xfcc header including \"'s around the cert", func() {
+		Context("The Ca instance cert has no pems but is not empty", func() {
+			const emptyCert = "../../../../test-certs/empty-mtls-local-ca.crt"
+			It("Creation should faile with NoCaCerts Error", func() {
+				_, err := auth.New(lager.NewLogger("auth-test"), policyDB, credentialCache, 10*time.Minute, emptyCert)
+				Expect(errors.Is(err, auth.ErrCAFileEmpty)).To(BeTrue())
+			})
+		})
+
+		Context("correct xfcc header including \"'s around the cert", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
 				req.Header.Add("X-Forwarded-Client-Cert", fmt.Sprintf("%q", MustReadXFCCcert(validClientCert1)))
@@ -206,7 +220,7 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("correct xfcc header with invalid CA is supplied", func() {
+		Context("correct xfcc header with invalid CA is supplied", func() {
 			It("should return status code 401", func() {
 				req = CreateRequest(body)
 				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/invalidmtls_client.crt"))
@@ -225,7 +239,7 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("correct xfcc header with no CA is supplied", func() {
+		Context("correct xfcc header with no CA is supplied", func() {
 			It("should return status code 401", func() {
 				req = CreateRequest(body)
 				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/nosignmtls_client.crt"))
@@ -244,7 +258,7 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("valid cert with wrong app-id is supplied", func() {
+		Context("valid cert with wrong app-id is supplied", func() {
 			It("should return status code 403", func() {
 				req = CreateRequest(body)
 				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
@@ -263,7 +277,7 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("expired cert with correct app-id is supplied", func() {
+		Context("expired cert with correct app-id is supplied", func() {
 			It("should return status code 401", func() {
 				req = CreateRequest(body)
 				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/expiredmtls_client.crt"))

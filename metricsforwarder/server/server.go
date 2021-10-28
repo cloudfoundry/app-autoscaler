@@ -26,8 +26,10 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	}
 
 	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, allowedMetricCache)
-	authenticator := auth.New(logger, policyDB, credentialCache, conf.CacheTTL, conf.MetricsForwarderConfig.TLS.CACertFile)
-
+	authenticator, err := auth.New(logger, policyDB, credentialCache, conf.CacheTTL, conf.MetricsForwarderConfig.TLS.CACertFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add auth middleware: %w", err)
+	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appid", rateLimiter, logger.Session("metricforwarder-ratelimiter-middleware"))
 
