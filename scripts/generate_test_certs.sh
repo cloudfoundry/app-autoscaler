@@ -35,18 +35,24 @@ certstrap --depot-path ${depot_path} init --passphrase '' --common-name validMTL
 mv -f ${depot_path}/validMTLSLocalCA.crt ${depot_path}/valid-mtls-local-ca-2.crt
 mv -f ${depot_path}/validMTLSLocalCA.key ${depot_path}/valid-mtls-local-ca-2.key
 
-#The \n\n is to enable testing of extra white space in the multiple pem cert files
+#CA with multiple certs. The \n\n is to enable testing of extra white space in the multiple pem cert files
 { printf "\n\n"; \
   cat "${depot_path}/valid-mtls-local-ca-1.crt";\
   printf "\t\n\n" ; \
   cat "${depot_path}/valid-mtls-local-ca-2.crt";\
   printf "\n  \n"; } > "${depot_path}/valid-mtls-local-ca-combined.crt"
 
-
 # CA for local testing mTLS certs (another CA for validating verification)
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name invalidMTLSLocalCA --years "20"
 mv -f ${depot_path}/invalidMTLSLocalCA.crt ${depot_path}/invalid-mtls-local-ca.crt
 mv -f ${depot_path}/invalidMTLSLocalCA.key ${depot_path}/invalid-mtls-local-ca.key
+
+# empty CA file  for local testing mTLS certs
+{ printf "   \n\n"; \
+  printf "\t\n\n" ; \
+  printf "\t\n\n" ; \
+  printf "\t\n\n" ; \
+  printf "\n  \n"; } > "${depot_path}/empty-mtls-local-ca.crt"
 
 # metricscollector certificate
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --domain metricscollector --ip 127.0.0.1
