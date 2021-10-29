@@ -140,8 +140,8 @@ var _ = BeforeSuite(func() {
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil)
 	rateLimiterBroker := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, lager.NewLogger("test-ratelimiter-broker"))
+	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil, rateLimiterBroker)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))

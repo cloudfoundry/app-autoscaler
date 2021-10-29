@@ -141,3 +141,7 @@ integration: build
 .PHONY: lint
 lint:
 	@make -C src/autoscaler lint
+
+.PHONY: testsuite
+testsuite: check-db_type init init-db test-certs
+	@make -C src/autoscaler TEST=${TEST} DBURL="${DBURL}" testsuite
