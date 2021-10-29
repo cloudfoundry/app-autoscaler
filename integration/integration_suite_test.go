@@ -58,7 +58,6 @@ var (
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
-	checkUserSpaceRegPath   = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
 	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
 	rolesRegPath            = regexp.MustCompile(`^/v3/roles$`)
 	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
@@ -770,26 +769,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			TotalResults int `json:"total_results"`
 		}{
 			1,
-		}))
-
-	type ServiceInstanceEntity struct {
-		ServicePlanGuid string `json:"service_plan_guid"`
-	}
-	fakeCCNOAAUAA.RouteToHandler("GET", serviceInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			ServiceInstanceEntity `json:"entity"`
-		}{
-			ServiceInstanceEntity{"cc-free-plan-id"},
-		}))
-
-	type ServicePlanEntity struct {
-		UniqueId string `json:"unique_id"`
-	}
-	fakeCCNOAAUAA.RouteToHandler("GET", servicePlanRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			ServicePlanEntity `json:"entity"`
-		}{
-			ServicePlanEntity{"autoscaler-free-plan-id"},
 		}))
 
 	app := struct {
