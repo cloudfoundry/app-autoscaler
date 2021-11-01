@@ -887,6 +887,34 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 
+		Context("When service bindings are present", func() {
+			BeforeEach(func() {
+				var bindingIds []string
+				bindingIds = append(bindingIds, testBindingId)
+
+				bindingdb.GetBindingIdsByInstanceIdReturns(bindingIds, nil)
+				bindingdb.GetAppIdByBindingIdReturnsOnCall(0, testAppId, nil)
+				instanceDeletionRequestBody := &models.BrokerCommonRequestBody{
+					ServiceID: "a-service-id",
+					PlanID:    "a-plan-id",
+				}
+				body, err := json.Marshal(instanceDeletionRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				Expect(err).NotTo(HaveOccurred())
+				verifyScheduleIsDeletedInScheduler(testAppId)
+			})
+			It("if it has been deleted", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+				Expect(bindingdb.DeleteServiceBindingCallCount()).To(Equal(1))
+				Expect(bindingdb.DeleteServiceBindingArgsForCall(0)).To(Equal(testBindingId))
+				Expect(bindingdb.DeleteServiceInstanceCallCount()).To(Equal(1))
+				Expect(policydb.DeletePolicyCallCount(), 1)
+				Expect(policydb.DeletePolicyArgsForCall(0), testAppId)
+			})
+		})
+
 	})
 
 	Describe("BindServiceInstance", func() {
