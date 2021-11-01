@@ -301,6 +301,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 	}
 	var updatedDefaultPolicy string
+	var updatedDefaultPolicyGuid string
 	if body.Parameters != nil && body.Parameters.DefaultPolicy != nil {
 		updatedDefaultPolicy = string(*body.Parameters.DefaultPolicy)
 		if emptyJSONObject.MatchString(updatedDefaultPolicy) {
@@ -309,12 +310,14 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 
 			updatedDefaultPolicy = ""
 		}
+	} else if body.Parameters == nil && serviceInstance.DefaultPolicy != "" && serviceInstance.DefaultPolicyGuid != "" {
+		updatedDefaultPolicy = serviceInstance.DefaultPolicy
+		updatedDefaultPolicyGuid = serviceInstance.DefaultPolicyGuid
 	}
 
 	h.logger.Info("update-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
 
-	var updatedDefaultPolicyGuid string
-	if updatedDefaultPolicy != "" {
+	if updatedDefaultPolicy != "" && updatedDefaultPolicyGuid == "" {
 		errResults, valid := h.policyValidator.ValidatePolicy(updatedDefaultPolicy)
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": updatedDefaultPolicy})
@@ -322,19 +325,16 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		//TODO @silvestre to check if this is needed from PR-10
 		servicePlan, err := h.cfClient.GetServicePlan(instanceId)
 		if err != nil {
 			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
 			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
 			return
 		}
-		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
-			return
-		}
 
-		if err != nil {
-			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
-			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
+		//TODO @silvestre to check if this is needed from PR-10
+		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
 			return
 		}
 
@@ -361,9 +361,11 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if updatedDefaultPolicy != "" && body.Parameters.DefaultPolicy != nil {
-		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
-			return
+	if updatedDefaultPolicy != "" && body.Parameters != nil {
+		if body.Parameters.DefaultPolicy != nil {
+			if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
+				return
+			}
 		}
 	} else if serviceInstance.DefaultPolicy != "" && newServicePlan != "" {
 		var existingPolicy *models.ScalingPolicy
@@ -383,6 +385,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			}
 			existingPolicyStr := string(existingPolicyByteArray)
 			if h.planDefinitionExceeded(existingPolicyStr, servicePlan, instanceId, w) {
+				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
 				return
 			}
 		}
