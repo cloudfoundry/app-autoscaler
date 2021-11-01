@@ -325,13 +325,15 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		//TODO check if this is necessary seems to be missing out of internal
+		//TODO @silvestre to check if this is needed from PR-10
 		servicePlan, err := h.cfClient.GetServicePlan(instanceId)
 		if err != nil {
 			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
 			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
 			return
 		}
+
+		//TODO @silvestre to check if this is needed from PR-10
 		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
 			return
 		}
