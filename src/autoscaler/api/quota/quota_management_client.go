@@ -69,24 +69,24 @@ func (qmc *Client) GetQuota(orgGUID, serviceName, planName string) (int, error) 
 	quotaUrl := fmt.Sprintf("%s/api/v2.0/orgs/%s/services/%s/plan/%s", qmc.conf.QuotaManagement.API, orgGUID, serviceName, planName)
 
 	req, err := http.NewRequest(http.MethodGet, quotaUrl, nil)
-	if err != nil {
-		return 0, err
-	}
 	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		return 0, fmt.Errorf("quota-management-client: creating GET request to %s failed: %w", quotaUrl, err)
+	}
 	res, err := qmc.client.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("quota-management-client: request %#v failed with %w", req, err)
 	}
 	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("GET %s returned %#v", quotaUrl, res.Status)
+		return 0, fmt.Errorf("quota-management-client: GET %s returned %#v", quotaUrl, res.Status)
 	}
 	var quotaResponse struct {
 		Quota int `json:"quota"`
 	}
 	err = json.NewDecoder(res.Body).Decode(&quotaResponse)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("quota-management-client: failed to read response: %w", err)
 	}
 	return quotaResponse.Quota, nil
 }
