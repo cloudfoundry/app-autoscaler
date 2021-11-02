@@ -104,6 +104,9 @@ func (c *cfClient) getCCServicePlanGuid(brokerPlanGuid string) (string, error) {
 	logger.Debug("start")
 	defer logger.Debug("end")
 
+	c.planMapsLock.Lock()
+	defer c.planMapsLock.Unlock()
+
 	if g, ok := c.brokerPlanGuidToCCServicePlanGuid[brokerPlanGuid]; ok {
 		return g, nil
 	}
@@ -170,6 +173,9 @@ func (c *cfClient) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 	logger.Debug("start")
 	defer logger.Debug("end")
 
+	c.planMapsLock.Lock()
+	defer c.planMapsLock.Unlock()
+
 	if g, ok := c.ccServicePlanToBrokerPlanGuid[ccServicePlanGuid]; ok {
 		return g, nil
 	}
@@ -226,6 +232,9 @@ func (c *cfClient) GetServicePlan(serviceInstanceGuid string) (string, error) {
 	logger := c.logger.Session("cf-client-get-service-plan", lager.Data{"serviceInstanceGuid": serviceInstanceGuid})
 	logger.Debug("start")
 	defer logger.Debug("end")
+
+	c.instanceMapLock.Lock()
+	defer c.instanceMapLock.Unlock()
 
 	if g, ok := c.serviceInstanceGuidToBrokerPlanGuid[serviceInstanceGuid]; ok {
 		return g, nil
