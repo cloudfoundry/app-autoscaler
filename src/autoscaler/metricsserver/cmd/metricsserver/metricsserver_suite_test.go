@@ -161,6 +161,7 @@ func NewMetricsServerRunner() *MetricsServerRunner {
 }
 
 func (ms *MetricsServerRunner) Start() {
+	// #nosec G204
 	msSession, err := gexec.Start(exec.Command(
 		msPath,
 		"-c",

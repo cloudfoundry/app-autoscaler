@@ -175,6 +175,7 @@ func NewOperatorRunner() *OperatorRunner {
 }
 
 func (pr *OperatorRunner) Start() {
+	// #nosec G204
 	prSession, err := gexec.Start(exec.Command(
 		prPath,
 		"-c",
