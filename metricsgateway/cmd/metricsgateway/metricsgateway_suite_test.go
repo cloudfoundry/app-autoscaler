@@ -223,6 +223,7 @@ func NewMetricsGatewayRunner() *MetricsGatewayRunner {
 }
 
 func (mg *MetricsGatewayRunner) Start() {
+	// #nosec G204
 	mgSession, err := gexec.Start(exec.Command(
 		mgPath,
 		"-c",

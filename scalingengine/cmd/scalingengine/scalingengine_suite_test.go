@@ -204,6 +204,7 @@ func NewScalingEngineRunner() *ScalingEngineRunner {
 }
 
 func (engine *ScalingEngineRunner) Start() {
+	// #nosec G204
 	engineSession, err := gexec.Start(
 		exec.Command(
 			enginePath,
