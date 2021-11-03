@@ -66,9 +66,9 @@ const (
 	PublicApiAttachPolicyRouteName = "AttachPolicy"
 	PublicApiDetachPolicyRouteName = "DetachPolicy"
 
-	PublicApiCredentialPath            = "/v1/apps/{appId:.+}/credential"
-	PublicApiCreateCredentialRouteName = "CreateCredential"
-	PublicApiDeleteCredentialRouteName = "DeleteCredential"
+	PublicApiCredentialPath            = "/v1/apps/{appId:.+}/credential" // #nosec G101
+	PublicApiCreateCredentialRouteName = "CreateCredential"               // #nosec G101
+	PublicApiDeleteCredentialRouteName = "DeleteCredential"               // #nosec G101
 
 	PublicApiInfoPath      = "/v1/info"
 	PublicApiInfoRouteName = "GetPublicApiInfo"

@@ -301,6 +301,7 @@ func NewEventGeneratorRunner() *EventGeneratorRunner {
 }
 
 func (eg *EventGeneratorRunner) Start() {
+	// #nosec G204
 	egSession, err := gexec.Start(exec.Command(
 		egPath,
 		"-c",
