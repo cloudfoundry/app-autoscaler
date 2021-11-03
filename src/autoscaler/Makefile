@@ -46,18 +46,19 @@ fmt: importfmt
 buildtools-force:
 	@echo "# Installing build tools"
 	$(GO) mod download
-	$(GO) get github.com/square/certstrap
-	$(GO) get github.com/onsi/ginkgo/ginkgo
-	$(GO) get github.com/maxbrunsfeld/counterfeiter/v6
-	$(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint
+	$(GO) install github.com/square/certstrap
+	$(GO) install github.com/onsi/ginkgo/ginkgo
+	$(GO) install github.com/maxbrunsfeld/counterfeiter/v6
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint
 
+.PHONY: buildtools
 buildtools:
 	@echo "# Installing build tools"
 	@$(GO) mod download
-	@which certstrap >/dev/null || $(GO) get github.com/square/certstrap
-	@which ginkgo >/dev/null || $(GO) get github.com/onsi/ginkgo/ginkgo
-	@which counterfeiter >/dev/null || $(GO) get github.com/maxbrunsfeld/counterfeiter/v6
-	@which golangci-lint >/dev/null || $(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint
+	@which certstrap >/dev/null || $(GO) install github.com/square/certstrap
+	@which ginkgo >/dev/null || $(GO) install github.com/onsi/ginkgo/ginkgo
+	@which counterfeiter >/dev/null || $(GO) install github.com/maxbrunsfeld/counterfeiter/v6
+	@which golangci-lint >/dev/null || $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 lint:
 	@golangci-lint run

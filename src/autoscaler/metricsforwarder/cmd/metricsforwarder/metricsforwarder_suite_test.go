@@ -176,6 +176,7 @@ func NewMetricsForwarderRunner() *MetricsForwarderRunner {
 }
 
 func (mf *MetricsForwarderRunner) Start() {
+	// #nosec G204
 	mfSession, err := gexec.Start(exec.Command(
 		mfPath,
 		"-c",
