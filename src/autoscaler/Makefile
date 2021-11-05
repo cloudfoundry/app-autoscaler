@@ -18,7 +18,7 @@ check: fmt lint build test
 
 test:
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs --junit-report=unit.xml -cover --skipPackage=integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs --junit-report=test-results/unit.xml -cover --skipPackage=integration
 
 testsuite:
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -randomizeAllSpecs $(TEST)
@@ -26,7 +26,7 @@ testsuite:
 .PHONY: integration
 integration:
 	@echo "# Running integration tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs --junit-report=integration.xml integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs --junit-report=test-results/integration.xml integration
 
 generate:
 	@echo "# Generating counterfeits"

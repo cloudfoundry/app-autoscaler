@@ -67,3 +67,8 @@ jobs:
       - name: Integration Tests
         run: |
           make integration db_type=mysql
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: src/acceptance/test-results/*.xml
