@@ -1,4 +1,4 @@
-package custom_metrics_cred_helper
+package cred_helper
 
 import (
 	"autoscaler/db"
@@ -11,6 +11,33 @@ import (
 const (
 	MaxRetry = 5
 )
+
+type Credentials interface {
+	Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error)
+	Delete(appId string) error
+}
+
+type credentials struct {
+	policyDB db.PolicyDB
+	maxRetry int
+}
+
+func New(policyDB db.PolicyDB, maxRetry int) Credentials {
+	return &credentials{
+		policyDB: policyDB,
+		maxRetry: maxRetry,
+	}
+}
+
+func (c credentials) Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
+	return createCredential(appId, userProvidedCredential, c.policyDB, c.maxRetry)
+}
+
+func (c credentials) Delete(appId string) error {
+	return deleteCredential(appId, c.policyDB, c.maxRetry)
+}
+
+var _ Credentials = credentials{}
 
 func _createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
 	var credUsername, credPassword string
@@ -54,7 +81,7 @@ func _createCredential(appId string, userProvidedCredential *models.Credential, 
 	return &cred, nil
 }
 
-func CreateCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
+func createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
 	var err error
 	var count int
 	var cred *models.Credential
@@ -78,7 +105,7 @@ func _deleteCredential(appId string, policyDB db.PolicyDB) error {
 	return nil
 }
 
-func DeleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
+func deleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
 	var err error
 	var count int
 	for {

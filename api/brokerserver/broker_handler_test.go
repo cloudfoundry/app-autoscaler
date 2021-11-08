@@ -2,6 +2,7 @@ package brokerserver_test
 
 import (
 	. "autoscaler/api/brokerserver"
+	"autoscaler/api/cred_helper"
 	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
@@ -53,7 +54,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}}, fakecfClient)
+		}}, fakecfClient, cred_helper.New(policydb, cred_helper.MaxRetry))
 	})
 
 	Describe("GetBrokerCatalog", func() {
