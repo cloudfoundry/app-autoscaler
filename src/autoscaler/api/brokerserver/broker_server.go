@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"autoscaler/api/cred_helper"
 	"autoscaler/cf"
 	"encoding/json"
 	"fmt"
@@ -116,7 +117,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		brokerCredentials: middleWareBrokerCredentials,
 	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services, cfClient)
+	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services, cfClient, cred_helper.New(policydb, cred_helper.MaxRetry))
 
 	r := routes.BrokerRoutes()
 

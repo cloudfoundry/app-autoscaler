@@ -2,6 +2,7 @@ package brokerserver
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/api/cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
@@ -104,7 +105,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}}, fakecfClient)
+		}}, fakecfClient, cred_helper.New(policydb, cred_helper.MaxRetry))
 	})
 	Describe("test delete binding", func() {
 		var err error

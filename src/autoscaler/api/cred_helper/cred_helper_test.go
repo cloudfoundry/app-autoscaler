@@ -1,10 +1,10 @@
-package custom_metrics_cred_helper_test
+package cred_helper_test
 
 import (
 	"database/sql"
 	"errors"
 
-	. "autoscaler/api/custom_metrics_cred_helper"
+	. "autoscaler/api/cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/models"
 
@@ -20,14 +20,17 @@ var _ = Describe("CustomMetricCredHelper", func() {
 		testPassword           = "the-password"
 		userProvidedCredential *models.Credential
 		credResult             *models.Credential
+		creds                  Credentials
 	)
+
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
+		creds = New(policyDB, MaxRetry)
 	})
 	Context("CreateCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			credResult, err = CreateCredential(appId, userProvidedCredential, policyDB, MaxRetry)
+			credResult, err = creds.Create(appId, userProvidedCredential)
 		})
 		Context("when userProvideCredential is not nil", func() {
 			BeforeEach(func() {
@@ -72,7 +75,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 	Context("DeleteCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			err = DeleteCredential(appId, policyDB, MaxRetry)
+			err = creds.Delete(appId)
 		})
 		Context("when there is no error when calling policydb", func() {
 			BeforeEach(func() {
