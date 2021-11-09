@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"autoscaler/db"
 	"autoscaler/models"
 	"bytes"
 	"encoding/base64"
@@ -67,7 +68,8 @@ var _ = Describe("Metricsforwarder", func() {
 				runner.startCheck = ""
 				missingConfig := cfg
 
-				missingConfig.Db.PolicyDb.URL = ""
+				missingConfig.Db = make(map[string]db.DatabaseConfig)
+				missingConfig.Db["policy_db"] = db.DatabaseConfig{URL: ""}
 
 				runner.configPath = writeConfig(&missingConfig).Name()
 				runner.Start()

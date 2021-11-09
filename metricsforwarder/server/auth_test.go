@@ -1,7 +1,6 @@
 package server_test
 
 import (
-	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/server/auth"
@@ -32,6 +31,7 @@ var _ = Describe("Authentication", func() {
 		authTest                   *auth.Auth
 		credentialCache            cache.Cache
 		policyDB                   *fakes.FakePolicyDB
+		fakeCredentials            *fakes.FakeCredentials
 		resp                       *httptest.ResponseRecorder
 		req                        *http.Request
 		body                       []byte
@@ -41,6 +41,7 @@ var _ = Describe("Authentication", func() {
 
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
+		fakeCredentials = &fakes.FakeCredentials{}
 		credentialCache = *cache.New(10*time.Minute, -1)
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()
@@ -54,7 +55,7 @@ var _ = Describe("Authentication", func() {
 	JustBeforeEach(func() {
 		logger := lager.NewLogger("auth-test")
 		var err error
-		authTest, err = auth.New(logger, custom_metrics_cred_helper.NewWithPolicyDb(policyDB, custom_metrics_cred_helper.MaxRetry), credentialCache, 10*time.Minute, metricsForwarderMtlsConfig.TLS.CACertFile)
+		authTest, err = auth.New(logger, fakeCredentials, credentialCache, 10*time.Minute, metricsForwarderMtlsConfig.TLS.CACertFile)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -94,11 +95,11 @@ var _ = Describe("Authentication", func() {
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						nextCalled = nextCalled + 1
 					})
-					policyDB.GetCredentialReturns(credentials, nil)
+					fakeCredentials.GetReturns(credentials, nil)
 
 					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
 
-					Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
+					Expect(fakeCredentials.GetCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(nextCalled).To(Equal(1))
 					//fills the cache
@@ -117,11 +118,11 @@ var _ = Describe("Authentication", func() {
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						nextCalled = nextCalled + 1
 					})
-					policyDB.GetCredentialReturns(nil, sql.ErrNoRows)
+					fakeCredentials.GetReturns(nil, sql.ErrNoRows)
 
 					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
 
-					Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
+					Expect(fakeCredentials.GetCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusUnauthorized))
 					errJson := &models.ErrorResponse{}
 					err := json.Unmarshal(resp.Body.Bytes(), errJson)
@@ -139,7 +140,7 @@ var _ = Describe("Authentication", func() {
 				It("should search in the database and calls next handler", func() {
 					req = CreateRequest(body)
 					credentialCache.Set("an-app-id", &models.Credential{Username: "some-stale-hashed-username", Password: "some-stale-hashed-password"}, 10*time.Minute)
-					policyDB.GetCredentialReturns(credentials, nil)
+					fakeCredentials.GetReturns(credentials, nil)
 					req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 					vars["appid"] = "an-app-id"
 					nextCalled := 0
@@ -148,7 +149,8 @@ var _ = Describe("Authentication", func() {
 					})
 
 					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
-					Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
+					Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
+					Expect(fakeCredentials.GetCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(nextCalled).To(Equal(1))
 				})
@@ -197,8 +199,8 @@ var _ = Describe("Authentication", func() {
 
 		Context("The Ca instance cert has no pems but is not empty", func() {
 			const emptyCert = "../../../../test-certs/empty-mtls-local-ca.crt"
-			It("Creation should faile with NoCaCerts Error", func() {
-				_, err := auth.New(lager.NewLogger("auth-test"), custom_metrics_cred_helper.NewWithPolicyDb(policyDB, custom_metrics_cred_helper.MaxRetry), credentialCache, 10*time.Minute, emptyCert)
+			It("Creation should fail with NoCaCerts Error", func() {
+				_, err := auth.New(lager.NewLogger("auth-test"), fakeCredentials, credentialCache, 10*time.Minute, emptyCert)
 				Expect(errors.Is(err, auth.ErrCAFileEmpty)).To(BeTrue())
 			})
 		})

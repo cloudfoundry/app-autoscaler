@@ -1,7 +1,6 @@
 package publicapiserver_test
 
 import (
-	"autoscaler/api/custom_metrics_cred_helper"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -67,6 +66,7 @@ var (
 	fakeCFClient     *fakes.FakeCFClient
 	fakePolicyDB     *fakes.FakePolicyDB
 	fakeRateLimiter  *fakes.FakeLimiter
+	fakeCredentials  *fakes.FakeCredentials
 	checkBindingFunc api.CheckBindingFunc
 	hasBinding       = true
 
@@ -124,9 +124,11 @@ var _ = BeforeSuite(func() {
 	fakeCFClient = &fakes.FakeCFClient{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	fakeRateLimiter = &fakes.FakeLimiter{}
+	fakeCredentials = &fakes.FakeCredentials{}
 	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf,
-		fakePolicyDB, custom_metrics_cred_helper.NewWithPolicyDb(fakePolicyDB, custom_metrics_cred_helper.MaxRetry),
-		checkBindingFunc, fakeCFClient, httpStatusCollector, fakeRateLimiter, nil)
+		fakePolicyDB, fakeCredentials,
+		checkBindingFunc, fakeCFClient,
+		httpStatusCollector, fakeRateLimiter, nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))

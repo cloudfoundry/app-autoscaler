@@ -22,16 +22,16 @@ const (
 )
 
 type Config struct {
-	Logging                helpers.LoggingConfig  `yaml:"logging"`
-	Server                 ServerConfig           `yaml:"server"`
-	LoggregatorConfig      LoggregatorConfig      `yaml:"loggregator"`
-	MetricsForwarderConfig MetricsForwarderConfig `yaml:"metrics_forwarder"`
-	Db                     DbConfig               `yaml:"db"`
-	CacheTTL               time.Duration          `yaml:"cache_ttl"`
-	CacheCleanupInterval   time.Duration          `yaml:"cache_cleanup_interval"`
-	PolicyPollerInterval   time.Duration          `yaml:"policy_poller_interval"`
-	Health                 models.HealthConfig    `yaml:"health"`
-	RateLimit              models.RateLimitConfig `yaml:"rate_limit"`
+	Logging                helpers.LoggingConfig        `yaml:"logging"`
+	Server                 ServerConfig                 `yaml:"server"`
+	LoggregatorConfig      LoggregatorConfig            `yaml:"loggregator"`
+	MetricsForwarderConfig MetricsForwarderConfig       `yaml:"metrics_forwarder"`
+	Db                     map[string]db.DatabaseConfig `yaml:"db"`
+	CacheTTL               time.Duration                `yaml:"cache_ttl"`
+	CacheCleanupInterval   time.Duration                `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval   time.Duration                `yaml:"policy_poller_interval"`
+	Health                 models.HealthConfig          `yaml:"health"`
+	RateLimit              models.RateLimitConfig       `yaml:"rate_limit"`
 }
 
 type ServerConfig struct {
@@ -61,10 +61,6 @@ type LoggregatorConfig struct {
 
 type MetricsForwarderConfig struct {
 	TLS models.TLSCerts `yaml:"tls"`
-}
-
-type DbConfig struct {
-	PolicyDb db.DatabaseConfig `yaml:"policy_db"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -98,7 +94,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Db.PolicyDb.URL == "" {
+	if c.Db["policy_db"].URL == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
 	if c.LoggregatorConfig.TLS.CACertFile == "" {

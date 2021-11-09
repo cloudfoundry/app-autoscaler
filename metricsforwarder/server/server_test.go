@@ -108,7 +108,7 @@ var _ = Describe("CustomMetrics Server", func() {
 		})
 	})
 
-	Context("when a request to forward custom metrics comes with  wrong user credentials", func() {
+	Context("when a request to forward custom metrics comes with wrong user credentials", func() {
 		BeforeEach(func() {
 			credentials = &models.Credential{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
@@ -116,7 +116,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
-			policyDB.GetCredentialReturns(nil, sql.ErrNoRows)
+			fakeCredentials.GetReturns(nil, sql.ErrNoRows)
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")

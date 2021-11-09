@@ -2,7 +2,6 @@ package brokerserver_test
 
 import (
 	. "autoscaler/api/brokerserver"
-	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
@@ -30,9 +29,10 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
-		fakecfClient *fakes.FakeCFClient
-		bindingdb    *fakes.FakeBindingDB
-		policydb     *fakes.FakePolicyDB
+		fakecfClient    *fakes.FakeCFClient
+		bindingdb       *fakes.FakeBindingDB
+		policydb        *fakes.FakePolicyDB
+		fakeCredentials *fakes.FakeCredentials
 
 		handler *BrokerHandler
 		resp    *httptest.ResponseRecorder
@@ -44,6 +44,7 @@ var _ = Describe("BrokerHandler", func() {
 		resp = httptest.NewRecorder()
 		installQuotaAPIHandlers()
 		fakecfClient = &fakes.FakeCFClient{}
+		fakeCredentials = &fakes.FakeCredentials{}
 	})
 
 	JustBeforeEach(func() {
@@ -54,7 +55,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}}, fakecfClient, custom_metrics_cred_helper.NewWithPolicyDb(policydb, custom_metrics_cred_helper.MaxRetry))
+		}}, fakecfClient, fakeCredentials)
 	})
 
 	Describe("GetBrokerCatalog", func() {
@@ -1152,10 +1153,12 @@ var _ = Describe("BrokerHandler", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-				policydb.GetCredentialReturns(nil, sql.ErrNoRows)
-				policydb.SaveCredentialReturns(fmt.Errorf("some sql error"))
+				fakeCredentials.CreateReturns(nil, fmt.Errorf("some internal error"))
 			})
 			It("fails with 500", func() {
+				Expect(policydb.GetCredentialCallCount()).To(Equal(0))
+				Expect(policydb.SaveCredentialCallCount()).To(Equal(0))
+				Expect(fakeCredentials.CreateCallCount()).To(Equal(1))
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
