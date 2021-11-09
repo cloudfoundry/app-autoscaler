@@ -3,7 +3,10 @@ package custom_metrics_cred_helper
 import (
 	"autoscaler/api/cred_helper"
 	"autoscaler/db"
+	"autoscaler/db/sqldb"
 	"autoscaler/models"
+
+	"code.cloudfoundry.org/lager"
 
 	uuid "github.com/nu7hatch/gouuid"
 	"golang.org/x/crypto/bcrypt"
@@ -18,9 +21,21 @@ type credentials struct {
 	maxRetry int
 }
 
-func New(policyDB db.PolicyDB, maxRetry int) cred_helper.Credentials {
+func New(dbConfig db.DatabaseConfig, logger lager.Logger, maxRetry int) (cred_helper.Credentials, error) {
+	policyDB, err := sqldb.NewPolicySQLDB(dbConfig, logger)
+	if err != nil {
+		return nil, err
+	}
+
 	return &credentials{
 		policyDB: policyDB,
+		maxRetry: maxRetry,
+	}, nil
+}
+
+func NewWithPolicyDb(policyDb db.PolicyDB, maxRetry int) cred_helper.Credentials {
+	return &credentials{
+		policyDB: policyDb,
 		maxRetry: maxRetry,
 	}
 }

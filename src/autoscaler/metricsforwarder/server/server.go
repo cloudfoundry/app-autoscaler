@@ -1,6 +1,7 @@
 package server
 
 import (
+	"autoscaler/api/cred_helper"
 	"autoscaler/db"
 	"autoscaler/healthendpoint"
 	"autoscaler/metricsforwarder/config"
@@ -18,7 +19,7 @@ import (
 	"github.com/tedsuo/ifrit/http_server"
 )
 
-func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentials cred_helper.Credentials, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
 	metricForwarder, err := forwarder.NewMetricForwarder(logger, conf)
 	if err != nil {
 		logger.Error("failed-to-create-metricforwarder-server", err)
@@ -26,7 +27,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	}
 
 	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, allowedMetricCache)
-	authenticator, err := auth.New(logger, policyDB, credentialCache, conf.CacheTTL, conf.MetricsForwarderConfig.TLS.CACertFile)
+	authenticator, err := auth.New(logger, credentials, credentialCache, conf.CacheTTL, conf.MetricsForwarderConfig.TLS.CACertFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add auth middleware: %w", err)
 	}

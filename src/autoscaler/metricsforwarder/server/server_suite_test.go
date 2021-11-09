@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
@@ -76,7 +77,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	rateLimiter = &fakes.FakeLimiter{}
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache, httpStatusCollector, rateLimiter)
+
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB,
+		custom_metrics_cred_helper.NewWithPolicyDb(policyDB, custom_metrics_cred_helper.MaxRetry),
+		credentialCache, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 	serverProcess = ginkgomon.Invoke(httpServer)

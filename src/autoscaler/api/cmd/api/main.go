@@ -1,6 +1,7 @@
 package main
 
 import (
+	"autoscaler/api/custom_metrics_cred_helper"
 	"flag"
 	"fmt"
 	"os"
@@ -78,9 +79,14 @@ func main() {
 		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
 		os.Exit(1)
 	}
-
+	credentials, err := custom_metrics_cred_helper.New(conf.DB.PolicyDB, logger.Session("policydb-db"), custom_metrics_cred_helper.MaxRetry)
+	if err != nil {
+		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		os.Exit(1)
+	}
 	var checkBindingFunc api.CheckBindingFunc
 	var bindingDB db.BindingDB
+
 	if !conf.UseBuildInMode {
 		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
 		if err != nil {
@@ -93,7 +99,8 @@ func main() {
 		checkBindingFunc = func(appId string) bool {
 			return bindingDB.CheckServiceBinding(appId)
 		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector, cfClient)
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf,
+			bindingDB, policyDb, httpStatusCollector, cfClient, credentials)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)
@@ -109,12 +116,15 @@ func main() {
 	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf,
+		policyDb, credentials, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port,
+		promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash,
+		conf.Health.HealthCheckPasswordHash)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)

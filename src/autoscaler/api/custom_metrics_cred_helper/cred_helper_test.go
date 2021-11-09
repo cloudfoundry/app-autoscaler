@@ -26,7 +26,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
-		creds = New(policyDB, MaxRetry)
+		creds = NewWithPolicyDb(policyDB, MaxRetry)
 	})
 	Context("CreateCredential", func() {
 		var err error
