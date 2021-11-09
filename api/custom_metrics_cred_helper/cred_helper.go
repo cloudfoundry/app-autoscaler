@@ -33,6 +33,10 @@ func (c credentials) Delete(appId string) error {
 	return deleteCredential(appId, c.policyDB, c.maxRetry)
 }
 
+func (c credentials) Get(appId string) (*models.Credential, error) {
+	return c.policyDB.GetCredential(appId)
+}
+
 var _ cred_helper.Credentials = credentials{}
 
 func _createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
