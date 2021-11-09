@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"autoscaler/api/cred_helper"
 	"autoscaler/cf"
 	"encoding/json"
 	"fmt"
@@ -67,7 +68,7 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, cfClient cf.CFClient) (ifrit.Runner, error) {
+func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, cfClient cf.CFClient, credentials cred_helper.Credentials) (ifrit.Runner, error) {
 	var middleWareBrokerCredentials []MiddleWareBrokerCredentials
 
 	for _, brokerCredential := range conf.BrokerCredentials {
@@ -116,7 +117,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		brokerCredentials: middleWareBrokerCredentials,
 	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services, cfClient)
+	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services, cfClient, credentials)
 
 	r := routes.BrokerRoutes()
 

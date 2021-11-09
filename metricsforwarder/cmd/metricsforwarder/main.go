@@ -1,6 +1,7 @@
 package main
 
 import (
+	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/healthendpoint"
@@ -62,6 +63,11 @@ func main() {
 	}
 	defer policyDB.Close()
 
+	credentials, err := custom_metrics_cred_helper.New(conf.Db.PolicyDb, logger.Session("policy-db"), custom_metrics_cred_helper.MaxRetry)
+	if err != nil {
+		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
+		os.Exit(1)
+	}
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
@@ -73,7 +79,7 @@ func main() {
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache, httpStatusCollector, rateLimiter)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentials, *credentialCache, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)
