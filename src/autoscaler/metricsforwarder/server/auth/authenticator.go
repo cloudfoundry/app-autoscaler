@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"autoscaler/api/cred_helper"
+	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/server/common"
 	"autoscaler/models"
@@ -23,7 +25,7 @@ var ErrCAFileEmpty = errors.New("CA file empty")
 type Auth struct {
 	logger          lager.Logger
 	credentialCache cache.Cache
-	policyDB        db.PolicyDB
+	credentials     cred_helper.Credentials
 	cacheTTL        time.Duration
 	certVerifyOpts  *x509.VerifyOptions
 }
@@ -37,7 +39,7 @@ func New(logger lager.Logger, policyDB db.PolicyDB, credentialCache cache.Cache,
 	return &Auth{
 		logger:          logger,
 		credentialCache: credentialCache,
-		policyDB:        policyDB,
+		credentials:     custom_metrics_cred_helper.New(policyDB, custom_metrics_cred_helper.MaxRetry),
 		cacheTTL:        cacheTTL,
 		certVerifyOpts:  opts,
 	}, nil
