@@ -1,13 +1,11 @@
 package publicapiserver_test
 
 import (
-	"autoscaler/api/custom_metrics_cred_helper"
 	. "autoscaler/api/publicapiserver"
 	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -59,6 +57,7 @@ var _ = Describe("PublicApiHandler", func() {
 	var (
 		policydb      *fakes.FakePolicyDB
 		bindingdb     *fakes.FakeBindingDB
+		credentials   *fakes.FakeCredentials
 		handler       *PublicApiHandler
 		resp          *httptest.ResponseRecorder
 		req           *http.Request
@@ -66,13 +65,14 @@ var _ = Describe("PublicApiHandler", func() {
 	)
 	BeforeEach(func() {
 		policydb = &fakes.FakePolicyDB{}
+		credentials = &fakes.FakeCredentials{}
 		bindingdb = nil
 		resp = httptest.NewRecorder()
 
 		pathVariables = map[string]string{}
 	})
 	JustBeforeEach(func() {
-		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb, bindingdb, custom_metrics_cred_helper.NewWithPolicyDb(policydb, custom_metrics_cred_helper.MaxRetry))
+		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb, bindingdb, credentials)
 	})
 
 	Describe("GetInfo", func() {
@@ -1720,19 +1720,18 @@ var _ = Describe("PublicApiHandler", func() {
 				})
 			})
 		})
-		Context("When failed to save credential to policydb", func() {
+		Context("When failed to save credential to a credential store", func() {
 			BeforeEach(func() {
-				policydb.SaveCredentialReturns(fmt.Errorf("sql db error"))
-				policydb.GetCredentialReturns(nil, sql.ErrNoRows)
+				credentials.CreateReturns(nil, fmt.Errorf("sql db error"))
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating credential"}`))
 			})
 		})
-		Context("When successfully save data to policydb", func() {
+		Context("When successfully save data to a credential store", func() {
 			BeforeEach(func() {
-				policydb.SaveCredentialReturns(nil)
+				credentials.CreateReturns(nil, nil)
 			})
 			It("should succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
@@ -1756,18 +1755,18 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
-		Context("When failed to delete credential from policydb", func() {
+		Context("When failed to delete credential from a credential store", func() {
 			BeforeEach(func() {
-				policydb.DeleteCredentialReturns(fmt.Errorf("sql db error"))
+				credentials.DeleteReturns(fmt.Errorf("sql db error"))
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting credential"}`))
 			})
 		})
-		Context("When successfully delete data from policydb", func() {
+		Context("When successfully delete data from a credential store", func() {
 			BeforeEach(func() {
-				policydb.DeleteCredentialReturns(nil)
+				credentials.DeleteReturns(nil)
 			})
 			It("should succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))

@@ -1,14 +1,10 @@
 package main
 
 import (
-	"autoscaler/api/custom_metrics_cred_helper"
-	"flag"
-	"fmt"
-	"os"
-
 	"autoscaler/api"
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
+	"autoscaler/api/cred_helper"
 	"autoscaler/api/publicapiserver"
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -16,6 +12,9 @@ import (
 	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
 	"autoscaler/ratelimiter"
+	"flag"
+	"fmt"
+	"os"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -59,9 +58,9 @@ func main() {
 	members := grouper.Members{}
 
 	var policyDb db.PolicyDB
-	policyDb, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policydb-db"))
+	policyDb, err = sqldb.NewPolicySQLDB(conf.DB["policy_db"], logger.Session("policydb-db"))
 	if err != nil {
-		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB["policy_db"]})
 		os.Exit(1)
 	}
 	defer policyDb.Close()
@@ -79,18 +78,19 @@ func main() {
 		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
 		os.Exit(1)
 	}
-	credentials, err := custom_metrics_cred_helper.New(conf.DB.PolicyDB, logger.Session("policydb-db"), custom_metrics_cred_helper.MaxRetry)
+
+	credentials, err := cred_helper.LoadCredentialPlugin(conf.DB, conf.Logging)
 	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		logger.Error("failed to load credential plugin", err)
 		os.Exit(1)
 	}
 	var checkBindingFunc api.CheckBindingFunc
 	var bindingDB db.BindingDB
 
 	if !conf.UseBuildInMode {
-		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB["binding_db"], logger.Session("bindingdb-db"))
 		if err != nil {
-			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
+			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB["binding_db"]})
 			os.Exit(1)
 		}
 		defer bindingDB.Close()

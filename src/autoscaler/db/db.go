@@ -12,6 +12,7 @@ const PostgresDriverName = "postgres"
 const MysqlDriverName = "mysql"
 
 type OrderType uint8
+type Name = string
 
 const (
 	DESC OrderType = iota

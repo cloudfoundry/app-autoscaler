@@ -64,6 +64,9 @@ test: test-autoscaler test-scheduler
 test-autoscaler: check-db_type init init-db test-certs
 	@echo " - using DBURL=${DBURL}"
 	@make -C src/autoscaler test DBURL="${DBURL}"
+test-autoscaler-suite: check-db_type init init-db test-certs
+	@echo " - using DBURL=${DBURL}"
+	@make -C src/autoscaler testsuite TEST=${TEST} DBURL="${DBURL}"
 test-scheduler: check-db_type init init-db test-certs
 	@mvn test --no-transfer-progress -Dspring.profiles.include=${db_type}
 

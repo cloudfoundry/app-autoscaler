@@ -12,7 +12,7 @@ build-%:
 	@echo "# building $*"
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
-build: build-scalingengine build-metricsforwarder build-eventgenerator build-api build-metricsgateway build-metricsserver build-operator
+build: build-scalingengine build-metricsforwarder build-eventgenerator build-api build-metricsgateway build-metricsserver build-operator build-custom-metrics-cred-helper-plugin
 
 check: fmt lint build test
 
@@ -21,7 +21,7 @@ test:
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs -cover --skipPackage=integration
 
 testsuite:
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -randomizeAllSpecs $(TEST)
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -randomizeAllSpecs $(TEST)
 
 .PHONY: integration
 integration:
