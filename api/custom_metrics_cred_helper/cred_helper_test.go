@@ -1,10 +1,11 @@
-package cred_helper_test
+package custom_metrics_cred_helper_test
 
 import (
+	"autoscaler/api/cred_helper"
+	. "autoscaler/api/custom_metrics_cred_helper"
 	"database/sql"
 	"errors"
 
-	. "autoscaler/api/cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/models"
 
@@ -20,7 +21,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 		testPassword           = "the-password"
 		userProvidedCredential *models.Credential
 		credResult             *models.Credential
-		creds                  Credentials
+		creds                  cred_helper.Credentials
 	)
 
 	BeforeEach(func() {

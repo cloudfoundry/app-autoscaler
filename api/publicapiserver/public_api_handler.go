@@ -1,6 +1,7 @@
 package publicapiserver
 
 import (
+	"autoscaler/api/cred_helper"
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 	"strconv"
 
 	"autoscaler/api/config"
-	"autoscaler/api/cred_helper"
 	"autoscaler/api/policyvalidator"
 	"autoscaler/api/schedulerutil"
 	"autoscaler/db"

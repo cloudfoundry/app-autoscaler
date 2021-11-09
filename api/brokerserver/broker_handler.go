@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"autoscaler/api/cred_helper"
 	"autoscaler/api/plancheck"
 	"autoscaler/api/quota"
 	"autoscaler/cf"
@@ -12,7 +13,6 @@ import (
 	"regexp"
 
 	"autoscaler/api/config"
-	"autoscaler/api/cred_helper"
 	"autoscaler/api/policyvalidator"
 	"autoscaler/api/schedulerutil"
 	"autoscaler/db"
