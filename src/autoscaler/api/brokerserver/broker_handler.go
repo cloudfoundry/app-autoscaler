@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"autoscaler/api/cred_helper"
 	"autoscaler/api/plancheck"
 	"autoscaler/api/quota"
 	"autoscaler/cf"
@@ -12,7 +13,6 @@ import (
 	"regexp"
 
 	"autoscaler/api/config"
-	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/api/policyvalidator"
 	"autoscaler/api/schedulerutil"
 	"autoscaler/db"
@@ -37,6 +37,7 @@ type BrokerHandler struct {
 	catalog               []domain.Service
 	planChecker           *plancheck.PlanChecker
 	cfClient              cf.CFClient
+	credentials           cred_helper.Credentials
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
@@ -46,7 +47,7 @@ var errorDeletePolicyForUnbinding = errors.New("Failed to delete policy for unbi
 var errorDeleteServiceBinding = errors.New("Error deleting service binding")
 var errorCredentialNotDeleted = errors.New("Failed to delete custom metrics credential for unbinding")
 
-func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, cfClient cf.CFClient) *BrokerHandler {
+func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, cfClient cf.CFClient, credentials cred_helper.Credentials) *BrokerHandler {
 	return &BrokerHandler{
 		logger:                logger,
 		conf:                  conf,
@@ -58,6 +59,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		quotaManagementClient: quota.NewClient(conf, logger, cfClient),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 		cfClient:              cfClient,
+		credentials:           credentials,
 	}
 }
 
@@ -595,7 +597,8 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service binding")
 		return
 	}
-	cred, err := custom_metrics_cred_helper.CreateCredential(body.AppID, nil, h.policydb, custom_metrics_cred_helper.MaxRetry)
+
+	cred, err := h.credentials.Create(body.AppID, nil)
 	if err != nil {
 		//revert binding creating
 		h.logger.Error("failed to create custom metrics credential", err, lager.Data{"appId": body.AppID})
@@ -614,7 +617,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			h.logger.Error("failed to save policy", err, lager.Data{"appId": body.AppID, "policy": policyStr})
 			//failed to save policy, so revert creating binding and custom metrics credential
-			err = custom_metrics_cred_helper.DeleteCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
+			err = h.credentials.Delete(body.AppID)
 			if err != nil {
 				h.logger.Error("failed to revert custom metrics credential due to failed to save policy", err, lager.Data{"appId": body.AppID})
 			}
@@ -712,7 +715,7 @@ func deleteBinding(h *BrokerHandler, bindingId string, serviceInstanceId string)
 		return errorDeleteServiceBinding
 	}
 
-	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	err = h.credentials.Delete(appId)
 	if err != nil {
 		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": appId})
 		return errorCredentialNotDeleted

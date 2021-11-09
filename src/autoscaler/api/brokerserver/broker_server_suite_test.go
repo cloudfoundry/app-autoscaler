@@ -3,6 +3,7 @@ package brokerserver_test
 import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
+	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/routes"
 	"io/ioutil"
@@ -133,7 +134,8 @@ var _ = BeforeSuite(func() {
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil)
+	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB,
+		httpStatusCollector, nil, custom_metrics_cred_helper.NewWithPolicyDb(fakePolicyDB, custom_metrics_cred_helper.MaxRetry))
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))

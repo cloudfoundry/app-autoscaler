@@ -9,5 +9,5 @@ import (
 
 func TestCustomMetricsCredHelper(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CustomMetricsCredHelper Suite")
+	RunSpecs(t, "Credentials Helper Suite")
 }

@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"autoscaler/db"
+	"autoscaler/api/cred_helper"
 	"autoscaler/metricsforwarder/server/common"
 	"autoscaler/models"
 	"crypto/x509"
@@ -23,12 +23,12 @@ var ErrCAFileEmpty = errors.New("CA file empty")
 type Auth struct {
 	logger          lager.Logger
 	credentialCache cache.Cache
-	policyDB        db.PolicyDB
+	credentials     cred_helper.Credentials
 	cacheTTL        time.Duration
 	certVerifyOpts  *x509.VerifyOptions
 }
 
-func New(logger lager.Logger, policyDB db.PolicyDB, credentialCache cache.Cache, cacheTTL time.Duration, metricsForwarderMtlsCACert string) (*Auth, error) {
+func New(logger lager.Logger, credentials cred_helper.Credentials, credentialCache cache.Cache, cacheTTL time.Duration, metricsForwarderMtlsCACert string) (*Auth, error) {
 	opts, err := loadMtlsAuth(metricsForwarderMtlsCACert)
 	if err != nil {
 		return nil, fmt.Errorf("error loading certs from %s: %w", metricsForwarderMtlsCACert, err)
@@ -37,7 +37,7 @@ func New(logger lager.Logger, policyDB db.PolicyDB, credentialCache cache.Cache,
 	return &Auth{
 		logger:          logger,
 		credentialCache: credentialCache,
-		policyDB:        policyDB,
+		credentials:     credentials,
 		cacheTTL:        cacheTTL,
 		certVerifyOpts:  opts,
 	}, nil

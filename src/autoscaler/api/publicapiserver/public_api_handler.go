@@ -1,6 +1,7 @@
 package publicapiserver
 
 import (
+	"autoscaler/api/cred_helper"
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 	"strconv"
 
 	"autoscaler/api/config"
-	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/api/policyvalidator"
 	"autoscaler/api/schedulerutil"
 	"autoscaler/db"
@@ -33,9 +33,10 @@ type PublicApiHandler struct {
 	eventGeneratorClient   *http.Client
 	policyValidator        *policyvalidator.PolicyValidator
 	schedulerUtil          *schedulerutil.SchedulerUtil
+	credentials            cred_helper.Credentials
 }
 
-func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB) *PublicApiHandler {
+func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB, credentials cred_helper.Credentials) *PublicApiHandler {
 	seClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
@@ -64,6 +65,7 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		eventGeneratorClient:   egClient,
 		policyValidator:        policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:          schedulerutil.NewSchedulerUtil(conf, logger),
+		credentials:            credentials,
 	}
 }
 
@@ -431,7 +433,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.logger.Info("Create credential", lager.Data{"appId": appId})
-	cred, err := custom_metrics_cred_helper.CreateCredential(appId, userProvidedCredential, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	cred, err := h.credentials.Create(appId, userProvidedCredential)
 	if err != nil {
 		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")
@@ -457,7 +459,7 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, _ *http.Reque
 	}
 
 	h.logger.Info("Delete credential", lager.Data{"appId": appId})
-	err := custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	err := h.credentials.Delete(appId)
 	if err != nil {
 		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting credential")
