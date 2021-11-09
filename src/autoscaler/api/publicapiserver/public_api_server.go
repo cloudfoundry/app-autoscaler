@@ -1,7 +1,7 @@
 package publicapiserver
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/api/custom_metrics_cred_helper"
 	"fmt"
 	"net/http"
 	"os"
@@ -29,7 +29,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter, bindingdb db.BindingDB) (ifrit.Runner, error) {
-	pah := NewPublicApiHandler(logger, conf, policydb, bindingdb, cred_helper.New(policydb, cred_helper.MaxRetry))
+	pah := NewPublicApiHandler(logger, conf, policydb, bindingdb, custom_metrics_cred_helper.New(policydb, custom_metrics_cred_helper.MaxRetry))
 	mw := NewMiddleware(logger, cfclient, checkBindingFunc, conf.APIClientId)
 	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appId", rateLimiter, logger.Session("api-ratelimiter-middleware"))
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)

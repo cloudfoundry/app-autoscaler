@@ -1,6 +1,7 @@
-package cred_helper
+package custom_metrics_cred_helper
 
 import (
+	"autoscaler/api/cred_helper"
 	"autoscaler/db"
 	"autoscaler/models"
 
@@ -12,17 +13,12 @@ const (
 	MaxRetry = 5
 )
 
-type Credentials interface {
-	Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error)
-	Delete(appId string) error
-}
-
 type credentials struct {
 	policyDB db.PolicyDB
 	maxRetry int
 }
 
-func New(policyDB db.PolicyDB, maxRetry int) Credentials {
+func New(policyDB db.PolicyDB, maxRetry int) cred_helper.Credentials {
 	return &credentials{
 		policyDB: policyDB,
 		maxRetry: maxRetry,
@@ -37,7 +33,7 @@ func (c credentials) Delete(appId string) error {
 	return deleteCredential(appId, c.policyDB, c.maxRetry)
 }
 
-var _ Credentials = credentials{}
+var _ cred_helper.Credentials = credentials{}
 
 func _createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
 	var credUsername, credPassword string
