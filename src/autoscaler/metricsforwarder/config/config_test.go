@@ -347,6 +347,8 @@ db:
 			}
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
+
+			conf.CredHelperPluginPath = "path/to/plugin"
 		})
 
 		JustBeforeEach(func() {
