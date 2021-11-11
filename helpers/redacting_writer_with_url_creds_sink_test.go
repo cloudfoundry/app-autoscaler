@@ -1,12 +1,13 @@
 package helpers_test
 
 import (
-	"autoscaler/helpers"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

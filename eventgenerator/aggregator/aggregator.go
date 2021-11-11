@@ -1,10 +1,11 @@
 package aggregator
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
 	"fmt"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

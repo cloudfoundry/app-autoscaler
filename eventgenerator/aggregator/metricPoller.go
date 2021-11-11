@@ -1,15 +1,16 @@
 package aggregator
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
-	"autoscaler/routes"
 	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager"
 )

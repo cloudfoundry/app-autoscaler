@@ -1,9 +1,9 @@
 package aggregator_test
 
 import (
-	. "autoscaler/eventgenerator/aggregator"
-	"autoscaler/fakes"
-	"autoscaler/models"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"sync"
 	"time"

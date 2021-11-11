@@ -1,14 +1,15 @@
 package brokerserver_test
 
 import (
-	"autoscaler/api/brokerserver"
-	"autoscaler/api/config"
-	"autoscaler/fakes"
-	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"github.com/onsi/gomega/ghttp"
 

@@ -1,14 +1,15 @@
 package server
 
 import (
-	"autoscaler/eventgenerator/aggregator"
 	"fmt"
 	"net/http"
 	"os"
 
-	"autoscaler/eventgenerator/config"
-	"autoscaler/healthendpoint"
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"

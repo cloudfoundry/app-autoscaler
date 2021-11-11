@@ -1,15 +1,15 @@
 package main
 
 import (
-	"autoscaler/db"
-	"autoscaler/db/sqldb"
-	"autoscaler/eventgenerator/aggregator"
-	"autoscaler/eventgenerator/config"
-	"autoscaler/eventgenerator/generator"
-	"autoscaler/eventgenerator/server"
-	"autoscaler/healthendpoint"
-	"autoscaler/helpers"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/generator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/server"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	circuit "github.com/rubyist/circuitbreaker"
 

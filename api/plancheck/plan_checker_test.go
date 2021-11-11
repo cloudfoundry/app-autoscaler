@@ -1,9 +1,9 @@
 package plancheck_test
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/api/plancheck"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager/lagertest"
 

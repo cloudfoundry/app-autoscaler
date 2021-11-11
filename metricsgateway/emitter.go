@@ -7,7 +7,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 
-	"autoscaler/metricsgateway/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
 )
 
 type Emitter interface {

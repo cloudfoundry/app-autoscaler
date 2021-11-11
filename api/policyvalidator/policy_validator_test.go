@@ -1,9 +1,10 @@
 package policyvalidator_test
 
 import (
-	. "autoscaler/api/policyvalidator"
 	"fmt"
 	"time"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

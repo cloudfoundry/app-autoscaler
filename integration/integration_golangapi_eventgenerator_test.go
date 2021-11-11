@@ -1,11 +1,12 @@
 package integration_test
 
 import (
-	"autoscaler/cf"
-	"autoscaler/models"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/ghttp"

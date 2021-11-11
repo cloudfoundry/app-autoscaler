@@ -10,7 +10,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (

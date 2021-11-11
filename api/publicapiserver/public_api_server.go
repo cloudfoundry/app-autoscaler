@@ -1,18 +1,19 @@
 package publicapiserver
 
 import (
-	"autoscaler/cred_helper"
 	"fmt"
 	"net/http"
 	"os"
 
-	"autoscaler/api"
-	"autoscaler/api/config"
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/ratelimiter"
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"

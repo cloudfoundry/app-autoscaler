@@ -2,8 +2,8 @@
 package fakes
 
 import (
-	"autoscaler/metricsforwarder/forwarder"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"sync"
 )
 

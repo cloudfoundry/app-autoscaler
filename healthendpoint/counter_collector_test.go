@@ -1,8 +1,9 @@
 package healthendpoint_test
 
 import (
-	. "autoscaler/healthendpoint"
 	"strings"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 

@@ -2,10 +2,10 @@
 package fakes
 
 import (
-	"autoscaler/cred_helper"
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"sync"
 )
 

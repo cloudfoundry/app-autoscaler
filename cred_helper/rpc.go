@@ -1,10 +1,11 @@
 package cred_helper
 
 import (
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
 	"net/rpc"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 type CredentialsRPCClient struct {

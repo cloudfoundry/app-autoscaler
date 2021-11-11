@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	. "autoscaler/helpers"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

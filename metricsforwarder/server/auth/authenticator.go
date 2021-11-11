@@ -1,9 +1,6 @@
 package auth
 
 import (
-	"autoscaler/cred_helper"
-	"autoscaler/metricsforwarder/server/common"
-	"autoscaler/models"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -11,6 +8,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"

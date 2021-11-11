@@ -1,8 +1,9 @@
 package server
 
 import (
-	"autoscaler/scalingengine/schedule"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 
 	"code.cloudfoundry.org/lager"
 )

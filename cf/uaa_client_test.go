@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
-	. "autoscaler/cf"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 )
 
 var _ = Describe("UAA Client", func() {

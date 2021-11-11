@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"autoscaler/db"
-	. "autoscaler/db/sqldb"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/go-sql-driver/mysql"

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"autoscaler/healthendpoint"
-	"autoscaler/metricsserver/config"
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"

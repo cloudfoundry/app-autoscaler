@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"autoscaler/db"
-	. "autoscaler/metricsserver/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
 )
 
 var _ = Describe("Config", func() {

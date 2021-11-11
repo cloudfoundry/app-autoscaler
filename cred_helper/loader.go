@@ -1,11 +1,12 @@
 package cred_helper
 
 import (
-	"autoscaler/db"
-	"autoscaler/helpers"
 	"fmt"
 	"os"
 	"os/exec"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"

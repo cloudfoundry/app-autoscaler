@@ -1,12 +1,13 @@
 package collector
 
 import (
-	"autoscaler/helpers"
-	"autoscaler/models"
 	"fmt"
 	"math"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"

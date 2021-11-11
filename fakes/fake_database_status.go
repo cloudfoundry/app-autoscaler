@@ -2,9 +2,10 @@
 package fakes
 
 import (
-	"autoscaler/db"
 	"database/sql"
 	"sync"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 )
 
 type FakeDatabaseStatus struct {

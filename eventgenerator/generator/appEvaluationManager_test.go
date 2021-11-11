@@ -1,12 +1,13 @@
 package generator_test
 
 import (
-	"autoscaler/eventgenerator/aggregator"
-	"autoscaler/eventgenerator/config"
-	. "autoscaler/eventgenerator/generator"
-	"autoscaler/models"
 	"reflect"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/generator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"

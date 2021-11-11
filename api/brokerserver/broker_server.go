@@ -1,20 +1,21 @@
 package brokerserver
 
 import (
-	"autoscaler/cf"
-	"autoscaler/cred_helper"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+
 	"github.com/pivotal-cf/brokerapi/domain"
 
-	"autoscaler/api/config"
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"

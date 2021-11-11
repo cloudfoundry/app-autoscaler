@@ -1,11 +1,12 @@
 package generator
 
 import (
-	"autoscaler/eventgenerator/aggregator"
-	"autoscaler/eventgenerator/config"
-	"autoscaler/models"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

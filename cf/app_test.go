@@ -1,11 +1,12 @@
 package cf_test
 
 import (
-	. "autoscaler/cf"
-	"autoscaler/models"
 	"errors"
 	"fmt"
 	"io"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

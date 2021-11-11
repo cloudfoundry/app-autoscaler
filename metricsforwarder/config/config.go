@@ -1,13 +1,14 @@
 package config
 
 import (
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"gopkg.in/yaml.v2"
 )

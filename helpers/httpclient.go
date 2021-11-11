@@ -1,10 +1,11 @@
 package helpers
 
 import (
-	"autoscaler/models"
 	"net"
 	"net/http"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp"
 )

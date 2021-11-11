@@ -1,11 +1,12 @@
 package collector
 
 import (
-	"autoscaler/healthendpoint"
-	"autoscaler/models"
 	"fmt"
 	"os"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"

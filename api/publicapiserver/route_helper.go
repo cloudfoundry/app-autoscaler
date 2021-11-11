@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (

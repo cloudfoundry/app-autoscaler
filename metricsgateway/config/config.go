@@ -1,11 +1,12 @@
 package config
 
 import (
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
 	"fmt"
 	"strings"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"time"
 

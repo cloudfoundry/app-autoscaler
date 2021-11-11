@@ -1,11 +1,12 @@
 package server
 
 import (
-	"autoscaler/db"
-	"autoscaler/metricsforwarder/forwarder"
-	"autoscaler/models"
 	"encoding/json"
 	"fmt"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"errors"
 	"io/ioutil"
