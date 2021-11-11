@@ -2,7 +2,6 @@ package brokerserver
 
 import (
 	"autoscaler/api/config"
-	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
@@ -24,6 +23,7 @@ var (
 	bindingdb             *fakes.FakeBindingDB
 	policydb              *fakes.FakePolicyDB
 	fakecfClient          *fakes.FakeCFClient
+	fakeCredentials       *fakes.FakeCredentials
 	handler               *BrokerHandler
 	conf                  *config.Config
 	schedulerServer       = ghttp.NewServer()
@@ -95,6 +95,7 @@ var _ = Describe("BrokerHandler", func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		fakecfClient = &fakes.FakeCFClient{}
+		fakeCredentials = &fakes.FakeCredentials{}
 	})
 
 	JustBeforeEach(func() {
@@ -105,7 +106,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}}, fakecfClient, custom_metrics_cred_helper.NewWithPolicyDb(policydb, custom_metrics_cred_helper.MaxRetry),
+		}}, fakecfClient, fakeCredentials,
 		)
 	})
 	Describe("test delete binding", func() {
