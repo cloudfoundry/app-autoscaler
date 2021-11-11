@@ -80,9 +80,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	credentials, err := cred_helper.LoadCredentialPlugin(conf.DB, conf.Logging, conf.CredHelperPath)
+	credentials, err := cred_helper.LoadCredentialPlugin(conf.DB, conf.Logging, conf.CredHelperPluginPath)
 	if err != nil {
-		logger.Error("failed to load credential plugin", err)
+		logger.Error("failed to load credential plugin", err, lager.Data{"dbConfigs": conf.DB})
 		os.Exit(1)
 	}
 	var checkBindingFunc api.CheckBindingFunc

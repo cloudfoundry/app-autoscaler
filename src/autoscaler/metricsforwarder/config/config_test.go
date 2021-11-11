@@ -67,6 +67,7 @@ db:
     connection_max_lifetime: 60s
 health:
   port: 9999
+cred_helper_plugin_path: path/to/helper/plugin
 `)
 			})
 
@@ -82,6 +83,7 @@ health:
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
+				Expect(conf.CredHelperPath).To(Equal("path/to/helper/plugin"))
 			})
 		})
 

@@ -33,6 +33,7 @@ type Config struct {
 	PolicyPollerInterval   time.Duration                `yaml:"policy_poller_interval"`
 	Health                 models.HealthConfig          `yaml:"health"`
 	RateLimit              models.RateLimitConfig       `yaml:"rate_limit"`
+	CredHelperPluginPath   string                       `yaml:"cred_helper_plugin_path"`
 }
 
 type ServerConfig struct {
