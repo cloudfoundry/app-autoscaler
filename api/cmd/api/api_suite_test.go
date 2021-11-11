@@ -47,6 +47,7 @@ var (
 	healthport       int
 	infoBytes        []byte
 	ccServer         *ghttp.Server
+	pluginPath       string
 )
 
 func TestApi(t *testing.T) {
@@ -66,6 +67,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 
 	ap, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
+	pluginPath, err = gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/cmd/custom-metrics-cred-helper-plugin", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	apDB, err := sql.Open(database.DriverName, database.DSN)
@@ -201,6 +205,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	cfg.RateLimit.MaxAmount = 10
 	cfg.RateLimit.ValidDuration = 1 * time.Second
+
+	cfg.CredHelperPluginPath = pluginPath
 
 	configFile = writeConfig(&cfg)
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(

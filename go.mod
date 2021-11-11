@@ -21,7 +21,7 @@ require (
 	github.com/golangci/golangci-lint v1.43.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/hashicorp/go-hclog v1.0.0 // indirect
+	github.com/hashicorp/go-hclog v1.0.0
 	github.com/hashicorp/go-plugin v1.4.3
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87 // indirect
 	github.com/jmoiron/sqlx v1.3.4
