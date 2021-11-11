@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	. "autoscaler/metricsgateway/helpers"
-	"autoscaler/routes"
-	"autoscaler/testhelpers"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"

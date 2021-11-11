@@ -1,7 +1,7 @@
 package metricsgateway
 
 import (
-	"autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

@@ -1,8 +1,6 @@
 package main_test
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -10,6 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"

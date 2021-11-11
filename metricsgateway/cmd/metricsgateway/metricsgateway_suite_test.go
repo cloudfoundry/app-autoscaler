@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"autoscaler/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"github.com/jmoiron/sqlx"
@@ -23,10 +24,10 @@ import (
 
 	"testing"
 
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/metricsgateway/config"
-	"autoscaler/testhelpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 )
 
 var (
@@ -81,7 +82,7 @@ func TestMetricsgateway(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	eg, err := gexec.Build("autoscaler/metricsgateway/cmd/metricsgateway", "-race")
+	eg, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/cmd/metricsgateway", "-race")
 	Expect(err).NotTo(HaveOccurred())
 	initDB()
 	return []byte(eg)

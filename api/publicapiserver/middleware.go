@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"autoscaler/api"
-	"autoscaler/cf"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"

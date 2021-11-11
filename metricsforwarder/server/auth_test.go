@@ -1,10 +1,6 @@
 package server_test
 
 import (
-	"autoscaler/fakes"
-	"autoscaler/metricsforwarder/config"
-	"autoscaler/metricsforwarder/server/auth"
-	"autoscaler/models"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -14,6 +10,11 @@ import (
 	"io/ioutil"
 	"path"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

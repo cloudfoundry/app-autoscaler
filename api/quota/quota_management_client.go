@@ -1,8 +1,6 @@
 package quota
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/cf"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -10,6 +8,9 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
 	"code.cloudfoundry.org/lager"
 	"golang.org/x/oauth2"

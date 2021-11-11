@@ -1,15 +1,16 @@
 package generator_test
 
 import (
-	"autoscaler/db"
-	"autoscaler/eventgenerator/aggregator"
-	. "autoscaler/eventgenerator/generator"
-	"autoscaler/models"
-	"autoscaler/routes"
 	"errors"
 	"net/http"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/generator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"

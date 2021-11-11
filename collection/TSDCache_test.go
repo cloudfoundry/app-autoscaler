@@ -1,8 +1,9 @@
 package collection_test
 
 import (
-	. "autoscaler/collection"
 	"time"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/collection"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

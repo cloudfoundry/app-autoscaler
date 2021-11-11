@@ -1,15 +1,16 @@
 package collector_test
 
 import (
-	"autoscaler/db"
-	"autoscaler/fakes"
-	"autoscaler/metricsserver/collector"
-	"autoscaler/metricsserver/config"
-	"autoscaler/models"
 	"fmt"
 	"net/url"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

@@ -1,10 +1,6 @@
 package brokerserver
 
 import (
-	"autoscaler/api/plancheck"
-	"autoscaler/api/quota"
-	"autoscaler/cf"
-	"autoscaler/cred_helper"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -12,12 +8,18 @@ import (
 	"net/http"
 	"regexp"
 
-	"autoscaler/api/config"
-	"autoscaler/api/policyvalidator"
-	"autoscaler/api/schedulerutil"
-	"autoscaler/db"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/quota"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+
 	"errors"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerutil"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"github.com/pivotal-cf/brokerapi/domain"
 

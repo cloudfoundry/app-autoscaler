@@ -1,10 +1,6 @@
 package integration_test
 
 import (
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/models"
-	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -19,6 +15,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	as_testhelpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"

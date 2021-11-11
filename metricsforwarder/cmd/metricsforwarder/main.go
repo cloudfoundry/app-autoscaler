@@ -1,17 +1,18 @@
 package main
 
 import (
-	"autoscaler/cred_helper"
-	"autoscaler/db"
-	"autoscaler/db/sqldb"
-	"autoscaler/healthendpoint"
-	"autoscaler/helpers"
-	"autoscaler/metricsforwarder/config"
-	"autoscaler/metricsforwarder/server"
-	"autoscaler/ratelimiter"
 	"flag"
 	"fmt"
 	"os"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -21,7 +22,7 @@ import (
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
 
-	"autoscaler/metricsforwarder/manager"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/manager"
 )
 
 func main() {

@@ -1,12 +1,13 @@
 package aggregator
 
 import (
-	"autoscaler/collection"
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/collection"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

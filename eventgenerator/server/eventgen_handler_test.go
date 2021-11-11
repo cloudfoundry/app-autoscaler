@@ -1,15 +1,16 @@
 package server_test
 
 import (
-	"autoscaler/db"
-	"autoscaler/eventgenerator/aggregator"
-	. "autoscaler/eventgenerator/server"
-	"autoscaler/models"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/server"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

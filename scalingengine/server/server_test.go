@@ -1,11 +1,11 @@
 package server_test
 
 import (
-	"autoscaler/fakes"
-	"autoscaler/models"
-	"autoscaler/routes"
-	"autoscaler/scalingengine/config"
-	. "autoscaler/scalingengine/server"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

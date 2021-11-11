@@ -1,9 +1,9 @@
 package collector_test
 
 import (
-	"autoscaler/db"
-	. "autoscaler/metricsserver/collector"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

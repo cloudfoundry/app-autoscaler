@@ -1,12 +1,13 @@
 package collector_test
 
 import (
-	"autoscaler/db"
-	"autoscaler/fakes"
-	. "autoscaler/metricsserver/collector"
-	"autoscaler/models"
 	"errors"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"

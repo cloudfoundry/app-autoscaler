@@ -1,10 +1,11 @@
 package collector
 
 import (
-	"autoscaler/helpers"
 	"net/http"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"

@@ -1,11 +1,12 @@
 package schedulerutil_test
 
 import (
-	"autoscaler/api/config"
-	. "autoscaler/api/schedulerutil"
-	"autoscaler/routes"
 	"net/http"
 	"net/url"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerutil"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager"
 

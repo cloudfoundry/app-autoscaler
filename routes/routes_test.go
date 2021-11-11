@@ -1,7 +1,7 @@
 package routes_test
 
 import (
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

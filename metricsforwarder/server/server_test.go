@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"

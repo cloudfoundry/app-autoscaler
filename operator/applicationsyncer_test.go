@@ -1,9 +1,9 @@
 package operator_test
 
 import (
-	"autoscaler/fakes"
-	"autoscaler/models"
-	"autoscaler/operator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 
 	"code.cloudfoundry.org/lager/lagertest"
 

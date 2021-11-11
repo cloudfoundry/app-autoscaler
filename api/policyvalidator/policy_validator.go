@@ -1,10 +1,11 @@
 package policyvalidator
 
 import (
-	"autoscaler/models"
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"github.com/xeipuuv/gojsonschema"
 )

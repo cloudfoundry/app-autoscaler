@@ -1,9 +1,9 @@
 package server
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
-	"autoscaler/scalingengine"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"

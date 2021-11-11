@@ -1,12 +1,13 @@
 package integration_test
 
 import (
-	"autoscaler/cf"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

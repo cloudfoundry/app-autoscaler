@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"time"
 
-	"autoscaler/db"
-	"autoscaler/operator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

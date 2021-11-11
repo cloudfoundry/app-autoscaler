@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	"autoscaler/healthendpoint"
-	"autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 )
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
