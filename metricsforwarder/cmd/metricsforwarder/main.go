@@ -64,9 +64,9 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	credentials, err := cred_helper.LoadCredentialPlugin(conf.Db, conf.Logging, "")
+	credentials, err := cred_helper.LoadCredentialPlugin(conf.Db, conf.Logging, conf.CredHelperPluginPath)
 	if err != nil {
-		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
+		logger.Error("failed-to-load-credential-plugin", err, lager.Data{"dbConfigs": conf.Db})
 		os.Exit(1)
 	}
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")

@@ -1,6 +1,7 @@
 package cred_helper
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,7 +13,11 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, CredHelperPath string) (Credentials, error) {
+func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPath string) (Credentials, error) {
+	if credHelperPath == "" {
+		return nil, errors.New("credHelperPath is not configured")
+	}
+
 	// Create an hclog.Logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "Plugin",
@@ -23,7 +28,7 @@ func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig
 	client := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: HandshakeConfig,
 		Plugins:         pluginMap,
-		Cmd:             exec.Command(CredHelperPath),
+		Cmd:             exec.Command(credHelperPath),
 		Logger:          logger,
 	})
 	// FIXME why is this call closing the rpc session

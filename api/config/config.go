@@ -110,7 +110,7 @@ type Config struct {
 	MetricsForwarder     MetricsForwarderConfig       `yaml:"metrics_forwarder"`
 	Health               models.HealthConfig          `yaml:"health"`
 	RateLimit            models.RateLimitConfig       `yaml:"rate_limit"`
-	CredHelperPath       string                       `yaml:"cred_helper_path"`
+	CredHelperPluginPath string                       `yaml:"cred_helper_plugin_path"`
 }
 
 type PlanCheckConfig struct {

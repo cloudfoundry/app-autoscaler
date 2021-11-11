@@ -165,7 +165,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-cred_helper_path: path/to/helper/plugin
+cred_helper_plugin_path: path/to/helper/plugin
 `)
 			})
 
@@ -234,7 +234,7 @@ cred_helper_path: path/to/helper/plugin
 						SkipSSLValidation: false,
 					},
 				))
-				Expect(conf.CredHelperPath).To(Equal("path/to/helper/plugin"))
+				Expect(conf.CredHelperPluginPath).To(Equal("path/to/helper/plugin"))
 			})
 		})
 
