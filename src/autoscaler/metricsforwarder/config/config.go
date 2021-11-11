@@ -114,6 +114,9 @@ func (c *Config) Validate() error {
 	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
+	if c.CredHelperPluginPath == "" {
+		return fmt.Errorf("Configuration error: CredHelperPluginPath is empty")
+	}
 
 	if err := c.Health.Validate("metricsforwarder"); err != nil {
 		return err
