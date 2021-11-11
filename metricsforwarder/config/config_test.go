@@ -83,7 +83,7 @@ cred_helper_plugin_path: path/to/helper/plugin
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.CredHelperPath).To(Equal("path/to/helper/plugin"))
+				Expect(conf.CredHelperPluginPath).To(Equal("path/to/helper/plugin"))
 			})
 		})
 
