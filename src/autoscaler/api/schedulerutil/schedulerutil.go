@@ -1,14 +1,15 @@
 package schedulerutil
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/helpers"
-	"autoscaler/routes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager"
 )

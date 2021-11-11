@@ -3,7 +3,7 @@ package ratelimiter_test
 import (
 	. "time"
 
-	. "autoscaler/ratelimiter"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 
 	. "code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"

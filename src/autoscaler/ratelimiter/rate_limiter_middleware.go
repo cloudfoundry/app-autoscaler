@@ -3,7 +3,7 @@ package ratelimiter
 import (
 	"net/http"
 
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"

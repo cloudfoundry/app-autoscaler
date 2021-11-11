@@ -1,11 +1,12 @@
 package auth
 
 import (
-	"autoscaler/models"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"golang.org/x/crypto/bcrypt"
 

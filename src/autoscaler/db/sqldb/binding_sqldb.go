@@ -1,17 +1,18 @@
 package sqldb
 
 import (
-	"autoscaler/models"
 	"database/sql"
 	"errors"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
-	"autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 )
 
 type BindingSQLDB struct {

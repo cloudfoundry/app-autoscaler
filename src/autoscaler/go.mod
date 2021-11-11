@@ -1,4 +1,4 @@
-module autoscaler
+module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
 go 1.15
 

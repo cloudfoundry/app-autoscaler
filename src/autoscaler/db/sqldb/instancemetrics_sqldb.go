@@ -1,8 +1,8 @@
 package sqldb
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/jmoiron/sqlx"

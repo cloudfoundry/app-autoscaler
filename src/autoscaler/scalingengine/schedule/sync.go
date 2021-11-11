@@ -5,9 +5,9 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"autoscaler/db"
-	"autoscaler/models"
-	"autoscaler/scalingengine"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 )
 
 type ActiveScheduleSychronizer interface {

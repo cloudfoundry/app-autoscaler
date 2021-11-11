@@ -10,14 +10,14 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 
-	"autoscaler/db"
-	"autoscaler/db/sqldb"
-	"autoscaler/healthendpoint"
-	"autoscaler/helpers"
-	"autoscaler/metricsgateway"
-	"autoscaler/metricsgateway/config"
-	mg_helpers "autoscaler/metricsgateway/helpers"
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
+	mg_helpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/v8"

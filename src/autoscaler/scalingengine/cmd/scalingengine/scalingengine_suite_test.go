@@ -1,11 +1,12 @@
 package main_test
 
 import (
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/models"
-	"autoscaler/scalingengine/config"
 	"path/filepath"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
 	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
@@ -45,7 +46,7 @@ var (
 
 var _ = SynchronizedBeforeSuite(
 	func() []byte {
-		compiledPath, err := gexec.Build("autoscaler/scalingengine/cmd/scalingengine", "-race")
+		compiledPath, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/cmd/scalingengine", "-race")
 		Expect(err).NotTo(HaveOccurred())
 		return []byte(compiledPath)
 	},

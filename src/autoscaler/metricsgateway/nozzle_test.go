@@ -11,9 +11,9 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 
-	"autoscaler/healthendpoint"
-	"autoscaler/metricsgateway"
-	. "autoscaler/testhelpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 )
 
 var _ = Describe("Nozzle", func() {

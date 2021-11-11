@@ -2,8 +2,8 @@
 package fakes
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"database/sql"
 	"sync"
 )

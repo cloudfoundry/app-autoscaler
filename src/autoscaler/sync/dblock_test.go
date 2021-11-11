@@ -4,9 +4,9 @@ import (
 	"os"
 	"time"
 
-	"autoscaler/db"
-	"autoscaler/db/sqldb"
-	. "autoscaler/sync"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/sync"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"

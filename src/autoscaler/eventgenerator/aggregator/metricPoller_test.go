@@ -1,9 +1,9 @@
 package aggregator_test
 
 import (
-	. "autoscaler/eventgenerator/aggregator"
-	"autoscaler/models"
-	"autoscaler/routes"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"

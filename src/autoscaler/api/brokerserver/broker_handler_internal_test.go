@@ -1,13 +1,14 @@
 package brokerserver
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/fakes"
-	"autoscaler/models"
-	"autoscaler/routes"
 	"database/sql"
 	"net/http"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager/lagertest"
 

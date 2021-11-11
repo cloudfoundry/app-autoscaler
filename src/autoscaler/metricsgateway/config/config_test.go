@@ -1,11 +1,12 @@
 package config_test
 
 import (
-	"autoscaler/db"
-	"autoscaler/helpers"
-	. "autoscaler/metricsgateway/config"
-	"autoscaler/models"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

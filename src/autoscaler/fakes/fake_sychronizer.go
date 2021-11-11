@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"autoscaler/scalingengine/schedule"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 	"sync"
 )
 

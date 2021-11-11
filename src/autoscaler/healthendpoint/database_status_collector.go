@@ -1,7 +1,7 @@
 package healthendpoint
 
 import (
-	"autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

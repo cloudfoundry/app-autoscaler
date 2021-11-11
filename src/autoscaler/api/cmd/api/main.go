@@ -1,20 +1,21 @@
 package main
 
 import (
-	"autoscaler/api"
-	"autoscaler/api/brokerserver"
-	"autoscaler/api/config"
-	"autoscaler/api/publicapiserver"
-	"autoscaler/cf"
-	"autoscaler/cred_helper"
-	"autoscaler/db"
-	"autoscaler/db/sqldb"
-	"autoscaler/healthendpoint"
-	"autoscaler/helpers"
-	"autoscaler/ratelimiter"
 	"flag"
 	"fmt"
 	"os"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

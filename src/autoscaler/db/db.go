@@ -1,9 +1,10 @@
 package db
 
 import (
-	"autoscaler/models"
 	"fmt"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"database/sql"
 )

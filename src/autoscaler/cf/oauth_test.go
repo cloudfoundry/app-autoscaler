@@ -1,9 +1,10 @@
 package cf_test
 
 import (
-	. "autoscaler/cf"
 	"net/http"
 	"regexp"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/lagertest"

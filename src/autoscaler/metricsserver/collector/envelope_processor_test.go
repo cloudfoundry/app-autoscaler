@@ -1,9 +1,10 @@
 package collector_test
 
 import (
-	. "autoscaler/metricsserver/collector"
-	"autoscaler/models"
 	"time"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"

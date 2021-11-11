@@ -1,11 +1,12 @@
 package sqldb_test
 
 import (
-	"autoscaler/db"
-	. "autoscaler/db/sqldb"
-	"autoscaler/models"
 	"database/sql"
 	"strings"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/go-sql-driver/mysql"

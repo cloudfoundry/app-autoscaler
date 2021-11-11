@@ -1,9 +1,10 @@
 package healthendpoint_test
 
 import (
-	"autoscaler/fakes"
-	. "autoscaler/healthendpoint"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

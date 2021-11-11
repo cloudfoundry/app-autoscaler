@@ -1,11 +1,12 @@
 package integration_test
 
 import (
-	"autoscaler/models"
-	as_testhelpers "autoscaler/testhelpers"
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	as_testhelpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo"

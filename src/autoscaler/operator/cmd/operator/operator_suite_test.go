@@ -19,10 +19,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
 
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/models"
-	"autoscaler/operator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 )
 
 var (
@@ -41,7 +41,7 @@ func TestOperator(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	pr, err := gexec.Build("autoscaler/operator/cmd/operator", "-race")
+	pr, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/cmd/operator", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	return []byte(pr)

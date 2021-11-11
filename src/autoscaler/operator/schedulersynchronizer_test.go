@@ -1,10 +1,11 @@
 package operator_test
 
 import (
-	"autoscaler/operator"
-	"autoscaler/routes"
 	"net/http"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock/fakeclock"

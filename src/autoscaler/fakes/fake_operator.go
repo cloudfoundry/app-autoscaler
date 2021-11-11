@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"autoscaler/operator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 	"sync"
 )
 

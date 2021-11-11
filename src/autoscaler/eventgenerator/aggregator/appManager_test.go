@@ -1,12 +1,13 @@
 package aggregator_test
 
 import (
-	"autoscaler/db"
-	. "autoscaler/eventgenerator/aggregator"
-	"autoscaler/fakes"
-	"autoscaler/models"
 	"errors"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"

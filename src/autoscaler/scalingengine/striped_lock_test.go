@@ -1,7 +1,7 @@
 package scalingengine_test
 
 import (
-	. "autoscaler/scalingengine"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
