@@ -2,10 +2,11 @@
 package fakes
 
 import (
-	"autoscaler/db"
-	"autoscaler/models"
 	"database/sql"
 	"sync"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 type FakeBindingDB struct {

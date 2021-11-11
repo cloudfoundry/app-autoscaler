@@ -1,19 +1,20 @@
 package main
 
 import (
-	"autoscaler/helpers"
 	"flag"
 	"fmt"
 	"os"
 
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/db/sqldb"
-	"autoscaler/healthendpoint"
-	"autoscaler/scalingengine"
-	"autoscaler/scalingengine/config"
-	"autoscaler/scalingengine/schedule"
-	"autoscaler/scalingengine/server"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"

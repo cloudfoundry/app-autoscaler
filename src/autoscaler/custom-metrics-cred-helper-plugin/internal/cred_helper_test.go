@@ -1,13 +1,14 @@
 package internal_test
 
 import (
-	"autoscaler/cred_helper"
-	"autoscaler/custom-metrics-cred-helper-plugin/internal"
 	"database/sql"
 	"errors"
 
-	"autoscaler/fakes"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/internal"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

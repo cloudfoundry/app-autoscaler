@@ -1,10 +1,6 @@
 package main_test
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/models"
 	"database/sql"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +8,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp"
 
@@ -64,7 +65,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("failed to get database URL and drivername: " + e.Error())
 	}
 
-	ap, err := gexec.Build("autoscaler/api/cmd/api", "-race")
+	ap, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	apDB, err := sql.Open(database.DriverName, database.DSN)

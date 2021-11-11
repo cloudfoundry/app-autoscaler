@@ -1,10 +1,6 @@
 package publicapiserver_test
 
 import (
-	. "autoscaler/api/publicapiserver"
-	"autoscaler/db"
-	"autoscaler/fakes"
-	"autoscaler/models"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -12,6 +8,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"

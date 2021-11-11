@@ -1,7 +1,6 @@
 package publicapiserver
 
 import (
-	"autoscaler/cred_helper"
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
@@ -10,13 +9,15 @@ import (
 	"reflect"
 	"strconv"
 
-	"autoscaler/api/config"
-	"autoscaler/api/policyvalidator"
-	"autoscaler/api/schedulerutil"
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
-	"autoscaler/routes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerutil"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"

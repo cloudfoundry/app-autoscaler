@@ -1,21 +1,22 @@
 package config
 
 import (
-	"autoscaler/cf"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v2"
 
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (

@@ -1,17 +1,17 @@
 package integration_test
 
 import (
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	apiConfig "autoscaler/api/config"
-	egConfig "autoscaler/eventgenerator/config"
-	mgConfig "autoscaler/metricsgateway/config"
-	msConfig "autoscaler/metricsserver/config"
-	opConfig "autoscaler/operator/config"
-	seConfig "autoscaler/scalingengine/config"
+	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	egConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	mgConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
+	msConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
+	opConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
+	seConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
 	"fmt"
 	"io/ioutil"

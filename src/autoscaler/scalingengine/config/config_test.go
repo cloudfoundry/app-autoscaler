@@ -1,8 +1,8 @@
 package config_test
 
 import (
-	"autoscaler/db"
-	. "autoscaler/scalingengine/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

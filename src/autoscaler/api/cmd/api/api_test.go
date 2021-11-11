@@ -1,13 +1,14 @@
 package main_test
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/db"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

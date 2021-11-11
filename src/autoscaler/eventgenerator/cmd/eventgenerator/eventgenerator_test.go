@@ -1,13 +1,14 @@
 package main_test
 
 import (
-	"autoscaler/eventgenerator/config"
-	"autoscaler/helpers"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

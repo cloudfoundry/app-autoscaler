@@ -1,12 +1,13 @@
 package config_test
 
 import (
-	. "autoscaler/api/config"
-	"autoscaler/cf"
-	"autoscaler/db"
-	"autoscaler/models"
 	"bytes"
 	"time"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

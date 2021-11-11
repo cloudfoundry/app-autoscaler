@@ -1,9 +1,10 @@
 package plancheck
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/models"
 	"fmt"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 )

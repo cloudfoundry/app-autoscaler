@@ -1,8 +1,8 @@
 package metricsgateway_test
 
 import (
-	"autoscaler/fakes"
-	. "autoscaler/metricsgateway"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"

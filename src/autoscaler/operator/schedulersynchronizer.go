@@ -1,9 +1,10 @@
 package operator
 
 import (
-	"autoscaler/routes"
 	"fmt"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"

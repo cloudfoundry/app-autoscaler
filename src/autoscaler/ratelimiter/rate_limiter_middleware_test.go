@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"autoscaler/fakes"
-	"autoscaler/ratelimiter"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 )
 
 var _ = Describe("RateLimiterMiddleware", func() {

@@ -1,10 +1,11 @@
 package quota_test
 
 import (
-	"autoscaler/api/config"
-	"autoscaler/api/quota"
-	"autoscaler/helpers"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/quota"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"

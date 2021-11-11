@@ -1,10 +1,6 @@
 package generator
 
 import (
-	"autoscaler/db"
-	"autoscaler/eventgenerator/aggregator"
-	"autoscaler/models"
-	"autoscaler/routes"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -12,6 +8,11 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager"
 	circuit "github.com/rubyist/circuitbreaker"

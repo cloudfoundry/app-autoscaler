@@ -22,10 +22,10 @@ import (
 	"github.com/onsi/gomega/gexec"
 	yaml "gopkg.in/yaml.v2"
 
-	"autoscaler/db"
-	"autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 
-	"autoscaler/metricsforwarder/testhelpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/testhelpers"
 )
 
 var (
@@ -49,7 +49,7 @@ func TestMetricsforwarder(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	mf, err := gexec.Build("autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
+	mf, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	database, err := db.GetConnection(os.Getenv("DBURL"))

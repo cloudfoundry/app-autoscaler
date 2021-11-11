@@ -1,9 +1,9 @@
 package scalingengine_test
 
 import (
-	"autoscaler/fakes"
-	"autoscaler/models"
-	. "autoscaler/scalingengine"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 
 	"errors"
 	"strconv"

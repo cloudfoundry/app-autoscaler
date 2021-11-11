@@ -1,17 +1,18 @@
 package server
 
 import (
-	"autoscaler/cred_helper"
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/metricsforwarder/config"
-	"autoscaler/metricsforwarder/forwarder"
-	"autoscaler/metricsforwarder/server/auth"
-	"autoscaler/metricsforwarder/server/common"
-	"autoscaler/ratelimiter"
-	"autoscaler/routes"
 	"fmt"
 	"os"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/patrickmn/go-cache"
