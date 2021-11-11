@@ -2,11 +2,12 @@
 package fakes
 
 import (
+	"sync"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"sync"
 )
 
 type FakeCredentials struct {
