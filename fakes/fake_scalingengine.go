@@ -2,9 +2,10 @@
 package fakes
 
 import (
+	"sync"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
-	"sync"
 )
 
 type FakeScalingEngine struct {
