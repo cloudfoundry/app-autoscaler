@@ -1,7 +1,7 @@
 package internal_test
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"autoscaler/custom-metrics-cred-helper-plugin/internal"
 	"database/sql"
 	"errors"

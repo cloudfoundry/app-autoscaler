@@ -4,9 +4,9 @@ import (
 	"autoscaler/api"
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
-	"autoscaler/api/cred_helper"
 	"autoscaler/api/publicapiserver"
 	"autoscaler/cf"
+	"autoscaler/cred_helper"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/healthendpoint"
@@ -58,9 +58,9 @@ func main() {
 	members := grouper.Members{}
 
 	var policyDb db.PolicyDB
-	policyDb, err = sqldb.NewPolicySQLDB(conf.DB["policy_db"], logger.Session("policydb-db"))
+	policyDb, err = sqldb.NewPolicySQLDB(conf.DB[db.PolicyDb], logger.Session("policydb-db"))
 	if err != nil {
-		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB["policy_db"]})
+		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
 		os.Exit(1)
 	}
 	defer policyDb.Close()
@@ -88,9 +88,9 @@ func main() {
 	var bindingDB db.BindingDB
 
 	if !conf.UseBuildInMode {
-		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB["binding_db"], logger.Session("bindingdb-db"))
+		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB[db.BindingDb], logger.Session("bindingdb-db"))
 		if err != nil {
-			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB["binding_db"]})
+			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
 			os.Exit(1)
 		}
 		defer bindingDB.Close()

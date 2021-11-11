@@ -1,7 +1,7 @@
 package server
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"autoscaler/db"
 	"autoscaler/healthendpoint"
 	"autoscaler/metricsforwarder/config"

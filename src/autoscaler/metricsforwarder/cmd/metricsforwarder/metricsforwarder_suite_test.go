@@ -129,7 +129,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CacheCleanupInterval = 10 * time.Minute
 	cfg.PolicyPollerInterval = 40 * time.Second
 	cfg.Db = make(map[string]db.DatabaseConfig)
-	cfg.Db["policy_db"] = db.DatabaseConfig{
+	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
