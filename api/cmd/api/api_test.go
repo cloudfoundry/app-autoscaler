@@ -72,8 +72,8 @@ var _ = Describe("Api", func() {
 				missingConfig := cfg
 
 				missingConfig.DB = make(map[string]db.DatabaseConfig)
-				missingConfig.DB["policy_db"] = db.DatabaseConfig{URL: ""}
-				missingConfig.DB["binding_db"] = db.DatabaseConfig{URL: ""}
+				missingConfig.DB[db.PolicyDb] = db.DatabaseConfig{URL: ""}
+				missingConfig.DB[db.BindingDb] = db.DatabaseConfig{URL: ""}
 
 				var brokerCreds []config.BrokerCredentialsConfig
 				missingConfig.BrokerCredentials = brokerCreds

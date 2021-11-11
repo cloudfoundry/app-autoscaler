@@ -75,7 +75,7 @@ health:
 				Expect(conf.Logging.Level).To(Equal("debug"))
 				Expect(conf.Health.Port).To(Equal(9999))
 				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
-				Expect(conf.Db["policy_db"]).To(Equal(
+				Expect(conf.Db[db.PolicyDb]).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 						MaxOpenConnections:    10,
@@ -337,7 +337,7 @@ db:
 			conf.LoggregatorConfig.TLS.CertFile = "../testcerts/client.crt"
 			conf.LoggregatorConfig.TLS.KeyFile = "../testcerts/client.crt"
 			conf.Db = make(map[string]db.DatabaseConfig)
-			conf.Db["policy_db"] = db.DatabaseConfig{
+			conf.Db[db.PolicyDb] = db.DatabaseConfig{
 				URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
@@ -359,7 +359,7 @@ db:
 
 		Context("when policy db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db["policy_db"] = db.DatabaseConfig{URL: ""}
+				conf.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
 			})
 
 			It("should error", func() {

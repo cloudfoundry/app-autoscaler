@@ -151,7 +151,7 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	if c.DB["policy_db"].URL == "" {
+	if c.DB[db.PolicyDb].URL == "" {
 		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
 	}
 	if c.Scheduler.SchedulerURL == "" {
@@ -186,7 +186,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}
 	if !c.UseBuildInMode {
-		if c.DB["binding_db"].URL == "" {
+		if c.DB[db.BindingDb].URL == "" {
 			return fmt.Errorf("Configuration error: BindingDB URL is empty")
 		}
 

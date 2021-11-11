@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
@@ -42,7 +42,7 @@ func (c *Credentials) Get(appId string) (*models.Credential, error) {
 func (c *Credentials) InitializeConfig(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig) error {
 	logger := helpers.InitLoggerFromConfig(&loggingConfig, "custom_metrics_cred_helper")
 	var err error
-	c.policyDB, err = sqldb.NewPolicySQLDB(dbConfigs["policy_db"], logger.Session("policy-db"))
+	c.policyDB, err = sqldb.NewPolicySQLDB(dbConfigs[db.PolicyDb], logger.Session("policy-db"))
 	if err != nil {
 		return err
 	}

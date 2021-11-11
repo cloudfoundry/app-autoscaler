@@ -94,7 +94,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Db["policy_db"].URL == "" {
+	if c.Db[db.PolicyDb].URL == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
 	if c.LoggregatorConfig.TLS.CACertFile == "" {

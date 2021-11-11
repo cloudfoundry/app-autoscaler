@@ -69,7 +69,7 @@ var _ = Describe("Metricsforwarder", func() {
 				missingConfig := cfg
 
 				missingConfig.Db = make(map[string]db.DatabaseConfig)
-				missingConfig.Db["policy_db"] = db.DatabaseConfig{URL: ""}
+				missingConfig.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
 
 				runner.configPath = writeConfig(&missingConfig).Name()
 				runner.Start()
