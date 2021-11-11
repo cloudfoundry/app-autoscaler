@@ -13,7 +13,17 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPath string) (Credentials, error) {
+type PluginManager struct {
+	client *plugin.Client
+}
+
+func (p *PluginManager) Kill() {
+	if p.client != nil {
+		p.client.Kill()
+	}
+}
+
+func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPath string) (Credentials, error) {
 	if credHelperPath == "" {
 		return nil, errors.New("credHelperPath is not configured")
 	}
@@ -31,8 +41,6 @@ func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig
 		Cmd:             exec.Command(credHelperPath),
 		Logger:          logger,
 	})
-	// FIXME why is this call closing the rpc session
-	//defer client.Kill()
 
 	// Connect via RPC
 	rpcClient, err := client.Client()
