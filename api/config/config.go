@@ -225,6 +225,9 @@ func (c *Config) Validate() error {
 		if c.CatalogPath == "" {
 			return fmt.Errorf("Configuration error: CatalogPath is empty")
 		}
+		if c.CredHelperPluginPath == "" {
+			return fmt.Errorf("Configuration error: CredHelperPluginPath is empty")
+		}
 
 		catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
 		catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
