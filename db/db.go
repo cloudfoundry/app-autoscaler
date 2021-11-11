@@ -8,8 +8,12 @@ import (
 	"database/sql"
 )
 
-const PostgresDriverName = "postgres"
-const MysqlDriverName = "mysql"
+const (
+	PostgresDriverName = "postgres"
+	MysqlDriverName    = "mysql"
+	PolicyDb           = "policy_db"
+	BindingDb          = "binding_db"
+)
 
 type OrderType uint8
 type Name = string

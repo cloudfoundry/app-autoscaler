@@ -1,8 +1,8 @@
 package brokerserver
 
 import (
-	"autoscaler/api/cred_helper"
 	"autoscaler/cf"
+	"autoscaler/cred_helper"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"

@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/models"

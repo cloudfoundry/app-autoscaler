@@ -1,7 +1,7 @@
 package publicapiserver
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"fmt"
 	"net/http"
 	"os"

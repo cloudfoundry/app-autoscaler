@@ -1,7 +1,7 @@
 package main
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"autoscaler/custom-metrics-cred-helper-plugin/internal"
 
 	"github.com/hashicorp/go-plugin"
