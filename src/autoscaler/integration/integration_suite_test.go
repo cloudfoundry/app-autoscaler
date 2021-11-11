@@ -109,6 +109,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("environment variable $DBURL is not set")
 	}
 
+	os.Setenv("CRED_HELPER", components.Executables[CustomMetricsCredHelperPlugin])
+
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -168,6 +170,7 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler", "build", "metricsgateway")
 	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler", "build", "metricsserver")
 	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler", "build", "api")
+	builtExecutables[CustomMetricsCredHelperPlugin] = path.Join(rootDir, "src", "autoscaler", "build", "custom-metrics-cred-helper-plugin")
 
 	return builtExecutables
 }

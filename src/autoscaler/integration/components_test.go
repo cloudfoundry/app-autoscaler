@@ -29,17 +29,17 @@ import (
 )
 
 const (
-	GolangAPIServer     = "golangApiServer"
-	ServiceBroker       = "serviceBroker"
-	GolangServiceBroker = "golangServiceBroker"
-	Scheduler           = "scheduler"
-	MetricsCollector    = "metricsCollector"
-	EventGenerator      = "eventGenerator"
-	ScalingEngine       = "scalingEngine"
-	Operator            = "operator"
-	MetricsGateway      = "metricsGateway"
-	MetricsServerHTTP   = "metricsServerHTTP"
-	MetricsServerWS     = "metricsServerWS"
+	GolangAPIServer               = "golangApiServer"
+	GolangServiceBroker           = "golangServiceBroker"
+	Scheduler                     = "scheduler"
+	MetricsCollector              = "metricsCollector"
+	EventGenerator                = "eventGenerator"
+	ScalingEngine                 = "scalingEngine"
+	Operator                      = "operator"
+	CustomMetricsCredHelperPlugin = "customMetricsCredHelperPlugin" // #nosec G101
+	MetricsGateway                = "metricsGateway"
+	MetricsServerHTTP             = "metricsServerHTTP"
+	MetricsServerWS               = "metricsServerWS"
 )
 
 var golangAPIInfoFilePath = "../api/exampleconfig/catalog-example.json"
@@ -232,11 +232,11 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		DB: apiConfig.DBConfig{
-			PolicyDB: db.DatabaseConfig{
+		DB: map[string]db.DatabaseConfig{
+			"policy_db": {
 				URL: dbURI,
 			},
-			BindingDB: db.DatabaseConfig{
+			"binding_db": {
 				URL: dbURI,
 			},
 		},

@@ -121,13 +121,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	}
 	cfg.Logging.Level = "info"
-	cfg.DB.BindingDB = db.DatabaseConfig{
+	cfg.DB = make(map[string]db.DatabaseConfig)
+	cfg.DB["binding_db"] = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.DB.PolicyDB = db.DatabaseConfig{
+	cfg.DB["policy_db"] = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,

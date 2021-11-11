@@ -1,7 +1,7 @@
 package main
 
 import (
-	"autoscaler/api/custom_metrics_cred_helper"
+	"autoscaler/api/cred_helper"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/healthendpoint"
@@ -56,16 +56,16 @@ func main() {
 	mfClock := clock.NewClock()
 
 	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDb, logger.Session("policy-db"))
+	policyDB, err = sqldb.NewPolicySQLDB(conf.Db["policy_db"], logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
+		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db["policy_db"]})
 		os.Exit(1)
 	}
 	defer policyDB.Close()
 
-	credentials, err := custom_metrics_cred_helper.New(conf.Db.PolicyDb, logger.Session("policy-db"), custom_metrics_cred_helper.MaxRetry)
+	credentials, err := cred_helper.LoadCredentialPlugin(conf.Db, conf.Logging)
 	if err != nil {
-		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
+		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db["policy_db"]})
 		os.Exit(1)
 	}
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")

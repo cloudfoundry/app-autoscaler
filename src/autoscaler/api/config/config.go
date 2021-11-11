@@ -41,11 +41,6 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: DefaultLoggingLevel,
 }
 
-type DBConfig struct {
-	BindingDB db.DatabaseConfig `yaml:"binding_db"`
-	PolicyDB  db.DatabaseConfig `yaml:"policy_db"`
-}
-
 type SchedulerConfig struct {
 	SchedulerURL   string          `yaml:"scheduler_url"`
 	TLSClientCerts models.TLSCerts `yaml:"tls"`
@@ -92,28 +87,28 @@ type BrokerCredentialsConfig struct {
 }
 
 type Config struct {
-	Logging              helpers.LoggingConfig     `yaml:"logging"`
-	BrokerServer         ServerConfig              `yaml:"broker_server"`
-	PublicApiServer      ServerConfig              `yaml:"public_api_server"`
-	DB                   DBConfig                  `yaml:"db"`
-	BrokerCredentials    []BrokerCredentialsConfig `yaml:"broker_credentials"`
-	APIClientId          string                    `yaml:"api_client_id"`
-	QuotaManagement      *QuotaManagementConfig    `yaml:"quota_management"`
-	PlanCheck            *PlanCheckConfig          `yaml:"plan_check"`
-	CatalogPath          string                    `yaml:"catalog_path"`
-	CatalogSchemaPath    string                    `yaml:"catalog_schema_path"`
-	DashboardRedirectURI string                    `yaml:"dashboard_redirect_uri"`
-	PolicySchemaPath     string                    `yaml:"policy_schema_path"`
-	Scheduler            SchedulerConfig           `yaml:"scheduler"`
-	ScalingEngine        ScalingEngineConfig       `yaml:"scaling_engine"`
-	MetricsCollector     MetricsCollectorConfig    `yaml:"metrics_collector"`
-	EventGenerator       EventGeneratorConfig      `yaml:"event_generator"`
-	CF                   cf.CFConfig               `yaml:"cf"`
-	UseBuildInMode       bool                      `yaml:"use_buildin_mode"`
-	InfoFilePath         string                    `yaml:"info_file_path"`
-	MetricsForwarder     MetricsForwarderConfig    `yaml:"metrics_forwarder"`
-	Health               models.HealthConfig       `yaml:"health"`
-	RateLimit            models.RateLimitConfig    `yaml:"rate_limit"`
+	Logging              helpers.LoggingConfig        `yaml:"logging"`
+	BrokerServer         ServerConfig                 `yaml:"broker_server"`
+	PublicApiServer      ServerConfig                 `yaml:"public_api_server"`
+	DB                   map[string]db.DatabaseConfig `yaml:"db"`
+	BrokerCredentials    []BrokerCredentialsConfig    `yaml:"broker_credentials"`
+	APIClientId          string                       `yaml:"api_client_id"`
+	QuotaManagement      *QuotaManagementConfig       `yaml:"quota_management"`
+	PlanCheck            *PlanCheckConfig             `yaml:"plan_check"`
+	CatalogPath          string                       `yaml:"catalog_path"`
+	CatalogSchemaPath    string                       `yaml:"catalog_schema_path"`
+	DashboardRedirectURI string                       `yaml:"dashboard_redirect_uri"`
+	PolicySchemaPath     string                       `yaml:"policy_schema_path"`
+	Scheduler            SchedulerConfig              `yaml:"scheduler"`
+	ScalingEngine        ScalingEngineConfig          `yaml:"scaling_engine"`
+	MetricsCollector     MetricsCollectorConfig       `yaml:"metrics_collector"`
+	EventGenerator       EventGeneratorConfig         `yaml:"event_generator"`
+	CF                   cf.CFConfig                  `yaml:"cf"`
+	UseBuildInMode       bool                         `yaml:"use_buildin_mode"`
+	InfoFilePath         string                       `yaml:"info_file_path"`
+	MetricsForwarder     MetricsForwarderConfig       `yaml:"metrics_forwarder"`
+	Health               models.HealthConfig          `yaml:"health"`
+	RateLimit            models.RateLimitConfig       `yaml:"rate_limit"`
 }
 
 type PlanCheckConfig struct {
@@ -156,7 +151,7 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	if c.DB.PolicyDB.URL == "" {
+	if c.DB["policy_db"].URL == "" {
 		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
 	}
 	if c.Scheduler.SchedulerURL == "" {
@@ -191,7 +186,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}
 	if !c.UseBuildInMode {
-		if c.DB.BindingDB.URL == "" {
+		if c.DB["binding_db"].URL == "" {
 			return fmt.Errorf("Configuration error: BindingDB URL is empty")
 		}
 

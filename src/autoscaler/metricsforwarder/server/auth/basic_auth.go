@@ -4,6 +4,7 @@ import (
 	"autoscaler/models"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -38,7 +39,7 @@ func (a *Auth) BasicAuth(r *http.Request, appID string) error {
 				return errors.New("basic authorization credential does not match")
 			}
 			a.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appid": appID})
-			return errors.New("error getting binding credentials from policyDB")
+			return fmt.Errorf("error getting binding credentials from policyDB %w", err)
 		}
 		// update the cache
 		a.credentialCache.Set(appID, credentials, a.cacheTTL)
