@@ -6,4 +6,4 @@ package fakes
 //go:generate counterfeiter -o ./fake_scheduler_db.go ../db SchedulerDB
 //go:generate counterfeiter -o ./fake_scalingengine.go ../scalingengine ScalingEngine
 //go:generate counterfeiter -o ./fake_binding_db.go ../db BindingDB
-//go:generate counterfeiter -o ./fake_credentials.go ../api/cred_helper Credentials
+//go:generate counterfeiter -o ./fake_credentials.go ../cred_helper Credentials

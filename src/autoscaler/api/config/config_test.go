@@ -185,14 +185,14 @@ cf:
 						CertFile:   "/var/vcap/jobs/autoscaler/config/certs/api.crt",
 					},
 				))
-				Expect(conf.DB["binding_db"]).To(Equal(
+				Expect(conf.DB[db.BindingDb]).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.DB["policy_db"]).To(Equal(
+				Expect(conf.DB[db.PolicyDb]).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
@@ -273,14 +273,14 @@ cf:
 				Expect(conf.Logging.Level).To(Equal("info"))
 				Expect(conf.BrokerServer.Port).To(Equal(8080))
 				Expect(conf.PublicApiServer.Port).To(Equal(8081))
-				Expect(conf.DB["binding_db"]).To(Equal(
+				Expect(conf.DB[db.BindingDb]).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.DB["policy_db"]).To(Equal(
+				Expect(conf.DB[db.PolicyDb]).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
@@ -1003,13 +1003,13 @@ rate_limit:
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.DB = make(map[string]db.DatabaseConfig)
-			conf.DB["binding_db"] = db.DatabaseConfig{
+			conf.DB[db.BindingDb] = db.DatabaseConfig{
 				URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.DB["policy_db"] = db.DatabaseConfig{
+			conf.DB[db.PolicyDb] = db.DatabaseConfig{
 				URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
@@ -1057,7 +1057,7 @@ rate_limit:
 
 		Context("when bindingdb url is not set", func() {
 			BeforeEach(func() {
-				conf.DB["binding_db"] = db.DatabaseConfig{URL: ""}
+				conf.DB[db.BindingDb] = db.DatabaseConfig{URL: ""}
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: BindingDB URL is empty")))
@@ -1066,7 +1066,7 @@ rate_limit:
 
 		Context("when policydb url is not set", func() {
 			BeforeEach(func() {
-				conf.DB["policy_db"] = db.DatabaseConfig{URL: ""}
+				conf.DB[db.PolicyDb] = db.DatabaseConfig{URL: ""}
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicyDB URL is empty")))
@@ -1307,7 +1307,7 @@ rate_limit:
 			})
 			Context("when broker related configs are not set", func() {
 				BeforeEach(func() {
-					conf.DB["binding_db"] = db.DatabaseConfig{URL: ""}
+					conf.DB[db.BindingDb] = db.DatabaseConfig{URL: ""}
 					brokerCred1 := BrokerCredentialsConfig{
 						BrokerUsername:     "",
 						BrokerUsernameHash: nil,

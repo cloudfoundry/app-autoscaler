@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"autoscaler/api/cred_helper"
+	"autoscaler/cred_helper"
 	"autoscaler/metricsforwarder/server/common"
 	"autoscaler/models"
 	"crypto/x509"
