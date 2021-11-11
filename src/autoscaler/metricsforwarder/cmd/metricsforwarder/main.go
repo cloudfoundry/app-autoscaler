@@ -64,7 +64,7 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	credentials, err := cred_helper.LoadCredentialPlugin(conf.Db, conf.Logging)
+	credentials, err := cred_helper.LoadCredentialPlugin(conf.Db, conf.Logging, "")
 	if err != nil {
 		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
 		os.Exit(1)

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig) (Credentials, error) {
+func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, CredHelperPath string) (Credentials, error) {
 	// Create an hclog.Logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "Plugin",
@@ -20,17 +20,10 @@ func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig
 		Level:  hclog.Debug,
 	})
 
-	// We're a host! Start by launching the plugin process.
-	// #nosec G101
-	credHelper := os.Getenv("CRED_HELPER")
-	if credHelper == "" {
-		// #nosec G101
-		credHelper = "../../../build/custom-metrics-cred-helper-plugin"
-	}
 	client := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: HandshakeConfig,
 		Plugins:         pluginMap,
-		Cmd:             exec.Command(credHelper),
+		Cmd:             exec.Command(CredHelperPath),
 		Logger:          logger,
 	})
 	// FIXME why is this call closing the rpc session

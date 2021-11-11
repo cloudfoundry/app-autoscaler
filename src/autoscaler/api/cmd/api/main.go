@@ -80,7 +80,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	credentials, err := cred_helper.LoadCredentialPlugin(conf.DB, conf.Logging)
+	credentials, err := cred_helper.LoadCredentialPlugin(conf.DB, conf.Logging, conf.CredHelperPath)
 	if err != nil {
 		logger.Error("failed to load credential plugin", err)
 		os.Exit(1)
