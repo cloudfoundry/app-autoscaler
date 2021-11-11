@@ -1,6 +1,7 @@
 package cred_helper
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,7 +13,21 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig) (Credentials, error) {
+type PluginManager struct {
+	client *plugin.Client
+}
+
+func (p *PluginManager) Kill() {
+	if p.client != nil {
+		p.client.Kill()
+	}
+}
+
+func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPath string) (Credentials, error) {
+	if credHelperPath == "" {
+		return nil, errors.New("credHelperPath is not configured")
+	}
+
 	// Create an hclog.Logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "Plugin",
@@ -20,21 +35,12 @@ func LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig
 		Level:  hclog.Debug,
 	})
 
-	// We're a host! Start by launching the plugin process.
-	// #nosec G101
-	credHelper := os.Getenv("CRED_HELPER")
-	if credHelper == "" {
-		// #nosec G101
-		credHelper = "../../../build/custom-metrics-cred-helper-plugin"
-	}
 	client := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: HandshakeConfig,
 		Plugins:         pluginMap,
-		Cmd:             exec.Command(credHelper),
+		Cmd:             exec.Command(credHelperPath),
 		Logger:          logger,
 	})
-	// FIXME why is this call closing the rpc session
-	//defer client.Kill()
 
 	// Connect via RPC
 	rpcClient, err := client.Client()

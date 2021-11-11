@@ -33,6 +33,7 @@ type Config struct {
 	PolicyPollerInterval   time.Duration                `yaml:"policy_poller_interval"`
 	Health                 models.HealthConfig          `yaml:"health"`
 	RateLimit              models.RateLimitConfig       `yaml:"rate_limit"`
+	CredHelperPluginPath   string                       `yaml:"cred_helper_plugin_path"`
 }
 
 type ServerConfig struct {
@@ -112,6 +113,9 @@ func (c *Config) Validate() error {
 	}
 	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
+	}
+	if c.CredHelperPluginPath == "" {
+		return fmt.Errorf("Configuration error: CredHelperPluginPath is empty")
 	}
 
 	if err := c.Health.Validate("metricsforwarder"); err != nil {

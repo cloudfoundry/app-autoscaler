@@ -86,6 +86,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
+cred_helper_path: path/to/helper/plugin
 `)
 			})
 
@@ -163,7 +164,9 @@ cf:
   api: https://api.example.com
   client_id: client-id
   secret: client-secret
-  skip_ssl_validation: false`)
+  skip_ssl_validation: false
+cred_helper_plugin_path: path/to/helper/plugin
+`)
 			})
 
 			It("It returns the config", func() {
@@ -231,6 +234,7 @@ cf:
 						SkipSSLValidation: false,
 					},
 				))
+				Expect(conf.CredHelperPluginPath).To(Equal("path/to/helper/plugin"))
 			})
 		})
 
@@ -1045,6 +1049,8 @@ rate_limit:
 
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
+
+			conf.CredHelperPluginPath = "path/to/plugin"
 		})
 		JustBeforeEach(func() {
 			err = conf.Validate()

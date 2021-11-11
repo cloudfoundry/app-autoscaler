@@ -64,11 +64,14 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	credentials, err := cred_helper.LoadCredentialPlugin(conf.Db, conf.Logging)
+	pm := cred_helper.PluginManager{}
+	credentials, err := pm.LoadCredentialPlugin(conf.Db, conf.Logging, conf.CredHelperPluginPath)
 	if err != nil {
-		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
+		logger.Error("failed-to-load-credential-plugin", err, lager.Data{"dbConfigs": conf.Db})
 		os.Exit(1)
 	}
+	defer pm.Kill()
+
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
