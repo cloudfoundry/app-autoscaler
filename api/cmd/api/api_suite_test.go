@@ -68,6 +68,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ap, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
+	//_, err = gexec.Build("autoscaler/custom-metrics-cred-helper-plugin/cmd/custom-metrics-cred-helper-plugin", "-race")
+	//Expect(err).NotTo(HaveOccurred())
+
 	apDB, err := sql.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -201,6 +204,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	cfg.RateLimit.MaxAmount = 10
 	cfg.RateLimit.ValidDuration = 1 * time.Second
+
+	cfg.CredHelperPath = "../../../build/custom-metrics-cred-helper-plugin"
 
 	configFile = writeConfig(&cfg)
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
