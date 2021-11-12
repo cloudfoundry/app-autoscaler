@@ -143,7 +143,7 @@ func main() {
 	logger.Info("started")
 
 	err = <-monitor.Wait()
-	pm.Kill()
+
 	if err != nil {
 		logger.Error("exited-with-failure", err)
 		os.Exit(1)

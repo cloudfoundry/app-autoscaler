@@ -1,6 +1,7 @@
 package cred_helper
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -15,13 +16,23 @@ import (
 
 type PluginManager struct {
 	client *plugin.Client
+
+	// ctx is used to shutdown the device manager
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func New() *PluginManager {
-	return &PluginManager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	return &PluginManager{
+		ctx:    ctx,
+		cancel: cancel,
+	}
 }
 
 func (p *PluginManager) Kill() {
+	p.cancel()
+
 	if p.client != nil {
 		p.client.Kill()
 	}
