@@ -28,6 +28,7 @@ var _ = Describe("Api", func() {
 	})
 
 	AfterEach(func() {
+		// then destroy
 		runner.KillWithFire()
 	})
 
@@ -110,6 +111,10 @@ var _ = Describe("Api", func() {
 	})
 
 	Describe("BuildIn Mode", func() {
+		AfterEach(func() {
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(0))
+		})
 		Context("BuildIn Mode is false", func() {
 			BeforeEach(func() {
 				basicAuthConfig := cfg
@@ -120,6 +125,7 @@ var _ = Describe("Api", func() {
 			It("should start both broker and public-api", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.broker_http_server.broker-http-server-created"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.public-api-http-server-created"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.started"))
 			})
 		})
 
@@ -133,11 +139,16 @@ var _ = Describe("Api", func() {
 			It("should start not start broker ", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(Say("api.broker_http_server.broker-http-server-created"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.public-api-http-server-created"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.started"))
 			})
 		})
 	})
 
 	Describe("Broker Rest API", func() {
+		AfterEach(func() {
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(0))
+		})
 		Context("When a request comes to broker catalog", func() {
 			BeforeEach(func() {
 				runner.Start()
@@ -161,6 +172,10 @@ var _ = Describe("Api", func() {
 	})
 
 	Describe("Pubic API", func() {
+		AfterEach(func() {
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(0))
+		})
 		Context("When a request comes to public api info", func() {
 			BeforeEach(func() {
 				runner.Start()
@@ -188,6 +203,10 @@ var _ = Describe("Api", func() {
 			runner.configPath = writeConfig(&basicAuthConfig).Name()
 			runner.Start()
 		})
+		AfterEach(func() {
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(0))
+		})
 		Context("when a request to query health comes", func() {
 			It("returns with a 200", func() {
 				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d", healthport))
@@ -209,6 +228,10 @@ var _ = Describe("Api", func() {
 	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
 		BeforeEach(func() {
 			runner.Start()
+		})
+		AfterEach(func() {
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 		Context("when username and password are incorrect for basic authentication during health check", func() {
 			It("should return 401", func() {
