@@ -121,7 +121,7 @@ func (a *Auth) CheckAuth(r *http.Request, appID string) error {
 		errAuth = a.XFCCAuth(r, appID)
 	}
 	if errors.Is(errAuth, ErrorMTLSHeaderNotFound) || !isMtlsConfigured {
-		a.logger.Info("Trying basic auth", lager.Data{"error": fmt.Sprintf("%+v", errAuth), "isMtlsConfigured": isMtlsConfigured})
+		a.logger.Debug("Trying basic auth", lager.Data{"error": fmt.Sprintf("%+v", errAuth), "isMtlsConfigured": isMtlsConfigured})
 		errAuth = a.BasicAuth(r, appID)
 	}
 	return errAuth
