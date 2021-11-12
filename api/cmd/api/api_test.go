@@ -27,11 +27,6 @@ var _ = Describe("Api", func() {
 		runner = NewApiRunner()
 	})
 
-	AfterEach(func() {
-		// then destroy
-		runner.KillWithFire()
-	})
-
 	Describe("Api configuration check", func() {
 		Context("with a missing config file", func() {
 			BeforeEach(func() {

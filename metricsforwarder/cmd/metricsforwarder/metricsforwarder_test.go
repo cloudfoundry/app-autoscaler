@@ -123,7 +123,6 @@ var _ = Describe("Metricsforwarder", func() {
 
 				AfterEach(func() {
 					runner.Interrupt()
-					runner.KillWithFire()
 				})
 
 				It("returns with a 200", func() {
@@ -166,7 +165,6 @@ var _ = Describe("Metricsforwarder", func() {
 		})
 		AfterEach(func() {
 			runner.Interrupt()
-			runner.KillWithFire()
 		})
 	})
 
@@ -205,7 +203,6 @@ var _ = Describe("Metricsforwarder", func() {
 
 		AfterEach(func() {
 			runner.Interrupt()
-			runner.KillWithFire()
 		})
 	})
 
@@ -244,7 +241,6 @@ var _ = Describe("Metricsforwarder", func() {
 
 		AfterEach(func() {
 			runner.Interrupt()
-			runner.KillWithFire()
 		})
 	})
 })
