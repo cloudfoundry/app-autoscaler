@@ -33,6 +33,24 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v2
 
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Go Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
@@ -43,6 +61,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
+
+
 
       - name: act only - Install Maven
         if: ${{ env.ACT }}
@@ -67,3 +87,5 @@ jobs:
       - name: Integration Tests
         run: |
           make integration db_type=mysql
+
+
