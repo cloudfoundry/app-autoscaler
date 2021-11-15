@@ -18,7 +18,6 @@ type PluginManager struct {
 }
 
 func (p *PluginManager) Kill() {
-
 	if p.client != nil {
 		p.client.Kill()
 	}
