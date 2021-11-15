@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/internal"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/internal"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"

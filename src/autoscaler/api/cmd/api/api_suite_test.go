@@ -69,7 +69,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ap, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	pluginPath, err = gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/cmd/custom-metrics-cred-helper-plugin", "-race")
+	pluginPath, err = gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/cmd/cred_helper", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	apDB, err := sql.Open(database.DriverName, database.DSN)

@@ -39,7 +39,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 			"https://127.0.0.1:8888",
 			true,
 			tmpDir,
-			components.Executables[CustomMetricsCredHelperPlugin])
+			components.Executables[CredHelperPlugin])
 		startGolangApiServer()
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)

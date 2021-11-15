@@ -29,17 +29,17 @@ import (
 )
 
 const (
-	GolangAPIServer               = "golangApiServer"
-	GolangServiceBroker           = "golangServiceBroker"
-	Scheduler                     = "scheduler"
-	MetricsCollector              = "metricsCollector"
-	EventGenerator                = "eventGenerator"
-	ScalingEngine                 = "scalingEngine"
-	Operator                      = "operator"
-	CustomMetricsCredHelperPlugin = "customMetricsCredHelperPlugin" // #nosec G101
-	MetricsGateway                = "metricsGateway"
-	MetricsServerHTTP             = "metricsServerHTTP"
-	MetricsServerWS               = "metricsServerWS"
+	GolangAPIServer     = "golangApiServer"
+	GolangServiceBroker = "golangServiceBroker"
+	Scheduler           = "scheduler"
+	MetricsCollector    = "metricsCollector"
+	EventGenerator      = "eventGenerator"
+	ScalingEngine       = "scalingEngine"
+	Operator            = "operator"
+	CredHelperPlugin    = "credHelperPlugin" // #nosec G101
+	MetricsGateway      = "metricsGateway"
+	MetricsServerHTTP   = "metricsServerHTTP"
+	MetricsServerWS     = "metricsServerWS"
 )
 
 var golangAPIInfoFilePath = "../api/exampleconfig/catalog-example.json"

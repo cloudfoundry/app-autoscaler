@@ -4,6 +4,7 @@ GO_NOMOD := GO111MODULE=off go
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/ | grep -v e2e)
+PATH:=${HOME}/go/bin:${PATH}
 
 CGO_ENABLED = 0
 BUILDTAGS :=
@@ -12,7 +13,8 @@ build-%:
 	@echo "# building $*"
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
-build: build-scalingengine build-metricsforwarder build-eventgenerator build-api build-metricsgateway build-metricsserver build-operator build-custom-metrics-cred-helper-plugin
+build: build-scalingengine build-metricsforwarder build-eventgenerator build-api build-metricsgateway\
+		build-metricsserver build-operator build-cred_helper
 
 check: fmt lint build test
 

@@ -39,7 +39,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			"https://127.0.0.1:8888",
 			true,
 			tmpDir,
-			components.Executables[CustomMetricsCredHelperPlugin])
+			components.Executables[CredHelperPlugin])
 		startGolangApiServer()
 		appId = getRandomId()
 		pathVariables = []string{appId}

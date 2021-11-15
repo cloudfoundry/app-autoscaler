@@ -2,7 +2,7 @@ package main
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/internal"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/internal"
 
 	"github.com/hashicorp/go-plugin"
 )
