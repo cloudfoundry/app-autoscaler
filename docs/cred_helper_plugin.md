@@ -82,3 +82,8 @@ Add a binary plugin-mechanism (gRPC or otherwise) to open-source that allows for
     - Do not consider Golang interface and grap the right one
     - Much larger attack surface for the attacker
 
+### References
+
+- https://cheppers.com/hashicorps-go-plugin-extensive-tutorial
+- https://eli.thegreenplace.net/2021/plugins-in-go/
+- https://github.com/hashicorp/go-plugin
