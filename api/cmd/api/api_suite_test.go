@@ -295,9 +295,3 @@ func (ap *ApiRunner) Interrupt() {
 		ap.Session.Interrupt().Wait(5 * time.Second)
 	}
 }
-
-func (ap *ApiRunner) KillWithFire() {
-	if ap.Session != nil {
-		ap.Session.Kill().Wait(5 * time.Second)
-	}
-}
