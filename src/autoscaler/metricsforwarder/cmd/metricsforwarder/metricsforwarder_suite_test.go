@@ -206,9 +206,3 @@ func (mf *MetricsForwarderRunner) Interrupt() {
 		mf.Session.Interrupt().Wait(5 * time.Second)
 	}
 }
-
-func (mf *MetricsForwarderRunner) KillWithFire() {
-	if mf.Session != nil {
-		mf.Session.Kill().Wait(5 * time.Second)
-	}
-}

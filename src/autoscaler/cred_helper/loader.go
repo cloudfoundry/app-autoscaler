@@ -35,7 +35,7 @@ func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseCo
 		Level:  hclog.Debug,
 	})
 
-	client := plugin.NewClient(&plugin.ClientConfig{
+	p.client = plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: HandshakeConfig,
 		Plugins:         pluginMap,
 		Cmd:             exec.Command(credHelperPath),
@@ -43,7 +43,7 @@ func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseCo
 	})
 
 	// Connect via RPC
-	rpcClient, err := client.Client()
+	rpcClient, err := p.client.Client()
 	if err != nil {
 		logger.Error("failed to create rpcClient", err)
 		return nil, fmt.Errorf("failed to create rpcClient %w", err)

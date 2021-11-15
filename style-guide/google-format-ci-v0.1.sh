@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -eu
+export PATH=${HOME}/go/bin:${PATH}
 ###################################################################################################
  # This script downloads google formatter and displays formatting issues on Github actions
 ###################################################################################################
