@@ -80,7 +80,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	pm := cred_helper.New()
+	pm := cred_helper.PluginManager{}
 	defer pm.Kill()
 
 	credentials, err := pm.LoadCredentialPlugin(conf.DB, conf.Logging, conf.CredHelperPluginPath)

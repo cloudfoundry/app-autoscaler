@@ -64,7 +64,7 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	pm := cred_helper.New()
+	pm := cred_helper.PluginManager{}
 	defer pm.Kill()
 
 	credentials, err := pm.LoadCredentialPlugin(conf.Db, conf.Logging, conf.CredHelperPluginPath)
