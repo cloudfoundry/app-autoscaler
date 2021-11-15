@@ -1,6 +1,6 @@
 # Discussion around choosing a Pluggable Architecture
 
-## Goal:
+## Goal
 
 Separate out some business functionality.
 
@@ -10,7 +10,7 @@ Separate out some business functionality.
 
 ## Options
 
-### Leave it at it is
+### Leave it as it is
 
 Continue rebasing a code-change on top of the latest open-source main. The code change could be moved out to a dedicated
 authenticator in a separate package to make conflicts less likely.
