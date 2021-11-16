@@ -2,7 +2,7 @@
 
 ## Goal
 
-Separate out some business functionality.
+The goal is to provide a method/pattern by which we can replace some of the OSS functionality with proprietary functionality.  The pattern should be as lightweight as possible and although initially will only be used for the credentials/authentication system, it may be used elsewhere in the future.
 
 ## Considerations
 
