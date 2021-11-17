@@ -1,8 +1,9 @@
 package plugin
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"net/rpc"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
 	"github.com/hashicorp/go-plugin"
 )

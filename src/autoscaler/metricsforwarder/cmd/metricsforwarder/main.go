@@ -1,10 +1,11 @@
 package main
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/plugin"
 	"flag"
 	"fmt"
 	"os"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/plugin"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"

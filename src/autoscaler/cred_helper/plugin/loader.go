@@ -1,14 +1,15 @@
 package plugin
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/custom_metrics"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/storedprocedure"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/custom_metrics"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/storedprocedure"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
