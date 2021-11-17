@@ -28,7 +28,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	}
 
 	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, allowedMetricCache)
-	authenticator, err := auth.New(logger, credentials, credentialCache, conf.CacheTTL, conf.MetricsForwarderConfig.TLS.CACertFile)
+	authenticator, err := auth.New(logger, credentials, credentialCache, conf.CacheTTL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add auth middleware: %w", err)
 	}
