@@ -22,30 +22,34 @@ import (
 type CredHelperOptions string
 
 const (
-	CRED_HELPER_DEFAULT          = "default"
-	CRED_HELPER_STORED_PROCEDURE = "stored_procedure"
+	credHelperDefault         = "default"
+	credHelperStoredProcedure = "stored_procedure"
 )
 
-type PluginManager struct {
+type Manager struct {
 	client *plugin.Client
 }
 
-func (p *PluginManager) Kill() {
+func (p *Manager) Kill() {
 	if p.client != nil {
 		p.client.Kill()
 	}
 }
 
-func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPlugin string, storedProcedureConfig *models.StoredProcedureConfig) (cred_helper.Credentials, error) {
+func (p *Manager) LoadCredentialsImplementation(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPlugin string, storedProcedureConfig *models.StoredProcedureConfig) (cred_helper.Credentials, error) {
+	if credHelperPlugin == "" {
+		return nil, errors.New("credHelperPlugin is not configured")
+	}
+
 	switch credHelperPlugin {
-	case CRED_HELPER_DEFAULT:
+	case credHelperDefault:
 		logger := helpers.InitLoggerFromConfig(&loggingConfig, "default_cred_helper")
 		policyDB, err := sqldb.NewPolicySQLDB(dbConfigs[db.PolicyDb], logger.Session("policy-db"))
 		if err != nil {
 			return nil, err
 		}
 		return custom_metrics.NewWithPolicyDb(policyDB, custom_metrics.MaxRetry), nil
-	case CRED_HELPER_STORED_PROCEDURE:
+	case credHelperStoredProcedure:
 		logger := helpers.InitLoggerFromConfig(&loggingConfig, "stored_procedure_cred_helper")
 		spDb, err := sqldb.NewStoredProcedureSQLDb(*storedProcedureConfig, dbConfigs[db.StoredProcedureDb], logger.Session("stored-procedure-db"))
 		if err != nil {
@@ -53,9 +57,6 @@ func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseCo
 		}
 		return storedprocedure.NewWithStoredProcedureDb(spDb, custom_metrics.MaxRetry, logger), nil
 	default:
-		if credHelperPlugin == "" {
-			return nil, errors.New("credHelperPlugin is not configured")
-		}
 		// Create an hclog.Logger
 		logger := hclog.New(&hclog.LoggerOptions{
 			Name:   "Plugin",
