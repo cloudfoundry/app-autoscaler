@@ -14,6 +14,7 @@ const (
 	MysqlDriverName    = "mysql"
 	PolicyDb           = "policy_db"
 	BindingDb          = "binding_db"
+	StoredProcedureDb  = "storedprocedure_db"
 )
 
 type OrderType uint8
@@ -118,4 +119,12 @@ type LockDB interface {
 	Lock(lock *models.Lock) (bool, error)
 	Release(owner string) error
 	Close() error
+}
+
+type StoredProcedureDB interface {
+	Close() error
+	CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error)
+	DeleteCredentials(credOptions models.CredentialsOptions) error
+	DeleteAllInstanceCredentials(instanceId string) error
+	ValidateCredentials(creds models.Credential) (*models.CredentialsOptions, error)
 }

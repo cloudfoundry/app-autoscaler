@@ -1,4 +1,4 @@
-package cred_helper
+package plugin
 
 import "github.com/hashicorp/go-plugin"
 
