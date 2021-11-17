@@ -3,15 +3,10 @@ package storedprocedure
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-)
-
-const (
-	MaxRetry = 5
 )
 
 type Credentials struct {
@@ -75,13 +70,6 @@ func (c *Credentials) Get(appId string) (*models.Credential, error) {
 	return nil, nil
 }
 
-func (c *Credentials) InitializeConfig(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig) error {
-	c.logger = helpers.InitLoggerFromConfig(&loggingConfig, "stored-procedure_cred_helper")
-	var err error
-	c.storedProcedureDb, err = sqldb.NewStoredProcedureSQLDb(sqldb.StoredProcedureConfig{}, dbConfigs["stored-procedure_db"], c.logger.Session("stored-procedure-sb"))
-	if err != nil {
-		return err
-	}
-	c.maxRetry = MaxRetry
-	return nil
+func (c *Credentials) InitializeConfig(_ map[db.Name]db.DatabaseConfig, _ helpers.LoggingConfig) error {
+	panic("Not implemented")
 }

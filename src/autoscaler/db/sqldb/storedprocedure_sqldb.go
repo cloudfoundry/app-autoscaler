@@ -11,23 +11,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// FIXME should be moved to a common config
-type StoredProcedureConfig struct {
-	SchemaName                             string
-	CreateBindingCredentialProcedureName   string
-	DropBindingCredentialProcedureName     string
-	DropAllBindingCredentialProcedureName  string
-	ValidateBindingCredentialProcedureName string
-}
-
 type StoredProcedureSQLDb struct {
-	config   StoredProcedureConfig
+	config   models.StoredProcedureConfig
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
 	sqldb    *sql.DB
 }
 
-func NewStoredProcedureSQLDb(config StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
+func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
 	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})

@@ -9,21 +9,21 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/custom_metrics"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/storedprocedure"
+	"github.com/hashicorp/go-hclog"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 )
 
-type CredHelperOptions int
+type CredHelperOptions string
 
 const (
-	LOAD_PLUGIN                  CredHelperOptions = iota
-	DEFAULT_CRED_HELPER                            = iota
-	STORED_PROCEDURE_CRED_HELPER                   = iota
+	CRED_HELPER_DEFAULT          = "default"
+	CRED_HELPER_STORED_PROCEDURE = "stored_procedure"
 )
 
 type PluginManager struct {
@@ -36,11 +36,25 @@ func (p *PluginManager) Kill() {
 	}
 }
 
-func (p *PluginManager) LoadCredentialPlugin(credHelperOptions CredHelperOptions, dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPath string) (cred_helper.Credentials, error) {
-	switch credHelperOptions {
-	case LOAD_PLUGIN:
-		if credHelperPath == "" {
-			return nil, errors.New("credHelperPath is not configured")
+func (p *PluginManager) LoadCredentialPlugin(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig, credHelperPlugin string, storedProcedureConfig *models.StoredProcedureConfig) (cred_helper.Credentials, error) {
+	switch credHelperPlugin {
+	case CRED_HELPER_DEFAULT:
+		logger := helpers.InitLoggerFromConfig(&loggingConfig, "default_cred_helper")
+		policyDB, err := sqldb.NewPolicySQLDB(dbConfigs[db.PolicyDb], logger.Session("policy-db"))
+		if err != nil {
+			return nil, err
+		}
+		return custom_metrics.NewWithPolicyDb(policyDB, custom_metrics.MaxRetry), nil
+	case CRED_HELPER_STORED_PROCEDURE:
+		logger := helpers.InitLoggerFromConfig(&loggingConfig, "stored_procedure_cred_helper")
+		spDb, err := sqldb.NewStoredProcedureSQLDb(*storedProcedureConfig, dbConfigs[db.StoredProcedureDb], logger.Session("stored-procedure-db"))
+		if err != nil {
+			return nil, err
+		}
+		return storedprocedure.NewWithStoredProcedureDb(spDb, custom_metrics.MaxRetry, logger), nil
+	default:
+		if credHelperPlugin == "" {
+			return nil, errors.New("credHelperPlugin is not configured")
 		}
 		// Create an hclog.Logger
 		logger := hclog.New(&hclog.LoggerOptions{
@@ -52,7 +66,7 @@ func (p *PluginManager) LoadCredentialPlugin(credHelperOptions CredHelperOptions
 		p.client = plugin.NewClient(&plugin.ClientConfig{
 			HandshakeConfig: HandshakeConfig,
 			Plugins:         pluginMap,
-			Cmd:             exec.Command(credHelperPath),
+			Cmd:             exec.Command(credHelperPlugin),
 			Logger:          logger,
 		})
 
@@ -75,21 +89,6 @@ func (p *PluginManager) LoadCredentialPlugin(credHelperOptions CredHelperOptions
 			return nil, fmt.Errorf("failed to initialize plugin %w", err)
 		}
 		return credentials, nil
-	case DEFAULT_CRED_HELPER:
-		logger := helpers.InitLoggerFromConfig(&loggingConfig, "default_cred_helper")
-		policyDB, err := sqldb.NewPolicySQLDB(dbConfigs[db.PolicyDb], logger.Session("policy-db"))
-		if err != nil {
-			return nil, err
-		}
-		return custom_metrics.NewWithPolicyDb(policyDB, custom_metrics.MaxRetry), nil
-	case STORED_PROCEDURE_CRED_HELPER:
-		logger := helpers.InitLoggerFromConfig(&loggingConfig, "stored_procedure_cred_helper")
-		// FIXME need to correctly create the config struct
-		spDb, err := sqldb.NewStoredProcedureSQLDb(sqldb.StoredProcedureConfig{}, dbConfigs[db.StoredProcedureDb], logger.Session("stored-procedure-db"))
-		if err != nil {
-			return nil, err
-		}
-		return storedprocedure.NewWithStoredProcedureDb(spDb, custom_metrics.MaxRetry, logger), nil
 	}
 	return nil, errors.New("unable to determine credentials implementation")
 }
