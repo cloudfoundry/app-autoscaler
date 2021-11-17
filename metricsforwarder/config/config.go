@@ -23,18 +23,17 @@ const (
 )
 
 type Config struct {
-	Logging                helpers.LoggingConfig         `yaml:"logging"`
-	Server                 ServerConfig                  `yaml:"server"`
-	LoggregatorConfig      LoggregatorConfig             `yaml:"loggregator"`
-	MetricsForwarderConfig MetricsForwarderConfig        `yaml:"metrics_forwarder"`
-	Db                     map[string]db.DatabaseConfig  `yaml:"db"`
-	CacheTTL               time.Duration                 `yaml:"cache_ttl"`
-	CacheCleanupInterval   time.Duration                 `yaml:"cache_cleanup_interval"`
-	PolicyPollerInterval   time.Duration                 `yaml:"policy_poller_interval"`
-	Health                 models.HealthConfig           `yaml:"health"`
-	RateLimit              models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperPlugin       string                        `yaml:"cred_helper_plugin"`
-	StoredProcedureConfig  *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
+	Logging               helpers.LoggingConfig         `yaml:"logging"`
+	Server                ServerConfig                  `yaml:"server"`
+	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
+	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
+	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
+	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`
+	Health                models.HealthConfig           `yaml:"health"`
+	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
+	CredHelperPlugin      string                        `yaml:"cred_helper_plugin"`
+	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
 type ServerConfig struct {
@@ -60,10 +59,6 @@ type LoggingConfig struct {
 type LoggregatorConfig struct {
 	MetronAddress string          `yaml:"metron_address"`
 	TLS           models.TLSCerts `yaml:"tls"`
-}
-
-type MetricsForwarderConfig struct {
-	TLS models.TLSCerts `yaml:"tls"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {

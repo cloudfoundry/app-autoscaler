@@ -5,14 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"path"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -29,15 +26,14 @@ import (
 var _ = Describe("Authentication", func() {
 
 	var (
-		authTest                   *auth.Auth
-		credentialCache            cache.Cache
-		policyDB                   *fakes.FakePolicyDB
-		fakeCredentials            *fakes.FakeCredentials
-		resp                       *httptest.ResponseRecorder
-		req                        *http.Request
-		body                       []byte
-		vars                       map[string]string
-		metricsForwarderMtlsConfig config.MetricsForwarderConfig
+		authTest        *auth.Auth
+		credentialCache cache.Cache
+		policyDB        *fakes.FakePolicyDB
+		fakeCredentials *fakes.FakeCredentials
+		resp            *httptest.ResponseRecorder
+		req             *http.Request
+		body            []byte
+		vars            map[string]string
 	)
 
 	BeforeEach(func() {
@@ -46,17 +42,13 @@ var _ = Describe("Authentication", func() {
 		credentialCache = *cache.New(10*time.Minute, -1)
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()
-		metricsForwarderMtlsConfig = config.MetricsForwarderConfig{
-			TLS: models.TLSCerts{
-				CACertFile: path.Join("..", "..", "..", "..", "test-certs", "valid-mtls-local-ca-combined.crt"),
-			}}
 		credentialCache.Flush()
 	})
 
 	JustBeforeEach(func() {
 		logger := lager.NewLogger("auth-test")
 		var err error
-		authTest, err = auth.New(logger, fakeCredentials, credentialCache, 10*time.Minute, metricsForwarderMtlsConfig.TLS.CACertFile)
+		authTest, err = auth.New(logger, fakeCredentials, credentialCache, 10*time.Minute)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -198,14 +190,6 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		Context("The Ca instance cert has no pems but is not empty", func() {
-			const emptyCert = "../../../../test-certs/empty-mtls-local-ca.crt"
-			It("Creation should fail with NoCaCerts Error", func() {
-				_, err := auth.New(lager.NewLogger("auth-test"), fakeCredentials, credentialCache, 10*time.Minute, emptyCert)
-				Expect(errors.Is(err, auth.ErrCAFileEmpty)).To(BeTrue())
-			})
-		})
-
 		Context("correct xfcc header including \"'s around the cert", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body)
@@ -224,44 +208,6 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		Context("correct xfcc header with invalid CA is supplied", func() {
-			It("should return status code 401", func() {
-				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/invalidmtls_client.crt"))
-				vars["appid"] = "an-app-id"
-				nextCalled := 0
-				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					nextCalled = nextCalled + 1
-				})
-
-				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
-
-				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
-				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Unauthorized","message":"Unauthorized"}`))
-				Expect(nextCalled).To(Equal(0))
-			})
-		})
-
-		Context("correct xfcc header with no CA is supplied", func() {
-			It("should return status code 401", func() {
-				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/nosignmtls_client.crt"))
-				vars["appid"] = "an-app-id"
-				nextCalled := 0
-				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					nextCalled = nextCalled + 1
-				})
-
-				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
-
-				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
-				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Unauthorized","message":"Unauthorized"}`))
-				Expect(nextCalled).To(Equal(0))
-			})
-		})
-
 		Context("valid cert with wrong app-id is supplied", func() {
 			It("should return status code 403", func() {
 				req = CreateRequest(body)
@@ -277,24 +223,6 @@ var _ = Describe("Authentication", func() {
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
 				Expect(resp.Code).To(Equal(http.StatusForbidden))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Forbidden","message":"Unauthorized"}`))
-				Expect(nextCalled).To(Equal(0))
-			})
-		})
-
-		Context("expired cert with correct app-id is supplied", func() {
-			It("should return status code 401", func() {
-				req = CreateRequest(body)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert("../../../../test-certs/expiredmtls_client.crt"))
-				nextCalled := 0
-				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					nextCalled = nextCalled + 1
-				})
-
-				vars["appid"] = "an-app-id"
-				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
-
-				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
-				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
 				Expect(nextCalled).To(Equal(0))
 			})
 		})

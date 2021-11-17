@@ -9,14 +9,14 @@ import (
 	"strings"
 )
 
-var ErrorMTLSHeaderNotFound = errors.New("mTLS authentication method not found")
+var ErrXFCCHeaderNotFound = errors.New("mTLS authentication method not found")
 var ErrorNoAppIDFound = errors.New("certificate does not contain an app id")
 var ErrorAppIDWrong = errors.New("app id in certificate is not valid")
 
 func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
 	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
 	if xfccHeader == "" {
-		return ErrorMTLSHeaderNotFound
+		return ErrXFCCHeaderNotFound
 	}
 
 	data, err := base64.StdEncoding.DecodeString(removeQuotes(xfccHeader))
@@ -37,11 +37,6 @@ func (a *Auth) XFCCAuth(r *http.Request, appID string) error {
 
 	if appID != certAppId {
 		return ErrorAppIDWrong
-	}
-
-	_, err = cert.Verify(*a.certVerifyOpts)
-	if err != nil {
-		return fmt.Errorf("cert CA check failed: %w", err)
 	}
 
 	return nil
