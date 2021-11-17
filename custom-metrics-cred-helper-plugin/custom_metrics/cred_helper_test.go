@@ -1,11 +1,11 @@
-package internal_test
+package custom_metrics_test
 
 import (
 	"database/sql"
 	"errors"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/internal"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/custom_metrics"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -27,7 +27,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
-		creds = internal.NewWithPolicyDb(policyDB, internal.MaxRetry)
+		creds = custom_metrics.NewWithPolicyDb(policyDB, custom_metrics.MaxRetry)
 	})
 	Context("CreateCredential", func() {
 		var err error
@@ -68,7 +68,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 
 			})
 			It("should try MaxRetry times and return error", func() {
-				Expect(policyDB.SaveCredentialCallCount()).To(Equal(internal.MaxRetry))
+				Expect(policyDB.SaveCredentialCallCount()).To(Equal(custom_metrics.MaxRetry))
 				Expect(credResult).To(BeNil())
 				Expect(err).To(HaveOccurred())
 			})
@@ -93,7 +93,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 				policyDB.DeleteCredentialReturns(errors.New("dberror"))
 			})
 			It("should try MaxRetry times and return error", func() {
-				Expect(policyDB.DeleteCredentialCallCount()).To(Equal(internal.MaxRetry))
+				Expect(policyDB.DeleteCredentialCallCount()).To(Equal(custom_metrics.MaxRetry))
 				Expect(err).To(HaveOccurred())
 			})
 		})

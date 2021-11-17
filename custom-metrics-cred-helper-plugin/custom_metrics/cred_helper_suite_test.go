@@ -1,4 +1,4 @@
-package internal_test
+package custom_metrics_test
 
 import (
 	. "github.com/onsi/ginkgo"
