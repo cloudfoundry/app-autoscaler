@@ -1,8 +1,9 @@
 package plugin
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"net/rpc"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
