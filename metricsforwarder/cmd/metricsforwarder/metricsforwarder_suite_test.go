@@ -140,7 +140,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 
-	cfg.CredHelperPluginPath = pluginPath
+	cfg.CredHelperPlugin = pluginPath
 
 	configFile = writeConfig(&cfg)
 

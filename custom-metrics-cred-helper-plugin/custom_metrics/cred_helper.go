@@ -1,4 +1,4 @@
-package internal
+package custom_metrics
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
@@ -6,7 +6,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
 	uuid "github.com/nu7hatch/gouuid"
 	"golang.org/x/crypto/bcrypt"
 )
