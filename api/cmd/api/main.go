@@ -81,10 +81,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	pm := plugin.PluginManager{}
+	pm := plugin.Manager{}
 	defer pm.Kill()
 
-	credentials, err := pm.LoadCredentialPlugin(conf.DB, conf.Logging, conf.CredHelperPlugin, conf.StoredProcedureConfig)
+	credentials, err := pm.LoadCredentialsImplementation(conf.DB, conf.Logging, conf.CredHelperPlugin, conf.StoredProcedureConfig)
 	if err != nil {
 		logger.Error("failed to load credential plugin", err, lager.Data{"dbConfigs": conf.DB})
 		os.Exit(1)
