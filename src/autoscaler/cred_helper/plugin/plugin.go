@@ -1,13 +1,15 @@
-package cred_helper
+package plugin
 
 import (
 	"net/rpc"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
 	"github.com/hashicorp/go-plugin"
 )
 
 type CredentialsPlugin struct {
-	Impl Credentials
+	Impl cred_helper.Credentials
 }
 
 func (p *CredentialsPlugin) Server(*plugin.MuxBroker) (interface{}, error) {

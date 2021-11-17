@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/plugin"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -80,10 +81,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	pm := cred_helper.PluginManager{}
+	pm := plugin.Manager{}
 	defer pm.Kill()
 
-	credentials, err := pm.LoadCredentialPlugin(conf.DB, conf.Logging, conf.CredHelperPluginPath)
+	credentials, err := pm.LoadCredentialsImplementation(conf.DB, conf.Logging, conf.CredHelperPlugin, conf.StoredProcedureConfig)
 	if err != nil {
 		logger.Error("failed to load credential plugin", err, lager.Data{"dbConfigs": conf.DB})
 		os.Exit(1)

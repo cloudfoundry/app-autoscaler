@@ -40,3 +40,8 @@ type Credentials struct {
 type CredentialResponse struct {
 	Credentials Credentials `json:"credentials"`
 }
+
+type CredentialsOptions struct {
+	InstanceId string `json:"instanceId"`
+	BindingId  string `json:"bindingId"`
+}
