@@ -110,7 +110,7 @@ type Config struct {
 	MetricsForwarder      MetricsForwarderConfig        `yaml:"metrics_forwarder"`
 	Health                models.HealthConfig           `yaml:"health"`
 	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperPlugin      string                        `yaml:"cred_helper_plugin"`
+	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
@@ -226,8 +226,8 @@ func (c *Config) Validate() error {
 		if c.CatalogPath == "" {
 			return fmt.Errorf("Configuration error: CatalogPath is empty")
 		}
-		if c.CredHelperPlugin == "" {
-			return fmt.Errorf("Configuration error: CredHelperPlugin is empty")
+		if c.CredHelperImpl == "" {
+			return fmt.Errorf("Configuration error: CredHelperImpl is empty")
 		}
 
 		catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)

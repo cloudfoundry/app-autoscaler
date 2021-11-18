@@ -41,7 +41,6 @@ var (
 	username              string
 	password              string
 	grpcIngressTestServer *testhelpers.TestIngressServer
-	pluginPath            string
 )
 
 func TestMetricsforwarder(t *testing.T) {
@@ -51,9 +50,6 @@ func TestMetricsforwarder(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	mf, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
-	Expect(err).NotTo(HaveOccurred())
-
-	pluginPath, err = gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/custom-metrics-cred-helper-plugin/cmd/custom-metrics-cred-helper-plugin", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	database, err := db.GetConnection(os.Getenv("DBURL"))
@@ -140,7 +136,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 
-	cfg.CredHelperPlugin = pluginPath
+	cfg.CredHelperImpl = "default"
 
 	configFile = writeConfig(&cfg)
 

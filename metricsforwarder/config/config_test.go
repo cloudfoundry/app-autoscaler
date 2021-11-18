@@ -67,7 +67,7 @@ db:
     connection_max_lifetime: 60s
 health:
   port: 9999
-cred_helper_plugin: path/to/helper/plugin
+cred_helper_impl: default
 `)
 			})
 
@@ -83,7 +83,7 @@ cred_helper_plugin: path/to/helper/plugin
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.CredHelperPlugin).To(Equal("path/to/helper/plugin"))
+				Expect(conf.CredHelperImpl).To(Equal("default"))
 			})
 		})
 
@@ -302,7 +302,7 @@ rate_limit:
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
 
-			conf.CredHelperPlugin = "path/to/plugin"
+			conf.CredHelperImpl = "path/to/plugin"
 		})
 
 		JustBeforeEach(func() {
