@@ -10,7 +10,7 @@ require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
-	github.com/cenkalti/backoff/v4 v4.1.1
+	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cloudfoundry-incubator/uaago v0.0.0-20190307164349-8136b7bbe76e
 	github.com/cloudfoundry/sonde-go v0.0.0-20200416163440-a42463ba266b
 	github.com/drewolson/testflight v1.0.0 // indirect
