@@ -136,7 +136,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 
-	cfg.CredHelperPlugin = "default"
+	cfg.CredHelperImpl = "default"
 
 	configFile = writeConfig(&cfg)
 

@@ -32,7 +32,7 @@ type Config struct {
 	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`
 	Health                models.HealthConfig           `yaml:"health"`
 	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperPlugin      string                        `yaml:"cred_helper_plugin"`
+	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
@@ -110,8 +110,8 @@ func (c *Config) Validate() error {
 	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
-	if c.CredHelperPlugin == "" {
-		return fmt.Errorf("Configuration error: CredHelperPlugin is empty")
+	if c.CredHelperImpl == "" {
+		return fmt.Errorf("Configuration error: CredHelperImpl is empty")
 	}
 
 	if err := c.Health.Validate("metricsforwarder"); err != nil {
