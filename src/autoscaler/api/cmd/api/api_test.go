@@ -260,7 +260,7 @@ var _ = Describe("Api", func() {
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
 			pluginPathConfig := cfg
-			pluginPathConfig.CredHelperPlugin = "default"
+			pluginPathConfig.CredHelperImpl = "default"
 			runner.configPath = writeConfig(&pluginPathConfig).Name()
 			runner.Start()
 		})

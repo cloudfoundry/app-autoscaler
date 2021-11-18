@@ -202,7 +202,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.RateLimit.MaxAmount = 10
 	cfg.RateLimit.ValidDuration = 1 * time.Second
 
-	cfg.CredHelperPlugin = "default"
+	cfg.CredHelperImpl = "default"
 
 	configFile = writeConfig(&cfg)
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(

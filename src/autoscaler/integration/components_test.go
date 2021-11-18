@@ -290,7 +290,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 			MaxAmount:     10,
 			ValidDuration: 1 * time.Second,
 		},
-		CredHelperPlugin: "default",
+		CredHelperImpl: "default",
 	}
 
 	return writeYmlConfig(tmpDir, GolangAPIServer, &cfg)

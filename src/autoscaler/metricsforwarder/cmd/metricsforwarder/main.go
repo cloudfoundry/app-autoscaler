@@ -66,7 +66,7 @@ func main() {
 	defer policyDB.Close()
 
 	var credentials cred_helper.Credentials
-	switch conf.CredHelperPlugin {
+	switch conf.CredHelperImpl {
 	case "stored_procedure":
 		if conf.StoredProcedureConfig == nil {
 			logger.Error("cannot create a storedProcedureCredHelper without StoredProcedureConfig", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
