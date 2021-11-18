@@ -67,8 +67,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 				"https://127.0.0.1:8888",
 				false,
-				tmpDir,
-				components.Executables[CustomMetricsCredHelperPlugin])
+				tmpDir)
 			startGolangApiServer()
 
 			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)
@@ -523,8 +522,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 				"https://127.0.0.1:8888",
 				true,
-				tmpDir,
-				components.Executables[CustomMetricsCredHelperPlugin])
+				tmpDir)
 			startGolangApiServer()
 
 			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)

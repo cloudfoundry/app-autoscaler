@@ -29,17 +29,16 @@ import (
 )
 
 const (
-	GolangAPIServer               = "golangApiServer"
-	GolangServiceBroker           = "golangServiceBroker"
-	Scheduler                     = "scheduler"
-	MetricsCollector              = "metricsCollector"
-	EventGenerator                = "eventGenerator"
-	ScalingEngine                 = "scalingEngine"
-	Operator                      = "operator"
-	CustomMetricsCredHelperPlugin = "customMetricsCredHelperPlugin" // #nosec G101
-	MetricsGateway                = "metricsGateway"
-	MetricsServerHTTP             = "metricsServerHTTP"
-	MetricsServerWS               = "metricsServerWS"
+	GolangAPIServer     = "golangApiServer"
+	GolangServiceBroker = "golangServiceBroker"
+	Scheduler           = "scheduler"
+	MetricsCollector    = "metricsCollector"
+	EventGenerator      = "eventGenerator"
+	ScalingEngine       = "scalingEngine"
+	Operator            = "operator"
+	MetricsGateway      = "metricsGateway"
+	MetricsServerHTTP   = "metricsServerHTTP"
+	MetricsServerWS     = "metricsServerWS"
 )
 
 var golangAPIInfoFilePath = "../api/exampleconfig/catalog-example.json"
@@ -196,7 +195,7 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 	})
 }
 
-func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, tmpDir string, credHelperPluginPath string) string {
+func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, tmpDir string) string {
 	brokerCred1 := apiConfig.BrokerCredentialsConfig{
 		BrokerUsername: "broker_username",
 		//BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
@@ -291,7 +290,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 			MaxAmount:     10,
 			ValidDuration: 1 * time.Second,
 		},
-		CredHelperPlugin: credHelperPluginPath,
+		CredHelperPlugin: "default",
 	}
 
 	return writeYmlConfig(tmpDir, GolangAPIServer, &cfg)

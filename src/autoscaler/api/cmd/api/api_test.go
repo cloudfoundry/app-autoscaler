@@ -285,32 +285,4 @@ var _ = Describe("Api", func() {
 		})
 	})
 
-	Describe("can start with plugin path", func() {
-		BeforeEach(func() {
-			pluginPathConfig := cfg
-			pluginPathConfig.CredHelperPlugin = pluginPath
-			runner.configPath = writeConfig(&pluginPathConfig).Name()
-			runner.Start()
-		})
-		AfterEach(func() {
-			runner.Interrupt()
-			Eventually(runner.Session, 5).Should(Exit(0))
-		})
-		Context("when a request to query health comes", func() {
-			It("returns with a 200", func() {
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://127.0.0.1:%d/v1/info", publicApiPort), nil)
-				Expect(err).NotTo(HaveOccurred())
-
-				rsp, err = apiHttpClient.Do(req)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(bodyBytes).To(Equal(infoBytes))
-			})
-		})
-	})
-
 })
