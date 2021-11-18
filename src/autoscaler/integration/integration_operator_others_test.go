@@ -38,8 +38,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 			"https://127.0.0.1:8888",
 			true,
-			tmpDir,
-			components.Executables[CustomMetricsCredHelperPlugin])
+			tmpDir)
 		startGolangApiServer()
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)

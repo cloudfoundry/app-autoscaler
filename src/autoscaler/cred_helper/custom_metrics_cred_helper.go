@@ -1,10 +1,7 @@
-package custom_metrics
+package cred_helper
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	uuid "github.com/nu7hatch/gouuid"
 	"golang.org/x/crypto/bcrypt"
@@ -14,42 +11,31 @@ const (
 	MaxRetry = 5
 )
 
-type Credentials struct {
+type customMetricsCredentials struct {
 	policyDB db.PolicyDB
 	maxRetry int
 }
 
-func NewWithPolicyDb(policyDb db.PolicyDB, maxRetry int) cred_helper.Credentials {
-	return &Credentials{
+func NewCustomMetricsCredHelper(policyDb db.PolicyDB, maxRetry int) Credentials {
+	return &customMetricsCredentials{
 		policyDB: policyDb,
 		maxRetry: maxRetry,
 	}
 }
 
-func (c *Credentials) Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
+func (c *customMetricsCredentials) Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
 	return createCredential(appId, userProvidedCredential, c.policyDB, c.maxRetry)
 }
 
-func (c *Credentials) Delete(appId string) error {
+func (c *customMetricsCredentials) Delete(appId string) error {
 	return deleteCredential(appId, c.policyDB, c.maxRetry)
 }
 
-func (c *Credentials) Get(appId string) (*models.Credential, error) {
+func (c *customMetricsCredentials) Get(appId string) (*models.Credential, error) {
 	return c.policyDB.GetCredential(appId)
 }
 
-func (c *Credentials) InitializeConfig(dbConfigs map[db.Name]db.DatabaseConfig, loggingConfig helpers.LoggingConfig) error {
-	logger := helpers.InitLoggerFromConfig(&loggingConfig, "custom_metrics_cred_helper")
-	var err error
-	c.policyDB, err = sqldb.NewPolicySQLDB(dbConfigs[db.PolicyDb], logger.Session("policy-db"))
-	if err != nil {
-		return err
-	}
-	c.maxRetry = MaxRetry
-	return nil
-}
-
-var _ cred_helper.Credentials = &Credentials{}
+var _ Credentials = &customMetricsCredentials{}
 
 func _createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
 	var credUsername, credPassword string

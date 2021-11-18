@@ -1,31 +1,29 @@
-package storedprocedure
+package cred_helper
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 )
 
-type Credentials struct {
+type storedProcedureCredentials struct {
 	storedProcedureDb db.StoredProcedureDB
 	maxRetry          int
 	logger            lager.Logger
 }
 
-var _ cred_helper.Credentials = &Credentials{}
+var _ Credentials = &storedProcedureCredentials{}
 
-func NewWithStoredProcedureDb(storedProcedureDb db.StoredProcedureDB, maxRetry int, logger lager.Logger) cred_helper.Credentials {
-	return &Credentials{
+func NewStoredProcedureCredHelper(storedProcedureDb db.StoredProcedureDB, maxRetry int, logger lager.Logger) Credentials {
+	return &storedProcedureCredentials{
 		storedProcedureDb: storedProcedureDb,
 		maxRetry:          maxRetry,
 		logger:            logger,
 	}
 }
 
-func (c *Credentials) Create(appId string, _ *models.Credential) (*models.Credential, error) {
+func (c *storedProcedureCredentials) Create(appId string, _ *models.Credential) (*models.Credential, error) {
 	logger := c.logger.Session("create-stored-procedure-credential", lager.Data{"appId": appId})
 	var err error
 	var count int
@@ -48,7 +46,7 @@ func (c *Credentials) Create(appId string, _ *models.Credential) (*models.Creden
 	}
 }
 
-func (c *Credentials) Delete(appId string) error {
+func (c *storedProcedureCredentials) Delete(appId string) error {
 	logger := c.logger.Session("delete-stored-procedure-credential", lager.Data{"appId": appId})
 	var err error
 	var count int
@@ -66,10 +64,6 @@ func (c *Credentials) Delete(appId string) error {
 	}
 }
 
-func (c *Credentials) Get(appId string) (*models.Credential, error) {
+func (c *storedProcedureCredentials) Get(appId string) (*models.Credential, error) {
 	return nil, nil
-}
-
-func (c *Credentials) InitializeConfig(_ map[db.Name]db.DatabaseConfig, _ helpers.LoggingConfig) error {
-	panic("Not implemented")
 }

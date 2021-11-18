@@ -19,7 +19,6 @@ build:	build-scalingengine\
 		build-metricsgateway\
 		build-metricsserver\
 		build-operator\
-		build-custom-metrics-cred-helper-plugin\
 
 check: fmt lint build test
 

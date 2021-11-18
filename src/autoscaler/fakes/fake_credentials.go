@@ -5,8 +5,6 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
@@ -48,18 +46,6 @@ type FakeCredentials struct {
 	getReturnsOnCall map[int]struct {
 		result1 *models.Credential
 		result2 error
-	}
-	InitializeConfigStub        func(map[string]db.DatabaseConfig, helpers.LoggingConfig) error
-	initializeConfigMutex       sync.RWMutex
-	initializeConfigArgsForCall []struct {
-		arg1 map[string]db.DatabaseConfig
-		arg2 helpers.LoggingConfig
-	}
-	initializeConfigReturns struct {
-		result1 error
-	}
-	initializeConfigReturnsOnCall map[int]struct {
-		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -255,68 +241,6 @@ func (fake *FakeCredentials) GetReturnsOnCall(i int, result1 *models.Credential,
 	}{result1, result2}
 }
 
-func (fake *FakeCredentials) InitializeConfig(arg1 map[string]db.DatabaseConfig, arg2 helpers.LoggingConfig) error {
-	fake.initializeConfigMutex.Lock()
-	ret, specificReturn := fake.initializeConfigReturnsOnCall[len(fake.initializeConfigArgsForCall)]
-	fake.initializeConfigArgsForCall = append(fake.initializeConfigArgsForCall, struct {
-		arg1 map[string]db.DatabaseConfig
-		arg2 helpers.LoggingConfig
-	}{arg1, arg2})
-	stub := fake.InitializeConfigStub
-	fakeReturns := fake.initializeConfigReturns
-	fake.recordInvocation("InitializeConfig", []interface{}{arg1, arg2})
-	fake.initializeConfigMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeCredentials) InitializeConfigCallCount() int {
-	fake.initializeConfigMutex.RLock()
-	defer fake.initializeConfigMutex.RUnlock()
-	return len(fake.initializeConfigArgsForCall)
-}
-
-func (fake *FakeCredentials) InitializeConfigCalls(stub func(map[string]db.DatabaseConfig, helpers.LoggingConfig) error) {
-	fake.initializeConfigMutex.Lock()
-	defer fake.initializeConfigMutex.Unlock()
-	fake.InitializeConfigStub = stub
-}
-
-func (fake *FakeCredentials) InitializeConfigArgsForCall(i int) (map[string]db.DatabaseConfig, helpers.LoggingConfig) {
-	fake.initializeConfigMutex.RLock()
-	defer fake.initializeConfigMutex.RUnlock()
-	argsForCall := fake.initializeConfigArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *FakeCredentials) InitializeConfigReturns(result1 error) {
-	fake.initializeConfigMutex.Lock()
-	defer fake.initializeConfigMutex.Unlock()
-	fake.InitializeConfigStub = nil
-	fake.initializeConfigReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeCredentials) InitializeConfigReturnsOnCall(i int, result1 error) {
-	fake.initializeConfigMutex.Lock()
-	defer fake.initializeConfigMutex.Unlock()
-	fake.InitializeConfigStub = nil
-	if fake.initializeConfigReturnsOnCall == nil {
-		fake.initializeConfigReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.initializeConfigReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeCredentials) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -326,8 +250,6 @@ func (fake *FakeCredentials) Invocations() map[string][][]interface{} {
 	defer fake.deleteMutex.RUnlock()
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	fake.initializeConfigMutex.RLock()
-	defer fake.initializeConfigMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

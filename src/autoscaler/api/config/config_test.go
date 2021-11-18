@@ -165,7 +165,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-cred_helper_plugin: path/to/helper/plugin
+cred_helper_impl: default
 `)
 			})
 
@@ -234,7 +234,7 @@ cred_helper_plugin: path/to/helper/plugin
 						SkipSSLValidation: false,
 					},
 				))
-				Expect(conf.CredHelperPlugin).To(Equal("path/to/helper/plugin"))
+				Expect(conf.CredHelperImpl).To(Equal("default"))
 			})
 		})
 
@@ -1050,7 +1050,7 @@ rate_limit:
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
 
-			conf.CredHelperPlugin = "path/to/plugin"
+			conf.CredHelperImpl = "path/to/plugin"
 		})
 		JustBeforeEach(func() {
 			err = conf.Validate()

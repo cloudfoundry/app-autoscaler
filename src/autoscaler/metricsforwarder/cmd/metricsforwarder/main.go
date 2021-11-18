@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper/plugin"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
@@ -65,13 +65,23 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	pm := plugin.Manager{}
-	defer pm.Kill()
-
-	credentials, err := pm.LoadCredentialsImplementation(conf.Db, conf.Logging, conf.CredHelperPlugin, conf.StoredProcedureConfig)
-	if err != nil {
-		logger.Error("failed-to-load-credential-plugin", err, lager.Data{"dbConfigs": conf.Db})
-		os.Exit(1)
+	var credentials cred_helper.Credentials
+	switch conf.CredHelperImpl {
+	case "stored_procedure":
+		if conf.StoredProcedureConfig == nil {
+			logger.Error("cannot create a storedProcedureCredHelper without StoredProcedureConfig", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
+			os.Exit(1)
+		}
+		var storedProcedureDb db.StoredProcedureDB
+		storedProcedureDb, err = sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.Db[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
+		if err != nil {
+			logger.Error("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
+			os.Exit(1)
+		}
+		defer storedProcedureDb.Close()
+		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
+	default:
+		credentials = cred_helper.NewCustomMetricsCredHelper(policyDB, cred_helper.MaxRetry)
 	}
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
