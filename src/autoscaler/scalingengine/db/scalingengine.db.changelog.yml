@@ -254,10 +254,15 @@ databaseChangeLog:
       author: aadeshmisra
       dbms: postgresql
       logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+          - primaryKeyExists:
+              tableName: scalinghistory
+              primaryKeyName: "pk_history"
       changes:
         - addPrimaryKey:
             columnNames: "appid,timestamp"
             constraintName: "pk_history"
-            chemaName: autoscaler
             tableName: scalinghistory
 
