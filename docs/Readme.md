@@ -18,6 +18,26 @@ The Cloud Foundry [Admin or Space Developers role][userrole] is needed to manage
 
 Autoscaling policy is represented in JSON and consists of the following parts. Refer to the [policy specification][policy] for the detailed definition.
 
+Autoscaling can be defined explicitly in the service binding or through a [default policy](#default-policy) at a service instance level.
+
+### Default policy 
+
+The default policy feature is optional. It applies to all service bindings 
+that are created without an explicit policy. It can be configured when provisioning a
+service instance. It can be specified by passing through a service
+creation parameter called `default_policy`.
+
+The default policy can be changed via the `cf update-service` command. The changes
+will be propagated to all apps that use the default policy. If a policy is set explicitly 
+on an app with the same content as the default policy, updates on the default policy 
+will not affect that app. Setting the default policy can be achieved by removing 
+the binding level policy.
+
+The default policy can be removed, by setting it to an empty JSON object when 
+calling `cf update-service`.
+
+
+
 ### Instance limits
 
 Instance limits are used to define the default minimal and maximal instance number of your application.
@@ -111,6 +131,7 @@ The following gives some policy examples for you to start with. Refer to [Policy
 * [Autoscaling policy example for custom metrics ][policy-dynamic-custom]
 * [Autoscaling policy example for both dynamic scaling rules and schedules][policy-all]
 
+## Create Autoscaling Policy JSON File
 ----
 
 ## Connect an application to App-AutoScaler
