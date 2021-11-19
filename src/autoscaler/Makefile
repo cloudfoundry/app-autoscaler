@@ -77,5 +77,5 @@ lint-fix:
 .PHONY: clean
 clean:
 	@echo "# cleaning autoscaler"
-	@${GO} clean
+	@go clean
 	@rm -rf build
