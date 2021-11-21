@@ -34,18 +34,17 @@ type FakeCredentials struct {
 	deleteReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetStub        func(string) (*models.Credential, error)
-	getMutex       sync.RWMutex
-	getArgsForCall []struct {
+	ValidateStub        func(string, models.Credential) error
+	validateMutex       sync.RWMutex
+	validateArgsForCall []struct {
 		arg1 string
+		arg2 models.Credential
 	}
-	getReturns struct {
-		result1 *models.Credential
-		result2 error
+	validateReturns struct {
+		result1 error
 	}
-	getReturnsOnCall map[int]struct {
-		result1 *models.Credential
-		result2 error
+	validateReturnsOnCall map[int]struct {
+		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -177,68 +176,66 @@ func (fake *FakeCredentials) DeleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCredentials) Get(arg1 string) (*models.Credential, error) {
-	fake.getMutex.Lock()
-	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+func (fake *FakeCredentials) Validate(arg1 string, arg2 models.Credential) error {
+	fake.validateMutex.Lock()
+	ret, specificReturn := fake.validateReturnsOnCall[len(fake.validateArgsForCall)]
+	fake.validateArgsForCall = append(fake.validateArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	stub := fake.GetStub
-	fakeReturns := fake.getReturns
-	fake.recordInvocation("Get", []interface{}{arg1})
-	fake.getMutex.Unlock()
+		arg2 models.Credential
+	}{arg1, arg2})
+	stub := fake.ValidateStub
+	fakeReturns := fake.validateReturns
+	fake.recordInvocation("Validate", []interface{}{arg1, arg2})
+	fake.validateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
-func (fake *FakeCredentials) GetCallCount() int {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	return len(fake.getArgsForCall)
+func (fake *FakeCredentials) ValidateCallCount() int {
+	fake.validateMutex.RLock()
+	defer fake.validateMutex.RUnlock()
+	return len(fake.validateArgsForCall)
 }
 
-func (fake *FakeCredentials) GetCalls(stub func(string) (*models.Credential, error)) {
-	fake.getMutex.Lock()
-	defer fake.getMutex.Unlock()
-	fake.GetStub = stub
+func (fake *FakeCredentials) ValidateCalls(stub func(string, models.Credential) error) {
+	fake.validateMutex.Lock()
+	defer fake.validateMutex.Unlock()
+	fake.ValidateStub = stub
 }
 
-func (fake *FakeCredentials) GetArgsForCall(i int) string {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.arg1
+func (fake *FakeCredentials) ValidateArgsForCall(i int) (string, models.Credential) {
+	fake.validateMutex.RLock()
+	defer fake.validateMutex.RUnlock()
+	argsForCall := fake.validateArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeCredentials) GetReturns(result1 *models.Credential, result2 error) {
-	fake.getMutex.Lock()
-	defer fake.getMutex.Unlock()
-	fake.GetStub = nil
-	fake.getReturns = struct {
-		result1 *models.Credential
-		result2 error
-	}{result1, result2}
+func (fake *FakeCredentials) ValidateReturns(result1 error) {
+	fake.validateMutex.Lock()
+	defer fake.validateMutex.Unlock()
+	fake.ValidateStub = nil
+	fake.validateReturns = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakeCredentials) GetReturnsOnCall(i int, result1 *models.Credential, result2 error) {
-	fake.getMutex.Lock()
-	defer fake.getMutex.Unlock()
-	fake.GetStub = nil
-	if fake.getReturnsOnCall == nil {
-		fake.getReturnsOnCall = make(map[int]struct {
-			result1 *models.Credential
-			result2 error
+func (fake *FakeCredentials) ValidateReturnsOnCall(i int, result1 error) {
+	fake.validateMutex.Lock()
+	defer fake.validateMutex.Unlock()
+	fake.ValidateStub = nil
+	if fake.validateReturnsOnCall == nil {
+		fake.validateReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.getReturnsOnCall[i] = struct {
-		result1 *models.Credential
-		result2 error
-	}{result1, result2}
+	fake.validateReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeCredentials) Invocations() map[string][][]interface{} {
@@ -248,8 +245,8 @@ func (fake *FakeCredentials) Invocations() map[string][][]interface{} {
 	defer fake.createMutex.RUnlock()
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
+	fake.validateMutex.RLock()
+	defer fake.validateMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

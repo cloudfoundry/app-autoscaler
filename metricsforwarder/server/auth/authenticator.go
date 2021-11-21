@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
@@ -11,25 +10,20 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
-	"github.com/patrickmn/go-cache"
 )
 
 var ErrorAuthNotFound = errors.New("authentication method not found")
 var ErrCAFileEmpty = errors.New("CA file empty")
 
 type Auth struct {
-	logger          lager.Logger
-	credentialCache cache.Cache
-	credentials     cred_helper.Credentials
-	cacheTTL        time.Duration
+	logger      lager.Logger
+	credentials cred_helper.Credentials
 }
 
-func New(logger lager.Logger, credentials cred_helper.Credentials, credentialCache cache.Cache, cacheTTL time.Duration) (*Auth, error) {
+func New(logger lager.Logger, credentials cred_helper.Credentials) (*Auth, error) {
 	return &Auth{
-		logger:          logger,
-		credentialCache: credentialCache,
-		credentials:     credentials,
-		cacheTTL:        cacheTTL,
+		logger:      logger,
+		credentials: credentials,
 	}, nil
 }
 
