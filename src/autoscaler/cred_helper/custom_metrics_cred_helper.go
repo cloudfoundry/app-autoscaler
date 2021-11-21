@@ -1,9 +1,16 @@
 package cred_helper
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"time"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/lager"
 	uuid "github.com/nu7hatch/gouuid"
+	"github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -12,14 +19,28 @@ const (
 )
 
 type customMetricsCredentials struct {
-	policyDB db.PolicyDB
-	maxRetry int
+	policyDB        db.PolicyDB
+	maxRetry        int
+	credentialCache cache.Cache
+	cacheTTL        time.Duration
+	logger          lager.Logger
 }
 
-func NewCustomMetricsCredHelper(policyDb db.PolicyDB, maxRetry int) Credentials {
+func NewCustomMetricsCredHelper(policyDb db.PolicyDB, maxRetry int, logger lager.Logger) Credentials {
 	return &customMetricsCredentials{
 		policyDB: policyDb,
 		maxRetry: maxRetry,
+		logger:   logger,
+	}
+}
+
+func NewCustomMetricsCredHelperWithCache(policyDb db.PolicyDB, maxRetry int, credentialCache cache.Cache, cacheTTL time.Duration, logger lager.Logger) Credentials {
+	return &customMetricsCredentials{
+		policyDB:        policyDb,
+		maxRetry:        maxRetry,
+		credentialCache: credentialCache,
+		cacheTTL:        cacheTTL,
+		logger:          logger,
 	}
 }
 
@@ -31,8 +52,41 @@ func (c *customMetricsCredentials) Delete(appId string) error {
 	return deleteCredential(appId, c.policyDB, c.maxRetry)
 }
 
-func (c *customMetricsCredentials) Get(appId string) (*models.Credential, error) {
-	return c.policyDB.GetCredential(appId)
+func (c *customMetricsCredentials) Validate(appId string, credential models.Credential) error {
+	var isValid bool
+
+	res, found := c.credentialCache.Get(appId)
+	if found {
+		// Credentials found in cache
+		credentials := res.(*models.Credential)
+		isValid = validateCredentials(credential.Username, credentials.Username, credential.Password, credentials.Password)
+	}
+
+	// Credentials not found in cache or
+	// stale cache entry with invalid credential found in cache
+	// search in the database and update the cache
+	if !found || !isValid {
+		credentials, err := c.policyDB.GetCredential(appId)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				c.logger.Error("no-credential-found-in-db", err, lager.Data{"appId": appId})
+				return errors.New("basic authorization credential does not match")
+			}
+			c.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appId": appId})
+			return fmt.Errorf("error getting binding credentials from policyDB %w", err)
+		}
+		// update the cache
+		c.credentialCache.Set(appId, credentials, c.cacheTTL)
+
+		isValid = validateCredentials(credential.Username, credentials.Username, credential.Password, credentials.Password)
+		// If Credentials in DB is not valid
+		if !isValid {
+			c.logger.Error("error-validating-authorization-header", err)
+			return errors.New("db basic authorization credential does not match")
+		}
+	}
+
+	return nil
 }
 
 var _ Credentials = &customMetricsCredentials{}
@@ -116,4 +170,13 @@ func deleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
 		}
 		count++
 	}
+}
+
+func validateCredentials(username string, usernameHash string, password string, passwordHash string) bool {
+	usernameAuthErr := bcrypt.CompareHashAndPassword([]byte(usernameHash), []byte(username))
+	passwordAuthErr := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	if usernameAuthErr == nil && passwordAuthErr == nil { // password matching successful
+		return true
+	}
+	return false
 }

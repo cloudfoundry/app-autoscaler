@@ -1,4 +1,4 @@
-package server_test
+package auth_test
 
 import (
 	"fmt"
@@ -29,29 +29,30 @@ var (
 	rateLimiter     *fakes.FakeLimiter
 	fakeCredentials *fakes.FakeCredentials
 
+	credentialCache    cache.Cache
 	allowedMetricCache cache.Cache
 )
 
-func TestServer(t *testing.T) {
+func TestAuth(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Server Suite")
+	RunSpecs(t, "Auth Suite")
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 
-	_, err := ioutil.ReadFile("../../../../test-certs/metron.key")
+	_, err := ioutil.ReadFile("../../../../../test-certs/metron.key")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile("../../../../test-certs/metron.crt")
+	_, err = ioutil.ReadFile("../../../../../test-certs/metron.crt")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile("../../../../test-certs/loggregator-ca.crt")
+	_, err = ioutil.ReadFile("../../../../../test-certs/loggregator-ca.crt")
 	Expect(err).NotTo(HaveOccurred())
 
 	return nil
 }, func(_ []byte) {
 
-	testCertDir := "../../../../test-certs"
+	testCertDir := "../../../../../test-certs"
 	loggregatorConfig := config.LoggregatorConfig{
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "metron.key"),
@@ -73,6 +74,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		LoggregatorConfig: loggregatorConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
+	credentialCache = *cache.New(10*time.Minute, -1)
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	rateLimiter = &fakes.FakeLimiter{}

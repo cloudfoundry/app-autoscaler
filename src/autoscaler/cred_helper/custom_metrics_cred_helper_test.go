@@ -3,6 +3,10 @@ package cred_helper_test
 import (
 	"database/sql"
 	"errors"
+	"time"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/patrickmn/go-cache"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
@@ -22,11 +26,15 @@ var _ = Describe("CustomMetricCredHelper", func() {
 		userProvidedCredential *models.Credential
 		credResult             *models.Credential
 		creds                  cred_helper.Credentials
+		credentialCache        cache.Cache
 	)
 
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
-		creds = cred_helper.NewCustomMetricsCredHelper(policyDB, cred_helper.MaxRetry)
+		credentialCache = *cache.New(10*time.Minute, -1)
+		logger := lager.NewLogger("auth-test")
+		creds = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, credentialCache, 10*time.Minute, logger)
+
 	})
 	Context("CreateCredential", func() {
 		var err error
@@ -94,6 +102,81 @@ var _ = Describe("CustomMetricCredHelper", func() {
 			It("should try MaxRetry times and return error", func() {
 				Expect(policyDB.DeleteCredentialCallCount()).To(Equal(cred_helper.MaxRetry))
 				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Context("ValidateCredentials", func() {
+		Context("credentials exists in the cache", func() {
+			It("should get the credentials from cache without searching from database", func() {
+				storedCredentials := &models.Credential{
+					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+				}
+				credentialCache.Set("an-app-id", storedCredentials, 10*time.Minute)
+
+				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				Expect(err).ShouldNot(HaveOccurred())
+
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
+			})
+
+		})
+
+		Context("credentials do not exists in the cache but exist in the database", func() {
+			It("should get the credentials from database, add it to the cache", func() {
+				storedCredentials := &models.Credential{
+					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+				}
+
+				policyDB.GetCredentialReturns(storedCredentials, nil)
+
+				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				Expect(err).ShouldNot(HaveOccurred())
+
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
+
+				//fills the cache
+				_, found := credentialCache.Get("an-app-id")
+				Expect(found).To(Equal(true))
+			})
+		})
+
+		Context("when credentials neither exists in the cache nor exist in the database", func() {
+			It("should search in both cache & database and returns an error", func() {
+				policyDB.GetCredentialReturns(nil, errors.New("some error"))
+
+				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				Expect(err).Should(HaveOccurred())
+
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
+
+				//fills the cache
+				_, found := credentialCache.Get("an-app-id")
+				Expect(found).To(Equal(false))
+			})
+		})
+
+		Context("when a stale credentials exists in the cache", func() {
+			It("should search in the database", func() {
+				credentialCache.Set("an-app-id", &models.Credential{Username: "some-stale-hashed-username", Password: "some-stale-hashed-password"}, 10*time.Minute)
+
+				storedCredentials := &models.Credential{
+					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+				}
+
+				policyDB.GetCredentialReturns(storedCredentials, nil)
+
+				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				Expect(err).ShouldNot(HaveOccurred())
+
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
+
+				//fills the cache
+				_, found := credentialCache.Get("an-app-id")
+				Expect(found).To(Equal(true))
 			})
 		})
 	})
