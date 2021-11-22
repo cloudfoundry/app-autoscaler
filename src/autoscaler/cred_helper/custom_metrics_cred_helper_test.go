@@ -115,8 +115,9 @@ var _ = Describe("CustomMetricCredHelper", func() {
 				}
 				credentialCache.Set("an-app-id", storedCredentials, 10*time.Minute)
 
-				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				valid, err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(valid).To(Equal(true))
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
 			})
@@ -132,8 +133,9 @@ var _ = Describe("CustomMetricCredHelper", func() {
 
 				policyDB.GetCredentialReturns(storedCredentials, nil)
 
-				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				valid, err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(valid).To(Equal(true))
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
 
@@ -147,8 +149,9 @@ var _ = Describe("CustomMetricCredHelper", func() {
 			It("should search in both cache & database and returns an error", func() {
 				policyDB.GetCredentialReturns(nil, errors.New("some error"))
 
-				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				valid, err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
 				Expect(err).Should(HaveOccurred())
+				Expect(valid).To(Equal(false))
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
 
@@ -169,8 +172,9 @@ var _ = Describe("CustomMetricCredHelper", func() {
 
 				policyDB.GetCredentialReturns(storedCredentials, nil)
 
-				err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
+				valid, err := creds.Validate("an-app-id", models.Credential{Username: "username", Password: "password"})
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(valid).To(Equal(true))
 
 				Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
 

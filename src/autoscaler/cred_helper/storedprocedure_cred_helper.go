@@ -64,7 +64,10 @@ func (c *storedProcedureCredentials) Delete(appId string) error {
 	}
 }
 
-func (c *storedProcedureCredentials) Validate(appId string, credential models.Credential) error {
+func (c *storedProcedureCredentials) Validate(appId string, credential models.Credential) (bool, error) {
 	_, err := c.storedProcedureDb.ValidateCredentials(credential)
-	return err
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

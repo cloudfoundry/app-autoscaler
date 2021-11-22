@@ -55,11 +55,29 @@ var _ = Describe("Authentication", func() {
 						nextCalled = nextCalled + 1
 					})
 
-					fakeCredentials.ValidateReturns(nil)
+					fakeCredentials.ValidateReturns(true, nil)
 
 					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
 					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(nextCalled).To(Equal(1))
+				})
+			})
+
+			Context("credentials are valid but db error occurs", func() {
+				It("should validate the credentials", func() {
+					req = CreateRequest(body)
+					req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+					vars["appid"] = "an-app-id"
+					nextCalled := 0
+					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						nextCalled = nextCalled + 1
+					})
+
+					fakeCredentials.ValidateReturns(true, errors.New("db error"))
+
+					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
+					Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+					Expect(nextCalled).To(Equal(0))
 				})
 			})
 
@@ -73,7 +91,7 @@ var _ = Describe("Authentication", func() {
 						nextCalled = nextCalled + 1
 					})
 
-					fakeCredentials.ValidateReturns(errors.New("an error"))
+					fakeCredentials.ValidateReturns(false, nil)
 
 					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
 					Expect(resp.Code).To(Equal(http.StatusUnauthorized))

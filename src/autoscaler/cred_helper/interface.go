@@ -7,5 +7,5 @@ import (
 type Credentials interface {
 	Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error)
 	Delete(appId string) error
-	Validate(appId string, credential models.Credential) error
+	Validate(appId string, credential models.Credential) (bool, error)
 }
