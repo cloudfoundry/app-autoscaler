@@ -2,8 +2,8 @@ package server_test
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -44,6 +44,8 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 			Expect(err).NotTo(HaveOccurred())
 
+			fakeCredentials.ValidateReturns(nil)
+
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
@@ -66,6 +68,9 @@ var _ = Describe("CustomMetrics Server", func() {
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
+
+			fakeCredentials.ValidateReturns(nil)
+
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -85,6 +90,9 @@ var _ = Describe("CustomMetrics Server", func() {
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/san-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "dXNlcm5hbWU6cGFzc3dvcmQ=")
+
+			fakeCredentials.ValidateReturns(nil)
+
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -100,11 +108,14 @@ var _ = Describe("CustomMetrics Server", func() {
 		BeforeEach(func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
-			fakeCredentials.ValidateReturns(sql.ErrNoRows)
+
+			fakeCredentials.ValidateReturns(errors.New("wrong credentials"))
+
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic M2YxZWY2MTJiMThlYTM5YmJlODRjZjUxMzY4MWYwYjc6YWYyNjk1Y2RmZDE0MzA4NThhMWY3MzJhYTI5NTQ2ZTk=")
+
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -120,6 +131,9 @@ var _ = Describe("CustomMetrics Server", func() {
 		BeforeEach(func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
+
+			fakeCredentials.ValidateReturns(nil)
+
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
@@ -156,6 +170,9 @@ var _ = Describe("CustomMetrics Server", func() {
 			}
 			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 			Expect(err).NotTo(HaveOccurred())
+
+			fakeCredentials.ValidateReturns(nil)
+
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
