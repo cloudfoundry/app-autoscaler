@@ -97,7 +97,7 @@ func main() {
 		defer storedProcedureDb.Close()
 		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
 	default:
-		credentials = cred_helper.NewCustomMetricsCredHelper(policyDb, cred_helper.MaxRetry)
+		credentials = cred_helper.NewCustomMetricsCredHelper(policyDb, cred_helper.MaxRetry, logger)
 	}
 
 	var checkBindingFunc api.CheckBindingFunc
