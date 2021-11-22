@@ -3,9 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.quartz;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyObject;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.ArgumentMatchers.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -146,7 +144,7 @@ public class AppScalingScheduleJobTest {
     testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -207,7 +205,7 @@ public class AppScalingScheduleJobTest {
 
     Mockito.verify(activeScheduleDao, Mockito.never())
         .deleteActiveSchedulesByAppId(Mockito.anyString());
-    Mockito.verify(activeScheduleDao, Mockito.never()).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.never()).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -222,7 +220,7 @@ public class AppScalingScheduleJobTest {
 
     // For end job
     Mockito.verify(scheduler, Mockito.never())
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     // For notify to Scaling Engine
     Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
@@ -252,7 +250,7 @@ public class AppScalingScheduleJobTest {
     testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -311,7 +309,7 @@ public class AppScalingScheduleJobTest {
 
     Mockito.verify(activeScheduleDao, Mockito.never())
         .deleteActiveSchedulesByAppId(Mockito.anyString());
-    Mockito.verify(activeScheduleDao, Mockito.never()).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.never()).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -327,7 +325,7 @@ public class AppScalingScheduleJobTest {
 
     // For end job
     Mockito.verify(scheduler, Mockito.never())
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     // For notify to Scaling Engine
     Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), Mockito.notNull());
@@ -366,7 +364,7 @@ public class AppScalingScheduleJobTest {
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).findByAppId(appId);
     Mockito.verify(activeScheduleDao, Mockito.times(0)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(0)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(0)).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -380,7 +378,7 @@ public class AppScalingScheduleJobTest {
 
     // For end job
     Mockito.verify(scheduler, Mockito.never())
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
     Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
   }
 
@@ -415,7 +413,7 @@ public class AppScalingScheduleJobTest {
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).findByAppId(appId);
     Mockito.verify(activeScheduleDao, Mockito.times(0)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(0)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(0)).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -429,7 +427,7 @@ public class AppScalingScheduleJobTest {
 
     // For end job
     Mockito.verify(scheduler, Mockito.never())
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
     Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
   }
 
@@ -464,8 +462,8 @@ public class AppScalingScheduleJobTest {
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).findByAppId(appId);
     Mockito.verify(activeScheduleDao, Mockito.times(0))
-        .deleteActiveSchedulesByAppId(Mockito.anyObject());
-    Mockito.verify(activeScheduleDao, Mockito.never()).create(Mockito.anyObject());
+        .deleteActiveSchedulesByAppId(Mockito.any());
+    Mockito.verify(activeScheduleDao, Mockito.never()).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =
@@ -476,7 +474,7 @@ public class AppScalingScheduleJobTest {
 
     // For end job
     Mockito.verify(scheduler, Mockito.never())
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
     Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
   }
 
@@ -543,7 +541,7 @@ public class AppScalingScheduleJobTest {
     Mockito.doThrow(new DatabaseValidationException("test exception"))
         .doNothing()
         .when(activeScheduleDao)
-        .create(Mockito.anyObject());
+        .create(Mockito.any());
 
     TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
     memScheduler.getListenerManager().addJobListener(testJobListener);
@@ -555,7 +553,7 @@ public class AppScalingScheduleJobTest {
     Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled))
         .deleteActiveSchedulesByAppId(appId);
     Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled))
-        .create(Mockito.anyObject());
+        .create(Mockito.any());
 
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
     String expectedMessage =
@@ -609,7 +607,7 @@ public class AppScalingScheduleJobTest {
     Mockito.doThrow(new DatabaseValidationException("test exception"))
         .doReturn(1)
         .when(activeScheduleDao)
-        .delete(eq(scheduleId), Mockito.anyObject());
+        .delete(eq(scheduleId), Mockito.any());
 
     TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
     memScheduler.getListenerManager().addJobListener(testJobListener);
@@ -654,7 +652,7 @@ public class AppScalingScheduleJobTest {
 
     Mockito.doThrow(new DatabaseValidationException("test exception"))
         .when(activeScheduleDao)
-        .create(Mockito.anyObject());
+        .create(Mockito.any());
 
     TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
     memScheduler.getListenerManager().addJobListener(testJobListener);
@@ -667,7 +665,7 @@ public class AppScalingScheduleJobTest {
     Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled))
         .deleteActiveSchedulesByAppId(appId);
     Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled))
-        .create(Mockito.anyObject());
+        .create(Mockito.any());
 
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
     String expectedMessage =
@@ -684,7 +682,7 @@ public class AppScalingScheduleJobTest {
 
     // For end job
     Mockito.verify(scheduler, Mockito.never())
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     // For notify to Scaling Engine
     Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
@@ -812,7 +810,7 @@ public class AppScalingScheduleJobTest {
     testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.any());
 
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
     String expectedMessage =
@@ -921,7 +919,7 @@ public class AppScalingScheduleJobTest {
     testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
     String expectedMessage =
         messageBundleResourceHelper.lookupMessage(
@@ -1020,7 +1018,7 @@ public class AppScalingScheduleJobTest {
         .when(restOperations)
         .put(
             eq(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/" + scheduleId),
-            Mockito.anyObject());
+            Mockito.any());
 
     TestJobListener testJobListener = new TestJobListener(2);
     memScheduler.getListenerManager().addJobListener(testJobListener);
@@ -1030,7 +1028,7 @@ public class AppScalingScheduleJobTest {
     testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
     String expectedMessage =
         messageBundleResourceHelper.lookupMessage(
@@ -1093,7 +1091,7 @@ public class AppScalingScheduleJobTest {
 
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     TestJobListener testJobListener = new TestJobListener(1);
     memScheduler.getListenerManager().addJobListener(testJobListener);
@@ -1101,7 +1099,7 @@ public class AppScalingScheduleJobTest {
     testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
-    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
+    Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.any());
     Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
     String expectedMessage =

@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.LocalDate;
@@ -361,7 +361,7 @@ public class ScheduleJobManagerTest {
 
     scheduleJobManager.deleteJob(appId, scheduleId, scheduleType);
 
-    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(anyObject());
+    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(any());
   }
 
   @Test
@@ -383,7 +383,7 @@ public class ScheduleJobManagerTest {
     // Set mock object for Quartz.
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     scheduleJobManager.createSimpleJob(specificDateScheduleEntity);
 
@@ -417,7 +417,7 @@ public class ScheduleJobManagerTest {
     // Set mock object for Quartz.
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     scheduleJobManager.createCronJob(recurringScheduleEntity);
 
@@ -440,7 +440,7 @@ public class ScheduleJobManagerTest {
 
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .deleteJob(Mockito.anyObject());
+        .deleteJob(Mockito.any());
 
     scheduleJobManager.deleteJob(appId, scheduleId, type);
 
@@ -463,7 +463,7 @@ public class ScheduleJobManagerTest {
 
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .deleteJob(Mockito.anyObject());
+        .deleteJob(Mockito.any());
 
     scheduleJobManager.deleteJob(appId, scheduleId, type);
 

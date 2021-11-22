@@ -9,7 +9,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -184,7 +183,7 @@ public class ScheduleManagerTest {
 
     SpecificDateScheduleEntity specificDateScheduleEntity =
         new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId).setScheduleId().build().get(0);
-    Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(specificDateScheduleDao.create(Mockito.any()))
         .thenReturn(specificDateScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -206,7 +205,7 @@ public class ScheduleManagerTest {
 
     RecurringScheduleEntity recurringScheduleEntity =
         new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setScheduleId().build().get(0);
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(recurringScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -233,7 +232,7 @@ public class ScheduleManagerTest {
 
     RecurringScheduleEntity recurringScheduleEntity =
         new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setScheduleId().build().get(0);
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(recurringScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -264,12 +263,12 @@ public class ScheduleManagerTest {
 
     RecurringScheduleEntity recurringScheduleEntity =
         new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setScheduleId().build().get(0);
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(recurringScheduleEntity);
 
     SpecificDateScheduleEntity specificDateScheduleEntity =
         new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId).setScheduleId().build().get(0);
-    Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(specificDateScheduleDao.create(Mockito.any()))
         .thenReturn(specificDateScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -300,12 +299,12 @@ public class ScheduleManagerTest {
 
     RecurringScheduleEntity recurringScheduleEntity =
         new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setScheduleId().build().get(0);
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(recurringScheduleEntity);
 
     SpecificDateScheduleEntity specificDateScheduleEntity =
         new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId).setScheduleId().build().get(0);
-    Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(specificDateScheduleDao.create(Mockito.any()))
         .thenReturn(specificDateScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -338,7 +337,7 @@ public class ScheduleManagerTest {
 
     RecurringScheduleEntity recurringScheduleEntity =
         new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setScheduleId().build().get(0);
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(recurringScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -373,9 +372,9 @@ public class ScheduleManagerTest {
         new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId).setScheduleId().build().get(0);
     RecurringScheduleEntity recurringScheduleEntity =
         new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setScheduleId().build().get(0);
-    Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(specificDateScheduleDao.create(Mockito.any()))
         .thenReturn(specificDateScheduleEntity);
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(recurringScheduleEntity);
 
     scheduleManager.createSchedules(schedules);
@@ -396,7 +395,7 @@ public class ScheduleManagerTest {
     Schedules schedules =
         TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, false, 1, 0, 0);
 
-    Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(specificDateScheduleDao.create(Mockito.any()))
         .thenThrow(new DatabaseValidationException("test exception"));
 
     try {
@@ -412,7 +411,7 @@ public class ScheduleManagerTest {
       }
     }
 
-    Mockito.verify(scheduleJobManager, Mockito.never()).createSimpleJob(Mockito.anyObject());
+    Mockito.verify(scheduleJobManager, Mockito.never()).createSimpleJob(Mockito.any());
   }
 
   @Test
@@ -422,7 +421,7 @@ public class ScheduleManagerTest {
     Schedules schedules =
         TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, false, 0, 1, 0);
 
-    Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+    Mockito.when(recurringScheduleDao.create(Mockito.any()))
         .thenThrow(new DatabaseValidationException("test exception"));
 
     try {
@@ -438,7 +437,7 @@ public class ScheduleManagerTest {
       }
     }
 
-    Mockito.verify(scheduleJobManager, Mockito.never()).createCronJob(Mockito.anyObject());
+    Mockito.verify(scheduleJobManager, Mockito.never()).createCronJob(Mockito.any());
   }
 
   @Test
@@ -550,7 +549,7 @@ public class ScheduleManagerTest {
         .thenReturn(specificDateScheduleEntities);
     Mockito.doNothing()
         .when(scheduleJobManager)
-        .deleteJob(Mockito.anyString(), Mockito.anyLong(), Mockito.anyObject());
+        .deleteJob(Mockito.anyString(), Mockito.anyLong(), Mockito.any());
 
     Mockito.when(activeScheduleDao.findByAppId(appId)).thenReturn(activeScheduleEntities);
     Mockito.doThrow(new ResourceAccessException("test resource access exception"))
@@ -690,13 +689,13 @@ public class ScheduleManagerTest {
 
     scheduleManager.deleteSchedules(appId);
 
-    Mockito.verify(specificDateScheduleDao, Mockito.never()).delete(Mockito.anyObject());
+    Mockito.verify(specificDateScheduleDao, Mockito.never()).delete(Mockito.any());
     Mockito.verify(scheduleJobManager, Mockito.never())
-        .deleteJob(Mockito.anyString(), Mockito.anyLong(), Mockito.anyObject());
+        .deleteJob(Mockito.anyString(), Mockito.anyLong(), Mockito.any());
 
-    Mockito.verify(recurringScheduleDao, Mockito.never()).delete(Mockito.anyObject());
+    Mockito.verify(recurringScheduleDao, Mockito.never()).delete(Mockito.any());
     Mockito.verify(scheduleJobManager, Mockito.never())
-        .deleteJob(Mockito.anyString(), Mockito.anyLong(), Mockito.anyObject());
+        .deleteJob(Mockito.anyString(), Mockito.anyLong(), Mockito.any());
 
     Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
   }
@@ -717,7 +716,7 @@ public class ScheduleManagerTest {
 
     Mockito.doThrow(new DatabaseValidationException("test exception"))
         .when(specificDateScheduleDao)
-        .delete(Mockito.anyObject());
+        .delete(Mockito.any());
 
     try {
       scheduleManager.deleteSchedules(appId);
@@ -754,7 +753,7 @@ public class ScheduleManagerTest {
 
     Mockito.doThrow(new DatabaseValidationException("test exception"))
         .when(recurringScheduleDao)
-        .delete(Mockito.anyObject());
+        .delete(Mockito.any());
 
     try {
       scheduleManager.deleteSchedules(appId);
@@ -882,9 +881,9 @@ public class ScheduleManagerTest {
     when(specificDateScheduleDao.getDistinctAppIdAndGuidList())
         .thenReturn(new ArrayList<Object[]>());
     when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList<Object[]>());
-    when(specificDateScheduleDao.create(Mockito.anyObject()))
+    when(specificDateScheduleDao.create(Mockito.any()))
         .thenReturn(schedules.getSpecificDate().get(0));
-    when(recurringScheduleDao.create(Mockito.anyObject()))
+    when(recurringScheduleDao.create(Mockito.any()))
         .thenReturn(schedules.getRecurringSchedule().get(0));
 
     SynchronizeResult result = scheduleManager.synchronizeSchedules();
@@ -1053,9 +1052,9 @@ public class ScheduleManagerTest {
         .thenReturn(schedules.getSpecificDate());
     when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
         .thenReturn(schedules.getRecurringSchedule());
-    when(specificDateScheduleDao.create(Mockito.anyObject()))
+    when(specificDateScheduleDao.create(Mockito.any()))
         .thenReturn(anotherSchedules.getSpecificDate().get(0));
-    when(recurringScheduleDao.create(anyObject()))
+    when(recurringScheduleDao.create(any()))
         .thenReturn(anotherSchedules.getRecurringSchedule().get(0));
 
     SynchronizeResult result = scheduleManager.synchronizeSchedules();
