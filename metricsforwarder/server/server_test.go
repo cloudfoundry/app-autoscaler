@@ -44,7 +44,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 			Expect(err).NotTo(HaveOccurred())
 
-			fakeCredentials.ValidateReturns(nil)
+			fakeCredentials.ValidateReturns(true, nil)
 
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
@@ -69,7 +69,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 
-			fakeCredentials.ValidateReturns(nil)
+			fakeCredentials.ValidateReturns(true, nil)
 
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -91,7 +91,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "dXNlcm5hbWU6cGFzc3dvcmQ=")
 
-			fakeCredentials.ValidateReturns(nil)
+			fakeCredentials.ValidateReturns(true, nil)
 
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -109,7 +109,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 
-			fakeCredentials.ValidateReturns(errors.New("wrong credentials"))
+			fakeCredentials.ValidateReturns(false, errors.New("wrong credentials"))
 
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
@@ -132,7 +132,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 
-			fakeCredentials.ValidateReturns(nil)
+			fakeCredentials.ValidateReturns(true, nil)
 
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
@@ -171,7 +171,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 			Expect(err).NotTo(HaveOccurred())
 
-			fakeCredentials.ValidateReturns(nil)
+			fakeCredentials.ValidateReturns(true, nil)
 
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))

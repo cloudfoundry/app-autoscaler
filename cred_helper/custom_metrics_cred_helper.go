@@ -52,7 +52,7 @@ func (c *customMetricsCredentials) Delete(appId string) error {
 	return deleteCredential(appId, c.policyDB, c.maxRetry)
 }
 
-func (c *customMetricsCredentials) Validate(appId string, credential models.Credential) error {
+func (c *customMetricsCredentials) Validate(appId string, credential models.Credential) (bool, error) {
 	var isValid bool
 
 	res, found := c.credentialCache.Get(appId)
@@ -70,23 +70,18 @@ func (c *customMetricsCredentials) Validate(appId string, credential models.Cred
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				c.logger.Error("no-credential-found-in-db", err, lager.Data{"appId": appId})
-				return errors.New("basic authorization credential does not match")
+				return false, errors.New("basic authorization credential does not match")
 			}
 			c.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appId": appId})
-			return fmt.Errorf("error getting binding credentials from policyDB %w", err)
+			return false, fmt.Errorf("error getting binding credentials from policyDB %w", err)
 		}
 		// update the cache
 		c.credentialCache.Set(appId, credentials, c.cacheTTL)
 
-		isValid = validateCredentials(credential.Username, credentials.Username, credential.Password, credentials.Password)
-		// If Credentials in DB is not valid
-		if !isValid {
-			c.logger.Error("error-validating-authorization-header", err)
-			return errors.New("db basic authorization credential does not match")
-		}
+		return validateCredentials(credential.Username, credentials.Username, credential.Password, credentials.Password), nil
 	}
 
-	return nil
+	return isValid, nil
 }
 
 var _ Credentials = &customMetricsCredentials{}

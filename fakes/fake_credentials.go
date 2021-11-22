@@ -34,17 +34,19 @@ type FakeCredentials struct {
 	deleteReturnsOnCall map[int]struct {
 		result1 error
 	}
-	ValidateStub        func(string, models.Credential) error
+	ValidateStub        func(string, models.Credential) (bool, error)
 	validateMutex       sync.RWMutex
 	validateArgsForCall []struct {
 		arg1 string
 		arg2 models.Credential
 	}
 	validateReturns struct {
-		result1 error
+		result1 bool
+		result2 error
 	}
 	validateReturnsOnCall map[int]struct {
-		result1 error
+		result1 bool
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -176,7 +178,7 @@ func (fake *FakeCredentials) DeleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCredentials) Validate(arg1 string, arg2 models.Credential) error {
+func (fake *FakeCredentials) Validate(arg1 string, arg2 models.Credential) (bool, error) {
 	fake.validateMutex.Lock()
 	ret, specificReturn := fake.validateReturnsOnCall[len(fake.validateArgsForCall)]
 	fake.validateArgsForCall = append(fake.validateArgsForCall, struct {
@@ -191,9 +193,9 @@ func (fake *FakeCredentials) Validate(arg1 string, arg2 models.Credential) error
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeCredentials) ValidateCallCount() int {
@@ -202,7 +204,7 @@ func (fake *FakeCredentials) ValidateCallCount() int {
 	return len(fake.validateArgsForCall)
 }
 
-func (fake *FakeCredentials) ValidateCalls(stub func(string, models.Credential) error) {
+func (fake *FakeCredentials) ValidateCalls(stub func(string, models.Credential) (bool, error)) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = stub
@@ -215,27 +217,30 @@ func (fake *FakeCredentials) ValidateArgsForCall(i int) (string, models.Credenti
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeCredentials) ValidateReturns(result1 error) {
+func (fake *FakeCredentials) ValidateReturns(result1 bool, result2 error) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = nil
 	fake.validateReturns = struct {
-		result1 error
-	}{result1}
+		result1 bool
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeCredentials) ValidateReturnsOnCall(i int, result1 error) {
+func (fake *FakeCredentials) ValidateReturnsOnCall(i int, result1 bool, result2 error) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = nil
 	if fake.validateReturnsOnCall == nil {
 		fake.validateReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 bool
+			result2 error
 		})
 	}
 	fake.validateReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 bool
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCredentials) Invocations() map[string][][]interface{} {
