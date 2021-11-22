@@ -81,7 +81,8 @@ func main() {
 		defer storedProcedureDb.Close()
 		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
 	default:
-		credentials = cred_helper.NewCustomMetricsCredHelper(policyDB, cred_helper.MaxRetry)
+		credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
+		credentials = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, *credentialCache, conf.CacheTTL, logger)
 	}
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
@@ -91,11 +92,10 @@ func main() {
 		httpStatusCollector,
 	}, true, logger.Session("metricsforwarder-prometheus"))
 
-	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentials, *credentialCache, *allowedMetricCache, httpStatusCollector, rateLimiter)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentials, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)
