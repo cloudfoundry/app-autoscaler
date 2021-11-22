@@ -78,7 +78,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	rateLimiter = &fakes.FakeLimiter{}
 	fakeCredentials = &fakes.FakeCredentials{}
 
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB,
+	logger := lager.NewLogger("server_suite_test")
+	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+
+	httpServer, err := NewServer(logger, conf, policyDB,
 		fakeCredentials, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
