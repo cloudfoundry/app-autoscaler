@@ -130,7 +130,7 @@ func main() {
 
 	serverConfig := collector.FromConfig(conf)
 
-	httpServer, err := collector.NewServer(logger.Session("http_server"), &serverConfig, conf, coll.QueryMetrics, httpStatusCollector)
+	httpServer, err := collector.NewServer(logger.Session("http_server"), &serverConfig, coll.QueryMetrics, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
