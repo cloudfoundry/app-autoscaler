@@ -9,7 +9,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
@@ -40,11 +39,8 @@ func TestCollector(t *testing.T) {
 var _ = BeforeSuite(func() {
 
 	port := 1111 + GinkgoParallelProcess()
-	serverConf := &config.ServerConfig{
-		Port: port,
-	}
-
-	conf := &config.Config{
+	serverConf := &collector.ServerConfig{
+		Port:      port,
 		NodeAddrs: []string{fmt.Sprintf("%s:%d", "localhost", port)},
 		NodeIndex: 0,
 	}
@@ -54,7 +50,11 @@ var _ = BeforeSuite(func() {
 	}
 
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := collector.NewServer(lager.NewLogger("test"), serverConf, conf, queryFunc, httpStatusCollector)
+
+	logger := lager.NewLogger("collector_suite_test")
+	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+
+	httpServer, err := collector.NewServer(logger, serverConf, queryFunc, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
