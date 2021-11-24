@@ -9,7 +9,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
@@ -46,14 +45,16 @@ var _ = BeforeSuite(func() {
 		NodeIndex: 0,
 	}
 
-	conf := &config.Config{}
-
 	queryFunc := func(appID string, instanceIndex int, name string, start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
 		return nil, nil
 	}
 
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := collector.NewServer(lager.NewLogger("test"), serverConf, conf, queryFunc, httpStatusCollector)
+
+	logger := lager.NewLogger("collector_suite_test")
+	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+
+	httpServer, err := collector.NewServer(logger, serverConf, queryFunc, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
