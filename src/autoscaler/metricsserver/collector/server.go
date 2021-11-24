@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -23,8 +22,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, serverConfig *config.ServerConfig, config *config.Config, query MetricQueryFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-	mh := NewMetricHandler(logger, config.NodeIndex, config.NodeAddrs, query)
+func NewServer(logger lager.Logger, serverConfig *ServerConfig, query MetricQueryFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
+	mh := NewMetricHandler(logger, serverConfig.NodeIndex, serverConfig.NodeAddrs, query)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 
 	r := routes.MetricsCollectorRoutes()

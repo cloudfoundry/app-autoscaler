@@ -128,17 +128,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverNodeAddrs := make([]string, len(conf.NodeAddrs))
-	for i, n := range conf.NodeAddrs {
-		serverNodeAddrs[i] = fmt.Sprintf("%s:%d", n, conf.Server.Port)
-	}
+	serverConfig := collector.FromConfig(conf)
 
-	httpServerConfig := &config.ServerConfig{
-		Port: conf.Server.Port,
-		TLS:  conf.Server.TLS,
-	}
-
-	httpServer, err := collector.NewServer(logger.Session("http_server"), httpServerConfig, conf, coll.QueryMetrics, httpStatusCollector)
+	httpServer, err := collector.NewServer(logger.Session("http_server"), &serverConfig, coll.QueryMetrics, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
