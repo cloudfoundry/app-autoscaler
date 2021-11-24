@@ -23,7 +23,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, serverConfig *config.ServerConfig, config *config.Config, query MetricQueryFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, serverConfig *ServerConfig, config *config.Config, query MetricQueryFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 	mh := NewMetricHandler(logger, config.NodeIndex, config.NodeAddrs, query)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 

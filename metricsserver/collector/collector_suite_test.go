@@ -40,14 +40,13 @@ func TestCollector(t *testing.T) {
 var _ = BeforeSuite(func() {
 
 	port := 1111 + GinkgoParallelProcess()
-	serverConf := &config.ServerConfig{
-		Port: port,
-	}
-
-	conf := &config.Config{
+	serverConf := &collector.ServerConfig{
+		Port:      port,
 		NodeAddrs: []string{fmt.Sprintf("%s:%d", "localhost", port)},
 		NodeIndex: 0,
 	}
+
+	conf := &config.Config{}
 
 	queryFunc := func(appID string, instanceIndex int, name string, start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
 		return nil, nil
