@@ -14,10 +14,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	MaxRetry = 5
-)
-
 type customMetricsCredentials struct {
 	policyDB        db.PolicyDB
 	maxRetry        int
