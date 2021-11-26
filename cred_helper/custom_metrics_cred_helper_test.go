@@ -32,7 +32,10 @@ var _ = Describe("CustomMetricCredHelper", func() {
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
 		credentialCache = *cache.New(10*time.Minute, -1)
-		logger := lager.NewLogger("auth-test")
+
+		logger := lager.NewLogger("custom_metrics_helper_test")
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+
 		creds = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, credentialCache, 10*time.Minute, logger)
 
 	})
