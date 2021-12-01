@@ -1,4 +1,4 @@
-# Deprecated - App-AutoScaler 
+# Archived repository - App-AutoScaler 
 
 :warning: :warning:The contents of this repo have been moved over to https://github.com/cloudfoundry/app-autoscaler-release, please submit all issues/pull requests on that repository.:warning: :warning:
 
