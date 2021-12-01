@@ -1,4 +1,7 @@
-# App-AutoScaler [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml) [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/mysql.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/mysql.yaml)
+# Archived repository - App-AutoScaler 
+
+:warning: :warning:The contents of this repo have been moved over to https://github.com/cloudfoundry/app-autoscaler-release, please submit all issues/pull requests on that repository.:warning: :warning:
+
 
 The `App-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
