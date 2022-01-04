@@ -42,6 +42,6 @@ require (
 	golang.org/x/sys v0.0.0-20211109065445-02f5c0300f6e // indirect
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
-	google.golang.org/grpc v1.42.0
+	google.golang.org/grpc v1.43.0
 	gopkg.in/yaml.v2 v2.4.0
 )
