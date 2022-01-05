@@ -14,8 +14,10 @@ func CreateHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
 	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
 		tlsCerts = nil
 	}
+	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 	client := cfhttp.NewClient()
 	if tlsCerts != nil {
+		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
 		if err != nil {
 			return nil, err

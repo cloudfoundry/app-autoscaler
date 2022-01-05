@@ -1,7 +1,7 @@
 package main_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"fmt"
@@ -161,6 +161,7 @@ func initHttpEndPoints() {
 	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
 
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	mcTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "metricscollector.crt"),
 		filepath.Join(testCertDir, "metricscollector.key"),
@@ -171,6 +172,7 @@ func initHttpEndPoints() {
 	metricCollector.HTTPTestServer.TLS = mcTLSConfig
 	metricCollector.HTTPTestServer.StartTLS()
 
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	seTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "scalingengine.crt"),
 		filepath.Join(testCertDir, "scalingengine.key"),
@@ -265,6 +267,7 @@ func initConfig() {
 	}
 	configFile = writeConfig(&conf)
 
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	tlsConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "api.crt"),
 		filepath.Join(testCertDir, "api.key"),

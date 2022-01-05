@@ -6,18 +6,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/collector"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
+	"testing"
+
 	"code.cloudfoundry.org/lager"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
-
-	"testing"
 )
 
 var (
@@ -60,9 +61,9 @@ var _ = BeforeSuite(func() {
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
 	Expect(err).ToNot(HaveOccurred())
 
-	serverProcess = ginkgomon.Invoke(httpServer)
+	serverProcess = ginkgomon_v2.Invoke(httpServer)
 })
 
 var _ = AfterSuite(func() {
-	ginkgomon.Interrupt(serverProcess)
+	ginkgomon_v2.Interrupt(serverProcess)
 })

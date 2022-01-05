@@ -50,6 +50,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	metricServerClientTLSConfig, err := cfhttp.NewTLSConfig(conf.Emitter.MetricsServerClientTLS.CertFile, conf.Emitter.MetricsServerClientTLS.KeyFile, conf.Emitter.MetricsServerClientTLS.CACertFile)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())

@@ -28,6 +28,7 @@ func NewWSServer(logger lager.Logger, tls models.TLSCerts, port int, keepAlive t
 	if (tls.KeyFile == "") || (tls.CertFile == "") {
 		runner = http_server.New(addr, wsHandler)
 	} else {
+		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(tls.CertFile, tls.KeyFile, tls.CACertFile)
 		if err != nil {
 			logger.Error("failed-new-websocket-server-new-tls-config", err)

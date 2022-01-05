@@ -15,7 +15,7 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/cenkalti/backoff/v4"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	circuit "github.com/rubyist/circuitbreaker"
@@ -101,6 +101,7 @@ var _ = Describe("Evaluator", func() {
 	)
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("Evaluator-test")
+		//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 		httpClient = cfhttp.NewClient()
 		triggerChan = make(chan []*models.Trigger, 1)
 

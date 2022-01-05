@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -85,8 +85,8 @@ type ServiceBrokerClient struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 
-func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              GolangAPIServer,
 		AnsiColorCode:     "33m",
 		StartCheck:        `"api.started"`,
@@ -100,8 +100,8 @@ func (components *Components) GolangAPIServer(confPath string, argv ...string) *
 		),
 	})
 }
-func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              Scheduler,
 		AnsiColorCode:     "34m",
 		StartCheck:        "Scheduler is ready to start",
@@ -115,8 +115,8 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 	})
 }
 
-func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              MetricsServerHTTP,
 		AnsiColorCode:     "33m",
 		StartCheck:        `"metricsserver.started"`,
@@ -131,8 +131,8 @@ func (components *Components) MetricsServer(confPath string, argv ...string) *gi
 	})
 }
 
-func (components *Components) EventGenerator(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) EventGenerator(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              EventGenerator,
 		AnsiColorCode:     "36m",
 		StartCheck:        `"eventgenerator.started"`,
@@ -147,8 +147,8 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 	})
 }
 
-func (components *Components) ScalingEngine(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) ScalingEngine(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              ScalingEngine,
 		AnsiColorCode:     "31m",
 		StartCheck:        `"scalingengine.started"`,
@@ -163,8 +163,8 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 	})
 }
 
-func (components *Components) Operator(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) Operator(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              Operator,
 		AnsiColorCode:     "38m",
 		StartCheck:        `"operator.started"`,
@@ -179,8 +179,8 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 	})
 }
 
-func (components *Components) MetricsGateway(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
+func (components *Components) MetricsGateway(confPath string, argv ...string) *ginkgomon_v2.Runner {
+	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              MetricsGateway,
 		AnsiColorCode:     "32m",
 		StartCheck:        `"metricsgateway.started"`,

@@ -8,10 +8,10 @@ import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"bytes"
 	"encoding/json"
@@ -44,12 +44,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, sychronizer, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
-	server = ginkgomon.Invoke(httpServer)
+	server = ginkgomon_v2.Invoke(httpServer)
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	ginkgomon.Interrupt(server)
+	ginkgomon_v2.Interrupt(server)
 }, func() {
 })
 

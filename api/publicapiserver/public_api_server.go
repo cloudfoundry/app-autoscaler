@@ -86,6 +86,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 		runner = http_server.New(addr, r)
 	} else {
 		logger.Info("creating-public-api-https-server")
+		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(conf.PublicApiServer.TLS.CertFile, conf.PublicApiServer.TLS.KeyFile, conf.PublicApiServer.TLS.CACertFile)
 		if err != nil {
 			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.PublicApiServer.TLS})

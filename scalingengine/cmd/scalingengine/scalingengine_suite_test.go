@@ -11,7 +11,7 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
@@ -144,6 +144,7 @@ var _ = SynchronizedBeforeSuite(
 		err = testDB.Close()
 		Expect(err).NotTo(HaveOccurred())
 
+		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(
 			filepath.Join(testCertDir, "eventgenerator.crt"),
 			filepath.Join(testCertDir, "eventgenerator.key"),

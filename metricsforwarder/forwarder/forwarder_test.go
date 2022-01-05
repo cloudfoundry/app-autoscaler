@@ -14,7 +14,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"

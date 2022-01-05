@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -22,15 +23,16 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"gopkg.in/yaml.v2"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"testing"
 )
 
 const (
-	username = "broker_username"
-	password = "broker_password"
+	username    = "broker_username"
+	password    = "broker_password"
+	testCertDir = "../../../../../test-certs"
 )
 
 var (
@@ -38,14 +40,13 @@ var (
 	cfg              config.Config
 	configFile       *os.File
 	apiHttpClient    *http.Client
-	brokerHttpClient *http.Client
 	healthHttpClient *http.Client
-	catalogBytes     []byte
+	catalogBytes     string
 	schedulerServer  *ghttp.Server
 	brokerPort       int
 	publicApiPort    int
 	healthport       int
-	infoBytes        []byte
+	infoBytes        string
 	ccServer         *ghttp.Server
 )
 
@@ -54,7 +55,14 @@ func TestApi(t *testing.T) {
 	RunSpecs(t, "Api Suite")
 }
 
+type testdata struct {
+	ApPath       string
+	InfoBytes    string
+	CatalogBytes string
+}
+
 var _ = SynchronizedBeforeSuite(func() []byte {
+	info := testdata{}
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
@@ -64,31 +72,43 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if e != nil {
 		Fail("failed to get database URL and drivername: " + e.Error())
 	}
-
-	ap, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	var err error
+	info.ApPath, err = gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api", "-race")
+	if err != nil {
+		AbortSuite(err.Error())
+	}
 
 	apDB, err := sql.Open(database.DriverName, database.DSN)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(err.Error())
+	}
 
 	_, err = apDB.Exec("DELETE FROM binding")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(err.Error())
+	}
 
 	_, err = apDB.Exec("DELETE FROM service_instance")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(err.Error())
+	}
 
 	err = apDB.Close()
+	if err != nil {
+		AbortSuite(err.Error())
+	}
+
+	info.CatalogBytes = readFile("../../exampleconfig/catalog-example.json")
+	info.InfoBytes = readFile("../../exampleconfig/info-file.json")
+	bytes, err := json.Marshal(info)
+	if err != nil {
+		AbortSuite("Failed to serialise:" + err.Error())
+	}
+	return bytes
+}, func(testParams []byte) {
+	info := &testdata{}
+	err := json.Unmarshal(testParams, info)
 	Expect(err).NotTo(HaveOccurred())
-
-	catalogBytes, err = ioutil.ReadFile("../../exampleconfig/catalog-example.json")
-	Expect(err).NotTo(HaveOccurred())
-
-	infoBytes, err = ioutil.ReadFile("../../exampleconfig/info-file.json")
-	Expect(err).NotTo(HaveOccurred())
-
-	return []byte(ap)
-}, func(pathsByte []byte) {
-
 	ccServer = ghttp.NewServer()
 	ccServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
@@ -98,12 +118,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	ccServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-	apPath = string(pathsByte)
-
+	apPath = info.ApPath
+	catalogBytes = info.CatalogBytes
+	infoBytes = info.InfoBytes
 	brokerPort = 8000 + GinkgoParallelProcess()
 	publicApiPort = 9000 + GinkgoParallelProcess()
 	healthport = 7000 + GinkgoParallelProcess()
-	testCertDir := "../../../../../test-certs"
 
 	cfg.BrokerServer = config.ServerConfig{
 		Port: brokerPort,
@@ -205,6 +225,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CredHelperImpl = "default"
 
 	configFile = writeConfig(&cfg)
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "api.crt"),
 		filepath.Join(testCertDir, "api.key"),
@@ -215,16 +236,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			TLSClientConfig: apiClientTLSConfig,
 		},
 	}
-	brokerClientTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "servicebroker.crt"),
-		filepath.Join(testCertDir, "servicebroker.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+
 	Expect(err).NotTo(HaveOccurred())
-	brokerHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: brokerClientTLSConfig,
-		},
-	}
+
 	healthHttpClient = &http.Client{}
 
 })
@@ -290,4 +304,12 @@ func (ap *ApiRunner) Interrupt() {
 	if ap.Session != nil {
 		ap.Session.Interrupt().Wait(5 * time.Second)
 	}
+}
+
+func readFile(filename string) string {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		Fail("Failed to read file:" + filename + " " + err.Error())
+	}
+	return string(contents)
 }

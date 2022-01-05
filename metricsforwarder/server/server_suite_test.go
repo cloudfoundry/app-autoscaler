@@ -13,11 +13,11 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"testing"
 )
@@ -85,10 +85,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		fakeCredentials, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
-	serverProcess = ginkgomon.Invoke(httpServer)
+	serverProcess = ginkgomon_v2.Invoke(httpServer)
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	ginkgomon.Interrupt(serverProcess)
+	ginkgomon_v2.Interrupt(serverProcess)
 }, func() {
 })

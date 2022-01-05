@@ -6,7 +6,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/prometheus/client_golang/prometheus"

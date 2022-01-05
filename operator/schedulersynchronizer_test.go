@@ -11,7 +11,7 @@ import (
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
@@ -29,6 +29,7 @@ var _ = Describe("ScheduleSynchronizer", func() {
 		buffer = logger.Buffer()
 		fclock := fakeclock.NewFakeClock(time.Now())
 		fakeSyncServer = ghttp.NewServer()
+		//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 		scheduleSynchronizer = operator.NewScheduleSynchronizer(cfhttp.NewClient(), fakeSyncServer.URL(), fclock, logger)
 
 	})

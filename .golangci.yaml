@@ -59,7 +59,7 @@ linters-settings:
     checks: [ "all", "-ST1003", "-ST1005" ]
     dot-import-whitelist:
       - github.com/onsi/gomega
-      - github.com/onsi/ginkgo
+      - github.com/onsi/ginkgo/v2
     # https://staticcheck.io/docs/options#initialisms
     #initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"]
     # https://staticcheck.io/docs/options#http_status_code_whitelist
