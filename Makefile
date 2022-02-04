@@ -2,7 +2,6 @@ SHELL := /bin/bash
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
 PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
-PATH:=${HOME}/go/bin:${PATH}
 CGO_ENABLED = 0
 BUILDTAGS :=
 export GO111MODULE=on
