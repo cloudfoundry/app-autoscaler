@@ -704,36 +704,29 @@ func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedSta
 func assertScheduleContents(appId string, expectHttpStatus int, expectResponseMap map[string]int) {
 	By("checking the schedule contents")
 	resp, err := getSchedules(appId)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to get schedule:%s", err)
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus), "Unexpected HTTP status")
 	defer func() { _ = resp.Body.Close() }()
 	var actual map[string]interface{}
 
 	err = json.NewDecoder(resp.Body).Decode(&actual)
-	Expect(err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Invalid JSON")
 
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	var schedules = actual["schedules"].(map[string]interface{})
 	var recurring = schedules["recurring_schedule"].([]interface{})
 	var specificDate = schedules["specific_date"].([]interface{})
-	if len(specificDate) != expectResponseMap["specific_date"] {
-		_, _ = fmt.Fprintf(GinkgoWriter, "Expected %d specific date schedules, but found %d: %#v\n", expectResponseMap["specific_date"], len(specificDate), specificDate)
-	}
-	ExpectWithOffset(1, len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
-	if len(recurring) != expectResponseMap["recurring_schedule"] {
-		_, _ = fmt.Fprintf(GinkgoWriter, "Expected %d recurring schedules, but found %d: %#v\n", expectResponseMap["recurring_schedule"], len(recurring), recurring)
-	}
-	ExpectWithOffset(1, len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
+	ExpectWithOffset(1, len(specificDate)).To(Equal(expectResponseMap["specific_date"]), "Expected %d specific date schedules, but found %d: %#v\n", expectResponseMap["specific_date"], len(specificDate), specificDate)
+	ExpectWithOffset(1, len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]), "Expected %d recurring schedules, but found %d: %#v\n", expectResponseMap["recurring_schedule"], len(recurring), recurring)
 }
 
 func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap map[string]int) bool {
 	resp, err := getSchedules(appId)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Get schedules failed with: %s", err)
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectHttpStatus), "Unexpected HTTP status")
 	defer func() { _ = resp.Body.Close() }()
 	var actual map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&actual)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Invalid JSON")
 	var schedules = actual["schedules"].(map[string]interface{})
 	var recurring = schedules["recurring_schedule"].([]interface{})
 	var specificDate = schedules["specific_date"].([]interface{})
