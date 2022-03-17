@@ -20,9 +20,11 @@ import (
 )
 
 const (
-	DefaultLoggingLevel  = "info"
-	DefaultMaxAmount     = 10
-	DefaultValidDuration = 1 * time.Second
+	DefaultLoggingLevel      = "info"
+	DefaultMaxAmount         = 10
+	DefaultValidDuration     = 1 * time.Second
+	DefaultCPULowerThreshold = 0
+	DefaultCPUUpperThreshold = 100
 )
 
 type ServerConfig struct {
@@ -87,6 +89,15 @@ type BrokerCredentialsConfig struct {
 	BrokerPasswordHash []byte `yaml:"broker_password_hash"`
 }
 
+type ScalingRulesConfig struct {
+	CPU CPUConfig `yaml:"cpu"`
+}
+
+type CPUConfig struct {
+	LowerThreshold int `yaml:"lower_threshold"`
+	UpperThreshold int `yaml:"upper_threshold"`
+}
+
 type Config struct {
 	Logging               helpers.LoggingConfig         `yaml:"logging"`
 	BrokerServer          ServerConfig                  `yaml:"broker_server"`
@@ -112,6 +123,7 @@ type Config struct {
 	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
 	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
+	ScalingRules          ScalingRulesConfig            `yaml:"scaling_rules"`
 }
 
 type PlanCheckConfig struct {
@@ -130,6 +142,12 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,
 			ValidDuration: DefaultValidDuration,
+		},
+		ScalingRules: ScalingRulesConfig{
+			CPU: CPUConfig{
+				LowerThreshold: DefaultCPULowerThreshold,
+				UpperThreshold: DefaultCPUUpperThreshold,
+			},
 		},
 	}
 
@@ -188,6 +206,15 @@ func (c *Config) Validate() error {
 	if c.InfoFilePath == "" {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}
+
+	if c.ScalingRules.CPU.LowerThreshold < 0 {
+		return fmt.Errorf("Configuration error: ScalingRules.CPU.LowerThreshold is less than zero")
+	}
+
+	if c.ScalingRules.CPU.UpperThreshold < 0 {
+		return fmt.Errorf("Configuration error: ScalingRules.CPU.UpperThreshold is less than zero")
+	}
+
 	if !c.UseBuildInMode {
 		if c.DB[db.BindingDb].URL == "" {
 			return fmt.Errorf("Configuration error: BindingDB URL is empty")
