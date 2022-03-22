@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
 )
 
 type StoredProcedureSQLDb struct {
@@ -56,7 +57,8 @@ func (sdb *StoredProcedureSQLDb) Close() error {
 
 func (sdb *StoredProcedureSQLDb) CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error) {
 	credentials := &models.Credential{}
-	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", sdb.config.SchemaName, sdb.config.CreateBindingCredentialProcedureName)
+	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.CreateBindingCredentialProcedureName))
+	sdb.logger.Info(query)
 	err := sdb.sqldb.QueryRow(query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -70,7 +72,7 @@ func (sdb *StoredProcedureSQLDb) CreateCredentials(credOptions models.Credential
 
 func (sdb *StoredProcedureSQLDb) DeleteCredentials(credOptions models.CredentialsOptions) error {
 	var count int
-	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", sdb.config.SchemaName, sdb.config.DropBindingCredentialProcedureName)
+	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.DropBindingCredentialProcedureName))
 	err := sdb.sqldb.QueryRow(query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
 	if err == sql.ErrNoRows {
 		return nil
@@ -84,7 +86,7 @@ func (sdb *StoredProcedureSQLDb) DeleteCredentials(credOptions models.Credential
 
 func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(instanceId string) error {
 	var count int
-	query := fmt.Sprintf("SELECT * from %s.%s($1)", sdb.config.SchemaName, sdb.config.DropAllBindingCredentialProcedureName)
+	query := fmt.Sprintf("SELECT * from %s.%s($1)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.DropAllBindingCredentialProcedureName))
 	err := sdb.sqldb.QueryRow(query, instanceId).Scan(&count)
 	if err == sql.ErrNoRows {
 		return nil
@@ -98,7 +100,7 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(instanceId string)
 
 func (sdb *StoredProcedureSQLDb) ValidateCredentials(creds models.Credential) (*models.CredentialsOptions, error) {
 	credOptions := &models.CredentialsOptions{}
-	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", sdb.config.SchemaName, sdb.config.ValidateBindingCredentialProcedureName)
+	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.ValidateBindingCredentialProcedureName))
 	err := sdb.sqldb.QueryRow(query, creds.Username, creds.Password).Scan(&credOptions.InstanceId, &credOptions.BindingId)
 	if err == sql.ErrNoRows {
 		return nil, nil
