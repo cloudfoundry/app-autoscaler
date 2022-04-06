@@ -103,13 +103,13 @@ func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, resu
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
 
 	//check InstanceMinCount and InstanceMaxCount
-	if policy.InstanceMin >= policy.InstanceMax {
+	if policy.InstanceMin > policy.InstanceMax {
 		instanceMinContext := gojsonschema.NewJsonContext("instance_min_count", rootContext)
 		errDetails := gojsonschema.ErrorDetails{
 			"instance_min_count": policy.InstanceMin,
 			"instance_max_count": policy.InstanceMax,
 		}
-		formatString := "instance_min_count {{.instance_min_count}} is higher or equal to instance_max_count {{.instance_max_count}}"
+		formatString := "instance_min_count {{.instance_min_count}} is higher than instance_max_count {{.instance_max_count}}"
 		err := newPolicyValidationError(instanceMinContext, formatString, errDetails)
 		result.AddError(err, errDetails)
 	}
@@ -172,14 +172,14 @@ func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPo
 func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPolicy, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	recurringScheduleContext := gojsonschema.NewJsonContext("recurring_schedule", schedulesContext)
 	for scheduleIndex, recSched := range policy.Schedules.RecurringSchedules {
-		if recSched.ScheduledInstanceMin >= recSched.ScheduledInstanceMax {
+		if recSched.ScheduledInstanceMin > recSched.ScheduledInstanceMax {
 			instanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.instance_min_count", scheduleIndex), recurringScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
 				"scheduleIndex":      scheduleIndex,
 				"instance_min_count": recSched.ScheduledInstanceMin,
 				"instance_max_count": recSched.ScheduledInstanceMax,
 			}
-			formatString := "recurring_schedule[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}} is higher or equal to recurring_schedule[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
+			formatString := "recurring_schedule[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}} is higher than recurring_schedule[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
 			err := newPolicyValidationError(instanceMinContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
@@ -271,14 +271,14 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingPolicy, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	specficDateScheduleContext := gojsonschema.NewJsonContext("specific_date", schedulesContext)
 	for scheduleIndex, specSched := range policy.Schedules.SpecificDateSchedules {
-		if specSched.ScheduledInstanceMin >= specSched.ScheduledInstanceMax {
+		if specSched.ScheduledInstanceMin > specSched.ScheduledInstanceMax {
 			instanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.instance_min_count", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
 				"scheduleIndex":      scheduleIndex,
 				"instance_min_count": specSched.ScheduledInstanceMin,
 				"instance_max_count": specSched.ScheduledInstanceMax,
 			}
-			formatString := "specific_date[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}} is higher or equal to specific_date[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
+			formatString := "specific_date[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}} is higher than specific_date[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
 			err := newPolicyValidationError(instanceMinContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
