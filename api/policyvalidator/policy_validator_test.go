@@ -132,7 +132,7 @@ var _ = Describe("PolicyValidator", func() {
 				Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 					{
 						Context:     "(root).instance_min_count",
-						Description: "instance_min_count 10 is higher or equal to instance_max_count 4",
+						Description: "instance_min_count 10 is higher than instance_max_count 4",
 					},
 				}))
 			})
@@ -1378,7 +1378,7 @@ var _ = Describe("PolicyValidator", func() {
 						Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 							{
 								Context:     "(root).schedules.recurring_schedule.0.instance_min_count",
-								Description: "recurring_schedule[0].instance_min_count 10 is higher or equal to recurring_schedule[0].instance_max_count 5",
+								Description: "recurring_schedule[0].instance_min_count 10 is higher than recurring_schedule[0].instance_max_count 5",
 							},
 						}))
 					})
@@ -2206,7 +2206,7 @@ var _ = Describe("PolicyValidator", func() {
 						Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 							{
 								Context:     "(root).schedules.specific_date.0.instance_min_count",
-								Description: "specific_date[0].instance_min_count 5 is higher or equal to specific_date[0].instance_max_count 2",
+								Description: "specific_date[0].instance_min_count 5 is higher than specific_date[0].instance_max_count 2",
 							},
 						}))
 					})
