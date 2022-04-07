@@ -3,6 +3,8 @@ package sqldb_test
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,7 +22,6 @@ import (
 const instanceId = "InstanceId1"
 const bindingId = "BindingId1"
 
-//For more information about the plpsql language see: https://www.postgresql.org/docs/12/plpgsql-control-structures.html
 var _ = Describe("Stored Procedure test", func() {
 	var (
 		storedProcedure *sqldb.StoredProcedureSQLDb
@@ -41,14 +42,19 @@ var _ = Describe("Stored Procedure test", func() {
 		}
 
 		if !strings.Contains(os.Getenv("DBURL"), "postgres") {
-			Skip("Not configured for postgres")
+			Skip("Not configured for Postgres")
 		}
+
+		if getPostgresMajorVersion() < 12 {
+			Skip("This test only works for Postgres v12 and above")
+		}
+
 		deleteAllFunctions()
-		addPSQLFunctons()
+		addPSQLFunctions()
 	})
 
 	AfterEach(func() {
-		//deleteAllFunctions()
+		deleteAllFunctions()
 	})
 
 	Describe("NewBindingSQLDB", func() {
@@ -109,6 +115,20 @@ var _ = Describe("Stored Procedure test", func() {
 	})
 })
 
+func getPostgresMajorVersion() int {
+	var version string
+	err := dbHelper.QueryRow("select version()").Scan(&version)
+	if err != nil {
+		Fail(fmt.Sprintf("postgres db failure while getting version:%s", err.Error()))
+	}
+	r, _ := regexp.Compile("PostgreSQL ([0-9]+)")
+	versionNumber, err := strconv.Atoi(r.FindStringSubmatch(version)[1])
+	if err != nil {
+		Fail(fmt.Sprintf("Could not determine postgress version from string: '%s'", version))
+	}
+	return versionNumber
+}
+
 func deleteAllFunctions() {
 	deleteFunction("deleteCreds")
 	deleteFunction("deleteAll")
@@ -116,7 +136,7 @@ func deleteAllFunctions() {
 	deleteFunction("create_creds")
 }
 
-func addPSQLFunctons() {
+func addPSQLFunctions() {
 	addCreateFunction()
 	addDeleteFunction()
 	addDeleteAllFunction()
