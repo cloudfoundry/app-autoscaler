@@ -56,7 +56,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		bindingdb:             bindingdb,
 		policydb:              policydb,
 		catalog:               catalog,
-		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
+		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
 		quotaManagementClient: quota.NewClient(conf, logger, cfClient),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),

@@ -12,13 +12,17 @@ import (
 
 var _ = Describe("PolicyValidator", func() {
 	var (
-		policyValidator *PolicyValidator
-		errResult       *[]PolicyValidationErrors
-		valid           bool
-		policyString    string
+		policyValidator   *PolicyValidator
+		errResult         *[]PolicyValidationErrors
+		valid             bool
+		policyString      string
+		lowerCPUThreshold int
+		upperCPUThreshold int
 	)
 	BeforeEach(func() {
-		policyValidator = NewPolicyValidator("./policy_json.schema.json")
+		lowerCPUThreshold = 0
+		upperCPUThreshold = 333
+		policyValidator = NewPolicyValidator("./policy_json.schema.json", lowerCPUThreshold, upperCPUThreshold)
 	})
 	JustBeforeEach(func() {
 		errResult, valid = policyValidator.ValidatePolicy(policyString)
@@ -513,7 +517,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 			})
 
-			Context("when threshold for cpu is less than 0", func() {
+			Context(fmt.Sprintf("when threshold for cpu is less than %d", lowerCPUThreshold), func() {
 				BeforeEach(func() {
 					policyString = `{
 					"instance_max_count":4,
@@ -534,13 +538,13 @@ var _ = Describe("PolicyValidator", func() {
 					Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 						{
 							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type cpu should be greater than 0 and less than equal to 100",
+							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
 						},
 					}))
 				})
 			})
 
-			Context("when threshold for cpu is greater than 100", func() {
+			Context(fmt.Sprintf("when threshold for cpu is greater than %d", upperCPUThreshold), func() {
 				BeforeEach(func() {
 					policyString = `{
 					"instance_max_count":4,
@@ -561,7 +565,7 @@ var _ = Describe("PolicyValidator", func() {
 					Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 						{
 							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type cpu should be greater than 0 and less than equal to 100",
+							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
 						},
 					}))
 				})
