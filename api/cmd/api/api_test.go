@@ -5,12 +5,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
+
+	"code.cloudfoundry.org/cfhttp"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/onsi/gomega/gbytes"
@@ -19,11 +22,25 @@ import (
 
 var _ = Describe("Api", func() {
 	var (
-		runner *ApiRunner
-		rsp    *http.Response
+		runner           *ApiRunner
+		rsp              *http.Response
+		brokerHttpClient *http.Client
 	)
 
 	BeforeEach(func() {
+		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
+		brokerClientTLSConfig, err := cfhttp.NewTLSConfig(
+			filepath.Join(testCertDir, "servicebroker.crt"),
+			filepath.Join(testCertDir, "servicebroker.key"),
+			filepath.Join(testCertDir, "autoscaler-ca.crt"))
+		if err != nil {
+			Fail("cfhttp.NewTLSConfig failed:" + err.Error())
+		}
+		brokerHttpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: brokerClientTLSConfig,
+			},
+		}
 		runner = NewApiRunner()
 	})
 
@@ -157,11 +174,20 @@ var _ = Describe("Api", func() {
 				rsp, err = brokerHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				if rsp.StatusCode != http.StatusOK {
+					Fail(fmt.Sprintf("Not ok:%d", rsp.StatusCode))
+				}
 
 				bodyBytes, err := ioutil.ReadAll(rsp.Body)
-				Expect(err).NotTo(HaveOccurred())
 
-				Expect(bodyBytes).To(Equal(catalogBytes))
+				if err != nil {
+					Fail("Read failed:" + err.Error())
+				}
+				if len(bodyBytes) == 0 {
+					Fail("body empty")
+				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(bodyBytes)).To(MatchJSON(catalogBytes))
 			})
 		})
 	})
@@ -185,8 +211,7 @@ var _ = Describe("Api", func() {
 
 				bodyBytes, err := ioutil.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(bodyBytes).To(Equal(infoBytes))
+				Expect(string(bodyBytes)).To(MatchJSON(infoBytes))
 			})
 		})
 	})
@@ -279,8 +304,7 @@ var _ = Describe("Api", func() {
 
 				bodyBytes, err := ioutil.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(bodyBytes).To(Equal(infoBytes))
+				Expect(string(bodyBytes)).To(MatchJSON(infoBytes))
 			})
 		})
 	})

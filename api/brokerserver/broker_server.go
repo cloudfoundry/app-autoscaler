@@ -143,6 +143,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {
 		runner = http_server.New(addr, r)
 	} else {
+		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(conf.BrokerServer.TLS.CertFile, conf.BrokerServer.TLS.KeyFile, conf.BrokerServer.TLS.CACertFile)
 		if err != nil {
 			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.BrokerServer.TLS})

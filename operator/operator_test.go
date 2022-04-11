@@ -9,11 +9,11 @@ import (
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 )
 
 var _ = Describe("Operator", func() {
@@ -41,7 +41,7 @@ var _ = Describe("Operator", func() {
 	})
 
 	AfterEach(func() {
-		ginkgomon.Kill(proc)
+		ginkgomon_v2.Kill(proc)
 		Eventually(proc.Wait()).Should(Receive(BeNil()))
 	})
 
@@ -62,7 +62,7 @@ var _ = Describe("Operator", func() {
 			fclock.Increment(TestRefreshInterval)
 			Eventually(fakeOperator.OperateCallCount).Should(Equal(2))
 
-			ginkgomon.Kill(proc)
+			ginkgomon_v2.Kill(proc)
 			Eventually(proc.Wait()).Should(Receive(BeNil()))
 
 			Eventually(buffer).Should(gbytes.Say("stopped"))

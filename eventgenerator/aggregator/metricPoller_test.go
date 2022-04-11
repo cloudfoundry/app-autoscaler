@@ -7,7 +7,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
@@ -69,6 +69,7 @@ var _ = Describe("MetricPoller", func() {
 	var urlPath string
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
+		//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 		httpClient = cfhttp.NewClient()
 		appMonitorsChan = make(chan *models.AppMonitor, 1)
 		appMetricChan = make(chan *models.AppMetric, 1)

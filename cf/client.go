@@ -95,6 +95,7 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	}
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 
+	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 	c.httpClient = cfhttp.NewClient()
 	// #nosec G402 - this is intentionally configurable
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}

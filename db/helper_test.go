@@ -3,7 +3,7 @@ package db_test
 import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

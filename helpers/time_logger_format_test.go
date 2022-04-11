@@ -7,7 +7,7 @@ import (
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/lager"

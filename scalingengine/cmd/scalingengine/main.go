@@ -56,6 +56,7 @@ func main() {
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "scalingengine")
 
+	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 	cfhttp.Initialize(conf.HttpClientTimeout)
 
 	eClock := clock.NewClock()

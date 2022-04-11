@@ -30,11 +30,11 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	uuid "github.com/nu7hatch/gouuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 	"github.com/tedsuo/ifrit/grouper"
 )
 
@@ -149,7 +149,9 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 	httpClient = cfhttp.NewClient()
+	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 	httpClientForPublicApi = cfhttp.NewClient()
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
@@ -187,67 +189,67 @@ func PreparePorts() Ports {
 }
 
 func startGolangApiServer() {
-	processMap[GolangAPIServer] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[GolangAPIServer] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{GolangAPIServer, components.GolangAPIServer(golangApiServerConfPath)},
 	}))
 }
 
 func startScheduler() {
-	processMap[Scheduler] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[Scheduler] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{Scheduler, components.Scheduler(schedulerConfPath)},
 	}))
 }
 
 func startEventGenerator() {
-	processMap[EventGenerator] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[EventGenerator] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{EventGenerator, components.EventGenerator(eventGeneratorConfPath)},
 	}))
 }
 
 func startScalingEngine() {
-	processMap[ScalingEngine] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[ScalingEngine] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{ScalingEngine, components.ScalingEngine(scalingEngineConfPath)},
 	}))
 }
 
 func startOperator() {
-	processMap[Operator] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[Operator] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{Operator, components.Operator(operatorConfPath)},
 	}))
 }
 
 func startMetricsGateway() {
-	processMap[MetricsGateway] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[MetricsGateway] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{MetricsGateway, components.MetricsGateway(metricsGatewayConfPath)},
 	}))
 }
 
 func startMetricsServer() {
-	processMap[MetricsServerHTTP] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+	processMap[MetricsServerHTTP] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{MetricsServerHTTP, components.MetricsServer(metricsServerConfPath)},
 	}))
 }
 
 func stopGolangApiServer() {
-	ginkgomon.Kill(processMap[GolangAPIServer], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[GolangAPIServer], 5*time.Second)
 }
 func stopScheduler() {
-	ginkgomon.Kill(processMap[Scheduler], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[Scheduler], 5*time.Second)
 }
 func stopScalingEngine() {
-	ginkgomon.Kill(processMap[ScalingEngine], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[ScalingEngine], 5*time.Second)
 }
 func stopEventGenerator() {
-	ginkgomon.Kill(processMap[EventGenerator], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[EventGenerator], 5*time.Second)
 }
 func stopOperator() {
-	ginkgomon.Kill(processMap[Operator], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[Operator], 5*time.Second)
 }
 func stopMetricsGateway() {
-	ginkgomon.Kill(processMap[MetricsGateway], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[MetricsGateway], 5*time.Second)
 }
 func stopMetricsServer() {
-	ginkgomon.Kill(processMap[MetricsServerHTTP], 5*time.Second)
+	ginkgomon_v2.Kill(processMap[MetricsServerHTTP], 5*time.Second)
 }
 
 func getRandomId() string {
@@ -256,6 +258,7 @@ func getRandomId() string {
 }
 
 func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	TLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, certFileName),
 		filepath.Join(testCertDir, keyFileName),
@@ -266,6 +269,7 @@ func initializeHttpClient(certFileName string, keyFileName string, caCertFileNam
 	httpClient.Timeout = httpRequestTimeout
 }
 func initializeHttpClientForPublicApi(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
+	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	TLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, certFileName),
 		filepath.Join(testCertDir, keyFileName),

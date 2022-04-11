@@ -5,7 +5,16 @@ PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
 CGO_ENABLED = 0
 BUILDTAGS :=
 export GO111MODULE=on
-export GO15VENDOREXPERIMENT=1
+# Fix for golang issue with Montery 6/12/2021. Fix already in trunk but not released
+# https://github.com/golang/go/issues/49138
+# https://github.com/golang/go/commit/5f6552018d1ec920c3ca3d459691528f48363c3c
+export MallocNanoZone=0
+
+ifndef CI
+	parrallel=-p
+endif
+
+GINKGO_OPTS=-r --race --require-suite ${parrallel} --randomize-all --cover
 
 build-%:
 	@echo "# building $*"
@@ -23,15 +32,15 @@ check: fmt lint build test
 
 test:
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs -cover --skipPackage=integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} --skip-package=integration
 
 testsuite:
-	APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -randomizeAllSpecs $(TEST)
+	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS}  $(TEST)
 
 .PHONY: integration
 integration:
 	@echo "# Running integration tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS}  integration
 
 generate:
 	@echo "# Generating counterfeits"
@@ -52,7 +61,7 @@ buildtools-force:
 	@echo "# Installing build tools"
 	go mod download
 	go install github.com/square/certstrap
-	go install github.com/onsi/ginkgo/ginkgo
+	go install github.com/onsi/ginkgo/v2/ginkgo
 	go install github.com/maxbrunsfeld/counterfeiter/v6
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
@@ -61,7 +70,7 @@ buildtools: golangci-lint
 	@echo "# Installing build tools"
 	@go mod download
 	@which certstrap >/dev/null || go install github.com/square/certstrap
-	@which ginkgo >/dev/null || go install github.com/onsi/ginkgo/ginkgo
+	@which ginkgo >/dev/null || go install github.com/onsi/ginkgo/v2/ginkgo
 	@which counterfeiter >/dev/null || go install github.com/maxbrunsfeld/counterfeiter/v6
 
 golangci-lint:
@@ -69,9 +78,6 @@ golangci-lint:
 
 lint: golangci-lint
 	@golangci-lint run
-
-lint-fix:
-	@golangci-lint run --fix
 
 .PHONY: clean
 clean:

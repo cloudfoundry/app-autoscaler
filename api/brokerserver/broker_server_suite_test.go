@@ -14,11 +14,11 @@ import (
 	"github.com/onsi/gomega/ghttp"
 
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"code.cloudfoundry.org/lager"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"testing"
@@ -142,7 +142,7 @@ var _ = BeforeSuite(func() {
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))
 	Expect(err).NotTo(HaveOccurred())
 
-	serverProcess = ginkgomon.Invoke(httpServer)
+	serverProcess = ginkgomon_v2.Invoke(httpServer)
 
 	httpClient = &http.Client{}
 
@@ -158,5 +158,5 @@ var _ = AfterSuite(func() {
 	for _, server := range servers {
 		server.Close()
 	}
-	ginkgomon.Interrupt(serverProcess)
+	ginkgomon_v2.Interrupt(serverProcess)
 })

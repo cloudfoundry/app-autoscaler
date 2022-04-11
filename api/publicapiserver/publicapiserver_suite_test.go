@@ -12,11 +12,11 @@ import (
 	"testing"
 
 	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
@@ -69,9 +69,8 @@ var (
 	fakeCredentials  *fakes.FakeCredentials
 	checkBindingFunc api.CheckBindingFunc
 	hasBinding       = true
-
-	testCertDir = "../../../../test-certs"
-	apiPort     = 12000 + GinkgoParallelProcess()
+	apiPort          = 0
+	testCertDir      = "../../../../test-certs"
 )
 
 func TestPublicapiserver(t *testing.T) {
@@ -80,6 +79,7 @@ func TestPublicapiserver(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	apiPort = 12000 + GinkgoParallelProcess()
 	scalingEngineServer = ghttp.NewServer()
 	metricsCollectorServer = ghttp.NewServer()
 	eventGeneratorServer = ghttp.NewServer()
@@ -134,7 +134,7 @@ var _ = BeforeSuite(func() {
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
 	Expect(err).NotTo(HaveOccurred())
 
-	serverProcess = ginkgomon.Invoke(httpServer)
+	serverProcess = ginkgomon_v2.Invoke(httpServer)
 
 	httpClient = &http.Client{}
 
@@ -161,7 +161,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	ginkgomon.Interrupt(serverProcess)
+	ginkgomon_v2.Interrupt(serverProcess)
 	scalingEngineServer.Close()
 	metricsCollectorServer.Close()
 	eventGeneratorServer.Close()

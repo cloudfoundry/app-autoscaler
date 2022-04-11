@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
 	_ "github.com/go-sql-driver/mysql"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"testing"
