@@ -69,9 +69,8 @@ var (
 	fakeCredentials  *fakes.FakeCredentials
 	checkBindingFunc api.CheckBindingFunc
 	hasBinding       = true
-
-	testCertDir = "../../../../test-certs"
-	apiPort     = 12000 + GinkgoParallelProcess()
+	apiPort          = 0
+	testCertDir      = "../../../../test-certs"
 )
 
 func TestPublicapiserver(t *testing.T) {
@@ -80,6 +79,7 @@ func TestPublicapiserver(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	apiPort = 12000 + GinkgoParallelProcess()
 	scalingEngineServer = ghttp.NewServer()
 	metricsCollectorServer = ghttp.NewServer()
 	eventGeneratorServer = ghttp.NewServer()
