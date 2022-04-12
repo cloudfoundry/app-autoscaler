@@ -83,7 +83,7 @@ func NewPolicyValidator(policySchemaPath string, lowerThreshold int, upperThresh
 	return policyValidator
 }
 
-func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidationErrors, bool) {
+func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidationErrors, bool, string) {
 	policyLoader := gojsonschema.NewStringLoader(policyStr)
 
 	result, err := gojsonschema.Validate(pv.policySchemaLoader, policyLoader)
@@ -91,11 +91,11 @@ func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidation
 		resultErrors := []PolicyValidationErrors{
 			{Context: "(root)", Description: err.Error()},
 		}
-		return &resultErrors, false
+		return &resultErrors, false, ""
 	}
 
 	if !result.Valid() {
-		return getErrorsObject(result.Errors()), false
+		return getErrorsObject(result.Errors()), false, ""
 	}
 
 	policy := models.ScalingPolicy{}
@@ -104,15 +104,24 @@ func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidation
 		resultErrors := []PolicyValidationErrors{
 			{Context: "(root)", Description: err.Error()},
 		}
-		return &resultErrors, false
+		return &resultErrors, false, ""
 	}
 
 	pv.validateAttributes(&policy, result)
 
 	if len(result.Errors()) > 0 {
-		return getErrorsObject(result.Errors()), false
+		return getErrorsObject(result.Errors()), false, ""
 	}
-	return nil, true
+
+	validatedPolicyStr, err := json.Marshal(policy)
+	if err != nil {
+		resultErrors := []PolicyValidationErrors{
+			{Context: "(root)", Description: err.Error()},
+		}
+		return &resultErrors, false, ""
+	}
+
+	return nil, true, string(validatedPolicyStr)
 }
 
 func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, result *gojsonschema.Result) {

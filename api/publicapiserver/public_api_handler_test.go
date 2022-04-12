@@ -54,6 +54,31 @@ var _ = Describe("PublicApiHandler", func() {
 				}]
 			}
 		}`
+		VALID_POLICY_STR_WITH_EXTRA_FIELDS = `{
+			"instance_min_count": 1,
+			"instance_max_count": 5,
+			"scaling_rules": [{
+				"metric_type": "memoryused",
+				"breach_duration_secs": 300,
+				"stats_window_secs": 666,
+				"threshold": 30,
+				"operator": ">",
+				"cool_down_secs": 300,
+				"adjustment": "-1"
+			}],
+			"schedules": {
+				"timezone": "Asia/Kolkata",
+				"recurring_schedule": [{
+					"start_time": "10:00",
+					"end_time": "18:00",
+					"days_of_week": [1, 2, 3],
+					"instance_min_count": 1,
+					"instance_max_count": 10,
+					"initial_min_instance_count": 5
+				}]
+			},
+			"is_admin": true
+		}`
 	)
 	var (
 		policydb      *fakes.FakePolicyDB
@@ -223,6 +248,18 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should succeed", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("When providing extra fields", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR_WITH_EXTRA_FIELDS))
+				schedulerStatus = 200
+			})
+			It("should succeed and ignore the extra fields", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(resp.Body).To(MatchJSON(VALID_POLICY_STR))
 			})
 		})
 
