@@ -10,11 +10,10 @@ export GO111MODULE=on
 # https://github.com/golang/go/commit/5f6552018d1ec920c3ca3d459691528f48363c3c
 export MallocNanoZone=0
 
-ifndef CI
-	parrallel=-p
-endif
+#TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/564 allow the tests to be run in parallel
+#GINKGO_OPTS=-r --race --require-suite -p --randomize-all --cover
 
-GINKGO_OPTS=-r --race --require-suite ${parrallel} --randomize-all --cover
+GINKGO_OPTS=-r --race --require-suite --randomize-all --cover
 
 build-%:
 	@echo "# building $*"
