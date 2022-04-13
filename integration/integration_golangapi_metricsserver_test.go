@@ -43,7 +43,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			true,
 			tmpDir)
 		startGolangApiServer()
-		appId = getRandomId()
+		appId = getRandomIdRef("appId")
 		pathVariables = []string{appId, metricType}
 
 	})
@@ -187,7 +187,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 				metric.InstanceIndex = 1
 				insertAppInstanceMetric(metric)
 				//add some  other appId
-				metric.AppId = getRandomId()
+				metric.AppId = getRandomIdRef("metric.appId")
 				metric.Name = models.MetricNameMemoryUsed
 				metric.Unit = models.UnitMegaBytes
 				metric.Timestamp = 444444

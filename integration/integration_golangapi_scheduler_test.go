@@ -37,15 +37,15 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, defaultHttpClientTimeout)
 		startScheduler()
 
-		serviceInstanceId = getRandomId()
-		orgId = getRandomId()
-		spaceId = getRandomId()
-		bindingId = getRandomId()
-		binding2Id = getRandomId()
-		binding3Id = getRandomId()
-		appId = getRandomId()
-		app2Id = getRandomId()
-		app3Id = getRandomId()
+		serviceInstanceId = getRandomIdRef("serviceInstanceId")
+		orgId = getRandomIdRef("orgId")
+		spaceId = getRandomIdRef("spaceId")
+		bindingId = getRandomIdRef("bindingId")
+		binding2Id = getRandomIdRef("binding2Id")
+		binding3Id = getRandomIdRef("binding3Id")
+		appId = getRandomIdRef("appId")
+		app2Id = getRandomIdRef("app2Id")
+		app3Id = getRandomIdRef("app3Id")
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 	})
 
@@ -434,7 +434,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 							BeforeEach(func() {
 								newDefaultPolicy = []byte("{\t\n}\r\n")
 							})
-							It("is reflected in the apps' policies and schedules", func() {
+							It("is reflected in the apps policies and schedules", func() {
 								checkApiServerStatus(appId, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
 								checkSchedulerStatus(appId, http.StatusNotFound)
 								checkApiServerContent(app2Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)

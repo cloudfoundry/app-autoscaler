@@ -252,9 +252,33 @@ func stopMetricsServer() {
 	ginkgomon_v2.Kill(processMap[MetricsServerHTTP], 5*time.Second)
 }
 
-func getRandomId() string {
+func getRandomIdRef(ref string) string {
+	report := CurrentSpecReport()
+	// 0123456789012345678901234567890123456789
+	// operator_others:189,11,instance:a5f63cbf7c204c417941d91d21cb3bd0
+	// |15|3|2|10|x| +4 == 40
+
+	id := fmt.Sprintf("%s:%d,%s,%d:%s", testFileFragment(report.FileName()), report.LineNumber(), ref, GinkgoParallelProcess(), randomBits())
+	if len(id) > 40 {
+		id = id[:40]
+	}
+	return id
+}
+
+func randomBits() string {
 	v4, _ := uuid.NewV4()
-	return v4.String()
+	randomBits := v4.String()
+	return strings.ReplaceAll(randomBits, "-", "")
+}
+
+func testFileFragment(filename string) string {
+	base := filepath.Base(filename)
+	base = strings.TrimSuffix(base, "_test.go")
+	base = strings.TrimPrefix(base, "integration_")
+	if len(base) > 15 {
+		return base[(len(base) - 15):]
+	}
+	return base
 }
 
 func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {

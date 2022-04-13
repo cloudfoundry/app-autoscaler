@@ -149,7 +149,11 @@ var _ = BeforeSuite(func() {
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
 
-	urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
+	urlPath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
+	if err != nil {
+		Fail(err.Error())
+	}
+
 	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 })

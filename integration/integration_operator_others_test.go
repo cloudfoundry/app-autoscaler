@@ -20,11 +20,10 @@ var _ = Describe("Integration_Operator_Others", func() {
 	)
 
 	BeforeEach(func() {
-		startFakeCCNOAAUAA(initInstanceCount)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
 
-		testAppId = getRandomId()
-		testGuid = getRandomId()
+		testAppId = getRandomIdRef("testAppId")
+		testGuid = getRandomIdRef("testGuid")
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		golangApiServerConfPath = components.PrepareGolangApiServerConfig(
