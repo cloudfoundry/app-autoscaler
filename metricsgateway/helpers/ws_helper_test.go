@@ -6,7 +6,6 @@ import (
 	"time"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
@@ -72,7 +71,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("SetupConn", func() {
 		var err error
 		JustBeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
+			wsHelper = NewWSHelper(metricServerAddress, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 
 		})
@@ -101,7 +100,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("CloseConn", func() {
 		var err error
 		BeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
+			wsHelper = NewWSHelper(metricServerAddress, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -132,7 +131,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("Ping", func() {
 		var err error
 		BeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
+			wsHelper = NewWSHelper(metricServerAddress, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -157,7 +156,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("Write", func() {
 		var err error
 		BeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
+			wsHelper = NewWSHelper(metricServerAddress, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 

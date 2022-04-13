@@ -17,8 +17,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
 	mg_helpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
@@ -67,10 +65,13 @@ func main() {
 	envelopeCounterCollector := healthendpoint.NewCounterCollector()
 
 	envelopChan := make(chan *loggregator_v2.Envelope, conf.EnvelopChanSize)
-	emitters := createEmitters(logger, conf.Emitter.BufferSize, gatewayClock, conf.Emitter.KeepAliveInterval, conf.MetricServerAddrs, metricServerClientTLSConfig, conf.Emitter.HandshakeTimeout, conf.Emitter.MaxSetupRetryCount, conf.Emitter.MaxCloseRetryCount, conf.Emitter.RetryDelay)
+	emitters := createEmitters(logger, conf.Emitter.BufferSize, gatewayClock, conf.Emitter.KeepAliveInterval,
+		conf.MetricServerAddrs, metricServerClientTLSConfig, conf.Emitter.HandshakeTimeout,
+		conf.Emitter.MaxSetupRetryCount, conf.Emitter.MaxCloseRetryCount, conf.Emitter.RetryDelay)
 	appManager := metricsgateway.NewAppManager(logger, gatewayClock, conf.AppManager.AppRefreshInterval, policyDB)
 	dispatcher := metricsgateway.NewDispatcher(logger, envelopChan, emitters)
-	nozzles := createNozzles(logger, conf.NozzleCount, conf.Nozzle.ShardID, conf.Nozzle.RLPAddr, loggregatorClientTLSConfig, envelopChan, appManager.GetAppIDs, envelopeCounterCollector)
+	nozzles := createNozzles(logger, conf.NozzleCount, conf.Nozzle.ShardID, conf.Nozzle.RLPAddr,
+		loggregatorClientTLSConfig, envelopChan, appManager.GetAppIDs, envelopeCounterCollector)
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsgateway", "policyDB", policyDB),
@@ -164,7 +165,7 @@ func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr
 func createEmitters(logger lager.Logger, bufferSize int, eclock clock.Clock, keepAliveInterval time.Duration, metricsServerAddrs []string, metricServerClientTLSConfig *tls.Config, handshakeTimeout time.Duration, maxSetupRetryCount int, maxCloseRetryCount int, retryDelay time.Duration) []metricsgateway.Emitter {
 	emitters := make([]metricsgateway.Emitter, len(metricsServerAddrs))
 	for i := 0; i < len(metricsServerAddrs); i++ {
-		emitter := metricsgateway.NewEnvelopeEmitter(logger, bufferSize, eclock, keepAliveInterval, mg_helpers.NewWSHelper(metricsServerAddrs[i]+routes.EnvelopePath, metricServerClientTLSConfig, handshakeTimeout, logger, maxSetupRetryCount, maxCloseRetryCount, retryDelay))
+		emitter := metricsgateway.NewEnvelopeEmitter(logger, bufferSize, eclock, keepAliveInterval, mg_helpers.NewWSHelper(metricsServerAddrs[i], metricServerClientTLSConfig, handshakeTimeout, logger, maxSetupRetryCount, maxCloseRetryCount, retryDelay))
 		emitters[i] = emitter
 	}
 	return emitters

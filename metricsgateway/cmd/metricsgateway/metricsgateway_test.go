@@ -45,7 +45,6 @@ var _ = Describe("Metricsgateway", func() {
 				runner.configPath = badfile.Name()
 				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
-
 			})
 
 			AfterEach(func() {
@@ -86,6 +85,7 @@ var _ = Describe("Metricsgateway", func() {
 			})
 		})
 	})
+
 	Describe("when it fails to connect to metricsserver when starting", func() {
 		BeforeEach(func() {
 			wrongConfig := conf
