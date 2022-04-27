@@ -195,7 +195,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	return evaluators, nil
 }
 
-func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
+func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
 	client, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": conf.MetricCollector.TLSClientCerts})
@@ -206,7 +206,7 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan 
 
 	pollers := make([]*aggregator.MetricPoller, count)
 	for i := 0; i < count; i++ {
-		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorURL, appChan, client, appMetricChan)
+		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorURL, appMonitorsChan, client, appMetricChan)
 	}
 
 	return pollers, nil

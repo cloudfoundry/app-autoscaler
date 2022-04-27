@@ -19,16 +19,16 @@ type MetricPoller struct {
 	logger             lager.Logger
 	metricCollectorUrl string
 	doneChan           chan bool
-	appChan            chan *models.AppMonitor
+	appMonitorsChan    chan *models.AppMonitor
 	httpClient         *http.Client
 	appMetricChan      chan *models.AppMetric
 }
 
-func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appChan chan *models.AppMonitor, httpClient *http.Client, appMetricChan chan *models.AppMetric) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appMonitorsChan chan *models.AppMonitor, httpClient *http.Client, appMetricChan chan *models.AppMetric) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
 		logger:             logger.Session("MetricPoller"),
-		appChan:            appChan,
+		appMonitorsChan:    appMonitorsChan,
 		doneChan:           make(chan bool),
 		httpClient:         httpClient,
 		appMetricChan:      appMetricChan,
@@ -50,20 +50,20 @@ func (m *MetricPoller) startMetricRetrieve() {
 		case <-m.doneChan:
 			m.logger.Info("stopped")
 			return
-		case app := <-m.appChan:
-			m.retrieveMetric(app)
+		case appMonitor := <-m.appMonitorsChan:
+			m.retrieveMetric(appMonitor)
 		}
 	}
 }
 
-func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
-	appId := app.AppId
-	metricType := app.MetricType
+func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) {
+	appId := appMonitor.AppId
+	metricType := appMonitor.MetricType
 	endTime := time.Now()
-	startTime := endTime.Add(0 - app.StatWindow)
+	startTime := endTime.Add(0 - appMonitor.StatWindow)
 
 	var url string
-	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", app.AppId, "metrictype", metricType)
+	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appMonitor.AppId, "metrictype", metricType)
 	parameters := path.Query()
 	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
 	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
