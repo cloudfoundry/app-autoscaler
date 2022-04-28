@@ -33,6 +33,7 @@ var _ = Describe("Config", func() {
 logging:
   level: info
 http_client_timeout: 10s
+use_log_cache: false
 server:
   port: 9080
   tls:
@@ -227,6 +228,7 @@ defaultBreachDurationSecs: 600
 						Port: 8080,
 						TLS:  models.TLSCerts{},
 					},
+					UseLogCache: false,
 					Health: models.HealthConfig{
 						Port: 8081,
 					},

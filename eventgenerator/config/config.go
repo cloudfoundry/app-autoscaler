@@ -87,6 +87,7 @@ type Config struct {
 	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
 	CircuitBreaker            CircuitBreakerConfig  `yaml:"circuitBreaker"`
 	HttpClientTimeout         time.Duration         `yaml:"http_client_timeout"`
+	UseLogCache               bool                  `yaml:"use_log_cache"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
