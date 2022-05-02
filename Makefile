@@ -25,7 +25,19 @@ build:	build-scalingengine\
 		build-api\
 		build-metricsgateway\
 		build-metricsserver\
-		build-operator\
+		build-operator
+
+build_tests:	build_test-scalingengine\
+		build_test-metricsforwarder\
+		build_test-eventgenerator\
+		build_test-api\
+		build_test-metricsgateway\
+		build_test-metricsserver\
+		build_test-operator
+
+build_test-%:
+	@echo " - $* tests"
+	@cd $* && for package in $$( find . -name "*.go" -exec dirname {} \; | sort | uniq  ); do echo " -- compiling $*/$${package}"; go test -c -o /dev/null $${package}; done;
 
 check: fmt lint build test
 

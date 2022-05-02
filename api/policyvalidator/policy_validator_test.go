@@ -12,12 +12,13 @@ import (
 
 var _ = Describe("PolicyValidator", func() {
 	var (
-		policyValidator   *PolicyValidator
-		errResult         *[]PolicyValidationErrors
-		valid             bool
-		policyString      string
-		lowerCPUThreshold int
-		upperCPUThreshold int
+		policyValidator       *PolicyValidator
+		errResult             *[]PolicyValidationErrors
+		valid                 bool
+		policyString          string
+		validatedPolicyString string
+		lowerCPUThreshold     int
+		upperCPUThreshold     int
 	)
 	BeforeEach(func() {
 		lowerCPUThreshold = 0
@@ -25,7 +26,7 @@ var _ = Describe("PolicyValidator", func() {
 		policyValidator = NewPolicyValidator("./policy_json.schema.json", lowerCPUThreshold, upperCPUThreshold)
 	})
 	JustBeforeEach(func() {
-		errResult, valid = policyValidator.ValidatePolicy(policyString)
+		errResult, valid, validatedPolicyString = policyValidator.ValidatePolicy(policyString)
 	})
 	Context("Policy Schema &  Validation", func() {
 		Context("when invalid json", func() {
@@ -182,6 +183,46 @@ var _ = Describe("PolicyValidator", func() {
 			})
 			It("should succeed", func() {
 				Expect(valid).To(BeTrue())
+				Expect(validatedPolicyString).To(MatchJSON(policyString))
+			})
+		})
+
+		Context("when additional fields are present", func() {
+			BeforeEach(func() {
+				policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"stats_window_secs": 600,
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}],
+					"is_admin": true,
+					"is_sso": true,
+					"role": "admin"
+				}`
+			})
+			It("the validation succeed and remove them", func() {
+				Expect(valid).To(BeTrue())
+				validPolicyString := `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				Expect(validatedPolicyString).To(MatchJSON(validPolicyString))
 			})
 		})
 
@@ -364,6 +405,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -466,6 +508,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -514,6 +557,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -702,6 +746,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -730,6 +775,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -750,6 +796,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -851,6 +898,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -1020,6 +1068,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -1087,6 +1136,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when only end_date is present", func() {
@@ -1117,6 +1167,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when only start_date is present and is same as current date", func() {
@@ -1149,6 +1200,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when only end_date is present and is same as current date", func() {
@@ -1181,6 +1233,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when start_date is after end_date", func() {
@@ -1351,6 +1404,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when instance_min_count is greater than instance_max_count", func() {
@@ -1582,6 +1636,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when overlapping time range in overlapping days_of_week in non-overlapping date range", func() {
@@ -1627,6 +1682,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 				Context("when overlapping time range in overlapping days_of_week in overlapping date range", func() {
@@ -1865,6 +1921,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 
@@ -1909,6 +1966,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 
@@ -1985,6 +2043,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 				It("should succeed", func() {
 					Expect(valid).To(BeTrue())
+					Expect(validatedPolicyString).To(MatchJSON(policyString))
 				})
 			})
 
@@ -2184,6 +2243,7 @@ var _ = Describe("PolicyValidator", func() {
 					})
 					It("should succeed", func() {
 						Expect(valid).To(BeTrue())
+						Expect(validatedPolicyString).To(MatchJSON(policyString))
 					})
 				})
 
@@ -2482,6 +2542,7 @@ var _ = Describe("PolicyValidator", func() {
 		})
 		It("It should succeed", func() {
 			Expect(valid).To(BeTrue())
+			Expect(validatedPolicyString).To(MatchJSON(policyString))
 		})
 	})
 })
