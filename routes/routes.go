@@ -44,6 +44,8 @@ const (
 	BrokerCreateBindingRouteName = "CreateBinding"
 	BrokerDeleteBindingRouteName = "DeleteBinding"
 
+	EnvelopePath               = "/v1/envelopes"
+	EnvelopeReportRouteName    = "ReportEnvelope"
 	CustomMetricsPath          = "/v1/apps/{appid}/metrics"
 	PostCustomMetricsRouteName = "PostCustomMetrics"
 	SchedulePath               = "/v1/apps/{appId}/schedules"
@@ -128,6 +130,8 @@ func newRouters() *AutoScalerRoute {
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodDelete).Name(BrokerDeleteBindingRouteName)
 	instance.metricsForwarderRoutes.Path(CustomMetricsPath).Methods(http.MethodPost).Name(PostCustomMetricsRouteName)
 
+	instance.metricServerRoutes.Path(EnvelopePath).Name(EnvelopeReportRouteName)
+
 	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodPut).Name(UpdateScheduleRouteName)
 	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodDelete).Name(DeleteScheduleRouteName)
 	instance.apiOpenRoutes.Path(PublicApiInfoPath).Methods(http.MethodGet).Name(PublicApiInfoRouteName)
@@ -164,6 +168,10 @@ func ScalingEngineRoutes() *mux.Router {
 
 func BrokerRoutes() *mux.Router {
 	return autoScalerRouteInstance.brokerRoutes
+}
+
+func MetricServerRoutes() *mux.Router {
+	return autoScalerRouteInstance.metricServerRoutes
 }
 
 func MetricsForwarderRoutes() *mux.Router {
