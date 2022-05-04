@@ -40,11 +40,11 @@ type metricCollector struct {
 	doneChan              chan bool
 	doneSaveChan          chan bool
 	ticker                clock.Ticker
-	lock                  *sync.RWMutex
+	lock                  *sync.RWMutex // AppsIDsLock
 	metricsChan           <-chan *models.AppInstanceMetric
-	appIDs                map[string]bool
+	appIDs                map[string]bool // Node specific apps ids
 	metricCache           map[string]*collection.TSDCache
-	mLock                 *sync.RWMutex
+	mLock                 *sync.RWMutex // MetricsLock
 }
 
 func NewCollector(logger lager.Logger, refreshInterval time.Duration, collectInterval time.Duration, PersistMetrics bool, saveInterval time.Duration,
@@ -91,6 +91,8 @@ func (c *metricCollector) startAppRefresh() {
 	}
 }
 
+// Remove metrics from cache that it should not track anymore, when a policy changes or the node does
+// not take case or that app anymore
 func (c *metricCollector) refreshApps() {
 	apps, err := c.policyDb.GetAppIds()
 	if err != nil {
@@ -155,12 +157,10 @@ func (c *metricCollector) QueryMetrics(appID string, instanceIndex int, name str
 		result, hit := appCache.Query(start, end+1, labels)
 		if hit || !c.PersistMetrics {
 			metrics := make([]*models.AppInstanceMetric, len(result))
-			if order == db.ASC {
-				for index, tsd := range result {
+			for index, tsd := range result {
+				if order == db.ASC {
 					metrics[index] = tsd.(*models.AppInstanceMetric)
-				}
-			} else {
-				for index, tsd := range result {
+				} else {
 					metrics[len(result)-1-index] = tsd.(*models.AppInstanceMetric)
 				}
 			}
