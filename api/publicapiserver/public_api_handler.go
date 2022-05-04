@@ -3,6 +3,7 @@ package publicapiserver
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -134,9 +135,9 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	policyStr := string(policyBytes)
+	policy := string(policyBytes)
 
-	errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
+	errResults, valid, policy := h.policyValidator.ValidatePolicy(policy)
 	if !valid {
 		h.logger.Error("Failed to validate policy", nil, lager.Data{"errResults": errResults})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
@@ -150,21 +151,21 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.logger.Info("saving policy json", lager.Data{"policy": policyStr})
-	err = h.policydb.SaveAppPolicy(appId, policyStr, policyGuid.String())
+	h.logger.Info("saving policy json", lager.Data{"policy": policy})
+	err = h.policydb.SaveAppPolicy(appId, policy, policyGuid.String())
 	if err != nil {
 		h.logger.Error("Failed to save policy", err, nil)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
 		return
 	}
 
-	h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
-	err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policyStr, policyGuid.String())
+	h.logger.Info("creating/updating schedules", lager.Data{"policy": policy})
+	err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policy, policyGuid.String())
 	if err != nil {
 		h.logger.Error("Failed to create/update schedule", err, nil)
 	}
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(policyBytes)
+	_, err = io.WriteString(w, policy)
 	if err != nil {
 		h.logger.Error("failed-to-write-body", err)
 	}

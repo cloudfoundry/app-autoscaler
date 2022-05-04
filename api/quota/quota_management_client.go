@@ -2,7 +2,6 @@ package quota
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -24,14 +23,14 @@ type Client struct {
 	logger   lager.Logger
 }
 
-func NewClient(config *config.Config, logger lager.Logger, cfClient cf.CFClient) *Client {
+func NewClient(config *config.Config, logger lager.Logger) *Client {
 	qmc := &Client{conf: config, logger: logger.Session("quota-management-client")}
 
 	if config.QuotaManagement != nil {
 		qmc.logger.Info("creating-client")
 		hc := &http.Client{
 			Timeout:   15 * time.Second,
-			Transport: newTransport(true),
+			Transport: newTransport(),
 		}
 		ctx := context.WithValue(context.Background(), oauth2.HTTPClient, hc)
 		conf := &clientcredentials.Config{ClientID: config.QuotaManagement.ClientID, ClientSecret: config.QuotaManagement.Secret, TokenURL: config.QuotaManagement.TokenURL}
@@ -41,22 +40,18 @@ func NewClient(config *config.Config, logger lager.Logger, cfClient cf.CFClient)
 	return qmc
 }
 
-func newTransport(shouldSkipTLSValidation bool) *http.Transport {
+func newTransport() *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   5 * time.Second,
 			KeepAlive: 30 * time.Second,
-			DualStack: true,
 		}).DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		//TODO we should not be turning of SkipSSLValidation on the default transport
-		//#nosec G402
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: shouldSkipTLSValidation},
 	}
 }
 

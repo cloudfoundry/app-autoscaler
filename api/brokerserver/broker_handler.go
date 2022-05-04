@@ -58,7 +58,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		catalog:               catalog,
 		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
-		quotaManagementClient: quota.NewClient(conf, logger, cfClient),
+		quotaManagementClient: quota.NewClient(conf, logger),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 		cfClient:              cfClient,
 		credentials:           credentials,
@@ -122,12 +122,13 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 	policyGuidStr := ""
 	if policyStr != "" {
-		errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
+		errResults, valid, validatedPolicy := h.policyValidator.ValidatePolicy(policyStr)
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": policyStr})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+		policyStr = validatedPolicy
 
 		if h.planDefinitionExceeded(policyStr, body.PlanID, instanceId, w) {
 			return
@@ -322,12 +323,13 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	h.logger.Info("update-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
 
 	if updatedDefaultPolicy != "" && updatedDefaultPolicyGuid == "" {
-		errResults, valid := h.policyValidator.ValidatePolicy(updatedDefaultPolicy)
+		errResults, valid, validatedPolicy := h.policyValidator.ValidatePolicy(updatedDefaultPolicy)
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": updatedDefaultPolicy})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+		updatedDefaultPolicy = validatedPolicy
 
 		servicePlan, err := h.cfClient.GetServicePlan(instanceId)
 		if err != nil {
@@ -525,12 +527,13 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 
 	policyStr := string(body.Policy)
 	if policyStr != "" {
-		errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
+		errResults, valid, validatedPolicyStr := h.policyValidator.ValidatePolicy(policyStr)
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"appId": body.AppID, "policy": policyStr})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+		policyStr = validatedPolicyStr
 
 		if h.planDefinitionExceeded(policyStr, body.PlanID, instanceId, w) {
 			return
