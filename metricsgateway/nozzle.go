@@ -111,7 +111,7 @@ func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 		if exist {
 			switch e.GetMessage().(type) {
 			case *loggregator_v2.Envelope_Gauge:
-				if e.GetGauge().GetMetrics()["memory_quota"] != nil {
+				if isContainerMetricEnvelope(e) {
 					n.logger.Debug("filter-envelopes-get-container-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 					n.envelopChan <- e
 				} else if e.GetDeprecatedTags()["origin"].GetText() == METRICS_FORWARDER_ORIGIN {
@@ -131,4 +131,9 @@ func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 			}
 		}
 	}
+}
+
+func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
+	_, exist := e.GetGauge().GetMetrics()["memory_quota"]
+	return exist
 }

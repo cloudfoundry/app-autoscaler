@@ -6,11 +6,12 @@ import (
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	loggregator_v2 "code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 )
 
@@ -20,17 +21,18 @@ type EnvelopeProcessor interface {
 }
 
 type envelopeProcessor struct {
-	logger          lager.Logger
-	collectInterval time.Duration
-	doneChan        chan bool
-	clock           clock.Clock
-	numRequests     map[string]map[uint32]int64
-	sumReponseTimes map[string]map[uint32]int64
-	processorIndex  int
-	numProcessors   int
-	envelopeChan    <-chan *loggregator_v2.Envelope
-	metricChan      chan<- *models.AppInstanceMetric
-	getAppIDs       func() map[string]bool
+	logger                 lager.Logger
+	collectInterval        time.Duration
+	doneChan               chan bool
+	clock                  clock.Clock
+	numRequests            map[string]map[uint32]int64 // to be depreacted
+	sumReponseTimes        map[string]map[uint32]int64 // to be depreacted
+	processorIndex         int
+	numProcessors          int
+	HttpStartStopEnvelopes map[string][]*loggregator_v2.Envelope // appID map of envelopes
+	envelopeChan           <-chan *loggregator_v2.Envelope
+	metricChan             chan<- *models.AppInstanceMetric
+	getAppIDs              func() map[string]bool
 }
 
 func NewEnvelopeProcessor(logger lager.Logger, collectInterval time.Duration, clock clock.Clock, processsorIndex, numProcesssors int,
@@ -68,74 +70,33 @@ func (ep *envelopeProcessor) processEvents() {
 			return
 
 		case e := <-ep.envelopeChan:
-			ep.processEnvelope(e)
+			metrics := ep.getAppInstanceMetrics(e)
+			for _, metric := range metrics {
+				ep.metricChan <- metric
+			}
 
 		case <-ticker.C():
+			// replace computeAndSaveMetrics with:
+			//metrics := envelopeprocessor.ComputeHttpStartStopFrom(ep.HttpStartStopEnvelopes)
+			//for _, metric := range metrics {
+			//	ep.metricChan <- metric
+			//}
 			ep.computeAndSaveMetrics()
 		}
 	}
 }
 
-func (ep *envelopeProcessor) processEnvelope(e *loggregator_v2.Envelope) {
+func (ep *envelopeProcessor) getAppInstanceMetrics(e *loggregator_v2.Envelope) []*models.AppInstanceMetric {
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
 	switch e.GetMessage().(type) {
 	case *loggregator_v2.Envelope_Gauge:
-		ep.logger.Debug("process-envelope", lager.Data{"index": ep.processorIndex, "appID": e.SourceId, "message": e.Message})
-		g := e.GetGauge()
-		_, exist := g.GetMetrics()["memory_quota"]
-		if exist {
-			ep.processContainerMetrics(e.SourceId, uint32(instanceIndex), e.Timestamp, g)
-		} else {
-			ep.processCustomMetrics(e.SourceId, uint32(instanceIndex), e.Timestamp, g)
-		}
+		return envelopeprocessor.GetGaugeInstanceMetrics(e, ep.clock.Now().UnixNano())
 	case *loggregator_v2.Envelope_Timer:
-		ep.logger.Debug("filter-envelopes-get-httpstartstop", lager.Data{"index": ep.processorIndex, "appID": e.SourceId, "message": e.Message})
-		t := e.GetTimer()
-		ep.processHttpStartStop(e.SourceId, uint32(instanceIndex), t)
-	}
-}
-
-func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
-	memory, exist := g.GetMetrics()["memory"]
-	if exist {
-		memoryUsedMetric := &models.AppInstanceMetric{
-			AppId:         appID,
-			InstanceIndex: instanceIndex,
-			CollectedAt:   ep.clock.Now().UnixNano(),
-			Name:          models.MetricNameMemoryUsed,
-			Unit:          models.UnitMegaBytes,
-			Value:         fmt.Sprintf("%d", int(math.Ceil(memory.GetValue()/(1024*1024)))),
-			Timestamp:     timestamp,
-		}
-		ep.metricChan <- memoryUsedMetric
-
-		memoryQuota, exist := g.GetMetrics()["memory_quota"]
-		if exist && memoryQuota.GetValue() != 0 {
-			memoryUtilMetric := &models.AppInstanceMetric{
-				AppId:         appID,
-				InstanceIndex: instanceIndex,
-				CollectedAt:   ep.clock.Now().UnixNano(),
-				Name:          models.MetricNameMemoryUtil,
-				Unit:          models.UnitPercentage,
-				Value:         fmt.Sprintf("%d", int(math.Ceil(memory.GetValue()/memoryQuota.GetValue()*100))),
-				Timestamp:     timestamp,
-			}
-			ep.metricChan <- memoryUtilMetric
-		}
-	}
-
-	cpu, exist := g.GetMetrics()["cpu"]
-	if exist {
-		cpuMetric := &models.AppInstanceMetric{
-			AppId:         appID,
-			InstanceIndex: instanceIndex,
-			CollectedAt:   ep.clock.Now().UnixNano(),
-			Name:          models.MetricNameCPUUtil,
-			Unit:          models.UnitPercentage,
-			Value:         fmt.Sprintf("%d", int64(math.Ceil(cpu.GetValue()))),
-			Timestamp:     timestamp,
-		}
-		ep.metricChan <- cpuMetric
+		ep.cacheHttpStartStopEnvelop(e)
+		ep.processHttpStartStop(e.SourceId, uint32(instanceIndex), e.GetTimer())
+		return []*models.AppInstanceMetric{}
+	default:
+		return []*models.AppInstanceMetric{}
 	}
 }
 
@@ -151,52 +112,24 @@ func (ep *envelopeProcessor) processHttpStartStop(appID string, instanceIndex ui
 	ep.sumReponseTimes[appID][instanceIndex] += t.Stop - t.Start
 }
 
-func (ep *envelopeProcessor) processCustomMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
-	for n, v := range g.GetMetrics() {
-		customMetric := &models.AppInstanceMetric{
-			AppId:         appID,
-			InstanceIndex: instanceIndex,
-			CollectedAt:   ep.clock.Now().UnixNano(),
-			Name:          n,
-			Unit:          v.Unit,
-			Value:         fmt.Sprintf("%d", int64(math.Ceil(v.Value))),
-			Timestamp:     timestamp,
-		}
-		ep.metricChan <- customMetric
-	}
-}
-
 func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	ep.logger.Debug("compute-and-save-metrics", lager.Data{"message": "start to compute and save metrics"})
 	for appID := range ep.getAppIDs() {
 		im := ep.numRequests[appID]
 		if len(im) == 0 {
 			if helpers.FNVHash(appID)%uint32(ep.numProcessors) == uint32(ep.processorIndex) {
-				throughputMetric := &models.AppInstanceMetric{
-					AppId:         appID,
-					InstanceIndex: 0,
-					CollectedAt:   ep.clock.Now().UnixNano(),
-					Name:          models.MetricNameThroughput,
-					Unit:          models.UnitRPS,
-					Value:         "0",
-					Timestamp:     ep.clock.Now().UnixNano(),
+				metrics := envelopeprocessor.ComputeHttpStartStop(ep.HttpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano())
+				for _, metric := range metrics {
+					ep.metricChan <- metric
 				}
-
-				responseTimeMetric := &models.AppInstanceMetric{
-					AppId:         appID,
-					InstanceIndex: 0,
-					CollectedAt:   ep.clock.Now().UnixNano(),
-					Name:          models.MetricNameResponseTime,
-					Unit:          models.UnitMilliseconds,
-					Value:         "0",
-					Timestamp:     ep.clock.Now().UnixNano(),
-				}
-
-				ep.metricChan <- throughputMetric
-				ep.metricChan <- responseTimeMetric
 			}
 			continue
 		}
+
+		//metrics := envelopeprocessor.ComputeHttpStartStop(ep.HttpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano())
+		//for _, metric := range metrics {
+		//	ep.metricChan <- metric
+		//}
 		for instanceIdx, numReq := range im {
 			throughputMetric := &models.AppInstanceMetric{
 				AppId:         appID,
@@ -221,6 +154,18 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 			ep.metricChan <- responseTimeMetric
 		}
 	}
+	// clean ep.HttpStartStopEnvelopes
 	ep.numRequests = map[string]map[uint32]int64{}
 	ep.sumReponseTimes = map[string]map[uint32]int64{}
+}
+
+func (ep *envelopeProcessor) cacheHttpStartStopEnvelop(e *loggregator_v2.Envelope) {
+	if ep.HttpStartStopEnvelopes == nil {
+		ep.HttpStartStopEnvelopes = map[string][]*loggregator_v2.Envelope{}
+	}
+	if ep.HttpStartStopEnvelopes[e.SourceId] == nil {
+		ep.HttpStartStopEnvelopes[e.SourceId] = []*loggregator_v2.Envelope{}
+	}
+
+	ep.HttpStartStopEnvelopes[e.SourceId] = append(ep.HttpStartStopEnvelopes[e.SourceId], e)
 }
