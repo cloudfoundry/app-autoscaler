@@ -41,15 +41,23 @@ build_test-%:
 
 check: fmt lint build test
 
-test:
+ginkgo_check:
+	@ current_version=$(shell ginkgo version | cut -d " " -f 3 | sed -E 's/([0-9]+\.[0-9]+)\..*/\1/');\
+	expected_version=$(shell cat go.mod | grep "ginkgo"  | cut -d " " -f 2 | sed -E 's/v([0-9]+\.[0-9]+)\..*/\1/');\
+	if [ "$${current_version}" != "$${expected_version}" ]; then \
+        echo "ERROR: Expected to have ginkgo version '$${expected_version}.x' but we have $(shell ginkgo version)";\
+        exit 1;\
+    fi
+
+test: ginkgo_check
 	@echo "Running tests"
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} --skip-package=integration
 
-testsuite:
+testsuite: ginkgo_check
 	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS}  $(TEST)
 
 .PHONY: integration
-integration:
+integration: ginkgo_check
 	@echo "# Running integration tests"
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS}  integration
 
