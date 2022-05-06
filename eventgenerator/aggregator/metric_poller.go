@@ -46,12 +46,15 @@ func (m *MetricPoller) startMetricRetrieve() {
 			m.logger.Info("stopped")
 			return
 		case appMonitor := <-m.appMonitorsChan:
-			m.retrieveMetric(appMonitor)
+			err := m.retrieveMetric(appMonitor)
+			if err != nil {
+				m.logger.Error("Error:", err)
+			}
 		}
 	}
 }
 
-func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) {
+func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 	var metrics []*models.AppInstanceMetric
 	appId := appMonitor.AppId
 	metricType := appMonitor.MetricType
@@ -61,14 +64,12 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) {
 
 	metrics, err := m.metricClient.GetMetric(appId, metricType, startTime, endTime)
 	if err != nil {
-		return
+		return fmt.Errorf("retriveMetric Failed: %w", err)
 	}
 	avgMetric := m.aggregate(appId, metricType, metrics)
-	if avgMetric == nil {
-		return
-	}
 	m.logger.Debug("save-aggregated-appmetric", lager.Data{"appMetric": avgMetric})
 	m.appMetricChan <- avgMetric
+	return nil
 }
 
 func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *models.AppMetric {

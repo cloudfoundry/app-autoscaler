@@ -4,6 +4,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -40,7 +41,7 @@ func (c *MetricServerClient) GetMetric(appId string, metricType string, startTim
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		c.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "url": url})
-		return nil, errors.New("Failed to retrieve metric from metrics collector. Request failed")
+		return nil, fmt.Errorf("failed to retrieve metric from metrics collector: %w", err)
 	}
 	defer resp.Body.Close()
 
