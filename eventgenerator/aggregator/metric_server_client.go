@@ -1,13 +1,14 @@
 package aggregator
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"

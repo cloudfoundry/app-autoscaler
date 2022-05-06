@@ -11,16 +11,14 @@ import (
 )
 
 type MetricPoller struct {
-	logger             lager.Logger
-	metricCollectorUrl string
-	doneChan           chan bool
-	metricClient       MetricClient
-	appMonitorsChan    chan *models.AppMonitor
-	appMetricChan      chan *models.AppMetric
+	logger          lager.Logger
+	doneChan        chan bool
+	metricClient    MetricClient
+	appMonitorsChan chan *models.AppMonitor
+	appMetricChan   chan *models.AppMetric
 }
 
 func NewMetricPoller(logger lager.Logger, metricClient MetricClient, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) *MetricPoller {
-
 	return &MetricPoller{
 		logger:          logger.Session("MetricPoller"),
 		appMonitorsChan: appMonitorsChan,

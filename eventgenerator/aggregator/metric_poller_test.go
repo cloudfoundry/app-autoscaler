@@ -5,9 +5,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/lager/lagertest"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
 
 	"net/http"
@@ -70,7 +67,8 @@ var _ = Describe("MetricPoller", func() {
 	)
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
-		//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
+		//TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
+		//nolint:staticcheck
 		appMonitorsChan = make(chan *models.AppMonitor, 1)
 		appMetricChan = make(chan *models.AppMetric, 1)
 		metricServer = nil
