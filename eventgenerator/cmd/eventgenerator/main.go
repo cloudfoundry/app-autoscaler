@@ -15,7 +15,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -194,17 +193,11 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 }
 
 func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-	client, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
-	if err != nil {
-		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": conf.MetricCollector.TLSClientCerts})
-		os.Exit(1)
-	}
-	count := conf.Aggregator.MetricPollerCount
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
+	metricClient := aggregator.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
 
-	pollers := make([]*aggregator.MetricPoller, count)
-	for i := 0; i < count; i++ {
-		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorURL, appMonitorsChan, client, appMetricChan)
+	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)
+	for i := 0; i < len(pollers); i++ {
+		pollers[i] = aggregator.NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 	}
 
 	return pollers, nil

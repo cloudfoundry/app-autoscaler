@@ -1,17 +1,12 @@
 package aggregator
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
-	"net/http"
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-
 	"code.cloudfoundry.org/lager"
 )
 
@@ -19,19 +14,19 @@ type MetricPoller struct {
 	logger             lager.Logger
 	metricCollectorUrl string
 	doneChan           chan bool
+	metricClient       MetricClient
 	appMonitorsChan    chan *models.AppMonitor
-	httpClient         *http.Client
 	appMetricChan      chan *models.AppMetric
 }
 
-func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appMonitorsChan chan *models.AppMonitor, httpClient *http.Client, appMetricChan chan *models.AppMetric) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricClient MetricClient, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) *MetricPoller {
+
 	return &MetricPoller{
-		metricCollectorUrl: metricCollectorUrl,
-		logger:             logger.Session("MetricPoller"),
-		appMonitorsChan:    appMonitorsChan,
-		doneChan:           make(chan bool),
-		httpClient:         httpClient,
-		appMetricChan:      appMetricChan,
+		logger:          logger.Session("MetricPoller"),
+		appMonitorsChan: appMonitorsChan,
+		metricClient:    metricClient,
+		doneChan:        make(chan bool),
+		appMetricChan:   appMetricChan,
 	}
 }
 
@@ -57,38 +52,17 @@ func (m *MetricPoller) startMetricRetrieve() {
 }
 
 func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) {
+	var metrics []*models.AppInstanceMetric
 	appId := appMonitor.AppId
 	metricType := appMonitor.MetricType
+	statWindow := appMonitor.StatWindow
 	endTime := time.Now()
-	startTime := endTime.Add(0 - appMonitor.StatWindow)
+	startTime := endTime.Add(0 - statWindow)
 
-	var url string
-	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appMonitor.AppId, "metrictype", metricType)
-	parameters := path.Query()
-	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
-	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
-	parameters.Add("order", db.ASCSTR)
-	url = m.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
-	resp, err := m.httpClient.Get(url)
+	metrics, err := m.metricClient.GetMetric(appId, metricType, startTime, endTime)
 	if err != nil {
-		m.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "url": url})
 		return
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		m.logger.Error("Failed to retrieve metric from metrics collector", nil,
-			lager.Data{"appId": appId, "metricType": metricType, "statusCode": resp.StatusCode})
-		return
-	}
-
-	var metrics []*models.AppInstanceMetric
-	err = json.NewDecoder(resp.Body).Decode(&metrics)
-	if err != nil {
-		m.logger.Error("Failed to parse response", err, lager.Data{"appId": appId, "metricType": metricType})
-		return
-	}
-
 	avgMetric := m.aggregate(appId, metricType, metrics)
 	if avgMetric == nil {
 		return

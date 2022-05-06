@@ -4,8 +4,6 @@ import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,7 +24,7 @@ var _ = Describe("MetricPoller", func() {
 		appMonitorsChan chan *models.AppMonitor
 		appMetricChan   chan *models.AppMetric
 		metricPoller    *MetricPoller
-		httpClient      *http.Client
+		metricClient    MetricClient
 		metricServer    *ghttp.Server
 		metrics         = []*models.AppInstanceMetric{
 			{
@@ -73,7 +71,6 @@ var _ = Describe("MetricPoller", func() {
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
 		//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-		httpClient = cfhttp.NewClient()
 		appMonitorsChan = make(chan *models.AppMonitor, 1)
 		appMetricChan = make(chan *models.AppMetric, 1)
 		metricServer = nil
@@ -86,6 +83,7 @@ var _ = Describe("MetricPoller", func() {
 			MetricType: testMetricType,
 			StatWindow: 10,
 		}
+
 	})
 
 	Context("When metric-collector is not running", func() {
@@ -93,7 +91,8 @@ var _ = Describe("MetricPoller", func() {
 		BeforeEach(func() {
 			metricServer = ghttp.NewUnstartedServer()
 
-			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
+			metricClient = NewMetricServerClient(logger, metricServer.URL(), &models.TLSCerts{})
+			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 
 			Expect(appMonitorsChan).Should(BeSent(appMonitor))
@@ -121,10 +120,12 @@ var _ = Describe("MetricPoller", func() {
 			metricServer = ghttp.NewServer()
 			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
+
+			metricClient = NewMetricServerClient(logger, metricServer.URL(), &models.TLSCerts{})
 		})
 
 		JustBeforeEach(func() {
-			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
+			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 
 			Expect(appMonitorsChan).Should(BeSent(appMonitor))
@@ -204,7 +205,7 @@ var _ = Describe("MetricPoller", func() {
 			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
 
-			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
+			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 			metricPoller.Stop()
 			Eventually(logger.Buffer).Should(Say("stopped"))
