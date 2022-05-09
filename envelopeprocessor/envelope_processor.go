@@ -42,7 +42,6 @@ func ComputeHttpStartStop(envelopes []*loggregator_v2.Envelope, appID string, cu
 		metrics = append(metrics, throughputMetric)
 		metrics = append(metrics, responseTimeMetric)
 	} else {
-		// ToDo: Factorize out!
 		numRequestsPerAppIdx, sumReponseTimesPerAppIdx := calcNumReqsAndResponseTimes(envelopes)
 
 		for _, instanceIndex := range maps.Keys(sumReponseTimesPerAppIdx) {
@@ -68,36 +67,13 @@ func ComputeHttpStartStop(envelopes []*loggregator_v2.Envelope, appID string, cu
 				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(sumReponseTime)/float64(numReq*1000*1000)))),
 				CollectedAt:   currentTimeStamp,
 				Timestamp:     currentTimeStamp,
-			}          
-            metrics = append(metrics, responseTimeMetric)
+			}
+			metrics = append(metrics, responseTimeMetric)
 		}
 
 	}
 
 	return metrics
-}
-
-// Aggregates statistics: Be careful: All envelopes must belong to the same app.
-func calcNumReqsAndResponseTimes(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map[uint64]int64, sumReponseTimesPerAppIdx map[uint64]int64) {
-	numRequestsPerAppIdx = map[uint64]int64{}
-	sumReponseTimesPerAppIdx = map[uint64]int64{}
-	for _, envelope := range envelopes {
-		instanceIdx, _ := strconv.ParseUint(envelope.InstanceId, 10, 32)
-
-		if numReqs, exists := numRequestsPerAppIdx[instanceIdx]; exists {
-			numRequestsPerAppIdx[instanceIdx] = numReqs + 1
-		} else {
-			numRequestsPerAppIdx[instanceIdx] = 1
-		}
-
-		if sumResponseTimes, exists := sumReponseTimesPerAppIdx[instanceIdx]; exists {
-			sumReponseTimesPerAppIdx[instanceIdx] = sumResponseTimes + envelope.GetTimer().Stop - envelope.GetTimer().Start
-		} else {
-			sumReponseTimesPerAppIdx[instanceIdx] = envelope.GetTimer().Stop - envelope.GetTimer().Start
-		}
-	}
-
-	return
 }
 
 func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) []*models.AppInstanceMetric {
@@ -108,12 +84,36 @@ func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 	}
 }
 
+// Aggregates statistics: Be careful: All envelopes must belong to the same app.
+func calcNumReqsAndResponseTimes(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map[uint64]int64, sumReponseTimesPerAppIdx map[uint64]int64) {
+	numRequestsPerAppIdx = map[uint64]int64{}
+	sumReponseTimesPerAppIdx = map[uint64]int64{}
+	for _, envelope := range envelopes {
+		instanceIdx, _ := strconv.ParseUint(envelope.InstanceId, 10, 32)
+
+		if _, exists := numRequestsPerAppIdx[instanceIdx]; exists {
+			numRequestsPerAppIdx[instanceIdx] += 1
+		} else {
+			numRequestsPerAppIdx[instanceIdx] = 1
+		}
+
+		if _, exists := sumReponseTimesPerAppIdx[instanceIdx]; exists {
+			sumReponseTimesPerAppIdx[instanceIdx] += envelope.GetTimer().Stop - envelope.GetTimer().Start
+		} else {
+			sumReponseTimesPerAppIdx[instanceIdx] = envelope.GetTimer().Stop - envelope.GetTimer().Start
+		}
+	}
+
+	return
+}
+
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
 	_, exist := e.GetGauge().GetMetrics()["memory_quota"]
 	return exist
 }
 
 func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) []*models.AppInstanceMetric {
+	var metrics []*models.AppInstanceMetric
 	appID := e.SourceId
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
 	g := e.GetGauge()
@@ -125,8 +125,6 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 		CollectedAt:   currentTimeStamp,
 		Timestamp:     timestamp,
 	}
-
-	var metrics []*models.AppInstanceMetric
 
 	if memory, exist := g.GetMetrics()["memory"]; exist {
 		appInstanceMetric := getMemoryInstanceMetric(memory.GetValue())

@@ -212,6 +212,8 @@ var _ = Describe("EnvelopeProcessor", func() {
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
 
+				Expect(processor.IsCacheEmpty()).To(BeTrue())
+
 			})
 
 			Context("when the app does not have http requests", func() {
