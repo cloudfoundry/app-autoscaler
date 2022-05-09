@@ -100,10 +100,14 @@ func (am *AppManager) retrievePolicies() ([]*models.PolicyJson, error) {
 	return policyJsons, nil
 }
 
+func (am *AppManager) isEventgeneratorRespForApp(appID string) bool {
+	return helpers.FNVHash(appID)%uint32(am.nodeNum) == uint32(am.nodeIndex)
+}
+
 func (am *AppManager) computePolicies(policyJsons []*models.PolicyJson) map[string]*models.AppPolicy {
 	policyMap := make(map[string]*models.AppPolicy)
 	for _, policyJSON := range policyJsons {
-		if (am.nodeNum == 1) || (helpers.FNVHash(policyJSON.AppId)%uint32(am.nodeNum) == uint32(am.nodeIndex)) {
+		if (am.nodeNum == 1) || am.isEventgeneratorRespForApp(policyJSON.AppId) {
 			appPolicy, err := policyJSON.GetAppPolicy()
 			if err != nil {
 				am.logger.Error("get-app-policy", err)

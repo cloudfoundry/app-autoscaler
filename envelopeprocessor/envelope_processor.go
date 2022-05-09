@@ -1,35 +1,24 @@
 package envelopeprocessor
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"fmt"
-	"github.com/imdario/mergo"
 	"math"
 	"strconv"
+	"time"
+
+	"golang.org/x/exp/maps"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"github.com/imdario/mergo"
 )
 
 // Received envelopes belong to a single app id
-func ComputeHttpStartStop(envelops []*loggregator_v2.Envelope, appID string, currentTimeStamp int64) []*models.AppInstanceMetric {
+func ComputeHttpStartStop(envelopes []*loggregator_v2.Envelope, appID string, currentTimeStamp int64,
+	collectionInterval time.Duration) []*models.AppInstanceMetric {
+	var metrics []*models.AppInstanceMetric
 
-	//numRequests := map[uint32]int64{}
-	//sumReponseTimes := map[uint32]int64{}
-
-	//for _, envelope := range envelops {
-	//	instanceIndex, _ := strconv.ParseInt(envelope.InstanceId, 10, 32)
-
-	//	if numRequests == nil {
-	//		numRequests = map[uint32]int64{}
-	//	}
-	//	if sumReponseTimes == nil {
-	//		sumReponseTimes = map[uint32]int64{}
-	//	}
-
-	//	numRequests[uint32(instanceIndex)]++
-	//	sumReponseTimes[uint32(instanceIndex)] += envelope.GetTimer().Stop - envelope.GetTimer().Start
-	//}
-
-	if len(envelops) == 0 {
+	if len(envelopes) == 0 {
 		throughputMetric := &models.AppInstanceMetric{
 			AppId:         appID,
 			InstanceIndex: 0,
@@ -43,20 +32,72 @@ func ComputeHttpStartStop(envelops []*loggregator_v2.Envelope, appID string, cur
 		responseTimeMetric := &models.AppInstanceMetric{
 			AppId:         appID,
 			InstanceIndex: 0,
-			CollectedAt:   currentTimeStamp,
 			Name:          models.MetricNameResponseTime,
 			Unit:          models.UnitMilliseconds,
 			Value:         "0",
+			CollectedAt:   currentTimeStamp,
 			Timestamp:     currentTimeStamp,
 		}
 
-		var metrics []*models.AppInstanceMetric
-
 		metrics = append(metrics, throughputMetric)
 		metrics = append(metrics, responseTimeMetric)
-		return metrics
+	} else {
+		// ToDo: Factorize out!
+		numRequestsPerAppIdx, sumReponseTimesPerAppIdx := calcNumReqsAndResponseTimes(envelopes)
+
+		for _, instanceIndex := range maps.Keys(sumReponseTimesPerAppIdx) {
+			numReq := numRequestsPerAppIdx[instanceIndex]
+			sumReponseTime := sumReponseTimesPerAppIdx[instanceIndex]
+
+			throughputMetric := &models.AppInstanceMetric{
+				AppId:         appID,
+				InstanceIndex: uint32(instanceIndex),
+				Name:          models.MetricNameThroughput,
+				Unit:          models.UnitRPS,
+				Value:         fmt.Sprintf("%d", int(math.Ceil(float64(numReq)/collectionInterval.Seconds()))),
+				CollectedAt:   currentTimeStamp,
+				Timestamp:     currentTimeStamp,
+			}
+			metrics = append(metrics, throughputMetric)
+
+			responseTimeMetric := &models.AppInstanceMetric{
+				AppId:         appID,
+				InstanceIndex: uint32(instanceIndex),
+				Name:          models.MetricNameResponseTime,
+				Unit:          models.UnitMilliseconds,
+				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(sumReponseTime)/float64(numReq*1000*1000)))),
+				CollectedAt:   currentTimeStamp,
+				Timestamp:     currentTimeStamp,
+			}          
+            metrics = append(metrics, responseTimeMetric)
+		}
+
 	}
-	return nil
+
+	return metrics
+}
+
+// Aggregates statistics: Be careful: All envelopes must belong to the same app.
+func calcNumReqsAndResponseTimes(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map[uint64]int64, sumReponseTimesPerAppIdx map[uint64]int64) {
+	numRequestsPerAppIdx = map[uint64]int64{}
+	sumReponseTimesPerAppIdx = map[uint64]int64{}
+	for _, envelope := range envelopes {
+		instanceIdx, _ := strconv.ParseUint(envelope.InstanceId, 10, 32)
+
+		if numReqs, exists := numRequestsPerAppIdx[instanceIdx]; exists {
+			numRequestsPerAppIdx[instanceIdx] = numReqs + 1
+		} else {
+			numRequestsPerAppIdx[instanceIdx] = 1
+		}
+
+		if sumResponseTimes, exists := sumReponseTimesPerAppIdx[instanceIdx]; exists {
+			sumReponseTimesPerAppIdx[instanceIdx] = sumResponseTimes + envelope.GetTimer().Stop - envelope.GetTimer().Start
+		} else {
+			sumReponseTimesPerAppIdx[instanceIdx] = envelope.GetTimer().Stop - envelope.GetTimer().Start
+		}
+	}
+
+	return
 }
 
 func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) []*models.AppInstanceMetric {
