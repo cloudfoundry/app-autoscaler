@@ -28,27 +28,27 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file")
+		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
 		os.Exit(1)
 	}
 
 	configFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 
 	var conf *config.Config
 	conf, err = config.LoadConfig(configFile)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	configFile.Close()
+	_ = configFile.Close()
 
 	err = conf.Validate()
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
 	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
@@ -63,7 +63,7 @@ func main() {
 		logger.Error("failed to connect instancemetrics database", err)
 		os.Exit(1)
 	}
-	defer instanceMetricsDB.Close()
+	defer func() { _ = instanceMetricsDB.Close() }()
 
 	var policyDB db.PolicyDB
 	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
@@ -71,7 +71,7 @@ func main() {
 		logger.Error("failed to connect policy database", err)
 		os.Exit(1)
 	}
-	defer policyDB.Close()
+	defer func() { _ = policyDB.Close() }()
 
 	metricsChan := make(chan *models.AppInstanceMetric, conf.Collector.MetricChannelSize)
 
