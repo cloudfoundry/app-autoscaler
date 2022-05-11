@@ -34,26 +34,26 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file")
+		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
 		os.Exit(1)
 	}
 
 	conf, err := loadConfig(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsgateway")
 	gatewayClock := clock.NewClock()
 	loggregatorClientTLSConfig, err := loggregator.NewEgressTLSConfig(conf.Nozzle.RLPClientTLS.CACertFile, conf.Nozzle.RLPClientTLS.CertFile, conf.Nozzle.RLPClientTLS.KeyFile)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
 	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 	metricServerClientTLSConfig, err := cfhttp.NewTLSConfig(conf.Emitter.MetricsServerClientTLS.CertFile, conf.Emitter.MetricsServerClientTLS.KeyFile, conf.Emitter.MetricsServerClientTLS.CACertFile)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -63,7 +63,7 @@ func main() {
 		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.AppManager.PolicyDB})
 		os.Exit(1)
 	}
-	defer policyDB.Close()
+	defer func() { _ = policyDB.Close() }()
 	envelopeCounterCollector := healthendpoint.NewCounterCollector()
 
 	envelopChan := make(chan *loggregator_v2.Envelope, conf.EnvelopChanSize)
@@ -136,7 +136,7 @@ func loadConfig(path string) (*config.Config, error) {
 	}
 
 	configFileBytes, err := ioutil.ReadAll(configFile)
-	configFile.Close()
+	_ = configFile.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)
 	}
