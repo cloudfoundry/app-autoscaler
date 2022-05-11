@@ -8,7 +8,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
@@ -30,27 +29,26 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file")
+		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
 		os.Exit(1)
 	}
 
 	configFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 
-	var conf *config.Config
-	conf, err = config.LoadConfig(configFile)
+	conf, err := config.LoadConfig(configFile)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	configFile.Close()
+	_ = configFile.Close()
 
 	err = conf.Validate()
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -67,29 +65,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
+	policyDB, err := sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
 	if err != nil {
 		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
-	defer policyDB.Close()
+	defer func() { _ = policyDB.Close() }()
 
-	var scalingEngineDB db.ScalingEngineDB
-	scalingEngineDB, err = sqldb.NewScalingEngineSQLDB(conf.DB.ScalingEngineDB, logger.Session("scalingengine-db"))
+	scalingEngineDB, err := sqldb.NewScalingEngineSQLDB(conf.DB.ScalingEngineDB, logger.Session("scalingengine-db"))
 	if err != nil {
 		logger.Error("failed to connect scalingengine database", err, lager.Data{"dbConfig": conf.DB.ScalingEngineDB})
 		os.Exit(1)
 	}
-	defer scalingEngineDB.Close()
+	defer func() { _ = scalingEngineDB.Close() }()
 
-	var schedulerDB db.SchedulerDB
-	schedulerDB, err = sqldb.NewSchedulerSQLDB(conf.DB.SchedulerDB, logger.Session("scheduler-db"))
+	schedulerDB, err := sqldb.NewSchedulerSQLDB(conf.DB.SchedulerDB, logger.Session("scheduler-db"))
 	if err != nil {
 		logger.Error("failed to connect scheduler database", err, lager.Data{"dbConfig": conf.DB.SchedulerDB})
 		os.Exit(1)
 	}
-	defer schedulerDB.Close()
+	defer func() { _ = schedulerDB.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine")
 	promRegistry := prometheus.NewRegistry()
