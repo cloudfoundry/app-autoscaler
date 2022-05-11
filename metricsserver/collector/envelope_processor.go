@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
@@ -25,24 +26,26 @@ type envelopeProcessor struct {
 	clock                  clock.Clock
 	processorIndex         int
 	numProcessors          int
-	HttpStartStopEnvelopes map[string][]*loggregator_v2.Envelope // appID map of envelopes
+	httpStartStopEnvelopes map[string][]*loggregator_v2.Envelope // appID map of envelopes
 	envelopeChan           <-chan *loggregator_v2.Envelope
 	metricChan             chan<- *models.AppInstanceMetric
 	getAppIDs              func() map[string]bool
+	mu                     sync.RWMutex
 }
 
 func NewEnvelopeProcessor(logger lager.Logger, collectInterval time.Duration, clock clock.Clock, processsorIndex, numProcesssors int,
 	envelopeChan <-chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric, getAppIDs func() map[string]bool) *envelopeProcessor {
 	return &envelopeProcessor{
-		logger:          logger,
-		collectInterval: collectInterval,
-		doneChan:        make(chan bool),
-		clock:           clock,
-		processorIndex:  processsorIndex,
-		numProcessors:   numProcesssors,
-		envelopeChan:    envelopeChan,
-		metricChan:      metricChan,
-		getAppIDs:       getAppIDs,
+		logger:                 logger,
+		collectInterval:        collectInterval,
+		doneChan:               make(chan bool),
+		clock:                  clock,
+		httpStartStopEnvelopes: map[string][]*loggregator_v2.Envelope{},
+		processorIndex:         processsorIndex,
+		numProcessors:          numProcesssors,
+		envelopeChan:           envelopeChan,
+		metricChan:             metricChan,
+		getAppIDs:              getAppIDs,
 	}
 }
 
@@ -70,24 +73,22 @@ func (ep *envelopeProcessor) processEvents() {
 			}
 
 		case <-ticker.C():
-			// replace processHttpStartStopMetrics with:
-			//metrics := envelopeprocessor.ComputeHttpStartStopFrom(ep.HttpStartStopEnvelopes)
-			//for _, metric := range metrics {
-			//	ep.metricChan <- metric
-			//}
 			ep.processHttpStartStopMetrics()
 		}
 	}
 }
 
 func (ep *envelopeProcessor) IsCacheEmpty() bool {
-	return ep.HttpStartStopEnvelopes == nil
+	ep.mu.RLock()
+	defer ep.mu.RUnlock()
+	return len(ep.httpStartStopEnvelopes) == 0
 }
 
 func (ep *envelopeProcessor) getAppInstanceMetrics(e *loggregator_v2.Envelope) []*models.AppInstanceMetric {
 	switch e.GetMessage().(type) {
 	case *loggregator_v2.Envelope_Gauge:
-		return envelopeprocessor.GetGaugeInstanceMetrics(e, ep.clock.Now().UnixNano())
+		appInstanceMetrics, _ := envelopeprocessor.GetGaugeInstanceMetrics(e, ep.clock.Now().UnixNano())
+		return appInstanceMetrics
 	case *loggregator_v2.Envelope_Timer:
 		ep.cacheHttpStartStopEnvelop(e)
 		return []*models.AppInstanceMetric{}
@@ -100,29 +101,27 @@ func (ep *envelopeProcessor) isMetrissrvRespForApp(appID string) bool {
 }
 
 func (ep *envelopeProcessor) processHttpStartStopMetrics() {
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
 	ep.logger.Debug("compute-and-save-metrics", lager.Data{"message": "start to compute and save metrics"})
+
 	for appID := range ep.getAppIDs() {
 		if !ep.isMetrissrvRespForApp(appID) { // skip apps we are not responsible for
 			continue
 		}
 
-		metrics := envelopeprocessor.ComputeHttpStartStop(ep.HttpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano(),
+		metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(ep.httpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano(),
 			ep.collectInterval)
 		for _, metric := range metrics {
 			ep.metricChan <- metric
 		}
 	}
 
-	ep.HttpStartStopEnvelopes = nil
+	ep.httpStartStopEnvelopes = map[string][]*loggregator_v2.Envelope{}
 }
 
 func (ep *envelopeProcessor) cacheHttpStartStopEnvelop(e *loggregator_v2.Envelope) {
-	if ep.HttpStartStopEnvelopes == nil {
-		ep.HttpStartStopEnvelopes = map[string][]*loggregator_v2.Envelope{}
-	}
-	if ep.HttpStartStopEnvelopes[e.SourceId] == nil {
-		ep.HttpStartStopEnvelopes[e.SourceId] = []*loggregator_v2.Envelope{}
-	}
-
-	ep.HttpStartStopEnvelopes[e.SourceId] = append(ep.HttpStartStopEnvelopes[e.SourceId], e)
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
+	ep.httpStartStopEnvelopes[e.SourceId] = append(ep.httpStartStopEnvelopes[e.SourceId], e)
 }

@@ -213,7 +213,6 @@ var _ = Describe("EnvelopeProcessor", func() {
 				}))
 
 				Expect(processor.IsCacheEmpty()).To(BeTrue())
-
 			})
 
 			Context("when the app does not have http requests", func() {
