@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 
@@ -38,9 +39,12 @@ var (
 	req                   *http.Request
 	err                   error
 	body                  []byte
-	username              string
-	password              string
 	grpcIngressTestServer *testhelpers.TestIngressServer
+)
+
+const (
+	username = "username"
+	password = "password"
 )
 
 func TestMetricsforwarder(t *testing.T) {
@@ -50,19 +54,26 @@ func TestMetricsforwarder(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	mf, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Could not build metricsforwarder: %s", err.Error()))
+	}
 
 	database, err := db.GetConnection(os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("DBURL not found: %s", err.Error()))
+	}
 
 	policyDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = policyDB.Exec("DELETE from policy_json")
-	Expect(err).NotTo(HaveOccurred())
-
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed clean policy_json %s", err.Error()))
+	}
 	_, err = policyDB.Exec("DELETE from credentials")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed clean credentials %s", err.Error()))
+	}
 
 	policy := `
 		{
@@ -81,19 +92,23 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}`
 	query := policyDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", policy, "1234")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed clean credentials %s", err.Error()))
+	}
 
-	username = "username"
-	password = "password"
 	encryptedUsername, _ := bcrypt.GenerateFromPassword([]byte(username), 8)
 	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 8)
 
 	query = policyDB.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", encryptedUsername, encryptedPassword, "2011-06-18 15:36:38")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to add credentials: %s", err.Error()))
+	}
 
 	err = policyDB.Close()
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to close connection: %s", err.Error()))
+	}
 
 	return []byte(mf)
 }, func(pathsByte []byte) {

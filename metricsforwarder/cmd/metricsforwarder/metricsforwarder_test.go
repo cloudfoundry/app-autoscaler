@@ -129,7 +129,7 @@ var _ = Describe("Metricsforwarder", func() {
 					res, err := httpClient.Do(req)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(res.StatusCode).To(Equal(http.StatusOK))
-					res.Body.Close()
+					_ = res.Body.Close()
 				})
 			})
 

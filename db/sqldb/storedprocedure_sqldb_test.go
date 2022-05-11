@@ -19,8 +19,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const instanceId = "InstanceId1"
-const bindingId = "BindingId1"
+var instanceId = "InstanceId1"
+var bindingId = "BindingId1"
 
 var _ = Describe("Stored Procedure test", func() {
 	var (
