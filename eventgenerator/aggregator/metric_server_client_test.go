@@ -20,8 +20,7 @@ var _ = Describe("MetricServerClient", func() {
 	})
 
 	It("Can be assign to a Metric Client type", func() {
-		var mc MetricClient
-		mc = msc
+		var mc MetricClient = msc
 		Expect(msc).To(BeAssignableToTypeOf(mc))
 	})
 })
