@@ -54,7 +54,7 @@ test: ginkgo_check
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} --skip-package=integration
 
 testsuite: ginkgo_check
-	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS}  $(TEST)
+	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} -vv $(TEST)
 
 .PHONY: integration
 integration: ginkgo_check
@@ -101,5 +101,5 @@ lint: golangci-lint
 .PHONY: clean
 clean:
 	@echo "# cleaning autoscaler"
-	@go clean
+	@go clean -cache -testcache
 	@rm -rf build
