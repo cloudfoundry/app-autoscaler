@@ -31,27 +31,27 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file")
+		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
 		os.Exit(1)
 	}
 
 	configFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 
 	var conf *config.Config
 	conf, err = config.LoadConfig(configFile)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	configFile.Close()
+	_ = configFile.Close()
 
 	err = conf.Validate()
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -65,7 +65,7 @@ func main() {
 		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
 		os.Exit(1)
 	}
-	defer policyDb.Close()
+	defer func() { _ = policyDb.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 	prometheusCollectors := []prometheus.Collector{
@@ -94,7 +94,7 @@ func main() {
 			logger.Error("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.DB[db.StoredProcedureDb]})
 			os.Exit(1)
 		}
-		defer storedProcedureDb.Close()
+		defer func() { _ = storedProcedureDb.Close() }()
 		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
 	default:
 		credentials = cred_helper.NewCustomMetricsCredHelper(policyDb, cred_helper.MaxRetry, logger)
@@ -109,9 +109,8 @@ func main() {
 			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
 			os.Exit(1)
 		}
-		defer bindingDB.Close()
-		prometheusCollectors = append(prometheusCollectors,
-			healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
+		defer func() { _ = bindingDB.Close() }()
+		prometheusCollectors = append(prometheusCollectors, healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
 		checkBindingFunc = func(appId string) bool {
 			return bindingDB.CheckServiceBinding(appId)
 		}
@@ -146,8 +145,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer},
-		grouper.Member{"health_server", healthServer})
+	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer}, grouper.Member{"health_server", healthServer})
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 

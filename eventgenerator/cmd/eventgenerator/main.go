@@ -1,7 +1,6 @@
 package main
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -33,12 +32,12 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stdout, "missing config file\nUsage:use '-c' option to specify the config file path")
+		_, _ = fmt.Fprintln(os.Stdout, "missing config file\nUsage:use '-c' option to specify the config file path")
 		os.Exit(1)
 	}
 	conf, err := loadConfig(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
 	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
@@ -51,15 +50,14 @@ func main() {
 		logger.Error("failed to connect app-metric database", err, lager.Data{"dbConfig": conf.DB.AppMetricDB})
 		os.Exit(1)
 	}
-	defer appMetricDB.Close()
+	defer func() { _ = appMetricDB.Close() }()
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
+	policyDB, err := sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
 	if err != nil {
 		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
-	defer policyDB.Close()
+	defer func() { _ = policyDB.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "eventgenerator")
 	promRegistry := prometheus.NewRegistry()
@@ -69,19 +67,17 @@ func main() {
 		httpStatusCollector,
 	}, true, logger.Session("eventgenerator-prometheus"))
 
-	appManager := aggregator.NewAppManager(logger, egClock, conf.Aggregator.PolicyPollerInterval,
-		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, conf.Aggregator.MetricCacheSizePerApp, policyDB, appMetricDB)
+	appManager := aggregator.NewAppManager(logger, egClock, conf.Aggregator.PolicyPollerInterval, len(conf.Server.NodeAddrs), conf.Server.NodeIndex, conf.Aggregator.MetricCacheSizePerApp, policyDB, appMetricDB)
 
 	triggersChan := make(chan []*models.Trigger, conf.Evaluator.TriggerArrayChannelSize)
 
-	evaluationManager, err := generator.NewAppEvaluationManager(logger, conf.Evaluator.EvaluationManagerInterval, egClock,
-		triggersChan, appManager.GetPolicies, conf.CircuitBreaker)
+	evaluationManager, err := generator.NewAppEvaluationManager(logger, conf.Evaluator.EvaluationManagerInterval, egClock, triggersChan, appManager.GetPolicies, conf.CircuitBreaker)
 	if err != nil {
 		logger.Error("failed to create Evaluation Manager", err)
 		os.Exit(1)
 	}
 
-	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB, appManager.QueryAppMetrics, evaluationManager.GetBreaker, evaluationManager.SetCoolDownExpired)
+	evaluators, err := createEvaluators(logger, conf, triggersChan, appManager.QueryAppMetrics, evaluationManager.GetBreaker, evaluationManager.SetCoolDownExpired)
 	if err != nil {
 		logger.Error("failed to create Evaluators", err)
 		os.Exit(1)
@@ -94,35 +90,13 @@ func main() {
 		logger.Error("failed to create MetricPoller", err)
 		os.Exit(1)
 	}
-	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.SaveInterval,
-		appMonitorsChan, appManager.GetPolicies, appManager.SaveMetricToCache, conf.DefaultStatWindowSecs, appMetricChan, appMetricDB)
+	anAggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.SaveInterval, appMonitorsChan, appManager.GetPolicies, appManager.SaveMetricToCache, conf.DefaultStatWindowSecs, appMetricChan, appMetricDB)
 	if err != nil {
 		logger.Error("failed to create Aggregator", err)
 		os.Exit(1)
 	}
 
-	eventGenerator := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		appManager.Start()
-
-		for _, evaluator := range evaluators {
-			evaluator.Start()
-		}
-		evaluationManager.Start()
-
-		for _, metricPoller := range metricPollers {
-			metricPoller.Start()
-		}
-		aggregator.Start()
-
-		close(ready)
-
-		<-signals
-		aggregator.Stop()
-		evaluationManager.Stop()
-		appManager.Stop()
-
-		return nil
-	})
+	eventGenerator := ifrit.RunFunc(runFunc(appManager, evaluators, evaluationManager, metricPollers, anAggregator))
 
 	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appManager.QueryAppMetrics, httpStatusCollector)
 	if err != nil {
@@ -152,6 +126,31 @@ func main() {
 
 	logger.Info("exited")
 }
+
+func runFunc(appManager *aggregator.AppManager, evaluators []*generator.Evaluator, evaluationManager *generator.AppEvaluationManager, metricPollers []*aggregator.MetricPoller, anAggregator *aggregator.Aggregator) func(signals <-chan os.Signal, ready chan<- struct{}) error {
+	return func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		appManager.Start()
+
+		for _, evaluator := range evaluators {
+			evaluator.Start()
+		}
+		evaluationManager.Start()
+
+		for _, metricPoller := range metricPollers {
+			metricPoller.Start()
+		}
+		anAggregator.Start()
+
+		close(ready)
+
+		<-signals
+		anAggregator.Stop()
+		evaluationManager.Stop()
+		appManager.Stop()
+
+		return nil
+	}
+}
 func loadConfig(path string) (*config.Config, error) {
 	configFile, err := os.Open(path)
 	if err != nil {
@@ -159,7 +158,7 @@ func loadConfig(path string) (*config.Config, error) {
 	}
 
 	configFileBytes, err := ioutil.ReadAll(configFile)
-	configFile.Close()
+	_ = configFile.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)
 	}
@@ -176,8 +175,7 @@ func loadConfig(path string) (*config.Config, error) {
 	return conf, nil
 }
 
-func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger,
-	database db.AppMetricDB, queryMetrics aggregator.QueryAppMetricsFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
+func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger, queryMetrics aggregator.QueryAppMetricsFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 
 	client, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
