@@ -57,8 +57,6 @@ cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohl
 cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RXyy7KQOVs=
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
-code.cloudfoundry.org/cfhttp v2.0.0+incompatible h1:Gk1oNYalXmkebrG9kgUtZ9+FPjQGnqZtS457RP2gWhc=
-code.cloudfoundry.org/cfhttp v2.0.0+incompatible/go.mod h1:kwYQ8kChWl4AuUJG3vKtp1po2B91S7XoUWhoKElabmA=
 code.cloudfoundry.org/clock v1.0.0 h1:kFXWQM4bxYvdBw2X8BbBeXwQNgfoWv1vqAk2ZZyBN2o=
 code.cloudfoundry.org/clock v1.0.0/go.mod h1:QD9Lzhd/ux6eNQVUDVRJX/RKTigpewimNYBi7ivZKY8=
 code.cloudfoundry.org/go-diodes v0.0.0-20180905200951-72629b5276e3/go.mod h1:Jzi+ccHgo/V/PLQUaQ6hnZcC1c4BS790gx21LRRui4g=
@@ -66,8 +64,6 @@ code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee h1:iAAPf9s7/+
 code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee/go.mod h1:Jzi+ccHgo/V/PLQUaQ6hnZcC1c4BS790gx21LRRui4g=
 code.cloudfoundry.org/go-loggregator/v8 v8.0.5 h1:p1rrGxTwUqLjlUVtbjTAvKOSGNmPuBja8LeQOQgRrBc=
 code.cloudfoundry.org/go-loggregator/v8 v8.0.5/go.mod h1:mLlJ1ZyG6gVvBEtYypvbztRvFeCtBsTxE9tt+85tS6Y=
-code.cloudfoundry.org/lager v2.0.0+incompatible h1:WZwDKDB2PLd/oL+USK4b4aEjUymIej9My2nUQ9oWEwQ=
-code.cloudfoundry.org/lager v2.0.0+incompatible/go.mod h1:O2sS7gKP3HM2iemG+EnwvyNQK7pTSC6Foi4QiMp9sSk=
 code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3/go.mod h1:eTbFJpyXRGuFVyg5+oaj9B2eIbIc+0/kZjH8ftbtdew=
 code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7 h1:5N6M1WbWH3bknkX80Q/s7eEo5odqjixLAW79Zrrbqu0=
 code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7/go.mod h1:CKI5CV+3MlfcohVSuU3FxXubFyC52lYJGMLnZ2ltvks=
@@ -86,6 +82,10 @@ github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24 h1:sHglBQTwgx+rW
 github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24/go.mod h1:4UJr5HIiMZrwgkSPdsjy2uOQExX/WEILpIrO9UPGuXs=
 github.com/GaijinEntertainment/go-exhaustruct/v2 v2.1.0 h1:LAPPhJ4KR5Z8aKVZF5S48csJkxL5RMKmE/98fMs1u5M=
 github.com/GaijinEntertainment/go-exhaustruct/v2 v2.1.0/go.mod h1:LGOGuvEgCfCQsy3JF2tRmpGDpzA53iZfyGEWSPwQ6/4=
+github.com/KevinJCross/cfhttp v1.0.1 h1:i9tn+qC2NBhDqUhir87zMzWzv8i79lhj32O17n4fb5g=
+github.com/KevinJCross/cfhttp v1.0.1/go.mod h1:I0B8044L6eoWE6EOZHlVLCWk/6h+FdMm6h1SyaMOcoc=
+github.com/KevinJCross/lager v1.2.0 h1:D+v+SsFzd1+8mMcAS1AO6+HoYGTzohGoCsKH7zd45+o=
+github.com/KevinJCross/lager v1.2.0/go.mod h1:ppro2YzfwiOF619yvtAvti6xJ3Cs0rV9Cb/VP0vLsXs=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver v1.4.2/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
 github.com/Masterminds/semver v1.5.0 h1:H65muMkzWKEuNDnfl9d70GUjFniHKHRbFPGBuZ3QEww=
