@@ -29,7 +29,7 @@ require (
 	github.com/onsi/gomega v1.19.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pivotal-cf/brokerapi v6.4.2+incompatible
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/square/certstrap v1.2.0
 	github.com/tedsuo/ifrit v0.0.0-20220120221754-dd274de71113
