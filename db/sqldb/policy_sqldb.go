@@ -121,9 +121,11 @@ func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error
 	var policyJson []byte
 	query := pdb.sqldb.Rebind("SELECT policy_json FROM policy_json WHERE app_id =?")
 	err := pdb.sqldb.QueryRow(query, appId).Scan(&policyJson)
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
+
 	if err != nil {
 		pdb.logger.Error("get-app-policy-from-policy-table", err, lager.Data{"query": query, "appid": appId})
 		return nil, err
