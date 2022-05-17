@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -47,7 +48,7 @@ type InstanceMetricsDB interface {
 	SaveMetric(metric *models.AppInstanceMetric) error
 	SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error
 	PruneInstanceMetrics(before int64) error
-	Close() error
+	io.Closer
 }
 
 type PolicyDB interface {
@@ -59,7 +60,7 @@ type PolicyDB interface {
 	SetOrUpdateDefaultAppPolicy(appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
-	Close() error
+	io.Closer
 	DeletePolicy(appId string) error
 	SaveCredential(appId string, cred models.Credential) error
 	DeleteCredential(appId string) error
@@ -81,7 +82,7 @@ type BindingDB interface {
 	GetAppIdsByInstanceId(instanceId string) ([]string, error)
 	CountServiceInstancesInOrg(orgId string) (int, error)
 	GetBindingIdsByInstanceId(instanceId string) ([]string, error)
-	Close() error
+	io.Closer
 }
 
 type AppMetricDB interface {
@@ -90,7 +91,7 @@ type AppMetricDB interface {
 	SaveAppMetricsInBulk(metrics []*models.AppMetric) error
 	RetrieveAppMetrics(appId string, metricType string, start int64, end int64, orderType OrderType) ([]*models.AppMetric, error)
 	PruneAppMetrics(before int64) error
-	Close() error
+	io.Closer
 }
 
 type ScalingEngineDB interface {
@@ -104,24 +105,24 @@ type ScalingEngineDB interface {
 	GetActiveSchedules() (map[string]string, error)
 	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
 	RemoveActiveSchedule(appId string) error
-	Close() error
+	io.Closer
 }
 
 type SchedulerDB interface {
 	healthendpoint.DatabaseStatus
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
-	Close() error
+	io.Closer
 }
 
 type LockDB interface {
 	Lock(lock *models.Lock) (bool, error)
 	Release(owner string) error
-	Close() error
+	io.Closer
 }
 
 type StoredProcedureDB interface {
 	healthendpoint.Pinger
-	Close() error
+	io.Closer
 	CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error)
 	DeleteCredentials(credOptions models.CredentialsOptions) error
 	DeleteAllInstanceCredentials(instanceId string) error
