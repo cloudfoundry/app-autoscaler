@@ -21,7 +21,7 @@ require (
 	github.com/golangci/golangci-lint v1.46.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/imdario/mergo v0.3.8
+	github.com/imdario/mergo v0.3.12
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.5
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
