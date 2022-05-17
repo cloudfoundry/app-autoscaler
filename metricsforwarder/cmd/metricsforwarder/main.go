@@ -57,33 +57,24 @@ func main() {
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsforwarder")
 	mfClock := clock.NewClock()
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.Db[db.PolicyDb], logger.Session("policy-db"))
+	policyDB, err := sqldb.NewPolicySQLDB(conf.Db[db.PolicyDb], logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
+		logger.Fatal("Failed To connect to policyDB", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
 		os.Exit(1)
 	}
-	defer policyDB.Close()
+	defer func() { _ = policyDB.Close() }()
 
-	var credentials cred_helper.Credentials
-	switch conf.CredHelperImpl {
-	case "stored_procedure":
-		if conf.StoredProcedureConfig == nil {
-			logger.Error("cannot create a storedProcedureCredHelper without StoredProcedureConfig", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		var storedProcedureDb db.StoredProcedureDB
-		storedProcedureDb, err = sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.Db[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
-		if err != nil {
-			logger.Error("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		defer storedProcedureDb.Close()
-		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
-	default:
-		credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
-		credentials = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, *credentialCache, conf.CacheTTL, logger)
+	credentialProvider, storedProcedureDb, err := credentialsProvider(conf, logger, err, policyDB)
+	if err != nil {
+		logger.Fatal("Failed to connect to storedProcedureDb", err)
+		os.Exit(1)
 	}
+
+	defer func() {
+		if storedProcedureDb != nil {
+			_ = storedProcedureDb.Close()
+		}
+	}()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 	promRegistry := prometheus.NewRegistry()
@@ -95,9 +86,9 @@ func main() {
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentials, *allowedMetricCache, httpStatusCollector, rateLimiter)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentialProvider, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {
-		logger.Error("failed-to-create-custommetrics-server", err)
+		logger.Fatal("Failed to create client to custom metrics server", err)
 		os.Exit(1)
 	}
 
@@ -105,17 +96,25 @@ func main() {
 
 	cacheUpdater := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		policyManager.Start()
-
 		close(ready)
-
 		<-signals
 		policyManager.Stop()
 		return nil
 	})
 
-	healthServer, err := healthendpoint.NewServerWithBasicAuth([]healthendpoint.Checker{}, logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
+	checkers := []healthendpoint.Checker{healthendpoint.DbChecker("policyDb", policyDB), healthendpoint.DbChecker("storedProcedureDb", storedProcedureDb)}
+
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(
+		checkers,
+		logger.Session("health-server"),
+		conf.Health.Port, promRegistry,
+		conf.Health.HealthCheckUsername,
+		conf.Health.HealthCheckPassword,
+		conf.Health.HealthCheckUsernameHash,
+		conf.Health.HealthCheckPasswordHash,
+	)
 	if err != nil {
-		logger.Error("failed to create health server", err)
+		logger.Fatal("Failed to create health server:", err)
 		os.Exit(1)
 	}
 
@@ -135,4 +134,26 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("exited")
+}
+
+func credentialsProvider(conf *config.Config, logger lager.Logger, err error, policyDB db.PolicyDB) (cred_helper.Credentials, db.StoredProcedureDB, error) {
+	var credentials cred_helper.Credentials
+	var storedProcedureDb db.StoredProcedureDB
+	switch conf.CredHelperImpl {
+	case "stored_procedure":
+		if conf.StoredProcedureConfig == nil {
+			logger.Error("cannot create a storedProcedureCredHelper without StoredProcedureConfig", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
+			os.Exit(1)
+		}
+		storedProcedureDb, err = sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.Db[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
+		if err != nil {
+			logger.Error("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
+			os.Exit(1)
+		}
+		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
+	default:
+		credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
+		credentials = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, *credentialCache, conf.CacheTTL, logger)
+	}
+	return credentials, storedProcedureDb, err
 }

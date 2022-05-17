@@ -12,11 +12,17 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+var _ db.StoredProcedureDB = &StoredProcedureSQLDb{}
+
 type StoredProcedureSQLDb struct {
 	config   models.StoredProcedureConfig
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
 	sqldb    *sql.DB
+}
+
+func (sdb *StoredProcedureSQLDb) Ping() error {
+	return sdb.sqldb.Ping()
 }
 
 func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
