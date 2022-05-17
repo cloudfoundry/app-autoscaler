@@ -56,7 +56,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	os.Remove(configFile.Name())
+	_ = os.Remove(configFile.Name())
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
@@ -150,7 +150,7 @@ func initConfig() {
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "pr")
 	Expect(err).NotTo(HaveOccurred())
-	defer cfg.Close()
+	defer func() { _ = cfg.Close() }()
 
 	var bytes []byte
 	bytes, err = yaml.Marshal(c)

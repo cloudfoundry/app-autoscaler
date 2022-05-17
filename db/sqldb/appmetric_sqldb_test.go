@@ -61,7 +61,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
 				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for postgres")
+					Skip("Postgres only test")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
@@ -73,7 +73,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
 				if strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for mysql")
+					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})
@@ -405,7 +405,10 @@ var _ = Describe("AppMetricSQLDB", func() {
 	Context("PruneAppMetrics", func() {
 		BeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
+			if err != nil {
+				Fail(err.Error())
+			}
+			DeferCleanup(func() error { return adb.Close() })
 
 			cleanAppMetricTable()
 
@@ -418,23 +421,23 @@ var _ = Describe("AppMetricSQLDB", func() {
 			}
 
 			err = adb.SaveAppMetric(appMetric)
-			Expect(err).NotTo(HaveOccurred())
+			if err != nil {
+				Fail(err.Error())
+			}
 
 			appMetric.Timestamp = 55555555
 			appMetric.Value = "200"
 			err = adb.SaveAppMetric(appMetric)
-			Expect(err).NotTo(HaveOccurred())
-
+			if err != nil {
+				Fail(err.Error())
+			}
 			appMetric.Timestamp = 33333333
 			appMetric.Value = "300"
 			err = adb.SaveAppMetric(appMetric)
-			Expect(err).NotTo(HaveOccurred())
+			if err != nil {
+				Fail(err.Error())
+			}
 
-		})
-
-		AfterEach(func() {
-			err = adb.Close()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {

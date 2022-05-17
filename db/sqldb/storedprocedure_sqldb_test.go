@@ -42,7 +42,7 @@ var _ = Describe("Stored Procedure test", func() {
 		}
 
 		if !strings.Contains(os.Getenv("DBURL"), "postgres") {
-			Skip("Not configured for Postgres")
+			Skip("Postgres test")
 		}
 
 		if getPostgresMajorVersion() < 12 {

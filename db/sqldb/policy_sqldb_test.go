@@ -65,7 +65,7 @@ var _ = Describe("PolicySQLDB", func() {
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
 				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for postgres")
+					Skip("Mysql test")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})

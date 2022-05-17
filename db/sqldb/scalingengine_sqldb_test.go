@@ -85,7 +85,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			})
 		})
 
-		Context("when url is correct", Pending, func() {
+		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(sdb).NotTo(BeNil())
