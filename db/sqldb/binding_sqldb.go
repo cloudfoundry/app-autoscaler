@@ -211,7 +211,6 @@ func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceI
 	return err
 }
 func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
-	bdb.logger.Info("deleting binding")
 	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE binding_id =?")
 	rows, err := bdb.sqldb.Query(query, bindingId)
 	if err != nil {

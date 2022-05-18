@@ -69,7 +69,7 @@ var _ = Describe("BindingSqldb", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("binding-sqldb-test")
-		//logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
 			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
@@ -81,19 +81,24 @@ var _ = Describe("BindingSqldb", func() {
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(func() error { return bdb.Close() })
 
-		cleanupDb := func(instanceId, bindingId string) {
-			err := bdb.DeleteServiceBinding(bindingId)
-			if err != nil {
-				logger.Info(fmt.Sprintf("Cleaning service binding %s failed:%s", bindingId, err.Error()))
-			}
-			err = bdb.DeleteServiceInstance(instanceId)
-			if err != nil {
-				logger.Info(fmt.Sprintf("Cleaning service instance %s failed:%s", instanceId, err.Error()))
+		cleanupInstances := func(instanceIds ...string) {
+			for _, instanceId := range instanceIds {
+				err := bdb.DeleteServiceInstance(instanceId)
+				if err != nil {
+					logger.Info(fmt.Sprintf("Cleaning service instance %s failed:%s", instanceId, err.Error()))
+				}
 			}
 		}
-		cleanupDb(testInstanceId, testBindingId)
-		cleanupDb(testInstanceId2, testBindingId2)
-		cleanupDb(testInstanceId3, testBindingId3)
+		cleanupBindings := func(bindingIds ...string) {
+			for _, bindingId := range bindingIds {
+				err := bdb.DeleteServiceBinding(bindingId)
+				if err != nil {
+					logger.Info(fmt.Sprintf("Cleaning service binding %s failed:%s", bindingId, err.Error()))
+				}
+			}
+		}
+		cleanupBindings(testBindingId, testBindingId2, testBindingId3)
+		cleanupInstances(testInstanceId, testInstanceId2, testInstanceId3)
 	})
 
 	Describe("NewBindingSQLDB", func() {
@@ -532,7 +537,7 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			FIt("returns the correct count", func() {
+			It("returns the correct count", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(serviceInstanceCount).To(Equal(2))
 			})
@@ -573,7 +578,7 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 			})
-			FIt("should succeed", func() {
+			It("should succeed", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingIds).To(ConsistOf(testBindingId, testBindingId2))
 			})

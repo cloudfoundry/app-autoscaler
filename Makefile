@@ -34,8 +34,8 @@ build_tests:	build_test-scalingengine\
 
 build_test-%:
 	@echo " - $* tests"
-	@export build_folder=${PWD}/build/$* &&\
- 	@mkdir -p $${build_folder} &&\
+	@export build_folder=${PWD}/build/$* && \
+ 	mkdir -p $${build_folder} && \
   	cd $* && \
   	for package in $$( find . -name "*.go" -exec dirname {} \; | sort | uniq  ); \
  	  do \
@@ -59,7 +59,7 @@ test: ginkgo_check
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} --skip-package=integration
 
 testsuite: ginkgo_check
-	APP_AUTOSCALER_TEST_RUN=true ginkgo -vv ${GINKGO_OPTS} $(TEST)
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -v ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration
 integration: ginkgo_check
