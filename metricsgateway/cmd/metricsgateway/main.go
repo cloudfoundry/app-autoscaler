@@ -107,7 +107,7 @@ func main() {
 		return nil
 	})
 
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth([]healthendpoint.Checker{}, logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
 
 	if err != nil {
 		logger.Error("failed to create health server", err)

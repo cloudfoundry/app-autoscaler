@@ -188,9 +188,20 @@ var _ = Describe("Metricsforwarder", func() {
 		})
 
 		Context("when username and password are correct for basic authentication during health check", func() {
-			It("should return 200", func() {
+			It("should return 200 for /health", func() {
 
 				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth(cfg.Health.HealthCheckUsername, cfg.Health.HealthCheckPassword)
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			})
+			It("should return 200 for /health/readiness", func() {
+
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health/readiness", healthport), nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				req.SetBasicAuth(cfg.Health.HealthCheckUsername, cfg.Health.HealthCheckPassword)
