@@ -48,13 +48,6 @@ var _ = Describe("Stored Procedure test", func() {
 		if getPostgresMajorVersion() < 12 {
 			Skip("This test only works for Postgres v12 and above")
 		}
-
-		deleteAllFunctions()
-		addPSQLFunctions()
-	})
-
-	AfterEach(func() {
-		deleteAllFunctions()
 	})
 
 	Describe("NewBindingSQLDB", func() {

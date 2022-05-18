@@ -2,6 +2,7 @@ package sqldb_test
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -21,26 +22,33 @@ import (
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		pdb             *PolicySQLDB
-		dbConfig        db.DatabaseConfig
-		logger          lager.Logger
-		err             error
-		appIds          map[string]bool
-		scalingPolicy   *models.ScalingPolicy
-		policyJson      []byte
-		policyJsonStr   string
-		appId           string
-		policies        []*models.PolicyJson
-		testMetricName  = "TestMetricName"
-		username        string
-		password        string
-		anotherUsername string
-		antherPassword  string
-		credential      *models.Credential
+		pdb               *PolicySQLDB
+		dbConfig          db.DatabaseConfig
+		logger            lager.Logger
+		err               error
+		appIds            map[string]bool
+		scalingPolicy     *models.ScalingPolicy
+		policyJson        []byte
+		policyJsonStr     string
+		policies          []*models.PolicyJson
+		testMetricName    = "TestMetricName"
+		username          string
+		password          string
+		anotherUsername   string
+		antherPassword    string
+		credential        *models.Credential
+		policyGuid        string
+		policyGuid2       string
+		policyGuid3       string
+		anotherPolicyGuid string
+		appId             string
+		appId2            string
+		appId3            string
 	)
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("policy-sqldb-test")
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
 			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
@@ -48,20 +56,41 @@ var _ = Describe("PolicySQLDB", func() {
 			ConnectionMaxLifetime: 10 * time.Second,
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
+		pdb, err = NewPolicySQLDB(dbConfig, logger)
+		if err != nil {
+			Fail("unable to connect policy-db: " + err.Error())
+		}
+		DeferCleanup(func() error {
+			if pdb != nil {
+				return pdb.Close()
+			} else {
+				return nil
+			}
+		})
+		policyGuid = addProcessIdTo("a-policy-guid")
+		policyGuid2 = addProcessIdTo("a-policy-guid-2")
+		policyGuid3 = addProcessIdTo("a-policy-guid-3")
+		anotherPolicyGuid = addProcessIdTo("another-policy-guid")
+		appId = addProcessIdTo("first-bound-app-id")
+		appId2 = addProcessIdTo("second-bound-app-id")
+		appId3 = addProcessIdTo("third-bound-app-id")
+		username = addProcessIdTo("the-user-name")
+		password = addProcessIdTo("the-password")
+		anotherUsername = addProcessIdTo("another-user-name")
+		antherPassword = addProcessIdTo("another-password")
+
+		deletePolicies(pdb, logger, policyGuid, policyGuid2, policyGuid3)
+		deleteApps(pdb, logger, appId, appId2, appId3)
+		deleteCredentials(pdb, logger, appId, appId2, appId3)
 	})
 
 	Describe("NewPolicySQLDB", func() {
 		JustBeforeEach(func() {
+			if pdb != nil {
+				_ = pdb.Close()
+			}
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 		})
-
-		AfterEach(func() {
-			if pdb != nil {
-				err = pdb.Close()
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
-
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
 				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
@@ -94,17 +123,9 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 
-	Describe("GetAppIds", func() {
+	Describe("GetAppIds", Serial, func() {
 		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
 			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
@@ -121,28 +142,23 @@ var _ = Describe("PolicySQLDB", func() {
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
 				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
-				insertPolicy("first-app-id", scalingPolicy)
-				insertPolicy("second-app-id", scalingPolicy)
-				insertPolicy("third-app-id", scalingPolicy)
+				insertPolicy(appId, scalingPolicy, policyGuid)
+				insertPolicy(appId2, scalingPolicy, policyGuid)
+				insertPolicy(appId3, scalingPolicy, policyGuid)
 			})
 
 			It("returns all app ids", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(appIds).To(HaveKey("first-app-id"))
-				Expect(appIds).To(HaveKey("second-app-id"))
-				Expect(appIds).To(HaveKey("third-app-id"))
+				Expect(appIds).To(HaveKey(appId))
+				Expect(appIds).To(HaveKey(appId2))
+				Expect(appIds).To(HaveKey(appId3))
 			})
 		})
 	})
 
 	Describe("GetAppPolicy", func() {
 		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-
-			insertPolicy("an-app-id", &models.ScalingPolicy{
+			insertPolicy(appId, &models.ScalingPolicy{
 				InstanceMin: 1,
 				InstanceMax: 6,
 				ScalingRules: []*models.ScalingRule{{
@@ -151,8 +167,8 @@ var _ = Describe("PolicySQLDB", func() {
 					Threshold:             1048576000,
 					Operator:              ">",
 					CoolDownSeconds:       300,
-					Adjustment:            "+10%"}}})
-			insertPolicy("another-app-id", &models.ScalingPolicy{
+					Adjustment:            "+10%"}}}, policyGuid)
+			insertPolicy(appId2, &models.ScalingPolicy{
 				InstanceMin: 2,
 				InstanceMax: 8,
 				ScalingRules: []*models.ScalingRule{{
@@ -161,12 +177,7 @@ var _ = Describe("PolicySQLDB", func() {
 					Threshold:             104857600,
 					Operator:              "<",
 					CoolDownSeconds:       120,
-					Adjustment:            "-2"}}})
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
+					Adjustment:            "-2"}}}, policyGuid)
 		})
 
 		JustBeforeEach(func() {
@@ -174,10 +185,6 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 
 		Context("when policy table has the app", func() {
-			BeforeEach(func() {
-				appId = "an-app-id"
-			})
-
 			It("returns the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(*scalingPolicy).To(Equal(models.ScalingPolicy{
@@ -196,7 +203,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when policy table does not have the app", func() {
 			BeforeEach(func() {
-				appId = "non-existent-app"
+				appId = addProcessIdTo("non-existent-app")
 			})
 
 			It("should return nil", func() {
@@ -206,24 +213,14 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 
-	Describe("RetrievePolicies", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
+	Describe("retrieve all policies", Serial, func() {
 
 		JustBeforeEach(func() {
+			cleanPolicyTable()
 			scalingPolicy = &models.ScalingPolicy{}
-			insertPolicy("first-app-id", scalingPolicy)
-			insertPolicy("second-app-id", scalingPolicy)
-			insertPolicy("third-app-id", scalingPolicy)
+			insertPolicy(appId, scalingPolicy, policyGuid)
+			insertPolicy(appId2, scalingPolicy, policyGuid)
+			insertPolicy(appId3, scalingPolicy, policyGuid)
 			policies, err = pdb.RetrievePolicies()
 			for i, policy := range policies {
 				policy.PolicyStr, err = formatPolicyString(policy.PolicyStr)
@@ -241,15 +238,15 @@ var _ = Describe("PolicySQLDB", func() {
 
 				Expect(policies).To(ConsistOf(
 					&models.PolicyJson{
-						AppId:     "first-app-id",
+						AppId:     appId,
 						PolicyStr: string(policyJson),
 					},
 					&models.PolicyJson{
-						AppId:     "second-app-id",
+						AppId:     appId2,
 						PolicyStr: string(policyJson),
 					},
 					&models.PolicyJson{
-						AppId:     "third-app-id",
+						AppId:     appId3,
 						PolicyStr: string(policyJson),
 					},
 				))
@@ -258,17 +255,6 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("SavePolicy", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 		Context("when no policy is present for the app_id", func() {
 			JustBeforeEach(func() {
 				policyJsonStr = `{
@@ -284,19 +270,19 @@ var _ = Describe("PolicySQLDB", func() {
 						"adjustment":"+1"
 					}]
 				}`
-				err = pdb.SaveAppPolicy("an-app-id", policyJsonStr, "1234")
+				err = pdb.SaveAppPolicy(appId, policyJsonStr, policyGuid)
 			})
 			It("saves the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
 				policyString, err := formatPolicyString(policyJsonStr)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(policyString))
+				Expect(formatPolicyString(getAppPolicy(appId))).To(Equal(policyString))
 			})
 		})
 
 		Context("when a policy is already present for the app_id", func() {
 			JustBeforeEach(func() {
-				insertPolicy("an-app-id", &models.ScalingPolicy{
+				insertPolicy(appId, &models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
@@ -305,7 +291,8 @@ var _ = Describe("PolicySQLDB", func() {
 						Threshold:             1048576000,
 						Operator:              ">",
 						CoolDownSeconds:       300,
-						Adjustment:            "+10%"}}})
+						Adjustment:            "+10%"}}}, policyGuid)
+
 				policyJsonStr = `{
 					"instance_max_count":4,
 					"instance_min_count":1,
@@ -319,32 +306,21 @@ var _ = Describe("PolicySQLDB", func() {
 						"adjustment":"+1"
 					}]
 				}`
-				err = pdb.SaveAppPolicy("an-app-id", policyJsonStr, "1234")
+
+				err = pdb.SaveAppPolicy(appId, policyJsonStr, policyGuid)
 			})
 			It("updates the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
 				policyString, err := formatPolicyString(policyJsonStr)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(policyString))
+				Expect(formatPolicyString(getAppPolicy(appId))).To(Equal(policyString))
 			})
 		})
 	})
 
 	Describe("DeletePolicy", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
-			err = pdb.DeletePolicy("an-app-id")
+			err = pdb.DeletePolicy(appId)
 		})
 
 		Context("when there is no policy in the table", func() {
@@ -356,12 +332,12 @@ var _ = Describe("PolicySQLDB", func() {
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
 				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
-				insertPolicy("an-app-id", scalingPolicy)
+				insertPolicy(appId, scalingPolicy, policyGuid)
 			})
 
 			It("should delete the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				policy, err := pdb.GetAppPolicy("an-app-id")
+				policy, err := pdb.GetAppPolicy(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).To(BeNil())
 			})
@@ -380,20 +356,8 @@ var _ = Describe("PolicySQLDB", func() {
 	Describe("DeletePoliciesByPolicyGuid", func() {
 		var updatedApps []string
 
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
-			updatedApps, err = pdb.DeletePoliciesByPolicyGuid("a-policy-guid")
+			updatedApps, err = pdb.DeletePoliciesByPolicyGuid(policyGuid)
 		})
 
 		Context("when there is no policy in the table", func() {
@@ -406,18 +370,18 @@ var _ = Describe("PolicySQLDB", func() {
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
 				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
-				insertPolicyWithGuid("first-app-id", scalingPolicy, "a-policy-guid")
-				insertPolicyWithGuid("second-app-id", scalingPolicy, "another-policy-guid")
+				insertPolicyWithGuid(appId, scalingPolicy, policyGuid)
+				insertPolicyWithGuid(appId2, scalingPolicy, anotherPolicyGuid)
 			})
 
 			It("should delete the policy with the specified policy guid", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(updatedApps).To(ConsistOf("first-app-id"))
+				Expect(updatedApps).To(ConsistOf(appId))
 
-				policy, err := pdb.GetAppPolicy("first-app-id")
+				policy, err := pdb.GetAppPolicy(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).To(BeNil())
-				policy, err = pdb.GetAppPolicy("second-app-id")
+				policy, err = pdb.GetAppPolicy(appId2)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).NotTo(BeNil())
 			})
@@ -425,7 +389,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				pdb.Close()
+				_ = pdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
@@ -434,54 +398,42 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("SetOrUpdateDefaultAppPolicy", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		newPolicy := `{"new": "policy"}`
 		var modifiedApps []string
 		JustBeforeEach(func() {
-			modifiedApps, err = pdb.SetOrUpdateDefaultAppPolicy([]string{"first-bound-app-id", "second-bound-app-id", "third-bound-app-id"}, "1", newPolicy, "8")
+			modifiedApps, err = pdb.SetOrUpdateDefaultAppPolicy([]string{appId, appId2, appId3}, policyGuid, newPolicy, policyGuid2)
 		})
 
 		Context("when policy table is empty", func() {
 			It("inserts the policies for the apps", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(modifiedApps).To(ConsistOf("first-bound-app-id", "second-bound-app-id", "third-bound-app-id"))
-				Expect(getAppPolicy("first-bound-app-id")).To(MatchJSON(newPolicy))
-				Expect(getAppPolicy("second-bound-app-id")).To(MatchJSON(newPolicy))
-				Expect(getAppPolicy("third-bound-app-id")).To(MatchJSON(newPolicy))
+				Expect(modifiedApps).To(ConsistOf(appId, appId2, appId3))
+				Expect(getAppPolicy(appId)).To(MatchJSON(newPolicy))
+				Expect(getAppPolicy(appId2)).To(MatchJSON(newPolicy))
+				Expect(getAppPolicy(appId3)).To(MatchJSON(newPolicy))
 			})
 		})
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
 				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
-				insertPolicyWithGuid("first-bound-app-id", scalingPolicy, "1")
-				insertPolicyWithGuid("second-bound-app-id", scalingPolicy, "2")
-				insertPolicyWithGuid("unrelated-app-id", scalingPolicy, "3")
+				insertPolicyWithGuid(appId, scalingPolicy, policyGuid)
+				insertPolicyWithGuid(appId2, scalingPolicy, policyGuid2)
+				insertPolicyWithGuid("unrelated-app-id", scalingPolicy, policyGuid3)
 			})
 
 			It("sets the default app policy on apps without a scaling policy and apps with the old policy", func() {
-				Expect(modifiedApps).To(ConsistOf("first-bound-app-id", "third-bound-app-id"))
-				Expect(getAppPolicy("first-bound-app-id")).To(MatchJSON(newPolicy))
-				Expect(getAppPolicy("second-bound-app-id")).ToNot(MatchJSON(newPolicy))
-				Expect(getAppPolicy("third-bound-app-id")).To(MatchJSON(newPolicy))
+				Expect(modifiedApps).To(ConsistOf(appId, appId3))
+				Expect(getAppPolicy(appId)).To(MatchJSON(newPolicy))
+				Expect(getAppPolicy(appId2)).ToNot(MatchJSON(newPolicy))
+				Expect(getAppPolicy(appId3)).To(MatchJSON(newPolicy))
 				Expect(getAppPolicy("unrelated-app-id")).NotTo(MatchJSON(newPolicy))
 			})
 		})
 
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				pdb.Close()
+				_ = pdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
@@ -490,21 +442,9 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("GetCredential", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = cleanCredentialTable()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 
 		JustBeforeEach(func() {
-			credential, err = pdb.GetCredential("an-app-id")
+			credential, err = pdb.GetCredential(appId)
 		})
 
 		Context("when there is no credential for target application", func() {
@@ -516,7 +456,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when there is credential for target application", func() {
 			BeforeEach(func() {
-				err = insertCredential("an-app-id", "username", "password")
+				err = insertCredential(appId, "username", "password")
 			})
 
 			It("Should get the credentials", func() {
@@ -528,22 +468,6 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 	Describe("SaveCredential", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			err = cleanCredentialTable()
-			Expect(err).NotTo(HaveOccurred())
-			appId = "the-test-app-id"
-			username = "the-user-name"
-			password = "the-password"
-			anotherUsername = "the-user-name"
-			antherPassword = "the-password"
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 
 		JustBeforeEach(func() {
 			err = pdb.SaveCredential(appId, models.Credential{
@@ -579,20 +503,6 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 	Describe("DeleteCred", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			err = cleanCredentialTable()
-			Expect(err).NotTo(HaveOccurred())
-			appId = "the-test-app-id"
-			username = "the-user-name"
-			password = "the-password"
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 
 		JustBeforeEach(func() {
 			err = pdb.DeleteCredential(appId)
@@ -617,7 +527,7 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				pdb.Close()
+				_ = pdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
@@ -626,3 +536,30 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 })
+
+func deleteCredentials(pdb *PolicySQLDB, logger lager.Logger, appIds ...string) {
+	for _, appId := range appIds {
+		err := pdb.DeleteCredential(appId)
+		if err != nil {
+			logger.Error(fmt.Sprintf("DeleteCredential app: %s", appId), err)
+		}
+	}
+}
+
+func deletePolicies(pdb *PolicySQLDB, logger lager.Logger, policyGuids ...string) {
+	for _, policyGuid := range policyGuids {
+		_, err := pdb.DeletePoliciesByPolicyGuid(policyGuid)
+		if err != nil {
+			logger.Error(fmt.Sprintf("DeletePoliciesByPolicyGuid policy: %s", policyGuid), err)
+		}
+	}
+}
+
+func deleteApps(pdb *PolicySQLDB, logger lager.Logger, appIds ...string) {
+	for _, appId := range appIds {
+		err := pdb.DeletePolicy(appId)
+		if err != nil {
+			logger.Error(fmt.Sprintf("DeletePolicy app: %s", appId), err)
+		}
+	}
+}

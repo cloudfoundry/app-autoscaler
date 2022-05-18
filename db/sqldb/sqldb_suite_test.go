@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,6 +57,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	_, e = dbHelper.Exec("DELETE from service_instance")
 	if e != nil {
 		Fail("can not clean table service_instance: " + e.Error())
+	}
+
+	if strings.Contains(os.Getenv("DBURL"), "postgres") && getPostgresMajorVersion() >= 12 {
+		deleteAllFunctions()
+		addPSQLFunctions()
 	}
 
 	_ = dbHelper.Close()
@@ -170,21 +176,22 @@ func cleanPolicyTable() {
 	}
 }
 
-func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
+func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy, policyGuid string) {
 	policyJson, e := json.Marshal(scalingPolicy)
 	if e != nil {
 		Fail("failed to marshall scaling policy" + e.Error())
 	}
 
 	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
-	_, e = dbHelper.Exec(query, appId, string(policyJson), "1234")
+	_, e = dbHelper.Exec(query, appId, string(policyJson), policyGuid)
 
 	if e != nil {
-		Fail("can not insert data to table policy_json: " + e.Error())
+		Fail(fmt.Sprintf("can not insert app:%s data to table policy_json: %s", appId, e.Error()))
 	}
 }
 
 func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, guid string) {
+	By("Insert policy:" + guid)
 	policyJson, e := json.Marshal(scalingPolicy)
 	if e != nil {
 		Fail("failed to marshall scaling policy" + e.Error())
@@ -365,13 +372,6 @@ func hasCredential(appId string) bool {
 		_ = rows.Err()
 	}()
 	return rows.Next()
-}
-func cleanCredentialTable() error {
-	_, err := dbHelper.Exec("DELETE FROM credentials")
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {
