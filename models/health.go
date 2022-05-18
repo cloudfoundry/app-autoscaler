@@ -12,6 +12,7 @@ type HealthConfig struct {
 	HealthCheckUsernameHash string `yaml:"username_hash"`
 	HealthCheckPassword     string `yaml:"password"`
 	HealthCheckPasswordHash string `yaml:"password_hash"`
+	ReadinessCheckEnabled   bool   `yaml:"readiness_enabled"`
 }
 
 func (c *HealthConfig) Validate(component string) error {
