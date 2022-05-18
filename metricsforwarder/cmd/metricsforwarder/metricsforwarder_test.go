@@ -207,7 +207,7 @@ var _ = Describe("Metricsforwarder", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				body, err := ioutil.ReadAll(rsp.Body)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(body).To(MatchJSON(`{"overall_status": "UP","checks": [ { "name":"policyDb", "type":"database", "status":"UP"}, { "name":"storedProcedureDb", "type":"database", "status":"UP"}]}`))
+				Expect(body).To(MatchJSON(`{"overall_status": "UP","checks": [ { "name":"policy_db", "type":"database", "status":"UP"}, { "name":"storedprocedure_db", "type":"database", "status":"UP"}]}`))
 			})
 		})
 
