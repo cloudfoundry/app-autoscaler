@@ -5,10 +5,6 @@ PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
 CGO_ENABLED = 0
 BUILDTAGS :=
 export GO111MODULE=on
-# Fix for golang issue with Montery 6/12/2021. Fix already in trunk but not released
-# https://github.com/golang/go/issues/49138
-# https://github.com/golang/go/commit/5f6552018d1ec920c3ca3d459691528f48363c3c
-export MallocNanoZone=0
 
 #TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/564 allow the tests to be run in parallel
 #GINKGO_OPTS=-r --race --require-suite -p --randomize-all --cover
@@ -33,11 +29,20 @@ build_tests:	build_test-scalingengine\
 		build_test-api\
 		build_test-metricsgateway\
 		build_test-metricsserver\
-		build_test-operator
+		build_test-operator\
+		build_test-db
 
 build_test-%:
 	@echo " - $* tests"
-	@cd $* && for package in $$( find . -name "*.go" -exec dirname {} \; | sort | uniq  ); do echo " -- compiling $*/$${package}"; go test -c -o /dev/null $${package}; done;
+	@export build_folder=${PWD}/build/$* && \
+ 	mkdir -p $${build_folder} && \
+  	cd $* && \
+  	for package in $$( find . -name "*.go" -exec dirname {} \; | sort | uniq  ); \
+ 	  do \
+ 	    name=tests_$$(echo "$${package}" | sed "s|\.|$*|" | sed 's|/|_|');\
+ 	    echo " -- compiling $*/$${package} to $${build_folder}/$${name}"; \
+ 	  	go test -c -o $${build_folder}/$${name} $${package};\
+ 	done;
 
 check: fmt lint build test
 
@@ -54,7 +59,7 @@ test: ginkgo_check
 	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} --skip-package=integration
 
 testsuite: ginkgo_check
-	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} -vv $(TEST)
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -v ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration
 integration: ginkgo_check

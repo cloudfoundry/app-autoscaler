@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -42,7 +43,9 @@ func TestOperator(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	pr, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/cmd/operator", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to build cmd/operator: %s", err.Error()))
+	}
 
 	return []byte(pr)
 }, func(pathsByte []byte) {
@@ -53,7 +56,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	os.Remove(configFile.Name())
+	_ = os.Remove(configFile.Name())
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
@@ -147,7 +150,7 @@ func initConfig() {
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "pr")
 	Expect(err).NotTo(HaveOccurred())
-	defer cfg.Close()
+	defer func() { _ = cfg.Close() }()
 
 	var bytes []byte
 	bytes, err = yaml.Marshal(c)

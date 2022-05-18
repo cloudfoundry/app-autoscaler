@@ -54,7 +54,7 @@ var _ = Describe("LockSqldb", func() {
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
 				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for postgres")
+					Skip("Postgres only test")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
@@ -66,7 +66,7 @@ var _ = Describe("LockSqldb", func() {
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
 				if strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for mysql")
+					Skip("Mysql test")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})

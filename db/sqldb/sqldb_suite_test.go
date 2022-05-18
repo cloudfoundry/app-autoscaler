@@ -26,7 +26,7 @@ func TestSqldb(t *testing.T) {
 	RunSpecs(t, "Sqldb Suite")
 }
 
-var _ = BeforeSuite(func() {
+var _ = SynchronizedBeforeSuite(func() []byte {
 	var e error
 
 	dbUrl := os.Getenv("DBURL")
@@ -47,17 +47,51 @@ var _ = BeforeSuite(func() {
 	if e != nil {
 		Fail("can not create test lock table: " + e.Error())
 	}
+
+	_, e = dbHelper.Exec("DELETE from binding")
+	if e != nil {
+		Fail("can not clean table binding: " + e.Error())
+	}
+
+	_, e = dbHelper.Exec("DELETE from service_instance")
+	if e != nil {
+		Fail("can not clean table service_instance: " + e.Error())
+	}
+
+	_ = dbHelper.Close()
+	dbHelper = nil
+
+	return []byte{}
+}, func([]byte) {
+	var e error
+
+	dbUrl := os.Getenv("DBURL")
+	if dbUrl == "" {
+		Fail("environment variable $DBURL is not set")
+	}
+	database, err := db.GetConnection(dbUrl)
+	if err != nil {
+		Fail("failed to parse database connection: " + err.Error())
+	}
+
+	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
+	if e != nil {
+		Fail("can not connect database: " + e.Error())
+	}
 })
 
-var _ = AfterSuite(func() {
+var _ = SynchronizedAfterSuite(func() {
+	if dbHelper != nil && GinkgoParallelProcess() != 1 {
+		_ = dbHelper.Close()
+	}
+}, func() {
 	e := dropLockTable()
 	if e != nil {
 		Fail("can not drop test lock table: " + e.Error())
 	}
-	if dbHelper != nil {
+	if dbHelper != nil && GinkgoParallelProcess() == 1 {
 		_ = dbHelper.Close()
 	}
-
 })
 
 func cleanInstanceMetricsTable() {
@@ -87,20 +121,6 @@ func getNumberOfInstanceMetrics() int {
 		Fail("can not count the number of records in table appinstancemetrics: " + e.Error())
 	}
 	return num
-}
-
-func cleanServiceBindingTable() {
-	_, e := dbHelper.Exec("DELETE from binding")
-	if e != nil {
-		Fail("can not clean table binding: " + e.Error())
-	}
-}
-
-func cleanServiceInstanceTable() {
-	_, e := dbHelper.Exec("DELETE from service_instance")
-	if e != nil {
-		Fail("can not clean table service_instance: " + e.Error())
-	}
 }
 
 func hasServiceInstance(serviceInstanceId string) bool {

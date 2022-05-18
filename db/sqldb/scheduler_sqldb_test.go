@@ -64,7 +64,7 @@ var _ = Describe("SchedulerSqldb", func() {
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
 				if strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for mysql")
+					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})

@@ -103,29 +103,36 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	initDB()
 	return []byte(eg)
 }, func(pathByte []byte) {
+	healthHttpClient = &http.Client{}
 	egPath = string(pathByte)
 	initHttpEndPoints()
 	initConfig()
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	os.Remove(configFile.Name())
+	_ = os.Remove(configFile.Name())
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
 
 func initDB() {
 	database, err := db.GetConnection(os.Getenv("DBURL"))
+
 	Expect(err).NotTo(HaveOccurred())
 
 	egDB, err := sqlx.Open(database.DriverName, database.DSN)
+	defer func() { _ = egDB.Close() }()
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = egDB.Exec("DELETE FROM app_metric")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to clean app_metric %s", err.Error()))
+	}
 
 	_, err = egDB.Exec("DELETE from policy_json")
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to clean policy_json %s", err.Error()))
+	}
 
 	policy := fmt.Sprintf(`
 		{
@@ -144,11 +151,9 @@ func initDB() {
 		}`, breachDurationSecs)
 	query := egDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = egDB.Exec(query, testAppId, policy, "1234")
-	Expect(err).NotTo(HaveOccurred())
-
-	err = egDB.Close()
-	Expect(err).NotTo(HaveOccurred())
-	healthHttpClient = &http.Client{}
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to insert policy %s", err.Error()))
+	}
 }
 
 func initHttpEndPoints() {

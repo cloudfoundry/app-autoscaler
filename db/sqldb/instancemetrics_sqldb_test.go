@@ -80,7 +80,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
 				if strings.Contains(os.Getenv("DBURL"), "postgres") {
-					Skip("Not configured for mysql")
+					Skip("Mysql test")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})

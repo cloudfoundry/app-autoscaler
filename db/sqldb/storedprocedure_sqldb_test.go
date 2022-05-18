@@ -19,8 +19,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const instanceId = "InstanceId1"
-const bindingId = "BindingId1"
+var instanceId = "InstanceId1"
+var bindingId = "BindingId1"
 
 var _ = Describe("Stored Procedure test", func() {
 	var (
@@ -42,7 +42,7 @@ var _ = Describe("Stored Procedure test", func() {
 		}
 
 		if !strings.Contains(os.Getenv("DBURL"), "postgres") {
-			Skip("Not configured for Postgres")
+			Skip("Postgres test")
 		}
 
 		if getPostgresMajorVersion() < 12 {
