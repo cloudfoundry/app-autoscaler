@@ -23,14 +23,21 @@ type MetricServerClient struct {
 }
 
 func NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, tlsClientCerts *models.TLSCerts) *MetricServerClient {
+
 	httpClient, err := helpers.CreateHTTPClient(tlsClientCerts)
+
 	if err != nil {
 		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": tlsClientCerts})
 	}
 	httpClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 1
-	return &MetricServerClient{logger: logger, metricCollectorUrl: metricCollectorUrl, httpClient: httpClient}
+	return &MetricServerClient{
+		logger:             logger.Session("MetricServerClient"),
+		metricCollectorUrl: metricCollectorUrl,
+		httpClient:         httpClient,
+	}
 }
 func (c *MetricServerClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]*models.AppInstanceMetric, error) {
+	c.logger.Debug("GetMetric")
 	var url string
 	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
 	parameters := path.Query()

@@ -39,6 +39,7 @@ var _ = Describe("Eventgenerator", func() {
 			Eventually(func() bool { return len(metricCollector.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
 			Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 		})
+
 	})
 
 	Context("with a missing config file", func() {
@@ -136,6 +137,7 @@ var _ = Describe("Eventgenerator", func() {
 		})
 
 	})
+
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
 			basicAuthConfig := conf
@@ -231,4 +233,31 @@ var _ = Describe("Eventgenerator", func() {
 		})
 	})
 
+	Describe("Getting metrics from LogCache", func() {
+		Context("when LogCache is not configured", func() {
+			BeforeEach(func() {
+				runner.Start()
+			})
+
+			It("Should create a MetricServerClient by default", func() {
+				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.LogCacheClient.GetMetric"))
+				Eventually(runner.Session.Buffer()).Should(Say("eventgenerator.MetricServerClient.GetMetric"))
+			})
+		})
+
+		Context("when logCache is enabled", func() {
+			BeforeEach(func() {
+				basicAuthConfig := conf
+				basicAuthConfig.UseLogCache = true
+				runner.configPath = writeConfig(&basicAuthConfig).Name()
+
+				runner.Start()
+			})
+
+			It("Should create a LogCacheClient", func() {
+				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.MetricServerClient.GetMetric"))
+				Eventually(runner.Session.Buffer()).Should(Say("eventgenerator.LogCacheClient.GetMetric"))
+			})
+		})
+	})
 })

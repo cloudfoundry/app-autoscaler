@@ -195,7 +195,16 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 }
 
 func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-	metricClient := aggregator.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
+	// if conf.UseLogCache
+	// then
+	// new logCacheClient
+	//else
+	var metricClient aggregator.MetricClient
+	if conf.UseLogCache {
+		metricClient = aggregator.NewLogCacheClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
+	} else {
+		metricClient = aggregator.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
+	}
 
 	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)
 	for i := 0; i < len(pollers); i++ {
