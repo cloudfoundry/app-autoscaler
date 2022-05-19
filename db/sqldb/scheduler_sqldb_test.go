@@ -28,6 +28,7 @@ var _ = Describe("SchedulerSqldb", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("scheduler-sqldb-test")
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
 			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,

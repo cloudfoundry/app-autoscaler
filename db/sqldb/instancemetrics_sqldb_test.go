@@ -35,9 +35,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		appId          string
 		instanceIndex  int
 		metricName     string
-		testAppId      = "Test-App-ID"
-		testMetricName = "TestMetricType"
-		testMetricUnit = "TestMetricUnit"
+		testMetricName string
+		testMetricUnit string
 	)
 
 	BeforeEach(func() {
@@ -46,23 +45,30 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
-			ConnectionMaxLifetime: 10 * time.Second,
-			ConnectionMaxIdleTime: 10 * time.Second,
+			ConnectionMaxLifetime: 5 * time.Second,
+			ConnectionMaxIdleTime: 10 * time.Millisecond,
 		}
 		instanceIndex = -1
-		testMetricName = "TestMetricType"
+		testMetricName = addProcessIdTo("TestMetricType")
+		appId = addProcessIdTo("Test-App-ID")
+		testMetricUnit = addProcessIdTo("TestMetricUnit")
+		idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
+		DeferCleanup(func() error {
+			if idb != nil {
+				return idb.Close()
+			}
+			return nil
+		})
+		cleanInstanceMetricsTableForApp(appId)
+		DeferCleanup(func() { cleanInstanceMetricsTableForApp(appId) })
 	})
 
 	Describe("NewInstanceMetricsSQLDB", func() {
 		JustBeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
-		})
-
-		AfterEach(func() {
 			if idb != nil {
-				err = idb.Close()
-				Expect(err).NotTo(HaveOccurred())
+				_ = idb.Close()
 			}
+			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
 		})
 
 		Context("when db url is not correct", func() {
@@ -99,20 +105,13 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	Describe("SaveMetric", func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanInstanceMetricsTable()
-		})
-
-		AfterEach(func() {
-			err = idb.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("When inserting a metric", func() {
 			BeforeEach(func() {
 				metric = &models.AppInstanceMetric{
-					AppId:         testAppId,
+					AppId:         appId,
 					InstanceIndex: 0,
 					CollectedAt:   111111,
 					Name:          testMetricName,
@@ -125,14 +124,14 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("has the metric in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric(appId, 0, testMetricName, 110000)).To(BeTrue())
 			})
 		})
 
 		Context("When inserting multiple metrics", func() {
 			BeforeEach(func() {
 				metric = &models.AppInstanceMetric{
-					AppId: testAppId,
+					AppId: appId,
 					Name:  testMetricName,
 					Unit:  testMetricUnit,
 				}
@@ -159,24 +158,14 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 
 			It("has all the metrics in database", func() {
-				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 111100)).To(BeTrue())
-				Expect(hasInstanceMetric(testAppId, 1, testMetricName, 110000)).To(BeTrue())
-				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 220000)).To(BeTrue())
+				Expect(hasInstanceMetric(appId, 0, testMetricName, 111100)).To(BeTrue())
+				Expect(hasInstanceMetric(appId, 1, testMetricName, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric(appId, 0, testMetricName, 220000)).To(BeTrue())
 			})
 		})
 	})
 
 	Describe("SaveMetricsInBulk", func() {
-		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanInstanceMetricsTable()
-		})
-
-		AfterEach(func() {
-			err = idb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 		Context("When inserting an empty array of metrics", func() {
 			BeforeEach(func() {
 				metrics := []*models.AppInstanceMetric{}
@@ -190,7 +179,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		Context("When inserting an array of metrics", func() {
 			BeforeEach(func() {
 				metric1 := models.AppInstanceMetric{
-					AppId:         testAppId,
+					AppId:         appId,
 					InstanceIndex: 0,
 					CollectedAt:   111111,
 					Name:          testMetricName,
@@ -199,7 +188,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					Timestamp:     110000,
 				}
 				metric2 := models.AppInstanceMetric{
-					AppId:         testAppId,
+					AppId:         appId,
 					InstanceIndex: 1,
 					CollectedAt:   222222,
 					Name:          testMetricName,
@@ -212,18 +201,17 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("has the metrics in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 110000)).To(BeTrue())
-				Expect(hasInstanceMetric(testAppId, 1, testMetricName, 220000)).To(BeTrue())
+				Expect(hasInstanceMetric(appId, 0, testMetricName, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric(appId, 1, testMetricName, 220000)).To(BeTrue())
 			})
 		})
 
 		Context("When there are errors in transaction", func() {
-			var lock = &sync.Mutex{}
-			var count = 0
+
 			BeforeEach(func() {
 				testMetricName = "This-is-a-too-long-meitrc-name-too-loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				metric1 := models.AppInstanceMetric{
-					AppId:         testAppId,
+					AppId:         appId,
 					InstanceIndex: 0,
 					CollectedAt:   111111,
 					Name:          testMetricName,
@@ -232,7 +220,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					Timestamp:     110000,
 				}
 				metric2 := models.AppInstanceMetric{
-					AppId:         testAppId,
+					AppId:         appId,
 					InstanceIndex: 1,
 					CollectedAt:   222222,
 					Name:          testMetricName,
@@ -240,25 +228,20 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					Value:         "234",
 					Timestamp:     220000,
 				}
-
+				wg := sync.WaitGroup{}
+				wg.Add(100)
 				for i := 0; i < 100; i++ {
-					go func(count *int) {
+					go func() {
 						err := idb.SaveMetricsInBulk([]*models.AppInstanceMetric{&metric1, &metric2})
 						Expect(err).To(HaveOccurred())
-						lock.Lock()
-						*count = *count + 1
-						lock.Unlock()
-					}(&count)
-
+						defer wg.Done()
+					}()
 				}
+				wg.Wait()
 			})
 
 			It("all connections should be released after transactions' rolling back", func() {
-				Eventually(func() int {
-					lock.Lock()
-					defer lock.Unlock()
-					return count
-				}, 120*time.Second, 1*time.Second).Should(Equal(100))
+
 				Eventually(func() int { return idb.GetDBStatus().OpenConnections }, 120*time.Second, 10*time.Millisecond).Should(BeZero())
 			})
 		})
@@ -266,12 +249,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	Describe("RetrieveInstanceMetrics", func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanInstanceMetricsTable()
-
 			metric = &models.AppInstanceMetric{
-				AppId: testAppId,
+				AppId: appId,
 				Name:  testMetricName,
 				Unit:  testMetricUnit,
 			}
@@ -306,15 +285,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			start = 0
 			end = -1
-			appId = testAppId
 			metricName = testMetricName
 			orderType = db.DESC
 
-		})
-
-		AfterEach(func() {
-			err = idb.Close()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
@@ -365,7 +338,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(4))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeEquivalentTo(333333),
 					"Name":          Equal(testMetricName),
@@ -375,7 +348,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
 					"Name":          Equal(testMetricName),
@@ -385,7 +358,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
 					"Name":          Equal(testMetricName),
@@ -395,7 +368,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[3]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
 					"Name":          Equal(testMetricName),
@@ -416,7 +389,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(mtrcs).To(HaveLen(4))
 
 				Expect(*mtrcs[3]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
 					"Name":          Equal(testMetricName),
@@ -426,7 +399,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeEquivalentTo(333333),
 					"Name":          Equal(testMetricName),
@@ -436,7 +409,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
 					"Name":          Equal(testMetricName),
@@ -446,7 +419,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
 					"Name":          Equal(testMetricName),
@@ -467,7 +440,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
 					"Name":          Equal(testMetricName),
@@ -477,7 +450,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
 					"Name":          Equal(testMetricName),
@@ -496,7 +469,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
 					"Name":          Equal(testMetricName),
@@ -506,7 +479,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
 					"Name":          Equal(testMetricName),
@@ -578,7 +551,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
 					"Name":          Equal(testMetricName),
@@ -587,7 +560,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
 					"Name":          Equal(testMetricName),
@@ -609,7 +582,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(1))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal(testAppId),
+					"AppId":         Equal(appId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
 					"Name":          Equal(testMetricName),
@@ -632,15 +605,10 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 	})
 
-	Describe("PruneMetrics", func() {
+	Describe("PruneMetrics", Serial, func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanInstanceMetricsTable()
-
 			metric = &models.AppInstanceMetric{
-				AppId: testAppId,
+				AppId: appId,
 				Name:  testMetricName,
 				Unit:  testMetricUnit,
 			}
@@ -674,11 +642,6 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		AfterEach(func() {
-			err = idb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
 			err = idb.PruneInstanceMetrics(before)
 		})
@@ -690,7 +653,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("does not remove any metrics", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfInstanceMetrics()).To(Equal(4))
+				Expect(getNumberOfInstanceMetricsForApp(appId)).To(Equal(4))
 			})
 		})
 
@@ -701,7 +664,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("empties the metrics table", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfInstanceMetrics()).To(Equal(0))
+				Expect(getNumberOfInstanceMetricsForApp(appId)).To(Equal(0))
 			})
 		})
 
@@ -712,13 +675,13 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("removes metrics before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfInstanceMetrics()).To(Equal(3))
+				Expect(getNumberOfInstanceMetricsForApp(appId)).To(Equal(3))
 			})
 		})
 
 		Context("when db fails", func() {
 			BeforeEach(func() {
-				idb.Close()
+				_ = idb.Close()
 			})
 
 			It("should error", func() {
@@ -728,5 +691,4 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 
 	})
-
 })

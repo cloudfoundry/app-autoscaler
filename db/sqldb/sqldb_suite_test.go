@@ -100,11 +100,9 @@ var _ = SynchronizedAfterSuite(func() {
 	}
 })
 
-func cleanInstanceMetricsTable() {
-	_, e := dbHelper.Exec("DELETE FROM appinstancemetrics")
-	if e != nil {
-		Fail("can not clean table appinstancemetrics:" + e.Error())
-	}
+func cleanInstanceMetricsTableForApp(appId string) {
+	_, e := dbHelper.Exec(dbHelper.Rebind("DELETE FROM appinstancemetrics where appid=?"), appId)
+	FailOnError("can not clean table appinstancemetrics:", e)
 }
 
 func hasInstanceMetric(appId string, index int, name string, timestamp int64) bool {
@@ -120,9 +118,9 @@ func hasInstanceMetric(appId string, index int, name string, timestamp int64) bo
 	return rows.Next()
 }
 
-func getNumberOfInstanceMetrics() int {
+func getNumberOfInstanceMetricsForApp(appId string) int {
 	var num int
-	e := dbHelper.QueryRow("SELECT COUNT(*) FROM appinstancemetrics").Scan(&num)
+	e := dbHelper.QueryRow(dbHelper.Rebind("SELECT COUNT(*) FROM appinstancemetrics where appid = ?"), appId).Scan(&num)
 	if e != nil {
 		Fail("can not count the number of records in table appinstancemetrics: " + e.Error())
 	}
@@ -225,10 +223,11 @@ func getAppPolicy(appId string) string {
 	return policyJsonStr
 }
 
-func cleanAppMetricTable() {
-	_, e := dbHelper.Exec("DELETE from app_metric")
-	if e != nil {
-		Fail("can not clean table app_metric : " + e.Error())
+func cleanAppMetricTable(appId string) {
+	query := dbHelper.Rebind("DELETE from app_metric where app_id = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table app_metric or app_id" + err.Error())
 	}
 }
 
@@ -245,19 +244,36 @@ func hasAppMetric(appId, metricType string, timestamp int64, value string) bool 
 	return rows.Next()
 }
 
-func getNumberOfAppMetrics() int {
+func getNumberOfMetricsForApp(appId string) int {
 	var num int
-	e := dbHelper.QueryRow("SELECT COUNT(*) FROM app_metric").Scan(&num)
-	if e != nil {
-		Fail("can not count the number of records in table app_metric: " + e.Error())
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM app_metric where app_id = ?")
+	err := dbHelper.QueryRow(query, appId).Scan(&num)
+	if err != nil {
+		Fail("can not count the number of records in table app_metric: " + err.Error())
 	}
 	return num
 }
 
-func cleanScalingHistoryTable() {
-	_, e := dbHelper.Exec("DELETE from scalinghistory")
-	if e != nil {
-		Fail("can not clean table scalinghistory: " + e.Error())
+func removeScalingHistoryForApp(appId string) {
+	query := dbHelper.Rebind("DELETE from scalinghistory where appId = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table scalinghistory: " + err.Error())
+	}
+}
+
+func removeCooldownForApp(appId string) {
+	query := dbHelper.Rebind("DELETE from scalingcooldown where appId = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table scalingcooldown: " + err.Error())
+	}
+}
+func removeActiveScheduleForApp(appId string) {
+	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table scalingcooldown: " + err.Error())
 	}
 }
 
@@ -274,20 +290,15 @@ func hasScalingHistory(appId string, timestamp int64) bool {
 	return rows.Next()
 }
 
-func getNumberOfScalingHistories() int {
+func getScalingHistoryForApp(appId string) int {
 	var num int
-	e := dbHelper.QueryRow("SELECT COUNT(*) FROM scalinghistory").Scan(&num)
-	if e != nil {
-		Fail("can not count the number of records in table scalinghistory: " + e.Error())
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ?")
+	row := dbHelper.QueryRow(query, appId)
+	err := row.Scan(&num)
+	if err != nil {
+		Fail("can not count the number of records in table scalinghistory: " + err.Error())
 	}
 	return num
-}
-
-func cleanScalingCooldownTable() {
-	_, e := dbHelper.Exec("DELETE from scalingcooldown")
-	if e != nil {
-		Fail("can not clean table scalingcooldown: " + e.Error())
-	}
 }
 
 func hasScalingCooldownRecord(appId string, expireAt int64) bool {
@@ -301,11 +312,6 @@ func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 		_ = rows.Err()
 	}()
 	return rows.Next()
-}
-
-func cleanActiveScheduleTable() error {
-	_, e := dbHelper.Exec("DELETE from activeschedule")
-	return e
 }
 
 func insertActiveSchedule(appId, scheduleId string, instanceMin, instanceMax, instanceMinInitial int) error {
