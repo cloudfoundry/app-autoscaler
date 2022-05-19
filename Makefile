@@ -56,7 +56,7 @@ ginkgo_check:
 
 test: ginkgo_check
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} -p --skip-package=integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} --skip-package=integration
 
 testsuite: ginkgo_check
 	APP_AUTOSCALER_TEST_RUN=true ginkgo -v ${GINKGO_OPTS} ${TEST}

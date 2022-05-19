@@ -262,6 +262,21 @@ func removeScalingHistoryForApp(appId string) {
 	}
 }
 
+func removeCooldownForApp(appId string) {
+	query := dbHelper.Rebind("DELETE from scalingcooldown where appId = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table scalingcooldown: " + err.Error())
+	}
+}
+func removeActiveScheduleForApp(appId string) {
+	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table scalingcooldown: " + err.Error())
+	}
+}
+
 func hasScalingHistory(appId string, timestamp int64) bool {
 	query := dbHelper.Rebind("SELECT * FROM scalinghistory WHERE appid = ? AND timestamp = ?")
 	rows, e := dbHelper.Query(query, appId, timestamp)
@@ -278,18 +293,12 @@ func hasScalingHistory(appId string, timestamp int64) bool {
 func getScalingHistoryForApp(appId string) int {
 	var num int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ?")
-	err := dbHelper.QueryRow(query, appId).Scan(&num)
+	row := dbHelper.QueryRow(query, appId)
+	err := row.Scan(&num)
 	if err != nil {
 		Fail("can not count the number of records in table scalinghistory: " + err.Error())
 	}
 	return num
-}
-
-func cleanScalingCooldownTable() {
-	_, e := dbHelper.Exec("DELETE from scalingcooldown")
-	if e != nil {
-		Fail("can not clean table scalingcooldown: " + e.Error())
-	}
 }
 
 func hasScalingCooldownRecord(appId string, expireAt int64) bool {
@@ -303,11 +312,6 @@ func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 		_ = rows.Err()
 	}()
 	return rows.Next()
-}
-
-func cleanActiveScheduleTable() error {
-	_, e := dbHelper.Exec("DELETE from activeschedule")
-	return e
 }
 
 func insertActiveSchedule(appId, scheduleId string, instanceMin, instanceMax, instanceMinInitial int) error {
