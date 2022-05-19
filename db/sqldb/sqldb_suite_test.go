@@ -254,10 +254,11 @@ func getNumberOfAppMetrics() int {
 	return num
 }
 
-func cleanScalingHistoryTable() {
-	_, e := dbHelper.Exec("DELETE from scalinghistory")
-	if e != nil {
-		Fail("can not clean table scalinghistory: " + e.Error())
+func removeScalingHistoryForApp(appId string) {
+	query := dbHelper.Rebind("DELETE from scalinghistory where appId = ?")
+	_, err := dbHelper.Exec(query, appId)
+	if err != nil {
+		Fail("can not clean table scalinghistory: " + err.Error())
 	}
 }
 
@@ -274,11 +275,12 @@ func hasScalingHistory(appId string, timestamp int64) bool {
 	return rows.Next()
 }
 
-func getNumberOfScalingHistories() int {
+func getScalingHistoryForApp(appId string) int {
 	var num int
-	e := dbHelper.QueryRow("SELECT COUNT(*) FROM scalinghistory").Scan(&num)
-	if e != nil {
-		Fail("can not count the number of records in table scalinghistory: " + e.Error())
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ?")
+	err := dbHelper.QueryRow(query, appId).Scan(&num)
+	if err != nil {
+		Fail("can not count the number of records in table scalinghistory: " + err.Error())
 	}
 	return num
 }

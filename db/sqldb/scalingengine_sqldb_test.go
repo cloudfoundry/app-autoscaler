@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var _ = Describe("ScalingEngineSqldb", func() {
+var _ = FDescribe("ScalingEngineSqldb", func() {
 	var (
 		dbConfig          db.DatabaseConfig
 		logger            lager.Logger
@@ -28,6 +28,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		end               int64
 		orderType         db.OrderType
 		appId             string
+		appId2            string
 		histories         []*models.AppScalingHistory
 		canScale          bool
 		cooldownExpiredAt int64
@@ -35,7 +36,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		schedules         map[string]string
 		before            int64
 		includeAll        bool
-		anAppId           = addProcessIdTo("an-app-id")
 	)
 
 	BeforeEach(func() {
@@ -47,10 +47,24 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			ConnectionMaxLifetime: 10 * time.Second,
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
+		sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
+		if err != nil {
+			Fail("Could not open db connection: " + err.Error())
+		}
+		DeferCleanup(func() error {
+			if sdb != nil {
+				return sdb.Close()
+			}
+			return nil
+		})
+		appId = addProcessIdTo("an-app-id")
+		appId2 = addProcessIdTo("second-app-id")
+		removeScalingHistoryForApp(appId)
 	})
 
 	Describe("NewHistorySQLDB", func() {
 		JustBeforeEach(func() {
+			_ = sdb.Close()
 			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 		})
 
@@ -94,17 +108,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	})
 
 	Describe("SaveScalingHistory", func() {
-		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanScalingHistoryTable()
-		})
-
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		Context("When inserting a scaling history record of an app", func() {
 			BeforeEach(func() {
 				history = &models.AppScalingHistory{
@@ -137,17 +140,17 @@ var _ = Describe("ScalingEngineSqldb", func() {
 					Message:      "a message",
 					Error:        "an error",
 				}
-				history.AppId = anAppId
+				history.AppId = appId
 				history.Timestamp = 111111
 				err = sdb.SaveScalingHistory(history)
 				Expect(err).NotTo(HaveOccurred())
 
-				history.AppId = anAppId
+				history.AppId = appId
 				history.Timestamp = 222222
 				err = sdb.SaveScalingHistory(history)
 				Expect(err).NotTo(HaveOccurred())
 
-				history.AppId = "another-app-id"
+				history.AppId = appId2
 				history.Timestamp = 333333
 				err = sdb.SaveScalingHistory(history)
 				Expect(err).NotTo(HaveOccurred())
@@ -156,9 +159,9 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 			It("has all the histories in database", func() {
 
-				Expect(hasScalingHistory(anAppId, 111111)).To(BeTrue())
-				Expect(hasScalingHistory(anAppId, 222222)).To(BeTrue())
-				Expect(hasScalingHistory("another-app-id", 333333)).To(BeTrue())
+				Expect(hasScalingHistory(appId, 111111)).To(BeTrue())
+				Expect(hasScalingHistory(appId, 222222)).To(BeTrue())
+				Expect(hasScalingHistory(appId2, 333333)).To(BeTrue())
 
 			})
 		})
@@ -168,25 +171,15 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	Describe("RetrieveScalingHistories", func() {
 
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanScalingHistoryTable()
-
 			start = 0
 			end = -1
-			appId = anAppId
 			orderType = db.DESC
 			includeAll = true
 		})
 
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
 			history = &models.AppScalingHistory{
-				AppId:        anAppId,
+				AppId:        appId,
 				OldInstances: 2,
 				NewInstances: 4,
 				Reason:       "a reason",
@@ -224,12 +217,9 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			histories, err = sdb.RetrieveScalingHistories(appId, start, end, orderType, includeAll)
 		})
 
-		Context("When the app has no hisotry", func() {
-			BeforeEach(func() {
-				appId = "app-id-no-history"
-			})
-
+		Context("When the app has no history", func() {
 			It("returns empty metrics", func() {
+				histories, err = sdb.RetrieveScalingHistories("app-id-no-history", start, end, orderType, includeAll)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(BeEmpty())
 			})
@@ -295,7 +285,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    222222,
 						ScalingType:  models.ScalingTypeDynamic,
 						Status:       models.ScalingStatusFailed,
@@ -306,7 +296,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Error:        "an error",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    333333,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusIgnored,
@@ -316,7 +306,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusFailed,
@@ -327,7 +317,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Error:        "an error",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    666666,
 						ScalingType:  models.ScalingTypeDynamic,
 						Status:       models.ScalingStatusSucceeded,
@@ -347,7 +337,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    666666,
 						ScalingType:  models.ScalingTypeDynamic,
 						Status:       models.ScalingStatusSucceeded,
@@ -357,7 +347,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusFailed,
@@ -368,7 +358,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Error:        "an error",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    333333,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusIgnored,
@@ -378,7 +368,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    222222,
 						ScalingType:  models.ScalingTypeDynamic,
 						Status:       models.ScalingStatusFailed,
@@ -404,7 +394,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusFailed,
@@ -414,7 +404,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 						Error:        "an error",
 					}, {
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    333333,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusIgnored,
@@ -437,7 +427,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    666666,
 						ScalingType:  models.ScalingTypeDynamic,
 						Status:       models.ScalingStatusSucceeded,
@@ -447,7 +437,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
 						Status:       models.ScalingStatusFailed,
@@ -458,7 +448,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Error:        "an error",
 					},
 					{
-						AppId:        anAppId,
+						AppId:        appId,
 						Timestamp:    222222,
 						ScalingType:  models.ScalingTypeDynamic,
 						Status:       models.ScalingStatusFailed,
@@ -474,11 +464,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("PruneScalingHistories", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanScalingHistoryTable()
-
-			history = &models.AppScalingHistory{}
+			history = &models.AppScalingHistory{AppId: appId}
 			history.Timestamp = 666666
 			err = sdb.SaveScalingHistory(history)
 			Expect(err).NotTo(HaveOccurred())
@@ -500,11 +486,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			err = sdb.PruneScalingHistories(before)
 		})
 
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		Context("when pruning histories before all the timestamps", func() {
 			BeforeEach(func() {
 				before = 111111
@@ -512,7 +493,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 			It("does not remove any histories", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfScalingHistories()).To(Equal(4))
+				Expect(getScalingHistoryForApp(appId)).To(Equal(4))
 			})
 		})
 
@@ -523,7 +504,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 			It("empties the scalinghistory table", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfScalingHistories()).To(Equal(0))
+				Expect(getScalingHistoryForApp(appId)).To(Equal(0))
 			})
 		})
 
@@ -534,13 +515,14 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 			It("removes histories before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfScalingHistories()).To(Equal(2))
+				Expect(getScalingHistoryForApp(appId)).To(Equal(2))
 			})
 		})
 
 		Context("when db fails", func() {
 			BeforeEach(func() {
-				sdb.Close()
+				_ = sdb.Close()
+				sdb = nil
 			})
 
 			It("should error", func() {
@@ -550,56 +532,35 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	})
 
 	Describe("UpdateScalingCooldownExpireTime", func() {
-		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanScalingCooldownTable()
-		})
-
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 
 		JustBeforeEach(func() {
-			err = sdb.UpdateScalingCooldownExpireTime(anAppId, 222222)
+			err = sdb.UpdateScalingCooldownExpireTime(appId, 222222)
 		})
 
 		Context("when there is no previous app cooldown record", func() {
 			It("creates the record", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasScalingCooldownRecord(anAppId, 222222)).To(BeTrue())
+				Expect(hasScalingCooldownRecord(appId, 222222)).To(BeTrue())
 			})
 		})
 
 		Context("when there is previous app cooldown record", func() {
 			BeforeEach(func() {
-				err = sdb.UpdateScalingCooldownExpireTime(anAppId, 111111)
+				err = sdb.UpdateScalingCooldownExpireTime(appId, 111111)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("removes the previous record and inserts a new record", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasScalingCooldownRecord(anAppId, 111111)).To(BeFalse())
-				Expect(hasScalingCooldownRecord(anAppId, 222222)).To(BeTrue())
+				Expect(hasScalingCooldownRecord(appId, 111111)).To(BeFalse())
+				Expect(hasScalingCooldownRecord(appId, 222222)).To(BeTrue())
 			})
 		})
 	})
 
 	Describe("CanScaleApp", func() {
-		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanScalingCooldownTable()
-		})
-
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
-			canScale, cooldownExpiredAt, err = sdb.CanScaleApp(anAppId)
+			canScale, cooldownExpiredAt, err = sdb.CanScaleApp(appId)
 		})
 
 		Context("when there is no cooldown record before", func() {
@@ -613,7 +574,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		Context("when the app is still in cooldown period", func() {
 			fakeCoolDownExpiredTime := time.Now().Add(100 * time.Second).UnixNano()
 			BeforeEach(func() {
-				err = sdb.UpdateScalingCooldownExpireTime(anAppId, fakeCoolDownExpiredTime)
+				err = sdb.UpdateScalingCooldownExpireTime(appId, fakeCoolDownExpiredTime)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("returns false", func() {
@@ -626,7 +587,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		Context("when the app passes cooldown period", func() {
 			fakeCoolDownExpiredTime := time.Now().Add(0 - 100*time.Second).UnixNano()
 			BeforeEach(func() {
-				err = sdb.UpdateScalingCooldownExpireTime(anAppId, fakeCoolDownExpiredTime)
+				err = sdb.UpdateScalingCooldownExpireTime(appId, fakeCoolDownExpiredTime)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("returns true", func() {
@@ -638,20 +599,8 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	})
 
 	Describe("GetActiveSchedule", func() {
-		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			err = cleanActiveScheduleTable()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
-			activeSchedule, err = sdb.GetActiveSchedule(anAppId)
+			activeSchedule, err = sdb.GetActiveSchedule(appId)
 		})
 
 		Context("when there is no active schedule for the given app", func() {
@@ -663,7 +612,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is active schedule ", func() {
 			BeforeEach(func() {
-				err = insertActiveSchedule(anAppId, "an-schedule-id", 2, 10, 5)
+				err = insertActiveSchedule(appId, "an-schedule-id", 2, 10, 5)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("return the active schedule", func() {
@@ -678,7 +627,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				sdb.Close()
+				_ = sdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
@@ -688,14 +637,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("GetActiveSchedules", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
 			err = cleanActiveScheduleTable()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			err = sdb.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -730,7 +672,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				sdb.Close()
+				_ = sdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
@@ -740,19 +682,12 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("RemoveActiveSchedule", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
 			err = cleanActiveScheduleTable()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
-			err = sdb.RemoveActiveSchedule(anAppId)
+			err = sdb.RemoveActiveSchedule(appId)
 		})
 
 		Context("when there is no active schedule in table", func() {
@@ -763,12 +698,12 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is active schedule in table", func() {
 			BeforeEach(func() {
-				err = insertActiveSchedule(anAppId, "existing-schedule-id", 3, 6, 0)
+				err = insertActiveSchedule(appId, "existing-schedule-id", 3, 6, 0)
 			})
 
 			It("should remove the active schedule from table", func() {
 				Expect(err).NotTo(HaveOccurred())
-				schedule, err := sdb.GetActiveSchedule(anAppId)
+				schedule, err := sdb.GetActiveSchedule(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(schedule).To(BeNil())
 			})
@@ -776,7 +711,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				sdb.Close()
+				_ = sdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
@@ -798,19 +733,14 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			}
 		})
 
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		JustBeforeEach(func() {
-			err = sdb.SetActiveSchedule(anAppId, activeSchedule)
+			err = sdb.SetActiveSchedule(appId, activeSchedule)
 		})
 
 		Context("when there is no active schedule in table", func() {
 			It("should insert the active schedule", func() {
 				Expect(err).NotTo(HaveOccurred())
-				schedule, err := sdb.GetActiveSchedule(anAppId)
+				schedule, err := sdb.GetActiveSchedule(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(schedule).To(Equal(activeSchedule))
 			})
@@ -818,12 +748,12 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is existing active schedule in table", func() {
 			BeforeEach(func() {
-				err = insertActiveSchedule(anAppId, "existing-schedule-id", 3, 6, 0)
+				err = insertActiveSchedule(appId, "existing-schedule-id", 3, 6, 0)
 			})
 
 			It("should remove the existing one and insert the new active schedule", func() {
 				Expect(err).NotTo(HaveOccurred())
-				schedule, err := sdb.GetActiveSchedule(anAppId)
+				schedule, err := sdb.GetActiveSchedule(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(schedule).To(Equal(activeSchedule))
 			})
@@ -831,8 +761,9 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				err = sdb.Close()
+				_ = sdb.Close()
 			})
+
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
 			})

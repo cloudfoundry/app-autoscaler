@@ -33,7 +33,7 @@ func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Sc
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
