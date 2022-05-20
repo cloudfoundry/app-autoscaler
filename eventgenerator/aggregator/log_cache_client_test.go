@@ -19,7 +19,6 @@ var _ = FDescribe("LogCacheClient", func() {
 	var (
 		fakeEnvelopeProcessor *fakes.FakeEnvelopeProcessor
 		fakeLogCacheClient    *fakes.FakeLogCacheClientReader
-		metricType            string
 		appId                 string
 		logger                *lagertest.TestLogger
 		logCacheClient        *LogCacheClient
@@ -58,10 +57,8 @@ var _ = FDescribe("LogCacheClient", func() {
 
 	})
 
-	Describe("GetMetric for startStop Metrics", func() {
-		BeforeEach(func() { metricType = models.MetricNameThroughput })
-
-		It("retrieve metrics", func() {
+	DescribeTable("GetMetric for startStop Metrics",
+		func(metricType string) {
 			actualMetrics, err := logCacheClient.GetMetric(appId, metricType, startTime, endTime)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualMetrics).To(Equal(metrics))
@@ -82,18 +79,21 @@ var _ = FDescribe("LogCacheClient", func() {
 			Expect(values["envelope_types"][0]).To(Equal("TIMER"))
 
 			By("Sends the right arguments to the timer processor")
+			Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(1), "Should call GetHttpStartStopInstanceMetricsCallCount once")
 			actualEnvelopes, actualAppId, actualCurrentTimestamp, collectionInterval := fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsArgsForCall(0)
 			Expect(actualEnvelopes).To(Equal(envelopes))
 			Expect(actualAppId).To(Equal(appId))
 			Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 			Expect(collectionInterval).To(Equal(30 * time.Second)) // default behaviour
-		})
-		//TODO responseTime
-	})
+		},
+		Entry("When metric type is MetricNameThroughput", models.MetricNameThroughput),
+		Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime),
+	)
+	//	MetricNameThroughput   = "throughput"
+	//	MetricNameResponseTime = "responsetime"
 
-	Describe("GetMetric for Gauge Metrics", func() {
-		BeforeEach(func() { metricType = models.MetricNameMemoryUsed })
-		It("retrieve metrics", func() {
+	DescribeTable("GetMetric for Gauge Metrics",
+		func(metricType string) {
 			actualMetrics, err := logCacheClient.GetMetric(appId, metricType, startTime, endTime)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualMetrics).To(Equal(metrics))
@@ -107,15 +107,13 @@ var _ = FDescribe("LogCacheClient", func() {
 
 			By("Sends the right arguments to the gauge processor")
 			actualEnvelopes, actualCurrentTimestamp := fakeEnvelopeProcessor.GetGaugeInstanceMetricsArgsForCall(0)
-			Expect(actualEnvelopes).To(Equal(envelopes[0]))
+			Expect(actualEnvelopes).To(Equal(envelopes))
 			Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
+		},
+		Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil),
+		Entry("When metric type is MetricNameMemoryUsed", models.MetricNameMemoryUsed),
+		Entry("When metric type is MetricNameCPUUtil", models.MetricNameCPUUtil),
+		Entry("When metric type is CustomMetrics", "a-crazy-metric"),
+	)
 
-		})
-		//TODO add
-		//	MetricNameMemoryUtil   = "memoryutil"
-		//	MetricNameMemoryUsed   = "memoryused"
-		//	MetricNameCPUUtil      = "cpu"
-		//	MetricNameThroughput   = "throughput"
-		//	MetricNameResponseTime = "responsetime"
-	})
 })

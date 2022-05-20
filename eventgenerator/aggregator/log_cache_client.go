@@ -39,22 +39,27 @@ func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client Log
 	}
 }
 func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
-
-	metricName := rpc.EnvelopeType_TIMER
-	switch metricType {
-	case models.MetricNameMemoryUsed:
-		metricName = rpc.EnvelopeType_GAUGE
-	}
-
-	envelopes, _ := c.client.Read(context.Background(), appId, startTime, logcache.WithEndTime(endTime), logcache.WithEnvelopeTypes(metricName))
+	logMetricType := getEnvelopeType(metricType)
+	envelopes, _ := c.client.Read(context.Background(), appId, startTime, logcache.WithEndTime(endTime), logcache.WithEnvelopeTypes(logMetricType))
 	var err error
 	var metrics []models.AppInstanceMetric
 
 	collectedAt := c.now().UnixNano()
-	if metricType == models.MetricNameThroughput {
+	if logMetricType == rpc.EnvelopeType_TIMER {
 		metrics = c.envelopeProcessor.GetHttpStartStopInstanceMetrics(envelopes, appId, collectedAt, 30*time.Second)
 	} else {
 		metrics, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelopes, collectedAt)
 	}
 	return metrics, err
+}
+
+func getEnvelopeType(metricType string) rpc.EnvelopeType {
+	var metricName rpc.EnvelopeType
+	switch metricType {
+	case models.MetricNameThroughput, models.MetricNameResponseTime:
+		metricName = rpc.EnvelopeType_TIMER
+	default:
+		metricName = rpc.EnvelopeType_GAUGE
+	}
+	return metricName
 }
