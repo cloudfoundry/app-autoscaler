@@ -11,10 +11,10 @@ import (
 )
 
 type FakeEnvelopeProcessor struct {
-	GetGaugeInstanceMetricsStub        func(*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)
+	GetGaugeInstanceMetricsStub        func([]*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)
 	getGaugeInstanceMetricsMutex       sync.RWMutex
 	getGaugeInstanceMetricsArgsForCall []struct {
-		arg1 *loggregator_v2.Envelope
+		arg1 []*loggregator_v2.Envelope
 		arg2 int64
 	}
 	getGaugeInstanceMetricsReturns struct {
@@ -43,16 +43,21 @@ type FakeEnvelopeProcessor struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetrics(arg1 *loggregator_v2.Envelope, arg2 int64) ([]models.AppInstanceMetric, error) {
+func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetrics(arg1 []*loggregator_v2.Envelope, arg2 int64) ([]models.AppInstanceMetric, error) {
+	var arg1Copy []*loggregator_v2.Envelope
+	if arg1 != nil {
+		arg1Copy = make([]*loggregator_v2.Envelope, len(arg1))
+		copy(arg1Copy, arg1)
+	}
 	fake.getGaugeInstanceMetricsMutex.Lock()
 	ret, specificReturn := fake.getGaugeInstanceMetricsReturnsOnCall[len(fake.getGaugeInstanceMetricsArgsForCall)]
 	fake.getGaugeInstanceMetricsArgsForCall = append(fake.getGaugeInstanceMetricsArgsForCall, struct {
-		arg1 *loggregator_v2.Envelope
+		arg1 []*loggregator_v2.Envelope
 		arg2 int64
-	}{arg1, arg2})
+	}{arg1Copy, arg2})
 	stub := fake.GetGaugeInstanceMetricsStub
 	fakeReturns := fake.getGaugeInstanceMetricsReturns
-	fake.recordInvocation("GetGaugeInstanceMetrics", []interface{}{arg1, arg2})
+	fake.recordInvocation("GetGaugeInstanceMetrics", []interface{}{arg1Copy, arg2})
 	fake.getGaugeInstanceMetricsMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
@@ -69,13 +74,13 @@ func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsCallCount() int {
 	return len(fake.getGaugeInstanceMetricsArgsForCall)
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsCalls(stub func(*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)) {
+func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsCalls(stub func([]*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)) {
 	fake.getGaugeInstanceMetricsMutex.Lock()
 	defer fake.getGaugeInstanceMetricsMutex.Unlock()
 	fake.GetGaugeInstanceMetricsStub = stub
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsArgsForCall(i int) (*loggregator_v2.Envelope, int64) {
+func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsArgsForCall(i int) ([]*loggregator_v2.Envelope, int64) {
 	fake.getGaugeInstanceMetricsMutex.RLock()
 	defer fake.getGaugeInstanceMetricsMutex.RUnlock()
 	argsForCall := fake.getGaugeInstanceMetricsArgsForCall[i]
