@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/generator"
@@ -203,8 +204,10 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsCh
 	//else
 	var metricClient aggregator.MetricClient
 	if conf.UseLogCache {
+		// TODO provision proper auth credentials to logcache.Client
 		logCacheClient := logcache.NewClient(conf.MetricCollector.MetricCollectorURL)
-		metricClient = aggregator.NewLogCacheClient(logger, time.Now, logCacheClient, nil)
+		processor := envelopeprocessor.NewProcessor(logger)
+		metricClient = aggregator.NewLogCacheClient(logger, time.Now, logCacheClient, processor)
 	} else {
 		metricClient = aggregator.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
 	}

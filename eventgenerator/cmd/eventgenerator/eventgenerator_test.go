@@ -242,7 +242,7 @@ var _ = Describe("Eventgenerator", func() {
 
 			It("Should create a MetricServerClient by default", func() {
 				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.LogCacheClient.GetMetric"))
-				Eventually(runner.Session.Buffer()).Should(Say("eventgenerator.MetricServerClient.GetMetric"))
+				Eventually(runner.Session.Buffer(), 3).Should(Say("eventgenerator.MetricServerClient.GetMetric"))
 			})
 		})
 
@@ -260,6 +260,10 @@ var _ = Describe("Eventgenerator", func() {
 			It("Should create a LogCacheClient", func() {
 				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.MetricServerClient.GetMetric"))
 				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.LogCacheClient.GetMetric"))
+			})
+
+			It("Should initialized an envelopeProcessor", func() {
+				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.EnvelopeProcessor.GetGaugeInstanceMetrics"))
 			})
 		})
 	})

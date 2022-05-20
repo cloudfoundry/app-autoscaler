@@ -39,6 +39,7 @@ func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client Log
 	}
 }
 func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
+	c.logger.Debug("GetMetric")
 	logMetricType := getEnvelopeType(metricType)
 	envelopes, _ := c.client.Read(context.Background(), appId, startTime, logcache.WithEndTime(endTime), logcache.WithEnvelopeTypes(logMetricType))
 	var err error

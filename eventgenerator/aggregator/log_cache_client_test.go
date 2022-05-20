@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var _ = FDescribe("LogCacheClient", func() {
+var _ = Describe("LogCacheClient", func() {
 	var (
 		fakeEnvelopeProcessor *fakes.FakeEnvelopeProcessor
 		fakeLogCacheClient    *fakes.FakeLogCacheClientReader
@@ -89,8 +89,6 @@ var _ = FDescribe("LogCacheClient", func() {
 		Entry("When metric type is MetricNameThroughput", models.MetricNameThroughput),
 		Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime),
 	)
-	//	MetricNameThroughput   = "throughput"
-	//	MetricNameResponseTime = "responsetime"
 
 	DescribeTable("GetMetric for Gauge Metrics",
 		func(metricType string) {

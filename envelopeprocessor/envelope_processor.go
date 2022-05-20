@@ -1,6 +1,7 @@
 package envelopeprocessor
 
 import (
+	"code.cloudfoundry.org/lager"
 	"fmt"
 	"math"
 	"strconv"
@@ -18,14 +19,24 @@ type EnvelopeProcessor interface {
 	GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric
 }
 
-var _ EnvelopeProcessor = &processor{}
+var _ EnvelopeProcessor = &Processor{}
 
-type processor struct{}
+type Processor struct {
+	logger lager.Logger
+}
 
-func (p processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+func NewProcessor(logger lager.Logger) Processor {
+	return Processor{
+		logger: logger.Session("EnvelopeProcessor"),
+	}
+}
+
+func (p Processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+	p.logger.Debug("GetGaugeInstanceMetrics")
 	return GetGaugeInstanceMetrics(envelopes, currentTimeStamp)
 }
-func (p processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
+func (p Processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
+	p.logger.Debug("GetHttpStartStopInstanceMetrics")
 	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, collectionInterval)
 }
 

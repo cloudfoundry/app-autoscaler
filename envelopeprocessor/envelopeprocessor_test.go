@@ -6,6 +6,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -17,17 +18,20 @@ const (
 var _ = Describe("Envelopeprocessor", func() {
 
 	var envelopes []*loggregator_v2.Envelope
+	var processor envelopeprocessor.Processor
+	var logger *lagertest.TestLogger
 
 	AfterEach(func() {
 		envelopes = nil
 	})
 
 	Describe("#GetGaugeInstanceMetrics", func() {
-
 		Context("processing custom metrics", func() {
 			BeforeEach(func() {
 				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111))
 				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "0", "custom_name", "custom_unit", 11.08, 1111))
+				logger = lagertest.NewTestLogger("envelopeProcessor")
+				processor = envelopeprocessor.NewProcessor(logger)
 			})
 
 			It("sends standard app instance metrics to channel", func() {
@@ -65,7 +69,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
-				metrics, err := envelopeprocessor.GetGaugeInstanceMetrics(envelopes, timestamp)
+				metrics, err := processor.GetGaugeInstanceMetrics(envelopes, timestamp)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
@@ -141,7 +145,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 		It("sends throughput and responsetime metric to channel", func() {
 			timestamp := time.Now().UnixNano()
-			metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(envelopes, "test-app-id", timestamp, TestCollectInterval)
+			metrics := processor.GetHttpStartStopInstanceMetrics(envelopes, "test-app-id", timestamp, TestCollectInterval)
 
 			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
@@ -192,7 +196,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends send 0 throughput and responsetime metric", func() {
 				timestamp := time.Now().UnixNano()
-				metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(envelopes, "another-test-app-id", timestamp, TestCollectInterval)
+				metrics := processor.GetHttpStartStopInstanceMetrics(envelopes, "another-test-app-id", timestamp, TestCollectInterval)
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "another-test-app-id",
 					InstanceIndex: 0,

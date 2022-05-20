@@ -87,7 +87,7 @@ func (ep *envelopeProcessor) IsCacheEmpty() bool {
 func (ep *envelopeProcessor) getAppInstanceMetrics(e *loggregator_v2.Envelope) []models.AppInstanceMetric {
 	switch e.GetMessage().(type) {
 	case *loggregator_v2.Envelope_Gauge:
-		appInstanceMetrics, _ := envelopeprocessor.GetGaugeInstanceMetrics(e, ep.clock.Now().UnixNano())
+		appInstanceMetrics, _ := envelopeprocessor.GetGaugeInstanceMetrics([]*loggregator_v2.Envelope{e}, ep.clock.Now().UnixNano())
 		return appInstanceMetrics
 	case *loggregator_v2.Envelope_Timer:
 		ep.cacheHttpStartStopEnvelop(e)
