@@ -54,11 +54,7 @@ func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime ti
 	if metricType == models.MetricNameThroughput {
 		metrics = c.envelopeProcessor.GetHttpStartStopInstanceMetrics(envelopes, appId, collectedAt, 30*time.Second)
 	} else {
-		for _, envelope := range envelopes {
-			var metrics_temp []models.AppInstanceMetric
-			metrics_temp, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelope, collectedAt)
-			metrics = append(metrics, metrics_temp...)
-		}
+		metrics, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelopes, collectedAt)
 	}
 	return metrics, err
 }

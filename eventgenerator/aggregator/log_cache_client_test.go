@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	"context"
+	"errors"
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -50,7 +51,11 @@ var _ = FDescribe("LogCacheClient", func() {
 	JustBeforeEach(func() {
 		fakeLogCacheClient.ReadReturns(envelopes, nil)
 		fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsReturns(metrics)
+		fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(0, metrics, nil)
+		fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(1, nil, errors.New("some error"))
+
 		logCacheClient = NewLogCacheClient(logger, func() time.Time { return collectedAt }, fakeLogCacheClient, fakeEnvelopeProcessor)
+
 	})
 
 	Describe("GetMetric for startStop Metrics", func() {
@@ -102,7 +107,7 @@ var _ = FDescribe("LogCacheClient", func() {
 
 			By("Sends the right arguments to the gauge processor")
 			actualEnvelopes, actualCurrentTimestamp := fakeEnvelopeProcessor.GetGaugeInstanceMetricsArgsForCall(0)
-			Expect(actualEnvelopes).To(Equal(envelopes))
+			Expect(actualEnvelopes).To(Equal(envelopes[0]))
 			Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 
 		})

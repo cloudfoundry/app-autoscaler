@@ -14,16 +14,35 @@ import (
 )
 
 type EnvelopeProcessor interface {
-	GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
+	GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
 	GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric
 }
 
-func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
-	if isContainerMetricEnvelope(e) {
-		return processContainerMetrics(e, currentTimeStamp)
-	} else {
-		return processCustomMetrics(e, currentTimeStamp)
+var _ EnvelopeProcessor = &processor{}
+
+type processor struct{}
+
+func (p processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+	return GetGaugeInstanceMetrics(envelopes, currentTimeStamp)
+}
+func (p processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
+	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, collectionInterval)
+}
+
+func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+	var metrics = []models.AppInstanceMetric{}
+	for _, envelope := range envelopes {
+		if isContainerMetricEnvelope(envelope) {
+			//TODO check error
+			containerMetrics, _ := processContainerMetrics(envelope, currentTimeStamp)
+			metrics = append(metrics, containerMetrics...)
+		} else {
+			//TODO check error
+			containerMetrics, _ := processCustomMetrics(envelope, currentTimeStamp)
+			metrics = append(metrics, containerMetrics...)
+		}
 	}
+	return metrics, nil
 }
 
 func GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64,
