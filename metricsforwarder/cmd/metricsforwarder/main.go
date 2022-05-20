@@ -57,71 +57,21 @@ func main() {
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsforwarder")
 	mfClock := clock.NewClock()
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.Db[db.PolicyDb], logger.Session("policy-db"))
-	if err != nil {
-		logger.Error("failed-to-connect-policy-database", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
-		os.Exit(1)
-	}
-	defer policyDB.Close()
+	policyDB := createPolicyDb(conf, logger)
+	defer func() { _ = policyDB.Close() }()
 
-	var credentials cred_helper.Credentials
-	switch conf.CredHelperImpl {
-	case "stored_procedure":
-		if conf.StoredProcedureConfig == nil {
-			logger.Error("cannot create a storedProcedureCredHelper without StoredProcedureConfig", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		var storedProcedureDb db.StoredProcedureDB
-		storedProcedureDb, err = sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.Db[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
-		if err != nil {
-			logger.Error("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		defer storedProcedureDb.Close()
-		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
-	default:
-		credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
-		credentials = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, *credentialCache, conf.CacheTTL, logger)
-	}
+	credentialProvider := credentialsProvider(conf, logger, policyDB)
+	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsforwarder", "policyDB", policyDB),
-		httpStatusCollector,
-	}, true, logger.Session("metricsforwarder-prometheus"))
-
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
-
-	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentials, *allowedMetricCache, httpStatusCollector, rateLimiter)
-	if err != nil {
-		logger.Error("failed-to-create-custommetrics-server", err)
-		os.Exit(1)
-	}
-
-	policyManager := manager.NewPolicyManager(logger, mfClock, conf.PolicyPollerInterval, policyDB, *allowedMetricCache, conf.CacheTTL)
-
-	cacheUpdater := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		policyManager.Start()
-
-		close(ready)
-
-		<-signals
-		policyManager.Stop()
-		return nil
-	})
-
-	healthServer, err := healthendpoint.NewServerWithBasicAuth([]healthendpoint.Checker{}, logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
-	if err != nil {
-		logger.Error("failed to create health server", err)
-		os.Exit(1)
-	}
+	customMetricsServer := createCustomMetricsServer(conf, logger, policyDB, credentialProvider, allowedMetricCache, httpStatusCollector)
+	cacheUpdater := cacheUpdater(logger, mfClock, conf, policyDB, allowedMetricCache)
+	healthServer := createHealthServer(policyDB, credentialProvider, logger, conf, createPrometheusRegistry(policyDB, httpStatusCollector, logger))
 
 	members := grouper.Members{
 		{"cacheUpdater", cacheUpdater},
-		{"custom_metrics_server", httpServer},
+		{"custom_metrics_server", customMetricsServer},
 		{"health_server", healthServer},
 	}
 
@@ -131,8 +81,87 @@ func main() {
 
 	err = <-monitor.Wait()
 	if err != nil {
-		logger.Error("exited-with-failure", err)
+		logger.Fatal("Exited with Error", err)
 		os.Exit(1)
 	}
 	logger.Info("exited")
+}
+
+func createPolicyDb(conf *config.Config, logger lager.Logger) *sqldb.PolicySQLDB {
+	policyDB, err := sqldb.NewPolicySQLDB(conf.Db[db.PolicyDb], logger.Session("policy-db"))
+	if err != nil {
+		logger.Fatal("Failed To connect to policyDB", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
+		os.Exit(1)
+	}
+	return policyDB
+}
+
+func createPrometheusRegistry(policyDB *sqldb.PolicySQLDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsforwarder", "policyDB", policyDB),
+		httpStatusCollector,
+	}, true, logger.Session("metricsforwarder-prometheus"))
+	return promRegistry
+}
+
+func cacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config, policyDB *sqldb.PolicySQLDB, allowedMetricCache *cache.Cache) ifrit.RunFunc {
+	policyManager := manager.NewPolicyManager(logger, mfClock, conf.PolicyPollerInterval, policyDB, *allowedMetricCache, conf.CacheTTL)
+	cacheUpdater := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		policyManager.Start()
+		close(ready)
+		<-signals
+		policyManager.Stop()
+		return nil
+	})
+	return cacheUpdater
+}
+
+func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyDB *sqldb.PolicySQLDB, credentialProvider cred_helper.Credentials, allowedMetricCache *cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) ifrit.Runner {
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentialProvider, *allowedMetricCache, httpStatusCollector, rateLimiter)
+	if err != nil {
+		logger.Fatal("Failed to create client to custom metrics server", err)
+		os.Exit(1)
+	}
+	return httpServer
+}
+
+func createHealthServer(policyDB *sqldb.PolicySQLDB, credDb cred_helper.Credentials, logger lager.Logger, conf *config.Config, promRegistry *prometheus.Registry) ifrit.Runner {
+	checkers := []healthendpoint.Checker{healthendpoint.DbChecker(db.PolicyDb, policyDB), healthendpoint.DbChecker(db.StoredProcedureDb, credDb)}
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(
+		checkers,
+		logger.Session("health-server"),
+		conf.Health.Port, promRegistry,
+		conf.Health.HealthCheckUsername,
+		conf.Health.HealthCheckPassword,
+		conf.Health.HealthCheckUsernameHash,
+		conf.Health.HealthCheckPasswordHash,
+	)
+	if err != nil {
+		logger.Fatal("Failed to create health server:", err)
+		os.Exit(1)
+	}
+	return healthServer
+}
+
+func credentialsProvider(conf *config.Config, logger lager.Logger, policyDB db.PolicyDB) cred_helper.Credentials {
+	var credentials cred_helper.Credentials
+	switch conf.CredHelperImpl {
+	case "stored_procedure":
+		if conf.StoredProcedureConfig == nil {
+			logger.Fatal("cannot create a storedProcedureCredHelper without StoredProcedureConfig", nil)
+			os.Exit(1)
+		}
+		storedProcedureDb, err := sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.Db[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
+		if err != nil {
+			logger.Fatal("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
+			os.Exit(1)
+		}
+		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
+	default:
+		credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
+		credentials = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, *credentialCache, conf.CacheTTL, logger)
+	}
+	return credentials
 }

@@ -14,12 +14,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var _ Credentials = &customMetricsCredentials{}
+
 type customMetricsCredentials struct {
 	policyDB        db.PolicyDB
 	maxRetry        int
 	credentialCache cache.Cache
 	cacheTTL        time.Duration
 	logger          lager.Logger
+}
+
+func (c *customMetricsCredentials) Ping() error {
+	return c.policyDB.Ping()
+}
+
+func (c *customMetricsCredentials) Close() error {
+	return c.policyDB.Close()
 }
 
 func NewCustomMetricsCredHelper(policyDb db.PolicyDB, maxRetry int, logger lager.Logger) Credentials {

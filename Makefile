@@ -90,18 +90,15 @@ buildtools-force:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 .PHONY: buildtools
-buildtools: golangci-lint
+buildtools:
 	@echo "# Installing build tools"
 	@go mod download
 	@which certstrap >/dev/null || go install github.com/square/certstrap
 	@which ginkgo >/dev/null || go install github.com/onsi/ginkgo/v2/ginkgo
 	@which counterfeiter >/dev/null || go install github.com/maxbrunsfeld/counterfeiter/v6
 
-golangci-lint:
-	@which golangci-lint >/dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint
-
-lint: golangci-lint
-	@golangci-lint run
+lint:
+	@cd ../../; make lint_autoscaler OPTS=${OPTS}
 
 .PHONY: clean
 clean:

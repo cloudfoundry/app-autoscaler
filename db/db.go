@@ -2,11 +2,12 @@ package db
 
 import (
 	"fmt"
+	"io"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 
-	"database/sql"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (
@@ -41,27 +42,25 @@ type DatabaseConfig struct {
 	ConnectionMaxIdleTime time.Duration `yaml:"connection_max_idletime"`
 }
 
-type DatabaseStatus interface {
-	GetDBStatus() sql.DBStats
-}
 type InstanceMetricsDB interface {
-	DatabaseStatus
+	healthendpoint.DatabaseStatus
 	RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
 	SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error
 	PruneInstanceMetrics(before int64) error
-	Close() error
+	io.Closer
 }
 
 type PolicyDB interface {
-	DatabaseStatus
+	healthendpoint.DatabaseStatus
+	healthendpoint.Pinger
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(appId string, policy string, policyGuid string) error
 	SetOrUpdateDefaultAppPolicy(appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
-	Close() error
+	io.Closer
 	DeletePolicy(appId string) error
 	SaveCredential(appId string, cred models.Credential) error
 	DeleteCredential(appId string) error
@@ -69,7 +68,7 @@ type PolicyDB interface {
 }
 
 type BindingDB interface {
-	DatabaseStatus
+	healthendpoint.DatabaseStatus
 	CreateServiceInstance(serviceInstance models.ServiceInstance) error
 	GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error)
 	GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error)
@@ -83,20 +82,20 @@ type BindingDB interface {
 	GetAppIdsByInstanceId(instanceId string) ([]string, error)
 	CountServiceInstancesInOrg(orgId string) (int, error)
 	GetBindingIdsByInstanceId(instanceId string) ([]string, error)
-	Close() error
+	io.Closer
 }
 
 type AppMetricDB interface {
-	DatabaseStatus
+	healthendpoint.DatabaseStatus
 	SaveAppMetric(appMetric *models.AppMetric) error
 	SaveAppMetricsInBulk(metrics []*models.AppMetric) error
 	RetrieveAppMetrics(appId string, metricType string, start int64, end int64, orderType OrderType) ([]*models.AppMetric, error)
 	PruneAppMetrics(before int64) error
-	Close() error
+	io.Closer
 }
 
 type ScalingEngineDB interface {
-	DatabaseStatus
+	healthendpoint.DatabaseStatus
 	SaveScalingHistory(history *models.AppScalingHistory) error
 	RetrieveScalingHistories(appId string, start int64, end int64, orderType OrderType, includeAll bool) ([]*models.AppScalingHistory, error)
 	PruneScalingHistories(before int64) error
@@ -106,23 +105,24 @@ type ScalingEngineDB interface {
 	GetActiveSchedules() (map[string]string, error)
 	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
 	RemoveActiveSchedule(appId string) error
-	Close() error
+	io.Closer
 }
 
 type SchedulerDB interface {
-	DatabaseStatus
+	healthendpoint.DatabaseStatus
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
-	Close() error
+	io.Closer
 }
 
 type LockDB interface {
 	Lock(lock *models.Lock) (bool, error)
 	Release(owner string) error
-	Close() error
+	io.Closer
 }
 
 type StoredProcedureDB interface {
-	Close() error
+	healthendpoint.Pinger
+	io.Closer
 	CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error)
 	DeleteCredentials(credOptions models.CredentialsOptions) error
 	DeleteAllInstanceCredentials(instanceId string) error

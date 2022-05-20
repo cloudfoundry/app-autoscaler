@@ -103,6 +103,16 @@ type FakePolicyDB struct {
 	getDBStatusReturnsOnCall map[int]struct {
 		result1 sql.DBStats
 	}
+	PingStub        func() error
+	pingMutex       sync.RWMutex
+	pingArgsForCall []struct {
+	}
+	pingReturns struct {
+		result1 error
+	}
+	pingReturnsOnCall map[int]struct {
+		result1 error
+	}
 	RetrievePoliciesStub        func() ([]*models.PolicyJson, error)
 	retrievePoliciesMutex       sync.RWMutex
 	retrievePoliciesArgsForCall []struct {
@@ -636,6 +646,59 @@ func (fake *FakePolicyDB) GetDBStatusReturnsOnCall(i int, result1 sql.DBStats) {
 	}{result1}
 }
 
+func (fake *FakePolicyDB) Ping() error {
+	fake.pingMutex.Lock()
+	ret, specificReturn := fake.pingReturnsOnCall[len(fake.pingArgsForCall)]
+	fake.pingArgsForCall = append(fake.pingArgsForCall, struct {
+	}{})
+	stub := fake.PingStub
+	fakeReturns := fake.pingReturns
+	fake.recordInvocation("Ping", []interface{}{})
+	fake.pingMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePolicyDB) PingCallCount() int {
+	fake.pingMutex.RLock()
+	defer fake.pingMutex.RUnlock()
+	return len(fake.pingArgsForCall)
+}
+
+func (fake *FakePolicyDB) PingCalls(stub func() error) {
+	fake.pingMutex.Lock()
+	defer fake.pingMutex.Unlock()
+	fake.PingStub = stub
+}
+
+func (fake *FakePolicyDB) PingReturns(result1 error) {
+	fake.pingMutex.Lock()
+	defer fake.pingMutex.Unlock()
+	fake.PingStub = nil
+	fake.pingReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePolicyDB) PingReturnsOnCall(i int, result1 error) {
+	fake.pingMutex.Lock()
+	defer fake.pingMutex.Unlock()
+	fake.PingStub = nil
+	if fake.pingReturnsOnCall == nil {
+		fake.pingReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.pingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePolicyDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	fake.retrievePoliciesMutex.Lock()
 	ret, specificReturn := fake.retrievePoliciesReturnsOnCall[len(fake.retrievePoliciesArgsForCall)]
@@ -908,6 +971,8 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.getCredentialMutex.RUnlock()
 	fake.getDBStatusMutex.RLock()
 	defer fake.getDBStatusMutex.RUnlock()
+	fake.pingMutex.RLock()
+	defer fake.pingMutex.RUnlock()
 	fake.retrievePoliciesMutex.RLock()
 	defer fake.retrievePoliciesMutex.RUnlock()
 	fake.saveAppPolicyMutex.RLock()
