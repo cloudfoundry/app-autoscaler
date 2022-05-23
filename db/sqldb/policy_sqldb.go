@@ -14,10 +14,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var _ db.PolicyDB = &PolicySQLDB{}
+
 type PolicySQLDB struct {
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
 	sqldb    *sqlx.DB
+}
+
+func (pdb *PolicySQLDB) Ping() error {
+	return pdb.sqldb.Ping()
 }
 
 func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQLDB, error) {

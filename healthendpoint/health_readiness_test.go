@@ -3,6 +3,8 @@ package healthendpoint_test
 import (
 	"net/http"
 
+	"github.com/pkg/errors"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
@@ -11,6 +13,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/steinfletcher/apitest"
 )
+
+type testPinger struct {
+	error error
+}
+
+func (pinger testPinger) Ping() error {
+	return pinger.error
+}
 
 var _ = Describe("Health Readiness", func() {
 
@@ -37,88 +47,122 @@ var _ = Describe("Health Readiness", func() {
 		var err error
 		healthRoute, err = healthendpoint.NewHealthRouter(checkers, logger, prometheus.NewRegistry(), username, password, "", "")
 		Expect(err).ShouldNot(HaveOccurred())
-
 	})
 
-	Context("Readiness endpoint is called without basic auth", func() {
-		It("should have json response", func() {
-			apitest.New().
-				Handler(healthRoute).
-				Get("/health/readiness").
-				Expect(t).
-				Status(http.StatusOK).
-				Header("Content-Type", "application/json").
-				Body(`{"status" : "OK", "checks" : [] }`).
-				End()
-		})
-	})
-
-	Context("Readiness endpoint is called without basic auth", func() {
-		BeforeEach(func() {
-			checkers = []healthendpoint.Checker{func() healthendpoint.ReadinessCheck {
-				return healthendpoint.ReadinessCheck{Name: "policy", Type: "database", Status: "OK"}
-			}}
-		})
-		It("should have database check passing", func() {
-			apitest.New().
-				Handler(healthRoute).
-				Get("/health/readiness").
-				Expect(t).
-				Status(http.StatusOK).
-				Header("Content-Type", "application/json").
-				Body(`{ 
-	"status" : "OK",
-	"checks" : [ {"name": "policy", "type": "database", "status": "OK" } ]
-}`).
-				End()
-		})
-	})
-
-	Context("Prometheus Health endpoint is called without basic auth", func() {
+	Context("without basic auth configured", func() {
 		BeforeEach(func() {
 			username = ""
 			password = ""
 		})
-		It("/anything should respond OK", func() {
-			apitest.New().
-				Handler(healthRoute).
-				Get("/anything").
-				Expect(t).
-				Status(http.StatusOK).
-				Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
-				End()
+		When("Prometheus Health endpoint is called", func() {
+			It("should respond OK", func() {
+				apitest.New().
+					Handler(healthRoute).
+					Get("/anything").
+					Expect(t).
+					Status(http.StatusOK).
+					Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
+					End()
+			})
 		})
-		It("/health/readiness should response OK", func() {
-			apitest.New().
-				Handler(healthRoute).
-				Get("/health/readiness").
-				Expect(t).
-				Status(http.StatusOK).
-				Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
-				End()
-		})
-	})
-
-	Context("Prometheus Health endpoint is called", func() {
-		It("should require basic auth", func() {
-			apitest.New().
-				Handler(healthRoute).
-				Get("/health").
-				Expect(t).
-				Status(http.StatusUnauthorized).
-				End()
+		When("/health/readiness endpoint is called", func() {
+			It("should response OK", func() {
+				apitest.New().
+					Handler(healthRoute).
+					Get("/health/readiness").
+					Expect(t).
+					Status(http.StatusOK).
+					Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
+					End()
+			})
 		})
 	})
 
-	Context("Health endpoint default response", func() {
-		It("should require basic auth", func() {
-			apitest.New().
-				Handler(healthRoute).
-				Get("/any").
-				Expect(t).
-				Status(http.StatusUnauthorized).
-				End()
+	Context("with basic auth configured", func() {
+		When("Readiness endpoint is called without basic auth", func() {
+			Context("and without checkers", func() {
+				It("should have json response", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						Header("Content-Type", "application/json").
+						Body(`{"overall_status" : "UP", "checks" : [] }`).
+						End()
+				})
+			})
+			Context("and a checker is passing", func() {
+
+				BeforeEach(func() {
+					checkers = []healthendpoint.Checker{healthendpoint.DbChecker("policy", testPinger{nil})}
+				})
+
+				It("should have database check passing", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						Header("Content-Type", "application/json").
+						Body(`{ 
+	"overall_status" : "UP",
+	"checks" : [ {"name": "policy", "type": "database", "status": "UP" } ]
+}`).
+						End()
+				})
+			})
+			Context("and two checkers and one is failing", func() {
+
+				BeforeEach(func() {
+
+					dbUpFunc := healthendpoint.DbChecker("policy", testPinger{nil})
+					dbDownFunc := healthendpoint.DbChecker("instance-db", testPinger{errors.Errorf("DB is DOWN")})
+
+					serverDownFunc := func() healthendpoint.ReadinessCheck {
+						return healthendpoint.ReadinessCheck{Name: "instance", Type: "server", Status: "DOWN"}
+					}
+					checkers = []healthendpoint.Checker{dbUpFunc, dbDownFunc, serverDownFunc}
+				})
+				It("should have overall status down", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						Header("Content-Type", "application/json").
+						Body(`{ 
+							"overall_status" : "DOWN",
+							"checks" : [ 
+									{"name": "policy", "type": "database", "status": "UP" },
+									{"name": "instance-db", "type": "database", "status": "DOWN" },
+									{"name": "instance", "type": "server", "status": "DOWN" }
+						]}`).
+						End()
+				})
+			})
 		})
+		When("Prometheus Health endpoint is called", func() {
+			It("should require basic auth", func() {
+				apitest.New().
+					Handler(healthRoute).
+					Get("/health").
+					Expect(t).
+					Status(http.StatusUnauthorized).
+					End()
+			})
+		})
+		When("Default endpoint is called", func() {
+			It("should require basic auth", func() {
+				apitest.New().
+					Handler(healthRoute).
+					Get("/any").
+					Expect(t).
+					Status(http.StatusUnauthorized).
+					End()
+			})
+		})
+
 	})
 
 })

@@ -1,7 +1,6 @@
 package healthendpoint
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,8 +22,8 @@ type basicAuthenticationMiddleware struct {
 	passwordHash []byte
 }
 
-// Middleware basic authentication middleware functionality for healthcheck
-func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
+// middleware basic authentication middleware functionality for healthcheck
+func (bam *basicAuthenticationMiddleware) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, authOK := r.BasicAuth()
 
@@ -65,7 +64,7 @@ func NewHealthRouter(healthCheckers []Checker, logger lager.Logger, gatherer pro
 		healthRouter.PathPrefix("").Handler(r)
 		healthRouter.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers)))
 	} else {
-		healthRouter, err = HealthBasicAuthRouter(healthCheckers, logger, gatherer, username, password, usernameHash, passwordHash)
+		healthRouter, err = healthBasicAuthRouter(healthCheckers, logger, gatherer, username, password, usernameHash, passwordHash)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +72,7 @@ func NewHealthRouter(healthCheckers []Checker, logger lager.Logger, gatherer pro
 	return healthRouter, nil
 }
 
-func HealthBasicAuthRouter(
+func healthBasicAuthRouter(
 	healthCheckers []Checker,
 	logger lager.Logger,
 	gatherer prometheus.Gatherer,
@@ -94,10 +93,10 @@ func HealthBasicAuthRouter(
 
 	//authenticated paths
 	health := router.Path("/health").Subrouter()
-	health.Use(basicAuthentication.Middleware)
+	health.Use(basicAuthentication.middleware)
 
 	everything := router.PathPrefix("").Subrouter()
-	everything.Use(basicAuthentication.Middleware)
+	everything.Use(basicAuthentication.middleware)
 	everything.PathPrefix("").Handler(promHandler)
 
 	return router, nil
@@ -150,35 +149,4 @@ func getUserHashBytes(logger lager.Logger, usernameHash string, username string)
 		usernameHashByte = []byte(usernameHash)
 	}
 	return usernameHashByte, err
-}
-
-type ReadinessCheck struct {
-	Name   string `json:"name"`
-	Type   string `json:"type"`
-	Status string `json:"status"`
-}
-type readinessResponse struct {
-	Status string           `json:"status"`
-	Checks []ReadinessCheck `json:"checks"`
-}
-
-type Checker func() ReadinessCheck
-
-func readiness(checkers []Checker) func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	return func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-		w.Header().Set("Content-Type", "application/json")
-
-		checks := make([]ReadinessCheck, 0, 8)
-
-		for _, checker := range checkers {
-			check := checker()
-			checks = append(checks, check)
-		}
-		response, err := json.Marshal(readinessResponse{Status: "OK", Checks: checks})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(`{"error":"Internal error"}`))
-		}
-		_, _ = w.Write(response)
-	}
 }

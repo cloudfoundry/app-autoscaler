@@ -54,6 +54,16 @@ type FakeStoredProcedureDB struct {
 	deleteCredentialsReturnsOnCall map[int]struct {
 		result1 error
 	}
+	PingStub        func() error
+	pingMutex       sync.RWMutex
+	pingArgsForCall []struct {
+	}
+	pingReturns struct {
+		result1 error
+	}
+	pingReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ValidateCredentialsStub        func(models.Credential) (*models.CredentialsOptions, error)
 	validateCredentialsMutex       sync.RWMutex
 	validateCredentialsArgsForCall []struct {
@@ -310,6 +320,59 @@ func (fake *FakeStoredProcedureDB) DeleteCredentialsReturnsOnCall(i int, result1
 	}{result1}
 }
 
+func (fake *FakeStoredProcedureDB) Ping() error {
+	fake.pingMutex.Lock()
+	ret, specificReturn := fake.pingReturnsOnCall[len(fake.pingArgsForCall)]
+	fake.pingArgsForCall = append(fake.pingArgsForCall, struct {
+	}{})
+	stub := fake.PingStub
+	fakeReturns := fake.pingReturns
+	fake.recordInvocation("Ping", []interface{}{})
+	fake.pingMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeStoredProcedureDB) PingCallCount() int {
+	fake.pingMutex.RLock()
+	defer fake.pingMutex.RUnlock()
+	return len(fake.pingArgsForCall)
+}
+
+func (fake *FakeStoredProcedureDB) PingCalls(stub func() error) {
+	fake.pingMutex.Lock()
+	defer fake.pingMutex.Unlock()
+	fake.PingStub = stub
+}
+
+func (fake *FakeStoredProcedureDB) PingReturns(result1 error) {
+	fake.pingMutex.Lock()
+	defer fake.pingMutex.Unlock()
+	fake.PingStub = nil
+	fake.pingReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeStoredProcedureDB) PingReturnsOnCall(i int, result1 error) {
+	fake.pingMutex.Lock()
+	defer fake.pingMutex.Unlock()
+	fake.PingStub = nil
+	if fake.pingReturnsOnCall == nil {
+		fake.pingReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.pingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeStoredProcedureDB) ValidateCredentials(arg1 models.Credential) (*models.CredentialsOptions, error) {
 	fake.validateCredentialsMutex.Lock()
 	ret, specificReturn := fake.validateCredentialsReturnsOnCall[len(fake.validateCredentialsArgsForCall)]
@@ -385,6 +448,8 @@ func (fake *FakeStoredProcedureDB) Invocations() map[string][][]interface{} {
 	defer fake.deleteAllInstanceCredentialsMutex.RUnlock()
 	fake.deleteCredentialsMutex.RLock()
 	defer fake.deleteCredentialsMutex.RUnlock()
+	fake.pingMutex.RLock()
+	defer fake.pingMutex.RUnlock()
 	fake.validateCredentialsMutex.RLock()
 	defer fake.validateCredentialsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

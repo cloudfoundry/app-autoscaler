@@ -1,10 +1,14 @@
 package healthendpoint
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"database/sql"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
+
+type DatabaseStatus interface {
+	GetDBStatus() sql.DBStats
+}
 
 type databaseStatusCollector struct {
 	MaxOpenConnectionsGauge prometheus.Gauge
@@ -16,10 +20,10 @@ type databaseStatusCollector struct {
 	MaxIdleClosedGauge      prometheus.Gauge
 	MaxLifetimeClosedGauge  prometheus.Gauge
 
-	dbStatus db.DatabaseStatus
+	dbStatus DatabaseStatus
 }
 
-func NewDatabaseStatusCollector(namespace, subSystem string, dbName string, dbStatus db.DatabaseStatus) prometheus.Collector {
+func NewDatabaseStatusCollector(namespace, subSystem string, dbName string, dbStatus DatabaseStatus) prometheus.Collector {
 	return &databaseStatusCollector{
 		MaxOpenConnectionsGauge: prometheus.NewGauge(
 			prometheus.GaugeOpts{

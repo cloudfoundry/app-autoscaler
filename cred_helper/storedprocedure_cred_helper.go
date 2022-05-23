@@ -13,6 +13,14 @@ type storedProcedureCredentials struct {
 	logger            lager.Logger
 }
 
+func (c *storedProcedureCredentials) Ping() error {
+	return c.storedProcedureDb.Ping()
+}
+
+func (c *storedProcedureCredentials) Close() error {
+	return c.storedProcedureDb.Close()
+}
+
 var _ Credentials = &storedProcedureCredentials{}
 
 func NewStoredProcedureCredHelper(storedProcedureDb db.StoredProcedureDB, maxRetry int, logger lager.Logger) Credentials {
