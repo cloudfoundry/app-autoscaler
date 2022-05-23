@@ -1,8 +1,9 @@
 package healthendpoint_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"github.com/pkg/errors"
 
@@ -40,6 +41,8 @@ var _ = Describe("Health Readiness", func() {
 
 		config.HealthCheckUsername = "test-user-name"
 		config.HealthCheckPassword = "test-user-password"
+		config.HealthCheckUsernameHash = ""
+		config.HealthCheckPasswordHash = ""
 		config.ReadinessCheckEnabled = true
 		checkers = []healthendpoint.Checker{}
 	})
@@ -76,7 +79,7 @@ var _ = Describe("Health Readiness", func() {
 				config.HealthCheckUsernameHash = "username_hash"
 				config.HealthCheckPasswordHash = "username_hash"
 			})
-			When("Prometheus Health endpoint is called", func() {
+			When("Prometheus Health endpoint is called without basic auth", func() {
 				It("should require basic auth", func() {
 					apitest.New().
 						Handler(healthRoute).
@@ -107,7 +110,7 @@ var _ = Describe("Health Readiness", func() {
 		})
 		When("/health/readiness endpoint is called", func() {
 			It("should response OK", func() {
-				apitest.New().Debug().
+				apitest.New().
 					Handler(healthRoute).
 					Get("/health/readiness").
 					Expect(t).

@@ -1,8 +1,9 @@
 package models_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"errors"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
@@ -14,6 +15,11 @@ var (
 )
 
 var _ = Describe("Health Config", func() {
+	BeforeEach(func() {
+		healthConfigBytes = []byte{}
+		healthConfig = models.HealthConfig{}
+	})
+
 	When("Readiness is not supplied", func() {
 		BeforeEach(func() {
 			healthConfigBytes = []byte(`
@@ -81,7 +87,7 @@ password_hash: password_hash
 			}
 			err = healthConfig.Validate()
 			Expect(err).To(HaveOccurred())
-			Expect(errors.Is(err, models.ConfigurationErr)).To(BeTrue())
+			Expect(errors.Is(err, models.ErrConfiguration)).To(BeTrue())
 			Expect(err.Error()).To(Equal("configuration error: both healthcheck password and healthcheck password_hash are provided, please provide only one of them"))
 		})
 	})

@@ -1,10 +1,11 @@
 package healthendpoint
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"fmt"
 	"net/http"
 	"os"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
 
@@ -61,7 +62,7 @@ func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger 
 	password := conf.HealthCheckPassword
 	usernameHash := conf.HealthCheckUsernameHash
 	passwordHash := conf.HealthCheckPasswordHash
-	if username == "" && password == "" && usernameHash == "" && passwordHash == ""{
+	if username == "" && password == "" && usernameHash == "" && passwordHash == "" {
 		//when username and password are not set then don't use basic authentication
 		healthRouter = mux.NewRouter()
 		if conf.ReadinessCheckEnabled {
@@ -69,8 +70,7 @@ func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger 
 		}
 		healthRouter.PathPrefix("").Handler(promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 	} else {
-
-		healthRouter, err = healthBasicAuthRouter(healthCheckers, logger, gatherer, username, password, usernameHash, passwordHash)
+		healthRouter, err = healthBasicAuthRouter(conf, healthCheckers, logger, gatherer)
 		if err != nil {
 			return nil, err
 		}
@@ -79,14 +79,11 @@ func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger 
 }
 
 func healthBasicAuthRouter(
+	conf models.HealthConfig,
 	healthCheckers []Checker,
 	logger lager.Logger,
-	gatherer prometheus.Gatherer,
-	username string,
-	password string,
-	usernameHash string,
-	passwordHash string) (*mux.Router, error) {
-	basicAuthentication, err := createBasicAuthMiddleware(logger, usernameHash, username, passwordHash, password)
+	gatherer prometheus.Gatherer) (*mux.Router, error) {
+	basicAuthentication, err := createBasicAuthMiddleware(logger, conf.HealthCheckUsernameHash, conf.HealthCheckUsername, conf.HealthCheckPasswordHash, conf.HealthCheckPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +92,9 @@ func healthBasicAuthRouter(
 	// /health
 	router := mux.NewRouter()
 	// unauthenticated paths
-	router.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers)))
-
+	if conf.ReadinessCheckEnabled {
+		router.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers)))
+	}
 	//authenticated paths
 	health := router.Path("/health").Subrouter()
 	health.Use(basicAuthentication.middleware)
