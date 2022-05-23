@@ -57,12 +57,12 @@ func NewHealthRouter(healthCheckers []Checker, logger lager.Logger, gatherer pro
 	logger.Info("new-health-server", lager.Data{"####username": username, "####password": password})
 	var healthRouter *mux.Router
 	var err error
-	if username == "" && password == "" {
+	if username == "" && password == "" && usernameHash == "" && passwordHash == "" {
 		//when username and password are not set then don't use basic authentication
 		healthRouter = mux.NewRouter()
 		r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
-		healthRouter.PathPrefix("").Handler(r)
 		healthRouter.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers)))
+		healthRouter.PathPrefix("").Handler(r)
 	} else {
 		healthRouter, err = healthBasicAuthRouter(healthCheckers, logger, gatherer, username, password, usernameHash, passwordHash)
 		if err != nil {

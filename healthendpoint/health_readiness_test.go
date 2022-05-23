@@ -25,12 +25,14 @@ func (pinger testPinger) Ping() error {
 var _ = Describe("Health Readiness", func() {
 
 	var (
-		t           GinkgoTInterface
-		healthRoute *mux.Router
-		logger      lager.Logger
-		checkers    []healthendpoint.Checker
-		username    string
-		password    string
+		t            GinkgoTInterface
+		healthRoute  *mux.Router
+		logger       lager.Logger
+		checkers     []healthendpoint.Checker
+		username     string
+		password     string
+		usernameHash string
+		passwordHash string
 	)
 
 	BeforeEach(func() {
@@ -40,13 +42,54 @@ var _ = Describe("Health Readiness", func() {
 
 		username = "test-user-name"
 		password = "test-user-password"
+		usernameHash = ""
+		passwordHash = ""
 		checkers = []healthendpoint.Checker{}
 	})
 
 	JustBeforeEach(func() {
 		var err error
-		healthRoute, err = healthendpoint.NewHealthRouter(checkers, logger, prometheus.NewRegistry(), username, password, "", "")
+		healthRoute, err = healthendpoint.NewHealthRouter(checkers, logger, prometheus.NewRegistry(), username, password, usernameHash, passwordHash)
 		Expect(err).ShouldNot(HaveOccurred())
+	})
+
+	Context("Authentication parameter checks", func() {
+		When("username and password are defined", func() {
+			BeforeEach(func() {
+				username = "username"
+				password = "password"
+				usernameHash = ""
+				passwordHash = ""
+			})
+			When("Prometheus Health endpoint is called", func() {
+				It("should require basic auth", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health").
+						Expect(t).
+						Status(http.StatusUnauthorized).
+						End()
+				})
+			})
+		})
+		When("username_hash and password_hash are defined", func() {
+			BeforeEach(func() {
+				username = ""
+				password = ""
+				usernameHash = "username_hash"
+				passwordHash = "password_hash"
+			})
+			When("Prometheus Health endpoint is called without basic auth", func() {
+				It("should require basic auth", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health").
+						Expect(t).
+						Status(http.StatusUnauthorized).
+						End()
+				})
+			})
+		})
 	})
 
 	Context("without basic auth configured", func() {
@@ -72,7 +115,8 @@ var _ = Describe("Health Readiness", func() {
 					Get("/health/readiness").
 					Expect(t).
 					Status(http.StatusOK).
-					Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
+					Header("Content-Type", "application/json").
+					Body(`{"overall_status" : "UP", "checks" : [] }`).
 					End()
 			})
 		})
