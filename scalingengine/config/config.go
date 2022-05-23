@@ -115,7 +115,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
 
-	if err := c.Health.Validate("scalingengine"); err != nil {
+	if err := c.Health.Validate(); err != nil {
 		return err
 	}
 

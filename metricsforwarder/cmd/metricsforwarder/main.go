@@ -129,15 +129,7 @@ func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyD
 
 func createHealthServer(policyDB *sqldb.PolicySQLDB, credDb cred_helper.Credentials, logger lager.Logger, conf *config.Config, promRegistry *prometheus.Registry) ifrit.Runner {
 	checkers := []healthendpoint.Checker{healthendpoint.DbChecker(db.PolicyDb, policyDB), healthendpoint.DbChecker(db.StoredProcedureDb, credDb)}
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(
-		checkers,
-		logger.Session("health-server"),
-		conf.Health.Port, promRegistry,
-		conf.Health.HealthCheckUsername,
-		conf.Health.HealthCheckPassword,
-		conf.Health.HealthCheckUsernameHash,
-		conf.Health.HealthCheckPasswordHash,
-	)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, checkers, logger.Session("health-server"), promRegistry)
 	if err != nil {
 		logger.Fatal("Failed to create health server:", err)
 		os.Exit(1)
