@@ -2,6 +2,7 @@ package healthendpoint_test
 
 import (
 	"net/http"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -16,11 +17,15 @@ import (
 	"github.com/steinfletcher/apitest"
 )
 
+var _ healthendpoint.Pinger = &testPinger{}
+
 type testPinger struct {
-	error error
+	error   error
+	counter int
 }
 
-func (pinger testPinger) Ping() error {
+func (pinger *testPinger) Ping() error {
+	pinger.counter += 1
 	return pinger.error
 }
 
@@ -32,6 +37,7 @@ var _ = Describe("Health Readiness", func() {
 		logger      lager.Logger
 		checkers    []healthendpoint.Checker
 		config      models.HealthConfig
+		timesetter  *time.Time
 	)
 
 	BeforeEach(func() {
@@ -45,11 +51,13 @@ var _ = Describe("Health Readiness", func() {
 		config.HealthCheckPasswordHash = ""
 		config.ReadinessCheckEnabled = true
 		checkers = []healthendpoint.Checker{}
+		tmsttr := time.Now()
+		timesetter = &(tmsttr)
 	})
 
 	JustBeforeEach(func() {
 		var err error
-		healthRoute, err = healthendpoint.NewHealthRouter(config, checkers, logger, prometheus.NewRegistry())
+		healthRoute, err = healthendpoint.NewHealthRouter(config, checkers, logger, prometheus.NewRegistry(), func() time.Time { return *timesetter })
 		Expect(err).ShouldNot(HaveOccurred())
 	})
 
@@ -150,9 +158,11 @@ var _ = Describe("Health Readiness", func() {
 				})
 			})
 			Context("and a checker is passing", func() {
+				var pinger *testPinger
 
 				BeforeEach(func() {
-					checkers = []healthendpoint.Checker{healthendpoint.DbChecker("policy", testPinger{nil})}
+					pinger = &testPinger{error: nil}
+					checkers = []healthendpoint.Checker{healthendpoint.DbChecker("policy", pinger)}
 				})
 
 				It("should have database check passing", func() {
@@ -168,11 +178,45 @@ var _ = Describe("Health Readiness", func() {
 }`).
 						End()
 				})
+				It("should cache health result", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						End()
+					Expect(pinger.counter).To(Equal(1))
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						End()
+					Expect(pinger.counter).To(Equal(1))
+				})
+				It("should expire the cache entry after 30 seconds", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						End()
+					Expect(pinger.counter).To(Equal(1))
+					tmsttr := timesetter.Add(30 * time.Second)
+					timesetter = &(tmsttr)
+					apitest.New().
+						Handler(healthRoute).
+						Get("/health/readiness").
+						Expect(t).
+						Status(http.StatusOK).
+						End()
+					Expect(pinger.counter).To(Equal(2))
+				})
 			})
 			Context("and a checker is supplied but readiness is disabled", func() {
 
 				BeforeEach(func() {
-					checkers = []healthendpoint.Checker{healthendpoint.DbChecker("policy", testPinger{nil})}
+					checkers = []healthendpoint.Checker{healthendpoint.DbChecker("policy", &testPinger{error: nil})}
 					config.ReadinessCheckEnabled = false
 				})
 
@@ -189,8 +233,8 @@ var _ = Describe("Health Readiness", func() {
 
 				BeforeEach(func() {
 
-					dbUpFunc := healthendpoint.DbChecker("policy", testPinger{nil})
-					dbDownFunc := healthendpoint.DbChecker("instance-db", testPinger{errors.Errorf("DB is DOWN")})
+					dbUpFunc := healthendpoint.DbChecker("policy", &testPinger{error: nil})
+					dbDownFunc := healthendpoint.DbChecker("instance-db", &testPinger{error: errors.Errorf("DB is DOWN")})
 
 					serverDownFunc := func() healthendpoint.ReadinessCheck {
 						return healthendpoint.ReadinessCheck{Name: "instance", Type: "server", Status: "DOWN"}
