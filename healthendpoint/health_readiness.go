@@ -3,6 +3,7 @@ package healthendpoint
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 type (
@@ -27,23 +28,28 @@ const (
 	statusDown = "DOWN"
 )
 
-func readiness(checkers []Checker) func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func readiness(checkers []Checker, timefunc func() time.Time) func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	var response []byte
+	var responseTime time.Time
 	return func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 		w.Header().Set("Content-Type", "application/json")
-
-		checks := make([]ReadinessCheck, 0, 8)
-		overallStatus := statusUp
-		for _, checker := range checkers {
-			check := checker()
-			checks = append(checks, check)
-			if check.Status == statusDown {
-				overallStatus = statusDown
+		if len(response) == 0 || timefunc().After(responseTime.Add(30*time.Second)) {
+			checks := make([]ReadinessCheck, 0, 8)
+			overallStatus := statusUp
+			for _, checker := range checkers {
+				check := checker()
+				checks = append(checks, check)
+				if check.Status == statusDown {
+					overallStatus = statusDown
+				}
 			}
-		}
-		response, err := json.Marshal(readinessResponse{OverallStatus: overallStatus, Checks: checks})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(`{"error":"Internal error"}`))
+			var err error
+			response, err = json.Marshal(readinessResponse{OverallStatus: overallStatus, Checks: checks})
+			responseTime = timefunc()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(`{"error":"Internal error"}`))
+			}
 		}
 		_, _ = w.Write(response)
 	}
