@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -39,8 +40,8 @@ func (bam *basicAuthenticationMiddleware) middleware(next http.Handler) http.Han
 
 // NewServerWithBasicAuth open the healthcheck port with basic authentication.
 // Make sure that username and password is not empty
-func NewServerWithBasicAuth(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer) (ifrit.Runner, error) {
-	healthRouter, err := NewHealthRouter(conf, healthCheckers, logger, gatherer)
+func NewServerWithBasicAuth(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (ifrit.Runner, error) {
+	healthRouter, err := NewHealthRouter(conf, healthCheckers, logger, gatherer, time)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func NewServerWithBasicAuth(conf models.HealthConfig, healthCheckers []Checker, 
 	return http_server.New(addr, healthRouter), nil
 }
 
-func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer) (*mux.Router, error) {
+func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
 	var healthRouter *mux.Router
 	var err error
 	username := conf.HealthCheckUsername
