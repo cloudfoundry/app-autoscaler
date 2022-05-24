@@ -16,7 +16,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
-	mg_helpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
+	mgHelpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
@@ -107,7 +107,7 @@ func main() {
 		return nil
 	})
 
-	healthServer, err := healthendpoint.NewServerWithBasicAuth([]healthendpoint.Checker{}, logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
 
 	if err != nil {
 		logger.Error("failed to create health server", err)
@@ -164,7 +164,7 @@ func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr
 func createEmitters(logger lager.Logger, bufferSize int, eclock clock.Clock, keepAliveInterval time.Duration, metricsServerAddrs []string, metricServerClientTLSConfig *tls.Config, handshakeTimeout time.Duration, maxSetupRetryCount int, maxCloseRetryCount int, retryDelay time.Duration) []metricsgateway.Emitter {
 	emitters := make([]metricsgateway.Emitter, len(metricsServerAddrs))
 	for i := 0; i < len(metricsServerAddrs); i++ {
-		emitter := metricsgateway.NewEnvelopeEmitter(logger, bufferSize, eclock, keepAliveInterval, mg_helpers.NewWSHelper(metricsServerAddrs[i]+routes.EnvelopePath, metricServerClientTLSConfig, handshakeTimeout, logger, maxSetupRetryCount, maxCloseRetryCount, retryDelay))
+		emitter := metricsgateway.NewEnvelopeEmitter(logger, bufferSize, eclock, keepAliveInterval, mgHelpers.NewWSHelper(metricsServerAddrs[i]+routes.EnvelopePath, metricServerClientTLSConfig, handshakeTimeout, logger, maxSetupRetryCount, maxCloseRetryCount, retryDelay))
 		emitters[i] = emitter
 	}
 	return emitters

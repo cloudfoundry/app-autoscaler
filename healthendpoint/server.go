@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
 
@@ -37,34 +40,38 @@ func (bam *basicAuthenticationMiddleware) middleware(next http.Handler) http.Han
 
 // NewServerWithBasicAuth open the healthcheck port with basic authentication.
 // Make sure that username and password is not empty
-func NewServerWithBasicAuth(healthCheckers []Checker, logger lager.Logger, port int, gatherer prometheus.Gatherer, username string, password string, usernameHash string, passwordHash string) (ifrit.Runner, error) {
-	healthRouter, err := NewHealthRouter(healthCheckers, logger, gatherer, username, password, usernameHash, passwordHash)
+func NewServerWithBasicAuth(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (ifrit.Runner, error) {
+	healthRouter, err := NewHealthRouter(conf, healthCheckers, logger, gatherer, time)
 	if err != nil {
 		return nil, err
 	}
 	var addr string
 	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
-		addr = fmt.Sprintf("localhost:%d", port)
+		addr = fmt.Sprintf("localhost:%d", conf.Port)
 	} else {
-		addr = fmt.Sprintf("0.0.0.0:%d", port)
+		addr = fmt.Sprintf("0.0.0.0:%d", conf.Port)
 	}
 
 	logger.Info("new-health-server-basic-auth", lager.Data{"addr": addr})
 	return http_server.New(addr, healthRouter), nil
 }
 
-func NewHealthRouter(healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, username string, password string, usernameHash string, passwordHash string) (*mux.Router, error) {
-	logger.Info("new-health-server", lager.Data{"####username": username, "####password": password})
+func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
 	var healthRouter *mux.Router
 	var err error
+	username := conf.HealthCheckUsername
+	password := conf.HealthCheckPassword
+	usernameHash := conf.HealthCheckUsernameHash
+	passwordHash := conf.HealthCheckPasswordHash
 	if username == "" && password == "" && usernameHash == "" && passwordHash == "" {
 		//when username and password are not set then don't use basic authentication
 		healthRouter = mux.NewRouter()
-		r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
-		healthRouter.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers)))
-		healthRouter.PathPrefix("").Handler(r)
+		if conf.ReadinessCheckEnabled {
+			healthRouter.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers, time)))
+		}
+		healthRouter.PathPrefix("").Handler(promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
 	} else {
-		healthRouter, err = healthBasicAuthRouter(healthCheckers, logger, gatherer, username, password, usernameHash, passwordHash)
+		healthRouter, err = healthBasicAuthRouter(conf, healthCheckers, logger, gatherer, time)
 		if err != nil {
 			return nil, err
 		}
@@ -72,15 +79,8 @@ func NewHealthRouter(healthCheckers []Checker, logger lager.Logger, gatherer pro
 	return healthRouter, nil
 }
 
-func healthBasicAuthRouter(
-	healthCheckers []Checker,
-	logger lager.Logger,
-	gatherer prometheus.Gatherer,
-	username string,
-	password string,
-	usernameHash string,
-	passwordHash string) (*mux.Router, error) {
-	basicAuthentication, err := createBasicAuthMiddleware(logger, usernameHash, username, passwordHash, password)
+func healthBasicAuthRouter(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
+	basicAuthentication, err := createBasicAuthMiddleware(logger, conf.HealthCheckUsernameHash, conf.HealthCheckUsername, conf.HealthCheckPasswordHash, conf.HealthCheckPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +89,9 @@ func healthBasicAuthRouter(
 	// /health
 	router := mux.NewRouter()
 	// unauthenticated paths
-	router.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers)))
-
+	if conf.ReadinessCheckEnabled {
+		router.Handle("/health/readiness", common.VarsFunc(readiness(healthCheckers, time)))
+	}
 	//authenticated paths
 	health := router.Path("/health").Subrouter()
 	health.Use(basicAuthentication.middleware)

@@ -137,6 +137,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Health.HealthCheckUsername = "metricsforwarderhealthcheckuser"
 	cfg.Health.HealthCheckPassword = "metricsforwarderhealthcheckpassword"
+	cfg.Health.ReadinessCheckEnabled = true
 
 	cfg.Server.Port = 10000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
