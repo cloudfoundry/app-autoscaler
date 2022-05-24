@@ -2,6 +2,8 @@ package healthendpoint_test
 
 import (
 	"net/http"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -47,8 +49,8 @@ var _ = Describe("Health Readiness", func() {
 
 		config.HealthCheckUsername = "test-user-name"
 		config.HealthCheckPassword = "test-user-password"
-		config.HealthCheckUsernameHash = ""
 		config.HealthCheckPasswordHash = ""
+		config.HealthCheckUsernameHash = ""
 		config.ReadinessCheckEnabled = true
 		checkers = []healthendpoint.Checker{}
 		tmsttr := time.Now()
@@ -186,6 +188,8 @@ var _ = Describe("Health Readiness", func() {
 						Status(http.StatusOK).
 						End()
 					Expect(pinger.counter).To(Equal(1))
+					tmsttr := timesetter.Add(29999 * time.Millisecond)
+					timesetter = &(tmsttr)
 					apitest.New().
 						Handler(healthRoute).
 						Get("/health/readiness").
@@ -221,7 +225,7 @@ var _ = Describe("Health Readiness", func() {
 				})
 
 				It("should respond with 401 due fallthough to Prometheus health", func() {
-					apitest.New().
+					apitest.New().Debug().
 						Handler(healthRoute).
 						Get("/health/readiness").
 						Expect(t).
@@ -256,6 +260,38 @@ var _ = Describe("Health Readiness", func() {
 									{"name": "instance", "type": "server", "status": "DOWN" }
 						]}`).
 						End()
+				})
+			})
+			When("There are many requests at the same time", func() {
+				counter := int32(0)
+				numThreads := 100
+				BeforeEach(func() {
+					checkers = []healthendpoint.Checker{func() healthendpoint.ReadinessCheck {
+						time.Sleep(10 * time.Millisecond)
+						atomic.AddInt32(&counter, 1)
+						return healthendpoint.ReadinessCheck{}
+					}}
+				})
+				It("will still only call the checkers once", func() {
+					wg := sync.WaitGroup{}
+					wg.Add(numThreads)
+					mu := sync.RWMutex{}
+					mu.Lock()
+					for i := numThreads; i > 0; i-- {
+						go func() {
+							mu.RLock()
+							apitest.New().
+								Handler(healthRoute).
+								Get("/health/readiness").
+								Expect(t).
+								Status(http.StatusOK).
+								End()
+							wg.Done()
+						}()
+					}
+					mu.Unlock()
+					wg.Wait()
+					Expect(counter).To(Equal(int32(1)))
 				})
 			})
 		})

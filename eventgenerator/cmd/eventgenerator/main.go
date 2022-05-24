@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -102,7 +104,7 @@ func main() {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)

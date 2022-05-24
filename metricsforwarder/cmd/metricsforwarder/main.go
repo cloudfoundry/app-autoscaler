@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
@@ -129,7 +130,7 @@ func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyD
 
 func createHealthServer(policyDB *sqldb.PolicySQLDB, credDb cred_helper.Credentials, logger lager.Logger, conf *config.Config, promRegistry *prometheus.Registry) ifrit.Runner {
 	checkers := []healthendpoint.Checker{healthendpoint.DbChecker(db.PolicyDb, policyDB), healthendpoint.DbChecker(db.StoredProcedureDb, credDb)}
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, checkers, logger.Session("health-server"), promRegistry)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, checkers, logger.Session("health-server"), promRegistry, time.Now)
 	if err != nil {
 		logger.Fatal("Failed to create health server:", err)
 		os.Exit(1)
