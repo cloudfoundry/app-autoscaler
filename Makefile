@@ -70,12 +70,9 @@ generate:
 	@echo "# Generating counterfeits"
 	@COUNTERFEITER_NO_GENERATE_WARNING=true go generate ./...
 
-get-fmt-deps:
-	go get golang.org/x/tools/cmd/goimports
-
-importfmt: get-fmt-deps
+importfmt:
 	@echo "# Formatting the imports"
-	@goimports -w $(GO_DEPENDENCIES)
+	@go run golang.org/x/tools/cmd/goimports@latest -w $(GO_DEPENDENCIES)
 
 fmt: importfmt
 	@FORMATTED=`go fmt $(PACKAGE_DIRS)`
