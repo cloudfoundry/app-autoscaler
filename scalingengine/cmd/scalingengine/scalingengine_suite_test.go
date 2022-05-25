@@ -1,8 +1,9 @@
 package main_test
 
 import (
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"path/filepath"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"

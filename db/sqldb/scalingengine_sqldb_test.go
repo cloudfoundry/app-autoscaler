@@ -1,8 +1,9 @@
 package sqldb_test
 
 import (
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"strings"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
