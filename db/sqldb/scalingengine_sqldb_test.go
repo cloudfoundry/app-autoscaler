@@ -55,9 +55,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-		if err != nil {
-			Fail("Could not open db connection: " + err.Error())
-		}
+		FailOnError("Could not open db connection: ", err)
 		DeferCleanup(func() error {
 			if sdb != nil {
 				return sdb.Close()

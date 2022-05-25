@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/cfhttp"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
@@ -33,9 +35,7 @@ var _ = Describe("Api", func() {
 			filepath.Join(testCertDir, "servicebroker.crt"),
 			filepath.Join(testCertDir, "servicebroker.key"),
 			filepath.Join(testCertDir, "autoscaler-ca.crt"))
-		if err != nil {
-			Fail("cfhttp.NewTLSConfig failed:" + err.Error())
-		}
+		FailOnError("cfhttp.NewTLSConfig failed:", err)
 		brokerHttpClient = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: brokerClientTLSConfig,
@@ -180,9 +180,7 @@ var _ = Describe("Api", func() {
 
 				bodyBytes, err := ioutil.ReadAll(rsp.Body)
 
-				if err != nil {
-					Fail("Read failed:" + err.Error())
-				}
+				FailOnError("Read failed:", err)
 				if len(bodyBytes) == 0 {
 					Fail("body empty")
 				}

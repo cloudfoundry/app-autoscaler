@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -308,8 +310,6 @@ func (ap *ApiRunner) Interrupt() {
 
 func readFile(filename string) string {
 	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		Fail("Failed to read file:" + filename + " " + err.Error())
-	}
+	FailOnError("Failed to read file:"+filename+" ", err)
 	return string(contents)
 }

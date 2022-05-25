@@ -68,9 +68,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("environment variable $DBURL is not set")
 	}
 	database, err := db.GetConnection(dbUrl)
-	if err != nil {
-		Fail("failed to parse database connection: " + err.Error())
-	}
+	FailOnError("failed to parse database connection: ", err)
 
 	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
@@ -78,9 +76,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 
 	err = createLockTable()
-	if err != nil {
-		Fail("can not create test lock table: " + err.Error())
-	}
+	FailOnError("can not create test lock table: ", err)
 
 })
 
@@ -204,9 +200,7 @@ func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, gui
 func getAppPolicy(appId string) string {
 	query := dbHelper.Rebind("SELECT policy_json FROM policy_json WHERE app_id=? ")
 	rows, err := dbHelper.Query(query, appId)
-	if err != nil {
-		Fail("failed to get policy" + err.Error())
-	}
+	FailOnError("failed to get policy", err)
 	defer func() {
 		_ = rows.Close()
 		_ = rows.Err()
@@ -214,9 +208,7 @@ func getAppPolicy(appId string) string {
 	var policyJsonStr string
 	if rows.Next() {
 		err = rows.Scan(&policyJsonStr)
-		if err != nil {
-			Fail("failed to scan policy" + err.Error())
-		}
+		FailOnError("failed to scan policy", err)
 	}
 	return policyJsonStr
 }
@@ -224,9 +216,7 @@ func getAppPolicy(appId string) string {
 func cleanAppMetricTable(appId string) {
 	query := dbHelper.Rebind("DELETE from app_metric where app_id = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table app_metric or app_id" + err.Error())
-	}
+	FailOnError("can not clean table app_metric or app_id", err)
 }
 
 func hasAppMetric(appId, metricType string, timestamp int64, value string) bool {
@@ -246,33 +236,25 @@ func getNumberOfMetricsForApp(appId string) int {
 	var num int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM app_metric where app_id = ?")
 	err := dbHelper.QueryRow(query, appId).Scan(&num)
-	if err != nil {
-		Fail("can not count the number of records in table app_metric: " + err.Error())
-	}
+	FailOnError("can not count the number of records in table app_metric: ", err)
 	return num
 }
 
 func removeScalingHistoryForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalinghistory where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table scalinghistory: " + err.Error())
-	}
+	FailOnError("can not clean table scalinghistory: ", err)
 }
 
 func removeCooldownForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalingcooldown where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table scalingcooldown: " + err.Error())
-	}
+	FailOnError("can not clean table scalingcooldown: ", err)
 }
 func removeActiveScheduleForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table scalingcooldown: " + err.Error())
-	}
+	FailOnError("can not clean table scalingcooldown: ", err)
 }
 
 func hasScalingHistory(appId string, timestamp int64) bool {
@@ -293,9 +275,7 @@ func getScalingHistoryForApp(appId string) int {
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ?")
 	row := dbHelper.QueryRow(query, appId)
 	err := row.Scan(&num)
-	if err != nil {
-		Fail("can not count the number of records in table scalinghistory: " + err.Error())
-	}
+	FailOnError("can not count the number of records in table scalinghistory: ", err)
 	return num
 }
 
@@ -349,9 +329,7 @@ func insertCredential(appid string, username string, password string) error {
 func getCredential(appId string) (string, string, error) {
 	query := dbHelper.Rebind("SELECT username,password FROM credentials WHERE id=? ")
 	rows, err := dbHelper.Query(query, appId)
-	if err != nil {
-		Fail("failed to get credential" + err.Error())
-	}
+	FailOnError("failed to get credential", err)
 	defer func() {
 		_ = rows.Close()
 		_ = rows.Err()
@@ -359,9 +337,7 @@ func getCredential(appId string) (string, string, error) {
 	var username, password string
 	if rows.Next() {
 		err = rows.Scan(&username, &password)
-		if err != nil {
-			Fail("failed to scan credential" + err.Error())
-		}
+		FailOnError("failed to scan credential", err)
 	}
 	return username, password, nil
 }
