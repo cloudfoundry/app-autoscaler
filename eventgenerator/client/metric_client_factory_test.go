@@ -1,6 +1,7 @@
 package client_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -80,7 +81,7 @@ var _ = Describe("MetricClientFactory", func() {
 		}
 
 		logger = lagertest.NewTestLogger("MetricServer")
-		metricClient = metricClientFactory.GetMetricClient(logger, conf)
+		metricClient = metricClientFactory.GetMetricClient(logger, &conf)
 	})
 	Describe("GetMetricServer", func() {
 		BeforeEach(func() {
@@ -113,11 +114,11 @@ var _ = Describe("MetricClientFactory", func() {
 					Expect(metricClient).To(BeAssignableToTypeOf(&LogCacheClient{}))
 					Expect(fakeMetricServerClientCreator.NewMetricServerClientCallCount()).To(Equal(0))
 					Expect(fakeLogCacheClientCreator.NewLogCacheClientCallCount()).To(Equal(1))
-					logger, now, actualLogCacheClient, envelopeProcessor := fakeLogCacheClientCreator.NewLogCacheClientArgsForCall(0)
+					logger, now, actualLogCacheClient, actualEnvelopeProcessor := fakeLogCacheClientCreator.NewLogCacheClientArgsForCall(0)
 					Expect(logger).NotTo(BeNil())
 					Expect(fakeGoLogCacheClient.NewClientCallCount()).To(Equal(1))
 					Expect(actualLogCacheClient).To(Equal(&expectedLogCacheClient))
-					Expect(envelopeProcessor).To(BeNil())
+					Expect(actualEnvelopeProcessor).To(BeAssignableToTypeOf(envelopeprocessor.Processor{}))
 					Expect(now).NotTo(BeNil())
 
 					By("Provision tls configuration to the logCacheClient")

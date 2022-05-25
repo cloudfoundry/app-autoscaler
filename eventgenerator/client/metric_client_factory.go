@@ -41,7 +41,7 @@ func NewMetricClientFactory(newMetricLogCacheClient newLogCacheClient, newMetric
 	}
 }
 
-func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf config.Config) MetricClient {
+func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
 	var metricClient MetricClient
 
 	if conf.UseLogCache {

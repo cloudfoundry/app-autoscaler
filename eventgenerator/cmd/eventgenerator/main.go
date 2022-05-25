@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -13,8 +12,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"time"
-
 	circuit "github.com/rubyist/circuitbreaker"
 
 	"flag"
@@ -24,7 +21,6 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
-	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
@@ -201,19 +197,8 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
 	var metricClient client.MetricClient
 
-	if conf.UseLogCache {
-		// TODO provision proper auth credentials to logcache.Client
-		logCacheClient := logcache.NewClient(conf.MetricCollector.MetricCollectorURL)
-		processor := envelopeprocessor.NewProcessor(logger)
-		metricClient = client.NewLogCacheClient(logger, time.Now, logCacheClient, processor)
-	} else {
-		httpClient, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
-
-		if err != nil {
-			logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": httpClient})
-		}
-		metricClient = client.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
-	}
+	clientFactory := client.NewMetricClientFactory(client.NewLogCacheClient, client.NewMetricServerClient)
+	metricClient = clientFactory.GetMetricClient(logger, conf)
 
 	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)
 	for i := 0; i < len(pollers); i++ {

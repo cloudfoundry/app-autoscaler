@@ -234,19 +234,7 @@ var _ = Describe("Eventgenerator", func() {
 		})
 	})
 
-	Describe("Getting metrics from LogCache", func() {
-		Context("when LogCache is not configured", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
-
-			It("Should create a MetricServerClient by default", func() {
-				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.LogCacheClient.GetMetric"))
-				Eventually(runner.Session.Buffer(), 3).Should(Say("eventgenerator.MetricServerClient.GetMetric"))
-			})
-		})
-
-		// TODO Replace me with a factory GetMetricServer test
+	Describe("", func() {
 		Context("when logCache is enabled", func() {
 			BeforeEach(func() {
 				logCache := newStubLogCache()
