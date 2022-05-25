@@ -19,43 +19,53 @@ import (
 
 var _ = Describe("AppMetricSQLDB", func() {
 	var (
-		adb               *AppMetricSQLDB
-		dbConfig          db.DatabaseConfig
-		logger            lager.Logger
-		err               error
-		appMetrics        []*models.AppMetric
-		start, end        int64
-		before            int64
-		appId, metricName string
-		testMetricName    string
-		testMetricUnit    = "Test-Metric-Unit"
-		testAppId         = "Test-App-ID"
-		orderType         db.OrderType
+		adb            *AppMetricSQLDB
+		dbConfig       db.DatabaseConfig
+		logger         lager.Logger
+		err            error
+		appMetrics     []*models.AppMetric
+		start, end     int64
+		before         int64
+		metricName     string
+		testMetricName string
+		testMetricUnit string
+		appId          string
+		orderType      db.OrderType
 	)
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("appmetric-sqldb-test")
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
 			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
-			ConnectionMaxLifetime: 10 * time.Second,
-			ConnectionMaxIdleTime: 10 * time.Second,
+			ConnectionMaxLifetime: 5 * time.Second,
+			ConnectionMaxIdleTime: 10 * time.Millisecond,
 		}
-		testMetricName = "Test-Metric-Name"
+		testMetricName = addProcessIdTo("Test-Metric-Name")
+		testMetricUnit = addProcessIdTo("Test-Metric-Unit")
 
+		adb, err = NewAppMetricSQLDB(dbConfig, logger)
+		FailOnError("NewAppMetricSQLDB", err)
+		DeferCleanup(func() error {
+			if adb != nil {
+				return adb.Close()
+			}
+			return nil
+		})
+
+		appId = addProcessIdTo("an-app-id")
+		cleanAppMetricTable(appId)
+		DeferCleanup(func() { cleanAppMetricTable(appId) })
 	})
 
 	Context("NewAppMetricSQLDB", func() {
 		JustBeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(dbConfig, logger)
-		})
-
-		AfterEach(func() {
 			if adb != nil {
-				err = adb.Close()
-				Expect(err).NotTo(HaveOccurred())
+				_ = adb.Close()
 			}
+			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 		})
 
 		Context("when db url is not correct", func() {
@@ -91,21 +101,11 @@ var _ = Describe("AppMetricSQLDB", func() {
 	})
 
 	Context("SaveAppMetric", func() {
-		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanAppMetricTable()
-		})
-
-		AfterEach(func() {
-			err = adb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 
 		Context("When inserting an app_metric", func() {
 			BeforeEach(func() {
 				appMetric := &models.AppMetric{
-					AppId:      testAppId,
+					AppId:      appId,
 					MetricType: testMetricName,
 					Unit:       testMetricUnit,
 					Timestamp:  11111111,
@@ -116,22 +116,13 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 
 			It("has the appMetric in database", func() {
-				Expect(hasAppMetric(testAppId, testMetricName, 11111111, "300")).To(BeTrue())
+				Expect(hasAppMetric(appId, testMetricName, 11111111, "300")).To(BeTrue())
 			})
 		})
 
 	})
 	Context("SaveAppMetricsInBulk", func() {
-		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanAppMetricTable()
-		})
 
-		AfterEach(func() {
-			err = adb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
 		Context("When inserting an empty array of app_metric", func() {
 			BeforeEach(func() {
 				appMetrics := []*models.AppMetric{}
@@ -146,14 +137,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 			BeforeEach(func() {
 				appMetrics := []*models.AppMetric{
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "300",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  22222222,
@@ -165,49 +156,41 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("has the array of app_metric in database", func() {
-				Expect(hasAppMetric(testAppId, testMetricName, 11111111, "300")).To(BeTrue())
-				Expect(hasAppMetric(testAppId, testMetricName, 22222222, "400")).To(BeTrue())
+				Expect(hasAppMetric(appId, testMetricName, 11111111, "300")).To(BeTrue())
+				Expect(hasAppMetric(appId, testMetricName, 22222222, "400")).To(BeTrue())
 			})
 		})
 		Context("When there are errors in transaction", func() {
-			var lock = &sync.Mutex{}
-			var count = 0
+			var wg = &sync.WaitGroup{}
 			BeforeEach(func() {
 				testMetricName = "Test-Metric-Name-this-is-a-too-long-metric-name-too-looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				appMetrics := []*models.AppMetric{
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "300",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  22222222,
 						Value:      "400",
 					},
 				}
+				wg.Add(100)
 				for i := 0; i < 100; i++ {
-					go func(count *int) {
+					go func() {
 						err := adb.SaveAppMetricsInBulk(appMetrics)
 						Expect(err).To(HaveOccurred())
-						lock.Lock()
-						*count = *count + 1
-						lock.Unlock()
-					}(&count)
-
+						defer wg.Done()
+					}()
 				}
-
 			})
 			It("all connections should be released after transactions' rolling back", func() {
-				Eventually(func() int {
-					lock.Lock()
-					defer lock.Unlock()
-					return count
-				}, 120*time.Second, 1*time.Second).Should(Equal(100))
+				wg.Wait()
 				Eventually(func() int {
 					return adb.GetDBStatus().OpenConnections
 				}, 120*time.Second, 10*time.Millisecond).Should(BeZero())
@@ -216,13 +199,10 @@ var _ = Describe("AppMetricSQLDB", func() {
 	})
 	Context("RetrieveAppMetrics", func() {
 		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-			cleanAppMetricTable()
 			orderType = db.ASC
 
 			appMetric := &models.AppMetric{
-				AppId:      testAppId,
+				AppId:      appId,
 				MetricType: testMetricName,
 				Unit:       testMetricUnit,
 				Timestamp:  11111111,
@@ -241,16 +221,10 @@ var _ = Describe("AppMetricSQLDB", func() {
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
-			appId = testAppId
 			metricName = testMetricName
 			start = 0
 			end = -1
 
-		})
-
-		AfterEach(func() {
-			err = adb.Close()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
@@ -321,21 +295,21 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "100",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  55555555,
@@ -353,14 +327,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  55555555,
@@ -377,21 +351,21 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  55555555,
 						Value:      "300",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
 					{
-						AppId:      testAppId,
+						AppId:      appId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
@@ -402,18 +376,10 @@ var _ = Describe("AppMetricSQLDB", func() {
 		})
 	})
 
-	Context("PruneAppMetrics", func() {
+	Context("PruneAppMetrics", Serial, func() {
 		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(dbConfig, logger)
-			if err != nil {
-				Fail(err.Error())
-			}
-			DeferCleanup(func() error { return adb.Close() })
-
-			cleanAppMetricTable()
-
 			appMetric := &models.AppMetric{
-				AppId:      testAppId,
+				AppId:      appId,
 				MetricType: testMetricName,
 				Unit:       testMetricUnit,
 				Timestamp:  11111111,
@@ -421,23 +387,17 @@ var _ = Describe("AppMetricSQLDB", func() {
 			}
 
 			err = adb.SaveAppMetric(appMetric)
-			if err != nil {
-				Fail(err.Error())
-			}
+			FailOnError("SaveAppMetric", err)
 
 			appMetric.Timestamp = 55555555
 			appMetric.Value = "200"
 			err = adb.SaveAppMetric(appMetric)
-			if err != nil {
-				Fail(err.Error())
-			}
+			FailOnError("SaveAppMetric", err)
+
 			appMetric.Timestamp = 33333333
 			appMetric.Value = "300"
 			err = adb.SaveAppMetric(appMetric)
-			if err != nil {
-				Fail(err.Error())
-			}
-
+			FailOnError("SaveAppMetric", err)
 		})
 
 		JustBeforeEach(func() {
@@ -451,7 +411,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			It("does not remove any metrics", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfAppMetrics()).To(Equal(3))
+				Expect(getNumberOfMetricsForApp(appId)).To(Equal(3))
 			})
 		})
 
@@ -462,7 +422,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			It("empties the app metrics table", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfAppMetrics()).To(Equal(0))
+				Expect(getNumberOfMetricsForApp(appId)).To(Equal(0))
 			})
 		})
 
@@ -473,8 +433,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			It("removes metrics before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getNumberOfAppMetrics()).To(Equal(1))
-				Expect(hasAppMetric(testAppId, testMetricName, 55555555, "200")).To(BeTrue())
+				Expect(getNumberOfMetricsForApp(appId)).To(Equal(1))
+				Expect(hasAppMetric(appId, testMetricName, 55555555, "200")).To(BeTrue())
 			})
 		})
 

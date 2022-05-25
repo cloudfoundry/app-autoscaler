@@ -53,13 +53,9 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 }
 
 func (adb *AppMetricSQLDB) Close() error {
-	err := adb.sqldb.Close()
-	if err != nil {
-		adb.logger.Error("Close-AppMetric-db", err, lager.Data{"dbConfig": adb.dbConfig})
-		return err
-	}
-	return nil
+	return adb.sqldb.Close()
 }
+
 func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *models.AppMetric) error {
 	query := adb.sqldb.Rebind("INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values(?, ?, ?, ?, ?)")
 	_, err := adb.sqldb.Exec(query, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
