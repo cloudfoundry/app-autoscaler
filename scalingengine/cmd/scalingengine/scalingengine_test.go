@@ -64,8 +64,8 @@ var _ = Describe("Main", func() {
 				secondRunner = NewScalingEngineRunner()
 				secondConf := conf
 
-				secondConf.Server.Port += 1
-				secondConf.Health.Port += 1
+				secondConf.Server.Port += 500
+				secondConf.Health.Port += 500
 				secondRunner.configPath = writeConfig(&secondConf).Name()
 				secondRunner.Start()
 			})
@@ -113,7 +113,7 @@ var _ = Describe("Main", func() {
 			})
 
 			AfterEach(func() {
-				os.Remove(runner.configPath)
+				_ = os.Remove(runner.configPath)
 			})
 
 			It("fails with an error", func() {

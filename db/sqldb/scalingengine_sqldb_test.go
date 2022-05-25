@@ -1,7 +1,7 @@
 package sqldb_test
 
 import (
-	"fmt"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -772,12 +772,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 	})
 })
-
-func FailOnError(message string, err error) {
-	if err != nil {
-		Fail(fmt.Sprintf("%s: %s", message, err.Error()))
-	}
-}
 
 func cleanupForApp(appId string) {
 	removeScalingHistoryForApp(appId)
