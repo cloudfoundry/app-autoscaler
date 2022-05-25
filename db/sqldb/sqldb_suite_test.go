@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -38,24 +40,16 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("environment variable $DBURL is not set")
 	}
 	database, err := db.GetConnection(dbUrl)
-	if err != nil {
-		Fail("failed to parse database connection: " + err.Error())
-	}
+	FailOnError("failed to parse database connection", err)
 
 	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
-	if err != nil {
-		Fail("can not connect database: " + err.Error())
-	}
+	FailOnError("can not connect database: ", err)
 
 	_, err = dbHelper.Exec("DELETE from binding")
-	if err != nil {
-		Fail("can not clean table binding: " + err.Error())
-	}
+	FailOnError("can not clean table binding", err)
 
 	_, err = dbHelper.Exec("DELETE from service_instance")
-	if err != nil {
-		Fail("can not clean table service_instance: " + err.Error())
-	}
+	FailOnError("can not clean table service_instance", err)
 
 	if strings.Contains(os.Getenv("DBURL"), "postgres") && getPostgresMajorVersion() >= 12 {
 		deleteAllFunctions()
