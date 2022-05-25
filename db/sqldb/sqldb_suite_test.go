@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -20,7 +22,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var dbHelper *sqlx.DB
+var (
+	dbHelper  *sqlx.DB
+	lockTable string
+)
 
 func TestSqldb(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -28,36 +33,23 @@ func TestSqldb(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	var e error
+	var err error
 
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
 	database, err := db.GetConnection(dbUrl)
-	if err != nil {
-		Fail("failed to parse database connection: " + err.Error())
-	}
+	FailOnError("failed to parse database connection", err)
 
-	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
-	if e != nil {
-		Fail("can not connect database: " + e.Error())
-	}
+	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	FailOnError("can not connect database: ", err)
 
-	e = createLockTable()
-	if e != nil {
-		Fail("can not create test lock table: " + e.Error())
-	}
+	_, err = dbHelper.Exec("DELETE from binding")
+	FailOnError("can not clean table binding", err)
 
-	_, e = dbHelper.Exec("DELETE from binding")
-	if e != nil {
-		Fail("can not clean table binding: " + e.Error())
-	}
-
-	_, e = dbHelper.Exec("DELETE from service_instance")
-	if e != nil {
-		Fail("can not clean table service_instance: " + e.Error())
-	}
+	_, err = dbHelper.Exec("DELETE from service_instance")
+	FailOnError("can not clean table service_instance", err)
 
 	if strings.Contains(os.Getenv("DBURL"), "postgres") && getPostgresMajorVersion() >= 12 {
 		deleteAllFunctions()
@@ -70,20 +62,22 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return []byte{}
 }, func([]byte) {
 	var e error
-
+	lockTable = fmt.Sprintf("test_lock_%d", GinkgoParallelProcess())
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
 	database, err := db.GetConnection(dbUrl)
-	if err != nil {
-		Fail("failed to parse database connection: " + err.Error())
-	}
+	FailOnError("failed to parse database connection: ", err)
 
 	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
+
+	err = createLockTable()
+	FailOnError("can not create test lock table: ", err)
+
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -206,9 +200,7 @@ func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, gui
 func getAppPolicy(appId string) string {
 	query := dbHelper.Rebind("SELECT policy_json FROM policy_json WHERE app_id=? ")
 	rows, err := dbHelper.Query(query, appId)
-	if err != nil {
-		Fail("failed to get policy" + err.Error())
-	}
+	FailOnError("failed to get policy", err)
 	defer func() {
 		_ = rows.Close()
 		_ = rows.Err()
@@ -216,9 +208,7 @@ func getAppPolicy(appId string) string {
 	var policyJsonStr string
 	if rows.Next() {
 		err = rows.Scan(&policyJsonStr)
-		if err != nil {
-			Fail("failed to scan policy" + err.Error())
-		}
+		FailOnError("failed to scan policy", err)
 	}
 	return policyJsonStr
 }
@@ -226,9 +216,7 @@ func getAppPolicy(appId string) string {
 func cleanAppMetricTable(appId string) {
 	query := dbHelper.Rebind("DELETE from app_metric where app_id = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table app_metric or app_id" + err.Error())
-	}
+	FailOnError("can not clean table app_metric or app_id", err)
 }
 
 func hasAppMetric(appId, metricType string, timestamp int64, value string) bool {
@@ -248,33 +236,25 @@ func getNumberOfMetricsForApp(appId string) int {
 	var num int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM app_metric where app_id = ?")
 	err := dbHelper.QueryRow(query, appId).Scan(&num)
-	if err != nil {
-		Fail("can not count the number of records in table app_metric: " + err.Error())
-	}
+	FailOnError("can not count the number of records in table app_metric: ", err)
 	return num
 }
 
 func removeScalingHistoryForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalinghistory where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table scalinghistory: " + err.Error())
-	}
+	FailOnError("can not clean table scalinghistory: ", err)
 }
 
 func removeCooldownForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalingcooldown where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table scalingcooldown: " + err.Error())
-	}
+	FailOnError("can not clean table scalingcooldown: ", err)
 }
 func removeActiveScheduleForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	if err != nil {
-		Fail("can not clean table scalingcooldown: " + err.Error())
-	}
+	FailOnError("can not clean table scalingcooldown: ", err)
 }
 
 func hasScalingHistory(appId string, timestamp int64) bool {
@@ -295,9 +275,7 @@ func getScalingHistoryForApp(appId string) int {
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ?")
 	row := dbHelper.QueryRow(query, appId)
 	err := row.Scan(&num)
-	if err != nil {
-		Fail("can not count the number of records in table scalinghistory: " + err.Error())
-	}
+	FailOnError("can not count the number of records in table scalinghistory: ", err)
 	return num
 }
 
@@ -351,9 +329,7 @@ func insertCredential(appid string, username string, password string) error {
 func getCredential(appId string) (string, string, error) {
 	query := dbHelper.Rebind("SELECT username,password FROM credentials WHERE id=? ")
 	rows, err := dbHelper.Query(query, appId)
-	if err != nil {
-		Fail("failed to get credential" + err.Error())
-	}
+	FailOnError("failed to get credential", err)
 	defer func() {
 		_ = rows.Close()
 		_ = rows.Err()
@@ -361,9 +337,7 @@ func getCredential(appId string) (string, string, error) {
 	var username, password string
 	if rows.Next() {
 		err = rows.Scan(&username, &password)
-		if err != nil {
-			Fail("failed to scan credential" + err.Error())
-		}
+		FailOnError("failed to scan credential", err)
 	}
 	return username, password, nil
 }
@@ -381,13 +355,13 @@ func hasCredential(appId string) bool {
 }
 
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {
-	query := dbHelper.Rebind("INSERT INTO test_lock (owner,lock_timestamp,ttl) VALUES (?,?,?)")
+	query := dbHelper.Rebind(fmt.Sprintf("INSERT INTO %s (owner,lock_timestamp,ttl) VALUES (?,?,?)", lockTable))
 	result, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, int64(lock.Ttl/time.Second))
 	return result, err
 }
 
 func cleanLockTable() error {
-	_, err := dbHelper.Exec("DELETE FROM test_lock")
+	_, err := dbHelper.Exec(fmt.Sprintf("DELETE FROM %s", lockTable))
 	if err != nil {
 		return err
 	}
@@ -395,7 +369,7 @@ func cleanLockTable() error {
 }
 
 func dropLockTable() error {
-	_, err := dbHelper.Exec("DROP TABLE test_lock")
+	_, err := dbHelper.Exec(fmt.Sprintf("DROP TABLE %s", lockTable))
 	if err != nil {
 		return err
 	}
@@ -403,13 +377,13 @@ func dropLockTable() error {
 }
 
 func createLockTable() error {
-	_, err := dbHelper.Exec(`
-		CREATE TABLE IF NOT EXISTS test_lock (
+	_, err := dbHelper.Exec(fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
 			owner VARCHAR(255) PRIMARY KEY,
 			lock_timestamp TIMESTAMP  NOT NULL,
 			ttl BIGINT DEFAULT 0
 		);
-	`)
+	`, lockTable))
 	if err != nil {
 		return err
 	}
@@ -422,7 +396,7 @@ func validateLockInDB(ownerid string, expectedLock *models.Lock) error {
 		ttl       time.Duration
 		owner     string
 	)
-	query := dbHelper.Rebind("SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=?")
+	query := dbHelper.Rebind(fmt.Sprintf("SELECT owner,lock_timestamp,ttl FROM %s WHERE owner=?", lockTable))
 	row := dbHelper.QueryRow(query, ownerid)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
@@ -446,7 +420,7 @@ func validateLockNotInDB(owner string) error {
 		timestamp time.Time
 		ttl       time.Duration
 	)
-	query := dbHelper.Rebind("SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=?")
+	query := dbHelper.Rebind(fmt.Sprintf("SELECT owner,lock_timestamp,ttl FROM %s WHERE owner=?", lockTable))
 	row := dbHelper.QueryRow(query, owner)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {

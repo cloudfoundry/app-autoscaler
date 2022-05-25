@@ -56,10 +56,10 @@ ginkgo_check:
 
 test: ginkgo_check
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -v ${GINKGO_OPTS} --skip-package=integration
+	@APP_AUTOSCALER_TEST_RUN=true ginkgo -p ${GINKGO_OPTS} --skip-package=integration
 
 testsuite: ginkgo_check
-	APP_AUTOSCALER_TEST_RUN=true ginkgo -v ${GINKGO_OPTS} ${TEST}
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -p ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration
 integration: ginkgo_check

@@ -3,6 +3,8 @@ package models_test
 import (
 	"errors"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,9 +33,7 @@ readiness_enabled: false
 		})
 		It("should default to false", func() {
 			err := yaml.Unmarshal(healthConfigBytes, &healthConfig)
-			if err != nil {
-				Fail("unable to unmarshal to health config" + err.Error())
-			}
+			FailOnError("unable to unmarshal to health config", err)
 			err = healthConfig.Validate()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -56,9 +56,7 @@ readiness_enabled: true
 		})
 		It("should have readiness true when supplied", func() {
 			err := yaml.Unmarshal(healthConfigBytes, &healthConfig)
-			if err != nil {
-				Fail("unable to unmarshal to health config" + err.Error())
-			}
+			FailOnError("unable to unmarshal to health config", err)
 			err = healthConfig.Validate()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -82,9 +80,7 @@ password_hash: password_hash
 		})
 		It("should fail validation", func() {
 			err := yaml.Unmarshal(healthConfigBytes, &healthConfig)
-			if err != nil {
-				Fail("unable to unmarshal to health config" + err.Error())
-			}
+			FailOnError("unable to unmarshal to health config", err)
 			err = healthConfig.Validate()
 			Expect(err).To(HaveOccurred())
 			Expect(errors.Is(err, models.ErrConfiguration)).To(BeTrue())

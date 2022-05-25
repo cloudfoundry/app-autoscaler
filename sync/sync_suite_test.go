@@ -21,11 +21,11 @@ func TestSync(t *testing.T) {
 
 var (
 	dbHelper      *sql.DB
-	lockTableName = "test_lock"
+	lockTableName string
 )
 var _ = BeforeSuite(func() {
 	var e error
-
+	lockTableName = fmt.Sprintf("lock_table_%d", GinkgoParallelProcess())
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")

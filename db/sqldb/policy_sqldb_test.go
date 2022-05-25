@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -57,9 +59,7 @@ var _ = Describe("PolicySQLDB", func() {
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		pdb, err = NewPolicySQLDB(dbConfig, logger)
-		if err != nil {
-			Fail("unable to connect policy-db: " + err.Error())
-		}
+		FailOnError("unable to connect policy-db: ", err)
 		DeferCleanup(func() error {
 			if pdb != nil {
 				return pdb.Close()

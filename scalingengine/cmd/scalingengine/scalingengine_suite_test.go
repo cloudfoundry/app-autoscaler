@@ -3,6 +3,8 @@ package main_test
 import (
 	"path/filepath"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -62,7 +64,7 @@ var _ = SynchronizedBeforeSuite(
 
 		ccUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-		appId = fmt.Sprintf("%s-%d", "app-id", GinkgoParallelProcess())
+		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
 		appState := models.AppStatusStarted
 		ccUAA.RouteToHandler("GET", "/v2/apps/"+appId+"/summary", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			models.AppEntity{Instances: 2, State: &appState}))
@@ -87,20 +89,21 @@ var _ = SynchronizedBeforeSuite(
 		conf.Health.Port = healthport
 		conf.Logging.Level = "debug"
 
+		dbUrl := os.Getenv("DBURL")
 		conf.DB.PolicyDB = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
 		conf.DB.ScalingEngineDB = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
 		conf.DB.SchedulerDB = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
@@ -115,23 +118,24 @@ var _ = SynchronizedBeforeSuite(
 
 		configFile = writeConfig(&conf)
 
-		database, err := db.GetConnection(os.Getenv("DBURL"))
+		database, err := db.GetConnection(dbUrl)
 		Expect(err).NotTo(HaveOccurred())
 
 		testDB, err := sqlx.Open(database.DriverName, database.DSN)
-		Expect(err).NotTo(HaveOccurred())
+		FailOnError("open db failed", err)
+		defer func() { _ = testDB.Close() }()
 
 		_, err = testDB.Exec(testDB.Rebind("DELETE FROM scalinghistory WHERE appid = ?"), appId)
-		Expect(err).NotTo(HaveOccurred())
+		FailOnError("delete from scalinghistory", err)
 
 		_, err = testDB.Exec(testDB.Rebind("DELETE from policy_json WHERE app_id = ?"), appId)
-		Expect(err).NotTo(HaveOccurred())
+		FailOnError("delete from policy_json", err)
 
 		_, err = testDB.Exec(testDB.Rebind("DELETE from activeschedule WHERE appid = ?"), appId)
-		Expect(err).NotTo(HaveOccurred())
+		FailOnError("delete from activeschedule", err)
 
 		_, err = testDB.Exec(testDB.Rebind("DELETE from app_scaling_active_schedule WHERE app_id = ?"), appId)
-		Expect(err).NotTo(HaveOccurred())
+		FailOnError("delete from app_scaling_active_schedule", err)
 
 		policy := `
 		{
@@ -139,10 +143,7 @@ var _ = SynchronizedBeforeSuite(
   			"instance_max_count": 5
 		}`
 		_, err = testDB.Exec(testDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)"), appId, policy, "1234")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testDB.Close()
-		Expect(err).NotTo(HaveOccurred())
+		FailOnError("insert failed", err)
 
 		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(
@@ -171,7 +172,7 @@ func verifyCertExistence(testCertDir string) {
 var _ = SynchronizedAfterSuite(
 	func() {
 		ccUAA.Close()
-		os.Remove(configFile.Name())
+		_ = os.Remove(configFile.Name())
 	},
 	func() {
 		gexec.CleanupBuildArtifacts()
@@ -181,7 +182,7 @@ func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "engine")
 	Expect(err).NotTo(HaveOccurred())
 
-	defer cfg.Close()
+	defer func() { _ = cfg.Close() }()
 
 	bytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())

@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Operator", func() {
+var _ = Describe("Operator", Serial, func() {
 
 	var (
 		runner       *OperatorRunner

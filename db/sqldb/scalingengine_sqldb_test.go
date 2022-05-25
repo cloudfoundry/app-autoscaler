@@ -1,8 +1,9 @@
 package sqldb_test
 
 import (
-	"fmt"
 	"strings"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
@@ -54,9 +55,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-		if err != nil {
-			Fail("Could not open db connection: " + err.Error())
-		}
+		FailOnError("Could not open db connection: ", err)
 		DeferCleanup(func() error {
 			if sdb != nil {
 				return sdb.Close()
@@ -772,12 +771,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 	})
 })
-
-func FailOnError(message string, err error) {
-	if err != nil {
-		Fail(fmt.Sprintf("%s: %s", message, err.Error()))
-	}
-}
 
 func cleanupForApp(appId string) {
 	removeScalingHistoryForApp(appId)
