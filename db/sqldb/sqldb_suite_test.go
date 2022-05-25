@@ -20,7 +20,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var dbHelper *sqlx.DB
+var (
+	dbHelper  *sqlx.DB
+	lockTable string
+)
 
 func TestSqldb(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -28,7 +31,7 @@ func TestSqldb(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	var e error
+	var err error
 
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
@@ -39,24 +42,19 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("failed to parse database connection: " + err.Error())
 	}
 
-	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
-	if e != nil {
-		Fail("can not connect database: " + e.Error())
+	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	if err != nil {
+		Fail("can not connect database: " + err.Error())
 	}
 
-	e = createLockTable()
-	if e != nil {
-		Fail("can not create test lock table: " + e.Error())
+	_, err = dbHelper.Exec("DELETE from binding")
+	if err != nil {
+		Fail("can not clean table binding: " + err.Error())
 	}
 
-	_, e = dbHelper.Exec("DELETE from binding")
-	if e != nil {
-		Fail("can not clean table binding: " + e.Error())
-	}
-
-	_, e = dbHelper.Exec("DELETE from service_instance")
-	if e != nil {
-		Fail("can not clean table service_instance: " + e.Error())
+	_, err = dbHelper.Exec("DELETE from service_instance")
+	if err != nil {
+		Fail("can not clean table service_instance: " + err.Error())
 	}
 
 	if strings.Contains(os.Getenv("DBURL"), "postgres") && getPostgresMajorVersion() >= 12 {
@@ -70,7 +68,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return []byte{}
 }, func([]byte) {
 	var e error
-
+	lockTable = fmt.Sprintf("test_lock_%d", GinkgoParallelProcess())
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
@@ -84,6 +82,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
+
+	err = createLockTable()
+	if err != nil {
+		Fail("can not create test lock table: " + err.Error())
+	}
+
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -381,13 +385,13 @@ func hasCredential(appId string) bool {
 }
 
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {
-	query := dbHelper.Rebind("INSERT INTO test_lock (owner,lock_timestamp,ttl) VALUES (?,?,?)")
+	query := dbHelper.Rebind(fmt.Sprintf("INSERT INTO %s (owner,lock_timestamp,ttl) VALUES (?,?,?)", lockTable))
 	result, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, int64(lock.Ttl/time.Second))
 	return result, err
 }
 
 func cleanLockTable() error {
-	_, err := dbHelper.Exec("DELETE FROM test_lock")
+	_, err := dbHelper.Exec(fmt.Sprintf("DELETE FROM %s", lockTable))
 	if err != nil {
 		return err
 	}
@@ -395,7 +399,7 @@ func cleanLockTable() error {
 }
 
 func dropLockTable() error {
-	_, err := dbHelper.Exec("DROP TABLE test_lock")
+	_, err := dbHelper.Exec(fmt.Sprintf("DROP TABLE %s", lockTable))
 	if err != nil {
 		return err
 	}
@@ -403,13 +407,13 @@ func dropLockTable() error {
 }
 
 func createLockTable() error {
-	_, err := dbHelper.Exec(`
-		CREATE TABLE IF NOT EXISTS test_lock (
+	_, err := dbHelper.Exec(fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
 			owner VARCHAR(255) PRIMARY KEY,
 			lock_timestamp TIMESTAMP  NOT NULL,
 			ttl BIGINT DEFAULT 0
 		);
-	`)
+	`, lockTable))
 	if err != nil {
 		return err
 	}
@@ -422,7 +426,7 @@ func validateLockInDB(ownerid string, expectedLock *models.Lock) error {
 		ttl       time.Duration
 		owner     string
 	)
-	query := dbHelper.Rebind("SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=?")
+	query := dbHelper.Rebind(fmt.Sprintf("SELECT owner,lock_timestamp,ttl FROM %s WHERE owner=?", lockTable))
 	row := dbHelper.QueryRow(query, ownerid)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
@@ -446,7 +450,7 @@ func validateLockNotInDB(owner string) error {
 		timestamp time.Time
 		ttl       time.Duration
 	)
-	query := dbHelper.Rebind("SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=?")
+	query := dbHelper.Rebind(fmt.Sprintf("SELECT owner,lock_timestamp,ttl FROM %s WHERE owner=?", lockTable))
 	row := dbHelper.QueryRow(query, owner)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
