@@ -87,10 +87,11 @@ var _ = Describe("MetricClientFactory", func() {
 	Describe("GetMetricServer", func() {
 		BeforeEach(func() {
 			metricCollectorURL = "some-metric-server-url"
+			useLogCache = false
 		})
 
 		Describe("when logCacheEnabled is false", func() {
-			It("should create a MetricServerClient by default", func() {
+			FIt("should create a MetricServerClient by default", func() {
 				Expect(metricClient).To(BeAssignableToTypeOf(&MetricServerClient{}))
 				Expect(fakeLogCacheClientCreator.NewLogCacheClientCallCount()).To(Equal(0))
 				Expect(fakeMetricServerClientCreator.NewMetricServerClientCallCount()).To(Equal(1))
