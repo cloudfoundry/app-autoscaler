@@ -25,13 +25,16 @@ var _ = Describe("Envelopeprocessor", func() {
 		envelopes = nil
 	})
 
+	JustBeforeEach(func() {
+		logger = lagertest.NewTestLogger("envelopeProcessor")
+		processor = envelopeprocessor.NewProcessor(logger)
+	})
+
 	Describe("#GetGaugeInstanceMetrics", func() {
 		Context("processing custom metrics", func() {
 			BeforeEach(func() {
 				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111))
 				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "0", "custom_name", "custom_unit", 11.08, 1111))
-				logger = lagertest.NewTestLogger("envelopeProcessor")
-				processor = envelopeprocessor.NewProcessor(logger)
 			})
 
 			It("sends standard app instance metrics to channel", func() {
