@@ -1,6 +1,10 @@
 package client_test
 
 import (
+	"crypto/tls"
+	"net/http"
+	"path/filepath"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -8,12 +12,9 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager/lagertest"
-	"crypto/tls"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	credentials "google.golang.org/grpc/credentials"
-	"net/http"
-	"path/filepath"
 )
 
 const testCertDir = "../../../../test-certs"
@@ -30,7 +31,7 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeTLSConfig                  fakes.FakeTLSConfig
 		expectedLogCacheClient         logcache.Client
 		expectedTLSTransportCredential credentials.TransportCredentials
-		expectedTLSCreds               tls.Config
+		expectedTLSCreds               *tls.Config
 		logger                         *lagertest.TestLogger
 		metricCollectorURL             string
 		useLogCache                    bool

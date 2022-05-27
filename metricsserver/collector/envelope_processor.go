@@ -68,7 +68,7 @@ func (ep *envelopeProcessor) processEvents() {
 
 		case e := <-ep.envelopeChan:
 			metrics := ep.getAppInstanceMetrics(e)
-			for i, _ := range metrics {
+			for i := range metrics {
 				ep.metricChan <- &metrics[i]
 			}
 
@@ -112,7 +112,7 @@ func (ep *envelopeProcessor) processHttpStartStopMetrics() {
 
 		metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(ep.httpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano(),
 			ep.collectInterval)
-		for i, _ := range metrics {
+		for i := range metrics {
 			ep.metricChan <- &metrics[i]
 		}
 	}

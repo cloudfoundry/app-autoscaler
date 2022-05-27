@@ -25,9 +25,9 @@ var _ = Describe("MetricPoller", func() {
 		logger          *lagertest.TestLogger
 		appMonitorsChan chan *models.AppMonitor
 		appMetricChan   chan *models.AppMetric
-		metricPoller *MetricPoller
-		metricClient MetricClient
-		metricServer *ghttp.Server
+		metricPoller    *MetricPoller
+		metricClient    MetricClient
+		metricServer    *ghttp.Server
 		metrics         = []*models.AppInstanceMetric{
 			{
 				AppId:         testAppId,

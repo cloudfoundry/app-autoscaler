@@ -1,11 +1,12 @@
 package aggregator
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"fmt"
 	"math"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager"

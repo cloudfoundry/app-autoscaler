@@ -1,18 +1,19 @@
 package client_test
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"net/url"
+	"time"
+
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
-	"context"
-	"errors"
-	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"net/url"
-	"time"
 )
 
 var _ = Describe("LogCacheClient", func() {

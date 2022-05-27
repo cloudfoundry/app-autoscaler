@@ -1,11 +1,12 @@
 package envelopeprocessor
 
 import (
-	"code.cloudfoundry.org/lager"
 	"fmt"
 	"math"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/lager"
 
 	"golang.org/x/exp/maps"
 

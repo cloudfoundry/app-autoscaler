@@ -1,15 +1,16 @@
 package client
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	logcache "code.cloudfoundry.org/go-log-cache"
@@ -44,7 +45,6 @@ type LogCacheClientCreator interface {
 }
 
 func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient {
-
 	return &LogCacheClient{
 		logger: logger.Session("LogCacheClient"),
 		client: client,
@@ -86,28 +86,29 @@ func NewTLSCredentials(caPath string, certPath string, keyPath string) (credenti
 		return nil, err
 	}
 
-	return NewTLS(&cfg), nil
+	return NewTLS(cfg), nil
 }
 
-func NewTLSConfig(caPath string, certPath string, keyPath string) (tls.Config, error) {
+func NewTLSConfig(caPath string, certPath string, keyPath string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
-		return tls.Config{}, err
+		return nil, err
 	}
 
-	tlsConfig := tls.Config{
+	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: false,
+		MinVersion:         tls.VersionTLS12,
 	}
 
 	caCertBytes, err := ioutil.ReadFile(caPath)
 	if err != nil {
-		return tls.Config{}, err
+		return nil, err
 	}
 
 	caCertPool := x509.NewCertPool()
 	if ok := caCertPool.AppendCertsFromPEM(caCertBytes); !ok {
-		return tls.Config{}, errors.New("cannot parse ca cert")
+		return nil, errors.New("cannot parse ca cert")
 	}
 
 	tlsConfig.RootCAs = caCertPool

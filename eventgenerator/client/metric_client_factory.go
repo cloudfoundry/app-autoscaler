@@ -1,17 +1,18 @@
 package client
 
 import (
+	"log"
+	"net/http"
+	"time"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager"
-	"google.golang.org/grpc"
+	gogrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"log"
-	"net/http"
-	"time"
 )
 
 type MetricClient interface {
@@ -23,10 +24,18 @@ type newMetricServerClient func(logger lager.Logger, metricCollectorUrl string, 
 
 var NewGoLogCacheClient = logcache.NewClient
 var LogCacheClientWithGRPC = logcache.WithViaGRPC
-var GRPCWithTransportCredentials = grpc.WithTransportCredentials
+var GRPCWithTransportCredentials = gogrpc.WithTransportCredentials
 
 type grpcDialOptions interface {
-	WithTransportCredentials(creds credentials.TransportCredentials) grpc.DialOption
+	WithTransportCredentials(creds credentials.TransportCredentials) gogrpc.DialOption
+}
+
+type grpcCreds struct {
+	grpcDialOptions
+}
+
+func (g grpcCreds) WithTransportCredentials(creds credentials.TransportCredentials) gogrpc.DialOption {
+	return GRPCWithTransportCredentials(creds)
 }
 
 type MetricClientFactory struct {
@@ -47,7 +56,7 @@ func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config
 	if conf.UseLogCache {
 		creds, err := NewTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile, conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
 
-		logCacheClient := NewGoLogCacheClient(conf.MetricCollector.MetricCollectorURL, LogCacheClientWithGRPC(GRPCWithTransportCredentials(creds)))
+		logCacheClient := NewGoLogCacheClient(conf.MetricCollector.MetricCollectorURL, LogCacheClientWithGRPC(new(grpcCreds).WithTransportCredentials(creds)))
 		if err != nil {
 			log.Fatalf("failed to load TLS config: %s", err)
 		}

@@ -356,7 +356,8 @@ func (s *stubLogCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if _, ok := s.result[r.Method+r.URL.Path]; ok {
 		w.WriteHeader(s.statusCode)
-		w.Write(s.result[r.Method+r.URL.Path])
+		_, err := w.Write(s.result[r.Method+r.URL.Path])
+		Expect(err).NotTo(HaveOccurred())
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
