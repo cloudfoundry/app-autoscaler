@@ -91,7 +91,7 @@ var _ = Describe("MetricClientFactory", func() {
 		})
 
 		Describe("when logCacheEnabled is false", func() {
-			FIt("should create a MetricServerClient by default", func() {
+			It("should create a MetricServerClient by default", func() {
 				Expect(metricClient).To(BeAssignableToTypeOf(&MetricServerClient{}))
 				Expect(fakeLogCacheClientCreator.NewLogCacheClientCallCount()).To(Equal(0))
 				Expect(fakeMetricServerClientCreator.NewMetricServerClientCallCount()).To(Equal(1))
