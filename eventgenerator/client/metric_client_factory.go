@@ -45,18 +45,13 @@ func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config
 	var metricClient MetricClient
 
 	if conf.UseLogCache {
-
 		creds, err := NewTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile, conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
 
 		logCacheClient := NewGoLogCacheClient(conf.MetricCollector.MetricCollectorURL, LogCacheClientWithGRPC(GRPCWithTransportCredentials(creds)))
 		if err != nil {
-
 			log.Fatalf("failed to load TLS config: %s", err)
 		}
 
-		//client := client.NewClient(
-		//	cfg.LogCacheAddr,
-		//)
 		envelopeProcessor := envelopeprocessor.NewProcessor(logger)
 		metricClient = mc.newLogCacheClient(logger, time.Now, logCacheClient, envelopeProcessor)
 	} else {
