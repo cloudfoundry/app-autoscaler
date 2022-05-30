@@ -239,7 +239,7 @@ var _ = Describe("Eventgenerator", func() {
 			BeforeEach(func() {
 				logCache := newStubLogCache()
 				logCacheConfig := conf
-				logCacheConfig.UseLogCache = true
+				logCacheConfig.MetricCollector.UseLogCache = true
 				logCacheConfig.MetricCollector.MetricCollectorURL = logCache.addr()
 				runner.configPath = writeConfig(&logCacheConfig).Name()
 

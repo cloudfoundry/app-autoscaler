@@ -70,8 +70,8 @@ var _ = Describe("MetricClientFactory", func() {
 
 	JustBeforeEach(func() {
 		conf = config.Config{
-			UseLogCache: useLogCache,
 			MetricCollector: config.MetricCollectorConfig{
+				UseLogCache:        useLogCache,
 				MetricCollectorURL: metricCollectorURL,
 				TLSClientCerts: models.TLSCerts{
 					KeyFile:    keyFilePath,

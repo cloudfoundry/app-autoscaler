@@ -53,7 +53,7 @@ func NewMetricClientFactory(newMetricLogCacheClient newLogCacheClient, newMetric
 func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
 	var metricClient MetricClient
 
-	if conf.UseLogCache {
+	if conf.MetricCollector.UseLogCache {
 		creds, err := NewTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile, conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
 
 		logCacheClient := NewGoLogCacheClient(conf.MetricCollector.MetricCollectorURL, LogCacheClientWithGRPC(new(grpcCreds).WithTransportCredentials(creds)))

@@ -33,7 +33,6 @@ var _ = Describe("Config", func() {
 logging:
   level: info
 http_client_timeout: 10s
-use_log_cache: false
 server:
   port: 9080
   tls:
@@ -74,6 +73,7 @@ scalingEngine:
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metricCollector:
+  use_log_cache: false
   metric_collector_url: http://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
@@ -228,7 +228,6 @@ defaultBreachDurationSecs: 600
 						Port: 8080,
 						TLS:  models.TLSCerts{},
 					},
-					UseLogCache: false,
 					Health: models.HealthConfig{
 						Port: 8081,
 					},
@@ -263,6 +262,7 @@ defaultBreachDurationSecs: 600
 					ScalingEngine: ScalingEngineConfig{
 						ScalingEngineURL: "http://localhost:8082"},
 					MetricCollector: MetricCollectorConfig{
+						UseLogCache:        false,
 						MetricCollectorURL: "http://localhost:8083"},
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
