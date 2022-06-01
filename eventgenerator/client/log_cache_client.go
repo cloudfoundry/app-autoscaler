@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -56,9 +57,14 @@ func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client Log
 func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	c.logger.Debug("GetMetric")
 	logMetricType := getEnvelopeType(metricType)
-	envelopes, _ := c.client.Read(context.Background(), appId, startTime, logcache.WithEndTime(endTime), logcache.WithEnvelopeTypes(logMetricType))
-	var err error
 	var metrics []models.AppInstanceMetric
+
+	var err error
+
+	envelopes, err := c.client.Read(context.Background(), appId, startTime, logcache.WithEndTime(endTime), logcache.WithEnvelopeTypes(logMetricType))
+	if err != nil {
+		return metrics, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", logMetricType, appId, err)
+	}
 
 	collectedAt := c.now().UnixNano()
 	if logMetricType == rpc.EnvelopeType_TIMER {

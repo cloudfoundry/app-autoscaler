@@ -18,21 +18,23 @@ import (
 
 var _ = Describe("LogCacheClient", func() {
 	var (
-		fakeEnvelopeProcessor *fakes.FakeEnvelopeProcessor
-		fakeLogCacheClient    *fakes.FakeLogCacheClientReader
-		appId                 string
-		logger                *lagertest.TestLogger
-		logCacheClient        *LogCacheClient
-		envelopes             []*loggregator_v2.Envelope
-		metrics               []models.AppInstanceMetric
-		startTime             time.Time
-		endTime               time.Time
-		collectedAt           time.Time
+		fakeEnvelopeProcessor   *fakes.FakeEnvelopeProcessor
+		fakeLogCacheClient      *fakes.FakeLogCacheClientReader
+		appId                   string
+		logger                  *lagertest.TestLogger
+		logCacheClient          *LogCacheClient
+		envelopes               []*loggregator_v2.Envelope
+		metrics                 []models.AppInstanceMetric
+		startTime               time.Time
+		endTime                 time.Time
+		collectedAt             time.Time
+		logCacheClientReadError error
 	)
 
 	BeforeEach(func() {
 		fakeEnvelopeProcessor = &fakes.FakeEnvelopeProcessor{}
 		fakeLogCacheClient = &fakes.FakeLogCacheClientReader{}
+		logCacheClientReadError = nil
 		logger = lagertest.NewTestLogger("MetricPoller-test")
 		startTime = time.Now()
 		endTime = startTime.Add(-60 * time.Second)
@@ -49,13 +51,24 @@ var _ = Describe("LogCacheClient", func() {
 	})
 
 	JustBeforeEach(func() {
-		fakeLogCacheClient.ReadReturns(envelopes, nil)
+		fakeLogCacheClient.ReadReturns(envelopes, logCacheClientReadError)
 		fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsReturns(metrics)
 		fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(0, metrics, nil)
 		fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(1, nil, errors.New("some error"))
 
 		logCacheClient = NewLogCacheClient(logger, func() time.Time { return collectedAt }, fakeLogCacheClient, fakeEnvelopeProcessor)
 
+	})
+
+	Describe("when log cache returns error on read", func() {
+		BeforeEach(func() {
+			logCacheClientReadError = errors.New("some Read error")
+		})
+
+		It("return error", func() {
+			_, err := logCacheClient.GetMetric(appId, models.MetricNameMemoryUtil, startTime, endTime)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	DescribeTable("GetMetric for startStop Metrics",
