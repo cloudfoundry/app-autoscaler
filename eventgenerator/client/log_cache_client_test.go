@@ -1,10 +1,12 @@
 package client_test
 
 import (
+	logcache "code.cloudfoundry.org/go-log-cache"
 	"context"
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
@@ -105,16 +107,24 @@ var _ = Describe("LogCacheClient", func() {
 	)
 
 	DescribeTable("GetMetric for Gauge Metrics",
-		func(metricType string) {
-			actualMetrics, err := logCacheClient.GetMetric(appId, metricType, startTime, endTime)
+		func(autoscalerMetricType string, requiredFilters []string) {
+			actualMetrics, err := logCacheClient.GetMetric(appId, autoscalerMetricType, startTime, endTime)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualMetrics).To(Equal(metrics))
 
 			By("Sends the right arguments to log-cache-client")
 			_, _, _, readOptions := fakeLogCacheClient.ReadArgsForCall(0)
-			values := url.Values{}
-			readOptions[1](nil, values)
-			Expect(values["envelope_types"][0]).To(Equal("GAUGE"))
+
+			Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
+
+			Expect(len(readOptions)).To(Equal(len(requiredFilters)), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
+			Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("GAUGE"))
+
+			// after starTime and envelopeType we filter the metric names
+			for i := 2; i < len(requiredFilters); i++ {
+				Expect(valuesFrom(readOptions[i])["name_filter"][0]).To(Equal(requiredFilters[i]))
+			}
+
 			Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(0))
 
 			By("Sends the right arguments to the gauge processor")
@@ -122,10 +132,17 @@ var _ = Describe("LogCacheClient", func() {
 			Expect(actualEnvelopes).To(Equal(envelopes))
 			Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 		},
-		Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil),
-		Entry("When metric type is MetricNameMemoryUsed", models.MetricNameMemoryUsed),
-		Entry("When metric type is MetricNameCPUUtil", models.MetricNameCPUUtil),
-		Entry("When metric type is CustomMetrics", "a-crazy-metric"),
+		Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory", "memory_quota"}),
+		Entry("When metric type is MetricNameMemoryUsed", models.MetricNameMemoryUsed, []string{"endtime", "envelope_type", "memory"}),
+		Entry("When metric type is MetricNameCPUUtil", models.MetricNameCPUUtil, []string{"endtime", "envelope_type", "cpu"}),
+		Entry("When metric type is CustomMetrics", "a-custom-metric", []string{"endtime", "envelope_type", "a-custom-metric"}),
 	)
 
 })
+
+func valuesFrom(option logcache.ReadOption) url.Values {
+	values := url.Values{}
+	option(nil, values)
+	return values
+
+}

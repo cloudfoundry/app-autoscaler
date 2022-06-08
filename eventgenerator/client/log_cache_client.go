@@ -56,23 +56,43 @@ func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client Log
 }
 func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	c.logger.Debug("GetMetric")
-	logMetricType := getEnvelopeType(metricType)
 	var metrics []models.AppInstanceMetric
 
 	var err error
 
-	envelopes, err := c.client.Read(context.Background(), appId, startTime, logcache.WithEndTime(endTime), logcache.WithEnvelopeTypes(logMetricType))
+	//TODO: filters for "throughput" and "responsetime"
+	envelopes, err := c.client.Read(context.Background(), appId, startTime, logCacheFiltersFor(endTime, metricType)...)
 	if err != nil {
-		return metrics, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", logMetricType, appId, err)
+		return metrics, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", getEnvelopeType(metricType), appId, err)
 	}
 
 	collectedAt := c.now().UnixNano()
-	if logMetricType == rpc.EnvelopeType_TIMER {
+	if getEnvelopeType(metricType) == rpc.EnvelopeType_TIMER {
 		metrics = c.envelopeProcessor.GetHttpStartStopInstanceMetrics(envelopes, appId, collectedAt, 30*time.Second)
 	} else {
 		metrics, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelopes, collectedAt)
 	}
 	return metrics, err
+}
+
+func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []logcache.ReadOption) {
+	logMetricType := getEnvelopeType(metricType)
+	readOptions = append(readOptions, logcache.WithEndTime(endTime))
+	readOptions = append(readOptions, logcache.WithEnvelopeTypes(logMetricType))
+
+	switch metricType {
+	case models.MetricNameMemoryUtil:
+		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
+		readOptions = append(readOptions, logcache.WithNameFilter("memory_quota"))
+	case models.MetricNameMemoryUsed:
+		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
+	case models.MetricNameCPUUtil:
+		readOptions = append(readOptions, logcache.WithNameFilter("cpu"))
+	default:
+		readOptions = append(readOptions, logcache.WithNameFilter(metricType))
+	}
+
+	return readOptions
 }
 
 func getEnvelopeType(metricType string) rpc.EnvelopeType {
