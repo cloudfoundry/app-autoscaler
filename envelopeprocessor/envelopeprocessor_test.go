@@ -1,8 +1,9 @@
 package envelopeprocessor_test
 
 import (
-	"golang.org/x/exp/maps"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -161,8 +162,7 @@ var _ = Describe("Envelopeprocessor", func() {
 		})
 
 		It("Should return a list of envelopes with matching timestamp, source_id and instance_id ", func() {
-			var expectedEnvelopes []*loggregator_v2.Envelope
-			expectedEnvelopes = processor.CompactEnvelopes(envelopes)
+			expectedEnvelopes := processor.CompactEnvelopes(envelopes)
 			Expect(len(expectedEnvelopes)).To(Equal(2))
 			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("cpu"))
 			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("memory"))

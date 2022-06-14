@@ -87,7 +87,6 @@ func filter(metrics []models.AppInstanceMetric, metricType string) []models.AppI
 	}
 
 	return result
-
 }
 func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []logcache.ReadOption) {
 	logMetricType := getEnvelopeType(metricType)

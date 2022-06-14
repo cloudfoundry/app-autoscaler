@@ -1,13 +1,14 @@
 package client_test
 
 import (
-	logcache "code.cloudfoundry.org/go-log-cache"
 	"context"
 	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
 	"time"
+
+	logcache "code.cloudfoundry.org/go-log-cache"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -175,7 +176,7 @@ var _ = Describe("LogCacheClient", func() {
 				})
 			})
 
-			It("should retrive requested metrics only", func() {
+			It("should retrieve requested metrics only", func() {
 				actualMetrics, err := logCacheClient.GetMetric(appId, models.MetricNameMemoryUsed, startTime, endTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(actualMetrics)).To(Equal(1))
@@ -190,5 +191,4 @@ func valuesFrom(option logcache.ReadOption) url.Values {
 	values := url.Values{}
 	option(nil, values)
 	return values
-
 }

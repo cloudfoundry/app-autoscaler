@@ -43,14 +43,12 @@ func (p Processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.E
 }
 
 func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*loggregator_v2.Envelope {
-	var result map[string]*loggregator_v2.Envelope
-	result = map[string]*loggregator_v2.Envelope{}
+	result := map[string]*loggregator_v2.Envelope{}
 	for i := range envelopes {
 		key := fmt.Sprintf("%s-%s-%d", envelopes[i].SourceId, envelopes[i].InstanceId, envelopes[i].Timestamp)
 		if result[key] == nil {
 			result[key] = &loggregator_v2.Envelope{}
 			result[key] = envelopes[i]
-
 		} else {
 			metrics := envelopes[i].GetGauge().GetMetrics()
 			for k, v := range metrics {
@@ -195,7 +193,6 @@ func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
 		}
 	}
 	return len(matchingKeys) != 0
-
 }
 
 func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
