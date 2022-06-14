@@ -62,6 +62,8 @@ func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime ti
 
 	//TODO: filters for "throughput" and "responsetime"
 	envelopes, err := c.client.Read(context.Background(), appId, startTime, logCacheFiltersFor(endTime, metricType)...)
+	//TODO: merge all envelopes with matching timestamp, source_id and instance_id
+
 	if err != nil {
 		return metrics, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", getEnvelopeType(metricType), appId, err)
 	}

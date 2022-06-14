@@ -11,7 +11,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	loggregator_v2 "code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"github.com/imdario/mergo"
 )
 
@@ -34,11 +34,32 @@ func NewProcessor(logger lager.Logger) Processor {
 
 func (p Processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
 	p.logger.Debug("GetGaugeInstanceMetrics")
-	return GetGaugeInstanceMetrics(envelopes, currentTimeStamp)
+	compactedEnvelopes := p.CompactEnvelopes(envelopes)
+	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
 }
 func (p Processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
 	p.logger.Debug("GetHttpStartStopInstanceMetrics")
 	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, collectionInterval)
+}
+
+func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*loggregator_v2.Envelope {
+	var result map[string]*loggregator_v2.Envelope
+	result = map[string]*loggregator_v2.Envelope{}
+	for i := range envelopes {
+		key := fmt.Sprintf("%s-%s-%d", envelopes[i].SourceId, envelopes[i].InstanceId, envelopes[i].Timestamp)
+		if result[key] == nil {
+			result[key] = &loggregator_v2.Envelope{}
+			result[key] = envelopes[i]
+
+		} else {
+			metrics := envelopes[i].GetGauge().GetMetrics()
+			for k, v := range metrics {
+				result[key].GetGauge().Metrics[k] = v
+			}
+		}
+	}
+
+	return maps.Values(result)
 }
 
 func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
@@ -163,8 +184,17 @@ func calcNumReqs(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map
 
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
 	// TODO: Check for all container metrics not only memory quota
-	_, exist := e.GetGauge().GetMetrics()["memory_quota"]
-	return exist
+	keys := maps.Keys(e.GetGauge().GetMetrics())
+
+	var matchingKeys []string
+
+	for i := range keys {
+		if keys[i] == "memory_quota" || keys[i] == "memory" {
+			matchingKeys = append(matchingKeys, keys[i])
+		}
+	}
+	return len(matchingKeys) != 0
+
 }
 
 func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {

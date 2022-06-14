@@ -1,6 +1,7 @@
 package envelopeprocessor_test
 
 import (
+	"golang.org/x/exp/maps"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
@@ -68,12 +69,15 @@ var _ = Describe("Envelopeprocessor", func() {
 			BeforeEach(func() {
 				envelopes = append(envelopes, GenerateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111))
 				envelopes = append(envelopes, GenerateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111))
+				envelopes = append(envelopes, GenerateMemoryContainerMetrics("test-app-id", "2", 10.2*1024*1024, 1111))
+				envelopes = append(envelopes, GenerateMemoryQuotaContainerMetrics("test-app-id", "2", 20*1024*1024, 1111))
 			})
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
 				metrics, err := processor.GetGaugeInstanceMetrics(envelopes, timestamp)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(len(metrics)).To(Equal(8))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
@@ -133,10 +137,39 @@ var _ = Describe("Envelopeprocessor", func() {
 					Timestamp:     1111,
 				}))
 
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 2,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameMemoryUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "51",
+					Timestamp:     1111,
+				}))
+
 			})
+
 		})
 	})
 
+	Describe("#CompactEnvelopes", func() {
+		BeforeEach(func() {
+			envelopes = append(envelopes, GenerateMemoryContainerMetrics("test-app-id", "0", 10*1024*1024, 1111))
+			envelopes = append(envelopes, GenerateMemoryQuotaContainerMetrics("test-app-id", "0", 20*1024*1024, 1111))
+			envelopes = append(envelopes, GenerateCPUContainerMetrics("test-app-id", "0", 20*1024*1024, 1111))
+			envelopes = append(envelopes, GenerateMemoryQuotaContainerMetrics("test-app-id", "1", 10.2, 1111))
+		})
+
+		It("Should return a list of envelopes with matching timestamp, source_id and instance_id ", func() {
+			var expectedEnvelopes []*loggregator_v2.Envelope
+			expectedEnvelopes = processor.CompactEnvelopes(envelopes)
+			Expect(len(expectedEnvelopes)).To(Equal(2))
+			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("cpu"))
+			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("memory"))
+			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("memory_quota"))
+			Expect(maps.Keys(expectedEnvelopes[1].GetGauge().GetMetrics())).To(ContainElement("memory_quota"))
+		})
+	})
 	Describe("#GetHttpStartStopInstanceMetrics", func() {
 		BeforeEach(func() {
 			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111))
@@ -278,6 +311,61 @@ func GenerateCustomMetrics(sourceID, instance, name, unit string, value float64,
 					name: {
 						Unit:  unit,
 						Value: value,
+					},
+				},
+			},
+		},
+		Timestamp: timestamp,
+	}
+	return e
+}
+func GenerateMemoryContainerMetrics(sourceID, instance string, memory float64, timestamp int64) *loggregator_v2.Envelope {
+	e := &loggregator_v2.Envelope{
+		SourceId:   sourceID,
+		InstanceId: instance,
+		Message: &loggregator_v2.Envelope_Gauge{
+			Gauge: &loggregator_v2.Gauge{
+				Metrics: map[string]*loggregator_v2.GaugeValue{
+					"memory": {
+						Unit:  "bytes",
+						Value: memory,
+					},
+				},
+			},
+		},
+		Timestamp: timestamp,
+	}
+	return e
+}
+
+func GenerateMemoryQuotaContainerMetrics(sourceID, instance string, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
+	e := &loggregator_v2.Envelope{
+		SourceId:   sourceID,
+		InstanceId: instance,
+		Message: &loggregator_v2.Envelope_Gauge{
+			Gauge: &loggregator_v2.Gauge{
+				Metrics: map[string]*loggregator_v2.GaugeValue{
+					"memory_quota": {
+						Unit:  "bytes",
+						Value: memoryQuota,
+					},
+				},
+			},
+		},
+		Timestamp: timestamp,
+	}
+	return e
+}
+func GenerateCPUContainerMetrics(sourceID, instance string, cpu float64, timestamp int64) *loggregator_v2.Envelope {
+	e := &loggregator_v2.Envelope{
+		SourceId:   sourceID,
+		InstanceId: instance,
+		Message: &loggregator_v2.Envelope_Gauge{
+			Gauge: &loggregator_v2.Gauge{
+				Metrics: map[string]*loggregator_v2.GaugeValue{
+					"cpu": {
+						Unit:  "percentage",
+						Value: cpu,
 					},
 				},
 			},
