@@ -33,8 +33,8 @@ func NewProcessor(logger lager.Logger) Processor {
 }
 
 func (p Processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
-	p.logger.Debug("GetGaugeInstanceMetrics")
 	compactedEnvelopes := p.CompactEnvelopes(envelopes)
+	p.logger.Debug("GetGaugeInstanceMetrics compacted envelopes:", lager.Data{"compactedEnvelopes": compactedEnvelopes})
 	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
 }
 func (p Processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
@@ -64,6 +64,7 @@ func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*log
 
 func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
 	var metrics = []models.AppInstanceMetric{}
+
 	for _, envelope := range envelopes {
 		if isContainerMetricEnvelope(envelope) {
 			//TODO check error
