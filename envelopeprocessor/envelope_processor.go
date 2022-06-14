@@ -162,6 +162,7 @@ func calcNumReqs(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map
 }
 
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
+	// TODO: Check for all container metrics not only memory quota
 	_, exist := e.GetGauge().GetMetrics()["memory_quota"]
 	return exist
 }

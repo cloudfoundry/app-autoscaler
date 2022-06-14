@@ -70,6 +70,7 @@ func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime ti
 	if getEnvelopeType(metricType) == rpc.EnvelopeType_TIMER {
 		metrics = c.envelopeProcessor.GetHttpStartStopInstanceMetrics(envelopes, appId, collectedAt, 30*time.Second)
 	} else {
+		c.logger.Debug("envelopes received from log-cache: ", lager.Data{"envelopes": envelopes})
 		metrics, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelopes, collectedAt)
 	}
 	return metrics, err
