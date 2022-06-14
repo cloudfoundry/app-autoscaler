@@ -72,11 +72,23 @@ func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime ti
 	if getEnvelopeType(metricType) == rpc.EnvelopeType_TIMER {
 		metrics = c.envelopeProcessor.GetHttpStartStopInstanceMetrics(envelopes, appId, collectedAt, 30*time.Second)
 	} else {
+		c.logger.Debug("envelopes received from log-cache: ", lager.Data{"envelopes": envelopes})
 		metrics, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelopes, collectedAt)
 	}
-	return metrics, err
+	return filter(metrics, metricType), err
 }
 
+func filter(metrics []models.AppInstanceMetric, metricType string) []models.AppInstanceMetric {
+	var result []models.AppInstanceMetric
+	for i := range metrics {
+		if metrics[i].Name == metricType {
+			result = append(result, metrics[i])
+		}
+	}
+
+	return result
+
+}
 func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []logcache.ReadOption) {
 	logMetricType := getEnvelopeType(metricType)
 	readOptions = append(readOptions, logcache.WithEndTime(endTime))
