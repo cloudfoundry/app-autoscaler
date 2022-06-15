@@ -105,8 +105,7 @@ func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []log
 
 	switch metricType {
 	case models.MetricNameMemoryUtil:
-		readOptions = append(readOptions, logcache.WithNameFilter("memory_quota"))
-		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
+		readOptions = append(readOptions, logcache.WithNameFilter("memory|memory_quota"))
 	case models.MetricNameMemoryUsed:
 		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
 	case models.MetricNameCPUUtil:

@@ -133,7 +133,7 @@ var _ = Describe("LogCacheClient", func() {
 
 				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
 
-				Expect(len(readOptions)).To(Equal(len(requiredFilters)), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
+				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
 				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("GAUGE"))
 
 				// after starTime and envelopeType we filter the metric names
@@ -148,7 +148,7 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualEnvelopes).To(Equal(envelopes))
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 			},
-			Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory_quota", "memory"}),
+			Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory|memory_quota"}),
 			Entry("When metric type is MetricNameMemoryUsed", models.MetricNameMemoryUsed, []string{"endtime", "envelope_type", "memory"}),
 			Entry("When metric type is MetricNameCPUUtil", models.MetricNameCPUUtil, []string{"endtime", "envelope_type", "cpu"}),
 			Entry("When metric type is CustomMetrics", "a-custom-metric", []string{"endtime", "envelope_type", "a-custom-metric"}),
