@@ -3,7 +3,6 @@ package client_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/url"
 	"strconv"
 	"time"
@@ -98,10 +97,9 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualStartTime).To(Equal(startTime))
 				values := url.Values{}
 				readOptions[0](nil, values)
-				Expect(values["end_time"][0]).To(Equal(fmt.Sprintf("%d", endTime.UnixNano())))
-				values = url.Values{}
-				readOptions[1](nil, values)
-				Expect(values["envelope_types"][0]).To(Equal("TIMER"))
+				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
+				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("TIMER"))
+				Expect(len(readOptions)).To(Equal(2), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
 
 				By("Sends the right arguments to the timer processor")
 				Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(1), "Should call GetHttpStartStopInstanceMetricsCallCount once")
@@ -129,7 +127,10 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualMetrics).To(Equal(metrics))
 
 				By("Sends the right arguments to log-cache-client")
-				_, _, _, readOptions := fakeLogCacheClient.ReadArgsForCall(0)
+				actualContext, actualAppId, actualStartTime, readOptions := fakeLogCacheClient.ReadArgsForCall(0)
+				Expect(actualContext).To(Equal(context.Background()))
+				Expect(actualAppId).To(Equal(appId))
+				Expect(actualStartTime).To(Equal(startTime))
 
 				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
 

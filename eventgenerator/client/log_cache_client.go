@@ -110,6 +110,8 @@ func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []log
 		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
 	case models.MetricNameCPUUtil:
 		readOptions = append(readOptions, logcache.WithNameFilter("cpu"))
+	case models.MetricNameResponseTime, models.MetricNameThroughput:
+		break
 	default:
 		readOptions = append(readOptions, logcache.WithNameFilter(metricType))
 	}
