@@ -75,7 +75,7 @@ var _ = Describe("LogCacheClient", func() {
 		})
 
 		DescribeTable("GetMetric for startStop Metrics",
-			func(metricType string) {
+			func(metricType string, requiredFilters []string) {
 				metrics = []models.AppInstanceMetric{
 					{
 						AppId: "some-id",
@@ -99,7 +99,8 @@ var _ = Describe("LogCacheClient", func() {
 				readOptions[0](nil, values)
 				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
 				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("TIMER"))
-				Expect(len(readOptions)).To(Equal(2), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
+				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
+				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
 
 				By("Sends the right arguments to the timer processor")
 				Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(1), "Should call GetHttpStartStopInstanceMetricsCallCount once")
@@ -109,8 +110,8 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 				Expect(collectionInterval).To(Equal(30 * time.Second)) // default behaviour
 			},
-			Entry("When metric type is MetricNameThroughput", models.MetricNameThroughput),
-			Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime),
+			Entry("When metric type is MetricNameThroughput", models.MetricNameThroughput, []string{"endtime", "envelope_type", "http"}),
+			Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime, []string{"endtime", "envelope_type", "http"}),
 		)
 
 		DescribeTable("GetMetric for Gauge Metrics",
@@ -138,9 +139,7 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("GAUGE"))
 
 				// after starTime and envelopeType we filter the metric names
-				for i := 2; i < len(requiredFilters); i++ {
-					Expect(valuesFrom(readOptions[i])["name_filter"][0]).To(Equal(requiredFilters[i]))
-				}
+				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
 
 				Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(0))
 
