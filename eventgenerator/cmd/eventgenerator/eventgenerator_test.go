@@ -1,14 +1,10 @@
 package main_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
-	rpc "code.cloudfoundry.org/go-log-cache/rpc/logcache_v1"
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"fmt"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -17,6 +13,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
+	rpc "code.cloudfoundry.org/go-log-cache/rpc/logcache_v1"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"google.golang.org/grpc"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -304,10 +305,12 @@ func newStubGrpcLogCache(caCert, certFile, keyFile string) *stubGrpcLogCache {
 
 	rpc.RegisterEgressServer(s.srv, s)
 	rpc.RegisterPromQLQuerierServer(s.srv, s)
-	go s.srv.Serve(lis)
+	go func() {
+		err := s.srv.Serve(lis)
+		Expect(err).NotTo(HaveOccurred())
+	}()
 
 	return s
-
 }
 func (s *stubGrpcLogCache) stop() {
 	s.srv.Stop()
