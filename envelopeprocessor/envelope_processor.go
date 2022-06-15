@@ -40,7 +40,9 @@ func (p Processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope,
 }
 func (p Processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
 	p.logger.Debug("GetHttpStartStopInstanceMetrics")
-	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, collectionInterval)
+	compactedEnvelopes := p.CompactEnvelopes(envelopes)
+	p.logger.Debug("Compacted envelopes:", lager.Data{"compactedEnvelopes": compactedEnvelopes})
+	return GetHttpStartStopInstanceMetrics(compactedEnvelopes, appID, currentTimestamp, collectionInterval)
 }
 
 func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*loggregator_v2.Envelope {

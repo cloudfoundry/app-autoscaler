@@ -147,9 +147,7 @@ var _ = Describe("Envelopeprocessor", func() {
 					Value:         "51",
 					Timestamp:     1111,
 				}))
-
 			})
-
 		})
 	})
 
