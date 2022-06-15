@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
@@ -55,13 +56,14 @@ func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client Log
 	}
 }
 func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
-	c.logger.Debug("GetMetric")
 	var metrics []models.AppInstanceMetric
 
 	var err error
 
 	//TODO: filters for "throughput" and "responsetime"
-	envelopes, err := c.client.Read(context.Background(), appId, startTime, logCacheFiltersFor(endTime, metricType)...)
+	filters := logCacheFiltersFor(endTime, metricType)
+	c.logger.Debug("GetMetric", lager.Data{"filters": valuesFrom(filters)})
+	envelopes, err := c.client.Read(context.Background(), appId, startTime, filters...)
 	//TODO: merge all envelopes with matching timestamp, source_id and instance_id
 
 	if err != nil {
@@ -76,6 +78,14 @@ func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime ti
 		metrics, err = c.envelopeProcessor.GetGaugeInstanceMetrics(envelopes, collectedAt)
 	}
 	return filter(metrics, metricType), err
+}
+
+func valuesFrom(filters []logcache.ReadOption) url.Values {
+	values := url.Values{}
+	for _, f := range filters {
+		f(nil, values)
+	}
+	return values
 }
 
 func filter(metrics []models.AppInstanceMetric, metricType string) []models.AppInstanceMetric {
@@ -95,8 +105,8 @@ func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []log
 
 	switch metricType {
 	case models.MetricNameMemoryUtil:
-		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
 		readOptions = append(readOptions, logcache.WithNameFilter("memory_quota"))
+		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
 	case models.MetricNameMemoryUsed:
 		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
 	case models.MetricNameCPUUtil:

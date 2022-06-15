@@ -148,7 +148,7 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualEnvelopes).To(Equal(envelopes))
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 			},
-			Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory", "memory_quota"}),
+			Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory_quota", "memory"}),
 			Entry("When metric type is MetricNameMemoryUsed", models.MetricNameMemoryUsed, []string{"endtime", "envelope_type", "memory"}),
 			Entry("When metric type is MetricNameCPUUtil", models.MetricNameCPUUtil, []string{"endtime", "envelope_type", "cpu"}),
 			Entry("When metric type is CustomMetrics", "a-custom-metric", []string{"endtime", "envelope_type", "a-custom-metric"}),
