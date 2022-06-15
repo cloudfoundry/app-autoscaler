@@ -1,11 +1,21 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
+	rpc "code.cloudfoundry.org/go-log-cache/rpc/logcache_v1"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"context"
+	"crypto/rand"
+	"crypto/tls"
 	"fmt"
+	"google.golang.org/grpc"
 	"io/ioutil"
+	"net"
 	"net/http"
-	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -13,13 +23,15 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Eventgenerator", func() {
 	var (
-		runner *EventGeneratorRunner
+		runner      *EventGeneratorRunner
+		testCertDir = "../../../../../test-certs"
 	)
 
 	BeforeEach(func() {
@@ -236,13 +248,19 @@ var _ = Describe("Eventgenerator", func() {
 
 	Describe("", func() {
 		Context("when logCache is enabled", func() {
+			var fakeLogCacheServer *stubGrpcLogCache
 			BeforeEach(func() {
-				logCache := newStubLogCache()
+				caCert := filepath.Join(testCertDir, "autoscaler-ca.crt")
+				certFile := filepath.Join(testCertDir, "metricserver.crt")
+				keyFile := filepath.Join(testCertDir, "metricserver.key")
+				fakeLogCacheServer = newStubGrpcLogCache(caCert, certFile, keyFile)
 				logCacheConfig := conf
 				logCacheConfig.MetricCollector.UseLogCache = true
-				logCacheConfig.MetricCollector.MetricCollectorURL = logCache.addr()
+				logCacheConfig.MetricCollector.TLSClientCerts.CACertFile = caCert
+				logCacheConfig.MetricCollector.TLSClientCerts.CertFile = certFile
+				logCacheConfig.MetricCollector.TLSClientCerts.KeyFile = keyFile
+				logCacheConfig.MetricCollector.MetricCollectorURL = strings.ReplaceAll(fakeLogCacheServer.addr(), "http://", "")
 				runner.configPath = writeConfig(&logCacheConfig).Name()
-
 				runner.Start()
 			})
 
@@ -254,111 +272,118 @@ var _ = Describe("Eventgenerator", func() {
 			It("Should initialized an envelopeProcessor", func() {
 				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.EnvelopeProcessor.GetGaugeInstanceMetrics"))
 			})
+			AfterEach(func() {
+				fakeLogCacheServer.stop()
+			})
 		})
 	})
 })
 
-type stubLogCache struct {
-	statusCode int
-	server     *httptest.Server
-	reqs       []*http.Request
-	bodies     [][]byte
-	result     map[string][]byte
-	block      bool
+type stubGrpcLogCache struct {
+	mu              sync.Mutex
+	reqs            []*rpc.ReadRequest
+	promInstantReqs []*rpc.PromQL_InstantQueryRequest
+	promRangeReqs   []*rpc.PromQL_RangeQueryRequest
+	lis             net.Listener
+	srv             *grpc.Server
+	block           bool
+	rpc.UnimplementedEgressServer
+	rpc.UnimplementedPromQLQuerierServer
 }
 
-func newStubLogCache() *stubLogCache {
-	s := &stubLogCache{
-		statusCode: http.StatusOK,
-		result: map[string][]byte{
-			"GET/api/v1/read/some-id": []byte(`{
-		"envelopes": {
-			"batch": [
-			    {
-					"timestamp": 99,
-					"source_id": "some-id"
-				},
-			    {
-					"timestamp": 100,
-					"source_id": "some-id"
-				}
-			]
-		}
-	}`),
-			"GET/api/v1/meta": []byte(`{
-		"meta": {
-			"source-0": {},
-			"source-1": {}
-		}
-	}`),
-			"GET/api/v1/query": []byte(`
-    {
-	  "status": "success",
-	  "data": {
-		"resultType": "vector",
-		"result": [
-          {
-            "metric": {
-              "deployment": "cf"
-            },
-            "value": [ 1234, "99" ]
-          }
-        ]
-      }
-    }
-			`),
-			"GET/api/v1/query_range": []byte(`
-    {
-	  "status": "success",
-	  "data": {
-		"resultType": "matrix",
-        "result": [
-          {
-            "metric": {
-              "deployment": "cf"
-            },
-            "values": [
-              [ 1234, "99" ],
-              [ 5678, "100" ]
-            ]
-          }
-        ]
-      }
-    }
-			`),
-			"GET/api/v1/info": []byte(`
-	{
-	  "version": "2.0.0",
-	  "vm_uptime": "789"
-	}
-			`),
-		},
-	}
-	s.server = httptest.NewServer(s)
+func newStubGrpcLogCache(caCert, certFile, keyFile string) *stubGrpcLogCache {
+	s := &stubGrpcLogCache{}
+	config, err := client.NewTLSConfig(caCert, certFile, keyFile)
+	Expect(err).NotTo(HaveOccurred())
+	config.Rand = rand.Reader
+	lis, err := tls.Listen("tcp", "127.0.0.1:8080", config)
+	Expect(err).ToNot(HaveOccurred())
+
+	s.lis = lis
+	s.srv = grpc.NewServer()
+
+	rpc.RegisterEgressServer(s.srv, s)
+	rpc.RegisterPromQLQuerierServer(s.srv, s)
+	go s.srv.Serve(lis)
+
 	return s
+
+}
+func (s *stubGrpcLogCache) stop() {
+	s.srv.Stop()
 }
 
-func (s *stubLogCache) addr() string {
-	return s.server.URL
+func (s *stubGrpcLogCache) addr() string {
+	return s.lis.Addr().String()
 }
 
-func (s *stubLogCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *stubGrpcLogCache) Read(c context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
 	if s.block {
 		var block chan struct{}
 		<-block
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-	Expect(err).ToNot(HaveOccurred())
-
-	s.bodies = append(s.bodies, body)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.reqs = append(s.reqs, r)
 
-	if _, ok := s.result[r.Method+r.URL.Path]; ok {
-		w.WriteHeader(s.statusCode)
-		_, err := w.Write(s.result[r.Method+r.URL.Path])
-		Expect(err).NotTo(HaveOccurred())
-	} else {
-		w.WriteHeader(http.StatusNotFound)
+	return &rpc.ReadResponse{
+		Envelopes: &loggregator_v2.EnvelopeBatch{
+			Batch: []*loggregator_v2.Envelope{
+				{Timestamp: 99, SourceId: "some-id"},
+				{Timestamp: 100, SourceId: "some-id"},
+			},
+		},
+	}, nil
+}
+
+func (s *stubGrpcLogCache) InstantQuery(c context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
+	if s.block {
+		var block chan struct{}
+		<-block
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.promInstantReqs = append(s.promInstantReqs, r)
+
+	return &rpc.PromQL_InstantQueryResult{
+		Result: &rpc.PromQL_InstantQueryResult_Scalar{
+			Scalar: &rpc.PromQL_Scalar{
+				Time:  "99.000",
+				Value: 101,
+			},
+		},
+	}, nil
+}
+
+func (s *stubGrpcLogCache) RangeQuery(c context.Context, r *rpc.PromQL_RangeQueryRequest) (*rpc.PromQL_RangeQueryResult, error) {
+	if s.block {
+		var block chan struct{}
+		<-block
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.promRangeReqs = append(s.promRangeReqs, r)
+
+	return &rpc.PromQL_RangeQueryResult{
+		Result: &rpc.PromQL_RangeQueryResult_Matrix{
+			Matrix: &rpc.PromQL_Matrix{
+				Series: []*rpc.PromQL_Series{
+					{
+						Metric: map[string]string{
+							"__name__": "test",
+						},
+						Points: []*rpc.PromQL_Point{
+							{
+								Time:  "99.000",
+								Value: 101,
+							},
+						},
+					},
+				},
+			},
+		},
+	}, nil
 }
