@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"time"
 
@@ -247,17 +248,123 @@ var _ = Describe("Eventgenerator", func() {
 
 		Context("when logCache is enabled", func() {
 			BeforeEach(func() {
-				basicAuthConfig := conf
-				basicAuthConfig.UseLogCache = true
-				runner.configPath = writeConfig(&basicAuthConfig).Name()
+				logCache := newStubLogCache()
+				logCacheConfig := conf
+				logCacheConfig.UseLogCache = true
+				logCacheConfig.MetricCollector.MetricCollectorURL = logCache.addr()
+				runner.configPath = writeConfig(&logCacheConfig).Name()
 
 				runner.Start()
 			})
 
 			It("Should create a LogCacheClient", func() {
 				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.MetricServerClient.GetMetric"))
-				Eventually(runner.Session.Buffer()).Should(Say("eventgenerator.LogCacheClient.GetMetric"))
+				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.LogCacheClient.GetMetric"))
 			})
 		})
 	})
 })
+
+type stubLogCache struct {
+	statusCode int
+	server     *httptest.Server
+	reqs       []*http.Request
+	bodies     [][]byte
+	result     map[string][]byte
+	block      bool
+}
+
+func newStubLogCache() *stubLogCache {
+	s := &stubLogCache{
+		statusCode: http.StatusOK,
+		result: map[string][]byte{
+			"GET/api/v1/read/some-id": []byte(`{
+		"envelopes": {
+			"batch": [
+			    {
+					"timestamp": 99,
+					"source_id": "some-id"
+				},
+			    {
+					"timestamp": 100,
+					"source_id": "some-id"
+				}
+			]
+		}
+	}`),
+			"GET/api/v1/meta": []byte(`{
+		"meta": {
+			"source-0": {},
+			"source-1": {}
+		}
+	}`),
+			"GET/api/v1/query": []byte(`
+    {
+	  "status": "success",
+	  "data": {
+		"resultType": "vector",
+		"result": [
+          {
+            "metric": {
+              "deployment": "cf"
+            },
+            "value": [ 1234, "99" ]
+          }
+        ]
+      }
+    }
+			`),
+			"GET/api/v1/query_range": []byte(`
+    {
+	  "status": "success",
+	  "data": {
+		"resultType": "matrix",
+        "result": [
+          {
+            "metric": {
+              "deployment": "cf"
+            },
+            "values": [
+              [ 1234, "99" ],
+              [ 5678, "100" ]
+            ]
+          }
+        ]
+      }
+    }
+			`),
+			"GET/api/v1/info": []byte(`
+	{
+	  "version": "2.0.0",
+	  "vm_uptime": "789"
+	}
+			`),
+		},
+	}
+	s.server = httptest.NewServer(s)
+	return s
+}
+
+func (s *stubLogCache) addr() string {
+	return s.server.URL
+}
+
+func (s *stubLogCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.block {
+		var block chan struct{}
+		<-block
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	Expect(err).ToNot(HaveOccurred())
+
+	s.bodies = append(s.bodies, body)
+	s.reqs = append(s.reqs, r)
+
+	if _, ok := s.result[r.Method+r.URL.Path]; ok {
+		w.WriteHeader(s.statusCode)
+		w.Write(s.result[r.Method+r.URL.Path])
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}

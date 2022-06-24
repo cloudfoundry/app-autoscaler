@@ -53,7 +53,7 @@ func (m *MetricPoller) startMetricRetrieve() {
 }
 
 func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
-	var metrics []*models.AppInstanceMetric
+	var metrics []models.AppInstanceMetric
 	appId := appMonitor.AppId
 	metricType := appMonitor.MetricType
 	statWindow := appMonitor.StatWindow
@@ -70,7 +70,7 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 	return nil
 }
 
-func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *models.AppMetric {
+func (m *MetricPoller) aggregate(appId string, metricType string, metrics []models.AppInstanceMetric) *models.AppMetric {
 	var count int64
 	var sum int64
 	var unit string

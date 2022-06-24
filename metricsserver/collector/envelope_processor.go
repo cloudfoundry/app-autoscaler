@@ -68,8 +68,8 @@ func (ep *envelopeProcessor) processEvents() {
 
 		case e := <-ep.envelopeChan:
 			metrics := ep.getAppInstanceMetrics(e)
-			for _, metric := range metrics {
-				ep.metricChan <- metric
+			for i, _ := range metrics {
+				ep.metricChan <- &metrics[i]
 			}
 
 		case <-ticker.C():
@@ -84,16 +84,16 @@ func (ep *envelopeProcessor) IsCacheEmpty() bool {
 	return len(ep.httpStartStopEnvelopes) == 0
 }
 
-func (ep *envelopeProcessor) getAppInstanceMetrics(e *loggregator_v2.Envelope) []*models.AppInstanceMetric {
+func (ep *envelopeProcessor) getAppInstanceMetrics(e *loggregator_v2.Envelope) []models.AppInstanceMetric {
 	switch e.GetMessage().(type) {
 	case *loggregator_v2.Envelope_Gauge:
 		appInstanceMetrics, _ := envelopeprocessor.GetGaugeInstanceMetrics(e, ep.clock.Now().UnixNano())
 		return appInstanceMetrics
 	case *loggregator_v2.Envelope_Timer:
 		ep.cacheHttpStartStopEnvelop(e)
-		return []*models.AppInstanceMetric{}
+		return []models.AppInstanceMetric{}
 	default:
-		return []*models.AppInstanceMetric{}
+		return []models.AppInstanceMetric{}
 	}
 }
 func (ep *envelopeProcessor) isMetrissrvRespForApp(appID string) bool {
@@ -112,8 +112,8 @@ func (ep *envelopeProcessor) processHttpStartStopMetrics() {
 
 		metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(ep.httpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano(),
 			ep.collectInterval)
-		for _, metric := range metrics {
-			ep.metricChan <- metric
+		for i, _ := range metrics {
+			ep.metricChan <- &metrics[i]
 		}
 	}
 

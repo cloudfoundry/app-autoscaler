@@ -10,7 +10,7 @@ replace (
 require (
 	code.cloudfoundry.org/cfhttp v2.0.0+incompatible
 	code.cloudfoundry.org/clock v1.0.0
-	code.cloudfoundry.org/go-log-cache v1.0.0
+	code.cloudfoundry.org/go-log-cache v1.0.1-0.20220413184527-638a438c46f0
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.3
@@ -50,8 +50,6 @@ require (
 require (
 	4d63.com/gochecknoglobals v0.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee // indirect
-	code.cloudfoundry.org/go-loggregator v7.4.0+incompatible // indirect
-	code.cloudfoundry.org/rfc5424 v0.0.0-20201103192249-000122071b78 // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7 // indirect
 	github.com/Antonboom/errname v0.1.6 // indirect
 	github.com/Antonboom/nilnil v0.1.1 // indirect
@@ -65,6 +63,7 @@ require (
 	github.com/ashanbrown/makezero v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bkielbasa/cyclop v1.2.0 // indirect
+	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
 	github.com/bombsimon/wsl/v3 v3.3.0 // indirect
 	github.com/breml/bidichk v0.2.3 // indirect
@@ -114,7 +113,7 @@ require (
 	github.com/gostaticanalysis/comment v1.4.2 // indirect
 	github.com/gostaticanalysis/forcetypeassert v0.1.0 // indirect
 	github.com/gostaticanalysis/nilerr v0.1.1 // indirect
-	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.6.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.4.0 // indirect

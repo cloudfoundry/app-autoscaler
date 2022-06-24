@@ -34,7 +34,7 @@ var _ = Describe("Envelopeprocessor", func() {
 				timestamp := time.Now().UnixNano()
 				metrics, err := envelopeprocessor.GetGaugeInstanceMetrics(envelopes[0], timestamp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   timestamp,
@@ -46,7 +46,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 				metrics, err = envelopeprocessor.GetGaugeInstanceMetrics(envelopes[1], timestamp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,
@@ -69,7 +69,7 @@ var _ = Describe("Envelopeprocessor", func() {
 				timestamp := time.Now().UnixNano()
 				metrics, err := envelopeprocessor.GetGaugeInstanceMetrics(envelopes[0], timestamp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,
@@ -79,7 +79,7 @@ var _ = Describe("Envelopeprocessor", func() {
 					Timestamp:     1111,
 				}))
 
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,
@@ -89,7 +89,7 @@ var _ = Describe("Envelopeprocessor", func() {
 					Timestamp:     1111,
 				}))
 
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,
@@ -101,7 +101,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 				metrics, err = envelopeprocessor.GetGaugeInstanceMetrics(envelopes[1], timestamp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   timestamp,
@@ -111,7 +111,7 @@ var _ = Describe("Envelopeprocessor", func() {
 					Timestamp:     1111,
 				}))
 
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   timestamp,
@@ -121,7 +121,7 @@ var _ = Describe("Envelopeprocessor", func() {
 					Timestamp:     1111,
 				}))
 
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   timestamp,
@@ -148,7 +148,7 @@ var _ = Describe("Envelopeprocessor", func() {
 			timestamp := time.Now().UnixNano()
 			metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(envelopes, "test-app-id", timestamp, TestCollectInterval)
 
-			Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
 				InstanceIndex: 0,
 				CollectedAt:   timestamp,
@@ -158,7 +158,7 @@ var _ = Describe("Envelopeprocessor", func() {
 				Timestamp:     timestamp,
 			}))
 
-			Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
 				InstanceIndex: 0,
 				CollectedAt:   timestamp,
@@ -168,7 +168,7 @@ var _ = Describe("Envelopeprocessor", func() {
 				Timestamp:     timestamp,
 			}))
 
-			Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
 				InstanceIndex: 1,
 				CollectedAt:   timestamp,
@@ -178,7 +178,7 @@ var _ = Describe("Envelopeprocessor", func() {
 				Timestamp:     timestamp,
 			}))
 
-			Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
 				InstanceIndex: 1,
 				CollectedAt:   timestamp,
@@ -198,7 +198,7 @@ var _ = Describe("Envelopeprocessor", func() {
 			It("sends send 0 throughput and responsetime metric", func() {
 				timestamp := time.Now().UnixNano()
 				metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(envelopes, "another-test-app-id", timestamp, TestCollectInterval)
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "another-test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,
@@ -207,7 +207,7 @@ var _ = Describe("Envelopeprocessor", func() {
 					Value:         "0",
 					Timestamp:     timestamp,
 				}))
-				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "another-test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,

@@ -7,5 +7,5 @@ import (
 )
 
 type MetricClient interface {
-	GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]*models.AppInstanceMetric, error)
+	GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error)
 }

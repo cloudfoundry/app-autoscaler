@@ -13,7 +13,12 @@ import (
 	"github.com/imdario/mergo"
 )
 
-func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]*models.AppInstanceMetric, error) {
+type EnvelopeProcessor interface {
+	GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
+	GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric
+}
+
+func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
 	if isContainerMetricEnvelope(e) {
 		return processContainerMetrics(e, currentTimeStamp)
 	} else {
@@ -22,8 +27,8 @@ func GetGaugeInstanceMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 }
 
 func GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64,
-	collectionInterval time.Duration) []*models.AppInstanceMetric {
-	var metrics []*models.AppInstanceMetric
+	collectionInterval time.Duration) []models.AppInstanceMetric {
+	var metrics []models.AppInstanceMetric
 
 	numRequestsPerAppIdx := calcNumReqs(envelopes)
 	sumReponseTimesPerAppIdx := calcSumResponseTimes(envelopes)
@@ -37,11 +42,11 @@ func GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID
 	return metrics
 }
 
-func getResponsetimeInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, numRequestsPerAppIdx map[uint64]int64, sumReponseTimesPerAppIdx map[uint64]int64, currentTimestamp int64) []*models.AppInstanceMetric {
-	var metrics []*models.AppInstanceMetric
+func getResponsetimeInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, numRequestsPerAppIdx map[uint64]int64, sumReponseTimesPerAppIdx map[uint64]int64, currentTimestamp int64) []models.AppInstanceMetric {
+	var metrics []models.AppInstanceMetric
 
 	if len(envelopes) == 0 {
-		responseTimeMetric := &models.AppInstanceMetric{
+		responseTimeMetric := models.AppInstanceMetric{
 			AppId:         appID,
 			InstanceIndex: 0,
 			Name:          models.MetricNameResponseTime,
@@ -56,7 +61,7 @@ func getResponsetimeInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID 
 			numReq := numRequestsPerAppIdx[instanceIndex]
 			sumResponseTime := sumReponseTimesPerAppIdx[instanceIndex]
 
-			responseTimeMetric := &models.AppInstanceMetric{
+			responseTimeMetric := models.AppInstanceMetric{
 				AppId:         appID,
 				InstanceIndex: uint32(instanceIndex),
 				Name:          models.MetricNameResponseTime,
@@ -71,11 +76,11 @@ func getResponsetimeInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID 
 	return metrics
 }
 
-func getThroughputInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, numRequestsPerAppIdx map[uint64]int64, collectionInterval time.Duration, currentTimestamp int64) []*models.AppInstanceMetric {
-	var metrics []*models.AppInstanceMetric
+func getThroughputInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, numRequestsPerAppIdx map[uint64]int64, collectionInterval time.Duration, currentTimestamp int64) []models.AppInstanceMetric {
+	var metrics []models.AppInstanceMetric
 
 	if len(envelopes) == 0 {
-		throughputMetric := &models.AppInstanceMetric{
+		throughputMetric := models.AppInstanceMetric{
 			AppId:         appID,
 			InstanceIndex: 0,
 			Name:          models.MetricNameThroughput,
@@ -89,7 +94,7 @@ func getThroughputInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID st
 		for _, instanceIndex := range maps.Keys(numRequestsPerAppIdx) {
 			numReq := numRequestsPerAppIdx[instanceIndex]
 
-			throughputMetric := &models.AppInstanceMetric{
+			throughputMetric := models.AppInstanceMetric{
 				AppId:         appID,
 				InstanceIndex: uint32(instanceIndex),
 				Name:          models.MetricNameThroughput,
@@ -130,8 +135,8 @@ func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
 	return exist
 }
 
-func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]*models.AppInstanceMetric, error) {
-	var metrics []*models.AppInstanceMetric
+func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+	var metrics []models.AppInstanceMetric
 	appID := e.SourceId
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
 	g := e.GetGauge()
@@ -146,9 +151,9 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 
 	if memory, exist := g.GetMetrics()["memory"]; exist {
 		appInstanceMetric := getMemoryInstanceMetric(memory.GetValue())
-		err := mergo.Merge(appInstanceMetric, baseAppInstanceMetric)
+		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
 		if err != nil {
-			return []*models.AppInstanceMetric{}, err
+			return []models.AppInstanceMetric{}, err
 		}
 
 		metrics = append(metrics, appInstanceMetric)
@@ -156,18 +161,18 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 
 	if memoryQuota, exist := g.GetMetrics()["memory_quota"]; exist && memoryQuota.GetValue() != 0 {
 		appInstanceMetric := getMemoryQuotaInstanceMetric(g.GetMetrics()["memory"].GetValue(), memoryQuota.GetValue())
-		err := mergo.Merge(appInstanceMetric, baseAppInstanceMetric)
+		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
 		if err != nil {
-			return []*models.AppInstanceMetric{}, err
+			return []models.AppInstanceMetric{}, err
 		}
 		metrics = append(metrics, appInstanceMetric)
 	}
 
 	if cpu, exist := g.GetMetrics()["cpu"]; exist {
 		appInstanceMetric := getCPUInstanceMetric(cpu.GetValue())
-		err := mergo.Merge(appInstanceMetric, baseAppInstanceMetric)
+		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
 		if err != nil {
-			return []*models.AppInstanceMetric{}, err
+			return []models.AppInstanceMetric{}, err
 		}
 		metrics = append(metrics, appInstanceMetric)
 	}
@@ -175,36 +180,36 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 	return metrics, nil
 }
 
-func getMemoryInstanceMetric(memoryValue float64) *models.AppInstanceMetric {
-	return &models.AppInstanceMetric{
+func getMemoryInstanceMetric(memoryValue float64) models.AppInstanceMetric {
+	return models.AppInstanceMetric{
 		Name:  models.MetricNameMemoryUsed,
 		Unit:  models.UnitMegaBytes,
 		Value: fmt.Sprintf("%d", int(math.Ceil(memoryValue/(1024*1024)))),
 	}
 }
 
-func getMemoryQuotaInstanceMetric(memoryValue float64, memoryQuotaValue float64) *models.AppInstanceMetric {
-	return &models.AppInstanceMetric{
+func getMemoryQuotaInstanceMetric(memoryValue float64, memoryQuotaValue float64) models.AppInstanceMetric {
+	return models.AppInstanceMetric{
 		Name:  models.MetricNameMemoryUtil,
 		Unit:  models.UnitPercentage,
 		Value: fmt.Sprintf("%d", int(math.Ceil(memoryValue/memoryQuotaValue*100))),
 	}
 }
 
-func getCPUInstanceMetric(cpuValue float64) *models.AppInstanceMetric {
-	return &models.AppInstanceMetric{
+func getCPUInstanceMetric(cpuValue float64) models.AppInstanceMetric {
+	return models.AppInstanceMetric{
 		Name:  models.MetricNameCPUUtil,
 		Unit:  models.UnitPercentage,
 		Value: fmt.Sprintf("%d", int64(math.Ceil(cpuValue))),
 	}
 }
 
-func processCustomMetrics(e *loggregator_v2.Envelope, currentTimestamp int64) ([]*models.AppInstanceMetric, error) {
-	var metrics []*models.AppInstanceMetric
+func processCustomMetrics(e *loggregator_v2.Envelope, currentTimestamp int64) ([]models.AppInstanceMetric, error) {
+	var metrics []models.AppInstanceMetric
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
 
 	for n, v := range e.GetGauge().GetMetrics() {
-		metrics = append(metrics, &models.AppInstanceMetric{
+		metrics = append(metrics, models.AppInstanceMetric{
 			AppId:         e.SourceId,
 			InstanceIndex: uint32(instanceIndex),
 			CollectedAt:   currentTimestamp,

@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"time"
 
 	circuit "github.com/rubyist/circuitbreaker"
 
@@ -21,6 +22,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
+	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
@@ -201,7 +203,8 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsCh
 	//else
 	var metricClient aggregator.MetricClient
 	if conf.UseLogCache {
-		metricClient = aggregator.NewLogCacheClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
+		logCacheClient := logcache.NewClient(conf.MetricCollector.MetricCollectorURL)
+		metricClient = aggregator.NewLogCacheClient(logger, time.Now, logCacheClient, nil)
 	} else {
 		metricClient = aggregator.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
 	}

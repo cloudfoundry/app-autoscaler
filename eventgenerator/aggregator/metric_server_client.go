@@ -36,7 +36,7 @@ func NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, tlsCl
 		httpClient:         httpClient,
 	}
 }
-func (c *MetricServerClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]*models.AppInstanceMetric, error) {
+func (c *MetricServerClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	c.logger.Debug("GetMetric")
 	var url string
 	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
@@ -59,7 +59,7 @@ func (c *MetricServerClient) GetMetric(appId string, metricType string, startTim
 		return nil, errors.New("Failed to retrieve metric from metrics collector")
 	}
 
-	var metrics []*models.AppInstanceMetric
+	var metrics []models.AppInstanceMetric
 	err = json.NewDecoder(resp.Body).Decode(&metrics)
 	if err != nil {
 		c.logger.Error("Failed to parse response", err, lager.Data{"appId": appId, "metricType": metricType})
