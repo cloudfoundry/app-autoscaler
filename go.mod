@@ -9,6 +9,7 @@ replace (
 
 require (
 	code.cloudfoundry.org/cfhttp v2.0.0+incompatible
+	code.cloudfoundry.org/cfhttp/v2 v2.0.0
 	code.cloudfoundry.org/clock v1.0.0
 	code.cloudfoundry.org/go-log-cache v1.0.1-0.20220413184527-638a438c46f0
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5

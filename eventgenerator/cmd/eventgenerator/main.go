@@ -6,6 +6,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/generator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/server"
@@ -198,18 +199,20 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 }
 
 func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-	// if conf.UseLogCache
-	// then
-	// new logCacheClient
-	//else
-	var metricClient aggregator.MetricClient
+	var metricClient client.MetricClient
+
 	if conf.UseLogCache {
 		// TODO provision proper auth credentials to logcache.Client
 		logCacheClient := logcache.NewClient(conf.MetricCollector.MetricCollectorURL)
 		processor := envelopeprocessor.NewProcessor(logger)
-		metricClient = aggregator.NewLogCacheClient(logger, time.Now, logCacheClient, processor)
+		metricClient = client.NewLogCacheClient(logger, time.Now, logCacheClient, processor)
 	} else {
-		metricClient = aggregator.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, &conf.MetricCollector.TLSClientCerts)
+		httpClient, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
+
+		if err != nil {
+			logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": httpClient})
+		}
+		metricClient = client.NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
 	}
 
 	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)

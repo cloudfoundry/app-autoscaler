@@ -2,8 +2,10 @@ package aggregator_test
 
 import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	cfhttp "code.cloudfoundry.org/cfhttp/v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -23,9 +25,9 @@ var _ = Describe("MetricPoller", func() {
 		logger          *lagertest.TestLogger
 		appMonitorsChan chan *models.AppMonitor
 		appMetricChan   chan *models.AppMetric
-		metricPoller    *MetricPoller
-		metricClient    MetricClient
-		metricServer    *ghttp.Server
+		metricPoller *MetricPoller
+		metricClient MetricClient
+		metricServer *ghttp.Server
 		metrics         = []*models.AppInstanceMetric{
 			{
 				AppId:         testAppId,
@@ -92,7 +94,8 @@ var _ = Describe("MetricPoller", func() {
 		BeforeEach(func() {
 			metricServer = ghttp.NewUnstartedServer()
 
-			metricClient = NewMetricServerClient(logger, metricServer.URL(), &models.TLSCerts{})
+			httpClient := cfhttp.NewClient()
+			metricClient = NewMetricServerClient(logger, metricServer.URL(), httpClient)
 			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 
@@ -122,7 +125,8 @@ var _ = Describe("MetricPoller", func() {
 			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
 
-			metricClient = NewMetricServerClient(logger, metricServer.URL(), &models.TLSCerts{})
+			httpClient := cfhttp.NewClient()
+			metricClient = NewMetricServerClient(logger, metricServer.URL(), httpClient)
 		})
 
 		JustBeforeEach(func() {

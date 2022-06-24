@@ -1,6 +1,7 @@
 package aggregator
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"fmt"
 	"math"
 	"strconv"
@@ -13,12 +14,12 @@ import (
 type MetricPoller struct {
 	logger          lager.Logger
 	doneChan        chan bool
-	metricClient    MetricClient
+	metricClient    client.MetricClient
 	appMonitorsChan chan *models.AppMonitor
 	appMetricChan   chan *models.AppMetric
 }
 
-func NewMetricPoller(logger lager.Logger, metricClient MetricClient, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricClient client.MetricClient, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) *MetricPoller {
 	return &MetricPoller{
 		logger:          logger.Session("MetricPoller"),
 		appMonitorsChan: appMonitorsChan,

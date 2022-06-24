@@ -246,6 +246,7 @@ var _ = Describe("Eventgenerator", func() {
 			})
 		})
 
+		// TODO Replace me with a factory GetMetricServer test
 		Context("when logCache is enabled", func() {
 			BeforeEach(func() {
 				logCache := newStubLogCache()

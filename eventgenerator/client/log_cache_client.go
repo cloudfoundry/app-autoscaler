@@ -1,8 +1,14 @@
-package aggregator
+package client
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"io/ioutil"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -19,21 +25,30 @@ type LogCacheClient struct {
 	envelopeProcessor envelopeprocessor.EnvelopeProcessor
 }
 
+var NewTLS = credentials.NewTLS
+
+type TLSConfig interface {
+	NewTLS(c *tls.Config) credentials.TransportCredentials
+}
 type LogCacheClientReader interface {
 	Read(ctx context.Context, sourceID string, start time.Time, opts ...logcache.ReadOption) ([]*loggregator_v2.Envelope, error)
 }
 
+type GoLogCacheClient interface {
+	NewClient(addr string, opts ...logcache.ClientOption) *logcache.Client
+	WithViaGRPC(opts ...grpc.DialOption) logcache.ClientOption
+}
+
+type LogCacheClientCreator interface {
+	NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient
+}
+
 func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient {
 
-	//client := client.NewClient(
-	//	cfg.LogCacheAddr,
-	//	client.WithViaGRPC(
-	//		grpc.WithTransportCredentials(cfg.TLS.Credentials("log-cache")),
-	//	),
-	//)
 	return &LogCacheClient{
-		logger:            logger.Session("LogCacheClient"),
-		client:            client,
+		logger: logger.Session("LogCacheClient"),
+		client: client,
+
 		envelopeProcessor: envelopeProcessor,
 		now:               getTime,
 	}
@@ -63,4 +78,39 @@ func getEnvelopeType(metricType string) rpc.EnvelopeType {
 		metricName = rpc.EnvelopeType_GAUGE
 	}
 	return metricName
+}
+
+func NewTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
+	cfg, err := NewTLSConfig(caPath, certPath, keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTLS(&cfg), nil
+}
+
+func NewTLSConfig(caPath string, certPath string, keyPath string) (tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return tls.Config{}, err
+	}
+
+	tlsConfig := tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: false,
+	}
+
+	caCertBytes, err := ioutil.ReadFile(caPath)
+	if err != nil {
+		return tls.Config{}, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM(caCertBytes); !ok {
+		return tls.Config{}, errors.New("cannot parse ca cert")
+	}
+
+	tlsConfig.RootCAs = caCertPool
+
+	return tlsConfig, nil
 }

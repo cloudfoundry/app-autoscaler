@@ -6,19 +6,19 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
-	client "code.cloudfoundry.org/go-log-cache"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
+	clienta "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 )
 
 type FakeLogCacheClientReader struct {
-	ReadStub        func(context.Context, string, time.Time, ...client.ReadOption) ([]*loggregator_v2.Envelope, error)
+	ReadStub        func(context.Context, string, time.Time, ...clienta.ReadOption) ([]*loggregator_v2.Envelope, error)
 	readMutex       sync.RWMutex
 	readArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 time.Time
-		arg4 []client.ReadOption
+		arg4 []clienta.ReadOption
 	}
 	readReturns struct {
 		result1 []*loggregator_v2.Envelope
@@ -32,14 +32,14 @@ type FakeLogCacheClientReader struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeLogCacheClientReader) Read(arg1 context.Context, arg2 string, arg3 time.Time, arg4 ...client.ReadOption) ([]*loggregator_v2.Envelope, error) {
+func (fake *FakeLogCacheClientReader) Read(arg1 context.Context, arg2 string, arg3 time.Time, arg4 ...clienta.ReadOption) ([]*loggregator_v2.Envelope, error) {
 	fake.readMutex.Lock()
 	ret, specificReturn := fake.readReturnsOnCall[len(fake.readArgsForCall)]
 	fake.readArgsForCall = append(fake.readArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 time.Time
-		arg4 []client.ReadOption
+		arg4 []clienta.ReadOption
 	}{arg1, arg2, arg3, arg4})
 	stub := fake.ReadStub
 	fakeReturns := fake.readReturns
@@ -60,13 +60,13 @@ func (fake *FakeLogCacheClientReader) ReadCallCount() int {
 	return len(fake.readArgsForCall)
 }
 
-func (fake *FakeLogCacheClientReader) ReadCalls(stub func(context.Context, string, time.Time, ...client.ReadOption) ([]*loggregator_v2.Envelope, error)) {
+func (fake *FakeLogCacheClientReader) ReadCalls(stub func(context.Context, string, time.Time, ...clienta.ReadOption) ([]*loggregator_v2.Envelope, error)) {
 	fake.readMutex.Lock()
 	defer fake.readMutex.Unlock()
 	fake.ReadStub = stub
 }
 
-func (fake *FakeLogCacheClientReader) ReadArgsForCall(i int) (context.Context, string, time.Time, []client.ReadOption) {
+func (fake *FakeLogCacheClientReader) ReadArgsForCall(i int) (context.Context, string, time.Time, []clienta.ReadOption) {
 	fake.readMutex.RLock()
 	defer fake.readMutex.RUnlock()
 	argsForCall := fake.readArgsForCall[i]
@@ -123,4 +123,4 @@ func (fake *FakeLogCacheClientReader) recordInvocation(key string, args []interf
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ aggregator.LogCacheClientReader = new(FakeLogCacheClientReader)
+var _ client.LogCacheClientReader = new(FakeLogCacheClientReader)

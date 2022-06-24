@@ -1,4 +1,4 @@
-package aggregator
+package client
 
 import (
 	"encoding/json"
@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -22,14 +20,14 @@ type MetricServerClient struct {
 	logger             lager.Logger
 }
 
-func NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, tlsClientCerts *models.TLSCerts) *MetricServerClient {
+type MetricServerClientCreator interface {
+	NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient
+}
 
-	httpClient, err := helpers.CreateHTTPClient(tlsClientCerts)
-
-	if err != nil {
-		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": tlsClientCerts})
+func NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient {
+	if httpClient.Transport != nil {
+		httpClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 1
 	}
-	httpClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 1
 	return &MetricServerClient{
 		logger:             logger.Session("MetricServerClient"),
 		metricCollectorUrl: metricCollectorUrl,
