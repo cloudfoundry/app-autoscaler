@@ -4,7 +4,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
 	"code.cloudfoundry.org/go-loggregator/v8"
 	"code.cloudfoundry.org/lager"
 )
