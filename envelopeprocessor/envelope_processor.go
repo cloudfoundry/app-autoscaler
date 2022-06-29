@@ -16,8 +16,8 @@ import (
 )
 
 type EnvelopeProcessor interface {
-	GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
-	GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric
+	GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
+	GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric
 }
 
 var _ EnvelopeProcessor = &Processor{}
@@ -32,18 +32,20 @@ func NewProcessor(logger lager.Logger) Processor {
 	}
 }
 
-func (p Processor) GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
-	p.logger.Debug("GetGaugeInstanceMetrics")
+func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+	p.logger.Debug("GetGaugeMetrics")
 	compactedEnvelopes := p.CompactEnvelopes(envelopes)
 	p.logger.Debug("Compacted envelopes:", lager.Data{"compactedEnvelopes": compactedEnvelopes})
 	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
 }
-func (p Processor) GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
-	p.logger.Debug("GetHttpStartStopInstanceMetrics")
+func (p Processor) GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
+	p.logger.Debug("GetTimerMetrics")
 	p.logger.Debug("Compacted envelopes:", lager.Data{"Envelopes": envelopes})
 	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, collectionInterval)
 }
 
+// Log cache returns instance metrics such as cpu and memory in serparate envelopes, this was not the case with
+//loggregator. We compact this message by matching source_id and timestamp to facilitate metrics calulations.
 func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*loggregator_v2.Envelope {
 	result := map[string]*loggregator_v2.Envelope{}
 	for i := range envelopes {

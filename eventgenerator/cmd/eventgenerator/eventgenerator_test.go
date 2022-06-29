@@ -271,7 +271,7 @@ var _ = Describe("Eventgenerator", func() {
 			})
 
 			It("Should initialized an envelopeProcessor", func() {
-				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.EnvelopeProcessor.GetGaugeInstanceMetrics"))
+				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.EnvelopeProcessor.GetGaugeMetrics"))
 			})
 			AfterEach(func() {
 				fakeLogCacheServer.stop()

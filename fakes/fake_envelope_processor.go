@@ -43,7 +43,7 @@ type FakeEnvelopeProcessor struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetrics(arg1 []*loggregator_v2.Envelope, arg2 int64) ([]models.AppInstanceMetric, error) {
+func (fake *FakeEnvelopeProcessor) GetGaugeMetrics(arg1 []*loggregator_v2.Envelope, arg2 int64) ([]models.AppInstanceMetric, error) {
 	var arg1Copy []*loggregator_v2.Envelope
 	if arg1 != nil {
 		arg1Copy = make([]*loggregator_v2.Envelope, len(arg1))
@@ -57,7 +57,7 @@ func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetrics(arg1 []*loggregator_v
 	}{arg1Copy, arg2})
 	stub := fake.GetGaugeInstanceMetricsStub
 	fakeReturns := fake.getGaugeInstanceMetricsReturns
-	fake.recordInvocation("GetGaugeInstanceMetrics", []interface{}{arg1Copy, arg2})
+	fake.recordInvocation("GetGaugeMetrics", []interface{}{arg1Copy, arg2})
 	fake.getGaugeInstanceMetricsMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
@@ -113,7 +113,7 @@ func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsReturnsOnCall(i int, r
 	}{result1, result2}
 }
 
-func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetrics(arg1 []*loggregator_v2.Envelope, arg2 string, arg3 int64, arg4 time.Duration) []models.AppInstanceMetric {
+func (fake *FakeEnvelopeProcessor) GetTimerMetrics(arg1 []*loggregator_v2.Envelope, arg2 string, arg3 int64, arg4 time.Duration) []models.AppInstanceMetric {
 	var arg1Copy []*loggregator_v2.Envelope
 	if arg1 != nil {
 		arg1Copy = make([]*loggregator_v2.Envelope, len(arg1))
@@ -129,7 +129,7 @@ func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetrics(arg1 []*loggr
 	}{arg1Copy, arg2, arg3, arg4})
 	stub := fake.GetHttpStartStopInstanceMetricsStub
 	fakeReturns := fake.getHttpStartStopInstanceMetricsReturns
-	fake.recordInvocation("GetHttpStartStopInstanceMetrics", []interface{}{arg1Copy, arg2, arg3, arg4})
+	fake.recordInvocation("GetTimerMetrics", []interface{}{arg1Copy, arg2, arg3, arg4})
 	fake.getHttpStartStopInstanceMetricsMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3, arg4)

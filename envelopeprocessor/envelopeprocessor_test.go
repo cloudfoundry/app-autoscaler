@@ -32,7 +32,7 @@ var _ = Describe("Envelopeprocessor", func() {
 		processor = envelopeprocessor.NewProcessor(logger)
 	})
 
-	Describe("#GetGaugeInstanceMetrics", func() {
+	Describe("#GetGaugeMetrics", func() {
 		Context("processing custom metrics", func() {
 			BeforeEach(func() {
 				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111))
@@ -76,7 +76,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
-				metrics, err := processor.GetGaugeInstanceMetrics(envelopes, timestamp)
+				metrics, err := processor.GetGaugeMetrics(envelopes, timestamp)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(metrics)).To(Equal(8))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
@@ -168,7 +168,7 @@ var _ = Describe("Envelopeprocessor", func() {
 			Expect(maps.Keys(expectedEnvelopes[1].GetGauge().GetMetrics())).To(ContainElement("memory_quota"))
 		})
 	})
-	Describe("#GetHttpStartStopInstanceMetrics", func() {
+	Describe("#GetTimerMetrics", func() {
 		BeforeEach(func() {
 			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111))
 			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "1", 10*1000*1000, 30*1000*1000, 1111))
@@ -179,7 +179,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 		It("sends throughput and responsetime metric to channel", func() {
 			timestamp := time.Now().UnixNano()
-			metrics := processor.GetHttpStartStopInstanceMetrics(envelopes, "test-app-id", timestamp, TestCollectInterval)
+			metrics := processor.GetTimerMetrics(envelopes, "test-app-id", timestamp, TestCollectInterval)
 
 			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
@@ -230,7 +230,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends send 0 throughput and responsetime metric", func() {
 				timestamp := time.Now().UnixNano()
-				metrics := processor.GetHttpStartStopInstanceMetrics(envelopes, "another-test-app-id", timestamp, TestCollectInterval)
+				metrics := processor.GetTimerMetrics(envelopes, "another-test-app-id", timestamp, TestCollectInterval)
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "another-test-app-id",
 					InstanceIndex: 0,
