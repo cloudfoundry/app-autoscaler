@@ -1,8 +1,9 @@
 package helpers
 
 import (
-	"code.cloudfoundry.org/lager"
 	"fmt"
+
+	"code.cloudfoundry.org/lager"
 )
 
 type LoggregatorGRPCLogger struct {
