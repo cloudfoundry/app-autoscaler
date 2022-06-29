@@ -297,7 +297,7 @@ func newStubGrpcLogCache(caCert, certFile, keyFile string) *stubGrpcLogCache {
 	config, err := client.NewTLSConfig(caCert, certFile, keyFile)
 	Expect(err).NotTo(HaveOccurred())
 	config.Rand = rand.Reader
-	lis, err := tls.Listen("tcp", "127.0.0.1:8087", config)
+	lis, err := tls.Listen("tcp", "127.0.0.1:0", config)
 	Expect(err).ToNot(HaveOccurred())
 
 	s.lis = lis
