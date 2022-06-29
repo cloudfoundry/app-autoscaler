@@ -824,10 +824,8 @@ github.com/ssgreg/nlreturn/v2 v2.2.1 h1:X4XDI7jstt3ySqGU86YGAURbxw3oTDPK9sPEi6YE
 github.com/ssgreg/nlreturn/v2 v2.2.1/go.mod h1:E/iiPB78hV7Szg2YfRgyIrk1AD6JVMTRkkxBiELzh2I=
 github.com/stbenjam/no-sprintf-host-port v0.1.1 h1:tYugd/yrm1O0dV+ThCbaKZh195Dfm07ysF0U6JQXczc=
 github.com/stbenjam/no-sprintf-host-port v0.1.1/go.mod h1:TLhvtIvONRzdmkFiio4O8LHsN9N74I+PhRquPsxpL0I=
-github.com/steinfletcher/apitest v1.5.11 h1:bG3hq3sA4+oPHln3O/xQ6LzsQgN0J2WJl+6EpydQZ8Q=
-github.com/steinfletcher/apitest v1.5.11 h1:bG3hq3sA4+oPHln3O/xQ6LzsQgN0J2WJl+6EpydQZ8Q=
-github.com/steinfletcher/apitest v1.5.11/go.mod h1:cf7Bneo52IIAgpqhP8xaLlzWgAiQ9fHtsDMjeDnZ3so=
-github.com/steinfletcher/apitest v1.5.11/go.mod h1:cf7Bneo52IIAgpqhP8xaLlzWgAiQ9fHtsDMjeDnZ3so=
+github.com/steinfletcher/apitest v1.5.12 h1:zv+UiSXxDspQ8R7DILKiQVIlamDH7ufCsyQuzWsn3H4=
+github.com/steinfletcher/apitest v1.5.12/go.mod h1:cf7Bneo52IIAgpqhP8xaLlzWgAiQ9fHtsDMjeDnZ3so=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1 h1:2vfRuCMp5sSVIDSqO8oNnWJq7mPa6KVP3iPIwFBuy8A=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
