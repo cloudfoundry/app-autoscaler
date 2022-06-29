@@ -37,7 +37,11 @@ func NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, httpC
 func (c *MetricServerClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	c.logger.Debug("GetMetric")
 	var url string
-	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
+	path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
+	if err != nil {
+		c.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType})
+		return nil, fmt.Errorf("Failed to retrieve metric from metrics collector. Request failed: %w", err)
+	}
 	parameters := path.Query()
 	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
 	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
