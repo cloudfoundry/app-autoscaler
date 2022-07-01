@@ -69,11 +69,11 @@ func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeSt
 
 	for _, envelope := range envelopes {
 		if isContainerMetricEnvelope(envelope) {
-			//TODO check error
+			//TODO: please see https://github.com/cloudfoundry/app-autoscaler-release/issues/717
 			containerMetrics, _ := processContainerMetrics(envelope, currentTimeStamp)
 			metrics = append(metrics, containerMetrics...)
 		} else {
-			//TODO check error
+			//TODO: please see https://github.com/cloudfoundry/app-autoscaler-release/issues/717
 			containerMetrics, _ := processCustomMetrics(envelope, currentTimeStamp)
 			metrics = append(metrics, containerMetrics...)
 		}

@@ -35,8 +35,8 @@ var _ = Describe("Envelopeprocessor", func() {
 	Describe("#GetGaugeMetrics", func() {
 		Context("processing custom metrics", func() {
 			BeforeEach(func() {
-				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111))
-				envelopes = append(envelopes, GenerateCustomMetrics("test-app-id", "0", "custom_name", "custom_unit", 11.08, 1111))
+				envelopes = append(envelopes, generateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111))
+				envelopes = append(envelopes, generateCustomMetrics("test-app-id", "0", "custom_name", "custom_unit", 11.08, 1111))
 			})
 
 			It("sends standard app instance metrics to channel", func() {
@@ -68,10 +68,10 @@ var _ = Describe("Envelopeprocessor", func() {
 
 		Context("processing container metrics", func() {
 			BeforeEach(func() {
-				envelopes = append(envelopes, GenerateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111))
-				envelopes = append(envelopes, GenerateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111))
-				envelopes = append(envelopes, GenerateMemoryContainerMetrics("test-app-id", "2", 10.2*1024*1024, 1111))
-				envelopes = append(envelopes, GenerateMemoryQuotaContainerMetrics("test-app-id", "2", 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateMemoryContainerMetrics("test-app-id", "2", 10.2*1024*1024, 1111))
+				envelopes = append(envelopes, generateMemoryQuotaContainerMetrics("test-app-id", "2", 20*1024*1024, 1111))
 			})
 
 			It("sends standard app instance metrics to channel", func() {
@@ -153,10 +153,10 @@ var _ = Describe("Envelopeprocessor", func() {
 
 	Describe("#CompactEnvelopes", func() {
 		BeforeEach(func() {
-			envelopes = append(envelopes, GenerateMemoryContainerMetrics("test-app-id", "0", 10*1024*1024, 1111))
-			envelopes = append(envelopes, GenerateMemoryQuotaContainerMetrics("test-app-id", "0", 20*1024*1024, 1111))
-			envelopes = append(envelopes, GenerateCPUContainerMetrics("test-app-id", "0", 20*1024*1024, 1111))
-			envelopes = append(envelopes, GenerateMemoryQuotaContainerMetrics("test-app-id", "1", 10.2, 1111))
+			envelopes = append(envelopes, generateMemoryContainerMetrics("test-app-id", "0", 10*1024*1024, 1111))
+			envelopes = append(envelopes, generateMemoryQuotaContainerMetrics("test-app-id", "0", 20*1024*1024, 1111))
+			envelopes = append(envelopes, generateCPUContainerMetrics("test-app-id", "0", 20*1024*1024, 1111))
+			envelopes = append(envelopes, generateMemoryQuotaContainerMetrics("test-app-id", "1", 10.2, 1111))
 		})
 
 		It("Should return a list of envelopes with matching timestamp, source_id and instance_id ", func() {
@@ -170,11 +170,11 @@ var _ = Describe("Envelopeprocessor", func() {
 	})
 	Describe("#GetTimerMetrics", func() {
 		BeforeEach(func() {
-			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111))
-			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "1", 10*1000*1000, 30*1000*1000, 1111))
-			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "0", 20*1000*1000, 30*1000*1000, 1111))
-			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 50*1000*1000, 1111))
-			envelopes = append(envelopes, GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 30*1000*1000, 1111))
+			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111))
+			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "1", 10*1000*1000, 30*1000*1000, 1111))
+			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "0", 20*1000*1000, 30*1000*1000, 1111))
+			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 50*1000*1000, 1111))
+			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 30*1000*1000, 1111))
 		})
 
 		It("sends throughput and responsetime metric to channel", func() {
@@ -256,7 +256,7 @@ var _ = Describe("Envelopeprocessor", func() {
 	})
 })
 
-func GenerateHttpStartStopEnvelope(sourceID, instance string, start, stop, timestamp int64) *loggregator_v2.Envelope {
+func generateHttpStartStopEnvelope(sourceID, instance string, start, stop, timestamp int64) *loggregator_v2.Envelope {
 	e := &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
@@ -272,7 +272,7 @@ func GenerateHttpStartStopEnvelope(sourceID, instance string, start, stop, times
 	return e
 }
 
-func GenerateContainerMetrics(sourceID, instance string, cpu, memory, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
+func generateContainerMetrics(sourceID, instance string, cpu, memory, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
 	e := &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
@@ -299,7 +299,7 @@ func GenerateContainerMetrics(sourceID, instance string, cpu, memory, memoryQuot
 	return e
 }
 
-func GenerateCustomMetrics(sourceID, instance, name, unit string, value float64, timestamp int64) *loggregator_v2.Envelope {
+func generateCustomMetrics(sourceID, instance, name, unit string, value float64, timestamp int64) *loggregator_v2.Envelope {
 	e := &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
@@ -317,7 +317,7 @@ func GenerateCustomMetrics(sourceID, instance, name, unit string, value float64,
 	}
 	return e
 }
-func GenerateMemoryContainerMetrics(sourceID, instance string, memory float64, timestamp int64) *loggregator_v2.Envelope {
+func generateMemoryContainerMetrics(sourceID, instance string, memory float64, timestamp int64) *loggregator_v2.Envelope {
 	e := &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
@@ -336,7 +336,7 @@ func GenerateMemoryContainerMetrics(sourceID, instance string, memory float64, t
 	return e
 }
 
-func GenerateMemoryQuotaContainerMetrics(sourceID, instance string, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
+func generateMemoryQuotaContainerMetrics(sourceID, instance string, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
 	e := &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
@@ -354,7 +354,7 @@ func GenerateMemoryQuotaContainerMetrics(sourceID, instance string, memoryQuota 
 	}
 	return e
 }
-func GenerateCPUContainerMetrics(sourceID, instance string, cpu float64, timestamp int64) *loggregator_v2.Envelope {
+func generateCPUContainerMetrics(sourceID, instance string, cpu float64, timestamp int64) *loggregator_v2.Envelope {
 	e := &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
