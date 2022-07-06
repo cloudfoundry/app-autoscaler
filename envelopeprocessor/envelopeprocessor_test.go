@@ -1,8 +1,9 @@
 package envelopeprocessor_test
 
 import (
-	"golang.org/x/exp/maps"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
