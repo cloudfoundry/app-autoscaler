@@ -1,9 +1,8 @@
 package envelopeprocessor_test
 
 import (
-	"time"
-
 	"golang.org/x/exp/maps"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -162,12 +161,25 @@ var _ = Describe("Envelopeprocessor", func() {
 		It("Should return a list of envelopes with matching timestamp, source_id and instance_id ", func() {
 			expectedEnvelopes := processor.CompactEnvelopes(envelopes)
 			Expect(len(expectedEnvelopes)).To(Equal(2))
-			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("cpu"))
-			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("memory"))
-			Expect(maps.Keys(expectedEnvelopes[0].GetGauge().GetMetrics())).To(ContainElement("memory_quota"))
-			Expect(maps.Keys(expectedEnvelopes[1].GetGauge().GetMetrics())).To(ContainElement("memory_quota"))
+
+			for i := range expectedEnvelopes {
+				expectedEnvelopeMetric := expectedEnvelopes[i].GetGauge().GetMetrics()
+				expectedEnvelopeMetricKeys := maps.Keys(expectedEnvelopeMetric)
+
+				switch len(expectedEnvelopeMetric) {
+				case 3:
+					Expect(expectedEnvelopeMetricKeys).To(ContainElement("cpu"))
+					Expect(expectedEnvelopeMetricKeys).To(ContainElement("memory"))
+					Expect(expectedEnvelopeMetricKeys).To(ContainElement("memory_quota"))
+
+				case 1:
+					Expect(expectedEnvelopeMetricKeys).To(ContainElement("memory_quota"))
+				}
+
+			}
 		})
 	})
+
 	Describe("#GetTimerMetrics", func() {
 		BeforeEach(func() {
 			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111))
