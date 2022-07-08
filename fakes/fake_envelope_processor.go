@@ -3,7 +3,6 @@ package fakes
 
 import (
 	"sync"
-	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -11,32 +10,31 @@ import (
 )
 
 type FakeEnvelopeProcessor struct {
-	GetGaugeInstanceMetricsStub        func([]*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)
-	getGaugeInstanceMetricsMutex       sync.RWMutex
-	getGaugeInstanceMetricsArgsForCall []struct {
+	GetGaugeMetricsStub        func([]*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)
+	getGaugeMetricsMutex       sync.RWMutex
+	getGaugeMetricsArgsForCall []struct {
 		arg1 []*loggregator_v2.Envelope
 		arg2 int64
 	}
-	getGaugeInstanceMetricsReturns struct {
+	getGaugeMetricsReturns struct {
 		result1 []models.AppInstanceMetric
 		result2 error
 	}
-	getGaugeInstanceMetricsReturnsOnCall map[int]struct {
+	getGaugeMetricsReturnsOnCall map[int]struct {
 		result1 []models.AppInstanceMetric
 		result2 error
 	}
-	GetHttpStartStopInstanceMetricsStub        func([]*loggregator_v2.Envelope, string, int64, time.Duration) []models.AppInstanceMetric
-	getHttpStartStopInstanceMetricsMutex       sync.RWMutex
-	getHttpStartStopInstanceMetricsArgsForCall []struct {
+	GetTimerMetricsStub        func([]*loggregator_v2.Envelope, string, int64) []models.AppInstanceMetric
+	getTimerMetricsMutex       sync.RWMutex
+	getTimerMetricsArgsForCall []struct {
 		arg1 []*loggregator_v2.Envelope
 		arg2 string
 		arg3 int64
-		arg4 time.Duration
 	}
-	getHttpStartStopInstanceMetricsReturns struct {
+	getTimerMetricsReturns struct {
 		result1 []models.AppInstanceMetric
 	}
-	getHttpStartStopInstanceMetricsReturnsOnCall map[int]struct {
+	getTimerMetricsReturnsOnCall map[int]struct {
 		result1 []models.AppInstanceMetric
 	}
 	invocations      map[string][][]interface{}
@@ -49,16 +47,16 @@ func (fake *FakeEnvelopeProcessor) GetGaugeMetrics(arg1 []*loggregator_v2.Envelo
 		arg1Copy = make([]*loggregator_v2.Envelope, len(arg1))
 		copy(arg1Copy, arg1)
 	}
-	fake.getGaugeInstanceMetricsMutex.Lock()
-	ret, specificReturn := fake.getGaugeInstanceMetricsReturnsOnCall[len(fake.getGaugeInstanceMetricsArgsForCall)]
-	fake.getGaugeInstanceMetricsArgsForCall = append(fake.getGaugeInstanceMetricsArgsForCall, struct {
+	fake.getGaugeMetricsMutex.Lock()
+	ret, specificReturn := fake.getGaugeMetricsReturnsOnCall[len(fake.getGaugeMetricsArgsForCall)]
+	fake.getGaugeMetricsArgsForCall = append(fake.getGaugeMetricsArgsForCall, struct {
 		arg1 []*loggregator_v2.Envelope
 		arg2 int64
 	}{arg1Copy, arg2})
-	stub := fake.GetGaugeInstanceMetricsStub
-	fakeReturns := fake.getGaugeInstanceMetricsReturns
+	stub := fake.GetGaugeMetricsStub
+	fakeReturns := fake.getGaugeMetricsReturns
 	fake.recordInvocation("GetGaugeMetrics", []interface{}{arg1Copy, arg2})
-	fake.getGaugeInstanceMetricsMutex.Unlock()
+	fake.getGaugeMetricsMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
 	}
@@ -68,71 +66,70 @@ func (fake *FakeEnvelopeProcessor) GetGaugeMetrics(arg1 []*loggregator_v2.Envelo
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsCallCount() int {
-	fake.getGaugeInstanceMetricsMutex.RLock()
-	defer fake.getGaugeInstanceMetricsMutex.RUnlock()
-	return len(fake.getGaugeInstanceMetricsArgsForCall)
+func (fake *FakeEnvelopeProcessor) GetGaugeMetricsCallCount() int {
+	fake.getGaugeMetricsMutex.RLock()
+	defer fake.getGaugeMetricsMutex.RUnlock()
+	return len(fake.getGaugeMetricsArgsForCall)
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsCalls(stub func([]*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)) {
-	fake.getGaugeInstanceMetricsMutex.Lock()
-	defer fake.getGaugeInstanceMetricsMutex.Unlock()
-	fake.GetGaugeInstanceMetricsStub = stub
+func (fake *FakeEnvelopeProcessor) GetGaugeMetricsCalls(stub func([]*loggregator_v2.Envelope, int64) ([]models.AppInstanceMetric, error)) {
+	fake.getGaugeMetricsMutex.Lock()
+	defer fake.getGaugeMetricsMutex.Unlock()
+	fake.GetGaugeMetricsStub = stub
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsArgsForCall(i int) ([]*loggregator_v2.Envelope, int64) {
-	fake.getGaugeInstanceMetricsMutex.RLock()
-	defer fake.getGaugeInstanceMetricsMutex.RUnlock()
-	argsForCall := fake.getGaugeInstanceMetricsArgsForCall[i]
+func (fake *FakeEnvelopeProcessor) GetGaugeMetricsArgsForCall(i int) ([]*loggregator_v2.Envelope, int64) {
+	fake.getGaugeMetricsMutex.RLock()
+	defer fake.getGaugeMetricsMutex.RUnlock()
+	argsForCall := fake.getGaugeMetricsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsReturns(result1 []models.AppInstanceMetric, result2 error) {
-	fake.getGaugeInstanceMetricsMutex.Lock()
-	defer fake.getGaugeInstanceMetricsMutex.Unlock()
-	fake.GetGaugeInstanceMetricsStub = nil
-	fake.getGaugeInstanceMetricsReturns = struct {
+func (fake *FakeEnvelopeProcessor) GetGaugeMetricsReturns(result1 []models.AppInstanceMetric, result2 error) {
+	fake.getGaugeMetricsMutex.Lock()
+	defer fake.getGaugeMetricsMutex.Unlock()
+	fake.GetGaugeMetricsStub = nil
+	fake.getGaugeMetricsReturns = struct {
 		result1 []models.AppInstanceMetric
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeEnvelopeProcessor) GetGaugeInstanceMetricsReturnsOnCall(i int, result1 []models.AppInstanceMetric, result2 error) {
-	fake.getGaugeInstanceMetricsMutex.Lock()
-	defer fake.getGaugeInstanceMetricsMutex.Unlock()
-	fake.GetGaugeInstanceMetricsStub = nil
-	if fake.getGaugeInstanceMetricsReturnsOnCall == nil {
-		fake.getGaugeInstanceMetricsReturnsOnCall = make(map[int]struct {
+func (fake *FakeEnvelopeProcessor) GetGaugeMetricsReturnsOnCall(i int, result1 []models.AppInstanceMetric, result2 error) {
+	fake.getGaugeMetricsMutex.Lock()
+	defer fake.getGaugeMetricsMutex.Unlock()
+	fake.GetGaugeMetricsStub = nil
+	if fake.getGaugeMetricsReturnsOnCall == nil {
+		fake.getGaugeMetricsReturnsOnCall = make(map[int]struct {
 			result1 []models.AppInstanceMetric
 			result2 error
 		})
 	}
-	fake.getGaugeInstanceMetricsReturnsOnCall[i] = struct {
+	fake.getGaugeMetricsReturnsOnCall[i] = struct {
 		result1 []models.AppInstanceMetric
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeEnvelopeProcessor) GetTimerMetrics(arg1 []*loggregator_v2.Envelope, arg2 string, arg3 int64, arg4 time.Duration) []models.AppInstanceMetric {
+func (fake *FakeEnvelopeProcessor) GetTimerMetrics(arg1 []*loggregator_v2.Envelope, arg2 string, arg3 int64) []models.AppInstanceMetric {
 	var arg1Copy []*loggregator_v2.Envelope
 	if arg1 != nil {
 		arg1Copy = make([]*loggregator_v2.Envelope, len(arg1))
 		copy(arg1Copy, arg1)
 	}
-	fake.getHttpStartStopInstanceMetricsMutex.Lock()
-	ret, specificReturn := fake.getHttpStartStopInstanceMetricsReturnsOnCall[len(fake.getHttpStartStopInstanceMetricsArgsForCall)]
-	fake.getHttpStartStopInstanceMetricsArgsForCall = append(fake.getHttpStartStopInstanceMetricsArgsForCall, struct {
+	fake.getTimerMetricsMutex.Lock()
+	ret, specificReturn := fake.getTimerMetricsReturnsOnCall[len(fake.getTimerMetricsArgsForCall)]
+	fake.getTimerMetricsArgsForCall = append(fake.getTimerMetricsArgsForCall, struct {
 		arg1 []*loggregator_v2.Envelope
 		arg2 string
 		arg3 int64
-		arg4 time.Duration
-	}{arg1Copy, arg2, arg3, arg4})
-	stub := fake.GetHttpStartStopInstanceMetricsStub
-	fakeReturns := fake.getHttpStartStopInstanceMetricsReturns
-	fake.recordInvocation("GetTimerMetrics", []interface{}{arg1Copy, arg2, arg3, arg4})
-	fake.getHttpStartStopInstanceMetricsMutex.Unlock()
+	}{arg1Copy, arg2, arg3})
+	stub := fake.GetTimerMetricsStub
+	fakeReturns := fake.getTimerMetricsReturns
+	fake.recordInvocation("GetTimerMetrics", []interface{}{arg1Copy, arg2, arg3})
+	fake.getTimerMetricsMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -140,44 +137,44 @@ func (fake *FakeEnvelopeProcessor) GetTimerMetrics(arg1 []*loggregator_v2.Envelo
 	return fakeReturns.result1
 }
 
-func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetricsCallCount() int {
-	fake.getHttpStartStopInstanceMetricsMutex.RLock()
-	defer fake.getHttpStartStopInstanceMetricsMutex.RUnlock()
-	return len(fake.getHttpStartStopInstanceMetricsArgsForCall)
+func (fake *FakeEnvelopeProcessor) GetTimerMetricsCallCount() int {
+	fake.getTimerMetricsMutex.RLock()
+	defer fake.getTimerMetricsMutex.RUnlock()
+	return len(fake.getTimerMetricsArgsForCall)
 }
 
-func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetricsCalls(stub func([]*loggregator_v2.Envelope, string, int64, time.Duration) []models.AppInstanceMetric) {
-	fake.getHttpStartStopInstanceMetricsMutex.Lock()
-	defer fake.getHttpStartStopInstanceMetricsMutex.Unlock()
-	fake.GetHttpStartStopInstanceMetricsStub = stub
+func (fake *FakeEnvelopeProcessor) GetTimerMetricsCalls(stub func([]*loggregator_v2.Envelope, string, int64) []models.AppInstanceMetric) {
+	fake.getTimerMetricsMutex.Lock()
+	defer fake.getTimerMetricsMutex.Unlock()
+	fake.GetTimerMetricsStub = stub
 }
 
-func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetricsArgsForCall(i int) ([]*loggregator_v2.Envelope, string, int64, time.Duration) {
-	fake.getHttpStartStopInstanceMetricsMutex.RLock()
-	defer fake.getHttpStartStopInstanceMetricsMutex.RUnlock()
-	argsForCall := fake.getHttpStartStopInstanceMetricsArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+func (fake *FakeEnvelopeProcessor) GetTimerMetricsArgsForCall(i int) ([]*loggregator_v2.Envelope, string, int64) {
+	fake.getTimerMetricsMutex.RLock()
+	defer fake.getTimerMetricsMutex.RUnlock()
+	argsForCall := fake.getTimerMetricsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetricsReturns(result1 []models.AppInstanceMetric) {
-	fake.getHttpStartStopInstanceMetricsMutex.Lock()
-	defer fake.getHttpStartStopInstanceMetricsMutex.Unlock()
-	fake.GetHttpStartStopInstanceMetricsStub = nil
-	fake.getHttpStartStopInstanceMetricsReturns = struct {
+func (fake *FakeEnvelopeProcessor) GetTimerMetricsReturns(result1 []models.AppInstanceMetric) {
+	fake.getTimerMetricsMutex.Lock()
+	defer fake.getTimerMetricsMutex.Unlock()
+	fake.GetTimerMetricsStub = nil
+	fake.getTimerMetricsReturns = struct {
 		result1 []models.AppInstanceMetric
 	}{result1}
 }
 
-func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetricsReturnsOnCall(i int, result1 []models.AppInstanceMetric) {
-	fake.getHttpStartStopInstanceMetricsMutex.Lock()
-	defer fake.getHttpStartStopInstanceMetricsMutex.Unlock()
-	fake.GetHttpStartStopInstanceMetricsStub = nil
-	if fake.getHttpStartStopInstanceMetricsReturnsOnCall == nil {
-		fake.getHttpStartStopInstanceMetricsReturnsOnCall = make(map[int]struct {
+func (fake *FakeEnvelopeProcessor) GetTimerMetricsReturnsOnCall(i int, result1 []models.AppInstanceMetric) {
+	fake.getTimerMetricsMutex.Lock()
+	defer fake.getTimerMetricsMutex.Unlock()
+	fake.GetTimerMetricsStub = nil
+	if fake.getTimerMetricsReturnsOnCall == nil {
+		fake.getTimerMetricsReturnsOnCall = make(map[int]struct {
 			result1 []models.AppInstanceMetric
 		})
 	}
-	fake.getHttpStartStopInstanceMetricsReturnsOnCall[i] = struct {
+	fake.getTimerMetricsReturnsOnCall[i] = struct {
 		result1 []models.AppInstanceMetric
 	}{result1}
 }
@@ -185,10 +182,10 @@ func (fake *FakeEnvelopeProcessor) GetHttpStartStopInstanceMetricsReturnsOnCall(
 func (fake *FakeEnvelopeProcessor) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getGaugeInstanceMetricsMutex.RLock()
-	defer fake.getGaugeInstanceMetricsMutex.RUnlock()
-	fake.getHttpStartStopInstanceMetricsMutex.RLock()
-	defer fake.getHttpStartStopInstanceMetricsMutex.RUnlock()
+	fake.getGaugeMetricsMutex.RLock()
+	defer fake.getGaugeMetricsMutex.RUnlock()
+	fake.getTimerMetricsMutex.RLock()
+	defer fake.getTimerMetricsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

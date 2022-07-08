@@ -29,7 +29,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 	JustBeforeEach(func() {
 		logger = lagertest.NewTestLogger("envelopeProcessor")
-		processor = envelopeprocessor.NewProcessor(logger)
+		processor = envelopeprocessor.NewProcessor(logger, TestCollectInterval)
 	})
 
 	Describe("#GetGaugeMetrics", func() {
@@ -192,7 +192,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 		It("sends throughput and responsetime metric to channel", func() {
 			timestamp := time.Now().UnixNano()
-			metrics := processor.GetTimerMetrics(envelopes, "test-app-id", timestamp, TestCollectInterval)
+			metrics := processor.GetTimerMetrics(envelopes, "test-app-id", timestamp)
 
 			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 				AppId:         "test-app-id",
@@ -233,7 +233,6 @@ var _ = Describe("Envelopeprocessor", func() {
 				Value:         "20",
 				Timestamp:     timestamp,
 			}))
-
 		})
 
 		Context("when no available envelopes for app", func() {
@@ -243,7 +242,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends send 0 throughput and responsetime metric", func() {
 				timestamp := time.Now().UnixNano()
-				metrics := processor.GetTimerMetrics(envelopes, "another-test-app-id", timestamp, TestCollectInterval)
+				metrics := processor.GetTimerMetrics(envelopes, "another-test-app-id", timestamp)
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "another-test-app-id",
 					InstanceIndex: 0,

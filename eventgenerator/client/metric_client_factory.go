@@ -23,6 +23,7 @@ type newLogCacheClient func(logger lager.Logger, getTime func() time.Time, clien
 type newMetricServerClient func(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient
 
 var NewGoLogCacheClient = logcache.NewClient
+var NewProcessor = envelopeprocessor.NewProcessor
 var LogCacheClientWithGRPC = logcache.WithViaGRPC
 var GRPCWithTransportCredentials = gogrpc.WithTransportCredentials
 
@@ -61,7 +62,7 @@ func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config
 			log.Fatalf("failed to load TLS config: %s", err)
 		}
 
-		envelopeProcessor := envelopeprocessor.NewProcessor(logger)
+		envelopeProcessor := NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
 		metricClient = mc.newLogCacheClient(logger, time.Now, logCacheClient, envelopeProcessor)
 	} else {
 		httpClient, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)

@@ -54,9 +54,9 @@ var _ = Describe("LogCacheClient", func() {
 
 	JustBeforeEach(func() {
 		fakeLogCacheClient.ReadReturns(envelopes, logCacheClientReadError)
-		fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsReturns(metrics)
-		fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(0, metrics, nil)
-		fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(1, nil, errors.New("some error"))
+		fakeEnvelopeProcessor.GetTimerMetricsReturns(metrics)
+		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
+		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(1, nil, errors.New("some error"))
 
 		logCacheClient = NewLogCacheClient(logger, func() time.Time { return collectedAt }, fakeLogCacheClient, fakeEnvelopeProcessor)
 
@@ -82,7 +82,7 @@ var _ = Describe("LogCacheClient", func() {
 						Name:  metricType,
 					},
 				}
-				fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsReturnsOnCall(0, metrics)
+				fakeEnvelopeProcessor.GetTimerMetricsReturnsOnCall(0, metrics)
 				actualMetrics, err := logCacheClient.GetMetric(appId, metricType, startTime, endTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualMetrics).To(Equal(metrics))
@@ -103,12 +103,11 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
 
 				By("Sends the right arguments to the timer processor")
-				Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(1), "Should call GetHttpStartStopInstanceMetricsCallCount once")
-				actualEnvelopes, actualAppId, actualCurrentTimestamp, collectionInterval := fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsArgsForCall(0)
+				Expect(fakeEnvelopeProcessor.GetTimerMetricsCallCount()).To(Equal(1), "Should call GetHttpStartStopInstanceMetricsCallCount once")
+				actualEnvelopes, actualAppId, actualCurrentTimestamp := fakeEnvelopeProcessor.GetTimerMetricsArgsForCall(0)
 				Expect(actualEnvelopes).To(Equal(envelopes))
 				Expect(actualAppId).To(Equal(appId))
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
-				Expect(collectionInterval).To(Equal(30 * time.Second)) // default behaviour
 			},
 			Entry("When metric type is MetricNameThroughput", models.MetricNameThroughput, []string{"endtime", "envelope_type", "http"}),
 			Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime, []string{"endtime", "envelope_type", "http"}),
@@ -122,7 +121,7 @@ var _ = Describe("LogCacheClient", func() {
 						Name:  autoscalerMetricType,
 					},
 				}
-				fakeEnvelopeProcessor.GetGaugeInstanceMetricsReturnsOnCall(0, metrics, nil)
+				fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
 				actualMetrics, err := logCacheClient.GetMetric(appId, autoscalerMetricType, startTime, endTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualMetrics).To(Equal(metrics))
@@ -141,10 +140,10 @@ var _ = Describe("LogCacheClient", func() {
 				// after starTime and envelopeType we filter the metric names
 				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
 
-				Expect(fakeEnvelopeProcessor.GetHttpStartStopInstanceMetricsCallCount()).To(Equal(0))
+				Expect(fakeEnvelopeProcessor.GetTimerMetricsCallCount()).To(Equal(0))
 
 				By("Sends the right arguments to the gauge processor")
-				actualEnvelopes, actualCurrentTimestamp := fakeEnvelopeProcessor.GetGaugeInstanceMetricsArgsForCall(0)
+				actualEnvelopes, actualCurrentTimestamp := fakeEnvelopeProcessor.GetGaugeMetricsArgsForCall(0)
 				Expect(actualEnvelopes).To(Equal(envelopes))
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 			},

@@ -14,7 +14,7 @@ import (
 type Aggregator struct {
 	logger                    lager.Logger
 	doneChan                  chan bool
-	appChan                   chan *models.AppMonitor
+	appMonitorChan            chan *models.AppMonitor
 	metricPollerArray         []*MetricPoller
 	cclock                    clock.Clock
 	aggregatorExecuteInterval time.Duration
@@ -31,7 +31,7 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 	aggregator := &Aggregator{
 		logger:                    logger.Session("Aggregator"),
 		doneChan:                  make(chan bool),
-		appChan:                   appMonitorChan,
+		appMonitorChan:            appMonitorChan,
 		cclock:                    clock,
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
 		saveInterval:              saveInterval,
@@ -86,8 +86,8 @@ func (a *Aggregator) startAggregating() {
 			return
 		case <-ticker.C():
 			appMonitors := a.getAppMonitors(a.getPolicies())
-			for _, monitor := range appMonitors {
-				a.appChan <- monitor
+			for _, ap := range appMonitors {
+				a.appMonitorChan <- ap
 			}
 		}
 	}

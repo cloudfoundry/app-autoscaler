@@ -16,3 +16,4 @@ package fakes
 //go:generate counterfeiter -o ./fake_go_log_cache_client.go ../eventgenerator/client GoLogCacheClient
 //go:generate counterfeiter -o ./fake_grpc.go ../eventgenerator/client grpcDialOptions
 //go:generate counterfeiter -o ./fake_tls_config.go ../eventgenerator/client TLSConfig
+//go:generate counterfeiter -o ./fake_envelope_processor_creator.go ../envelopeprocessor EnvelopeProcessorCreator

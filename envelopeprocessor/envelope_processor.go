@@ -15,20 +15,26 @@ import (
 	"github.com/imdario/mergo"
 )
 
+type EnvelopeProcessorCreator interface {
+	NewProcessor(logger lager.Logger, collectionInterval time.Duration) Processor
+}
+
 type EnvelopeProcessor interface {
 	GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
-	GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric
+	GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64) []models.AppInstanceMetric
 }
 
 var _ EnvelopeProcessor = &Processor{}
 
 type Processor struct {
-	logger lager.Logger
+	logger             lager.Logger
+	collectionInterval time.Duration
 }
 
-func NewProcessor(logger lager.Logger) Processor {
+func NewProcessor(logger lager.Logger, collectionInterval time.Duration) Processor {
 	return Processor{
-		logger: logger.Session("EnvelopeProcessor"),
+		logger:             logger.Session("EnvelopeProcessor"),
+		collectionInterval: collectionInterval,
 	}
 }
 
@@ -38,10 +44,10 @@ func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, current
 	p.logger.Debug("Compacted envelopes:", lager.Data{"compactedEnvelopes": compactedEnvelopes})
 	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
 }
-func (p Processor) GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64, collectionInterval time.Duration) []models.AppInstanceMetric {
+func (p Processor) GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64) []models.AppInstanceMetric {
 	p.logger.Debug("GetTimerMetrics")
 	p.logger.Debug("Compacted envelopes:", lager.Data{"Envelopes": envelopes})
-	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, collectionInterval)
+	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, p.collectionInterval)
 }
 
 // Log cache returns instance metrics such as cpu and memory in serparate envelopes, this was not the case with

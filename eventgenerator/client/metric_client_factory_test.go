@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
@@ -26,6 +27,7 @@ var _ = Describe("MetricClientFactory", func() {
 		metricClientFactory            *MetricClientFactory
 		fakeLogCacheClientCreator      fakes.FakeLogCacheClientCreator
 		fakeMetricServerClientCreator  fakes.FakeMetricServerClientCreator
+		fakeEnvelopeProcessorCreator   fakes.FakeEnvelopeProcessorCreator
 		fakeGoLogCacheClient           fakes.FakeGoLogCacheClient
 		fakeGRPC                       fakes.FakeGrpcDialOptions
 		fakeTLSConfig                  fakes.FakeTLSConfig
@@ -51,6 +53,7 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeTLSConfig = fakes.FakeTLSConfig{}
 		fakeGRPC = fakes.FakeGrpcDialOptions{}
 		metricClientFactory = NewMetricClientFactory(fakeLogCacheClientCreator.NewLogCacheClient, fakeMetricServerClientCreator.NewMetricServerClient)
+		NewProcessor = fakeEnvelopeProcessorCreator.NewProcessor
 		NewGoLogCacheClient = fakeGoLogCacheClient.NewClient
 		LogCacheClientWithGRPC = fakeGoLogCacheClient.WithViaGRPC
 		GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
@@ -69,6 +72,9 @@ var _ = Describe("MetricClientFactory", func() {
 
 	JustBeforeEach(func() {
 		conf = config.Config{
+			Aggregator: config.AggregatorConfig{
+				AggregatorExecuteInterval: 51 * time.Second,
+			},
 			MetricCollector: config.MetricCollectorConfig{
 				UseLogCache:        useLogCache,
 				MetricCollectorURL: metricCollectorURL,
@@ -83,7 +89,7 @@ var _ = Describe("MetricClientFactory", func() {
 		logger = lagertest.NewTestLogger("MetricServer")
 		metricClient = metricClientFactory.GetMetricClient(logger, &conf)
 	})
-	Describe("GetMetricServer", func() {
+	Describe("GetMetricClient", func() {
 		BeforeEach(func() {
 			metricCollectorURL = "some-metric-server-url"
 			useLogCache = false
@@ -120,6 +126,11 @@ var _ = Describe("MetricClientFactory", func() {
 				Expect(actualLogCacheClient).To(Equal(&expectedLogCacheClient))
 				Expect(actualEnvelopeProcessor).To(BeAssignableToTypeOf(envelopeprocessor.Processor{}))
 				Expect(now).NotTo(BeNil())
+			})
+
+			It("Should set AggregatorExecuteInterval as processor collectionInterval", func() {
+				_, actualCollectionInterval := fakeEnvelopeProcessorCreator.NewProcessorArgsForCall(0)
+				Expect(actualCollectionInterval).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
 			})
 
 			It("Should provision tls configuration to the logCacheClient", func() {
