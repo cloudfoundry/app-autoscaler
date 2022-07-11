@@ -37,7 +37,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, defaultHttpClientTimeout)
 		startScheduler()
 
-		serviceInstanceId = getRandomIdRef("serviceInstanceId")
+		serviceInstanceId = getRandomIdRef("serviceInstId")
 		orgId = getRandomIdRef("orgId")
 		spaceId = getRandomIdRef("spaceId")
 		bindingId = getRandomIdRef("bindingId")
