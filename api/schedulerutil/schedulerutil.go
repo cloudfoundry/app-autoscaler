@@ -77,7 +77,10 @@ func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr stri
 
 func (su *SchedulerUtil) DeleteSchedule(appId string) error {
 	var url string
-	path, _ := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
+	path, err := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
+	if err != nil {
+		return fmt.Errorf("deleteScheduleRouteName could not make url: %w", err)
+	}
 
 	url = su.schedulerUrl + path.RequestURI()
 

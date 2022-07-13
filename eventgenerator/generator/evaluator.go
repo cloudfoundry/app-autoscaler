@@ -193,6 +193,10 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 	}
 
 	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
+	if err != nil {
+		return fmt.Errorf("failed to create url ScaleRouteName, %s: %w", trigger.AppId, err)
+	}
+
 	resp, err := e.httpClient.Post(e.scalingEngineUrl+path.Path, "application/json", bytes.NewReader(jsonBytes))
 	if err != nil {
 		e.logger.Error("failed-send-trigger-alarm-request", err, lager.Data{"trigger": trigger})

@@ -40,7 +40,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			true,
 			tmpDir)
 		startGolangApiServer()
-		appId = getRandomId()
+		appId = getRandomIdRef("appId")
 		pathVariables = []string{appId}
 
 	})
@@ -166,7 +166,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 				insertScalingHistory(&history5)
 
 				//add some other app id
-				history6 := createScalingHistory(getRandomId(), 444444)
+				history6 := createScalingHistory(getRandomIdRef("history6"), 444444)
 				insertScalingHistory(&history6)
 			})
 			It("should get the scaling histories ", func() {

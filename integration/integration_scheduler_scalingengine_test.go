@@ -20,8 +20,8 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	BeforeEach(func() {
 		initializeHttpClient("scheduler.crt", "scheduler.key", "autoscaler-ca.crt", schedulerScalingEngineHttpRequestTimeout)
 
-		testAppId = getRandomId()
-		testGuid = getRandomId()
+		testAppId = getRandomIdRef("testAppId")
+		testGuid = getRandomIdRef("testGuid")
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)

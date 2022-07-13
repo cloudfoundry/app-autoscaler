@@ -23,7 +23,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 		fakeRLPEmitInterval = 500 * time.Millisecond
 	)
 	BeforeEach(func() {
-		testAppId = getRandomId()
+		testAppId = getRandomIdRef("testAppId")
 		startFakeCCNOAAUAA(initInstanceCount)
 	})
 

@@ -42,7 +42,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 			true,
 			tmpDir)
 		startGolangApiServer()
-		appId = getRandomId()
+		appId = getRandomIdRef("appId")
 		pathVariables = []string{appId, metricType}
 
 	})
@@ -169,7 +169,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				metric.Timestamp = 444444
 				insertAppMetric(metric)
 				//add some  other appId
-				metric.AppId = getRandomId()
+				metric.AppId = getRandomIdRef("metric.appId")
 				metric.MetricType = models.MetricNameMemoryUsed
 				metric.Unit = models.UnitMegaBytes
 				metric.Timestamp = 444444

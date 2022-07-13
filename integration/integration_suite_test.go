@@ -252,9 +252,37 @@ func stopMetricsServer() {
 	ginkgomon_v2.Kill(processMap[MetricsServerHTTP], 5*time.Second)
 }
 
-func getRandomId() string {
+func getRandomIdRef(ref string) string {
+	report := CurrentSpecReport()
+	// 0123456789012345678901234567890123456789
+	// operator_others:189,11,instance:a5f63cbf 7c204c417941d91d21cb3bd0
+	// |filename|:|linenumber|,|ref|process|:|random|
+	// |15|1|3-4|1|14|2|1|3-4| == 40 (max id length)
+	if len(ref) > 13 {
+		GinkgoT().Logf("WARNING: %s:%d using a ref that is being truncated '%s' should be <= 13 chars", report.FileName(), report.LineNumber(), ref)
+		ref = ref[:13]
+	}
+	id := fmt.Sprintf("%s:%d,%s,%d:%s", testFileFragment(report.FileName()), report.LineNumber(), ref, GinkgoParallelProcess(), randomBits())
+	if len(id) > 40 {
+		id = id[:40]
+	}
+	return id
+}
+
+func randomBits() string {
 	v4, _ := uuid.NewV4()
-	return v4.String()
+	randomBits := v4.String()
+	return strings.ReplaceAll(randomBits, "-", "")
+}
+
+func testFileFragment(filename string) string {
+	base := filepath.Base(filename)
+	base = strings.TrimSuffix(base, "_test.go")
+	base = strings.TrimPrefix(base, "integration_")
+	if len(base) > 15 {
+		return base[(len(base) - 15):]
+	}
+	return base
 }
 
 func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
