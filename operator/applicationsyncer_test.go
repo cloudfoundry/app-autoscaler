@@ -51,8 +51,7 @@ var _ = Describe("AppSynchronizer", func() {
 
 		Context("when trying to delete non-existent application records from policy db", func() {
 			BeforeEach(func() {
-				err := models.NewAppNotFoundErr("The app could not be found")
-				cfc.GetAppReturns(nil, err)
+				cfc.GetAppReturns(nil, models.CfResourceNotFound)
 			})
 			It("should successfully delete", func() {
 				Eventually(policyDB.GetAppIdsCallCount).Should(Equal(1))

@@ -37,8 +37,8 @@ func (as ApplicationSynchronizer) Operate() {
 		_, err = as.cfClient.GetApp(appID)
 		if err != nil {
 			as.logger.Error("failed-to-get-app-info", err)
-			var appNotFoundErr *models.AppNotFoundErr
-			if errors.As(err, &appNotFoundErr) {
+			var cfError *models.CfError
+			if errors.As(err, &cfError) && cfError.IsNotFound() {
 				// Application does not exist, lets clean up app details from policyDB
 				err = as.policyDb.DeletePolicy(appID)
 				if err != nil {

@@ -335,14 +335,12 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
-	var appNotFoundErr *models.AppNotFoundErr
 	if err != nil {
-		if errors.As(err, &appNotFoundErr) {
-			logger.Info("app-not-found", lager.Data{"appId": appId})
+		var cfError *models.CfError
+		if errors.As(err, &cfError) && cfError.IsNotFound() {
 			history.Status = models.ScalingStatusIgnored
 			return nil
 		}
-		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
 		return err

@@ -1015,8 +1015,6 @@ var _ = Describe("ScalingEngine", func() {
 
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-info"))
-				Eventually(buffer).Should(gbytes.Say("an error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",

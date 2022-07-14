@@ -21,6 +21,53 @@ import (
 	"net/url"
 )
 
+var usageExample = `{
+  "guid": "a595fe2f-01ff-4965-a50c-290258ab8582",
+  "created_at": "2020-05-28T16:41:23Z",
+  "updated_at": "2020-05-28T16:41:26Z",
+  "state": {
+    "current": "STARTED",
+    "previous": "STOPPED"
+  },
+  "app": {
+    "guid": "guid-f93250f7-7ef5-4b02-8d33-353919ce8358",
+    "name": "name-1982"
+  },
+  "process": {
+    "guid": "guid-e9d2d5a0-69a6-46ef-bac5-43f3ed177614",
+    "type": "type-1983"
+  },
+  "space": {
+    "guid": "guid-5e28f12f-9d80-473e-b826-537b148eb338",
+    "name": "name-1664"
+  },
+  "organization": {
+    "guid": "guid-036444f4-f2f5-4ea8-a353-e73330ca0f0a"
+  },
+  "buildpack": {
+    "guid": "guid-34916716-31d7-40c1-9afd-f312996c9654",
+    "name": "label-64"
+  },
+  "task": {
+    "guid": "guid-7cc11646-bf38-4f4e-b6e0-9581916a74d9",
+    "name": "name-2929"
+  },
+  "memory_in_mb_per_instance": {
+    "current": 512,
+    "previous": 256
+  },
+  "instance_count": {
+    "current": 6,
+    "previous": 5
+  },
+  "links": {
+    "self": {
+      "href": "https://api.example.org/v3/app_usage_events/a595fe2f-01ff-4965-a50c-290258ab8582"
+    }
+  }
+}
+`
+
 var _ = Describe("App", func() {
 
 	var (
@@ -29,7 +76,6 @@ var _ = Describe("App", func() {
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
 		err             error
-		appState        string
 		appEntity       *models.AppEntity
 	)
 
@@ -66,16 +112,11 @@ var _ = Describe("App", func() {
 			appEntity, err = cfc.GetApp("test-app-id")
 		})
 		Context("when get app summary succeeds", func() {
-			appState = "test_app_state"
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathApp+"/test-app-id/summary"),
-						ghttp.RespondWithJSONEncoded(http.StatusOK,
-							models.AppEntity{
-								Instances: 6,
-								State:     &appState,
-							}),
+						ghttp.VerifyRequest("GET", "/v3/app_usage_events/test-app-id"),
+						ghttp.RespondWith(http.StatusOK, usageExample, http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
 			})
@@ -83,7 +124,7 @@ var _ = Describe("App", func() {
 			It("returns correct instance number", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appEntity.Instances).To(Equal(6))
-				Expect(*appEntity.State).To(Equal("test_app_state"))
+				Expect(*appEntity.State).To(Equal("STARTED"))
 			})
 		})
 
@@ -91,10 +132,8 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CFErrorResponse{
-							Description: "The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42",
-							ErrorCode:   "CF-AppNotFound",
-							Code:        100004,
+						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CfError{
+							Errors: []models.CfErrorItem{{Code: 10010, Detail: "App usage event not found", Title: "CF-ResourceNotFound"}},
 						}),
 					),
 				)
@@ -102,27 +141,23 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(appEntity).To(BeNil())
-				Expect(err).To(Equal(models.NewAppNotFoundErr("The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42")))
-				Expect(err).To(MatchError(MatchRegexp("The app could not be found: *")))
+				var cfError *models.CfError
+				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
 			})
 		})
 
-		Context("when get app summary return non-200 and non-404 status code", func() {
+		Context("when get app usage return non-200 and non-404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CFErrorResponse{
-							Description: "Server error",
-							ErrorCode:   "ServerError",
-							Code:        100001,
-						}),
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 					),
 				)
 			})
 
 			It("should error", func() {
 				Expect(appEntity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed getting application summary: *")))
+				Expect(err).To(MatchError(MatchRegexp("failed getting application usage events: *")))
 			})
 
 		})
@@ -138,7 +173,7 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(appEntity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed getting application summary: *")))
+				Expect(err.Error()).To(MatchRegexp("failed getting application usage events:"))
 			})
 
 		})
@@ -167,7 +202,9 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(appEntity).To(BeNil())
-				Expect(err).To(BeAssignableToTypeOf(&json.UnmarshalTypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("failed to unmarshal")))
+				var errType *json.UnmarshalTypeError
+				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			})
 
 		})

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 
@@ -19,71 +20,89 @@ const (
 	CFAppNotFound   = "CF-AppNotFound"
 )
 
-func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
-	url := c.conf.API + path.Join(PathApp, appID, "summary")
-	c.logger.Debug("get-app-instances", lager.Data{"url": url})
+type usage struct {
+	Guid      string    `json:"guid"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	State     struct {
+		Current  string `json:"current"`
+		Previous string `json:"previous"`
+	} `json:"state"`
+	App struct {
+		Guid string `json:"guid"`
+		Name string `json:"name"`
+	} `json:"app"`
+	Process struct {
+		Guid string `json:"guid"`
+		Type string `json:"type"`
+	} `json:"process"`
+	Space struct {
+		Guid string `json:"guid"`
+		Name string `json:"name"`
+	} `json:"space"`
+	Organization struct {
+		Guid string `json:"guid"`
+	} `json:"organization"`
+	Buildpack struct {
+		Guid string `json:"guid"`
+		Name string `json:"name"`
+	} `json:"buildpack"`
+	Task struct {
+		Guid string `json:"guid"`
+		Name string `json:"name"`
+	} `json:"task"`
+	MemoryInMbPerInstance struct {
+		Current  int `json:"current"`
+		Previous int `json:"previous"`
+	} `json:"memory_in_mb_per_instance"`
+	InstanceCount struct {
+		Current  int `json:"current"`
+		Previous int `json:"previous"`
+	} `json:"instance_count"`
+	Links struct {
+		Self struct {
+			Href string `json:"href"`
+		} `json:"self"`
+	} `json:"links"`
+}
 
+/*GetApp
+ * Get the usage information for a specific app
+ * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#app-usage-events
+ */
+func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
+	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/app_usage_events", appID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		c.logger.Error("get-app-instances-new-request", err)
-		return nil, err
+		return nil, fmt.Errorf("app usage request failed for app %s :%w", appID, err)
 	}
 	tokens, err := c.GetTokens()
 	if err != nil {
-		c.logger.Error("get-app-instances-get-tokens", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get token %s: %w", appID, err)
 	}
 	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
-	var resp *http.Response
-	resp, err = c.httpClient.Do(req)
-
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("get-app-instances-do-request", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get app %s: %w", appID, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == 404 {
-			respBody, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				c.logger.Error("failed-to-read-response-body-while-getting-app-summary", err, lager.Data{"appID": appID})
-				return nil, err
-			}
-			var bodydata map[string]interface{}
-			err = json.Unmarshal(respBody, &bodydata)
-			if err != nil {
-				err = fmt.Errorf("%s", string(respBody))
-				c.logger.Error("failed-to-get-application-summary", err, lager.Data{"appID": appID})
-				return nil, err
-			}
-			errorDescription := bodydata["description"].(string)
-			errorCode := bodydata["error_code"].(string)
-			code := bodydata["code"].(float64)
-
-			if errorCode == CFAppNotFound && code == 100004 {
-				// Application does not exists
-				err = models.NewAppNotFoundErr(errorDescription)
-			} else {
-				err = fmt.Errorf("failed getting application summary: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
-			}
-			c.logger.Error("get-app-summary-response", err, lager.Data{"appID": appID, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
-			return nil, err
+	statusCode := resp.StatusCode
+	if statusCode != http.StatusOK {
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response[%d] for %s : %w", statusCode, appID, err)
 		}
-		// For Non 404 Error type
-		err = fmt.Errorf("failed getting application summary: %s [%d] %s", url, resp.StatusCode, resp.Status)
-		c.logger.Error("get-app-instances-response", err)
-		return nil, err
+		return nil, fmt.Errorf("failed getting application usage events: %w", models.NewCfError(appID, statusCode, respBody))
 	}
 
-	appEntity := &models.AppEntity{}
-	err = json.NewDecoder(resp.Body).Decode(appEntity)
+	usage := &usage{}
+	err = json.NewDecoder(resp.Body).Decode(usage)
 	if err != nil {
-		c.logger.Error("get-app-instances-decode", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal app_usage_events response:%w", err)
 	}
-	return appEntity, nil
+	return &models.AppEntity{Instances: usage.InstanceCount.Current, State: &usage.State.Current}, nil
 }
 
 func (c *cfClient) SetAppInstances(appID string, num int) error {
