@@ -57,14 +57,13 @@ var (
 	dbUrl                   string
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
 	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
 	rolesRegPath            = regexp.MustCompile(`^/v3/roles$`)
 	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sqlx.DB
-	fakeCCNOAAUAA           *ghttp.Server
+	fakeCCNOAAUAA           *testhelpers.MockServer
 	testUserId              = "testUserId"
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
@@ -766,7 +765,7 @@ func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap
 }
 
 func startFakeCCNOAAUAA(instanceCount int) {
-	fakeCCNOAAUAA = ghttp.NewServer()
+	fakeCCNOAAUAA = testhelpers.NewMockServer()
 	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
 			AuthEndpoint:    fakeCCNOAAUAA.URL(),
@@ -774,9 +773,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-	appState := models.AppStatusStarted
-	fakeCCNOAAUAA.RouteToHandler("GET", appSummaryRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		models.AppEntity{Instances: instanceCount, State: &appState}))
+	fakeCCNOAAUAA.Add().AppUsageEvents(instanceCount, models.AppStatusStarted)
 	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
