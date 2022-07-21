@@ -32,6 +32,7 @@ var _ = Describe("Client", func() {
 		conf = &CFConfig{}
 		conf.API = fakeCC.URL()
 		fclock = fakeclock.NewFakeClock(time.Now())
+		err = nil
 	})
 
 	AfterEach(func() {

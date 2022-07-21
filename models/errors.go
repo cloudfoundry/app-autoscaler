@@ -2,9 +2,12 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+const cfResourceNotFound = 10010
 
 type ErrorResponse struct {
 	Code    string `json:"code"`
@@ -17,7 +20,7 @@ type CFErrorResponse struct {
 	Code        int    `json:"code"`
 }
 
-var CfResourceNotFound = &CfError{Errors: []CfErrorItem{{Detail: "App usage event not found", Title: "CF-ResourceNotFound", Code: 10010}}}
+var CfResourceNotFound = &CfError{Errors: []CfErrorItem{{Detail: "App usage event not found", Title: "CF-ResourceNotFound", Code: cfResourceNotFound}}}
 var CfInternalServerError = &CfError{Errors: []CfErrorItem{{Detail: "An unexpected, uncaught error occurred; the CC logs will contain more information", Title: "UnknownError", Code: 10001}}}
 var _ error = &CfError{}
 var ErrInvalidJson = fmt.Errorf("invalid error json")
@@ -66,7 +69,7 @@ func (c *CfError) Error() string {
 func (c *CfError) IsNotFound() bool {
 	if c.IsValid() {
 		for _, item := range c.Errors {
-			if item.Code == 10010 {
+			if item.Code == cfResourceNotFound {
 				return true
 			}
 		}
@@ -83,4 +86,9 @@ func truncateString(stringToTrunk string, length int) string {
 		return stringToTrunk[:length]
 	}
 	return stringToTrunk
+}
+
+func IsNotFound(err error) bool {
+	var cfError *CfError
+	return errors.As(err, &cfError) && cfError.IsNotFound()
 }

@@ -111,7 +111,7 @@ var _ = Describe("App", func() {
 		JustBeforeEach(func() {
 			appEntity, err = cfc.GetApp("test-app-id")
 		})
-		Context("when get app summary succeeds", func() {
+		Context("when get app usage succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
@@ -128,7 +128,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		Context("when get app summary return 404 status code", func() {
+		Context("when get app usage return 404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
@@ -162,7 +162,7 @@ var _ = Describe("App", func() {
 
 		})
 
-		Context("when get app summary return non-200 and non-404 status code with non-JSON response", func() {
+		Context("when get app usage return non-200 and non-404 status code with non-JSON response", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(

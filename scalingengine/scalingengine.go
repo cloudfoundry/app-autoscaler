@@ -336,8 +336,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {
-		var cfError *models.CfError
-		if errors.As(err, &cfError) && cfError.IsNotFound() {
+		if models.IsNotFound(err) {
 			history.Status = models.ScalingStatusIgnored
 			return nil
 		}
