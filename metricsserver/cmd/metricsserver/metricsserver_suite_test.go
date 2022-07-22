@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -41,7 +43,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ms, err := gexec.Build("code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/cmd/metricsserver", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	database, err := db.GetConnection(os.Getenv("DBURL"))
+	dbUrl := testhelpers.GetDbUrl()
+	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
 	msDB, err := sqlx.Open(database.DriverName, database.DSN)
@@ -78,14 +81,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Logging.Level = "info"
 
+	dbUrl := testhelpers.GetDbUrl()
 	cfg.DB.InstanceMetricsDB = db.DatabaseConfig{
-		URL:                   os.Getenv("DBURL"),
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 	cfg.DB.PolicyDB = db.DatabaseConfig{
-		URL:                   os.Getenv("DBURL"),
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,

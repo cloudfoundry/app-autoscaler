@@ -3,6 +3,8 @@ package sqldb_test
 import (
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -14,7 +16,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
 
-	"os"
 	"sync"
 	"time"
 )
@@ -39,10 +40,11 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		testMetricUnit string
 	)
 
+	dbUrl := testhelpers.GetDbUrl()
 	BeforeEach(func() {
 		logger = lager.NewLogger("instance-metrics-sqldb-test")
 		dbConfig = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 5 * time.Second,
@@ -73,7 +75,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -85,7 +87,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if strings.Contains(dbUrl, "postgres") {
 					Skip("Mysql test")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"

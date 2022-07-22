@@ -15,7 +15,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"os"
 	"time"
 )
 
@@ -44,11 +43,12 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		includeAll        bool
 	)
 
+	dbUrl := GetDbUrl()
 	BeforeEach(func() {
 		logger = lager.NewLogger("history-sqldb-test")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
@@ -93,7 +93,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -105,7 +105,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for mysql")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"

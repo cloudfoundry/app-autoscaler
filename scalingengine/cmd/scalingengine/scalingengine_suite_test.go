@@ -89,7 +89,7 @@ var _ = SynchronizedBeforeSuite(
 		conf.Health.Port = healthport
 		conf.Logging.Level = "debug"
 
-		dbUrl := os.Getenv("DBURL")
+		dbUrl := GetDbUrl()
 		conf.DB.PolicyDB = db.DatabaseConfig{
 			URL:                   dbUrl,
 			MaxOpenConnections:    10,

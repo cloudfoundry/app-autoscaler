@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	testhelpers2 "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"io/ioutil"
@@ -58,7 +60,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		AbortSuite(fmt.Sprintf("Could not build metricsforwarder: %s", err.Error()))
 	}
 
-	database, err := db.GetConnection(os.Getenv("DBURL"))
+	dbUrl := testhelpers2.GetDbUrl()
+	database, err := db.GetConnection(dbUrl)
 	if err != nil {
 		AbortSuite(fmt.Sprintf("DBURL not found: %s", err.Error()))
 	}
@@ -145,8 +148,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CacheCleanupInterval = 10 * time.Minute
 	cfg.PolicyPollerInterval = 40 * time.Second
 	cfg.Db = make(map[string]db.DatabaseConfig)
+	dbUrl := testhelpers2.GetDbUrl()
 	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
-		URL:                   os.Getenv("DBURL"),
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,

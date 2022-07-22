@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -83,13 +85,10 @@ func initConfig() {
 	healthport = 8000 + GinkgoParallelProcess()
 	cfg.Health.Port = healthport
 	cfg.Logging.Level = "debug"
-	dbURL := os.Getenv("DBURL")
-	if dbURL == "" {
-		Fail("environment variable $DBURL is not set")
-	}
+	dbUrl := testhelpers.GetDbUrl()
 
 	cfg.InstanceMetricsDB.DB = db.DatabaseConfig{
-		URL:                   dbURL,
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
@@ -98,7 +97,7 @@ func initConfig() {
 	cfg.InstanceMetricsDB.CutoffDuration = 20 * 24 * time.Hour
 
 	cfg.AppMetricsDB.DB = db.DatabaseConfig{
-		URL:                   dbURL,
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
@@ -107,7 +106,7 @@ func initConfig() {
 	cfg.AppMetricsDB.CutoffDuration = 20 * 24 * time.Hour
 
 	cfg.ScalingEngineDB.DB = db.DatabaseConfig{
-		URL:                   dbURL,
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
@@ -126,7 +125,7 @@ func initConfig() {
 	}
 
 	cfg.DBLock.DB = db.DatabaseConfig{
-		URL:                   os.Getenv("DBURL"),
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
@@ -135,7 +134,7 @@ func initConfig() {
 	cfg.DBLock.LockTTL = 15 * time.Second
 	cfg.DBLock.LockRetryInterval = 5 * time.Second
 	cfg.AppSyncer.DB = db.DatabaseConfig{
-		URL:                   dbURL,
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
@@ -205,7 +204,8 @@ func (pr *OperatorRunner) KillWithFire() {
 }
 
 func (pr *OperatorRunner) ClearLockDatabase() {
-	database, err := db.GetConnection(os.Getenv("DBURL"))
+	dbUrl := testhelpers.GetDbUrl()
+	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
 	lockDB, err := sql.Open(database.DriverName, database.DSN)

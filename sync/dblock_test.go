@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/sync"
@@ -15,6 +17,7 @@ import (
 )
 
 var _ = Describe("Dblock", func() {
+	dbUrl := testhelpers.GetDbUrl()
 	var (
 		lock1       *DatabaseLock
 		lock2       *DatabaseLock
@@ -28,7 +31,7 @@ var _ = Describe("Dblock", func() {
 		logger2     *lagertest.TestLogger
 		ldb         *sqldb.LockSQLDB
 		dbConfig    = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,

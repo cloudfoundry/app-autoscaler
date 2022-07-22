@@ -2,9 +2,10 @@ package sqldb_test
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
@@ -30,12 +31,13 @@ var _ = Describe("LockSqldb", func() {
 		ownerId2       string
 	)
 
+	dbUrl := testhelpers.GetDbUrl()
 	BeforeEach(func() {
 		ownerId = fmt.Sprintf("111111%d", GinkgoParallelProcess())
 		ownerId2 = fmt.Sprintf("222222%d", GinkgoParallelProcess())
 		logger = lager.NewLogger("lock-sqldb-test")
 		dbConfig = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
@@ -66,7 +68,7 @@ var _ = Describe("LockSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Postgres only test")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -78,7 +80,7 @@ var _ = Describe("LockSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if strings.Contains(dbUrl, "postgres") {
 					Skip("Mysql test")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"

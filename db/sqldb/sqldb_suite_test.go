@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -35,10 +34,7 @@ func TestSqldb(t *testing.T) {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
 
-	dbUrl := os.Getenv("DBURL")
-	if dbUrl == "" {
-		Fail("environment variable $DBURL is not set")
-	}
+	dbUrl := GetDbUrl()
 	database, err := db.GetConnection(dbUrl)
 	FailOnError("failed to parse database connection", err)
 
@@ -51,7 +47,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	_, err = dbHelper.Exec("DELETE from service_instance")
 	FailOnError("can not clean table service_instance", err)
 
-	if strings.Contains(os.Getenv("DBURL"), "postgres") && getPostgresMajorVersion() >= 12 {
+	if strings.Contains(dbUrl, "postgres") && getPostgresMajorVersion() >= 12 {
 		deleteAllFunctions()
 		addPSQLFunctions()
 	}
@@ -63,10 +59,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func([]byte) {
 	var e error
 	lockTable = fmt.Sprintf("test_lock_%d", GinkgoParallelProcess())
-	dbUrl := os.Getenv("DBURL")
-	if dbUrl == "" {
-		Fail("environment variable $DBURL is not set")
-	}
+	dbUrl := GetDbUrl()
 	database, err := db.GetConnection(dbUrl)
 	FailOnError("failed to parse database connection: ", err)
 

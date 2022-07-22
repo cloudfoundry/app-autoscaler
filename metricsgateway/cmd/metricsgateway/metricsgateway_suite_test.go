@@ -102,7 +102,8 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	database, err := db.GetConnection(os.Getenv("DBURL"))
+	dbUrl := testhelpers.GetDbUrl()
+	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
 	mgDB, err := sqlx.Open(database.DriverName, database.DSN)
@@ -136,6 +137,7 @@ func initDB() {
 
 func initConfig() {
 	healthport = 8000 + GinkgoParallelProcess()
+	dbUrl := testhelpers.GetDbUrl()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "info",
@@ -146,7 +148,7 @@ func initConfig() {
 		AppManager: config.AppManagerConfig{
 			AppRefreshInterval: 10 * time.Second,
 			PolicyDB: db.DatabaseConfig{
-				URL:                   os.Getenv("DBURL"),
+				URL:                   dbUrl,
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,

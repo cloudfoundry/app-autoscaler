@@ -3,6 +3,8 @@ package sqldb_test
 import (
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -13,7 +15,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"os"
 	"time"
 )
 
@@ -26,11 +27,12 @@ var _ = Describe("SchedulerSqldb", func() {
 		schedules map[string]*models.ActiveSchedule
 	)
 
+	dbUrl := testhelpers.GetDbUrl()
 	BeforeEach(func() {
 		logger = lager.NewLogger("scheduler-sqldb-test")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
@@ -52,7 +54,7 @@ var _ = Describe("SchedulerSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -64,7 +66,7 @@ var _ = Describe("SchedulerSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"

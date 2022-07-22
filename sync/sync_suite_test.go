@@ -3,9 +3,9 @@ package sync_test
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo/v2"
@@ -26,10 +26,7 @@ var (
 var _ = BeforeSuite(func() {
 	var e error
 	lockTableName = fmt.Sprintf("lock_table_%d", GinkgoParallelProcess())
-	dbUrl := os.Getenv("DBURL")
-	if dbUrl == "" {
-		Fail("environment variable $DBURL is not set")
-	}
+	dbUrl := testhelpers.GetDbUrl()
 
 	database, e := db.GetConnection(dbUrl)
 	if e != nil {

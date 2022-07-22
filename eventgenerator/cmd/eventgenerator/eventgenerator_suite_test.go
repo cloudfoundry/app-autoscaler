@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -116,7 +117,8 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	database, err := db.GetConnection(os.Getenv("DBURL"))
+	dbUrl := testhelpers.GetDbUrl()
+	database, err := db.GetConnection(dbUrl)
 
 	Expect(err).NotTo(HaveOccurred())
 
@@ -198,6 +200,7 @@ func initConfig() {
 
 	egPort = 7000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
+	dbUrl := testhelpers.GetDbUrl()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "debug",
@@ -228,13 +231,13 @@ func initConfig() {
 		},
 		DB: config.DBConfig{
 			PolicyDB: db.DatabaseConfig{
-				URL:                   os.Getenv("DBURL"),
+				URL:                   dbUrl,
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 10 * time.Second,
 			},
 			AppMetricDB: db.DatabaseConfig{
-				URL:                   os.Getenv("DBURL"),
+				URL:                   dbUrl,
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 10 * time.Second,

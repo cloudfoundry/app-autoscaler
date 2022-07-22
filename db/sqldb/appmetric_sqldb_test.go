@@ -1,7 +1,6 @@
 package sqldb_test
 
 import (
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -35,11 +34,12 @@ var _ = Describe("AppMetricSQLDB", func() {
 		orderType      db.OrderType
 	)
 
+	dbUrl := GetDbUrl()
 	BeforeEach(func() {
 		logger = lager.NewLogger("appmetric-sqldb-test")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 		dbConfig = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 5 * time.Second,
@@ -72,7 +72,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Postgres only test")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -84,7 +84,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if strings.Contains(os.Getenv("DBURL"), "postgres") {
+				if strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"

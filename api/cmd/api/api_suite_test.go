@@ -65,10 +65,7 @@ type testdata struct {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	info := testdata{}
-	dbUrl := os.Getenv("DBURL")
-	if dbUrl == "" {
-		Fail("environment variable $DBURL is not set")
-	}
+	dbUrl := GetDbUrl()
 
 	database, e := db.GetConnection(dbUrl)
 	if e != nil {
@@ -145,14 +142,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	cfg.Logging.Level = "info"
 	cfg.DB = make(map[string]db.DatabaseConfig)
+	dbUrl := GetDbUrl()
 	cfg.DB[db.BindingDb] = db.DatabaseConfig{
-		URL:                   os.Getenv("DBURL"),
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 	cfg.DB[db.PolicyDb] = db.DatabaseConfig{
-		URL:                   os.Getenv("DBURL"),
+		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,

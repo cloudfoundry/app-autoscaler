@@ -2,11 +2,12 @@ package sqldb_test
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"github.com/lib/pq"
 
@@ -33,15 +34,16 @@ var _ = Describe("Stored Procedure test", func() {
 	BeforeEach(func() {
 		logger = lager.NewLogger("stored_procedure")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+		dbUrl := testhelpers.GetDbUrl()
 		dbConfig = db.DatabaseConfig{
-			URL:                   os.Getenv("DBURL"),
+			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 
-		if !strings.Contains(os.Getenv("DBURL"), "postgres") {
+		if !strings.Contains(dbUrl, "postgres") {
 			Skip("Postgres test")
 		}
 

@@ -19,7 +19,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	as_testhelpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
@@ -105,7 +105,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	payload, err := json.Marshal(&components)
 	Expect(err).NotTo(HaveOccurred())
 
-	dbUrl = os.Getenv("DBURL")
+	dbUrl = testhelpers.GetDbUrl()
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
@@ -127,7 +127,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	tmpDir, err = ioutil.TempDir("", "autoscaler")
 	Expect(err).NotTo(HaveOccurred())
 
-	dbUrl = os.Getenv("DBURL")
+	dbUrl = testhelpers.GetDbUrl()
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -861,15 +861,15 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 	)
 }
 
-func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *as_testhelpers.FakeEventProducer {
-	fakeRLPServer, err := as_testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
+func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *testhelpers.FakeEventProducer {
+	fakeRLPServer, err := testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
 	Expect(err).NotTo(HaveOccurred())
 	fakeRLPServer.SetEnvelops(envelopes)
 	fakeRLPServer.Start()
 	return fakeRLPServer
 }
 
-func stopFakeRLPServer(fakeRLPServer *as_testhelpers.FakeEventProducer) {
+func stopFakeRLPServer(fakeRLPServer *testhelpers.FakeEventProducer) {
 	stopped := fakeRLPServer.Stop()
 	Expect(stopped).To(Equal(true))
 }
