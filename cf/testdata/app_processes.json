@@ -1,0 +1,72 @@
+{
+  "pagination": {
+    "total_results": 1,
+    "total_pages": 1,
+    "first": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/processes?page=1&per_page=50"
+    },
+    "last": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/processes?page=1&per_page=50"
+    },
+    "next": null,
+    "previous": null
+  },
+  "resources": [
+    {
+      "guid": "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
+      "created_at": "2022-07-21T13:42:30Z",
+      "updated_at": "2022-07-21T14:30:17Z",
+      "type": "web",
+      "command": "[PRIVATE DATA HIDDEN IN LISTS]",
+      "instances": 2,
+      "memory_in_mb": 128,
+      "disk_in_mb": 1024,
+      "health_check": {
+        "type": "http",
+        "data": {
+          "timeout": null,
+          "invocation_timeout": null,
+          "endpoint": "/health"
+        }
+      },
+      "relationships": {
+        "app": {
+          "data": {
+            "guid": "663e9a25-30ba-4fb4-91fa-9b784f4a8542"
+          }
+        },
+        "revision": {
+          "data": {
+            "guid": "47344ff6-9027-4f84-b9d2-16e7ad55c4f7"
+          }
+        }
+      },
+      "metadata": {
+        "labels": {
+
+        },
+        "annotations": {
+
+        }
+      },
+      "links": {
+        "self": {
+          "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/processes/663e9a25-30ba-4fb4-91fa-9b784f4a8542"
+        },
+        "scale": {
+          "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/processes/663e9a25-30ba-4fb4-91fa-9b784f4a8542/actions/scale",
+          "method": "POST"
+        },
+        "app": {
+          "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542"
+        },
+        "space": {
+          "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/spaces/3dfc4a10-6e70-44f8-989d-b3842f339e3b"
+        },
+        "stats": {
+          "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/processes/663e9a25-30ba-4fb4-91fa-9b784f4a8542/stats"
+        }
+      }
+    }
+  ]
+}

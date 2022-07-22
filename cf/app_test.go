@@ -1,12 +1,12 @@
 package cf_test
 
 import (
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"errors"
 	"fmt"
 	"io"
-
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -20,53 +20,6 @@ import (
 	"net/http"
 	"net/url"
 )
-
-var usageExample = `{
-  "guid": "a595fe2f-01ff-4965-a50c-290258ab8582",
-  "created_at": "2020-05-28T16:41:23Z",
-  "updated_at": "2020-05-28T16:41:26Z",
-  "state": {
-    "current": "STARTED",
-    "previous": "STOPPED"
-  },
-  "app": {
-    "guid": "guid-f93250f7-7ef5-4b02-8d33-353919ce8358",
-    "name": "name-1982"
-  },
-  "process": {
-    "guid": "guid-e9d2d5a0-69a6-46ef-bac5-43f3ed177614",
-    "type": "type-1983"
-  },
-  "space": {
-    "guid": "guid-5e28f12f-9d80-473e-b826-537b148eb338",
-    "name": "name-1664"
-  },
-  "organization": {
-    "guid": "guid-036444f4-f2f5-4ea8-a353-e73330ca0f0a"
-  },
-  "buildpack": {
-    "guid": "guid-34916716-31d7-40c1-9afd-f312996c9654",
-    "name": "label-64"
-  },
-  "task": {
-    "guid": "guid-7cc11646-bf38-4f4e-b6e0-9581916a74d9",
-    "name": "name-2929"
-  },
-  "memory_in_mb_per_instance": {
-    "current": 512,
-    "previous": 256
-  },
-  "instance_count": {
-    "current": 6,
-    "previous": 5
-  },
-  "links": {
-    "self": {
-      "href": "https://api.example.org/v3/app_usage_events/a595fe2f-01ff-4965-a50c-290258ab8582"
-    }
-  }
-}
-`
 
 var _ = Describe("App", func() {
 
@@ -115,8 +68,12 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/app_usage_events/test-app-id"),
-						ghttp.RespondWith(http.StatusOK, usageExample, http.Header{"Content-Type": []string{"application/json"}}),
+						ghttp.VerifyRequest("GET", "/v3/app/test-app-id"),
+						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+					),
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/app/test-app-id/processes"),
+						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
 			})
@@ -129,6 +86,7 @@ var _ = Describe("App", func() {
 		})
 
 		Context("when get app usage return 404 status code", func() {
+			//TODO ... we need both variations of app/{guid} and app/{guid}/processes with 404 and 200
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
@@ -143,10 +101,12 @@ var _ = Describe("App", func() {
 				Expect(appEntity).To(BeNil())
 				var cfError *models.CfError
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
+				Expect(models.IsNotFound(err)).To(BeTrue())
 			})
 		})
 
-		Context("when get app usage return non-200 and non-404 status code", func() {
+		Context("when get app/* return non-200 and non-404 status code", func() {
+			//TODO ... we need both variations of app/{guid} and app/{guid}/processes with 404 and 200
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
@@ -159,10 +119,10 @@ var _ = Describe("App", func() {
 				Expect(appEntity).To(BeNil())
 				Expect(err).To(MatchError(MatchRegexp("failed getting application usage events: *")))
 			})
-
 		})
 
-		Context("when get app usage return non-200 and non-404 status code with non-JSON response", func() {
+		Context("when get app/*  return non-200 and non-404 status code with non-JSON response", func() {
+			//TODO ... we need both variations of app/{guid} and app/{guid}/processes with non 200
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
