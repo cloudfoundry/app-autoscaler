@@ -20,61 +20,86 @@ const (
 	CFAppNotFound   = "CF-AppNotFound"
 )
 
-type usage struct {
+type App struct {
 	Guid      string    `json:"guid"`
+	Name      string    `json:"name"`
+	State     string    `json:"state"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	State     struct {
-		Current  string `json:"current"`
-		Previous string `json:"previous"`
-	} `json:"state"`
-	App struct {
-		Guid string `json:"guid"`
-		Name string `json:"name"`
-	} `json:"app"`
-	Process struct {
-		Guid string `json:"guid"`
+	Lifecycle struct {
 		Type string `json:"type"`
-	} `json:"process"`
-	Space struct {
-		Guid string `json:"guid"`
-		Name string `json:"name"`
-	} `json:"space"`
-	Organization struct {
-		Guid string `json:"guid"`
-	} `json:"organization"`
-	Buildpack struct {
-		Guid string `json:"guid"`
-		Name string `json:"name"`
-	} `json:"buildpack"`
-	Task struct {
-		Guid string `json:"guid"`
-		Name string `json:"name"`
-	} `json:"task"`
-	MemoryInMbPerInstance struct {
-		Current  int `json:"current"`
-		Previous int `json:"previous"`
-	} `json:"memory_in_mb_per_instance"`
-	InstanceCount struct {
-		Current  int `json:"current"`
-		Previous int `json:"previous"`
-	} `json:"instance_count"`
+		Data struct {
+			Buildpacks []string `json:"buildpacks"`
+			Stack      string   `json:"stack"`
+		} `json:"data"`
+	} `json:"lifecycle"`
+	Relationships struct {
+		Space struct {
+			Data struct {
+				Guid string `json:"guid"`
+			} `json:"data"`
+		} `json:"space"`
+	} `json:"relationships"`
 	Links struct {
 		Self struct {
 			Href string `json:"href"`
 		} `json:"self"`
+		Space struct {
+			Href string `json:"href"`
+		} `json:"space"`
+		Processes struct {
+			Href string `json:"href"`
+		} `json:"processes"`
+		Packages struct {
+			Href string `json:"href"`
+		} `json:"packages"`
+		EnvironmentVariables struct {
+			Href string `json:"href"`
+		} `json:"environment_variables"`
+		CurrentDroplet struct {
+			Href string `json:"href"`
+		} `json:"current_droplet"`
+		Droplets struct {
+			Href string `json:"href"`
+		} `json:"droplets"`
+		Tasks struct {
+			Href string `json:"href"`
+		} `json:"tasks"`
+		Start struct {
+			Href   string `json:"href"`
+			Method string `json:"method"`
+		} `json:"start"`
+		Stop struct {
+			Href   string `json:"href"`
+			Method string `json:"method"`
+		} `json:"stop"`
+		Revisions struct {
+			Href string `json:"href"`
+		} `json:"revisions"`
+		DeployedRevisions struct {
+			Href string `json:"href"`
+		} `json:"deployed_revisions"`
+		Features struct {
+			Href string `json:"href"`
+		} `json:"features"`
 	} `json:"links"`
+	Metadata struct {
+		Labels struct {
+		} `json:"labels"`
+		Annotations struct {
+		} `json:"annotations"`
+	} `json:"metadata"`
 }
 
 /*GetApp
- * Get the usage information for a specific app
- * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#app-usage-events
+ * Get the information for a specific app
+ * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
 func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
-	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/app_usage_events", appID)
+	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/apps", appID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("app usage request failed for app %s :%w", appID, err)
+		return nil, fmt.Errorf("app request failed for app %s :%w", appID, err)
 	}
 	tokens, err := c.GetTokens()
 	if err != nil {
@@ -94,15 +119,15 @@ func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response[%d] for %s : %w", statusCode, appID, err)
 		}
-		return nil, fmt.Errorf("failed getting application usage events: %w", models.NewCfError(appID, statusCode, respBody))
+		return nil, fmt.Errorf("failed getting information for application. id %s : %w", appID, models.NewCfError(appID, statusCode, respBody))
 	}
 
-	usage := &usage{}
-	err = json.NewDecoder(resp.Body).Decode(usage)
+	app := &App{}
+	err = json.NewDecoder(resp.Body).Decode(app)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal app_usage_events response:%w", err)
 	}
-	return &models.AppEntity{Instances: usage.InstanceCount.Current, State: &usage.State.Current}, nil
+	return &models.AppEntity{State: &app.State}, nil
 }
 
 func (c *cfClient) SetAppInstances(appID string, num int) error {

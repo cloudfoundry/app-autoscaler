@@ -1,7 +1,7 @@
 package cf_test
 
 import (
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"errors"
@@ -24,29 +24,29 @@ import (
 var _ = Describe("App", func() {
 
 	var (
-		conf            *CFConfig
-		cfc             CFClient
+		conf            *cf.CFConfig
+		cfc             cf.CFClient
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
 		err             error
-		appEntity       *models.AppEntity
+		app             *models.AppEntity
 	)
 
 	BeforeEach(func() {
 		fakeCC = ghttp.NewServer()
 		fakeLoginServer = ghttp.NewServer()
-		fakeCC.RouteToHandler("GET", PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+		fakeCC.RouteToHandler("GET", cf.PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Endpoints{
 			AuthEndpoint:    fakeLoginServer.URL(),
 			TokenEndpoint:   fakeLoginServer.URL(),
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
-		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+		fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 			AccessToken: "test-access-token",
 			ExpiresIn:   12000,
 		}))
-		conf = &CFConfig{}
+		conf = &cf.CFConfig{}
 		conf.API = fakeCC.URL()
-		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
+		cfc = cf.NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
 		err = cfc.Login()
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -60,28 +60,27 @@ var _ = Describe("App", func() {
 		}
 	})
 
-	Describe("GetAppEntity", func() {
+	Describe("GetApp", func() {
 		JustBeforeEach(func() {
-			appEntity, err = cfc.GetApp("test-app-id")
+			app, err = cfc.GetApp("test-app-id")
 		})
-		Context("when get app usage succeeds", func() {
+		Context("when get app succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/app/test-app-id"),
+						ghttp.VerifyRequest("GET", "/v3/apps/test-app-id"),
 						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/app/test-app-id/processes"),
-						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
-					),
+					// ghttp.CombineHandlers(
+					// 	ghttp.VerifyRequest("GET", "/v3/app/test-app-id/processes"),
+					// 	ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+					// ),
 				)
 			})
 
-			It("returns correct instance number", func() {
+			It("returns correct state", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(appEntity.Instances).To(Equal(6))
-				Expect(*appEntity.State).To(Equal("STARTED"))
+				Expect(*app.State).To(Equal("STOPPED"))
 			})
 		})
 
@@ -98,7 +97,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(appEntity).To(BeNil())
+				Expect(app).To(BeNil())
 				var cfError *models.CfError
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
 				Expect(models.IsNotFound(err)).To(BeTrue())
@@ -116,7 +115,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(appEntity).To(BeNil())
+				Expect(app).To(BeNil())
 				Expect(err).To(MatchError(MatchRegexp("failed getting application usage events: *")))
 			})
 		})
@@ -132,7 +131,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(appEntity).To(BeNil())
+				Expect(app).To(BeNil())
 				Expect(err.Error()).To(MatchRegexp("failed getting application usage events:"))
 			})
 
@@ -145,7 +144,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(appEntity).To(BeNil())
+				Expect(app).To(BeNil())
 				IsUrlNetOpError(err)
 			})
 
@@ -161,7 +160,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(appEntity).To(BeNil())
+				Expect(app).To(BeNil())
 				Expect(err).To(MatchError(MatchRegexp("failed to unmarshal")))
 				var errType *json.UnmarshalTypeError
 				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
@@ -178,7 +177,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("PUT", PathApp+"/test-app-id"),
+						ghttp.VerifyRequest("PUT", cf.PathApp+"/test-app-id"),
 						ghttp.VerifyJSONRepresenting(models.AppEntity{Instances: 6}),
 						ghttp.RespondWith(http.StatusCreated, ""),
 					),
