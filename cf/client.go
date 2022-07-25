@@ -52,6 +52,7 @@ type CFClient interface {
 	GetTokens() (Tokens, error)
 	GetEndpoints() Endpoints
 	GetApp(string) (*App, error)
+	GetAppProcesses(string) (*Processes, error)
 	GetStateAndInstances(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
 	IsUserAdmin(userToken string) (bool, error)

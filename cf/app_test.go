@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -22,7 +23,7 @@ import (
 	"net/url"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Cf client App", func() {
 
 	var (
 		conf            *cf.CFConfig
@@ -75,7 +76,17 @@ var _ = Describe("", func() {
 			It("returns correct state", func() {
 				app, err := cfc.GetApp("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(app.State).To(Equal("STOPPED"))
+				created, err := time.Parse(time.RFC3339, "2022-07-21T13:42:30Z")
+				Expect(err).NotTo(HaveOccurred())
+				updated, err := time.Parse(time.RFC3339, "2022-07-21T14:30:17Z")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(app).To(Equal(&cf.App{
+					Guid:      "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
+					Name:      "autoscaler-1--0cde0e473e3e47f4",
+					State:     "STOPPED",
+					CreatedAt: created,
+					UpdatedAt: updated,
+				}))
 			})
 		})
 
@@ -156,6 +167,122 @@ var _ = Describe("", func() {
 				app, err := cfc.GetApp("incorrect_object")
 				Expect(app).To(BeNil())
 				Expect(err).To(MatchError(MatchRegexp("failed unmarshalling app information for 'incorrect_object': .* cannot unmarshal string")))
+				var errType *json.UnmarshalTypeError
+				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
+			})
+
+		})
+	})
+
+	Describe("GetAppProcesses", func() {
+
+		When("get process succeeds", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/processes/test-app-id"),
+						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+					),
+				)
+			})
+
+			It("returns correct state", func() {
+				process, err := cfc.GetAppProcesses("test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				created, err := time.Parse(time.RFC3339, "2016-03-23T18:48:22Z")
+				Expect(err).NotTo(HaveOccurred())
+				updated, err := time.Parse(time.RFC3339, "2016-03-23T18:48:42Z")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(process).To(Equal(&cf.Processes{
+					Guid:       "6a901b7c-9417-4dc1-8189-d3234aa0ab82",
+					Type:       "web",
+					Command:    "rackup",
+					Instances:  5,
+					MemoryInMb: 256,
+					DiskInMb:   1024,
+					CreatedAt:  created,
+					UpdatedAt:  updated,
+				}))
+			})
+		})
+
+		When("get processes return 404 status code", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/processes/404"),
+						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+					),
+				)
+			})
+
+			It("should error", func() {
+				process, err := cfc.GetAppProcesses("404")
+				Expect(process).To(BeNil())
+				var cfError *models.CfError
+				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
+				Expect(models.IsNotFound(err)).To(BeTrue())
+			})
+		})
+
+		When("get processes/* return non-200 and non-404 status code", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", "/v3/processes/500"),
+					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError)))
+			})
+
+			It("should error", func() {
+				process, err := cfc.GetAppProcesses("500")
+				Expect(process).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("failed getting processes information for '500':.*'UnknownError'")))
+			})
+		})
+
+		When("get processes/*  returns a non-200 and non-404 status code with non-JSON response", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/processes/invalid_json"),
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ""),
+					),
+				)
+			})
+
+			It("should error", func() {
+				process, err := cfc.GetAppProcesses("invalid_json")
+				Expect(process).To(BeNil())
+				Expect(err.Error()).To(MatchRegexp("failed getting processes information for 'invalid_json': failed to unmarshal"))
+			})
+		})
+
+		When(" get processes call and cloud controller is not reachable", func() {
+			BeforeEach(func() {
+				fakeCC.Close()
+				fakeCC = nil
+			})
+
+			It("should error", func() {
+				app, err := cfc.GetAppProcesses("something")
+				Expect(app).To(BeNil())
+				IsUrlNetOpError(err)
+			})
+		})
+
+		When("get processes returns incorrect message body", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/processes/incorrect_object"),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
+					),
+				)
+			})
+
+			It("should error", func() {
+				process, err := cfc.GetAppProcesses("incorrect_object")
+				Expect(process).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("failed unmarshalling processes information for 'incorrect_object': .* cannot unmarshal string")))
 				var errType *json.UnmarshalTypeError
 				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			})

@@ -22,6 +22,19 @@ type FakeCFClient struct {
 		result1 *cf.App
 		result2 error
 	}
+	GetAppProcessesStub        func(string) (*cf.Processes, error)
+	getAppProcessesMutex       sync.RWMutex
+	getAppProcessesArgsForCall []struct {
+		arg1 string
+	}
+	getAppProcessesReturns struct {
+		result1 *cf.Processes
+		result2 error
+	}
+	getAppProcessesReturnsOnCall map[int]struct {
+		result1 *cf.Processes
+		result2 error
+	}
 	GetEndpointsStub        func() cf.Endpoints
 	getEndpointsMutex       sync.RWMutex
 	getEndpointsArgsForCall []struct {
@@ -223,6 +236,70 @@ func (fake *FakeCFClient) GetAppReturnsOnCall(i int, result1 *cf.App, result2 er
 	}
 	fake.getAppReturnsOnCall[i] = struct {
 		result1 *cf.App
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetAppProcesses(arg1 string) (*cf.Processes, error) {
+	fake.getAppProcessesMutex.Lock()
+	ret, specificReturn := fake.getAppProcessesReturnsOnCall[len(fake.getAppProcessesArgsForCall)]
+	fake.getAppProcessesArgsForCall = append(fake.getAppProcessesArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetAppProcessesStub
+	fakeReturns := fake.getAppProcessesReturns
+	fake.recordInvocation("GetAppProcesses", []interface{}{arg1})
+	fake.getAppProcessesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCFClient) GetAppProcessesCallCount() int {
+	fake.getAppProcessesMutex.RLock()
+	defer fake.getAppProcessesMutex.RUnlock()
+	return len(fake.getAppProcessesArgsForCall)
+}
+
+func (fake *FakeCFClient) GetAppProcessesCalls(stub func(string) (*cf.Processes, error)) {
+	fake.getAppProcessesMutex.Lock()
+	defer fake.getAppProcessesMutex.Unlock()
+	fake.GetAppProcessesStub = stub
+}
+
+func (fake *FakeCFClient) GetAppProcessesArgsForCall(i int) string {
+	fake.getAppProcessesMutex.RLock()
+	defer fake.getAppProcessesMutex.RUnlock()
+	argsForCall := fake.getAppProcessesArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeCFClient) GetAppProcessesReturns(result1 *cf.Processes, result2 error) {
+	fake.getAppProcessesMutex.Lock()
+	defer fake.getAppProcessesMutex.Unlock()
+	fake.GetAppProcessesStub = nil
+	fake.getAppProcessesReturns = struct {
+		result1 *cf.Processes
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetAppProcessesReturnsOnCall(i int, result1 *cf.Processes, result2 error) {
+	fake.getAppProcessesMutex.Lock()
+	defer fake.getAppProcessesMutex.Unlock()
+	fake.GetAppProcessesStub = nil
+	if fake.getAppProcessesReturnsOnCall == nil {
+		fake.getAppProcessesReturnsOnCall = make(map[int]struct {
+			result1 *cf.Processes
+			result2 error
+		})
+	}
+	fake.getAppProcessesReturnsOnCall[i] = struct {
+		result1 *cf.Processes
 		result2 error
 	}{result1, result2}
 }
@@ -899,6 +976,8 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.getAppMutex.RLock()
 	defer fake.getAppMutex.RUnlock()
+	fake.getAppProcessesMutex.RLock()
+	defer fake.getAppProcessesMutex.RUnlock()
 	fake.getEndpointsMutex.RLock()
 	defer fake.getEndpointsMutex.RUnlock()
 	fake.getServiceInstancesInOrgMutex.RLock()

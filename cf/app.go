@@ -29,6 +29,18 @@ type App struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+//Processes the processes information for an App from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#processes
+type Processes struct {
+	Guid       string    `json:"guid"`
+	Type       string    `json:"type"`
+	Command    string    `json:"command"`
+	Instances  int       `json:"instances"`
+	MemoryInMb int       `json:"memory_in_mb"`
+	DiskInMb   int       `json:"disk_in_mb"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
 func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error) {
 	app, err := c.GetApp(appID)
 	if err != nil {
@@ -74,6 +86,45 @@ func (c *cfClient) GetApp(appID string) (*App, error) {
 		return nil, fmt.Errorf("failed unmarshalling app information for '%s': %w", appID, err)
 	}
 	return app, nil
+}
+
+/*GetAppProcesses
+ * Get the processes information for a specific app
+ * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
+ */
+func (c *cfClient) GetAppProcesses(appID string) (*Processes, error) {
+	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/processes", appID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("processes request failed for app %s :%w", appID, err)
+	}
+	tokens, err := c.GetTokens()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token %s: %w", appID, err)
+	}
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get processes %s: %w", appID, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	statusCode := resp.StatusCode
+	if statusCode != http.StatusOK {
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response[%d] for %s : %w", statusCode, appID, err)
+		}
+		return nil, fmt.Errorf("failed getting processes information for '%s': %w", appID, models.NewCfError(appID, statusCode, respBody))
+	}
+
+	processes := &Processes{}
+	err = json.NewDecoder(resp.Body).Decode(processes)
+	if err != nil {
+		return nil, fmt.Errorf("failed unmarshalling processes information for '%s': %w", appID, err)
+	}
+	return processes, nil
 }
 
 func (c *cfClient) SetAppInstances(appID string, num int) error {
