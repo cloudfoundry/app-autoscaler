@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -42,11 +43,27 @@ type Processes struct {
 }
 
 func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error) {
-	app, err := c.GetApp(appID)
-	if err != nil {
-		return nil, err
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var app *App
+	var process *Processes
+	var errApp, errProc error
+	go func() {
+		app, errApp = c.GetApp(appID)
+		wg.Add(1)
+	}()
+	go func() {
+		process, errProc = c.GetAppProcesses(appID)
+		wg.Add(1)
+	}()
+	wg.Wait()
+	if errApp != nil {
+		return nil, fmt.Errorf("get state&instances getApp failed:%w", errApp)
 	}
-	return &models.AppEntity{State: &app.State}, nil
+	if errProc != nil {
+		return nil, fmt.Errorf("get state&instances GetAppProcesses failed:%w", errProc)
+	}
+	return &models.AppEntity{State: &app.State, Instances: process.Instances}, nil
 }
 
 /*GetApp
@@ -55,6 +72,7 @@ func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error)
  */
 func (c *cfClient) GetApp(appID string) (*App, error) {
 	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/apps", appID)
+	//TODO add retries
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("app request failed for app %s :%w", appID, err)
@@ -94,6 +112,7 @@ func (c *cfClient) GetApp(appID string) (*App, error) {
  */
 func (c *cfClient) GetAppProcesses(appID string) (*Processes, error) {
 	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/processes", appID)
+	//TODO add retries
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("processes request failed for app %s :%w", appID, err)

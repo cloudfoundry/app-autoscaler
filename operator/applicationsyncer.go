@@ -8,6 +8,12 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+type Operator interface {
+	Operate()
+}
+
+var _ Operator = &ApplicationSynchronizer{}
+
 type ApplicationSynchronizer struct {
 	cfClient cf.CFClient
 	policyDb db.PolicyDB
@@ -23,7 +29,6 @@ func NewApplicationSynchronizer(cfClient cf.CFClient, policyDb db.PolicyDB, logg
 }
 
 func (as ApplicationSynchronizer) Operate() {
-	as.logger.Debug("deleting non-existent application details")
 	// Get all the application details from policyDB
 	appIds, err := as.policyDb.GetAppIds()
 	if err != nil {
@@ -32,8 +37,7 @@ func (as ApplicationSynchronizer) Operate() {
 	}
 	// For each app check if they really exist or not via CC api call
 	for appID := range appIds {
-		//TODO refactor to use the single apps/guid call
-		_, err = as.cfClient.GetStateAndInstances(appID)
+		_, err = as.cfClient.GetApp(appID)
 		if err != nil {
 			as.logger.Error("failed-to-get-app-info", err)
 			if models.IsNotFound(err) {
@@ -41,6 +45,7 @@ func (as ApplicationSynchronizer) Operate() {
 				err = as.policyDb.DeletePolicy(appID)
 				if err != nil {
 					as.logger.Error("failed-to-prune-non-existent-application-details", err)
+					//TODO make this a continue and write a test.
 					return
 				}
 				as.logger.Info("successfully-pruned-non-existent-applcation", lager.Data{"appid": appID})
