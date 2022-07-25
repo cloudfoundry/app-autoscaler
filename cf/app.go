@@ -119,7 +119,7 @@ func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response[%d] for %s : %w", statusCode, appID, err)
 		}
-		return nil, fmt.Errorf("failed getting information for application. id %s : %w", appID, models.NewCfError(appID, statusCode, respBody))
+		return nil, fmt.Errorf("failed getting app information for '%s': %w", appID, models.NewCfError(appID, statusCode, respBody))
 	}
 
 	app := &App{}

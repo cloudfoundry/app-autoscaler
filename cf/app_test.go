@@ -1,12 +1,13 @@
 package cf_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"errors"
 	"fmt"
 	"io"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -116,7 +117,7 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(app).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed getting application usage events: *")))
+				Expect(err).To(MatchError(MatchRegexp("failed getting app information for 'test-app-id':.*'UnknownError'")))
 			})
 		})
 
@@ -132,7 +133,7 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(app).To(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed getting application usage events:"))
+				Expect(err.Error()).To(MatchRegexp("failed getting app information for 'test-app-id': failed to unmarshal"))
 			})
 
 		})

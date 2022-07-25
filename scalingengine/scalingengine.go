@@ -78,6 +78,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		CooldownExpiredAt: 0,
 	}
 
+	//TODO consider using the 2 calls 1 get state and the other get instances
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
@@ -334,6 +335,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		_ = s.scalingEngineDB.SaveScalingHistory(history)
 	}()
 
+	//TODO refactor to use /apps/guid/processes (for instance only)
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {
 		if models.IsNotFound(err) {
