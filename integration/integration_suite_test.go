@@ -773,7 +773,8 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-	fakeCCNOAAUAA.Add().AppUsageEvents(instanceCount, models.AppStatusStarted)
+	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted)
+	fakeCCNOAAUAA.Add().GetAppProcesses(instanceCount)
 	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {

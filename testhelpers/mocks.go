@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"github.com/onsi/gomega/ghttp"
 )
 
@@ -28,15 +29,14 @@ type InstanceCount struct {
 	Previous int `json:"previous"`
 }
 
-type usage struct {
-	State         State         `json:"state"`
-	InstanceCount InstanceCount `json:"instance_count"`
+func (a AddMock) GetApp(appState string) {
+	a.server.RouteToHandler("GET",
+		regexp.MustCompile(`^/v3/apps/[^/]+$`),
+		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.App{State: appState}))
 }
 
-func (a AddMock) AppUsageEvents(instanceCount int, appState string) {
-	a.server.RouteToHandler("GET", regexp.MustCompile(`^/v3/app_usage_events/.*$`),
-		ghttp.RespondWithJSONEncoded(http.StatusOK, usage{
-			State:         State{Current: appState},
-			InstanceCount: InstanceCount{Current: instanceCount},
-		}))
+func (a AddMock) GetAppProcesses(processes int) {
+	a.server.RouteToHandler("GET",
+		regexp.MustCompile(`^/v3/apps/[^/]+/processes$`),
+		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Processes{{Instances: processes}}))
 }

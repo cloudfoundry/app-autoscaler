@@ -21,39 +21,68 @@ const (
 	CFAppNotFound   = "CF-AppNotFound"
 )
 
-//App the app information from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
-type App struct {
-	Guid      string    `json:"guid"`
-	Name      string    `json:"name"`
-	State     string    `json:"state"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
+type (
+	//App the app information from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
+	App struct {
+		Guid      string    `json:"guid"`
+		Name      string    `json:"name"`
+		State     string    `json:"state"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
 
-//Processes the processes information for an App from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#processes
-type Processes struct {
-	Guid       string    `json:"guid"`
-	Type       string    `json:"type"`
-	Command    string    `json:"command"`
-	Instances  int       `json:"instances"`
-	MemoryInMb int       `json:"memory_in_mb"`
-	DiskInMb   int       `json:"disk_in_mb"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	//Processes the processes information for an App from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#processes
+	Process struct {
+		Guid       string    `json:"guid"`
+		Type       string    `json:"type"`
+		Instances  int       `json:"instances"`
+		MemoryInMb int       `json:"memory_in_mb"`
+		DiskInMb   int       `json:"disk_in_mb"`
+		CreatedAt  time.Time `json:"created_at"`
+		UpdatedAt  time.Time `json:"updated_at"`
+	}
+
+	Processes []Process
+
+	Pagination struct {
+		TotalResults int  `json:"total_results"`
+		TotalPages   int  `json:"total_pages"`
+		First        href `json:"first"`
+		Last         href `json:"last"`
+		Next         href `json:"next"`
+		Previous     href `json:"previous"`
+	}
+	href struct {
+		Href string `json:"href"`
+	}
+
+	//processResponse https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#list-processes
+	processesResponse struct {
+		Pagination Pagination `json:"pagination"`
+		Resources  Processes  `json:"resources"`
+	}
+)
+
+func (p Processes) GetInstances() int {
+	instances := 0
+	for _, process := range p {
+		instances += process.Instances
+	}
+	return instances
 }
 
 func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
-	var process *Processes
+	var processes Processes
 	var errApp, errProc error
 	go func() {
 		app, errApp = c.GetApp(appID)
 		wg.Add(1)
 	}()
 	go func() {
-		process, errProc = c.GetAppProcesses(appID)
+		processes, errProc = c.GetAppProcesses(appID)
 		wg.Add(1)
 	}()
 	wg.Wait()
@@ -63,7 +92,7 @@ func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error)
 	if errProc != nil {
 		return nil, fmt.Errorf("get state&instances GetAppProcesses failed:%w", errProc)
 	}
-	return &models.AppEntity{State: &app.State, Instances: process.Instances}, nil
+	return &models.AppEntity{State: &app.State, Instances: processes.GetInstances()}, nil
 }
 
 /*GetApp
@@ -71,7 +100,7 @@ func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error)
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
 func (c *cfClient) GetApp(appID string) (*App, error) {
-	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/apps", appID)
+	url := fmt.Sprintf("%s/v3/apps/%s", c.conf.API, appID)
 	//TODO add retries
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -110,8 +139,8 @@ func (c *cfClient) GetApp(appID string) (*App, error) {
  * Get the processes information for a specific app
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
-func (c *cfClient) GetAppProcesses(appID string) (*Processes, error) {
-	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/processes", appID)
+func (c *cfClient) GetAppProcesses(appID string) (Processes, error) {
+	url := fmt.Sprintf("%s/v3/apps/%s/processes", c.conf.API, appID)
 	//TODO add retries
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -138,12 +167,13 @@ func (c *cfClient) GetAppProcesses(appID string) (*Processes, error) {
 		return nil, fmt.Errorf("failed getting processes information for '%s': %w", appID, models.NewCfError(appID, statusCode, respBody))
 	}
 
-	processes := &Processes{}
-	err = json.NewDecoder(resp.Body).Decode(processes)
+	processResp := processesResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&processResp)
 	if err != nil {
 		return nil, fmt.Errorf("failed unmarshalling processes information for '%s': %w", appID, err)
 	}
-	return processes, nil
+	//TODO: Support pagination for responses with multiple pages
+	return processResp.Resources, nil
 }
 
 func (c *cfClient) SetAppInstances(appID string, num int) error {

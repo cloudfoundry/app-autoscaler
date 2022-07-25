@@ -22,17 +22,17 @@ type FakeCFClient struct {
 		result1 *cf.App
 		result2 error
 	}
-	GetAppProcessesStub        func(string) (*cf.Processes, error)
+	GetAppProcessesStub        func(string) (cf.Processes, error)
 	getAppProcessesMutex       sync.RWMutex
 	getAppProcessesArgsForCall []struct {
 		arg1 string
 	}
 	getAppProcessesReturns struct {
-		result1 *cf.Processes
+		result1 cf.Processes
 		result2 error
 	}
 	getAppProcessesReturnsOnCall map[int]struct {
-		result1 *cf.Processes
+		result1 cf.Processes
 		result2 error
 	}
 	GetEndpointsStub        func() cf.Endpoints
@@ -240,7 +240,7 @@ func (fake *FakeCFClient) GetAppReturnsOnCall(i int, result1 *cf.App, result2 er
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetAppProcesses(arg1 string) (*cf.Processes, error) {
+func (fake *FakeCFClient) GetAppProcesses(arg1 string) (cf.Processes, error) {
 	fake.getAppProcessesMutex.Lock()
 	ret, specificReturn := fake.getAppProcessesReturnsOnCall[len(fake.getAppProcessesArgsForCall)]
 	fake.getAppProcessesArgsForCall = append(fake.getAppProcessesArgsForCall, struct {
@@ -265,7 +265,7 @@ func (fake *FakeCFClient) GetAppProcessesCallCount() int {
 	return len(fake.getAppProcessesArgsForCall)
 }
 
-func (fake *FakeCFClient) GetAppProcessesCalls(stub func(string) (*cf.Processes, error)) {
+func (fake *FakeCFClient) GetAppProcessesCalls(stub func(string) (cf.Processes, error)) {
 	fake.getAppProcessesMutex.Lock()
 	defer fake.getAppProcessesMutex.Unlock()
 	fake.GetAppProcessesStub = stub
@@ -278,28 +278,28 @@ func (fake *FakeCFClient) GetAppProcessesArgsForCall(i int) string {
 	return argsForCall.arg1
 }
 
-func (fake *FakeCFClient) GetAppProcessesReturns(result1 *cf.Processes, result2 error) {
+func (fake *FakeCFClient) GetAppProcessesReturns(result1 cf.Processes, result2 error) {
 	fake.getAppProcessesMutex.Lock()
 	defer fake.getAppProcessesMutex.Unlock()
 	fake.GetAppProcessesStub = nil
 	fake.getAppProcessesReturns = struct {
-		result1 *cf.Processes
+		result1 cf.Processes
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetAppProcessesReturnsOnCall(i int, result1 *cf.Processes, result2 error) {
+func (fake *FakeCFClient) GetAppProcessesReturnsOnCall(i int, result1 cf.Processes, result2 error) {
 	fake.getAppProcessesMutex.Lock()
 	defer fake.getAppProcessesMutex.Unlock()
 	fake.GetAppProcessesStub = nil
 	if fake.getAppProcessesReturnsOnCall == nil {
 		fake.getAppProcessesReturnsOnCall = make(map[int]struct {
-			result1 *cf.Processes
+			result1 cf.Processes
 			result2 error
 		})
 	}
 	fake.getAppProcessesReturnsOnCall[i] = struct {
-		result1 *cf.Processes
+		result1 cf.Processes
 		result2 error
 	}{result1, result2}
 }

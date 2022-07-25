@@ -72,7 +72,8 @@ func initConfig() {
 
 	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-	cfServer.Add().AppUsageEvents(2, models2.AppStatusStarted)
+	cfServer.Add().GetApp(models2.AppStatusStarted)
+	cfServer.Add().GetAppProcesses(2)
 
 	cfg.CF = cf.CFConfig{
 		API:      cfServer.URL(),

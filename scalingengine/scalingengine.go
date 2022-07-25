@@ -259,14 +259,14 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		_ = s.scalingEngineDB.SaveScalingHistory(history)
 	}()
 
-	process, err := s.cfClient.GetAppProcesses(appId)
+	processes, err := s.cfClient.GetAppProcesses(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
 		return err
 	}
-	instances := process.Instances
+	instances := processes.GetInstances()
 	history.OldInstances = instances
 
 	instanceMin := schedule.InstanceMinInitial
@@ -348,7 +348,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		history.Error = "failed to get app info: " + err.Error()
 		return err
 	}
-	instances := processes.Instances
+	instances := processes.GetInstances()
 
 	history.OldInstances = instances
 
