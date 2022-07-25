@@ -20,82 +20,28 @@ const (
 	CFAppNotFound   = "CF-AppNotFound"
 )
 
+//App the app information from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
 type App struct {
 	Guid      string    `json:"guid"`
 	Name      string    `json:"name"`
 	State     string    `json:"state"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Lifecycle struct {
-		Type string `json:"type"`
-		Data struct {
-			Buildpacks []string `json:"buildpacks"`
-			Stack      string   `json:"stack"`
-		} `json:"data"`
-	} `json:"lifecycle"`
-	Relationships struct {
-		Space struct {
-			Data struct {
-				Guid string `json:"guid"`
-			} `json:"data"`
-		} `json:"space"`
-	} `json:"relationships"`
-	Links struct {
-		Self struct {
-			Href string `json:"href"`
-		} `json:"self"`
-		Space struct {
-			Href string `json:"href"`
-		} `json:"space"`
-		Processes struct {
-			Href string `json:"href"`
-		} `json:"processes"`
-		Packages struct {
-			Href string `json:"href"`
-		} `json:"packages"`
-		EnvironmentVariables struct {
-			Href string `json:"href"`
-		} `json:"environment_variables"`
-		CurrentDroplet struct {
-			Href string `json:"href"`
-		} `json:"current_droplet"`
-		Droplets struct {
-			Href string `json:"href"`
-		} `json:"droplets"`
-		Tasks struct {
-			Href string `json:"href"`
-		} `json:"tasks"`
-		Start struct {
-			Href   string `json:"href"`
-			Method string `json:"method"`
-		} `json:"start"`
-		Stop struct {
-			Href   string `json:"href"`
-			Method string `json:"method"`
-		} `json:"stop"`
-		Revisions struct {
-			Href string `json:"href"`
-		} `json:"revisions"`
-		DeployedRevisions struct {
-			Href string `json:"href"`
-		} `json:"deployed_revisions"`
-		Features struct {
-			Href string `json:"href"`
-		} `json:"features"`
-	} `json:"links"`
-	Metadata struct {
-		Labels struct {
-		} `json:"labels"`
-		Annotations struct {
-		} `json:"annotations"`
-	} `json:"metadata"`
+}
+
+func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error) {
+	app, err := c.GetApp(appID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.AppEntity{State: &app.State}, nil
 }
 
 /*GetApp
  * Get the information for a specific app
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
-func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
+func (c *cfClient) GetApp(appID string) (*App, error) {
 	url := fmt.Sprintf("%s%s/%s", c.conf.API, "/v3/apps", appID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -125,9 +71,9 @@ func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
 	app := &App{}
 	err = json.NewDecoder(resp.Body).Decode(app)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal app_usage_events response:%w", err)
+		return nil, fmt.Errorf("failed unmarshalling app information for '%s': %w", appID, err)
 	}
-	return &models.AppEntity{State: &app.State}, nil
+	return app, nil
 }
 
 func (c *cfClient) SetAppInstances(appID string, num int) error {

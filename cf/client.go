@@ -51,7 +51,8 @@ type CFClient interface {
 	RefreshAuthToken() (string, error)
 	GetTokens() (Tokens, error)
 	GetEndpoints() Endpoints
-	GetApp(string) (*models.AppEntity, error)
+	GetApp(string) (*App, error)
+	GetStateAndInstances(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)

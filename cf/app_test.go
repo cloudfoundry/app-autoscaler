@@ -22,7 +22,7 @@ import (
 	"net/url"
 )
 
-var _ = Describe("App", func() {
+var _ = Describe("", func() {
 
 	var (
 		conf            *cf.CFConfig
@@ -30,7 +30,6 @@ var _ = Describe("App", func() {
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
 		err             error
-		app             *models.AppEntity
 	)
 
 	BeforeEach(func() {
@@ -62,42 +61,36 @@ var _ = Describe("App", func() {
 	})
 
 	Describe("GetApp", func() {
-		JustBeforeEach(func() {
-			app, err = cfc.GetApp("test-app-id")
-		})
-		Context("when get app succeeds", func() {
+
+		When("get app succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", "/v3/apps/test-app-id"),
 						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
-					// ghttp.CombineHandlers(
-					// 	ghttp.VerifyRequest("GET", "/v3/app/test-app-id/processes"),
-					// 	ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
-					// ),
 				)
 			})
 
 			It("returns correct state", func() {
+				app, err := cfc.GetApp("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(*app.State).To(Equal("STOPPED"))
+				Expect(app.State).To(Equal("STOPPED"))
 			})
 		})
 
-		Context("when get app usage return 404 status code", func() {
-			//TODO ... we need both variations of app/{guid} and app/{guid}/processes with 404 and 200
+		When("get app usage return 404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CfError{
-							Errors: []models.CfErrorItem{{Code: 10010, Detail: "App usage event not found", Title: "CF-ResourceNotFound"}},
-						}),
+						ghttp.VerifyRequest("GET", "/v3/apps/404"),
+						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
 					),
 				)
 			})
 
 			It("should error", func() {
+				app, err := cfc.GetApp("404")
 				Expect(app).To(BeNil())
 				var cfError *models.CfError
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
@@ -105,64 +98,64 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		Context("when get app/* return non-200 and non-404 status code", func() {
-			//TODO ... we need both variations of app/{guid} and app/{guid}/processes with 404 and 200
+		When("get app/* return non-200 and non-404 status code", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
-					),
-				)
+				fakeCC.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", "/v3/apps/500"),
+					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError)))
 			})
 
 			It("should error", func() {
+				app, err := cfc.GetApp("500")
 				Expect(app).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed getting app information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("failed getting app information for '500':.*'UnknownError'")))
 			})
 		})
 
-		Context("when get app/*  return non-200 and non-404 status code with non-JSON response", func() {
-			//TODO ... we need both variations of app/{guid} and app/{guid}/processes with non 200
+		When("get app/*  returns a non-200 and non-404 status code with non-JSON response", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/apps/invalid_json"),
 						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ""),
 					),
 				)
 			})
 
 			It("should error", func() {
+				app, err := cfc.GetApp("invalid_json")
 				Expect(app).To(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed getting app information for 'test-app-id': failed to unmarshal"))
+				Expect(err.Error()).To(MatchRegexp("failed getting app information for 'invalid_json': failed to unmarshal"))
 			})
-
 		})
 
-		Context("when cloud controller is not reachable", func() {
+		When("cloud controller is not reachable", func() {
 			BeforeEach(func() {
 				fakeCC.Close()
 				fakeCC = nil
 			})
 
 			It("should error", func() {
+				app, err := cfc.GetApp("something")
 				Expect(app).To(BeNil())
 				IsUrlNetOpError(err)
 			})
-
 		})
 
-		Context("when cloud controller returns incorrect message body", func() {
+		When("cloud controller returns incorrect message body", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/v3/apps/incorrect_object"),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
 					),
 				)
 			})
 
 			It("should error", func() {
+				app, err := cfc.GetApp("incorrect_object")
 				Expect(app).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed to unmarshal")))
+				Expect(err).To(MatchError(MatchRegexp("failed unmarshalling app information for 'incorrect_object': .* cannot unmarshal string")))
 				var errType *json.UnmarshalTypeError
 				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			})
