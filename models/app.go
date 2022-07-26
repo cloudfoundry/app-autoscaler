@@ -3,8 +3,9 @@ package models
 import "time"
 
 type AppEntity struct {
-	Instances int     `json:"instances"`
-	State     *string `json:"state,omitempty"`
+	Instances int `json:"instances"`
+	//TODO remove the * on string because empty strings are also omitted
+	State *string `json:"state,omitempty"`
 }
 
 type ScalingType int

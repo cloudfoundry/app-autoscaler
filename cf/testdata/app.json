@@ -1,0 +1,72 @@
+{
+  "guid": "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
+  "created_at": "2022-07-21T13:42:30Z",
+  "updated_at": "2022-07-21T14:30:17Z",
+  "name": "autoscaler-1--0cde0e473e3e47f4",
+  "state": "STOPPED",
+  "lifecycle": {
+    "type": "buildpack",
+    "data": {
+      "buildpacks": [
+        "nodejs_buildpack"
+      ],
+      "stack": "cflinuxfs3"
+    }
+  },
+  "relationships": {
+    "space": {
+      "data": {
+        "guid": "3dfc4a10-6e70-44f8-989d-b3842f339e3b"
+      }
+    }
+  },
+  "metadata": {
+    "labels": {
+    },
+    "annotations": {
+    }
+  },
+  "links": {
+    "self": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542"
+    },
+    "environment_variables": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/environment_variables"
+    },
+    "space": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/spaces/3dfc4a10-6e70-44f8-989d-b3842f339e3b"
+    },
+    "processes": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/processes"
+    },
+    "packages": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/packages"
+    },
+    "current_droplet": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/droplets/current"
+    },
+    "droplets": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/droplets"
+    },
+    "tasks": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/tasks"
+    },
+    "start": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/actions/start",
+      "method": "POST"
+    },
+    "stop": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/actions/stop",
+      "method": "POST"
+    },
+    "revisions": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/revisions"
+    },
+    "deployed_revisions": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/revisions/deployed"
+    },
+    "features": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/663e9a25-30ba-4fb4-91fa-9b784f4a8542/features"
+    }
+  }
+}

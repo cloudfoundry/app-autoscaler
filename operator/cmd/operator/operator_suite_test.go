@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	models2 "code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -24,18 +25,16 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 )
 
 var (
-	prPath            string
-	cfg               config.Config
-	configFile        *os.File
-	cfServer          *ghttp.Server
-	healthHttpClient  *http.Client
-	healthport        int
-	appSummaryRegPath = regexp.MustCompile(`^/v2/apps/.*/summary$`)
+	prPath           string
+	cfg              config.Config
+	configFile       *os.File
+	cfServer         *testhelpers.MockServer
+	healthHttpClient *http.Client
+	healthport       int
 )
 
 func TestOperator(t *testing.T) {
@@ -64,7 +63,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initConfig() {
-	cfServer = ghttp.NewServer()
+	cfServer = testhelpers.NewMockServer()
 	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
 			TokenEndpoint:   cfServer.URL(),
@@ -73,9 +72,8 @@ func initConfig() {
 
 	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-	appState := models.AppStatusStarted
-	cfServer.RouteToHandler("GET", appSummaryRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		models.AppEntity{Instances: 2, State: &appState}))
+	cfServer.Add().GetApp(models2.AppStatusStarted)
+	cfServer.Add().GetAppProcesses(2)
 
 	cfg.CF = cf.CFConfig{
 		API:      cfServer.URL(),

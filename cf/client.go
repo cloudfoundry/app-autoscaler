@@ -46,12 +46,16 @@ type Endpoints struct {
 	DopplerEndpoint string `json:"doppler_logging_endpoint"`
 }
 
+var _ CFClient = &cfClient{}
+
 type CFClient interface {
 	Login() error
 	RefreshAuthToken() (string, error)
 	GetTokens() (Tokens, error)
 	GetEndpoints() Endpoints
-	GetApp(string) (*models.AppEntity, error)
+	GetApp(string) (*App, error)
+	GetAppProcesses(string) (Processes, error)
+	GetStateAndInstances(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)

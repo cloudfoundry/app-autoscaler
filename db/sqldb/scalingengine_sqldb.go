@@ -67,6 +67,7 @@ func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHist
 		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
 
 	if err != nil {
+		//TODO wrap error
 		sdb.logger.Error("save-scaling-history", err, lager.Data{"query": query, "history": history})
 	}
 	return err

@@ -8,10 +8,6 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type Operator interface {
-	Operate()
-}
-
 type OperatorRunner struct {
 	operator Operator
 	interval time.Duration

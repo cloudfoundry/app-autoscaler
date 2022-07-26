@@ -40,7 +40,7 @@ var (
 	port             int
 	healthport       int
 	configFile       *os.File
-	ccUAA            *ghttp.Server
+	ccUAA            *MockServer
 	appId            string
 	httpClient       *http.Client
 	healthHttpClient *http.Client
@@ -55,7 +55,7 @@ var _ = SynchronizedBeforeSuite(
 	func(pathBytes []byte) {
 		enginePath = string(pathBytes)
 
-		ccUAA = ghttp.NewServer()
+		ccUAA = NewMockServer()
 		ccUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			cf.Endpoints{
 				TokenEndpoint:   ccUAA.URL(),
@@ -65,9 +65,10 @@ var _ = SynchronizedBeforeSuite(
 		ccUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
 		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
-		appState := models.AppStatusStarted
-		ccUAA.RouteToHandler("GET", "/v2/apps/"+appId+"/summary", ghttp.RespondWithJSONEncoded(http.StatusOK,
-			models.AppEntity{Instances: 2, State: &appState}))
+
+		ccUAA.Add().GetApp(models.AppStatusStarted)
+		ccUAA.Add().GetAppProcesses(2)
+
 		ccUAA.RouteToHandler("PUT", "/v2/apps/"+appId, ghttp.RespondWith(http.StatusCreated, ""))
 
 		conf.CF = cf.CFConfig{

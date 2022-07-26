@@ -69,6 +69,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	}
 
 	defer func() {
+		//TODO log error
 		_ = s.scalingEngineDB.SaveScalingHistory(history)
 	}()
 
@@ -78,7 +79,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		CooldownExpiredAt: 0,
 	}
 
-	appEntity, err := s.cfClient.GetApp(appId)
+	appEntity, err := s.cfClient.GetStateAndInstances(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
@@ -254,24 +255,26 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		Reason:       getScheduledScalingReason(schedule),
 	}
 	defer func() {
+		//TODO log error
 		_ = s.scalingEngineDB.SaveScalingHistory(history)
 	}()
 
-	appEntity, err := s.cfClient.GetApp(appId)
+	processes, err := s.cfClient.GetAppProcesses(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
 		return err
 	}
-	history.OldInstances = appEntity.Instances
+	instances := processes.GetInstances()
+	history.OldInstances = instances
 
 	instanceMin := schedule.InstanceMinInitial
 	if schedule.InstanceMin > instanceMin {
 		instanceMin = schedule.InstanceMin
 	}
 
-	newInstances := appEntity.Instances
+	newInstances := instances
 	if newInstances < instanceMin {
 		newInstances = instanceMin
 		history.Message = fmt.Sprintf("limited by min instances %d", instanceMin)
@@ -282,7 +285,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 
 	history.NewInstances = newInstances
 
-	if newInstances == appEntity.Instances {
+	if newInstances == instances {
 		history.Status = models.ScalingStatusIgnored
 		return nil
 	}
@@ -331,23 +334,23 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		Reason:       "schedule ends",
 	}
 	defer func() {
+		//TODO log error
 		_ = s.scalingEngineDB.SaveScalingHistory(history)
 	}()
 
-	appEntity, err := s.cfClient.GetApp(appId)
-	var appNotFoundErr *models.AppNotFoundErr
+	processes, err := s.cfClient.GetAppProcesses(appId)
 	if err != nil {
-		if errors.As(err, &appNotFoundErr) {
-			logger.Info("app-not-found", lager.Data{"appId": appId})
+		if models.IsNotFound(err) {
 			history.Status = models.ScalingStatusIgnored
 			return nil
 		}
-		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
 		return err
 	}
-	history.OldInstances = appEntity.Instances
+	instances := processes.GetInstances()
+
+	history.OldInstances = instances
 
 	policy, err := s.policyDB.GetAppPolicy(appId)
 	if err != nil {
@@ -362,7 +365,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		return nil
 	}
 
-	newInstances := appEntity.Instances
+	newInstances := instances
 	if newInstances < policy.InstanceMin {
 		newInstances = policy.InstanceMin
 		history.Message = fmt.Sprintf("limited by min instances %d", policy.InstanceMin)
@@ -373,7 +376,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 
 	history.NewInstances = newInstances
 
-	if newInstances == appEntity.Instances {
+	if newInstances == instances {
 		history.Status = models.ScalingStatusIgnored
 		return nil
 	}
