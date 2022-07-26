@@ -58,7 +58,6 @@ var (
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
-	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
 	rolesRegPath            = regexp.MustCompile(`^/v3/roles$`)
 	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
@@ -788,25 +787,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		}{
 			testUserId,
 		}))
-	fakeCCNOAAUAA.RouteToHandler("GET", v3appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			TotalResults int `json:"total_results"`
-		}{
-			1,
-		}))
-
-	app := struct {
-		Relationships struct {
-			Space struct {
-				Data struct {
-					GUID string `json:"guid"`
-				} `json:"data"`
-			} `json:"space"`
-		} `json:"relationships"`
-	}{}
-	app.Relationships.Space.Data.GUID = "test_space_guid"
-	fakeCCNOAAUAA.RouteToHandler("GET", v3appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		app))
 
 	roles := struct {
 		Pagination struct {

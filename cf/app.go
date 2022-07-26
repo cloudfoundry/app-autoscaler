@@ -24,11 +24,21 @@ const (
 type (
 	//App the app information from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
 	App struct {
-		Guid      string    `json:"guid"`
-		Name      string    `json:"name"`
-		State     string    `json:"state"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+		Guid          string        `json:"guid"`
+		Name          string        `json:"name"`
+		State         string        `json:"state"`
+		CreatedAt     time.Time     `json:"created_at"`
+		UpdatedAt     time.Time     `json:"updated_at"`
+		Relationships Relationships `json:"relationships"`
+	}
+	Relationships struct {
+		Space *Space `json:"space"`
+	}
+	SpaceData struct {
+		Guid string `json:"guid"`
+	}
+	Space struct {
+		Data SpaceData `json:"data"`
 	}
 
 	//Processes the processes information for an App from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#processes

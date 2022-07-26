@@ -2,8 +2,6 @@ package cf_test
 
 import (
 	"errors"
-	"fmt"
-	"io"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -18,9 +16,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 
 	"encoding/json"
-	"net"
 	"net/http"
-	"net/url"
 )
 
 var _ = Describe("Cf client App", func() {
@@ -63,6 +59,31 @@ var _ = Describe("Cf client App", func() {
 
 	Describe("GetApp", func() {
 
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().GetApp("STARTED")
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				Expect(err).NotTo(HaveOccurred())
+				created, err := time.Parse(time.RFC3339, "2022-07-21T13:42:30Z")
+				Expect(err).NotTo(HaveOccurred())
+				updated, err := time.Parse(time.RFC3339, "2022-07-21T14:30:17Z")
+				Expect(err).NotTo(HaveOccurred())
+				app, err := cfc.GetApp("test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(app).To(Equal(&cf.App{
+					Guid:      "testing-guid-get-app",
+					Name:      "mock-get-app",
+					State:     "STARTED",
+					CreatedAt: created,
+					UpdatedAt: updated,
+				}))
+			})
+		})
+
 		When("get app succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
@@ -86,6 +107,13 @@ var _ = Describe("Cf client App", func() {
 					State:     "STOPPED",
 					CreatedAt: created,
 					UpdatedAt: updated,
+					Relationships: cf.Relationships{
+						Space: &cf.Space{
+							Data: cf.SpaceData{
+								Guid: "3dfc4a10-6e70-44f8-989d-b3842f339e3b",
+							},
+						},
+					},
 				}))
 			})
 		})
@@ -175,6 +203,20 @@ var _ = Describe("Cf client App", func() {
 	})
 
 	Describe("GetAppProcesses", func() {
+
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().GetAppProcesses(27)
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				app, err := cfc.GetAppProcesses("test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(app).To(Equal(cf.Processes{{Instances: 27}}))
+			})
+		})
 
 		When("get process with one page succeeds", func() {
 			BeforeEach(func() {
@@ -367,12 +409,3 @@ var _ = Describe("Cf client App", func() {
 	})
 
 })
-
-func IsUrlNetOpError(err error) {
-	var urlErr *url.Error
-	Expect(errors.As(err, &urlErr)).To(BeTrue(), fmt.Sprintf("Expected a (*url.Error) error in the chan got, %T: %+v", err, err))
-
-	var netOpErr *net.OpError
-	Expect(errors.As(err, &netOpErr) || errors.Is(err, io.EOF)).
-		To(BeTrue(), fmt.Sprintf("Expected a (*net.OpError) or io.EOF error in the chan got, %T: %+v", err, err))
-}
