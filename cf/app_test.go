@@ -579,7 +579,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetStateAndInstances("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes page 1: failed getting processes for app 'test-app-id':.*'UnknownError'")))
 			})
 		})
 
@@ -596,7 +596,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetStateAndInstances("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app 'test-app-id': get request failed:.*'UnknownError'")))
 			})
 		})
 
@@ -613,7 +613,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetStateAndInstances("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed:.*'UnknownError'")))
 			})
 		})
 	})
