@@ -81,19 +81,20 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		CooldownExpiredAt: 0,
 	}
 
-	appEntity, err := s.cfClient.GetStateAndInstances(appId)
+	appAndProcesses, err := s.cfClient.GetStateAndInstances(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
 		return nil, err
 	}
-	history.OldInstances = appEntity.Instances
+	instances := appAndProcesses.Processes.GetInstances()
+	history.OldInstances = instances
 
-	if strings.ToUpper(*appEntity.State) != models.AppStatusStarted {
+	if strings.ToUpper(appAndProcesses.App.State) != models.AppStatusStarted {
 		logger.Info("check-app-state", lager.Data{"message": "ignore scaling since app is not started"})
 		history.Status = models.ScalingStatusIgnored
-		history.NewInstances = appEntity.Instances
+		history.NewInstances = instances
 		history.Message = "app is not started"
 		result.Status = history.Status
 		return result, nil
@@ -109,15 +110,15 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	result.CooldownExpiredAt = expiredAt
 	if !ok {
 		history.Status = models.ScalingStatusIgnored
-		history.NewInstances = appEntity.Instances
+		history.NewInstances = instances
 		history.Message = "app in cooldown period"
 		result.Status = history.Status
 		return result, nil
 	}
 
-	newInstances, err := s.ComputeNewInstances(appEntity.Instances, trigger.Adjustment)
+	newInstances, err := s.ComputeNewInstances(instances, trigger.Adjustment)
 	if err != nil {
-		logger.Error("failed-to-compute-new-instance", err, lager.Data{"instances": appEntity.Instances, "adjustment": trigger.Adjustment})
+		logger.Error("failed-to-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment})
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to compute new app instances"
 		return nil, err
@@ -164,7 +165,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	}
 	history.NewInstances = newInstances
 
-	if newInstances == appEntity.Instances {
+	if newInstances == instances {
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
 		result.Adjustment = 0
@@ -182,7 +183,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 
 	history.Status = models.ScalingStatusSucceeded
 	result.Status = history.Status
-	result.Adjustment = newInstances - appEntity.Instances
+	result.Adjustment = newInstances - instances
 	result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
 	err = s.scalingEngineDB.UpdateScalingCooldownExpireTime(appId, result.CooldownExpiredAt)
 	if err != nil {

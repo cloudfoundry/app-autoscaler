@@ -28,6 +28,12 @@ type (
 		UpdatedAt     time.Time     `json:"updated_at"`
 		Relationships Relationships `json:"relationships"`
 	}
+
+	AppAndProcesses struct {
+		App       *App
+		Processes Processes
+	}
+
 	Relationships struct {
 		Space *Space `json:"space"`
 	}
@@ -68,6 +74,11 @@ type (
 		Pagination Pagination `json:"pagination"`
 		Resources  Processes  `json:"resources"`
 	}
+
+	appEntity struct {
+		Instances int    `json:"instances"`
+		State     string `json:"state,omitempty"`
+	}
 )
 
 func (p Processes) GetInstances() int {
@@ -78,7 +89,7 @@ func (p Processes) GetInstances() int {
 	return instances
 }
 
-func (c *Client) GetStateAndInstances(appID string) (*models.AppEntity, error) {
+func (c *Client) GetStateAndInstances(appID string) (*AppAndProcesses, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
@@ -99,7 +110,7 @@ func (c *Client) GetStateAndInstances(appID string) (*models.AppEntity, error) {
 	if errProc != nil {
 		return nil, fmt.Errorf("get state&instances GetAppProcesses failed: %w", errProc)
 	}
-	return &models.AppEntity{State: &app.State, Instances: processes.GetInstances()}, nil
+	return &AppAndProcesses{App: app, Processes: processes}, nil
 }
 
 /*GetApp

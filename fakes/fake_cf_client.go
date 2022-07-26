@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 type FakeCFClient struct {
@@ -72,17 +71,17 @@ type FakeCFClient struct {
 		result1 string
 		result2 error
 	}
-	GetStateAndInstancesStub        func(string) (*models.AppEntity, error)
+	GetStateAndInstancesStub        func(string) (*cf.AppAndProcesses, error)
 	getStateAndInstancesMutex       sync.RWMutex
 	getStateAndInstancesArgsForCall []struct {
 		arg1 string
 	}
 	getStateAndInstancesReturns struct {
-		result1 *models.AppEntity
+		result1 *cf.AppAndProcesses
 		result2 error
 	}
 	getStateAndInstancesReturnsOnCall map[int]struct {
-		result1 *models.AppEntity
+		result1 *cf.AppAndProcesses
 		result2 error
 	}
 	GetTokensStub        func() (cf.Tokens, error)
@@ -486,7 +485,7 @@ func (fake *FakeCFClient) GetServicePlanReturnsOnCall(i int, result1 string, res
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetStateAndInstances(arg1 string) (*models.AppEntity, error) {
+func (fake *FakeCFClient) GetStateAndInstances(arg1 string) (*cf.AppAndProcesses, error) {
 	fake.getStateAndInstancesMutex.Lock()
 	ret, specificReturn := fake.getStateAndInstancesReturnsOnCall[len(fake.getStateAndInstancesArgsForCall)]
 	fake.getStateAndInstancesArgsForCall = append(fake.getStateAndInstancesArgsForCall, struct {
@@ -511,7 +510,7 @@ func (fake *FakeCFClient) GetStateAndInstancesCallCount() int {
 	return len(fake.getStateAndInstancesArgsForCall)
 }
 
-func (fake *FakeCFClient) GetStateAndInstancesCalls(stub func(string) (*models.AppEntity, error)) {
+func (fake *FakeCFClient) GetStateAndInstancesCalls(stub func(string) (*cf.AppAndProcesses, error)) {
 	fake.getStateAndInstancesMutex.Lock()
 	defer fake.getStateAndInstancesMutex.Unlock()
 	fake.GetStateAndInstancesStub = stub
@@ -524,28 +523,28 @@ func (fake *FakeCFClient) GetStateAndInstancesArgsForCall(i int) string {
 	return argsForCall.arg1
 }
 
-func (fake *FakeCFClient) GetStateAndInstancesReturns(result1 *models.AppEntity, result2 error) {
+func (fake *FakeCFClient) GetStateAndInstancesReturns(result1 *cf.AppAndProcesses, result2 error) {
 	fake.getStateAndInstancesMutex.Lock()
 	defer fake.getStateAndInstancesMutex.Unlock()
 	fake.GetStateAndInstancesStub = nil
 	fake.getStateAndInstancesReturns = struct {
-		result1 *models.AppEntity
+		result1 *cf.AppAndProcesses
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetStateAndInstancesReturnsOnCall(i int, result1 *models.AppEntity, result2 error) {
+func (fake *FakeCFClient) GetStateAndInstancesReturnsOnCall(i int, result1 *cf.AppAndProcesses, result2 error) {
 	fake.getStateAndInstancesMutex.Lock()
 	defer fake.getStateAndInstancesMutex.Unlock()
 	fake.GetStateAndInstancesStub = nil
 	if fake.getStateAndInstancesReturnsOnCall == nil {
 		fake.getStateAndInstancesReturnsOnCall = make(map[int]struct {
-			result1 *models.AppEntity
+			result1 *cf.AppAndProcesses
 			result2 error
 		})
 	}
 	fake.getStateAndInstancesReturnsOnCall[i] = struct {
-		result1 *models.AppEntity
+		result1 *cf.AppAndProcesses
 		result2 error
 	}{result1, result2}
 }
