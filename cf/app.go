@@ -89,18 +89,18 @@ func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error)
 	var errApp, errProc error
 	go func() {
 		app, errApp = c.GetApp(appID)
-		wg.Add(1)
+		wg.Done()
 	}()
 	go func() {
 		processes, errProc = c.GetAppProcesses(appID)
-		wg.Add(1)
+		wg.Done()
 	}()
 	wg.Wait()
 	if errApp != nil {
-		return nil, fmt.Errorf("get state&instances getApp failed:%w", errApp)
+		return nil, fmt.Errorf("get state&instances getApp failed: %w", errApp)
 	}
 	if errProc != nil {
-		return nil, fmt.Errorf("get state&instances GetAppProcesses failed:%w", errProc)
+		return nil, fmt.Errorf("get state&instances GetAppProcesses failed: %w", errProc)
 	}
 	return &models.AppEntity{State: &app.State, Instances: processes.GetInstances()}, nil
 }

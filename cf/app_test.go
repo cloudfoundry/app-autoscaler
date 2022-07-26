@@ -343,6 +343,94 @@ var _ = Describe("Cf client App", func() {
 		})
 	})
 
+	Describe("GetStateAndInstances", func() {
+
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().GetAppProcesses(27)
+				mocks.Add().GetApp("STARTED")
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				app, err := cfc.GetStateAndInstances("test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				state := "STARTED"
+				Expect(app).To(Equal(&models.AppEntity{State: &state, Instances: 27}))
+			})
+		})
+
+		When("get app & process return ok", func() {
+			BeforeEach(func() {
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
+					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
+					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				))
+			})
+
+			It("returns correct state", func() {
+				processes, err := cfc.GetStateAndInstances("test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				s := "STOPPED"
+				Expect(processes).To(Equal(&models.AppEntity{Instances: 6, State: &s}))
+			})
+		})
+
+		When("get app returns 500 & get process return ok", func() {
+			BeforeEach(func() {
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
+					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
+					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				))
+			})
+
+			It("should error", func() {
+				entity, err := cfc.GetStateAndInstances("test-app-id")
+				Expect(entity).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes information for 'test-app-id':.*'UnknownError'")))
+			})
+		})
+
+		When("get processes return OK get app returns 500", func() {
+			BeforeEach(func() {
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
+					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
+					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				))
+			})
+
+			It("should error", func() {
+				entity, err := cfc.GetStateAndInstances("test-app-id")
+				Expect(entity).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app information for 'test-app-id':.*'UnknownError'")))
+			})
+		})
+
+		When("get processes return 500 & get app returns 500", func() {
+			BeforeEach(func() {
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
+					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
+					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				))
+			})
+
+			It("should error", func() {
+				entity, err := cfc.GetStateAndInstances("test-app-id")
+				Expect(entity).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app information for 'test-app-id':.*'UnknownError'")))
+			})
+		})
+	})
+
 	Describe("SetAppInstances", func() {
 		JustBeforeEach(func() {
 			err = cfc.SetAppInstances("test-app-id", 6)
