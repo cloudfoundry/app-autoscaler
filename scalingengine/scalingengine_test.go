@@ -647,7 +647,7 @@ var _ = Describe("ScalingEngine", func() {
 		})
 
 		BeforeEach(func() {
-			cfc.GetAppProcessesReturns(&cf.Processes{}, nil)
+			cfc.GetAppProcessesReturns(cf.Processes{}, nil)
 		})
 
 		It("Saves the active schedule to database", func() {
@@ -659,7 +659,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when app instance number is greater than InstanceMax in active schedule", func() {
 			BeforeEach(func() {
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 12}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 12}}, nil)
 			})
 
 			It("sets the app instances to be InstanceMax", func() {
@@ -689,7 +689,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			Context("when app instance number is below the InstanceMin in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppProcessesReturns(&cf.Processes{Instances: 1}, nil)
+					cfc.GetAppProcessesReturns(cf.Processes{{Instances: 1}}, nil)
 				})
 
 				It("sets the app instances to be InstanceMin", func() {
@@ -715,7 +715,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			Context("when app instance number is in the range of [InstanceMin, InstanceMax] in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppProcessesReturns(&cf.Processes{Instances: 3}, nil)
+					cfc.GetAppProcessesReturns(cf.Processes{{Instances: 3}}, nil)
 				})
 				It("does not change the instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -737,7 +737,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when initial min instance is set", func() {
 			Context("when app instance number is below the InstanceMinInitial in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppProcessesReturns(&cf.Processes{Instances: 3}, nil)
+					cfc.GetAppProcessesReturns(cf.Processes{{Instances: 3}}, nil)
 				})
 
 				It("sets the app instances to be InstanceMinInitial", func() {
@@ -763,7 +763,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			Context("when app instance number is in the range of [InstanceMinInitial, InstanceMax] in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppProcessesReturns(&cf.Processes{Instances: 6}, nil)
+					cfc.GetAppProcessesReturns(cf.Processes{{Instances: 6}}, nil)
 				})
 				It("does not change the instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -898,7 +898,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instance number is in the default range [InstanceMin, InstianceMax] in the policy", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 5}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 5}}, nil)
 			})
 
 			It("does not change the instance number", func() {
@@ -918,7 +918,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instance number is below the default InstanceMin in the policy", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 1}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 1}}, nil)
 			})
 
 			It("changes the instance number to InstanceMin", func() {
@@ -942,7 +942,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instance number is greater than the default InstanaceMax in the policy", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 8}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 8}}, nil)
 			})
 
 			It("changes the instance number to instance-max-count", func() {
@@ -1034,7 +1034,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when getting app policy fails", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 2}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 2}}, nil)
 				policyDB.GetAppPolicyReturns(nil, errors.New("an error"))
 			})
 
@@ -1060,7 +1060,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when no policy for app in policy db", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 2}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 2}}, nil)
 				policyDB.GetAppPolicyReturns(nil, nil)
 			})
 
@@ -1074,7 +1074,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when setting instance number fails", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppProcessesReturns(&cf.Processes{Instances: 2}, nil)
+				cfc.GetAppProcessesReturns(cf.Processes{{Instances: 2}}, nil)
 				cfc.SetAppInstancesReturns(errors.New("an error"))
 			})
 

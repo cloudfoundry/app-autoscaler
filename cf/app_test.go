@@ -80,6 +80,13 @@ var _ = Describe("Cf client App", func() {
 					State:     "STARTED",
 					CreatedAt: created,
 					UpdatedAt: updated,
+					Relationships: cf.Relationships{
+						Space: &cf.Space{
+							Data: cf.SpaceData{
+								Guid: "test_space_guid",
+							},
+						},
+					},
 				}))
 			})
 		})
