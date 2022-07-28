@@ -25,19 +25,7 @@ const (
 	DefaultHttpClientTimeout          = 5 * time.Second
 )
 
-type InstanceMetricsDbPrunerConfig struct {
-	DB              db.DatabaseConfig `yaml:"db"`
-	RefreshInterval time.Duration     `yaml:"refresh_interval"`
-	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
-}
-
-type AppMetricsDBPrunerConfig struct {
-	DB              db.DatabaseConfig `yaml:"db"`
-	RefreshInterval time.Duration     `yaml:"refresh_interval"`
-	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
-}
-
-type ScalingEngineDBPrunerConfig struct {
+type DbPrunerConfig struct {
 	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
 	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
@@ -76,17 +64,17 @@ var defaultHealthConfig = models.HealthConfig{
 }
 
 type Config struct {
-	CF                cf.Config                     `yaml:"cf"`
-	Health            models.HealthConfig           `yaml:"health"`
-	Logging           helpers.LoggingConfig         `yaml:"logging"`
-	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
-	AppMetricsDB      AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`
-	ScalingEngineDB   ScalingEngineDBPrunerConfig   `yaml:"scaling_engine_db"`
-	ScalingEngine     ScalingEngineConfig           `yaml:"scaling_engine"`
-	Scheduler         SchedulerConfig               `yaml:"scheduler"`
-	AppSyncer         AppSyncerConfig               `yaml:"app_syncer"`
-	DBLock            DBLockConfig                  `yaml:"db_lock"`
-	HttpClientTimeout time.Duration                 `yaml:"http_client_timeout"`
+	CF                cf.Config             `yaml:"cf"`
+	Health            models.HealthConfig   `yaml:"health"`
+	Logging           helpers.LoggingConfig `yaml:"logging"`
+	InstanceMetricsDB DbPrunerConfig        `yaml:"instance_metrics_db"`
+	AppMetricsDB      DbPrunerConfig        `yaml:"app_metrics_db"`
+	ScalingEngineDB   DbPrunerConfig        `yaml:"scaling_engine_db"`
+	ScalingEngine     ScalingEngineConfig   `yaml:"scaling_engine"`
+	Scheduler         SchedulerConfig       `yaml:"scheduler"`
+	AppSyncer         AppSyncerConfig       `yaml:"app_syncer"`
+	DBLock            DBLockConfig          `yaml:"db_lock"`
+	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
 }
 
 var defaultConfig = Config{
@@ -95,15 +83,15 @@ var defaultConfig = Config{
 	},
 	Health:  defaultHealthConfig,
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
-	InstanceMetricsDB: InstanceMetricsDbPrunerConfig{
+	InstanceMetricsDB: DbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDuration:  DefaultCutoffDuration,
 	},
-	AppMetricsDB: AppMetricsDBPrunerConfig{
+	AppMetricsDB: DbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDuration:  DefaultCutoffDuration,
 	},
-	ScalingEngineDB: ScalingEngineDBPrunerConfig{
+	ScalingEngineDB: DbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDuration:  DefaultCutoffDuration,
 	},

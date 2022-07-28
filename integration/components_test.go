@@ -503,21 +503,21 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 			ClientID: "admin",
 			Secret:   "admin",
 		},
-		InstanceMetricsDB: opConfig.InstanceMetricsDbPrunerConfig{
+		InstanceMetricsDB: opConfig.DbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDuration:  cutoffDuration,
 			DB: db.DatabaseConfig{
 				URL: dbURI,
 			},
 		},
-		AppMetricsDB: opConfig.AppMetricsDBPrunerConfig{
+		AppMetricsDB: opConfig.DbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDuration:  cutoffDuration,
 			DB: db.DatabaseConfig{
 				URL: dbURI,
 			},
 		},
-		ScalingEngineDB: opConfig.ScalingEngineDBPrunerConfig{
+		ScalingEngineDB: opConfig.DbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDuration:  cutoffDuration,
 			DB: db.DatabaseConfig{

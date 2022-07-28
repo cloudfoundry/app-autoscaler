@@ -1,0 +1,61 @@
+
+cf:
+  api: https://api.example.com
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+health:
+  port: 9999
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_duration: 20h
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_duration: 15h
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_duration: 30h
+scaling_engine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+app_syncer:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  sync_interval: 60s
+db_lock:
+  ttl: 15s
+  db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  retry_interval: 5s
+http_client_timeout: 10s
