@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"bytes"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"time"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
@@ -19,75 +20,17 @@ var _ = Describe("Config", func() {
 	var (
 		conf        *Config
 		err         error
-		configBytes []byte
+		configBytes string
 	)
 
 	Describe("Load Config", func() {
 		JustBeforeEach(func() {
-			conf, err = LoadConfig(bytes.NewReader(configBytes))
+			conf, err = LoadConfig(bytes.NewReader([]byte(configBytes)))
 		})
 
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-  broker_server:
-	port: 8080,
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
-db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-cred_helper_path: path/to/helper/plugin
-`)
+				configBytes = LoadFile("invalid_config.yml")
 			})
 
 			It("returns an error", func() {
@@ -96,77 +39,7 @@ cred_helper_path: path/to/helper/plugin
 		})
 		Context("with valid yaml", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/broker.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/broker.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-public_api_server:
-  port: 8081
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/api.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/api.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
-db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-  metrics_forwarder_mtls_url: https://mtlssdsdds:8084
-
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-cred_helper_impl: default
-`)
+				configBytes = LoadFile("valid_config.yml")
 			})
 
 			It("It returns the config", func() {
@@ -232,6 +105,8 @@ cred_helper_impl: default
 						ClientID:          "client-id",
 						Secret:            "client-secret",
 						SkipSSLValidation: false,
+						MaxRetries:        3,
+						MaxRetryWaitMs:    27,
 					},
 				))
 				Expect(conf.CredHelperImpl).To(Equal("default"))
@@ -240,37 +115,7 @@ cred_helper_impl: default
 
 		Context("with partial config", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
-db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-event_generator:
-  event_generator_url: https://localhost:8083
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-`)
+				configBytes = LoadFile("partial_config.yml")
 			})
 			It("It returns the default values", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -298,14 +143,10 @@ cf:
 
 		Context("when it gives a non integer broker_server port", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
+				configBytes = `
 broker_server:
   port: port
-public_api_server:
-  port: 8081
-health:
-  port: 8888
-`)
+`
 			})
 
 			It("should error", func() {
@@ -315,14 +156,10 @@ health:
 		})
 		Context("when it gives a non integer public_api_server port", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
+				configBytes = `
 public_api_server:
   port: port
-health:
-  port: 8888
-`)
+`
 			})
 
 			It("should error", func() {
@@ -332,14 +169,10 @@ health:
 		})
 		Context("when it gives a non integer health server port", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
+				configBytes = `
 health:
   port: port
-`)
+`
 			})
 
 			It("should error", func() {
@@ -350,59 +183,11 @@ health:
 
 		Context("when it gives a non integer max_open_connections of bindingdb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
   binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
     max_open_connections: NOT-INTEGER-VALUE
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -411,59 +196,11 @@ cf:
 		})
 		Context("when it gives a non integer max_idle_connections of bindingdb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
   binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: NOT-INTEGER-VALUE
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-  grant_type: client_credentials`)
+   max_idle_connections: NOT-INTEGER-VALUE
+ `
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -472,59 +209,11 @@ cf:
 		})
 		Context("when it gives a non integer connection_max_lifetime of bindingdb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
   binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
     connection_max_lifetime: NOT-TIME-DURATION
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -534,44 +223,11 @@ cf:
 
 		Context("when it gives a non integer max_open_connections of policydb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
   policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
     max_open_connections: NOT-INTEGER-VALUE
-    max_idle_connections: 5
-    connection_max_lifetime: 60
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -580,37 +236,11 @@ scheduler:
 		})
 		Context("when it gives a non integer max_idle_connections of bidingdb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: 8080
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2d
+				configBytes = `
 db:
   binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -619,37 +249,11 @@ scheduler:
 		})
 		Context("when it gives a non integer connection_max_lifetime of bidingdb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: 8080
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
   binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
     connection_max_lifetime: NOT-TIME-DURATION
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -659,200 +263,37 @@ scheduler:
 
 		Context("when it gives a non integer max_open_connections of policydb", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: 8080
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60
   policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
     max_open_connections: NON-INTEGER-VALUE
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
-		Context("when it gives a non integer max_idle_connections of bindingdb", func() {
+		Context("when it gives a non integer max_idle_connections of policy_db", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
   policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-  `)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
-		Context("when it gives a non integer connection_max_lifetime of bindingdb", func() {
+		Context("when it gives a non integer connection_max_lifetime of policy_db", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
+				configBytes = `
 db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
   policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
     connection_max_lifetime: NOT-TIME-DURATION
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -861,69 +302,10 @@ cf:
 		})
 		Context("when max_amount of rate_limit is not an integer", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
-db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
+				configBytes = `
 rate_limit:
   max_amount: NOT-INTEGER
-  valid_duration: 1s
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -932,69 +314,10 @@ rate_limit:
 		})
 		Context("when valid_duration of rate_limit is not a time duration", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-broker_server:
-  port: 8080
-public_api_server:
-  port: 8081
-logging:
-  level: debug
-broker_credentials:
-  - broker_username: broker_username
-    broker_password: broker_password
-  - broker_username: broker_username2
-    broker_password: broker_password2
-db:
-  binding_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  policy_db:
-    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-catalog_schema_path: '../schemas/catalog.schema.json'
-catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'
-scheduler:
-  scheduler_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scaling_engine:
-  scaling_engine_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-event_generator:
-  event_generator_url: https://localhost:8083
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_forwarder:
-  metrics_forwarder_url: https://localhost:8088
-use_buildin_mode: false
-info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
-cf:
-  api: https://api.example.com
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
+				configBytes = `
 rate_limit:
-  max_amount: 2
   valid_duration: NOT-TIME-DURATION
-`)
+`
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
