@@ -19,7 +19,7 @@ const (
 	DefaultHttpClientTimeout = 5 * time.Second
 )
 
-var defaultCFConfig = cf.CFConfig{
+var defaultCFConfig = cf.Config{
 	SkipSSLValidation: false,
 }
 
@@ -51,7 +51,7 @@ type SynchronizerConfig struct {
 }
 
 type Config struct {
-	CF                  cf.CFConfig           `yaml:"cf"`
+	CF                  cf.Config             `yaml:"cf"`
 	Logging             helpers.LoggingConfig `yaml:"logging"`
 	Server              ServerConfig          `yaml:"server"`
 	Health              models.HealthConfig   `yaml:"health"`

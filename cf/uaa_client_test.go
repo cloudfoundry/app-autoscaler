@@ -15,14 +15,14 @@ var _ = Describe("UAA Client", func() {
 	var (
 		fakeUAAServer *ghttp.Server
 		uaaClient     UaaClient
-		conf          *CFConfig
+		conf          *Config
 		authToken     string
 		err           error
 	)
 
 	BeforeEach(func() {
 		fakeUAAServer = ghttp.NewServer()
-		conf = &CFConfig{}
+		conf = &Config{}
 		err = nil
 	})
 

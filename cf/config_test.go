@@ -10,13 +10,13 @@ import (
 var _ = Describe("Config", func() {
 
 	var (
-		conf *CFConfig
+		conf *Config
 		err  error
 	)
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
-			conf = &CFConfig{}
+			conf = &Config{}
 			conf.API = "http://api.example.com"
 			conf.ClientID = "admin"
 			conf.SkipSSLValidation = false

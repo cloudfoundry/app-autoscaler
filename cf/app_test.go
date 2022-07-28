@@ -2,18 +2,19 @@ package cf_test
 
 import (
 	"errors"
+	"regexp"
 	"time"
+
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
+	. "github.com/onsi/gomega/ghttp"
 
 	"encoding/json"
 	"net/http"
@@ -22,30 +23,35 @@ import (
 var _ = Describe("Cf client App", func() {
 
 	var (
-		conf            *cf.CFConfig
+		conf            *cf.Config
 		cfc             cf.CFClient
-		fakeCC          *ghttp.Server
-		fakeLoginServer *ghttp.Server
+		fakeCC          *MockServer
+		fakeLoginServer *Server
 		err             error
+		logger          lager.Logger
 	)
 
+	var setCfcClient = func(maxRetries int) {
+		conf = &cf.Config{}
+		conf.API = fakeCC.URL()
+		conf.MaxRetries = maxRetries
+		conf.MaxRetryWaitMs = 1
+		cfc = cf.NewCFClient(conf, logger, clock.NewClock())
+		err = cfc.Login()
+		Expect(err).NotTo(HaveOccurred())
+	}
+
 	BeforeEach(func() {
-		fakeCC = ghttp.NewServer()
-		fakeLoginServer = ghttp.NewServer()
-		fakeCC.RouteToHandler("GET", cf.PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Endpoints{
-			AuthEndpoint:    fakeLoginServer.URL(),
-			TokenEndpoint:   fakeLoginServer.URL(),
-			DopplerEndpoint: "test-doppler-endpoint",
-		}))
-		fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
+		fakeCC = NewMockServer()
+		fakeLoginServer = NewServer()
+		fakeCC.Add().Info(fakeLoginServer.URL())
+		fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 			AccessToken: "test-access-token",
 			ExpiresIn:   12000,
 		}))
-		conf = &cf.CFConfig{}
-		conf.API = fakeCC.URL()
-		cfc = cf.NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
-		err = cfc.Login()
-		Expect(err).NotTo(HaveOccurred())
+		logger = lager.NewLogger("cf")
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+		setCfcClient(0)
 	})
 
 	AfterEach(func() {
@@ -63,7 +69,8 @@ var _ = Describe("Cf client App", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
 				conf.API = mocks.URL()
-				mocks.Add().GetApp("STARTED")
+				mocks.Add().GetApp("STARTED").Info(fakeLoginServer.URL())
+
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
@@ -94,9 +101,9 @@ var _ = Describe("Cf client App", func() {
 		When("get app succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/test-app-id"),
-						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/test-app-id"),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
 			})
@@ -128,9 +135,9 @@ var _ = Describe("Cf client App", func() {
 		When("get app usage return 404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/404"),
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/404"),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
 					),
 				)
 			})
@@ -144,28 +151,48 @@ var _ = Describe("Cf client App", func() {
 			})
 		})
 
-		When("get app/* return non-200 and non-404 status code", func() {
+		When("get app returns 500 status code", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", "/v3/apps/500"),
-					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError)))
+				setCfcClient(3)
 			})
+			When("it never recovers", func() {
 
-			It("should error", func() {
-				app, err := cfc.GetApp("500")
-				Expect(app).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed getting app information for '500':.*'UnknownError'")))
+				BeforeEach(func() {
+					fakeCC.RouteToHandler("GET", regexp.MustCompile(`^/v3/apps/[^/]+$`),
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+					)
+				})
+
+				It("should error", func() {
+					app, err := cfc.GetApp("500")
+					Expect(app).To(BeNil())
+					Expect(fakeCC.Count().Requests(`^/v3/apps/[^/]+$`)).To(Equal(4))
+					Expect(err).To(MatchError(MatchRegexp("failed getting app information for '500':.*'UnknownError'")))
+				})
+			})
+			When("it recovers after 3 retries", func() {
+				BeforeEach(func() {
+					fakeCC.RouteToHandler("GET", regexp.MustCompile(`^/v3/apps/[^/]+$`),
+						RespondWithMultiple(
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+							RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						))
+				})
+
+				It("should return success", func() {
+					app, err := cfc.GetApp("500")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(app).ToNot(BeNil())
+					Expect(fakeCC.Count().Requests(`^/v3/apps/[^/]+$`)).To(Equal(4))
+				})
 			})
 		})
 
-		When("get app/*  returns a non-200 and non-404 status code with non-JSON response", func() {
+		When("get app returns a non-200 and non-404 status code with non-JSON response", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/invalid_json"),
-						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ""),
-					),
-				)
+				fakeCC.RouteToHandler("GET", "/v3/apps/invalid_json", RespondWithJSONEncoded(http.StatusInternalServerError, ""))
 			})
 
 			It("should error", func() {
@@ -191,9 +218,9 @@ var _ = Describe("Cf client App", func() {
 		When("cloud controller returns incorrect message body", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/incorrect_object"),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/incorrect_object"),
+						RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
 					),
 				)
 			})
@@ -215,7 +242,7 @@ var _ = Describe("Cf client App", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
 				conf.API = mocks.URL()
-				mocks.Add().GetAppProcesses(27)
+				mocks.Add().GetAppProcesses(27).Info(fakeLoginServer.URL())
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
@@ -228,9 +255,9 @@ var _ = Describe("Cf client App", func() {
 		When("get process with one page succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
-						ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
 			})
@@ -269,9 +296,9 @@ var _ = Describe("Cf client App", func() {
 		When("get processes return 404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/404/processes"),
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/404/processes"),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
 					),
 				)
 			})
@@ -285,26 +312,50 @@ var _ = Describe("Cf client App", func() {
 			})
 		})
 
-		When("get processes/* return non-200 and non-404 status code", func() {
+		When("get app returns 500 status code", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", "/v3/apps/500/processes"),
-					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError)))
+				setCfcClient(3)
 			})
+			When("it never recovers", func() {
 
-			It("should error", func() {
-				process, err := cfc.GetAppProcesses("500")
-				Expect(process).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed getting processes information for '500':.*'UnknownError'")))
+				BeforeEach(func() {
+					fakeCC.RouteToHandler("GET", "/v3/apps/500/processes",
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError))
+				})
+
+				It("should error", func() {
+					process, err := cfc.GetAppProcesses("500")
+					Expect(process).To(BeNil())
+					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes$`)).To(Equal(4))
+					Expect(err).To(MatchError(MatchRegexp("failed getting processes information for '500':.*'UnknownError'")))
+				})
+			})
+			When("it recovers after 3 retries", func() {
+				BeforeEach(func() {
+					fakeCC.RouteToHandler("GET", regexp.MustCompile("^/v3/apps/500/processes$"),
+						RespondWithMultiple(
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+							RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						))
+				})
+
+				It("should return success", func() {
+					process, err := cfc.GetAppProcesses("500")
+					Expect(err).To(BeNil())
+					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes$`)).To(Equal(4))
+					Expect(process).ToNot(BeNil())
+				})
 			})
 		})
 
-		When("get processes/*  returns a non-200 and non-404 status code with non-JSON response", func() {
+		When("get processes returns a non-200 and non-404 status code with non-JSON response", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/invalid_json/processes"),
-						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ""),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/invalid_json/processes"),
+						RespondWithJSONEncoded(http.StatusInternalServerError, ""),
 					),
 				)
 			})
@@ -332,9 +383,9 @@ var _ = Describe("Cf client App", func() {
 		When("get processes returns incorrect message body", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/v3/apps/incorrect_object/processes"),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/incorrect_object/processes"),
+						RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
 					),
 				)
 			})
@@ -356,7 +407,7 @@ var _ = Describe("Cf client App", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
 				conf.API = mocks.URL()
-				mocks.Add().GetAppProcesses(27)
+				mocks.Add().GetAppProcesses(27).Info(fakeLoginServer.URL())
 				mocks.Add().GetApp("STARTED")
 				DeferCleanup(mocks.Close)
 			})
@@ -370,11 +421,11 @@ var _ = Describe("Cf client App", func() {
 
 		When("get app & process return ok", func() {
 			BeforeEach(func() {
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
-					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
+					RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 				))
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
-					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", CombineHandlers(
+					RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 				))
 			})
 
@@ -388,11 +439,11 @@ var _ = Describe("Cf client App", func() {
 
 		When("get app returns 500 & get process return ok", func() {
 			BeforeEach(func() {
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
-					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
+					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 				))
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
-					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", CombineHandlers(
+					RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 				))
 			})
 
@@ -405,11 +456,11 @@ var _ = Describe("Cf client App", func() {
 
 		When("get processes return OK get app returns 500", func() {
 			BeforeEach(func() {
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
-					ghttp.RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
+					RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 				))
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
-					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", CombineHandlers(
+					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 				))
 			})
 
@@ -422,11 +473,11 @@ var _ = Describe("Cf client App", func() {
 
 		When("get processes return 500 & get app returns 500", func() {
 			BeforeEach(func() {
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", ghttp.CombineHandlers(
-					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
+					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 				))
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", ghttp.CombineHandlers(
-					ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", CombineHandlers(
+					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 				))
 			})
 
@@ -445,10 +496,10 @@ var _ = Describe("Cf client App", func() {
 		Context("when set app instances succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("PUT", cf.PathApp+"/test-app-id"),
-						ghttp.VerifyJSONRepresenting(models.AppEntity{Instances: 6}),
-						ghttp.RespondWith(http.StatusCreated, ""),
+					CombineHandlers(
+						VerifyRequest("PUT", cf.PathApp+"/test-app-id"),
+						VerifyJSONRepresenting(models.AppEntity{Instances: 6}),
+						RespondWith(http.StatusCreated, ""),
 					),
 				)
 			})
@@ -464,8 +515,8 @@ var _ = Describe("Cf client App", func() {
 				responseMap["description"] = "You have exceeded the instance memory limit for your space's quota"
 				responseMap["error_code"] = "SpaceQuotaInstanceMemoryLimitExceeded"
 				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusBadRequest, responseMap),
+					CombineHandlers(
+						RespondWithJSONEncoded(http.StatusBadRequest, responseMap),
 					),
 				)
 			})

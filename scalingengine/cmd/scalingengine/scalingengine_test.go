@@ -126,7 +126,7 @@ var _ = Describe("Main", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingParamConf := conf
-				missingParamConf.CF = cf.CFConfig{
+				missingParamConf.CF = cf.Config{
 					API: ccUAA.URL(),
 				}
 

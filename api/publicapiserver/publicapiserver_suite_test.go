@@ -222,7 +222,7 @@ func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
 		MetricsForwarder: config.MetricsForwarderConfig{
 			MetricsForwarderUrl: "http://localhost:8088",
 		},
-		CF: cf.CFConfig{
+		CF: cf.Config{
 			API:               "http://api.bosh-lite.com",
 			ClientID:          CLIENT_ID,
 			Secret:            CLIENT_SECRET,
