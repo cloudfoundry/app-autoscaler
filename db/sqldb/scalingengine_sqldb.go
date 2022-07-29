@@ -1,6 +1,8 @@
 package sqldb
 
 import (
+	"fmt"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -67,10 +69,9 @@ func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHist
 		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
 
 	if err != nil {
-		//TODO wrap error
-		sdb.logger.Error("save-scaling-history", err, lager.Data{"query": query, "history": history})
+		return fmt.Errorf("saveScalingHistory failed appId(%s) scalingtype(%d) reason(%s): %w", history.AppId, history.ScalingType, history.Reason, err)
 	}
-	return err
+	return nil
 }
 
 func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType, includeAll bool) ([]*models.AppScalingHistory, error) {

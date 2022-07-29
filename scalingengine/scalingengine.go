@@ -69,8 +69,10 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	}
 
 	defer func() {
-		//TODO log error
-		_ = s.scalingEngineDB.SaveScalingHistory(history)
+		err := s.scalingEngineDB.SaveScalingHistory(history)
+		if err != nil {
+			s.logger.Error("Scale failed to save history", err)
+		}
 	}()
 
 	result := &models.AppScalingResult{
@@ -255,8 +257,10 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		Reason:       getScheduledScalingReason(schedule),
 	}
 	defer func() {
-		//TODO log error
-		_ = s.scalingEngineDB.SaveScalingHistory(history)
+		err := s.scalingEngineDB.SaveScalingHistory(history)
+		if err != nil {
+			s.logger.Error("SetActiveSchedule failed to save history", err)
+		}
 	}()
 
 	processes, err := s.cfClient.GetAppProcesses(appId)
@@ -334,8 +338,10 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		Reason:       "schedule ends",
 	}
 	defer func() {
-		//TODO log error
-		_ = s.scalingEngineDB.SaveScalingHistory(history)
+		err := s.scalingEngineDB.SaveScalingHistory(history)
+		if err != nil {
+			s.logger.Error("RemoveActiveSchedule failed to save history", err)
+		}
 	}()
 
 	processes, err := s.cfClient.GetAppProcesses(appId)
