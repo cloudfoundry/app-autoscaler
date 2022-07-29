@@ -28,7 +28,8 @@ func (l LeveledLoggerAdapter) Warn(msg string, keysAndValues ...interface{}) {
 
 func createData(keysAndValues []interface{}) lager.Data {
 	data := lager.Data{}
-	for i := 0; i < len(keysAndValues); i += 2 {
+
+	for i := 0; (i + 1) < len(keysAndValues); i += 2 {
 		key, isString := keysAndValues[i].(string)
 		if isString {
 			data[key] = keysAndValues[i+1]

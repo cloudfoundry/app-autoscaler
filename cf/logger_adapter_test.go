@@ -41,3 +41,11 @@ func TestLeveledLoggerAdapter_Warn(t *testing.T) {
 	log.Warn("a message", "key1", "value1", "key2", "value2", "key3", "value3")
 	Eventually(logger.Buffer).Should(Say(`{"timestamp":"[0-9]+.[0-9]+","source":"test","message":"test.Warning: a message","log_level":1,"data":{"key1":"value1","key2":"value2","key3":"value3"}}`))
 }
+
+func TestLeveledLoggerAdapter_NoLastValue(t *testing.T) {
+	RegisterTestingT(t)
+	logger := lagertest.NewTestLogger("test")
+	log := cf.LeveledLoggerAdapter{Logger: logger}
+	log.Warn("a message", "key1", "value1", "key2", "value2", "key3")
+	Eventually(logger.Buffer).Should(Say(`{"timestamp":"[0-9]+.[0-9]+","source":"test","message":"test.Warning: a message","log_level":1,"data":{"key1":"value1","key2":"value2"}}`))
+}
