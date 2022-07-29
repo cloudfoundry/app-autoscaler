@@ -2,8 +2,9 @@ package config_test
 
 import (
 	"bytes"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"time"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -180,7 +181,7 @@ health:
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
-		
+
 		Context("when max_amount of rate_limit is not an integer", func() {
 			BeforeEach(func() {
 				configBytes = `

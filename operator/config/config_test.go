@@ -2,8 +2,9 @@ package config_test
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
