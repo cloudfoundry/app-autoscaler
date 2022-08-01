@@ -1,14 +1,11 @@
 {
   "pagination": {
     "total_results": 3,
-    "total_pages": 2,
+    "total_pages": 1,
     "first": {
       "href": "https://api.example.org/v3/apps/ccc25a0f-c8f4-4b39-9f1b-de9f328d0ee5/processes?page=1&per_page=2"
     },
     "last": {
-      "href": "https://api.example.org/v3/apps/ccc25a0f-c8f4-4b39-9f1b-de9f328d0ee5/processes?page=2&per_page=2"
-    },
-    "next": {
       "href": "https://api.example.org/v3/apps/ccc25a0f-c8f4-4b39-9f1b-de9f328d0ee5/processes?page=2&per_page=2"
     },
     "previous": null

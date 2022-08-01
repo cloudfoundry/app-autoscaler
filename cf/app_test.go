@@ -167,7 +167,7 @@ var _ = Describe("Cf client App", func() {
 					app, err := cfc.GetApp("500")
 					Expect(app).To(BeNil())
 					Expect(fakeCC.Count().Requests(`^/v3/apps/[^/]+$`)).To(Equal(4))
-					Expect(err).To(MatchError(MatchRegexp("failed getting app information for '500':.*'UnknownError'")))
+					Expect(err).To(MatchError(MatchRegexp("failed getting app '500':.*'UnknownError'")))
 				})
 			})
 			When("it recovers after 3 retries", func() {
@@ -198,7 +198,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				app, err := cfc.GetApp("invalid_json")
 				Expect(app).To(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed getting app information for 'invalid_json': failed to unmarshal"))
+				Expect(err.Error()).To(MatchRegexp("failed getting app '.*':.*failed to unmarshal"))
 			})
 		})
 
@@ -256,7 +256,7 @@ var _ = Describe("Cf client App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
+						VerifyRequest("GET", "/v3/apps/test-app-id/processes", "per_page=100"),
 						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
@@ -289,6 +289,46 @@ var _ = Describe("Cf client App", func() {
 						UpdatedAt:  updated,
 					},
 				}))
+				Expect(processes.GetInstances()).To(Equal(6))
+			})
+		})
+
+		When("get process with mutltiple pages succeeds", func() {
+			type processesResponse struct {
+				Pagination cf.Pagination `json:"pagination"`
+				Resources  cf.Processes  `json:"resources"`
+			}
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
+						RespondWithJSONEncoded(http.StatusOK,
+							processesResponse{
+								Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
+								Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/1"}},
+							}),
+					),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/test-app-id/processes/1"),
+						RespondWithJSONEncoded(http.StatusOK,
+							processesResponse{
+								Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
+								Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/2"}},
+							}),
+					),
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/apps/test-app-id/processes/2"),
+						RespondWithJSONEncoded(http.StatusOK,
+							processesResponse{
+								Resources: cf.Processes{{Instances: 1}, {Instances: 1}}},
+						),
+					),
+				)
+			})
+
+			It("returns correct state", func() {
+				processes, err := cfc.GetAppProcesses("test-app-id")
+				Expect(err).ToNot(HaveOccurred())
 				Expect(processes.GetInstances()).To(Equal(6))
 			})
 		})
@@ -326,13 +366,13 @@ var _ = Describe("Cf client App", func() {
 				It("should error", func() {
 					process, err := cfc.GetAppProcesses("500")
 					Expect(process).To(BeNil())
-					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes$`)).To(Equal(4))
-					Expect(err).To(MatchError(MatchRegexp("failed getting processes information for '500':.*'UnknownError'")))
+					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes\?.*`)).To(Equal(4))
+					Expect(err).To(MatchError(MatchRegexp("failed getting processes for app '500':.*'UnknownError'")))
 				})
 			})
 			When("it recovers after 3 retries", func() {
 				BeforeEach(func() {
-					fakeCC.RouteToHandler("GET", regexp.MustCompile("^/v3/apps/500/processes$"),
+					fakeCC.RouteToHandler("GET", "/v3/apps/500/processes",
 						RespondWithMultiple(
 							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
@@ -344,7 +384,7 @@ var _ = Describe("Cf client App", func() {
 				It("should return success", func() {
 					process, err := cfc.GetAppProcesses("500")
 					Expect(err).To(BeNil())
-					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes$`)).To(Equal(4))
+					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes\?`)).To(Equal(4))
 					Expect(process).ToNot(BeNil())
 				})
 			})
@@ -363,7 +403,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				process, err := cfc.GetAppProcesses("invalid_json")
 				Expect(process).To(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed getting processes information for 'invalid_json': failed to unmarshal"))
+				Expect(err.Error()).To(MatchRegexp("failed getting processes for app '.*':.*failed to unmarshal"))
 			})
 		})
 
@@ -450,7 +490,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				entity, err := cfc.GetStateAndInstances("test-app-id")
 				Expect(entity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes.*:.*'UnknownError'")))
 			})
 		})
 
@@ -467,7 +507,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				entity, err := cfc.GetStateAndInstances("test-app-id")
 				Expect(entity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed:.*failed getting app.*:.*'UnknownError'")))
 			})
 		})
 
@@ -484,7 +524,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				entity, err := cfc.GetStateAndInstances("test-app-id")
 				Expect(entity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app information for 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app.*:.*'UnknownError'")))
 			})
 		})
 	})
