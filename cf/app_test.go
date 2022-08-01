@@ -298,7 +298,7 @@ var _ = Describe("Cf client App", func() {
 				Pagination cf.Pagination `json:"pagination"`
 				Resources  cf.Processes  `json:"resources"`
 			}
-			When("there are 3 pages", func() {
+			When("there are 3 pages with null terminated pagination", func() {
 
 				BeforeEach(func() {
 					fakeCC.AppendHandlers(
@@ -320,10 +320,10 @@ var _ = Describe("Cf client App", func() {
 						),
 						CombineHandlers(
 							VerifyRequest("GET", "/v3/apps/test-app-id/processes/2"),
-							RespondWithJSONEncoded(http.StatusOK,
-								processesResponse{
-									Resources: cf.Processes{{Instances: 1}, {Instances: 1}}},
-							),
+							RespondWith(
+								http.StatusOK,
+								`{"pagination":{ "next": null }, "resources":[{ "instances": 1 },{ "instances": 1 }] }`,
+								http.Header{"Content-Type": []string{"application/json"}}),
 						),
 					)
 				})

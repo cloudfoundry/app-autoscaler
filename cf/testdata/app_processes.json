@@ -8,7 +8,8 @@
     "last": {
       "href": "https://api.example.org/v3/apps/ccc25a0f-c8f4-4b39-9f1b-de9f328d0ee5/processes?page=2&per_page=2"
     },
-    "previous": null
+    "previous": null,
+    "next": null
   },
   "resources": [
     {
