@@ -293,43 +293,79 @@ var _ = Describe("Cf client App", func() {
 			})
 		})
 
-		When("get process with mutltiple pages succeeds", func() {
+		Context("get process with mutltiple pages", func() {
 			type processesResponse struct {
 				Pagination cf.Pagination `json:"pagination"`
 				Resources  cf.Processes  `json:"resources"`
 			}
-			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					CombineHandlers(
-						VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
-						RespondWithJSONEncoded(http.StatusOK,
-							processesResponse{
-								Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
-								Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/1"}},
-							}),
-					),
-					CombineHandlers(
-						VerifyRequest("GET", "/v3/apps/test-app-id/processes/1"),
-						RespondWithJSONEncoded(http.StatusOK,
-							processesResponse{
-								Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
-								Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/2"}},
-							}),
-					),
-					CombineHandlers(
-						VerifyRequest("GET", "/v3/apps/test-app-id/processes/2"),
-						RespondWithJSONEncoded(http.StatusOK,
-							processesResponse{
-								Resources: cf.Processes{{Instances: 1}, {Instances: 1}}},
-						),
-					),
-				)
-			})
+			When("there are 3 pages", func() {
 
-			It("returns correct state", func() {
-				processes, err := cfc.GetAppProcesses("test-app-id")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(processes.GetInstances()).To(Equal(6))
+				BeforeEach(func() {
+					fakeCC.AppendHandlers(
+						CombineHandlers(
+							VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
+							RespondWithJSONEncoded(http.StatusOK,
+								processesResponse{
+									Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
+									Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/1"}},
+								}),
+						),
+						CombineHandlers(
+							VerifyRequest("GET", "/v3/apps/test-app-id/processes/1"),
+							RespondWithJSONEncoded(http.StatusOK,
+								processesResponse{
+									Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
+									Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/2"}},
+								}),
+						),
+						CombineHandlers(
+							VerifyRequest("GET", "/v3/apps/test-app-id/processes/2"),
+							RespondWithJSONEncoded(http.StatusOK,
+								processesResponse{
+									Resources: cf.Processes{{Instances: 1}, {Instances: 1}}},
+							),
+						),
+					)
+				})
+
+				It("counts all processes", func() {
+					processes, err := cfc.GetAppProcesses("test-app-id")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(processes.GetInstances()).To(Equal(6))
+				})
+			})
+			When("the second page fails", func() {
+				type processesResponse struct {
+					Pagination cf.Pagination `json:"pagination"`
+					Resources  cf.Processes  `json:"resources"`
+				}
+				BeforeEach(func() {
+					fakeCC.AppendHandlers(
+						CombineHandlers(
+							VerifyRequest("GET", "/v3/apps/test-app-id/processes"),
+							RespondWithJSONEncoded(http.StatusOK,
+								processesResponse{
+									Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
+									Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/1"}},
+								}),
+						),
+						CombineHandlers(
+							VerifyRequest("GET", "/v3/apps/test-app-id/processes/1"),
+							RespondWithJSONEncoded(http.StatusOK,
+								processesResponse{
+									Resources:  cf.Processes{{Instances: 1}, {Instances: 1}},
+									Pagination: cf.Pagination{Next: cf.Href{Url: fakeCC.URL() + "/v3/apps/test-app-id/processes/2"}},
+								}),
+						),
+					)
+					fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes/2", RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError))
+				})
+
+				It("returns correct state", func() {
+					_, err := cfc.GetAppProcesses("test-app-id")
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(MatchRegexp("failed getting processes page 3: failed getting processes for app 'test-app-id':.*'UnknownError'.*")))
+				})
 			})
 		})
 

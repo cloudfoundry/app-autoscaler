@@ -131,15 +131,17 @@ func (c *Client) GetApp(appID string) (*App, error) {
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
 func (c *Client) GetAppProcesses(appID string) (Processes, error) {
+	pageNumber := 1
 	url := fmt.Sprintf("%s/v3/apps/%s/processes?per_page=100", c.conf.API, appID)
 	var processes Processes
 	for url != "" {
 		pagination, pageProcesses, err := c.getProcesses(appID, url)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed getting processes page %d: %w", pageNumber, err)
 		}
 		processes = append(processes, pageProcesses...)
 		url = pagination.Next.Url
+		pageNumber++
 	}
 
 	return processes, nil
