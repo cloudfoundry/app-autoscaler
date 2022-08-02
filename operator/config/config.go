@@ -76,7 +76,7 @@ var defaultHealthConfig = models.HealthConfig{
 }
 
 type Config struct {
-	CF                cf.CFConfig                   `yaml:"cf"`
+	CF                cf.Config                     `yaml:"cf"`
 	Health            models.HealthConfig           `yaml:"health"`
 	Logging           helpers.LoggingConfig         `yaml:"logging"`
 	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
@@ -90,7 +90,7 @@ type Config struct {
 }
 
 var defaultConfig = Config{
-	CF: cf.CFConfig{
+	CF: cf.Config{
 		SkipSSLValidation: false,
 	},
 	Health:  defaultHealthConfig,

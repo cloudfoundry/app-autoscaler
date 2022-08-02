@@ -115,7 +115,7 @@ type Config struct {
 	ScalingEngine         ScalingEngineConfig           `yaml:"scaling_engine"`
 	MetricsCollector      MetricsCollectorConfig        `yaml:"metrics_collector"`
 	EventGenerator        EventGeneratorConfig          `yaml:"event_generator"`
-	CF                    cf.CFConfig                   `yaml:"cf"`
+	CF                    cf.Config                     `yaml:"cf"`
 	UseBuildInMode        bool                          `yaml:"use_buildin_mode"`
 	InfoFilePath          string                        `yaml:"info_file_path"`
 	MetricsForwarder      MetricsForwarderConfig        `yaml:"metrics_forwarder"`
@@ -136,7 +136,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		BrokerServer:    defaultBrokerServerConfig,
 		PublicApiServer: defaultPublicApiServerConfig,
 		UseBuildInMode:  false,
-		CF: cf.CFConfig{
+		CF: cf.Config{
 			SkipSSLValidation: false,
 		},
 		RateLimit: models.RateLimitConfig{

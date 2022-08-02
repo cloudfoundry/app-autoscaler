@@ -16,7 +16,7 @@ const (
 	ResultsPerPageParam  = "results-per-page"
 )
 
-func (c *cfClient) GetServiceInstancesInOrg(orgGUID, brokerServicePlanGuid string) (int, error) {
+func (c *Client) GetServiceInstancesInOrg(orgGUID, brokerServicePlanGuid string) (int, error) {
 	ccServicePlanGuid, err := c.getCCServicePlanGuid(brokerServicePlanGuid)
 	if err != nil {
 		return 0, fmt.Errorf("cf-client-get-service-instances-in-org: failed to resolve service plan guid: %w", err)
@@ -99,7 +99,7 @@ type ServicePlanResource struct {
 	Entity ServicePlanEntity `json:"entity"`
 }
 
-func (c *cfClient) getCCServicePlanGuid(brokerPlanGuid string) (string, error) {
+func (c *Client) getCCServicePlanGuid(brokerPlanGuid string) (string, error) {
 	logger := c.logger.Session("cf-client-get-service-plan-guid", lager.Data{"brokerPlanGuid": brokerPlanGuid})
 	logger.Debug("start")
 	defer logger.Debug("end")
@@ -168,7 +168,7 @@ func (c *cfClient) getCCServicePlanGuid(brokerPlanGuid string) (string, error) {
 	return ccServicePlanGuid, nil
 }
 
-func (c *cfClient) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
+func (c *Client) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 	logger := c.logger.Session("cf-client-get-broker-plan-guid", lager.Data{"ccServicePlanGuid": ccServicePlanGuid})
 	logger.Debug("start")
 	defer logger.Debug("end")
@@ -228,7 +228,7 @@ func (c *cfClient) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 	return brokerPlanGuid, nil
 }
 
-func (c *cfClient) GetServicePlan(serviceInstanceGuid string) (string, error) {
+func (c *Client) GetServicePlan(serviceInstanceGuid string) (string, error) {
 	logger := c.logger.Session("cf-client-get-service-plan", lager.Data{"serviceInstanceGuid": serviceInstanceGuid})
 	logger.Debug("start")
 	defer logger.Debug("end")

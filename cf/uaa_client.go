@@ -13,12 +13,12 @@ type UaaClient interface {
 
 type uaaClient struct {
 	logger      lager.Logger
-	conf        *CFConfig
+	conf        *Config
 	uaaClient   *uaago.Client
 	UAAEndpoint string
 }
 
-func NewUaaClient(conf *CFConfig, logger lager.Logger, uaaEndpoint string) UaaClient {
+func NewUaaClient(conf *Config, logger lager.Logger, uaaEndpoint string) UaaClient {
 	uc := &uaaClient{}
 	uc.logger = logger
 	uc.conf = conf

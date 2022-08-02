@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/cfhttp"
+	"github.com/hashicorp/go-retryablehttp"
+
+	"code.cloudfoundry.org/cfhttp/v2"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 
@@ -46,7 +47,7 @@ type Endpoints struct {
 	DopplerEndpoint string `json:"doppler_logging_endpoint"`
 }
 
-var _ CFClient = &cfClient{}
+var _ CFClient = &Client{}
 
 type CFClient interface {
 	Login() error
@@ -64,9 +65,9 @@ type CFClient interface {
 	GetServicePlan(serviceInstanceGuid string) (string, error)
 }
 
-type cfClient struct {
+type Client struct {
 	logger                              lager.Logger
-	conf                                *CFConfig
+	conf                                *Config
 	clk                                 clock.Clock
 	tokens                              Tokens
 	endpoints                           Endpoints
@@ -83,10 +84,11 @@ type cfClient struct {
 	ccServicePlanToBrokerPlanGuid       map[string]string
 	instanceMapLock                     *sync.Mutex
 	serviceInstanceGuidToBrokerPlanGuid map[string]string
+	retryClient                         *http.Client
 }
 
-func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
-	c := &cfClient{}
+func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
+	c := &Client{}
 	c.logger = logger
 	c.conf = conf
 	c.clk = clk
@@ -98,15 +100,13 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 		"client_secret": {conf.Secret},
 	}
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
-
-	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-	c.httpClient = cfhttp.NewClient()
 	// #nosec G402 - this is intentionally configurable
-	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
-	c.httpClient.Transport.(*http.Transport).DialContext = (&net.Dialer{
-		Timeout: 30 * time.Second,
-	}).DialContext
+	c.httpClient = cfhttp.NewClient(
+		cfhttp.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}),
+		cfhttp.WithDialTimeout(30*time.Second),
+	)
 
+	c.retryClient = createRetryClient(conf, c.httpClient, logger)
 	c.lock = &sync.Mutex{}
 
 	c.planMapsLock = &sync.Mutex{}
@@ -119,7 +119,24 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	return c
 }
 
-func (c *cfClient) retrieveEndpoints() error {
+func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *http.Client {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 0
+	if conf.MaxRetries != 0 {
+		retryClient.RetryMax = conf.MaxRetries
+	}
+	if conf.MaxRetryWaitMs != 0 {
+		retryClient.RetryWaitMax = time.Duration(conf.MaxRetryWaitMs) * time.Millisecond
+	}
+	retryClient.Logger = LeveledLoggerAdapter{logger}
+	retryClient.HTTPClient = client
+	retryClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
+		return resp, err
+	}
+	return retryClient.StandardClient()
+}
+
+func (c *Client) retrieveEndpoints() error {
 	c.logger.Info("retrieve-endpoints", lager.Data{"infoURL": c.infoURL})
 
 	resp, err := c.httpClient.Get(c.infoURL)
@@ -146,7 +163,7 @@ func (c *cfClient) retrieveEndpoints() error {
 	return nil
 }
 
-func (c *cfClient) requestClientCredentialGrant(formData *url.Values) error {
+func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
 	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": c.tokenURL, "form": *formData})
 
 	req, err := http.NewRequest("POST", c.tokenURL, strings.NewReader(formData.Encode()))
@@ -180,7 +197,7 @@ func (c *cfClient) requestClientCredentialGrant(formData *url.Values) error {
 	return nil
 }
 
-func (c *cfClient) Login() error {
+func (c *Client) Login() error {
 	c.logger.Info("login", lager.Data{"infoURL": c.infoURL})
 
 	err := c.retrieveEndpoints()
@@ -191,7 +208,7 @@ func (c *cfClient) Login() error {
 	return c.requestClientCredentialGrant(&c.loginForm)
 }
 
-func (c *cfClient) RefreshAuthToken() (string, error) {
+func (c *Client) RefreshAuthToken() (string, error) {
 	c.logger.Info("refresh-auth-token", lager.Data{"tokenURL": c.tokenURL})
 
 	var err error
@@ -208,7 +225,7 @@ func (c *cfClient) RefreshAuthToken() (string, error) {
 	return TokenTypeBearer + " " + c.tokens.AccessToken, nil
 }
 
-func (c *cfClient) GetTokens() (Tokens, error) {
+func (c *Client) GetTokens() (Tokens, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -221,15 +238,15 @@ func (c *cfClient) GetTokens() (Tokens, error) {
 	return c.tokens, nil
 }
 
-func (c *cfClient) isTokenToBeExpired() bool {
+func (c *Client) isTokenToBeExpired() bool {
 	return c.clk.Now().Sub(c.grantTime) > (time.Duration(c.tokens.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
 }
 
-func (c *cfClient) GetEndpoints() Endpoints {
+func (c *Client) GetEndpoints() Endpoints {
 	return c.endpoints
 }
 
-func (c *cfClient) IsTokenAuthorized(token, clientId string) (bool, error) {
+func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
 	formData := url.Values{"token": {token}}
 	request, err := http.NewRequest("POST", c.introspectTokenURL, strings.NewReader(formData.Encode()))
 	if err != nil {

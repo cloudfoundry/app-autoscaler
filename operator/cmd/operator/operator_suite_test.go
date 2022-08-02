@@ -75,7 +75,7 @@ func initConfig() {
 	cfServer.Add().GetApp(models2.AppStatusStarted)
 	cfServer.Add().GetAppProcesses(2)
 
-	cfg.CF = cf.CFConfig{
+	cfg.CF = cf.Config{
 		API:      cfServer.URL(),
 		ClientID: "client-id",
 		Secret:   "secret",

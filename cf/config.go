@@ -6,14 +6,16 @@ import (
 	"strings"
 )
 
-type CFConfig struct {
+type Config struct {
 	API               string `yaml:"api"`
 	ClientID          string `yaml:"client_id"`
 	Secret            string `yaml:"secret"`
 	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
+	MaxRetries        int    `yaml:"max_retries"`
+	MaxRetryWaitMs    int64  `yaml:"max_retry_wait_ms"`
 }
 
-func (conf *CFConfig) Validate() error {
+func (conf *Config) Validate() error {
 	if conf.API == "" {
 		return fmt.Errorf("Configuration error: cf api is empty")
 	}

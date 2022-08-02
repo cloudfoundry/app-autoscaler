@@ -44,34 +44,34 @@ const (
 	TEST_USER_ID    = "test-user-id"
 )
 
-var (
-	conf      *CFConfig
-	cfc       CFClient
-	err       error
-	userToken string
-	logger    *lagertest.TestLogger
-
-	isUserSpaceDeveloperFlag bool
-	isUserAdminFlag          bool
-
-	fakeCCServer    *ghttp.Server
-	fakeTokenServer *ghttp.Server
-
-	userInfoStatus   int
-	userInfoResponse userInfo
-
-	userScopeStatus   int
-	userScopeResponse userScope
-
-	appStatus       int
-	appResponse     app
-	appsPathMatcher *regexp.Regexp
-
-	rolesStatus   int
-	rolesResponse roles
-)
-
 var _ = Describe("Oauth", func() {
+
+	var (
+		conf      *Config
+		cfc       CFClient
+		err       error
+		userToken string
+		logger    *lagertest.TestLogger
+
+		isUserSpaceDeveloperFlag bool
+		isUserAdminFlag          bool
+
+		fakeCCServer    *ghttp.Server
+		fakeTokenServer *ghttp.Server
+
+		userInfoStatus   int
+		userInfoResponse userInfo
+
+		userScopeStatus   int
+		userScopeResponse userScope
+
+		appStatus       int
+		appResponse     app
+		appsPathMatcher *regexp.Regexp
+
+		rolesStatus   int
+		rolesResponse roles
+	)
 
 	BeforeEach(func() {
 		userToken = TEST_USER_TOKEN
@@ -101,7 +101,7 @@ var _ = Describe("Oauth", func() {
 			ghttp.VerifyRequest("GET", "/v3/roles", "types=space_developer&space_guids="+TEST_SPACE_ID+"&user_guids="+TEST_USER_ID),
 			ghttp.RespondWithJSONEncodedPtr(&rolesStatus, &rolesResponse)))
 
-		conf = &CFConfig{}
+		conf = &Config{}
 		conf.API = fakeCCServer.URL()
 		logger = lagertest.NewTestLogger("oauth-test")
 		cfc = NewCFClient(conf, logger, clock.NewClock())

@@ -227,7 +227,7 @@ cred_helper_impl: default
 				Expect(conf.UseBuildInMode).To(BeFalse())
 				Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 				Expect(conf.CF).To(Equal(
-					cf.CFConfig{
+					cf.Config{
 						API:               "https://api.example.com",
 						ClientID:          "client-id",
 						Secret:            "client-secret",

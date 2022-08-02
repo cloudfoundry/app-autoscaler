@@ -19,7 +19,7 @@ var (
 	ErrInvalidTokenFormat = fmt.Errorf("Invalid token format")
 )
 
-func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
+func (c *Client) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
 	userId, err := c.getUserId(userToken)
 	if err != nil {
 		return false, err
@@ -72,7 +72,7 @@ func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, e
 	return isSpaceDeveloperOnAppSapce, nil
 }
 
-func (c *cfClient) IsUserAdmin(userToken string) (bool, error) {
+func (c *Client) IsUserAdmin(userToken string) (bool, error) {
 	scopes, err := c.getUserScope(userToken)
 	if err != nil {
 		return false, err
@@ -88,7 +88,7 @@ func (c *cfClient) IsUserAdmin(userToken string) (bool, error) {
 	return false, nil
 }
 
-func (c *cfClient) getUserScope(userToken string) ([]string, error) {
+func (c *Client) getUserScope(userToken string) ([]string, error) {
 	userScopeEndpoint, err := c.getUserScopeEndpoint(userToken)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (c *cfClient) getUserScope(userToken string) ([]string, error) {
 	return userScope.Scope, nil
 }
 
-func (c *cfClient) getUserId(userToken string) (string, error) {
+func (c *Client) getUserId(userToken string) (string, error) {
 	userInfoEndpoint := c.getUserInfoEndpoint()
 
 	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
@@ -161,7 +161,7 @@ func (c *cfClient) getUserId(userToken string) (string, error) {
 	return userInfo.UserId, nil
 }
 
-func (c *cfClient) getSpaceId(userToken string, appId string) (string, error) {
+func (c *Client) getSpaceId(userToken string, appId string) (string, error) {
 	appsEndpoint := c.getAppsEndpoint(appId)
 
 	req, err := http.NewRequest("GET", appsEndpoint, nil)
@@ -212,7 +212,7 @@ func (c *cfClient) getSpaceId(userToken string, appId string) (string, error) {
 	return spaceId, nil
 }
 
-func (c *cfClient) getUserScopeEndpoint(userToken string) (string, error) {
+func (c *Client) getUserScopeEndpoint(userToken string) (string, error) {
 	parameters := url.Values{}
 	parameters.Add("token", strings.Split(userToken, " ")[1])
 
@@ -220,15 +220,15 @@ func (c *cfClient) getUserScopeEndpoint(userToken string) (string, error) {
 	return userScopeEndpoint, nil
 }
 
-func (c *cfClient) getUserInfoEndpoint() string {
+func (c *Client) getUserInfoEndpoint() string {
 	return c.endpoints.TokenEndpoint + "/userinfo"
 }
 
-func (c *cfClient) getAppsEndpoint(appId string) string {
+func (c *Client) getAppsEndpoint(appId string) string {
 	return c.conf.API + "/v3/apps/" + appId
 }
 
-func (c *cfClient) getSpaceDeveloperRolesEndpoint(userId string, spaceId string) string {
+func (c *Client) getSpaceDeveloperRolesEndpoint(userId string, spaceId string) string {
 	parameters := url.Values{}
 	parameters.Add("types", "space_developer")
 	parameters.Add("space_guids", spaceId)

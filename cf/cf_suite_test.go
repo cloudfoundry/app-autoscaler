@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestSecurity(t *testing.T) {
+func TestCfClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Cf Suite")
 }

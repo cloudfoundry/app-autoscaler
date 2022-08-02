@@ -276,7 +276,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		CF: cf.CFConfig{
+		CF: cf.Config{
 			API:      cfApi,
 			ClientID: "admin",
 			Secret:   "admin",
@@ -458,7 +458,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 
 func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := seConfig.Config{
-		CF: cf.CFConfig{
+		CF: cf.Config{
 			API:      ccUAAURL,
 			ClientID: "admin",
 			Secret:   "admin",
@@ -498,7 +498,7 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		CF: cf.CFConfig{
+		CF: cf.Config{
 			API:      ccUAAURL,
 			ClientID: "admin",
 			Secret:   "admin",

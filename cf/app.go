@@ -81,7 +81,7 @@ func (p Processes) GetInstances() int {
 	return instances
 }
 
-func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error) {
+func (c *Client) GetStateAndInstances(appID string) (*models.AppEntity, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
@@ -109,9 +109,9 @@ func (c *cfClient) GetStateAndInstances(appID string) (*models.AppEntity, error)
  * Get the information for a specific app
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
-func (c *cfClient) GetApp(appID string) (*App, error) {
+func (c *Client) GetApp(appID string) (*App, error) {
 	url := fmt.Sprintf("%s/v3/apps/%s", c.conf.API, appID)
-	//TODO add retries
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("app request failed for app %s :%w", appID, err)
@@ -122,7 +122,7 @@ func (c *cfClient) GetApp(appID string) (*App, error) {
 	}
 	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.retryClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get app %s: %w", appID, err)
 	}
@@ -149,9 +149,9 @@ func (c *cfClient) GetApp(appID string) (*App, error) {
  * Get the processes information for a specific app
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
-func (c *cfClient) GetAppProcesses(appID string) (Processes, error) {
+func (c *Client) GetAppProcesses(appID string) (Processes, error) {
 	url := fmt.Sprintf("%s/v3/apps/%s/processes", c.conf.API, appID)
-	//TODO add retries
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("processes request failed for app %s :%w", appID, err)
@@ -162,7 +162,7 @@ func (c *cfClient) GetAppProcesses(appID string) (Processes, error) {
 	}
 	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.retryClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get processes %s: %w", appID, err)
 	}
@@ -186,7 +186,7 @@ func (c *cfClient) GetAppProcesses(appID string) (Processes, error) {
 	return processResp.Resources, nil
 }
 
-func (c *cfClient) SetAppInstances(appID string, num int) error {
+func (c *Client) SetAppInstances(appID string, num int) error {
 	url := c.conf.API + path.Join(PathApp, appID)
 	c.logger.Debug("set-app-instances", lager.Data{"url": url})
 
