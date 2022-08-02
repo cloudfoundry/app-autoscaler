@@ -132,7 +132,7 @@ func (c *Client) GetApp(appID string) (*App, error) {
  */
 func (c *Client) GetAppProcesses(appID string) (Processes, error) {
 	pageNumber := 1
-	url := fmt.Sprintf("%s/v3/apps/%s/processes?per_page=100", c.conf.API, appID)
+	url := fmt.Sprintf("%s/v3/apps/%s/processes?per_page=%d", c.conf.API, appID, c.conf.PerPage)
 	var processes Processes
 	for url != "" {
 		pagination, pageProcesses, err := c.getProcesses(appID, url)
