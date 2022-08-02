@@ -1,0 +1,35 @@
+cf:
+  api: https://api.example.com
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 9999
+
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+defaultCoolDownSecs: 300
+lockSize: 32
+http_client_timeout: 10s

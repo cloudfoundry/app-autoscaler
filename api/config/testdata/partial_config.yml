@@ -1,0 +1,29 @@
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
+db:
+  binding_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: https://localhost:8083
+scaling_engine:
+  scaling_engine_url: https://localhost:8083
+metrics_collector:
+  metrics_collector_url: https://localhost:8084
+event_generator:
+  event_generator_url: https://localhost:8083
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
+info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
+cf:
+  api: https://api.example.com
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false

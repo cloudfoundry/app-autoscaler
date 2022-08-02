@@ -1,0 +1,12 @@
+
+cf:
+  api: https://api.example.com
+db:
+  policy_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+  scalingengine_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+  scheduler_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+defaultCoolDownSecs: 300
+lockSize: 32

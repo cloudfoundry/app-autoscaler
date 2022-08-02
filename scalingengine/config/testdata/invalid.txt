@@ -1,0 +1,11 @@
+
+  cf:
+  api: https://api.exmaple.com
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
+server:
+  port: 8989
+health:
+  port: 9999
+defaultCoolDownSecs: 300
+lockSize: 32
