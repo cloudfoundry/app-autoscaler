@@ -28,6 +28,7 @@ const (
 	GrantTypeClientCredentials                   = "client_credentials"
 	GrantTypeRefreshToken                        = "refresh_token"
 	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
+	defaultPerPage                               = 100
 )
 
 type Tokens struct {
@@ -115,7 +116,9 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.brokerPlanGuidToCCServicePlanGuid = make(map[string]string)
 	c.ccServicePlanToBrokerPlanGuid = make(map[string]string)
 	c.serviceInstanceGuidToBrokerPlanGuid = make(map[string]string)
-
+	if c.conf.PerPage == 0 {
+		c.conf.PerPage = defaultPerPage
+	}
 	return c
 }
 

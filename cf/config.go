@@ -13,6 +13,7 @@ type Config struct {
 	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
 	MaxRetries        int    `yaml:"max_retries"`
 	MaxRetryWaitMs    int64  `yaml:"max_retry_wait_ms"`
+	PerPage           int    `yaml:"per_page"`
 }
 
 func (conf *Config) Validate() error {
