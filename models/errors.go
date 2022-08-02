@@ -25,7 +25,7 @@ var CfInternalServerError = &CfError{Errors: []CfErrorItem{{Detail: "An unexpect
 var _ error = &CfError{}
 var ErrInvalidJson = fmt.Errorf("invalid error json")
 
-func NewCfError(resourceId string, statusCode int, respBody []byte) error {
+func NewCfError(url string, resourceId string, statusCode int, respBody []byte) error {
 	var cfError = &CfError{}
 	err := json.Unmarshal(respBody, &cfError)
 	if err != nil {
@@ -33,6 +33,7 @@ func NewCfError(resourceId string, statusCode int, respBody []byte) error {
 	}
 	cfError.ResourceId = resourceId
 	cfError.StatusCode = statusCode
+	cfError.url = url
 
 	if !cfError.IsValid() {
 		return fmt.Errorf("invalid cfError: resource %s status:%d body:%s :%w", resourceId, statusCode, truncateString(string(respBody), 512), ErrInvalidJson)
@@ -45,6 +46,7 @@ type CfError struct {
 	Errors     []CfErrorItem `json:"errors"`
 	StatusCode int
 	ResourceId string
+	url        string
 }
 
 type CfErrorItem struct {
@@ -54,16 +56,16 @@ type CfErrorItem struct {
 }
 
 func (c *CfError) Error() string {
-	errors := []string{}
+	var errs []string
 	message := "None found"
 	for _, errorItem := range c.Errors {
 		errorsString := fmt.Sprintf("['%s' code: %d, Detail: '%s']", errorItem.Title, errorItem.Code, errorItem.Detail)
-		errors = append(errors, errorsString)
+		errs = append(errs, errorsString)
 	}
-	if len(errors) > 0 {
-		message = strings.Join(errors, ", ")
+	if len(errs) > 0 {
+		message = strings.Join(errs, ", ")
 	}
-	return fmt.Sprintf("cf api Error: %s", message)
+	return fmt.Sprintf("cf api Error url='%s', resourceId='%s': %s", c.url, c.ResourceId, message)
 }
 
 func (c *CfError) IsNotFound() bool {

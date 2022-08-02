@@ -57,7 +57,6 @@ var (
 	dbUrl                   string
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
 	rolesRegPath            = regexp.MustCompile(`^/v3/roles$`)
 	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
@@ -772,9 +771,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted)
-	fakeCCNOAAUAA.Add().GetAppProcesses(instanceCount)
-	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
+	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted).GetAppProcesses(instanceCount).ScaleAppWebProcess()
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			Scope []string `json:"scope"`

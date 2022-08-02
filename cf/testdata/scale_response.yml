@@ -1,0 +1,52 @@
+{
+  "command": "npm start",
+  "created_at": "2022-08-02T13:27:52Z",
+  "disk_in_mb": 128,
+  "guid": "92ec759d-d6b8-4e64-a8e0-4677dee17ad6",
+  "health_check": {
+    "data": {
+      "endpoint": "/health",
+      "invocation_timeout": 10,
+      "timeout": 120
+    },
+    "type": "http"
+  },
+  "instances": 4,
+  "links": {
+    "app": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/apps/92ec759d-d6b8-4e64-a8e0-4677dee17ad6"
+    },
+    "scale": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/processes/92ec759d-d6b8-4e64-a8e0-4677dee17ad6/actions/scale",
+      "method": "POST"
+    },
+    "self": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/processes/92ec759d-d6b8-4e64-a8e0-4677dee17ad6"
+    },
+    "space": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/spaces/4edeac8f-b24e-42ff-ad8f-f44400c74006"
+    },
+    "stats": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/processes/92ec759d-d6b8-4e64-a8e0-4677dee17ad6/stats"
+    }
+  },
+  "memory_in_mb": 128,
+  "metadata": {
+    "annotations": { },
+    "labels": { }
+  },
+  "relationships": {
+    "app": {
+      "data": {
+        "guid": "92ec759d-d6b8-4e64-a8e0-4677dee17ad6"
+      }
+    },
+    "revision": {
+      "data": {
+        "guid": "d8566f8a-b02f-46b6-b39c-2bb1fd37c4ed"
+      }
+    }
+  },
+  "type": "web",
+  "updated_at": "2022-08-02T13:56:40Z"
+}

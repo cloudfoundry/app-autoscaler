@@ -172,7 +172,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		return result, nil
 	}
 
-	err = s.cfClient.SetAppInstances(appId, newInstances)
+	err = s.cfClient.ScaleAppWebProcess(appId, newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		history.Status = models.ScalingStatusFailed
@@ -294,7 +294,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		return nil
 	}
 
-	err = s.cfClient.SetAppInstances(appId, newInstances)
+	err = s.cfClient.ScaleAppWebProcess(appId, newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed
@@ -387,7 +387,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		return nil
 	}
 
-	err = s.cfClient.SetAppInstances(appId, newInstances)
+	err = s.cfClient.ScaleAppWebProcess(appId, newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed

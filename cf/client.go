@@ -58,7 +58,7 @@ type CFClient interface {
 	GetApp(string) (*App, error)
 	GetAppProcesses(string) (Processes, error)
 	GetStateAndInstances(string) (*models.AppEntity, error)
-	SetAppInstances(string, int) error
+	ScaleAppWebProcess(string, int) error
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 	IsTokenAuthorized(token, clientId string) (bool, error)

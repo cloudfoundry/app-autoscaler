@@ -66,10 +66,10 @@ var _ = SynchronizedBeforeSuite(
 
 		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
 
-		ccUAA.Add().GetApp(models.AppStatusStarted)
-		ccUAA.Add().GetAppProcesses(2)
-
-		ccUAA.RouteToHandler("PUT", "/v2/apps/"+appId, ghttp.RespondWith(http.StatusCreated, ""))
+		ccUAA.Add().
+			GetApp(models.AppStatusStarted).
+			GetAppProcesses(2).
+			ScaleAppWebProcess()
 
 		conf.CF = cf.Config{
 			API:      ccUAA.URL(),

@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"sync"
 	"time"
-
-	"code.cloudfoundry.org/lager"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
@@ -167,6 +164,23 @@ func (c *Client) get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	return c.sendRequest(req)
+}
+
+func (c *Client) post(url string, bodyStuct any) (*http.Response, error) {
+	body, err := json.Marshal(bodyStuct)
+	if err != nil {
+		return nil, fmt.Errorf("failed post: %w", err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("post %s failed: %w", url, err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	return c.sendRequest(req)
+}
+
+func (c *Client) sendRequest(req *http.Request) (*http.Response, error) {
 	tokens, err := c.GetTokens()
 	if err != nil {
 		return nil, fmt.Errorf("get token failed: %w", err)
@@ -179,69 +193,28 @@ func (c *Client) get(url string) (*http.Response, error) {
 	}
 
 	statusCode := resp.StatusCode
-	if statusCode != http.StatusOK {
+	if isError(statusCode) {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response[%d]: %w", statusCode, err)
 		}
-		return nil, fmt.Errorf("get request failed: %w", models.NewCfError(url, statusCode, respBody))
+		return nil, fmt.Errorf("%s request failed: %w", req.Method, models.NewCfError(req.RequestURI, req.RequestURI, statusCode, respBody))
 	}
 	return resp, nil
 }
 
-func (c *Client) SetAppInstances(appID string, num int) error {
-	url := c.conf.API + path.Join(PathApp, appID)
-	c.logger.Debug("set-app-instances", lager.Data{"url": url})
+func isError(statusCode int) bool {
+	return statusCode >= 300
+}
 
-	appEntity := models.AppEntity{
-		Instances: num,
+func (c *Client) ScaleAppWebProcess(appID string, num int) error {
+	url := fmt.Sprintf("%s/v3/apps/%s/processes/web/actions/scale", c.conf.API, appID)
+	type scaleApp struct {
+		Instances int `json:"instances"`
 	}
-	body, err := json.Marshal(appEntity)
+	_, err := c.post(url, scaleApp{Instances: num})
 	if err != nil {
-		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appID": appID, "appEntity": appEntity})
-		return err
+		return fmt.Errorf("failed scaling app '%s' to %d: %w", appID, num, err)
 	}
-
-	var req *http.Request
-	req, err = http.NewRequest("PUT", url, bytes.NewReader(body))
-	if err != nil {
-		c.logger.Error("set-app-instances-new-request", err)
-		return err
-	}
-	tokens, err := c.GetTokens()
-	if err != nil {
-		c.logger.Error("set-app-instances-get-tokens", err)
-		return err
-	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	var resp *http.Response
-	resp, err = c.httpClient.Do(req)
-	if err != nil {
-		c.logger.Error("set-app-instances-do-request", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			c.logger.Error("failed-to-read-response-body-while-setting-app-instance", err, lager.Data{"appID": appID})
-			return err
-		}
-		var bodydata map[string]interface{}
-		err = json.Unmarshal(respBody, &bodydata)
-		if err != nil {
-			err = fmt.Errorf("%s", string(respBody))
-			c.logger.Error("faileded-to-set-application-instances", err, lager.Data{"appID": appID})
-			return err
-		}
-		errorDescription := bodydata["description"].(string)
-		errorCode := bodydata["error_code"].(string)
-		err = fmt.Errorf("failed setting application instances: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
-		c.logger.Error("set-app-instances-response", err, lager.Data{"appID": appID, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
-		return err
-	}
-	return nil
+	return err
 }

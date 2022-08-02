@@ -95,3 +95,8 @@ func (a AddMock) Info(url string) AddMock {
 	}))
 	return a
 }
+
+func (a AddMock) ScaleAppWebProcess() AddMock {
+	a.server.RouteToHandler("POST", regexp.MustCompile(`^/v3/apps/[^/]+/processes/web/actions/scale$`), ghttp.RespondWith(http.StatusAccepted, "{}"))
+	return a
+}

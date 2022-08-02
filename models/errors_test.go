@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("Errors test", func() {
-
+	url := "https://some.cf.install/v3/apps/guid/processes/web/action/scale"
 	Context("nil type error", func() {
 		It("should be invalid", func() {
 			var err *models.CfError
@@ -24,18 +24,19 @@ var _ = Describe("Errors test", func() {
 	})
 	Context("Constructing Errors", func() {
 		It("should be able to construct from call", func() {
-			err := models.NewCfError("some-id", 404, []byte(`{"errors": [{"code": 1,"title": "Title","detail": "Detail"}]}`))
+			err := models.NewCfError(url, "some-id", 404, []byte(`{"errors": [{"code": 1,"title": "Title","detail": "Detail"}]}`))
 			Expect(err).To(BeAssignableToTypeOf(&models.CfError{}))
+			Expect(err.Error()).To(Equal("cf api Error url='https://some.cf.install/v3/apps/guid/processes/web/action/scale', resourceId='some-id': ['Title' code: 1, Detail: 'Detail']"))
 		})
 		It("should return error if not marshalable", func() {
-			err := models.NewCfError("some-id", 404, []byte(`{"errors": [{"code" "Title","detail": "Detail"}]}`))
+			err := models.NewCfError(url, "some-id", 404, []byte(`{"errors": [{"code" "Title","detail": "Detail"}]}`))
 			Expect(err).ToNot(BeAssignableToTypeOf(&models.CfError{}))
 			var errType *json.SyntaxError
 			Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			Expect(err.Error()).To(MatchRegexp("failed to unmarshal id:some-id error status '404' body:'{\\\"errors\\\": "))
 		})
 		It("should return error if not incorrect Json", func() {
-			err := models.NewCfError("some-id", 404, []byte(`{"Some":"JSON"}`))
+			err := models.NewCfError(url, "some-id", 404, []byte(`{"Some":"JSON"}`))
 			Expect(err).ToNot(BeAssignableToTypeOf(&models.CfError{}))
 			Expect(errors.Is(err, models.ErrInvalidJson)).To(BeTrue())
 			Expect(err.Error()).To(MatchRegexp("invalid cfError: resource some-id status:404 body:{\"Some\":\"JSON\"}"))
@@ -61,7 +62,7 @@ var _ = Describe("Errors test", func() {
 		Context("There is one error", func() {
 			BeforeEach(func() { errorResponse = `{"errors": [{"code": 1,"title": "Title","detail": "Detail"}]}` })
 			It("Should have the right message", func() {
-				Expect(cfError.Error()).To(Equal("cf api Error: ['Title' code: 1, Detail: 'Detail']"))
+				Expect(cfError.Error()).To(Equal("cf api Error url='', resourceId='': ['Title' code: 1, Detail: 'Detail']"))
 			})
 			It("Should be valid", func() {
 				Expect(cfError.IsValid()).To(BeTrue())
@@ -75,7 +76,7 @@ var _ = Describe("Errors test", func() {
 				errorResponse = `{"errors": [{"code": 1,"title": "Title1","detail": "Detail1"},{"code": 2,"title": "Title2","detail": "Detail2"}]}`
 			})
 			It("Should have the right message", func() {
-				Expect(cfError.Error()).To(Equal("cf api Error: ['Title1' code: 1, Detail: 'Detail1'], ['Title2' code: 2, Detail: 'Detail2']"))
+				Expect(cfError.Error()).To(Equal("cf api Error url='', resourceId='': ['Title1' code: 1, Detail: 'Detail1'], ['Title2' code: 2, Detail: 'Detail2']"))
 			})
 			It("Should be valid", func() {
 				Expect(cfError.IsValid()).To(BeTrue())
@@ -97,7 +98,7 @@ var _ = Describe("Errors test", func() {
 				errorResponse = `{"errors": []}`
 			})
 			It("Should have the right message", func() {
-				Expect(cfError.Error()).To(Equal("cf api Error: None found"))
+				Expect(cfError.Error()).To(Equal("cf api Error url='', resourceId='': None found"))
 			})
 			It("Should be invalid", func() {
 				Expect(cfError.IsValid()).To(BeFalse())

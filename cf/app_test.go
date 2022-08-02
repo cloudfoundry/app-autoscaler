@@ -565,17 +565,31 @@ var _ = Describe("Cf client App", func() {
 		})
 	})
 
-	Describe("SetAppInstances", func() {
+	Describe("ScaleAppWebProcess", func() {
 		JustBeforeEach(func() {
-			err = cfc.SetAppInstances("test-app-id", 6)
+			err = cfc.ScaleAppWebProcess("test-app-id", 6)
 		})
-		Context("when set app instances succeeds", func() {
+
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().ScaleAppWebProcess().Info(fakeLoginServer.URL())
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				err := cfc.ScaleAppWebProcess("r_scalingengine:503,testAppId,1:c8ec66ba", 3)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		When("scaling web app succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("PUT", cf.PathApp+"/test-app-id"),
-						VerifyJSONRepresenting(models.AppEntity{Instances: 6}),
-						RespondWith(http.StatusCreated, ""),
+						VerifyRequest("POST", "/v3/apps/test-app-id/processes/web/actions/scale"),
+						VerifyJSON(`{"instances":6}`),
+						RespondWith(http.StatusAccepted, LoadFile("scale_response.yml")),
 					),
 				)
 			})
@@ -585,47 +599,18 @@ var _ = Describe("Cf client App", func() {
 			})
 		})
 
-		Context("when updating app instances returns non-200 status code", func() {
+		When("scaling endpoint return 500", func() {
 			BeforeEach(func() {
-				responseMap := make(map[string]interface{})
-				responseMap["description"] = "You have exceeded the instance memory limit for your space's quota"
-				responseMap["error_code"] = "SpaceQuotaInstanceMemoryLimitExceeded"
-				fakeCC.AppendHandlers(
-					CombineHandlers(
-						RespondWithJSONEncoded(http.StatusBadRequest, responseMap),
-					),
-				)
+				setCfcClient(3)
+				fakeCC.RouteToHandler("POST",
+					"/v3/apps/test-app-id/processes/web/actions/scale",
+					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError))
 			})
 
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("failed setting application instances: *")))
+			It("should error correctly", func() {
+				Expect(fakeCC.Count().Requests(`^/v3/apps/[^/]+/processes/web/actions/scale$`)).To(Equal(4))
+				Expect(err).To(MatchError(MatchRegexp("failed scaling app 'test-app-id' to 6: POST request failed:.*'UnknownError'.*")))
 			})
-
-		})
-
-		Context("when cloud controller is not reachable", func() {
-			BeforeEach(func() {
-				ccURL := fakeCC.URL()
-				fakeCC.Close()
-				fakeCC = nil
-
-				Eventually(func() error {
-					// #nosec G107
-					resp, err := http.Get(ccURL)
-
-					if err != nil {
-						return err
-					}
-					_ = resp.Body.Close()
-
-					return nil
-				}).Should(HaveOccurred())
-			})
-
-			It("should error", func() {
-				IsUrlNetOpError(err)
-			})
-
 		})
 
 	})
