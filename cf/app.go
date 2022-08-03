@@ -14,8 +14,6 @@ import (
 
 const (
 	TokenTypeBearer = "Bearer"
-	PathApp         = "/v2/apps"
-	CFAppNotFound   = "CF-AppNotFound"
 )
 
 type (
@@ -68,17 +66,6 @@ type (
 	Href struct {
 		Url string `json:"href"`
 	}
-
-	//processResponse https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#list-processes
-	processesResponse struct {
-		Pagination Pagination `json:"pagination"`
-		Resources  Processes  `json:"resources"`
-	}
-
-	appEntity struct {
-		Instances int    `json:"instances"`
-		State     string `json:"state,omitempty"`
-	}
 )
 
 func (p Processes) GetInstances() int {
@@ -89,7 +76,7 @@ func (p Processes) GetInstances() int {
 	return instances
 }
 
-func (c *Client) GetStateAndInstances(appID string) (*AppAndProcesses, error) {
+func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
@@ -155,6 +142,9 @@ func (c *Client) GetAppProcesses(appID string) (Processes, error) {
 	return processes, nil
 }
 
+/* getProcesses
+ * processResponse https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#list-processes
+ */
 func (c *Client) getProcesses(appID string, url string) (*Pagination, Processes, error) {
 	resp, err := c.get(url)
 	if err != nil {
@@ -162,7 +152,11 @@ func (c *Client) getProcesses(appID string, url string) (*Pagination, Processes,
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	processResp := processesResponse{}
+	processResp := struct {
+		Pagination Pagination `json:"pagination"`
+		Resources  Processes  `json:"resources"`
+	}{}
+
 	err = json.NewDecoder(resp.Body).Decode(&processResp)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed unmarshalling processes information for '%s': %w", appID, err)

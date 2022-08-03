@@ -81,7 +81,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		CooldownExpiredAt: 0,
 	}
 
-	appAndProcesses, err := s.cfClient.GetStateAndInstances(appId)
+	appAndProcesses, err := s.cfClient.GetAppAndProcesses(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed

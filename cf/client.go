@@ -55,8 +55,8 @@ type CFClient interface {
 	GetEndpoints() Endpoints
 	GetApp(string) (*App, error)
 	GetAppProcesses(string) (Processes, error)
-	GetStateAndInstances(string) (*AppAndProcesses, error)
-	SetAppInstances(string, int) error
+	GetAppAndProcesses(string) (*AppAndProcesses, error)
+	ScaleAppWebProcess(string, int) error
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 	IsTokenAuthorized(token, clientId string) (bool, error)
