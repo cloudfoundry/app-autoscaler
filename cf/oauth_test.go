@@ -174,6 +174,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp("failed IsUserSpaceDeveloper:.*connection refused")))
 			})
 		})
 
@@ -187,7 +188,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get app, statusCode : 400"))
+				Expect(err).To(MatchError(MatchRegexp("400")))
 			})
 		})
 
@@ -201,7 +202,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Unauthorized"))
+				Expect(err).To(MatchError(MatchRegexp("401")))
 			})
 		})
 
