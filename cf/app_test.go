@@ -360,7 +360,7 @@ var _ = Describe("Cf client App", func() {
 				It("returns correct state", func() {
 					_, err := cfc.GetAppProcesses("test-app-id")
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError(MatchRegexp("failed getting processes page 3: failed getting processes for app 'test-app-id':.*'UnknownError'.*")))
+					Expect(err).To(MatchError(MatchRegexp("failed GetAppProcesses 'test-app-id': failed getting page 3:.*'UnknownError'.*")))
 				})
 			})
 		})
@@ -399,7 +399,7 @@ var _ = Describe("Cf client App", func() {
 					process, err := cfc.GetAppProcesses("500")
 					Expect(process).To(BeNil())
 					Expect(fakeCC.Count().Requests(`^/v3/apps/500/processes\?.*`)).To(Equal(4))
-					Expect(err).To(MatchError(MatchRegexp("failed getting processes for app '500':.*'UnknownError'")))
+					Expect(err).To(MatchError(MatchRegexp("failed GetAppProcesses '500': failed getting page 1:.*'UnknownError'")))
 				})
 			})
 			When("it recovers after 3 retries", func() {
@@ -435,7 +435,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				process, err := cfc.GetAppProcesses("invalid_json")
 				Expect(process).To(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed getting processes for app '.*':.*failed to unmarshal"))
+				Expect(err.Error()).To(MatchRegexp("failed GetAppProcesses 'invalid_json': failed getting page 1:.*failed to unmarshal"))
 			})
 		})
 
@@ -465,11 +465,10 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				process, err := cfc.GetAppProcesses("incorrect_object")
 				Expect(process).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed unmarshalling processes information for 'incorrect_object': .* cannot unmarshal string")))
+				Expect(err).To(MatchError(MatchRegexp("failed GetAppProcesses 'incorrect_object': failed getting page 1: failed unmarshalling cf\\.Response\\[cf\\.Process\\]:.*cannot unmarshal string.*")))
 				var errType *json.UnmarshalTypeError
 				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			})
-
 		})
 	})
 

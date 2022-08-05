@@ -22,7 +22,7 @@ var (
 func (c *Client) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
 	userId, err := c.getUserId(userToken)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper: %w", err)
 	}
 
 	spaceId, err := c.getSpaceId(appId)
@@ -30,39 +30,9 @@ func (c *Client) IsUserSpaceDeveloper(userToken string, appId string) (bool, err
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper: %w", err)
 	}
 
-	rolesEndpoint := c.getSpaceDeveloperRolesEndpoint(userId, spaceId)
-
-	req, err := http.NewRequest("GET", rolesEndpoint, nil)
+	roles, err := c.GetSpaceDeveloperRoles(userId, spaceId)
 	if err != nil {
-		c.logger.Error("Failed to create get roles request", err, lager.Data{"rolesEndpoint": rolesEndpoint})
-		return false, err
-	}
-	req.Header.Set("Authorization", userToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		c.logger.Error("Failed to get roles, request failed", err, lager.Data{"rolesEndpoint": rolesEndpoint})
-		return false, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusUnauthorized {
-		c.logger.Error("Failed to get roles, token invalid", nil, lager.Data{"rolesEndpoint": rolesEndpoint, "statusCode": resp.StatusCode})
-		return false, ErrUnauthrorized
-	} else if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Failed to get roles", nil, lager.Data{"rolesEndpoint": rolesEndpoint, "statusCode": resp.StatusCode})
-		return false, fmt.Errorf("Failed to get roles, statusCode : %v", resp.StatusCode)
-	}
-
-	roles := struct {
-		Pagination struct {
-			Total int `json:"total_results"`
-		} `json:"pagination"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&roles)
-	if err != nil {
-		c.logger.Error("Failed to parse roles response body", err, lager.Data{"rolesEndpoint": rolesEndpoint})
-		return false, err
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper: %w", err)
 	}
 
 	isSpaceDeveloperOnAppSapce := roles.Pagination.Total > 0
