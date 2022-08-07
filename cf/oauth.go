@@ -22,24 +22,24 @@ var (
 func (c *Client) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
 	userId, err := c.getUserId(userToken)
 	if err != nil {
-		return false, fmt.Errorf("failed IsUserSpaceDeveloper: %w", err)
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
 	spaceId, err := c.getSpaceId(appId)
 	if err != nil {
-		return false, fmt.Errorf("failed IsUserSpaceDeveloper: %w", err)
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	roles, err := c.GetSpaceDeveloperRoles(userId, spaceId)
+	roles, err := c.GetSpaceDeveloperRoles(spaceId, userId)
 	if err != nil {
-		return false, fmt.Errorf("failed IsUserSpaceDeveloper: %w", err)
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
 
-	isSpaceDeveloperOnAppSapce := roles.Pagination.Total > 0
-	if !isSpaceDeveloperOnAppSapce {
-		c.logger.Error("User without SpaceDeveloper role in the apps space tried to access API", nil, lager.Data{"rolesEndpoint": rolesEndpoint})
+	isSpaceDeveloperOnAppSpace := roles.HasRole(RoleSpaceDeveloper)
+	if !isSpaceDeveloperOnAppSpace {
+		c.logger.Error("User without SpaceDeveloper role in the apps space tried to access API", nil)
 	}
-	return isSpaceDeveloperOnAppSapce, nil
+	return isSpaceDeveloperOnAppSpace, nil
 }
 
 func (c *Client) IsUserAdmin(userToken string) (bool, error) {
@@ -156,13 +156,4 @@ func (c *Client) getUserScopeEndpoint(userToken string) (string, error) {
 
 func (c *Client) getUserInfoEndpoint() string {
 	return c.endpoints.TokenEndpoint + "/userinfo"
-}
-
-func (c *Client) getSpaceDeveloperRolesEndpoint(userId string, spaceId string) string {
-	parameters := url.Values{}
-	parameters.Add("types", "space_developer")
-	parameters.Add("space_guids", spaceId)
-	parameters.Add("user_guids", userId)
-	spaceDeveloperRolesEndpoint := c.conf.API + "/v3/roles?" + parameters.Encode()
-	return spaceDeveloperRolesEndpoint
 }

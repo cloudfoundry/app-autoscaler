@@ -21,12 +21,6 @@ type userScope struct {
 	Scope []string `json:"scope"`
 }
 
-type roles struct {
-	Pagination struct {
-		Total int `json:"total_results"`
-	} `json:"pagination"`
-}
-
 type app struct {
 	Relationships struct {
 		Space struct {
@@ -70,7 +64,7 @@ var _ = Describe("Oauth", func() {
 		appsPathMatcher *regexp.Regexp
 
 		rolesStatus   int
-		rolesResponse roles
+		rolesResponse Response[Role]
 	)
 
 	BeforeEach(func() {
@@ -138,7 +132,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Unauthorized"))
+				Expect(err).To(MatchError(MatchRegexp("Unauthorized")))
 			})
 		})
 
@@ -148,7 +142,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get user info, statuscode :400"))
+				Expect(err).To(MatchError(MatchRegexp("Failed to get user info, statuscode :400")))
 			})
 		})
 
@@ -174,7 +168,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp("failed IsUserSpaceDeveloper:.*connection refused")))
+				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper for appId\(test-app-id\): getSpaceId failed:.*connection refused`)))
 			})
 		})
 
@@ -217,10 +211,11 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp(`.*appId\(test-app-id\): getSpaceId failed:.*unmarshalling app information.*`)))
 			})
 		})
 
-		Context("roles endpoint returns non-200 and non-401 status code", func() {
+		Context("roles endpoint returns 200 and 400 status code", func() {
 			BeforeEach(func() {
 				userInfoStatus = http.StatusOK
 				userInfoResponse = userInfo{
@@ -234,7 +229,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get roles, statusCode : 400"))
+				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper userId\(test-user-id\), spaceId\(test-space-id\):.*page 1:.*cf.Response\[cf.Role\]:.*400`)))
 			})
 		})
 
@@ -252,7 +247,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Unauthorized"))
+				Expect(err).To(MatchError(MatchRegexp(`.*userId\(test-user-id\), spaceId\(test-space-id\):.*cf.Response\[cf.Role\]:.*invalid error json`)))
 			})
 		})
 
@@ -285,7 +280,7 @@ var _ = Describe("Oauth", func() {
 				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
 
 				rolesStatus = http.StatusOK
-				rolesResponse = roles{}
+				rolesResponse = Response[Role]{Resources: Roles{{Type: RoleOrganizationManager}}}
 
 			})
 			It("should return false", func() {
@@ -305,8 +300,7 @@ var _ = Describe("Oauth", func() {
 				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
 
 				rolesStatus = http.StatusOK
-				rolesResponse = roles{}
-				rolesResponse.Pagination.Total = 2
+				rolesResponse = Response[Role]{Resources: Roles{{Type: RoleSpaceDeveloper}}}
 
 			})
 			It("should return true", func() {

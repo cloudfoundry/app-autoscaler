@@ -53,7 +53,7 @@ func (r ResourceRetriever[T]) getPage(url string) (Response[T], error) {
 	response := Response[T]{}
 	resp, err := r.get(url)
 	if err != nil {
-		return response, fmt.Errorf("failed getting processes: %w", err)
+		return response, fmt.Errorf("failed getting %T: %w", response, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
