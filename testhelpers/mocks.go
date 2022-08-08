@@ -100,3 +100,9 @@ func (a AddMock) ScaleAppWebProcess() AddMock {
 	a.server.RouteToHandler("POST", regexp.MustCompile(`^/v3/apps/[^/]+/processes/web/actions/scale$`), ghttp.RespondWith(http.StatusAccepted, "{}"))
 	return a
 }
+
+func (a AddMock) Roles() {
+	a.server.RouteToHandler("GET", "/v3/roles", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Response[cf.Role]{
+		Resources: cf.Roles{{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper}},
+	}))
+}

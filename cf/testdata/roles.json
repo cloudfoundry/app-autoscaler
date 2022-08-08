@@ -1,18 +1,4 @@
 {
-  "pagination": {
-    "total_results": 3,
-    "total_pages": 2,
-    "first": {
-      "href": "https://api.example.org/v3/roles?page=1&per_page=2"
-    },
-    "last": {
-      "href": "https://api.example.org/v3/roles?page=2&per_page=2"
-    },
-    "next": {
-      "href": "https://api.example.org/v3/roles?page=2&per_page=2"
-    },
-    "previous": null
-  },
   "resources": [
     {
       "guid": "40557c70-d1bd-4976-a2ab-a85f5e882418",

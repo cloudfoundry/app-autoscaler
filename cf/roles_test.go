@@ -3,7 +3,6 @@ package cf_test
 import (
 	"errors"
 	"regexp"
-	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -63,36 +62,48 @@ var _ = Describe("Cf client Roles", func() {
 		}
 	})
 
+	Describe("Roles.HasRole", func() {
+		When("The role is present", func() {
+			roles := cf.Roles{{Type: cf.RoleSpaceDeveloper}}
+			It("Should return true", func() {
+				Expect(roles.HasRole("space_developer")).To(BeTrue())
+			})
+		})
+		When("The role is not present", func() {
+			roles := cf.Roles{
+				{Type: cf.RoleSpaceManager},
+				{Type: cf.RoleOrganizationManager},
+				{Type: cf.RoleOrganizationBillingManager},
+				{Type: cf.RoleOrganisationUser},
+				{Type: cf.RoleOrganizationAuditor},
+				{Type: cf.RoleSpaceSupporter},
+			}
+			It("should return false", func() {
+				Expect(roles.HasRole(cf.RoleSpaceDeveloper)).To(BeFalse())
+
+			})
+
+		})
+		When("the roles is nil", func() {})
+	})
+
 	Describe("GetRoles", func() {
 
 		When("the mocks are used", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
 				conf.API = mocks.URL()
-				mocks.Add().GetApp("STARTED").Info(fakeLoginServer.URL())
+				mocks.Add().Info(fakeLoginServer.URL()).Roles()
 
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
+				roles, err := cfc.GetSpaceDeveloperRoles("some_space", "some_user")
 				Expect(err).NotTo(HaveOccurred())
-				created, err := time.Parse(time.RFC3339, "2022-07-21T13:42:30Z")
-				Expect(err).NotTo(HaveOccurred())
-				updated, err := time.Parse(time.RFC3339, "2022-07-21T14:30:17Z")
-				Expect(err).NotTo(HaveOccurred())
-				app, err := cfc.GetApp("test-app-id")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(app).To(Equal(&cf.App{
-					Guid:      "testing-guid-get-app",
-					Name:      "mock-get-app",
-					State:     "STARTED",
-					CreatedAt: created,
-					UpdatedAt: updated,
-					Relationships: cf.Relationships{
-						Space: &cf.Space{
-							Data: cf.SpaceData{
-								Guid: "test_space_guid",
-							},
-						},
+				Expect(roles).To(Equal(cf.Roles{
+					{
+						Guid: "mock_guid",
+						Type: cf.RoleSpaceDeveloper,
 					},
 				}))
 			})
@@ -113,10 +124,19 @@ var _ = Describe("Cf client Roles", func() {
 				userId := cf.UserId("someUserId")
 				roles, err := cfc.GetSpaceDeveloperRoles(spaceId, userId)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(roles).To(Equal(cf.Roles{{
-					Guid: "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
-					Type: "",
-				}}))
+				Expect(roles).To(Equal(cf.Roles{
+					{
+						Guid: "40557c70-d1bd-4976-a2ab-a85f5e882418",
+						Type: "organization_auditor",
+					},
+					{
+						Guid: "12347c70-d1bd-4976-a2ab-a85f5e882418",
+						Type: "space_auditor",
+					},
+					{
+						Guid: "12347c70-d1bd-4976-a2ab-a85f5e882418",
+						Type: "space_auditor",
+					}}))
 			})
 		})
 

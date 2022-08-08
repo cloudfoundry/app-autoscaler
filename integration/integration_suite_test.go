@@ -57,7 +57,6 @@ var (
 	dbUrl                   string
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	rolesRegPath            = regexp.MustCompile(`^/v3/roles$`)
 	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sqlx.DB
@@ -771,7 +770,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted).GetAppProcesses(instanceCount).ScaleAppWebProcess()
+	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted).GetAppProcesses(instanceCount).ScaleAppWebProcess().Roles()
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			Scope []string `json:"scope"`
@@ -784,15 +783,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		}{
 			testUserId,
 		}))
-
-	roles := struct {
-		Pagination struct {
-			Total int `json:"total_results"`
-		} `json:"pagination"`
-	}{}
-	roles.Pagination.Total = 1
-	fakeCCNOAAUAA.RouteToHandler("GET", rolesRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		roles))
 
 	type ServiceInstanceEntity struct {
 		ServicePlanGuid string `json:"service_plan_guid"`
