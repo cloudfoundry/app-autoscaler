@@ -48,6 +48,6 @@ func (c *Client) GetSpaceDeveloperRoles(spaceId SpaceId, userId UserId) (Roles, 
 	parameters.Add("space_guids", string(spaceId))
 	parameters.Add("user_guids", string(userId))
 	params := parameters.Encode()
-	theUrl := fmt.Sprintf("%s/v3/roles?%s", c.conf.API, params)
-	return ResourceRetriever[Role]{c}.getAllPages(theUrl)
+	theUrl := fmt.Sprintf("/v3/roles?%s", params)
+	return PagedResourceRetriever[Role]{c}.GetAllPages(theUrl)
 }

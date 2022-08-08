@@ -211,7 +211,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`.*appId\(test-app-id\): getSpaceId failed:.*unmarshalling app information.*`)))
+				Expect(err).To(MatchError(MatchRegexp(`.*appId\(test-app-id\): getSpaceId failed:.*failed unmarshalling.*`)))
 			})
 		})
 
@@ -229,7 +229,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper userId\(test-user-id\), spaceId\(test-space-id\):.*page 1:.*cf.Response\[cf.Role\]:.*400`)))
+				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper userId\(test-user-id\), spaceId\(test-space-id\):.*page 1:.*cf.Response\[.*cf.Role\]:.*400`)))
 			})
 		})
 
@@ -247,7 +247,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`.*userId\(test-user-id\), spaceId\(test-space-id\):.*cf.Response\[cf.Role\]:.*invalid error json`)))
+				Expect(err).To(MatchError(MatchRegexp(`.*userId\(test-user-id\), spaceId\(test-space-id\):.*cf.Response\[.*cf.Role\]:.*invalid error json`)))
 			})
 		})
 

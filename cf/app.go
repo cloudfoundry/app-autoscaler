@@ -1,7 +1,6 @@
 package cf
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -92,20 +91,13 @@ func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
 func (c *Client) GetApp(appID string) (*App, error) {
-	url := fmt.Sprintf("%s/v3/apps/%s", c.conf.API, appID)
+	url := fmt.Sprintf("/v3/apps/%s", appID)
 
-	resp, err := c.get(url)
+	resp, err := ResourceRetriever[*App]{c}.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting app '%s': %w", appID, err)
 	}
-	defer func() { _ = resp.Body.Close() }()
-
-	app := &App{}
-	err = json.NewDecoder(resp.Body).Decode(app)
-	if err != nil {
-		return nil, fmt.Errorf("failed unmarshalling app information for '%s': %w", appID, err)
-	}
-	return app, nil
+	return resp, nil
 }
 
 /*GetAppProcesses
@@ -113,9 +105,9 @@ func (c *Client) GetApp(appID string) (*App, error) {
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
 func (c *Client) GetAppProcesses(appID string) (Processes, error) {
-	url := fmt.Sprintf("%s/v3/apps/%s/processes?per_page=%d", c.conf.API, appID, c.conf.PerPage)
+	url := fmt.Sprintf("/v3/apps/%s/processes?per_page=%d", appID, c.conf.PerPage)
 
-	pages, err := ResourceRetriever[Process]{c}.getAllPages(url)
+	pages, err := PagedResourceRetriever[Process]{c}.GetAllPages(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetAppProcesses '%s': %w", appID, err)
 	}
@@ -127,11 +119,11 @@ func (c *Client) GetAppProcesses(appID string) (Processes, error) {
  * https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#scale-a-process
  */
 func (c *Client) ScaleAppWebProcess(appID string, num int) error {
-	url := fmt.Sprintf("%s/v3/apps/%s/processes/web/actions/scale", c.conf.API, appID)
+	url := fmt.Sprintf("/v3/apps/%s/processes/web/actions/scale", appID)
 	type scaleApp struct {
 		Instances int `json:"instances"`
 	}
-	_, err := c.post(url, scaleApp{Instances: num})
+	_, err := c.Post(url, scaleApp{Instances: num})
 	if err != nil {
 		return fmt.Errorf("failed scaling app '%s' to %d: %w", appID, num, err)
 	}

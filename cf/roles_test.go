@@ -237,7 +237,7 @@ var _ = Describe("Cf client Roles", func() {
 			It("should error", func() {
 				app, err := cfc.GetApp("incorrect_object")
 				Expect(app).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("failed unmarshalling app information for 'incorrect_object': .* cannot unmarshal string")))
+				Expect(err).To(MatchError(MatchRegexp(`failed unmarshalling \*cf.App:.*cannot unmarshal string`)))
 				var errType *json.UnmarshalTypeError
 				Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			})

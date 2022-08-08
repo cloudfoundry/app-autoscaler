@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -29,14 +29,21 @@ type (
 		Resources  []T        `json:"resources"`
 	}
 
+	PagedResourceRetriever[T any] struct {
+		Client *Client
+	}
+
 	ResourceRetriever[T any] struct {
-		*Client
+		Client *Client
 	}
 )
 
-func (r ResourceRetriever[T]) getAllPages(url string) ([]T, error) {
+func (r PagedResourceRetriever[T]) GetAllPages(pathAndQuery string) ([]T, error) {
 	pageNumber := 1
 	var resources []T
+
+	url := r.Client.conf.API + pathAndQuery
+
 	for url != "" {
 		page, err := r.getPage(url)
 		if err != nil {
@@ -49,19 +56,34 @@ func (r ResourceRetriever[T]) getAllPages(url string) ([]T, error) {
 	return resources, nil
 }
 
-func (r ResourceRetriever[T]) getPage(url string) (Response[T], error) {
-	response := Response[T]{}
-	resp, err := r.get(url)
+func (r PagedResourceRetriever[T]) GetPage(pathAndQuery string) (Response[T], error) {
+	return r.getPage(r.Client.conf.API + pathAndQuery)
+}
+
+func (r PagedResourceRetriever[T]) getPage(url string) (Response[T], error) {
+	return ResourceRetriever[Response[T]](r).get(url)
+}
+
+func (r ResourceRetriever[T]) Get(pathAndQuery string) (T, error) {
+	return r.get(r.Client.conf.API + pathAndQuery)
+}
+
+func (r ResourceRetriever[T]) get(url string) (T, error) {
+	var response T
+	resp, err := r.Client.get(url)
 	if err != nil {
 		return response, fmt.Errorf("failed getting %T: %w", response, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return response, fmt.Errorf("failed unmarshalling %T: %w", response, err)
 	}
 	return response, nil
+}
+
+func (c *Client) Get(pathAndQuery string) (*http.Response, error) {
+	return c.get(c.conf.API + pathAndQuery)
 }
 
 func (c *Client) get(url string) (*http.Response, error) {
@@ -72,12 +94,12 @@ func (c *Client) get(url string) (*http.Response, error) {
 	return c.sendRequest(req)
 }
 
-func (c *Client) post(url string, bodyStuct any) (*http.Response, error) {
+func (c *Client) Post(url string, bodyStuct any) (*http.Response, error) {
 	body, err := json.Marshal(bodyStuct)
 	if err != nil {
 		return nil, fmt.Errorf("failed post: %w", err)
 	}
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", c.conf.API+url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("post %s failed: %w", url, err)
 	}
@@ -99,7 +121,7 @@ func (c *Client) sendRequest(req *http.Request) (*http.Response, error) {
 
 	statusCode := resp.StatusCode
 	if isError(statusCode) {
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response[%d]: %w", statusCode, err)
 		}
