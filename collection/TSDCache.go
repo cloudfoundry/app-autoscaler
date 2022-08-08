@@ -106,10 +106,8 @@ func (c *TSDCache) String() string {
 	return fmt.Sprint(s)
 }
 
-//
-//  Query returns the time series with the timestamp in [start, end)
-//  If it can not guarantee all the data are in cache, it returns ([start, end), false)
-//
+// Query returns the time series with the timestamp in [start, end)
+// If it can not guarantee all the data are in cache, it returns ([start, end), false)
 func (c *TSDCache) Query(start, end int64, labels map[string]string) ([]TSD, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()

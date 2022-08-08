@@ -41,7 +41,7 @@ func NewCfError(url string, resourceId string, statusCode int, respBody []byte) 
 	return cfError
 }
 
-//CfError cf V3 Error type
+// CfError cf V3 Error type
 type CfError struct {
 	Errors     []CfErrorItem `json:"errors"`
 	StatusCode int

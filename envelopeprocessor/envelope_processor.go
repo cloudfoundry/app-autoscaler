@@ -51,7 +51,7 @@ func (p Processor) GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID s
 }
 
 // Log cache returns instance metrics such as cpu and memory in serparate envelopes, this was not the case with
-//loggregator. We compact this message by matching source_id and timestamp to facilitate metrics calulations.
+// loggregator. We compact this message by matching source_id and timestamp to facilitate metrics calulations.
 func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*loggregator_v2.Envelope {
 	result := map[string]*loggregator_v2.Envelope{}
 	for i := range envelopes {

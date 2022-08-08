@@ -21,18 +21,22 @@ type MySQLConfig struct {
 	cert   string
 }
 
-/**
- This function is used to generate db connection info, for example,
- For mysql:
- input dbUrl: 'username:password@tcp(localhost:3306)/autoscaler?tls=custom&sslrootcert=db_ca.crt'
-   return:
-   &Database{DriverName: "mysql", DSN:"username:password@tcp(localhost:3306)/autoscaler?parseTime=true&tls=custom"}
+/*
+*
+
+	This function is used to generate db connection info, for example,
+	For mysql:
+	input dbUrl: 'username:password@tcp(localhost:3306)/autoscaler?tls=custom&sslrootcert=db_ca.crt'
+	  return:
+	  &Database{DriverName: "mysql", DSN:"username:password@tcp(localhost:3306)/autoscaler?parseTime=true&tls=custom"}
 
 For postgres:
-   input dbUrl: postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable
-   return:
-   &Database{DriverName: "postgres", DSN:"postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable"
- **/
+
+	  input dbUrl: postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable
+	  return:
+	  &Database{DriverName: "postgres", DSN:"postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable"
+	*
+*/
 func GetConnection(dbUrl string) (*Database, error) {
 	database := &Database{}
 
