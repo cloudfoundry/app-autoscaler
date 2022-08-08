@@ -111,16 +111,12 @@ var _ = Describe("Cf client App", func() {
 			It("returns correct state", func() {
 				app, err := cfc.GetApp("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				created, err := time.Parse(time.RFC3339, "2022-07-21T13:42:30Z")
-				Expect(err).NotTo(HaveOccurred())
-				updated, err := time.Parse(time.RFC3339, "2022-07-21T14:30:17Z")
-				Expect(err).NotTo(HaveOccurred())
 				Expect(app).To(Equal(&cf.App{
 					Guid:      "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
 					Name:      "autoscaler-1--0cde0e473e3e47f4",
 					State:     "STOPPED",
-					CreatedAt: created,
-					UpdatedAt: updated,
+					CreatedAt: parseDate("2022-07-21T13:42:30Z"),
+					UpdatedAt: parseDate("2022-07-21T14:30:17Z"),
 					Relationships: cf.Relationships{
 						Space: &cf.Space{
 							Data: cf.SpaceData{
@@ -477,7 +473,7 @@ var _ = Describe("Cf client App", func() {
 		})
 	})
 
-	Describe("GetStateAndInstances", func() {
+	Describe("GetAppAndProcesses", func() {
 
 		When("the mocks are used", func() {
 			var mocks = NewMockServer()
@@ -488,10 +484,34 @@ var _ = Describe("Cf client App", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
-				app, err := cfc.GetStateAndInstances("test-app-id")
+				app, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				state := "STARTED"
-				Expect(app).To(Equal(&models.AppEntity{State: &state, Instances: 27}))
+				Expect(app).To(Equal(&cf.AppAndProcesses{
+					App: &cf.App{
+						Guid:      "testing-guid-get-app",
+						Name:      "mock-get-app",
+						State:     "STARTED",
+						CreatedAt: parseDate("2022-07-21T13:42:30Z"),
+						UpdatedAt: parseDate("2022-07-21T14:30:17Z"),
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: "test_space_guid",
+								},
+							},
+						},
+					},
+					Processes: cf.Processes{
+						{
+							Guid:       "",
+							Type:       "",
+							Instances:  27,
+							MemoryInMb: 0,
+							DiskInMb:   0,
+							CreatedAt:  parseDate("0001-01-01T00:00:00Z"),
+							UpdatedAt:  parseDate("0001-01-01T00:00:00Z"),
+						},
+					}}))
 			})
 		})
 
@@ -506,10 +526,43 @@ var _ = Describe("Cf client App", func() {
 			})
 
 			It("returns correct state", func() {
-				processes, err := cfc.GetStateAndInstances("test-app-id")
+				appAndProcess, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				s := "STOPPED"
-				Expect(processes).To(Equal(&models.AppEntity{Instances: 6, State: &s}))
+				Expect(appAndProcess).To(Equal(&cf.AppAndProcesses{
+					App: &cf.App{
+						Guid:      "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
+						Name:      "autoscaler-1--0cde0e473e3e47f4",
+						State:     "STOPPED",
+						CreatedAt: parseDate("2022-07-21T13:42:30Z"),
+						UpdatedAt: parseDate("2022-07-21T14:30:17Z"),
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: "3dfc4a10-6e70-44f8-989d-b3842f339e3b",
+								},
+							},
+						},
+					},
+					Processes: cf.Processes{
+						{
+							Guid:       "6a901b7c-9417-4dc1-8189-d3234aa0ab82",
+							Type:       "web",
+							Instances:  5,
+							MemoryInMb: 256,
+							DiskInMb:   1024,
+							CreatedAt:  parseDate("2016-03-23T18:48:22Z"),
+							UpdatedAt:  parseDate("2016-03-23T18:48:42Z"),
+						},
+						{
+							Guid:       "3fccacd9-4b02-4b96-8d02-8e865865e9eb",
+							Type:       "worker",
+							Instances:  1,
+							MemoryInMb: 256,
+							DiskInMb:   1024,
+							CreatedAt:  parseDate("2016-03-23T18:48:22Z"),
+							UpdatedAt:  parseDate("2016-03-23T18:48:42Z"),
+						}},
+				}))
 			})
 		})
 
@@ -524,9 +577,9 @@ var _ = Describe("Cf client App", func() {
 			})
 
 			It("should error", func() {
-				entity, err := cfc.GetStateAndInstances("test-app-id")
-				Expect(entity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes.*:.*'UnknownError'")))
+				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
+				Expect(appAndProcesses).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes page 1: failed getting processes for app 'test-app-id':.*'UnknownError'")))
 			})
 		})
 
@@ -541,9 +594,9 @@ var _ = Describe("Cf client App", func() {
 			})
 
 			It("should error", func() {
-				entity, err := cfc.GetStateAndInstances("test-app-id")
-				Expect(entity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed:.*failed getting app.*:.*'UnknownError'")))
+				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
+				Expect(appAndProcesses).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app 'test-app-id': GET request failed:.*'UnknownError'")))
 			})
 		})
 
@@ -558,9 +611,9 @@ var _ = Describe("Cf client App", func() {
 			})
 
 			It("should error", func() {
-				entity, err := cfc.GetStateAndInstances("test-app-id")
-				Expect(entity).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app.*:.*'UnknownError'")))
+				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
+				Expect(appAndProcesses).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed:.*'UnknownError'")))
 			})
 		})
 	})
@@ -616,3 +669,9 @@ var _ = Describe("Cf client App", func() {
 	})
 
 })
+
+func parseDate(date string) time.Time {
+	updated, err := time.Parse(time.RFC3339, date)
+	Expect(err).NotTo(HaveOccurred())
+	return updated
+}
