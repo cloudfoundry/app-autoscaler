@@ -33,7 +33,7 @@ type (
 		Space *Space `json:"space"`
 	}
 	SpaceData struct {
-		Guid string `json:"guid"`
+		Guid SpaceId `json:"guid"`
 	}
 	Space struct {
 		Data SpaceData `json:"data"`

@@ -94,7 +94,7 @@ func (c *Client) getUserScope(userToken string) ([]string, error) {
 	return userScope.Scope, nil
 }
 
-func (c *Client) getUserId(userToken string) (string, error) {
+func (c *Client) getUserId(userToken string) (UserId, error) {
 	userInfoEndpoint := c.getUserInfoEndpoint()
 
 	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
@@ -120,7 +120,7 @@ func (c *Client) getUserId(userToken string) (string, error) {
 	}
 
 	userInfo := struct {
-		UserId string `json:"user_id"`
+		UserId UserId `json:"user_id"`
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&userInfo)
 	if err != nil {
@@ -131,7 +131,7 @@ func (c *Client) getUserId(userToken string) (string, error) {
 	return userInfo.UserId, nil
 }
 
-func (c *Client) getSpaceId(appId string) (string, error) {
+func (c *Client) getSpaceId(appId string) (SpaceId, error) {
 	app, err := c.GetApp(appId)
 	if err != nil {
 		return "", fmt.Errorf("getSpaceId failed: %w", err)

@@ -102,14 +102,16 @@ var _ = Describe("Cf client Roles", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/roles?types=space_developer&space_guids=some_space_id&user_guids=someUserId"),
+						VerifyRequest("GET", "/v3/roles", "types=space_developer&space_guids=some_space_id&user_guids=someUserId"),
 						RespondWith(http.StatusCreated, LoadFile("roles.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
 			})
 
 			It("returns correct struct", func() {
-				roles, err := cfc.GetSpaceDeveloperRoles("someUserId", "some_space_id")
+				spaceId := cf.SpaceId("some_space_id")
+				userId := cf.UserId("someUserId")
+				roles, err := cfc.GetSpaceDeveloperRoles(spaceId, userId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(roles).To(Equal(cf.Roles{{
 					Guid: "663e9a25-30ba-4fb4-91fa-9b784f4a8542",

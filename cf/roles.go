@@ -26,6 +26,9 @@ type (
 
 type Roles []Role
 
+type SpaceId string
+type UserId string
+
 func (r Roles) HasRole(roleType RoleType) bool {
 	for _, role := range r {
 		if role.Type == roleType {
@@ -39,11 +42,11 @@ func (r Roles) HasRole(roleType RoleType) bool {
  * Get role information given a set of filters
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#roles
  */
-func (c *Client) GetSpaceDeveloperRoles(spaceId string, userId string) (Roles, error) {
+func (c *Client) GetSpaceDeveloperRoles(spaceId SpaceId, userId UserId) (Roles, error) {
 	parameters := url.Values{}
 	parameters.Add("types", "space_developer")
-	parameters.Add("space_guids", spaceId)
-	parameters.Add("user_guids", userId)
+	parameters.Add("space_guids", string(spaceId))
+	parameters.Add("user_guids", string(userId))
 	params := parameters.Encode()
 	theUrl := fmt.Sprintf("%s/v3/roles?%s", c.conf.API, params)
 	return ResourceRetriever[Role]{c}.getAllPages(theUrl)
