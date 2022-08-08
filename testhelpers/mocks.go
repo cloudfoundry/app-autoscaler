@@ -101,8 +101,7 @@ func (a AddMock) ScaleAppWebProcess() AddMock {
 	return a
 }
 
-func (a AddMock) Roles() {
-	a.server.RouteToHandler("GET", "/v3/roles", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Response[cf.Role]{
-		Resources: cf.Roles{{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper}},
-	}))
+func (a AddMock) Roles(roles ...cf.Role) {
+	a.server.RouteToHandler("GET", "/v3/roles",
+		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Response[cf.Role]{Resources: roles}))
 }

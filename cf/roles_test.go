@@ -93,7 +93,7 @@ var _ = Describe("Cf client Roles", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
 				conf.API = mocks.URL()
-				mocks.Add().Info(fakeLoginServer.URL()).Roles()
+				mocks.Add().Info(fakeLoginServer.URL()).Roles(cf.Role{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper})
 
 				DeferCleanup(mocks.Close)
 			})
@@ -106,6 +106,7 @@ var _ = Describe("Cf client Roles", func() {
 						Type: cf.RoleSpaceDeveloper,
 					},
 				}))
+				Expect(roles.HasRole(cf.RoleSpaceDeveloper)).To(BeTrue())
 			})
 		})
 
