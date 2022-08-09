@@ -176,7 +176,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Context("Check permission not passed", func() {
 			BeforeEach(func() {
-				fakeCCNOAAUAA.Add().Roles()
+				fakeCCNOAAUAA.Add().Roles(http.StatusOK)
 			})
 			Context("Create policy", func() {
 				It("should error with status code 401", func() {

@@ -770,7 +770,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted).GetAppProcesses(instanceCount).ScaleAppWebProcess().Roles(cf.Role{Type: cf.RoleSpaceDeveloper})
+	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").GetAppProcesses(instanceCount).ScaleAppWebProcess().Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper})
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			Scope []string `json:"scope"`

@@ -160,7 +160,7 @@ var _ = Describe("Cf client App", func() {
 			BeforeEach(func() {
 				conf.API = mocks.URL()
 				mocks.Add().GetAppProcesses(27).Info(fakeLoginServer.URL())
-				mocks.Add().GetApp("STARTED")
+				mocks.Add().GetApp("STARTED", http.StatusOK, "test_space_guid")
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {

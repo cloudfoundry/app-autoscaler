@@ -67,7 +67,7 @@ var _ = SynchronizedBeforeSuite(
 		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
 
 		ccUAA.Add().
-			GetApp(models.AppStatusStarted).
+			GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 			GetAppProcesses(2).
 			ScaleAppWebProcess()
 

@@ -18,7 +18,7 @@ var _ = Describe("Cf cloud controller", func() {
 
 	var (
 		conf            *cf.Config
-		cfc             cf.CFClient
+		cfc             *cf.Client
 		fakeCC          *MockServer
 		fakeLoginServer *Server
 		err             error
@@ -63,7 +63,7 @@ var _ = Describe("Cf cloud controller", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
 				conf.API = mocks.URL()
-				mocks.Add().GetApp("STARTED").Info(fakeLoginServer.URL())
+				mocks.Add().GetApp("STARTED", http.StatusOK, "test_space_guid").Info(fakeLoginServer.URL())
 
 				DeferCleanup(mocks.Close)
 			})
@@ -113,7 +113,7 @@ var _ = Describe("Cf cloud controller", func() {
 			BeforeEach(func() {
 				conf.API = mocks.URL()
 				mocks.Add().GetAppProcesses(27).Info(fakeLoginServer.URL())
-				mocks.Add().GetApp("STARTED")
+				mocks.Add().GetApp("STARTED", http.StatusOK, "test_space_guid")
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
@@ -160,4 +160,26 @@ var _ = Describe("Cf cloud controller", func() {
 		})
 	})
 
+	Describe("GetRoles", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().Info(fakeLoginServer.URL()).Roles(http.StatusOK, cf.Role{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper})
+
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				roles, err := cfc.GetSpaceDeveloperRoles("some_space", "some_user")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(roles).To(Equal(cf.Roles{
+					{
+						Guid: "mock_guid",
+						Type: cf.RoleSpaceDeveloper,
+					},
+				}))
+				Expect(roles.HasRole(cf.RoleSpaceDeveloper)).To(BeTrue())
+			})
+		})
+	})
 })

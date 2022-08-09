@@ -89,27 +89,6 @@ var _ = Describe("Cf client Roles", func() {
 
 	Describe("GetRoles", func() {
 
-		When("the mocks are used", func() {
-			var mocks = NewMockServer()
-			BeforeEach(func() {
-				conf.API = mocks.URL()
-				mocks.Add().Info(fakeLoginServer.URL()).Roles(cf.Role{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper})
-
-				DeferCleanup(mocks.Close)
-			})
-			It("will return success", func() {
-				roles, err := cfc.GetSpaceDeveloperRoles("some_space", "some_user")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(roles).To(Equal(cf.Roles{
-					{
-						Guid: "mock_guid",
-						Type: cf.RoleSpaceDeveloper,
-					},
-				}))
-				Expect(roles.HasRole(cf.RoleSpaceDeveloper)).To(BeTrue())
-			})
-		})
-
 		When("get roles succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(

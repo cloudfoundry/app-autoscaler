@@ -110,7 +110,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 
 		Context("Check permission not passed", func() {
 			BeforeEach(func() {
-				fakeCCNOAAUAA.Add().Roles()
+				fakeCCNOAAUAA.Add().Roles(http.StatusOK)
 			})
 			It("should error with status code 401", func() {
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer],
