@@ -49,5 +49,9 @@ func (c *Client) GetSpaceDeveloperRoles(spaceId SpaceId, userId UserId) (Roles, 
 	parameters.Add("user_guids", string(userId))
 	params := parameters.Encode()
 	theUrl := fmt.Sprintf("/v3/roles?%s", params)
-	return PagedResourceRetriever[Role]{c}.GetAllPages(theUrl)
+	pages, err := PagedResourceRetriever[Role]{c}.GetAllPages(theUrl)
+	if err != nil {
+		return nil, fmt.Errorf("failed GetSpaceDeveloperRoles spaceId(%s) userId(%s): %w", spaceId, userId, err)
+	}
+	return pages, err
 }

@@ -328,7 +328,6 @@ var _ = Describe("Cf client App", func() {
 			})
 
 			It("should error correctly", func() {
-				Expect(fakeCC.Count().Requests(`^/v3/apps/[^/]+/processes/web/actions/scale$`)).To(Equal(4))
 				Expect(err).To(MatchError(MatchRegexp("failed scaling app 'test-app-id' to 6: POST request failed:.*'UnknownError'.*")))
 			})
 		})
