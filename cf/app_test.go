@@ -246,7 +246,7 @@ var _ = Describe("Cf client App", func() {
 			})
 		})
 
-		When("get app returns 500 & get process return ok", func() {
+		When("get app returns 500 and get process return ok", func() {
 			BeforeEach(func() {
 				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
 					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
@@ -259,7 +259,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances GetAppProcesses failed: failed getting processes page 1: failed getting processes for app 'test-app-id':.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp(`get state&instances failed: failed GetAppProcesses 'test-app-id': failed getting page 1: failed getting cf.Response\[.*cf.Process\]:.*'UnknownError'`)))
 			})
 		})
 
@@ -276,11 +276,11 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed: failed getting app 'test-app-id': GET request failed:.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp("get state&instances failed: failed getting app 'test-app-id':.*'UnknownError'")))
 			})
 		})
 
-		When("get processes return 500 & get app returns 500", func() {
+		When("get processes return 500 and get app returns 500", func() {
 			BeforeEach(func() {
 				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
 					RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
@@ -293,7 +293,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp("get state&instances getApp failed:.*'UnknownError'")))
+				Expect(err).To(MatchError(MatchRegexp(`get state&instances failed: .*'UnknownError'`)))
 			})
 		})
 	})

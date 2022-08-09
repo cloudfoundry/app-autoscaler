@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (
@@ -78,10 +76,10 @@ func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
 	}()
 	wg.Wait()
 	if errApp != nil {
-		return nil, fmt.Errorf("get state&instances getApp failed: %w", errApp)
+		return nil, fmt.Errorf("get state&instances failed: %w", errApp)
 	}
 	if errProc != nil {
-		return nil, fmt.Errorf("get state&instances GetAppProcesses failed: %w", errProc)
+		return nil, fmt.Errorf("get state&instances failed: %w", errProc)
 	}
 	return &AppAndProcesses{App: app, Processes: processes}, nil
 }
