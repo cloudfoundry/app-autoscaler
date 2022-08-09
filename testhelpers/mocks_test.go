@@ -1,13 +1,10 @@
 package testhelpers_test
 
 import (
-	"time"
-
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -71,19 +68,14 @@ var _ = Describe("Cf cloud controller", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
-				Expect(err).NotTo(HaveOccurred())
-				created, err := time.Parse(time.RFC3339, "2022-07-21T13:42:30Z")
-				Expect(err).NotTo(HaveOccurred())
-				updated, err := time.Parse(time.RFC3339, "2022-07-21T14:30:17Z")
-				Expect(err).NotTo(HaveOccurred())
 				app, err := cfc.GetApp("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(app).To(Equal(&cf.App{
 					Guid:      "testing-guid-get-app",
 					Name:      "mock-get-app",
 					State:     "STARTED",
-					CreatedAt: created,
-					UpdatedAt: updated,
+					CreatedAt: ParseDate("2022-07-21T13:42:30Z"),
+					UpdatedAt: ParseDate("2022-07-21T14:30:17Z"),
 					Relationships: cf.Relationships{
 						Space: &cf.Space{
 							Data: cf.SpaceData{
@@ -115,8 +107,7 @@ var _ = Describe("Cf cloud controller", func() {
 
 	})
 
-	Describe("GetStateAndInstances", func() {
-
+	Describe("GetAppAndProcesses", func() {
 		When("the mocks are used", func() {
 			var mocks = NewMockServer()
 			BeforeEach(func() {
@@ -126,10 +117,25 @@ var _ = Describe("Cf cloud controller", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
-				app, err := cfc.GetStateAndInstances("test-app-id")
+				app, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				state := "STARTED"
-				Expect(app).To(Equal(&models.AppEntity{State: &state, Instances: 27}))
+				Expect(app).To(Equal(&cf.AppAndProcesses{
+					App: &cf.App{
+						Guid:      "testing-guid-get-app",
+						Name:      "mock-get-app",
+						State:     "STARTED",
+						CreatedAt: ParseDate("2022-07-21T13:42:30Z"),
+						UpdatedAt: ParseDate("2022-07-21T14:30:17Z"),
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: "test_space_guid",
+								},
+							},
+						},
+					},
+					Processes: cf.Processes{{Instances: 27}},
+				}))
 			})
 		})
 

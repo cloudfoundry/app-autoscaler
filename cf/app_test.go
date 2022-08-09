@@ -78,8 +78,8 @@ var _ = Describe("Cf client App", func() {
 					Guid:      "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
 					Name:      "autoscaler-1--0cde0e473e3e47f4",
 					State:     "STOPPED",
-					CreatedAt: parseDate("2022-07-21T13:42:30Z"),
-					UpdatedAt: parseDate("2022-07-21T14:30:17Z"),
+					CreatedAt: ParseDate("2022-07-21T13:42:30Z"),
+					UpdatedAt: ParseDate("2022-07-21T14:30:17Z"),
 					Relationships: cf.Relationships{
 						Space: &cf.Space{
 							Data: cf.SpaceData{
@@ -171,8 +171,8 @@ var _ = Describe("Cf client App", func() {
 						Guid:      "testing-guid-get-app",
 						Name:      "mock-get-app",
 						State:     "STARTED",
-						CreatedAt: parseDate("2022-07-21T13:42:30Z"),
-						UpdatedAt: parseDate("2022-07-21T14:30:17Z"),
+						CreatedAt: ParseDate("2022-07-21T13:42:30Z"),
+						UpdatedAt: ParseDate("2022-07-21T14:30:17Z"),
 						Relationships: cf.Relationships{
 							Space: &cf.Space{
 								Data: cf.SpaceData{
@@ -188,8 +188,8 @@ var _ = Describe("Cf client App", func() {
 							Instances:  27,
 							MemoryInMb: 0,
 							DiskInMb:   0,
-							CreatedAt:  parseDate("0001-01-01T00:00:00Z"),
-							UpdatedAt:  parseDate("0001-01-01T00:00:00Z"),
+							CreatedAt:  ParseDate("0001-01-01T00:00:00Z"),
+							UpdatedAt:  ParseDate("0001-01-01T00:00:00Z"),
 						},
 					}}))
 			})
@@ -213,8 +213,8 @@ var _ = Describe("Cf client App", func() {
 						Guid:      "663e9a25-30ba-4fb4-91fa-9b784f4a8542",
 						Name:      "autoscaler-1--0cde0e473e3e47f4",
 						State:     "STOPPED",
-						CreatedAt: parseDate("2022-07-21T13:42:30Z"),
-						UpdatedAt: parseDate("2022-07-21T14:30:17Z"),
+						CreatedAt: ParseDate("2022-07-21T13:42:30Z"),
+						UpdatedAt: ParseDate("2022-07-21T14:30:17Z"),
 						Relationships: cf.Relationships{
 							Space: &cf.Space{
 								Data: cf.SpaceData{
@@ -230,8 +230,8 @@ var _ = Describe("Cf client App", func() {
 							Instances:  5,
 							MemoryInMb: 256,
 							DiskInMb:   1024,
-							CreatedAt:  parseDate("2016-03-23T18:48:22Z"),
-							UpdatedAt:  parseDate("2016-03-23T18:48:42Z"),
+							CreatedAt:  ParseDate("2016-03-23T18:48:22Z"),
+							UpdatedAt:  ParseDate("2016-03-23T18:48:42Z"),
 						},
 						{
 							Guid:       "3fccacd9-4b02-4b96-8d02-8e865865e9eb",
@@ -239,8 +239,8 @@ var _ = Describe("Cf client App", func() {
 							Instances:  1,
 							MemoryInMb: 256,
 							DiskInMb:   1024,
-							CreatedAt:  parseDate("2016-03-23T18:48:22Z"),
-							UpdatedAt:  parseDate("2016-03-23T18:48:42Z"),
+							CreatedAt:  ParseDate("2016-03-23T18:48:22Z"),
+							UpdatedAt:  ParseDate("2016-03-23T18:48:42Z"),
 						}},
 				}))
 			})
@@ -336,9 +336,3 @@ var _ = Describe("Cf client App", func() {
 	})
 
 })
-
-func parseDate(date string) time.Time {
-	updated, err := time.Parse(time.RFC3339, date)
-	Expect(err).NotTo(HaveOccurred())
-	return updated
-}
