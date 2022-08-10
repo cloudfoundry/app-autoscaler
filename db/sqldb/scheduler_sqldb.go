@@ -64,10 +64,7 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 		sdb.logger.Error("failed-get-active-schedules-query", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	schedules := make(map[string]*models.ActiveSchedule)
 	var id int64
@@ -92,7 +89,7 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 		}
 		schedules[appId] = &schedule
 	}
-	return schedules, nil
+	return schedules, rows.Err()
 }
 
 func (sdb *SchedulerSQLDB) GetDBStatus() sql.DBStats {

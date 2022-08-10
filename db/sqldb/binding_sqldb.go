@@ -165,10 +165,7 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 		return err
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		query = bdb.sqldb.Rebind("DELETE FROM service_instance WHERE service_instance_id =?")
@@ -177,6 +174,12 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 		if err != nil {
 			bdb.logger.Error("delete-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
 		}
+		return err
+	}
+
+	err = rows.Err()
+	if err != nil {
+		bdb.logger.Error("delete-service-instance-row", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
 		return err
 	}
 
@@ -191,13 +194,16 @@ func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceI
 		return err
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		return db.ErrAlreadyExists
+	}
+
+	err = rows.Err()
+	if err != nil {
+		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
+		return err
 	}
 
 	query = bdb.sqldb.Rebind("INSERT INTO binding" +
@@ -218,10 +224,7 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 		return err
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		query = bdb.sqldb.Rebind("DELETE FROM binding WHERE binding_id =?")
@@ -230,6 +233,12 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 		if err != nil {
 			bdb.logger.Error("delete-service-binding", err, lager.Data{"query": query, "bindingid": bindingId})
 		}
+		return err
+	}
+
+	err = rows.Err()
+	if err != nil {
+		bdb.logger.Error("delete-service-binding-row", err, lager.Data{"query": query, "bindingId": bindingId})
 		return err
 	}
 
@@ -277,10 +286,7 @@ func (bdb *BindingSQLDB) GetAppIdsByInstanceId(instanceId string) ([]string, err
 		return appIds, err
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	var appId string
 	for rows.Next() {
@@ -291,7 +297,7 @@ func (bdb *BindingSQLDB) GetAppIdsByInstanceId(instanceId string) ([]string, err
 		appIds = append(appIds, appId)
 	}
 
-	return appIds, nil
+	return appIds, rows.Err()
 }
 
 func (bdb *BindingSQLDB) CountServiceInstancesInOrg(orgId string) (int, error) {
@@ -313,10 +319,7 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(instanceId string) ([]string,
 		bdb.logger.Error("get-appids-from-binding-table", err, lager.Data{"query": query, "instanceId": instanceId})
 		return bindingIds, err
 	}
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	var appId string
 	for rows.Next() {
@@ -327,5 +330,5 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(instanceId string) ([]string,
 		bindingIds = append(bindingIds, appId)
 	}
 
-	return bindingIds, nil
+	return bindingIds, rows.Err()
 }

@@ -198,10 +198,7 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 		}
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
+	defer func() { _ = rows.Close() }()
 
 	mtrcs := []*models.AppInstanceMetric{}
 	var index uint32
@@ -230,7 +227,7 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 		}
 		mtrcs = append(mtrcs, &metric)
 	}
-	return mtrcs, nil
+	return mtrcs, rows.Err()
 }
 func (idb *InstanceMetricsSQLDB) PruneInstanceMetrics(before int64) error {
 	query := idb.sqldb.Rebind("DELETE FROM appinstancemetrics WHERE timestamp <= ?")

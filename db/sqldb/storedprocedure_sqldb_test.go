@@ -140,13 +140,14 @@ func addPSQLFunctions() {
 
 func addCreateFunction() {
 	//nolint:rowserrcheck
-	_, err := dbHelper.Query(`
+	rows, err := dbHelper.Query(`
 create or replace function create_creds(
   username varchar,
   password varchar
 ) returns TABLE(username varchar, password varchar)
 language SQL
 as $$ SELECT $2 || ' from create', $1 || ' from create' $$`)
+	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function createCreds: %s", err.Error()))
 	}
@@ -154,7 +155,7 @@ as $$ SELECT $2 || ' from create', $1 || ' from create' $$`)
 
 func addDeleteFunction() {
 	//nolint:rowserrcheck
-	_, err := dbHelper.Query(fmt.Sprintf(`
+	rows, err := dbHelper.Query(fmt.Sprintf(`
 create or replace function "deleteCreds"(
   username varchar,
   password varchar
@@ -168,6 +169,7 @@ begin
     return 1;
 end;
 $$`, instanceId, bindingId))
+	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function deleteCreds: %s", err.Error()))
 	}
@@ -175,7 +177,7 @@ $$`, instanceId, bindingId))
 
 func addDeleteAllFunction() {
 	//nolint:rowserrcheck
-	_, err := dbHelper.Query(fmt.Sprintf(`
+	rows, err := dbHelper.Query(fmt.Sprintf(`
 create or replace function "deleteAll"( instanceId varchar) 
 returns integer
 language plpgsql
@@ -187,6 +189,7 @@ begin
     return 1;
 end;
 $$`, instanceId))
+	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function deleteAll: %s", err.Error()))
 	}
@@ -194,7 +197,7 @@ $$`, instanceId))
 
 func addValidateFunction() {
 	//nolint:rowserrcheck
-	_, err := dbHelper.Query(fmt.Sprintf(`
+	rows, err := dbHelper.Query(fmt.Sprintf(`
 create or replace function "validate"( username text, password text) 
 returns TABLE( instanceId text, bindingId text)
 language plpgsql
@@ -206,6 +209,7 @@ begin
     return query SELECT username || ' from validate' , password || ' from validate'  ;
 end;
 $$`, instanceId, bindingId))
+	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function validate: %s", err.Error()))
 	}
@@ -213,7 +217,8 @@ $$`, instanceId, bindingId))
 
 func deleteFunction(name string) {
 	//nolint:rowserrcheck
-	_, err := dbHelper.Query(fmt.Sprintf("Drop function if exists public.%s", pq.QuoteIdentifier(name)))
+	rows, err := dbHelper.Query(fmt.Sprintf("Drop function if exists public.%s", pq.QuoteIdentifier(name)))
+	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not remove procedure %s: %s", name, err.Error()))
 	}
