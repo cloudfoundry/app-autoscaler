@@ -2,9 +2,9 @@ package cf_test
 
 import (
 	"net/http"
-	"regexp"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -21,27 +21,11 @@ type userScope struct {
 	Scope []string `json:"scope"`
 }
 
-type roles struct {
-	Pagination struct {
-		Total int `json:"total_results"`
-	} `json:"pagination"`
-}
-
-type app struct {
-	Relationships struct {
-		Space struct {
-			Data struct {
-				GUID string `json:"guid"`
-			} `json:"data"`
-		} `json:"space"`
-	} `json:"relationships"`
-}
-
 const (
-	TEST_USER_TOKEN = "bearer test-user-token"
-	TEST_APP_ID     = "test-app-id"
-	TEST_SPACE_ID   = "test-space-id"
-	TEST_USER_ID    = "test-user-id"
+	TestUserToken = "bearer test-user-token"
+	TestAppId     = "test-app-id"
+	TestSpaceId   = "test-space-id"
+	TestUserId    = "test-user-id"
 )
 
 var _ = Describe("Oauth", func() {
@@ -56,8 +40,8 @@ var _ = Describe("Oauth", func() {
 		isUserSpaceDeveloperFlag bool
 		isUserAdminFlag          bool
 
-		fakeCCServer    *ghttp.Server
-		fakeTokenServer *ghttp.Server
+		fakeCCServer    *testhelpers.MockServer
+		fakeTokenServer *testhelpers.MockServer
 
 		userInfoStatus   int
 		userInfoResponse userInfo
@@ -65,47 +49,41 @@ var _ = Describe("Oauth", func() {
 		userScopeStatus   int
 		userScopeResponse userScope
 
-		appStatus       int
-		appResponse     app
-		appsPathMatcher *regexp.Regexp
+		appStatus int
 
-		rolesStatus   int
-		rolesResponse roles
+		rolesStatus int
+		roles       Roles
 	)
 
 	BeforeEach(func() {
-		userToken = TEST_USER_TOKEN
+		userToken = TestUserToken
+		appStatus = http.StatusOK
+		userScopeStatus = http.StatusOK
+		userInfoStatus = http.StatusOK
+		rolesStatus = http.StatusOK
+		roles = Roles{{Type: RoleSpaceDeveloper}}
+		userInfoResponse = userInfo{
+			UserId: TestUserId,
+		}
 
-		fakeCCServer = ghttp.NewServer()
-		fakeTokenServer = ghttp.NewServer()
-
-		fakeCCServer.RouteToHandler(http.MethodGet, "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-			AuthEndpoint:    "test-auth-endpoint",
-			TokenEndpoint:   fakeTokenServer.URL(),
-			DopplerEndpoint: "test-doppler-endpoint",
-		}))
-
+		fakeCCServer = testhelpers.NewMockServer()
+		fakeTokenServer = testhelpers.NewMockServer()
 		fakeTokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWithJSONEncodedPtr(&userInfoStatus, &userInfoResponse))
 		fakeTokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWithJSONEncodedPtr(&userScopeStatus, &userScopeResponse))
 		fakeTokenServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 			AccessToken: "test-access-token",
 			ExpiresIn:   12000,
 		}))
-
-		appsPathMatcher, _ = regexp.Compile(`/v3/apps/[A-Za-z0-9\-]+`)
-		fakeCCServer.RouteToHandler(http.MethodGet, appsPathMatcher, ghttp.CombineHandlers(
-			ghttp.VerifyRequest("GET", "/v3/apps/"+TEST_APP_ID),
-			ghttp.RespondWithJSONEncodedPtr(&appStatus, &appResponse)))
-
-		fakeCCServer.RouteToHandler(http.MethodGet, "/v3/roles", ghttp.CombineHandlers(
-			ghttp.VerifyRequest("GET", "/v3/roles", "types=space_developer&space_guids="+TEST_SPACE_ID+"&user_guids="+TEST_USER_ID),
-			ghttp.RespondWithJSONEncodedPtr(&rolesStatus, &rolesResponse)))
-
+		fakeCCServer.Add().Info(fakeTokenServer.URL())
 		conf = &Config{}
 		conf.API = fakeCCServer.URL()
 		logger = lagertest.NewTestLogger("oauth-test")
 		cfc = NewCFClient(conf, logger, clock.NewClock())
 		err = cfc.Login()
+
+	})
+	JustBeforeEach(func() {
+		fakeCCServer.Add().GetApp(TestAppId, appStatus, TestSpaceId).Roles(rolesStatus, roles...)
 	})
 
 	AfterEach(func() {
@@ -119,7 +97,7 @@ var _ = Describe("Oauth", func() {
 
 	Describe("IsUserSpaceDeveloper", func() {
 		JustBeforeEach(func() {
-			isUserSpaceDeveloperFlag, err = cfc.IsUserSpaceDeveloper(TEST_USER_TOKEN, TEST_APP_ID)
+			isUserSpaceDeveloperFlag, err = cfc.IsUserSpaceDeveloper(TestUserToken, TestAppId)
 		})
 
 		Context("token server is not reachable", func() {
@@ -138,7 +116,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Unauthorized"))
+				Expect(err).To(MatchError(MatchRegexp("Unauthorized")))
 			})
 		})
 
@@ -148,7 +126,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get user info, statuscode :400"))
+				Expect(err).To(MatchError(MatchRegexp("Failed to get user info, statuscode :400")))
 			})
 		})
 
@@ -163,129 +141,57 @@ var _ = Describe("Oauth", func() {
 
 		Context("cc server is not reachable", func() {
 			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-
 				fakeCCServer.Close()
-				fakeCCServer = nil
-
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper for appId\(test-app-id\): getSpaceId failed:.*connection refused`)))
 			})
 		})
 
-		Context("apps endpoint returns non-200 and non-401 status code", func() {
+		Context("apps endpoint returns 400 status code", func() {
 			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
 				appStatus = http.StatusBadRequest
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get app, statusCode : 400"))
+				Expect(err).To(MatchError(MatchRegexp("400")))
 			})
 		})
 
-		Context("apps endpoint returns non-200 and non-401 status code", func() {
+		Context("apps endpoint returns 401 status code", func() {
 			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
 				appStatus = http.StatusUnauthorized
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Unauthorized"))
+				Expect(err).To(MatchError(MatchRegexp("401")))
 			})
 		})
 
-		Context("apps endpoint returns non json response", func() {
+		Context("roles endpoint returns 200 and 400 status code", func() {
 			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-				fakeCCServer.RouteToHandler(http.MethodGet, appsPathMatcher, ghttp.RespondWith(http.StatusOK, "non-json-response"))
-
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		Context("roles endpoint returns non-200 and non-401 status code", func() {
-			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-				appStatus = http.StatusOK
-				appResponse = app{}
-				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
-
 				rolesStatus = http.StatusBadRequest
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get roles, statusCode : 400"))
+				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper userId\(test-user-id\), spaceId\(test-space-id\):.*page 1:.*cf.Response\[.*cf.Role\]:.*400`)))
 			})
 		})
 
 		Context("roles endpoint returns 401 status code", func() {
 			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-				appStatus = http.StatusOK
-				appResponse = app{}
-				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
-
 				rolesStatus = http.StatusUnauthorized
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Unauthorized"))
-			})
-		})
-
-		Context("roles endpoint returns non json response", func() {
-			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-				appStatus = http.StatusOK
-				appResponse = app{}
-				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
-
-				fakeCCServer.RouteToHandler(http.MethodGet, "/v3/roles", ghttp.RespondWith(http.StatusOK, "non-json-response"))
-
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp(`.*userId\(test-user-id\), spaceId\(test-space-id\):.*cf.Response\[.*cf.Role\]:.*invalid error json`)))
 			})
 		})
 
 		Context("user is not space developer", func() {
 			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-				appStatus = http.StatusOK
-				appResponse = app{}
-				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
-
-				rolesStatus = http.StatusOK
-				rolesResponse = roles{}
-
+				roles = Roles{{Type: RoleOrganizationManager}}
 			})
 			It("should return false", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -294,20 +200,6 @@ var _ = Describe("Oauth", func() {
 		})
 
 		Context("user is space developer", func() {
-			BeforeEach(func() {
-				userInfoStatus = http.StatusOK
-				userInfoResponse = userInfo{
-					UserId: TEST_USER_ID,
-				}
-				appStatus = http.StatusOK
-				appResponse = app{}
-				appResponse.Relationships.Space.Data.GUID = TEST_SPACE_ID
-
-				rolesStatus = http.StatusOK
-				rolesResponse = roles{}
-				rolesResponse.Pagination.Total = 2
-
-			})
 			It("should return true", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isUserSpaceDeveloperFlag).To(BeTrue())

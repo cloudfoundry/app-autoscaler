@@ -115,12 +115,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 
 		Context("Check permission not passed", func() {
 			BeforeEach(func() {
-				fakeCCNOAAUAA.RouteToHandler("GET", rolesRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-					struct {
-						Pagination struct {
-							Total int `json:"total_results"`
-						} `json:"pagination"`
-					}{}))
+				fakeCCNOAAUAA.Add().Roles(http.StatusOK)
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {

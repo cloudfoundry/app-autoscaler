@@ -176,12 +176,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Context("Check permission not passed", func() {
 			BeforeEach(func() {
-				fakeCCNOAAUAA.RouteToHandler("GET", rolesRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-					struct {
-						Pagination struct {
-							Total int `json:"total_results"`
-						} `json:"pagination"`
-					}{}))
+				fakeCCNOAAUAA.Add().Roles(http.StatusOK)
 			})
 			Context("Create policy", func() {
 				It("should error with status code 401", func() {

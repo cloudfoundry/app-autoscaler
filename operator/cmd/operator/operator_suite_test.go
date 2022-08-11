@@ -72,7 +72,7 @@ func initConfig() {
 
 	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-	cfServer.Add().GetApp(models2.AppStatusStarted)
+	cfServer.Add().GetApp(models2.AppStatusStarted, http.StatusOK, "test_space_guid")
 	cfServer.Add().GetAppProcesses(2)
 
 	cfg.CF = cf.Config{

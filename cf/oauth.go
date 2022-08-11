@@ -22,54 +22,24 @@ var (
 func (c *Client) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
 	userId, err := c.getUserId(userToken)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	spaceId, err := c.getSpaceId(userToken, appId)
+	spaceId, err := c.getSpaceId(appId)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	rolesEndpoint := c.getSpaceDeveloperRolesEndpoint(userId, spaceId)
-
-	req, err := http.NewRequest("GET", rolesEndpoint, nil)
+	roles, err := c.GetSpaceDeveloperRoles(spaceId, userId)
 	if err != nil {
-		c.logger.Error("Failed to create get roles request", err, lager.Data{"rolesEndpoint": rolesEndpoint})
-		return false, err
-	}
-	req.Header.Set("Authorization", userToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		c.logger.Error("Failed to get roles, request failed", err, lager.Data{"rolesEndpoint": rolesEndpoint})
-		return false, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusUnauthorized {
-		c.logger.Error("Failed to get roles, token invalid", nil, lager.Data{"rolesEndpoint": rolesEndpoint, "statusCode": resp.StatusCode})
-		return false, ErrUnauthrorized
-	} else if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Failed to get roles", nil, lager.Data{"rolesEndpoint": rolesEndpoint, "statusCode": resp.StatusCode})
-		return false, fmt.Errorf("Failed to get roles, statusCode : %v", resp.StatusCode)
+		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
 
-	roles := struct {
-		Pagination struct {
-			Total int `json:"total_results"`
-		} `json:"pagination"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&roles)
-	if err != nil {
-		c.logger.Error("Failed to parse roles response body", err, lager.Data{"rolesEndpoint": rolesEndpoint})
-		return false, err
+	isSpaceDeveloperOnAppSpace := roles.HasRole(RoleSpaceDeveloper)
+	if !isSpaceDeveloperOnAppSpace {
+		c.logger.Error("User without SpaceDeveloper role in the apps space tried to access API", nil)
 	}
-
-	isSpaceDeveloperOnAppSapce := roles.Pagination.Total > 0
-	if !isSpaceDeveloperOnAppSapce {
-		c.logger.Error("User without SpaceDeveloper role in the apps space tried to access API", nil, lager.Data{"rolesEndpoint": rolesEndpoint})
-	}
-	return isSpaceDeveloperOnAppSapce, nil
+	return isSpaceDeveloperOnAppSpace, nil
 }
 
 func (c *Client) IsUserAdmin(userToken string) (bool, error) {
@@ -124,7 +94,7 @@ func (c *Client) getUserScope(userToken string) ([]string, error) {
 	return userScope.Scope, nil
 }
 
-func (c *Client) getUserId(userToken string) (string, error) {
+func (c *Client) getUserId(userToken string) (UserId, error) {
 	userInfoEndpoint := c.getUserInfoEndpoint()
 
 	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
@@ -150,7 +120,7 @@ func (c *Client) getUserId(userToken string) (string, error) {
 	}
 
 	userInfo := struct {
-		UserId string `json:"user_id"`
+		UserId UserId `json:"user_id"`
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&userInfo)
 	if err != nil {
@@ -161,52 +131,16 @@ func (c *Client) getUserId(userToken string) (string, error) {
 	return userInfo.UserId, nil
 }
 
-func (c *Client) getSpaceId(userToken string, appId string) (string, error) {
-	appsEndpoint := c.getAppsEndpoint(appId)
-
-	req, err := http.NewRequest("GET", appsEndpoint, nil)
+func (c *Client) getSpaceId(appId string) (SpaceId, error) {
+	app, err := c.GetApp(appId)
 	if err != nil {
-		c.logger.Error("Failed to create apps request", err, lager.Data{"appsEndpoint": appsEndpoint})
-		return "", err
-	}
-	req.Header.Set("Authorization", userToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		c.logger.Error("Failed to get app, request failed", err, lager.Data{"appsEndpoint": appsEndpoint})
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusNotFound {
-		c.logger.Error("Failed to get app info, token invalid", nil, lager.Data{"appsEndpoint": appsEndpoint, "statusCode": resp.StatusCode})
-		return "", ErrUnauthrorized
-	} else if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Failed to get app info", nil, lager.Data{"appsEndpoint": appsEndpoint, "statusCode": resp.StatusCode})
-		return "", fmt.Errorf("Failed to get app, statusCode : %v", resp.StatusCode)
+		return "", fmt.Errorf("getSpaceId failed: %w", err)
 	}
 
-	app := struct {
-		Relationships struct {
-			Space struct {
-				Data struct {
-					GUID string `json:"guid"`
-				} `json:"data"`
-			} `json:"space"`
-		} `json:"relationships"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&app)
-	if err != nil {
-		c.logger.Error("Failed to parse app response body", err, lager.Data{"appsEndpoint": appsEndpoint})
-		return "", err
-	}
-
-	spaceId := app.Relationships.Space.Data.GUID
+	spaceId := app.Relationships.Space.Data.Guid
 
 	if spaceId == "" {
-		c.logger.Error("Failed to retrieve space guid", nil, lager.Data{"appsEndpoint": appsEndpoint, "appObject": app})
-		return "", fmt.Errorf("Failed to retrieve space guid")
+		return "", fmt.Errorf("empty space-guid: failed to retrieve it for app with id %s", appId)
 	}
 
 	return spaceId, nil
@@ -222,17 +156,4 @@ func (c *Client) getUserScopeEndpoint(userToken string) (string, error) {
 
 func (c *Client) getUserInfoEndpoint() string {
 	return c.endpoints.TokenEndpoint + "/userinfo"
-}
-
-func (c *Client) getAppsEndpoint(appId string) string {
-	return c.conf.API + "/v3/apps/" + appId
-}
-
-func (c *Client) getSpaceDeveloperRolesEndpoint(userId string, spaceId string) string {
-	parameters := url.Values{}
-	parameters.Add("types", "space_developer")
-	parameters.Add("space_guids", spaceId)
-	parameters.Add("user_guids", userId)
-	spaceDeveloperRolesEndpoint := c.conf.API + "/v3/roles?" + parameters.Encode()
-	return spaceDeveloperRolesEndpoint
 }
