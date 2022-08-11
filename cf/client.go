@@ -104,7 +104,7 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 		cfhttp.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}),
 		cfhttp.WithDialTimeout(30*time.Second),
 	)
-
+	c.httpClient.Transport = DrainingTransport{c.httpClient.Transport}
 	c.retryClient = createRetryClient(conf, c.httpClient, logger)
 	c.lock = &sync.Mutex{}
 
