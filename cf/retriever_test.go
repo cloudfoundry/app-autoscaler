@@ -92,12 +92,18 @@ var _ = Describe("Cf client Retriever", func() {
 			})
 
 			It("should return IsNotFound error", func() {
-				app, err := cfc.Get("/v3/something/404")
-				Expect(app).To(BeNil())
+				_, err := cfc.Get("/v3/something/404")
 				var cfError *models.CfError
 				Expect(err).To(MatchError(MatchRegexp(`GET request failed: cf api Error url='', resourceId='': \['CF-ResourceNotFound' code: 10010.*\]`)))
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
 				Expect(models.IsNotFound(err)).To(BeTrue())
+			})
+			It("should close the response body", func() {
+				resp, err := cfc.Get("/v3/something/404")
+				Expect(err).ToNot(BeNil())
+				_, err = resp.Body.Read([]byte{})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError(MatchRegexp(`closed response body`)))
 			})
 		})
 
@@ -114,8 +120,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					app, err := cfc.Get("/v3/some/url")
-					Expect(app).To(BeNil())
+					_, err := cfc.Get("/v3/some/url")
 					Expect(fakeCC.Count().Requests(`^/v3/some/url$`)).To(Equal(4))
 					Expect(err).To(MatchError(MatchRegexp("GET request failed:.*'UnknownError'")))
 				})
@@ -148,12 +153,13 @@ var _ = Describe("Cf client Retriever", func() {
 				It("should error", func() {
 					app, err := cfc.Get("/something")
 					Expect(app).To(BeNil())
-					Expect(err.Error()).To(MatchRegexp(`connection refused`))
+					Expect(err).To(MatchError(MatchRegexp(`connection refused`)))
 					IsUrlNetOpError(err)
 				})
 			})
 		})
 	})
+
 	Describe("Client.Post", func() {
 		When("has an invalid url", func() {
 			It("should return error", func() {
@@ -193,9 +199,32 @@ var _ = Describe("Cf client Retriever", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
-
 	})
-	Describe("Retriever T", func() {
+
+	Describe("ResourceRetriever T", func() {
+		type TestItem struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+		}
+		When("A successful call is made", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					CombineHandlers(
+						VerifyRequest("GET", "/v3/something"),
+						RespondWithJSONEncoded(http.StatusOK, TestItem{Name: "test_name", Type: "test_type"}),
+					),
+				)
+			})
+
+			It("should return correct test item", func() {
+				item, err := cf.ResourceRetriever[TestItem]{cfc}.Get("/v3/something")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(item).To(Equal(TestItem{Name: "test_name", Type: "test_type"}))
+			})
+		})
+	})
+
+	Describe("PagedResourceRetriever T", func() {
 		Context("GetPage", func() {
 			When("response has invalid json", func() {
 				BeforeEach(func() {

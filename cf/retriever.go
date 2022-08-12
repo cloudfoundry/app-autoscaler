@@ -116,16 +116,17 @@ func (c *Client) sendRequest(req *http.Request) (*http.Response, error) {
 
 	resp, err := c.retryClient.Do(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	statusCode := resp.StatusCode
 	if isError(statusCode) {
+		defer func() { _ = resp.Body.Close() }()
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read response[%d]: %w", statusCode, err)
+			return resp, fmt.Errorf("failed to read response[%d]: %w", statusCode, err)
 		}
-		return nil, fmt.Errorf("%s request failed: %w", req.Method, models.NewCfError(req.RequestURI, req.RequestURI, statusCode, respBody))
+		return resp, fmt.Errorf("%s request failed: %w", req.Method, models.NewCfError(req.RequestURI, req.RequestURI, statusCode, respBody))
 	}
 	return resp, nil
 }
