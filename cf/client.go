@@ -60,7 +60,6 @@ type CFClient interface {
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 	IsTokenAuthorized(token, clientId string) (bool, error)
-	GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error)
 	GetServicePlan(serviceInstanceGuid string) (string, error)
 }
 
