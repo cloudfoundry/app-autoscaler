@@ -283,7 +283,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	existingServicePlan, err := h.cfClient.GetServicePlan(instanceId)
+	existingServicePlan, err := h.GetBrokerCatalogPlanId(instanceId)
 	newServicePlan := body.PlanID
 	if newServicePlan != "" {
 		if err != nil {
@@ -331,7 +331,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 		updatedDefaultPolicy = validatedPolicy
 
-		servicePlan, err := h.cfClient.GetServicePlan(instanceId)
+		servicePlan, err := h.GetBrokerCatalogPlanId(instanceId)
 		if err != nil {
 			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
 			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
@@ -450,6 +450,10 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		h.logger.Error("unable to write body", err)
 	}
+}
+
+func (h *BrokerHandler) GetBrokerCatalogPlanId(instanceId string) (string, error) {
+	return h.cfClient.GetServicePlan(instanceId)
 }
 
 func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Request, vars map[string]string) {

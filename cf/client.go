@@ -64,25 +64,22 @@ type CFClient interface {
 }
 
 type Client struct {
-	logger                              lager.Logger
-	conf                                *Config
-	clk                                 clock.Clock
-	tokens                              Tokens
-	endpoints                           Endpoints
-	infoURL                             string
-	tokenURL                            string
-	introspectTokenURL                  string
-	loginForm                           url.Values
-	authHeader                          string
-	httpClient                          *http.Client
-	lock                                *sync.Mutex
-	grantTime                           time.Time
-	planMapsLock                        *sync.Mutex
-	brokerPlanGuidToCCServicePlanGuid   map[string]string
-	ccServicePlanToBrokerPlanGuid       map[string]string
-	instanceMapLock                     *sync.Mutex
-	serviceInstanceGuidToBrokerPlanGuid map[string]string
-	retryClient                         *http.Client
+	logger             lager.Logger
+	conf               *Config
+	clk                clock.Clock
+	tokens             Tokens
+	endpoints          Endpoints
+	infoURL            string
+	tokenURL           string
+	introspectTokenURL string
+	loginForm          url.Values
+	authHeader         string
+	httpClient         *http.Client
+	lock               *sync.Mutex
+	grantTime          time.Time
+	retryClient        *http.Client
+	servicePlan        *Memoizer[string, string]
+	brokerPlanGuid     *Memoizer[string, string]
 }
 
 func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
@@ -107,12 +104,9 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.retryClient = createRetryClient(conf, c.httpClient, logger)
 	c.lock = &sync.Mutex{}
 
-	c.planMapsLock = &sync.Mutex{}
-	c.instanceMapLock = &sync.Mutex{}
+	c.servicePlan = NewMemoizer(c.getServicePlan)
+	c.brokerPlanGuid = NewMemoizer(c.getBrokerPlanGuid)
 
-	c.brokerPlanGuidToCCServicePlanGuid = make(map[string]string)
-	c.ccServicePlanToBrokerPlanGuid = make(map[string]string)
-	c.serviceInstanceGuidToBrokerPlanGuid = make(map[string]string)
 	if c.conf.PerPage == 0 {
 		c.conf.PerPage = defaultPerPage
 	}
