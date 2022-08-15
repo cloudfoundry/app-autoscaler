@@ -101,7 +101,18 @@ func (a AddMock) ScaleAppWebProcess() AddMock {
 	return a
 }
 
-func (a AddMock) Roles(statusCode int, roles ...cf.Role) {
+func (a AddMock) Roles(statusCode int, roles ...cf.Role) AddMock {
 	a.server.RouteToHandler("GET", "/v3/roles",
 		ghttp.RespondWithJSONEncoded(statusCode, cf.Response[cf.Role]{Resources: roles}))
+	return a
+}
+
+func (a AddMock) ServiceInstance(planGuid string) {
+	a.server.RouteToHandler("GET", regexp.MustCompile(`^/v3/service_instances/[^/]+$`),
+		ghttp.RespondWithJSONEncoded(http.StatusOK, &cf.ServiceInstance{
+			Guid:          "service-instance-mock-guid",
+			Type:          "managed",
+			Relationships: cf.ServiceInstanceRelationships{ServicePlan: cf.ServicePlan{Data: cf.ServicePlanData{Guid: planGuid}}},
+		}),
+	)
 }

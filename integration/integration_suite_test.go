@@ -57,7 +57,6 @@ var (
 	dbUrl                   string
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *testhelpers.MockServer
@@ -770,7 +769,12 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-	fakeCCNOAAUAA.Add().GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").GetAppProcesses(instanceCount).ScaleAppWebProcess().Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper})
+	fakeCCNOAAUAA.Add().
+		GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
+		GetAppProcesses(instanceCount).
+		ScaleAppWebProcess().
+		Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper}).ServiceInstance("cc-free-plan-id")
+
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			Scope []string `json:"scope"`
@@ -782,16 +786,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			UserId string `json:"user_id"`
 		}{
 			testUserId,
-		}))
-
-	type ServiceInstanceEntity struct {
-		ServicePlanGuid string `json:"service_plan_guid"`
-	}
-	fakeCCNOAAUAA.RouteToHandler("GET", serviceInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			ServiceInstanceEntity `json:"entity"`
-		}{
-			ServiceInstanceEntity{"cc-free-plan-id"},
 		}))
 
 	type ServicePlanEntity struct {

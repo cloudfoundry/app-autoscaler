@@ -63,7 +63,7 @@ var _ = Describe("Cf client Service Instances", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/service_instances/test_guid", "fields[service_plan]=name,guid"),
+						VerifyRequest("GET", "/v3/service_instances/test_guid"),
 						RespondWith(http.StatusOK, LoadFile("service_instance.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
@@ -89,7 +89,7 @@ var _ = Describe("Cf client Service Instances", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/service_instances/test_guid", "fields[service_plan]=name,guid"),
+						VerifyRequest("GET", "/v3/service_instances/test_guid"),
 						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 					),
 				)

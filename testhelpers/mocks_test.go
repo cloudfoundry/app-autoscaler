@@ -182,4 +182,23 @@ var _ = Describe("Cf cloud controller", func() {
 			})
 		})
 	})
+
+	Describe("GetServiceInstance", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().Info(fakeLoginServer.URL()).ServiceInstance("A-service-plan-guid")
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				roles, err := cfc.GetServiceInstance("some-guid")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(roles).To(Equal(&cf.ServiceInstance{
+					Guid:          "service-instance-mock-guid",
+					Type:          "managed",
+					Relationships: cf.ServiceInstanceRelationships{ServicePlan: cf.ServicePlan{Data: cf.ServicePlanData{Guid: "A-service-plan-guid"}}}}))
+			})
+		})
+	})
 })

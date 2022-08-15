@@ -10,6 +10,10 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+const (
+	ServicePlansPath = "v2/service_plans"
+)
+
 type ServicePlanEntity struct {
 	UniqueId string `json:"unique_id"`
 }
