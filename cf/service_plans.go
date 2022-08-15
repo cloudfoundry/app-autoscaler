@@ -95,7 +95,7 @@ func (c *Client) GetServicePlan(serviceInstanceGuid string) (string, error) {
 		return "", err
 	}
 
-	servicePlanGuid := result.Entity.ServicePlanGuid
+	servicePlanGuid := result.Relationships.ServicePlan.Data.Guid
 	logger.Info("found-guid", lager.Data{"servicePlanGuid": servicePlanGuid})
 	brokerPlanGuid, err := c.getBrokerPlanGuid(servicePlanGuid)
 	if err != nil {
