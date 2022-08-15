@@ -9,18 +9,15 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-
 	"code.cloudfoundry.org/lager"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 type Client struct {
-	client   *http.Client
-	cfClient cf.CFClient
-	conf     *config.Config
-	logger   lager.Logger
+	client *http.Client
+	conf   *config.Config
+	logger lager.Logger
 }
 
 func NewClient(config *config.Config, logger lager.Logger) *Client {
@@ -89,8 +86,4 @@ func (qmc *Client) GetQuota(orgGUID, serviceName, planName string) (int, error) 
 
 func (qmc *Client) SetClient(client *http.Client) {
 	qmc.client = client
-}
-
-func (qmc *Client) GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error) {
-	return qmc.cfClient.GetServiceInstancesInOrg(orgGUID, servicePlanGuid)
 }
