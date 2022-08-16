@@ -197,7 +197,23 @@ var _ = Describe("Cf cloud controller", func() {
 				Expect(roles).To(Equal(&cf.ServiceInstance{
 					Guid:          "service-instance-mock-guid",
 					Type:          "managed",
-					Relationships: cf.ServiceInstanceRelationships{ServicePlan: cf.ServicePlan{Data: cf.ServicePlanData{Guid: "A-service-plan-guid"}}}}))
+					Relationships: cf.ServiceInstanceRelationships{ServicePlan: cf.ServicePlanRelation{Data: cf.ServicePlanData{Guid: "A-service-plan-guid"}}}}))
+			})
+		})
+	})
+
+	Describe("ServicePlan", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().Info(fakeLoginServer.URL()).ServicePlan("a-broker-plan-id")
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				roles, err := cfc.GetServicePlanResource("a-broker-plan-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(roles).To(Equal(&cf.ServicePlan{BrokerCatalog: cf.BrokerCatalog{Id: "a-broker-plan-id"}}))
 			})
 		})
 	})

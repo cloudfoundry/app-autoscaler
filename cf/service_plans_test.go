@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-var _ = Describe("Cf client Service Instances", func() {
+var _ = Describe("Cf client Service Plans", func() {
 
 	var (
 		conf            *cf.Config
@@ -57,48 +57,42 @@ var _ = Describe("Cf client Service Instances", func() {
 		}
 	})
 
-	Describe("Get Service Instances", func() {
+	Describe("GetServicePlanResource", func() {
 
-		When("get service instances succeeds", func() {
+		When("get service plans succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/service_instances/test_guid"),
-						RespondWith(http.StatusOK, LoadFile("service_instance.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						VerifyRequest("GET", "/v3/service_plans/test_guid"),
+						RespondWith(http.StatusOK, LoadFile("service_plan.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
 			})
 
 			It("returns correct struct", func() {
-				serviceInstance, err := cfc.GetServiceInstance("test_guid")
+				servicePlan, err := cfc.GetServicePlanResource("test_guid")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(serviceInstance).To(Equal(&cf.ServiceInstance{
-					Guid: "c89b3280-fe8d-4aa0-a42e-44465bb1c61c",
-					Type: "managed",
-					Relationships: cf.ServiceInstanceRelationships{
-						ServicePlan: cf.ServicePlanRelation{
-							Data: cf.ServicePlanData{
-								Guid: "5358d122-638e-11ea-afca-bf6e756684ac",
-							},
-						},
+				Expect(servicePlan).To(Equal(&cf.ServicePlan{Guid: "d67b2fe4-665c-4bf2-9ccc-e080c49d48d4",
+					BrokerCatalog: cf.BrokerCatalog{
+						Id: "autoscaler-free-plan-id",
 					}}))
 			})
 		})
 
-		When("get service instance returns a 500 code", func() {
+		When("get service plans returns a 500 code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/service_instances/test_guid"),
+						VerifyRequest("GET", "/v3/service_plans/test_guid"),
 						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 					),
 				)
 			})
 
 			It("should return correct error", func() {
-				_, err := cfc.GetServiceInstance("test_guid")
+				_, err := cfc.GetServicePlanResource("test_guid")
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`failed GetServiceInstance guid\(test_guid\):.*cf.ServiceInstance.*GET.*'UnknownError'.*`)))
+				Expect(err).To(MatchError(MatchRegexp(`failed GetServicePlanResource\(test_guid\):.*cf.ServicePlan.*GET.*'UnknownError'.*`)))
 			})
 		})
 

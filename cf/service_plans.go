@@ -1,17 +1,9 @@
 package cf
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
-	"path"
 
 	"code.cloudfoundry.org/lager"
-)
-
-const (
-	ServicePlansPath = "v2/service_plans"
 )
 
 type ServicePlanEntity struct {
@@ -21,6 +13,16 @@ type ServicePlanEntity struct {
 type ServicePlanResource struct {
 	Entity ServicePlanEntity `json:"entity"`
 }
+
+type (
+	ServicePlan struct {
+		Guid          string        `json:"guid"`
+		BrokerCatalog BrokerCatalog `json:"broker_catalog"`
+	}
+	BrokerCatalog struct {
+		Id string `json:"id"`
+	}
+)
 
 func (c *Client) GetBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 	return c.brokerPlanGuid.Func(ccServicePlanGuid)
@@ -32,49 +34,21 @@ func (c *Client) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 		return "", err
 	}
 
-	brokerPlanGuid := result.Entity.UniqueId
+	brokerPlanGuid := result.BrokerCatalog.Id
 	c.logger.Info("found-guid", lager.Data{"brokerPlanGuid": brokerPlanGuid})
 	return brokerPlanGuid, nil
 }
 
-func (c *Client) GetServicePlanResource(ccServicePlanGuid string) (*ServicePlanResource, error) {
-	servicePlansUrl, err := url.Parse(c.conf.API)
+/*GetServicePlanResource
+ *  v3 api docs https://v3-apidocs.cloudfoundry.org/version/3.123.0/index.html#service-plans
+ */
+func (c *Client) GetServicePlanResource(servicePlanGuid string) (*ServicePlan, error) {
+	theUrl := fmt.Sprintf("/v3/service_plans/%s", servicePlanGuid)
+	plan, err := ResourceRetriever[*ServicePlan]{c}.Get(theUrl)
 	if err != nil {
-		return nil, fmt.Errorf("cf-client-get-broker-plan-guid: failed to parse CF API URL: %w", err)
+		return plan, fmt.Errorf("failed GetServicePlanResource(%s): %w", servicePlanGuid, err)
 	}
-	servicePlansUrl.Path = servicePlansUrl.Path + path.Join(ServicePlansPath, ccServicePlanGuid)
-
-	req, err := http.NewRequest("GET", servicePlansUrl.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("cf-client-get-broker-plan-guid: failed to create request to CF API: %w", err)
-	}
-
-	tokens, _ := c.GetTokens()
-	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
-
-	var resp *http.Response
-	resp, err = c.httpClient.Do(req)
-
-	if err != nil {
-		c.logger.Error("do-request", err)
-		return nil, fmt.Errorf("cf-client-get-broker-plan-guid: failed to execute request to CF API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("cf-client-get-broker-plan-guid: failed to get service plan: %s [%d] %s", servicePlansUrl.String(), resp.StatusCode, resp.Status)
-		c.logger.Error("get-response", err)
-		return nil, err
-	}
-
-	result := &ServicePlanResource{}
-
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		c.logger.Error("decode", err)
-		return nil, fmt.Errorf("cf-client-get-broker-plan-guid: failed to decode response from CF API: %w", err)
-	}
-	return result, nil
+	return plan, nil
 }
 
 // GetServicePlan

@@ -8,11 +8,11 @@ type (
 	ServicePlanData struct {
 		Guid string `json:"guid"`
 	}
-	ServicePlan struct {
+	ServicePlanRelation struct {
 		Data ServicePlanData `json:"data"`
 	}
 	ServiceInstanceRelationships struct {
-		ServicePlan ServicePlan `json:"service_plan"`
+		ServicePlan ServicePlanRelation `json:"service_plan"`
 	}
 	ServiceInstance struct {
 		Guid          string                       `json:"guid"`

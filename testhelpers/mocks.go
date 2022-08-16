@@ -107,12 +107,20 @@ func (a AddMock) Roles(statusCode int, roles ...cf.Role) AddMock {
 	return a
 }
 
-func (a AddMock) ServiceInstance(planGuid string) {
+func (a AddMock) ServiceInstance(planGuid string) AddMock {
 	a.server.RouteToHandler("GET", regexp.MustCompile(`^/v3/service_instances/[^/]+$`),
 		ghttp.RespondWithJSONEncoded(http.StatusOK, &cf.ServiceInstance{
 			Guid:          "service-instance-mock-guid",
 			Type:          "managed",
-			Relationships: cf.ServiceInstanceRelationships{ServicePlan: cf.ServicePlan{Data: cf.ServicePlanData{Guid: planGuid}}},
+			Relationships: cf.ServiceInstanceRelationships{ServicePlan: cf.ServicePlanRelation{Data: cf.ServicePlanData{Guid: planGuid}}},
 		}),
 	)
+	return a
+}
+
+func (a AddMock) ServicePlan(brokerPlanId string) AddMock {
+	a.server.RouteToHandler("GET", regexp.MustCompile(`^/v3/service_plans/[^/]+$`),
+		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.ServicePlan{BrokerCatalog: cf.BrokerCatalog{Id: brokerPlanId}}),
+	)
+	return a
 }

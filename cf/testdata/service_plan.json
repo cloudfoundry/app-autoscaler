@@ -1,0 +1,66 @@
+{
+  "guid": "d67b2fe4-665c-4bf2-9ccc-e080c49d48d4",
+  "created_at": "2022-08-16T10:22:27Z",
+  "updated_at": "2022-08-16T10:48:10Z",
+  "name": "autoscaler-free-plan",
+  "visibility_type": "public",
+  "available": true,
+  "free": true,
+  "costs": [
+  ],
+  "description": "This is the free service plan for the Auto-Scaling service.",
+  "maintenance_info": {
+  },
+  "broker_catalog": {
+    "id": "autoscaler-free-plan-id",
+    "metadata": {
+    },
+    "maximum_polling_duration": null,
+    "features": {
+      "bindable": true,
+      "plan_updateable": true
+    }
+  },
+  "schemas": {
+    "service_instance": {
+      "create": {
+        "parameters": {
+        }
+      },
+      "update": {
+        "parameters": {
+        }
+      }
+    },
+    "service_binding": {
+      "create": {
+        "parameters": {
+        }
+      }
+    }
+  },
+  "relationships": {
+    "service_offering": {
+      "data": {
+        "guid": "92553cdd-69d0-4bab-92ba-c5c39c752720"
+      }
+    }
+  },
+  "metadata": {
+    "labels": {
+    },
+    "annotations": {
+    }
+  },
+  "links": {
+    "self": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/service_plans/d67b2fe4-665c-4bf2-9ccc-e080c49d48d4"
+    },
+    "service_offering": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/service_offerings/92553cdd-69d0-4bab-92ba-c5c39c752720"
+    },
+    "visibility": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3/service_plans/d67b2fe4-665c-4bf2-9ccc-e080c49d48d4/visibility"
+    }
+  }
+}

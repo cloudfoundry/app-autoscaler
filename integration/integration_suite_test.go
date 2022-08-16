@@ -57,7 +57,6 @@ var (
 	dbUrl                   string
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *testhelpers.MockServer
 	testUserId              = "testUserId"
@@ -773,7 +772,9 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 		GetAppProcesses(instanceCount).
 		ScaleAppWebProcess().
-		Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper}).ServiceInstance("cc-free-plan-id")
+		Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper}).
+		ServiceInstance("cc-free-plan-id").
+		ServicePlan("autoscaler-free-plan-id")
 
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
@@ -786,16 +787,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			UserId string `json:"user_id"`
 		}{
 			testUserId,
-		}))
-
-	type ServicePlanEntity struct {
-		UniqueId string `json:"unique_id"`
-	}
-	fakeCCNOAAUAA.RouteToHandler("GET", servicePlanRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			ServicePlanEntity `json:"entity"`
-		}{
-			ServicePlanEntity{"autoscaler-free-plan-id"},
 		}))
 }
 
