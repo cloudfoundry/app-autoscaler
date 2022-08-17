@@ -57,17 +57,30 @@ type FakeCFClient struct {
 	getEndpointsReturnsOnCall map[int]struct {
 		result1 cf.Endpoints
 	}
-	GetServicePlanStub        func(string) (string, error)
-	getServicePlanMutex       sync.RWMutex
-	getServicePlanArgsForCall []struct {
+	GetServiceInstanceStub        func(string) (*cf.ServiceInstance, error)
+	getServiceInstanceMutex       sync.RWMutex
+	getServiceInstanceArgsForCall []struct {
 		arg1 string
 	}
-	getServicePlanReturns struct {
-		result1 string
+	getServiceInstanceReturns struct {
+		result1 *cf.ServiceInstance
 		result2 error
 	}
-	getServicePlanReturnsOnCall map[int]struct {
-		result1 string
+	getServiceInstanceReturnsOnCall map[int]struct {
+		result1 *cf.ServiceInstance
+		result2 error
+	}
+	GetServicePlanResourceStub        func(string) (*cf.ServicePlan, error)
+	getServicePlanResourceMutex       sync.RWMutex
+	getServicePlanResourceArgsForCall []struct {
+		arg1 string
+	}
+	getServicePlanResourceReturns struct {
+		result1 *cf.ServicePlan
+		result2 error
+	}
+	getServicePlanResourceReturnsOnCall map[int]struct {
+		result1 *cf.ServicePlan
 		result2 error
 	}
 	GetTokensStub        func() (cf.Tokens, error)
@@ -406,16 +419,16 @@ func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints)
 	}{result1}
 }
 
-func (fake *FakeCFClient) GetServicePlan(arg1 string) (string, error) {
-	fake.getServicePlanMutex.Lock()
-	ret, specificReturn := fake.getServicePlanReturnsOnCall[len(fake.getServicePlanArgsForCall)]
-	fake.getServicePlanArgsForCall = append(fake.getServicePlanArgsForCall, struct {
+func (fake *FakeCFClient) GetServiceInstance(arg1 string) (*cf.ServiceInstance, error) {
+	fake.getServiceInstanceMutex.Lock()
+	ret, specificReturn := fake.getServiceInstanceReturnsOnCall[len(fake.getServiceInstanceArgsForCall)]
+	fake.getServiceInstanceArgsForCall = append(fake.getServiceInstanceArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	stub := fake.GetServicePlanStub
-	fakeReturns := fake.getServicePlanReturns
-	fake.recordInvocation("GetServicePlan", []interface{}{arg1})
-	fake.getServicePlanMutex.Unlock()
+	stub := fake.GetServiceInstanceStub
+	fakeReturns := fake.getServiceInstanceReturns
+	fake.recordInvocation("GetServiceInstance", []interface{}{arg1})
+	fake.getServiceInstanceMutex.Unlock()
 	if stub != nil {
 		return stub(arg1)
 	}
@@ -425,47 +438,111 @@ func (fake *FakeCFClient) GetServicePlan(arg1 string) (string, error) {
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeCFClient) GetServicePlanCallCount() int {
-	fake.getServicePlanMutex.RLock()
-	defer fake.getServicePlanMutex.RUnlock()
-	return len(fake.getServicePlanArgsForCall)
+func (fake *FakeCFClient) GetServiceInstanceCallCount() int {
+	fake.getServiceInstanceMutex.RLock()
+	defer fake.getServiceInstanceMutex.RUnlock()
+	return len(fake.getServiceInstanceArgsForCall)
 }
 
-func (fake *FakeCFClient) GetServicePlanCalls(stub func(string) (string, error)) {
-	fake.getServicePlanMutex.Lock()
-	defer fake.getServicePlanMutex.Unlock()
-	fake.GetServicePlanStub = stub
+func (fake *FakeCFClient) GetServiceInstanceCalls(stub func(string) (*cf.ServiceInstance, error)) {
+	fake.getServiceInstanceMutex.Lock()
+	defer fake.getServiceInstanceMutex.Unlock()
+	fake.GetServiceInstanceStub = stub
 }
 
-func (fake *FakeCFClient) GetServicePlanArgsForCall(i int) string {
-	fake.getServicePlanMutex.RLock()
-	defer fake.getServicePlanMutex.RUnlock()
-	argsForCall := fake.getServicePlanArgsForCall[i]
+func (fake *FakeCFClient) GetServiceInstanceArgsForCall(i int) string {
+	fake.getServiceInstanceMutex.RLock()
+	defer fake.getServiceInstanceMutex.RUnlock()
+	argsForCall := fake.getServiceInstanceArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeCFClient) GetServicePlanReturns(result1 string, result2 error) {
-	fake.getServicePlanMutex.Lock()
-	defer fake.getServicePlanMutex.Unlock()
-	fake.GetServicePlanStub = nil
-	fake.getServicePlanReturns = struct {
-		result1 string
+func (fake *FakeCFClient) GetServiceInstanceReturns(result1 *cf.ServiceInstance, result2 error) {
+	fake.getServiceInstanceMutex.Lock()
+	defer fake.getServiceInstanceMutex.Unlock()
+	fake.GetServiceInstanceStub = nil
+	fake.getServiceInstanceReturns = struct {
+		result1 *cf.ServiceInstance
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetServicePlanReturnsOnCall(i int, result1 string, result2 error) {
-	fake.getServicePlanMutex.Lock()
-	defer fake.getServicePlanMutex.Unlock()
-	fake.GetServicePlanStub = nil
-	if fake.getServicePlanReturnsOnCall == nil {
-		fake.getServicePlanReturnsOnCall = make(map[int]struct {
-			result1 string
+func (fake *FakeCFClient) GetServiceInstanceReturnsOnCall(i int, result1 *cf.ServiceInstance, result2 error) {
+	fake.getServiceInstanceMutex.Lock()
+	defer fake.getServiceInstanceMutex.Unlock()
+	fake.GetServiceInstanceStub = nil
+	if fake.getServiceInstanceReturnsOnCall == nil {
+		fake.getServiceInstanceReturnsOnCall = make(map[int]struct {
+			result1 *cf.ServiceInstance
 			result2 error
 		})
 	}
-	fake.getServicePlanReturnsOnCall[i] = struct {
-		result1 string
+	fake.getServiceInstanceReturnsOnCall[i] = struct {
+		result1 *cf.ServiceInstance
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetServicePlanResource(arg1 string) (*cf.ServicePlan, error) {
+	fake.getServicePlanResourceMutex.Lock()
+	ret, specificReturn := fake.getServicePlanResourceReturnsOnCall[len(fake.getServicePlanResourceArgsForCall)]
+	fake.getServicePlanResourceArgsForCall = append(fake.getServicePlanResourceArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetServicePlanResourceStub
+	fakeReturns := fake.getServicePlanResourceReturns
+	fake.recordInvocation("GetServicePlanResource", []interface{}{arg1})
+	fake.getServicePlanResourceMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCFClient) GetServicePlanResourceCallCount() int {
+	fake.getServicePlanResourceMutex.RLock()
+	defer fake.getServicePlanResourceMutex.RUnlock()
+	return len(fake.getServicePlanResourceArgsForCall)
+}
+
+func (fake *FakeCFClient) GetServicePlanResourceCalls(stub func(string) (*cf.ServicePlan, error)) {
+	fake.getServicePlanResourceMutex.Lock()
+	defer fake.getServicePlanResourceMutex.Unlock()
+	fake.GetServicePlanResourceStub = stub
+}
+
+func (fake *FakeCFClient) GetServicePlanResourceArgsForCall(i int) string {
+	fake.getServicePlanResourceMutex.RLock()
+	defer fake.getServicePlanResourceMutex.RUnlock()
+	argsForCall := fake.getServicePlanResourceArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeCFClient) GetServicePlanResourceReturns(result1 *cf.ServicePlan, result2 error) {
+	fake.getServicePlanResourceMutex.Lock()
+	defer fake.getServicePlanResourceMutex.Unlock()
+	fake.GetServicePlanResourceStub = nil
+	fake.getServicePlanResourceReturns = struct {
+		result1 *cf.ServicePlan
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetServicePlanResourceReturnsOnCall(i int, result1 *cf.ServicePlan, result2 error) {
+	fake.getServicePlanResourceMutex.Lock()
+	defer fake.getServicePlanResourceMutex.Unlock()
+	fake.GetServicePlanResourceStub = nil
+	if fake.getServicePlanResourceReturnsOnCall == nil {
+		fake.getServicePlanResourceReturnsOnCall = make(map[int]struct {
+			result1 *cf.ServicePlan
+			result2 error
+		})
+	}
+	fake.getServicePlanResourceReturnsOnCall[i] = struct {
+		result1 *cf.ServicePlan
 		result2 error
 	}{result1, result2}
 }
@@ -902,8 +979,10 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getAppProcessesMutex.RUnlock()
 	fake.getEndpointsMutex.RLock()
 	defer fake.getEndpointsMutex.RUnlock()
-	fake.getServicePlanMutex.RLock()
-	defer fake.getServicePlanMutex.RUnlock()
+	fake.getServiceInstanceMutex.RLock()
+	defer fake.getServiceInstanceMutex.RUnlock()
+	fake.getServicePlanResourceMutex.RLock()
+	defer fake.getServicePlanResourceMutex.RUnlock()
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
 	fake.isTokenAuthorizedMutex.RLock()

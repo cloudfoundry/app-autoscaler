@@ -15,7 +15,7 @@ var _ = Describe("Plan check operations", func() {
 	var (
 		quotaConfig      *config.PlanCheckConfig
 		validationResult string
-		qmc              *plancheck.PlanChecker
+		qmc              *plancheck.planChecker
 		ok               bool
 		err              error
 		testPolicy       models.ScalingPolicy

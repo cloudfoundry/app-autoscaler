@@ -29,58 +29,60 @@ const (
 	defaultPerPage                               = 100
 )
 
-type Tokens struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int64  `json:"expires_in"`
-}
+type (
+	Tokens struct {
+		AccessToken string `json:"access_token"`
+		ExpiresIn   int64  `json:"expires_in"`
+	}
 
-type IntrospectionResponse struct {
-	Active   bool   `json:"active"`
-	Email    string `json:"email"`
-	ClientId string `json:"client_id"`
-}
+	IntrospectionResponse struct {
+		Active   bool   `json:"active"`
+		Email    string `json:"email"`
+		ClientId string `json:"client_id"`
+	}
 
-type Endpoints struct {
-	AuthEndpoint    string `json:"authorization_endpoint"`
-	TokenEndpoint   string `json:"token_endpoint"`
-	DopplerEndpoint string `json:"doppler_logging_endpoint"`
-}
+	Endpoints struct {
+		AuthEndpoint    string `json:"authorization_endpoint"`
+		TokenEndpoint   string `json:"token_endpoint"`
+		DopplerEndpoint string `json:"doppler_logging_endpoint"`
+	}
+
+	CFClient interface {
+		Login() error
+		RefreshAuthToken() (string, error)
+		GetTokens() (Tokens, error)
+		GetEndpoints() Endpoints
+		GetApp(string) (*App, error)
+		GetAppProcesses(string) (Processes, error)
+		GetAppAndProcesses(string) (*AppAndProcesses, error)
+		ScaleAppWebProcess(string, int) error
+		IsUserAdmin(userToken string) (bool, error)
+		IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
+		IsTokenAuthorized(token, clientId string) (bool, error)
+		GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error)
+		GetServicePlanResource(servicePlanGuid string) (*ServicePlan, error)
+	}
+
+	Client struct {
+		logger             lager.Logger
+		conf               *Config
+		clk                clock.Clock
+		tokens             Tokens
+		endpoints          Endpoints
+		infoURL            string
+		tokenURL           string
+		introspectTokenURL string
+		loginForm          url.Values
+		authHeader         string
+		httpClient         *http.Client
+		lock               *sync.Mutex
+		grantTime          time.Time
+		retryClient        *http.Client
+		brokerPlanGuid     *Memoizer[string, string]
+	}
+)
 
 var _ CFClient = &Client{}
-
-type CFClient interface {
-	Login() error
-	RefreshAuthToken() (string, error)
-	GetTokens() (Tokens, error)
-	GetEndpoints() Endpoints
-	GetApp(string) (*App, error)
-	GetAppProcesses(string) (Processes, error)
-	GetAppAndProcesses(string) (*AppAndProcesses, error)
-	ScaleAppWebProcess(string, int) error
-	IsUserAdmin(userToken string) (bool, error)
-	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
-	IsTokenAuthorized(token, clientId string) (bool, error)
-	GetServicePlan(serviceInstanceGuid string) (string, error)
-}
-
-type Client struct {
-	logger             lager.Logger
-	conf               *Config
-	clk                clock.Clock
-	tokens             Tokens
-	endpoints          Endpoints
-	infoURL            string
-	tokenURL           string
-	introspectTokenURL string
-	loginForm          url.Values
-	authHeader         string
-	httpClient         *http.Client
-	lock               *sync.Mutex
-	grantTime          time.Time
-	retryClient        *http.Client
-	servicePlan        *Memoizer[string, string]
-	brokerPlanGuid     *Memoizer[string, string]
-}
 
 func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c := &Client{}
@@ -104,7 +106,6 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.retryClient = createRetryClient(conf, c.httpClient, logger)
 	c.lock = &sync.Mutex{}
 
-	c.servicePlan = NewMemoizer(c.getServicePlan)
 	c.brokerPlanGuid = NewMemoizer(c.getBrokerPlanGuid)
 
 	if c.conf.PerPage == 0 {

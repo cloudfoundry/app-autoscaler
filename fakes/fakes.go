@@ -17,3 +17,4 @@ package fakes
 //go:generate counterfeiter -o ./fake_grpc.go ../eventgenerator/client grpcDialOptions
 //go:generate counterfeiter -o ./fake_tls_config.go ../eventgenerator/client TLSConfig
 //go:generate counterfeiter -o ./fake_envelope_processor_creator.go ../envelopeprocessor EnvelopeProcessorCreator
+//go:generate counterfeiter -o ./fake_plan_checker.go ../api/plancheck PlanChecker

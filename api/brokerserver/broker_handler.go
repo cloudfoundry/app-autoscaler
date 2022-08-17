@@ -37,7 +37,7 @@ type BrokerHandler struct {
 	schedulerUtil         *schedulerutil.SchedulerUtil
 	quotaManagementClient *quota.Client
 	catalog               []domain.Service
-	planChecker           *plancheck.PlanChecker
+	PlanChecker           plancheck.PlanChecker
 	cfClient              cf.CFClient
 	credentials           cred_helper.Credentials
 }
@@ -59,7 +59,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
 		quotaManagementClient: quota.NewClient(conf, logger),
-		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
+		PlanChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 		cfClient:              cfClient,
 		credentials:           credentials,
 	}
@@ -181,7 +181,7 @@ func (h *BrokerHandler) planDefinitionExceeded(policyStr string, planID string, 
 		writeErrorResponse(w, http.StatusInternalServerError, "Error reading policy")
 		return true
 	}
-	ok, checkResult, err := h.planChecker.CheckPlan(policy, planID)
+	ok, checkResult, err := h.PlanChecker.CheckPlan(policy, planID)
 	if err != nil {
 		h.logger.Error("failed to check policy for plan adherence", err, lager.Data{"instanceId": instanceId, "policyStr": policyStr})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error generating validating policy")
@@ -283,7 +283,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	existingServicePlan, err := h.GetBrokerCatalogPlanId(instanceId)
+	existingServicePlan, err := h.getBrokerCatalogPlanId(instanceId)
 	newServicePlan := body.PlanID
 	if newServicePlan != "" {
 		if err != nil {
@@ -292,7 +292,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 		if !(existingServicePlan == newServicePlan) {
-			isPlanUpdatable, err := h.planChecker.IsPlanUpdatable(existingServicePlan)
+			isPlanUpdatable, err := h.PlanChecker.IsPlanUpdatable(existingServicePlan)
 			if err != nil {
 				h.logger.Error("Plan not found", err)
 				writeErrorResponse(w, http.StatusBadRequest, "Unable to retrieve the service plan")
@@ -331,7 +331,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 		updatedDefaultPolicy = validatedPolicy
 
-		servicePlan, err := h.GetBrokerCatalogPlanId(instanceId)
+		servicePlan, err := h.getBrokerCatalogPlanId(instanceId)
 		if err != nil {
 			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
 			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
@@ -452,8 +452,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (h *BrokerHandler) GetBrokerCatalogPlanId(instanceId string) (string, error) {
-	return h.cfClient.GetServicePlan(instanceId)
+func (h *BrokerHandler) getBrokerCatalogPlanId(instanceId string) (string, error) {
+	return h.getServicePlanBrokerCatalogId(instanceId)
 }
 
 func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
@@ -731,4 +731,21 @@ func deleteBinding(h *BrokerHandler, bindingId string, serviceInstanceId string)
 	}
 
 	return nil
+}
+
+func (h *BrokerHandler) getServicePlanBrokerCatalogId(serviceInstanceGuid string) (string, error) {
+	serviceInstance, err := h.cfClient.GetServiceInstance(serviceInstanceGuid)
+	if err != nil {
+		return "", err
+	}
+	servicePlanGuid := serviceInstance.Relationships.ServicePlan.Data.Guid
+	h.logger.Info("found-guid", lager.Data{"servicePlanGuid": servicePlanGuid})
+
+	servicePlan, err := h.cfClient.GetServicePlanResource(servicePlanGuid)
+	if err != nil {
+		return "", fmt.Errorf("cf-client-get-service-plan: failed to translate Cloud Controller service plan to broker service plan: %w", err)
+	}
+	brokerPlanGuid := servicePlan.BrokerCatalog.Id
+
+	return brokerPlanGuid, nil
 }

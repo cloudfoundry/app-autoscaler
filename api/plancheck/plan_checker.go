@@ -9,19 +9,23 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type PlanChecker struct {
+type planChecker struct {
 	conf   *config.PlanCheckConfig
 	logger lager.Logger
 }
+type PlanChecker interface {
+	CheckPlan(policy models.ScalingPolicy, planID string) (bool, string, error)
+	IsPlanUpdatable(planID string) (bool, error)
+}
 
-func NewPlanChecker(config *config.PlanCheckConfig, logger lager.Logger) *PlanChecker {
-	return &PlanChecker{
+func NewPlanChecker(config *config.PlanCheckConfig, logger lager.Logger) *planChecker {
+	return &planChecker{
 		conf:   config,
 		logger: logger.Session("plan-checker"),
 	}
 }
 
-func (pc PlanChecker) CheckPlan(policy models.ScalingPolicy, planID string) (bool, string, error) {
+func (pc planChecker) CheckPlan(policy models.ScalingPolicy, planID string) (bool, string, error) {
 	if pc.conf == nil {
 		pc.logger.Info("plan-checker-not-configured-allowing-all")
 		return true, "", nil
@@ -54,7 +58,7 @@ func (pc PlanChecker) CheckPlan(policy models.ScalingPolicy, planID string) (boo
 	}
 }
 
-func (pc PlanChecker) IsPlanUpdatable(planID string) (bool, error) {
+func (pc planChecker) IsPlanUpdatable(planID string) (bool, error) {
 	if pc.conf == nil {
 		return true, nil
 	}

@@ -2,6 +2,7 @@ package brokerserver_test
 
 import (
 	"bytes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -489,16 +490,34 @@ var _ = Describe("BrokerHandler", func() {
 				instanceUpdateRequestBody.Parameters = &parameters
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				fakecfClient.GetServiceInstanceReturns(&cf.ServiceInstance{
+					Relationships: cf.ServiceInstanceRelationships{
+						ServicePlan: cf.ServicePlanRelation{
+							Data: cf.ServicePlanData{Guid: "a-service-plan-guid"}}},
+				}, nil)
+				fakecfClient.GetServicePlanResourceReturns(&cf.ServicePlan{}, nil)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
 			})
 			It("succeeds with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+				Expect(fakecfClient.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
+				Expect(fakecfClient.GetServicePlanResourceArgsForCall(0)).To(Equal("a-service-plan-guid"))
 			})
 			It("retrieves the service instance", func() {
 				Expect(bindingdb.GetServiceInstanceCallCount()).To(Equal(1))
 				Expect(bindingdb.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
 			})
+
+			Context("with a fake plan checker", func() {
+				fakePlanChecker := &fakes.FakePlanChecker{}
+				JustBeforeEach(func() {
+					handler.PlanChecker = fakePlanChecker
+				})
+				It("it uses the correct plan id", func() {
+					Expect(fakePlanChecker.CheckPlanArgsForCall(0)).To(Equal("asd"))
+				})
+			})
+
 		})
 		Context("When a default policy is present and there was previously not a default policy", func() {
 			BeforeEach(func() {
@@ -520,7 +539,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200, saves the default policy, and sets the default policy on the already bound apps", func() {
 				By("returning 200")
@@ -570,7 +589,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200, saves the default policy, and updates the default policy", func() {
 				By("returning 200")
@@ -622,7 +641,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).To(BeNil())
 				policydb.GetAppPolicyReturns(&encodedTestDefaultPolicy, nil)
 				verifyScheduleIsDeletedInScheduler("app-id-2")
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200 and removes the default policy", func() {
 				By("returning 200")
@@ -678,7 +697,7 @@ var _ = Describe("BrokerHandler", func() {
 					ServiceInstanceId: testInstanceId,
 				}, nil)
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-2", "app-id-1"}, nil)
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("fails with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
@@ -698,7 +717,7 @@ var _ = Describe("BrokerHandler", func() {
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
 				}, nil)
@@ -718,7 +737,7 @@ var _ = Describe("BrokerHandler", func() {
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
 					DefaultPolicy:     testDefaultPolicy,
@@ -745,7 +764,7 @@ var _ = Describe("BrokerHandler", func() {
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-				fakecfClient.GetServicePlanReturns("a-plan-id-not-updatable", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id-not-updatable", nil)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
 				}, nil)
@@ -776,7 +795,7 @@ var _ = Describe("BrokerHandler", func() {
 				}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
-				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				//fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 			})
 			It("fails with 400", func() {

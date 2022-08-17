@@ -50,25 +50,3 @@ func (c *Client) GetServicePlanResource(servicePlanGuid string) (*ServicePlan, e
 	}
 	return plan, nil
 }
-
-// GetServicePlan
-// This function does not really get a service plan but the service plan's broker catalog id
-func (c *Client) GetServicePlan(serviceInstanceGuid string) (string, error) {
-	return c.servicePlan.Func(serviceInstanceGuid)
-}
-
-func (c *Client) getServicePlan(serviceInstanceGuid string) (string, error) {
-	result, err := c.GetServiceInstance(serviceInstanceGuid)
-	if err != nil {
-		return "", err
-	}
-
-	servicePlanGuid := result.Relationships.ServicePlan.Data.Guid
-	c.logger.Info("found-guid", lager.Data{"servicePlanGuid": servicePlanGuid})
-	brokerPlanGuid, err := c.GetBrokerPlanGuid(servicePlanGuid)
-	if err != nil {
-		c.logger.Error("cc-plan-to-broker-plan", err)
-		return "", fmt.Errorf("cf-client-get-service-plan: failed to translate Cloud Controller service plan to broker service plan: %w", err)
-	}
-	return brokerPlanGuid, nil
-}
