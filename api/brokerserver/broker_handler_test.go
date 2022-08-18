@@ -613,13 +613,15 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 			Context("Broker Catalog PlanId is cached", func() {
+
+				JustBeforeEach(func() { verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy) })
 				JustBeforeEach(callUpdateServiceInstance)
 				BeforeEach(func() {
 					setupCfClient("a-plan-id")
 				})
 				It("it call getBrokerCatalogPlanId only once", func() {
-					Expect(fakecfClient.GetServiceInstanceCallCount()).To(Equal(1))
-					Expect(fakecfClient.GetServicePlanCallCount()).To(Equal(1))
+					Expect(fakecfClient.GetServiceInstanceCallCount()).To(Equal(1), "GetServiceInstanceCallCount")
+					Expect(fakecfClient.GetServicePlanCallCount()).To(Equal(1), "GetServicePlanCallCount")
 				})
 			})
 		})

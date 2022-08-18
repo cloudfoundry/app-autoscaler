@@ -2,8 +2,6 @@ package cf
 
 import (
 	"fmt"
-
-	"code.cloudfoundry.org/lager"
 )
 
 type ServicePlanEntity struct {
@@ -23,21 +21,6 @@ type (
 		Id string `json:"id"`
 	}
 )
-
-func (c *Client) GetBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
-	return c.brokerPlanGuid.Func(ccServicePlanGuid)
-}
-
-func (c *Client) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
-	result, err := c.GetServicePlan(ccServicePlanGuid)
-	if err != nil {
-		return "", err
-	}
-
-	brokerPlanGuid := result.BrokerCatalog.Id
-	c.logger.Info("found-guid", lager.Data{"brokerPlanGuid": brokerPlanGuid})
-	return brokerPlanGuid, nil
-}
 
 /*GetServicePlanResource
  *  v3 api docs https://v3-apidocs.cloudfoundry.org/version/3.123.0/index.html#service-plans

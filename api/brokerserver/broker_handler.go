@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -29,18 +30,18 @@ import (
 )
 
 type BrokerHandler struct {
-	logger                lager.Logger
-	conf                  *config.Config
-	bindingdb             db.BindingDB
-	policydb              db.PolicyDB
-	policyValidator       *policyvalidator.PolicyValidator
-	schedulerUtil         *schedulerutil.SchedulerUtil
-	quotaManagementClient *quota.Client
-	catalog               []domain.Service
-	PlanChecker           plancheck.PlanChecker
-	cfClient              cf.CFClient
-	credentials           cred_helper.Credentials
-	brokerCatalogPlanId   *cf.Memoizer[string, string]
+	logger                     lager.Logger
+	conf                       *config.Config
+	bindingdb                  db.BindingDB
+	policydb                   db.PolicyDB
+	policyValidator            *policyvalidator.PolicyValidator
+	schedulerUtil              *schedulerutil.SchedulerUtil
+	quotaManagementClient      *quota.Client
+	catalog                    []domain.Service
+	PlanChecker                plancheck.PlanChecker
+	cfClient                   cf.CFClient
+	credentials                cred_helper.Credentials
+	servicePlanBrokerCatalogId *memoizer.Memoizer[string, string]
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
@@ -64,7 +65,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		cfClient:              cfClient,
 		credentials:           credentials,
 	}
-	handler.brokerCatalogPlanId = cf.NewMemoizer(handler.getBrokerCatalogPlanId)
+	handler.servicePlanBrokerCatalogId = memoizer.New(handler.getServicePlanBrokerCatalogId)
 	return handler
 }
 
@@ -456,7 +457,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 }
 
 func (h *BrokerHandler) getBrokerCatalogPlanId(instanceId string) (string, error) {
-	return h.getServicePlanBrokerCatalogId(instanceId)
+	return h.servicePlanBrokerCatalogId.Func(instanceId)
 }
 
 func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Request, vars map[string]string) {

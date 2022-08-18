@@ -78,7 +78,6 @@ type (
 		lock               *sync.Mutex
 		grantTime          time.Time
 		retryClient        *http.Client
-		brokerPlanGuid     *Memoizer[string, string]
 	}
 )
 
@@ -105,8 +104,6 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.httpClient.Transport = DrainingTransport{c.httpClient.Transport}
 	c.retryClient = createRetryClient(conf, c.httpClient, logger)
 	c.lock = &sync.Mutex{}
-
-	c.brokerPlanGuid = NewMemoizer(c.getBrokerPlanGuid)
 
 	if c.conf.PerPage == 0 {
 		c.conf.PerPage = defaultPerPage

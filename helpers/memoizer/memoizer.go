@@ -1,8 +1,8 @@
-package cf
+package memoizer
 
 import "sync"
 
-func NewMemoizer[T comparable, R any](funcToMemoize func(T) (R, error)) *Memoizer[T, R] {
+func New[T comparable, R any](funcToMemoize func(T) (R, error)) *Memoizer[T, R] {
 	return &Memoizer[T, R]{fn: funcToMemoize, cache: make(map[T]R)}
 }
 
