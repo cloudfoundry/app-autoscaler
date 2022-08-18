@@ -286,15 +286,17 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
-
 	existingServicePlan, err := h.getBrokerCatalogPlanId(instanceId)
 	if err != nil {
 		h.logger.Error("Error retrieving broker plan Id", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving broker plan Id")
 		return
 	}
+	//TODO check some edge cases around service Plan
+	servicePlan := existingServicePlan
 	newServicePlan := body.PlanID
 	if newServicePlan != "" {
+		servicePlan = newServicePlan
 		if !(existingServicePlan == newServicePlan) {
 			isPlanUpdatable, err := h.PlanChecker.IsPlanUpdatable(existingServicePlan)
 			if err != nil {
@@ -354,14 +356,6 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 		updatedDefaultPolicyGuid = policyGuid.String()
 	}
-
-	var servicePlan string
-	if newServicePlan != "" {
-		servicePlan = newServicePlan
-	} else {
-		servicePlan = existingServicePlan
-	}
-
 	allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
 	if err != nil {
 		h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
