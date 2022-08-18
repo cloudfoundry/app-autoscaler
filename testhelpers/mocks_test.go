@@ -211,7 +211,7 @@ var _ = Describe("Cf cloud controller", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
-				roles, err := cfc.GetServicePlanResource("a-broker-plan-id")
+				roles, err := cfc.GetServicePlan("a-broker-plan-id")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(roles).To(Equal(&cf.ServicePlan{BrokerCatalog: cf.BrokerCatalog{Id: "a-broker-plan-id"}}))
 			})

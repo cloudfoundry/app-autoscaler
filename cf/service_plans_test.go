@@ -57,7 +57,7 @@ var _ = Describe("Cf client Service Plans", func() {
 		}
 	})
 
-	Describe("GetServicePlanResource", func() {
+	Describe("GetServicePlan", func() {
 
 		When("get service plans succeeds", func() {
 			BeforeEach(func() {
@@ -70,7 +70,7 @@ var _ = Describe("Cf client Service Plans", func() {
 			})
 
 			It("returns correct struct", func() {
-				servicePlan, err := cfc.GetServicePlanResource("test_guid")
+				servicePlan, err := cfc.GetServicePlan("test_guid")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(servicePlan).To(Equal(&cf.ServicePlan{Guid: "d67b2fe4-665c-4bf2-9ccc-e080c49d48d4",
 					BrokerCatalog: cf.BrokerCatalog{
@@ -90,9 +90,9 @@ var _ = Describe("Cf client Service Plans", func() {
 			})
 
 			It("should return correct error", func() {
-				_, err := cfc.GetServicePlanResource("test_guid")
+				_, err := cfc.GetServicePlan("test_guid")
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`failed GetServicePlanResource\(test_guid\):.*cf.ServicePlan.*GET.*'UnknownError'.*`)))
+				Expect(err).To(MatchError(MatchRegexp(`failed GetServicePlan\(test_guid\):.*cf.ServicePlan.*GET.*'UnknownError'.*`)))
 			})
 		})
 

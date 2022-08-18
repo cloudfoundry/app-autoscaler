@@ -60,7 +60,7 @@ type (
 		IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 		IsTokenAuthorized(token, clientId string) (bool, error)
 		GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error)
-		GetServicePlanResource(servicePlanGuid string) (*ServicePlan, error)
+		GetServicePlan(servicePlanGuid string) (*ServicePlan, error)
 	}
 
 	Client struct {

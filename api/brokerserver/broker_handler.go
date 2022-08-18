@@ -284,13 +284,13 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 
 	existingServicePlan, err := h.getBrokerCatalogPlanId(instanceId)
+	if err != nil {
+		h.logger.Error("Error retrieving broker plan Id", err, lager.Data{"instanceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving broker plan Id")
+		return
+	}
 	newServicePlan := body.PlanID
 	if newServicePlan != "" {
-		if err != nil {
-			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
-			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
-			return
-		}
 		if !(existingServicePlan == newServicePlan) {
 			isPlanUpdatable, err := h.PlanChecker.IsPlanUpdatable(existingServicePlan)
 			if err != nil {
@@ -741,7 +741,7 @@ func (h *BrokerHandler) getServicePlanBrokerCatalogId(serviceInstanceGuid string
 	servicePlanGuid := serviceInstance.Relationships.ServicePlan.Data.Guid
 	h.logger.Info("found-guid", lager.Data{"servicePlanGuid": servicePlanGuid})
 
-	servicePlan, err := h.cfClient.GetServicePlanResource(servicePlanGuid)
+	servicePlan, err := h.cfClient.GetServicePlan(servicePlanGuid)
 	if err != nil {
 		return "", fmt.Errorf("cf-client-get-service-plan: failed to translate Cloud Controller service plan to broker service plan: %w", err)
 	}

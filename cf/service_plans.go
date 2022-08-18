@@ -29,7 +29,7 @@ func (c *Client) GetBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 }
 
 func (c *Client) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
-	result, err := c.GetServicePlanResource(ccServicePlanGuid)
+	result, err := c.GetServicePlan(ccServicePlanGuid)
 	if err != nil {
 		return "", err
 	}
@@ -42,11 +42,11 @@ func (c *Client) getBrokerPlanGuid(ccServicePlanGuid string) (string, error) {
 /*GetServicePlanResource
  *  v3 api docs https://v3-apidocs.cloudfoundry.org/version/3.123.0/index.html#service-plans
  */
-func (c *Client) GetServicePlanResource(servicePlanGuid string) (*ServicePlan, error) {
+func (c *Client) GetServicePlan(servicePlanGuid string) (*ServicePlan, error) {
 	theUrl := fmt.Sprintf("/v3/service_plans/%s", servicePlanGuid)
 	plan, err := ResourceRetriever[*ServicePlan]{c}.Get(theUrl)
 	if err != nil {
-		return plan, fmt.Errorf("failed GetServicePlanResource(%s): %w", servicePlanGuid, err)
+		return plan, fmt.Errorf("failed GetServicePlan(%s): %w", servicePlanGuid, err)
 	}
 	return plan, nil
 }
