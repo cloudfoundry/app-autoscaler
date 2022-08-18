@@ -400,10 +400,11 @@ var _ = Describe("BrokerHandler", func() {
 			}, nil)
 			fakecfClient.GetServicePlanReturns(&cf.ServicePlan{BrokerCatalog: cf.BrokerCatalog{Id: brokerCatalogId}}, nil)
 		}
-		JustBeforeEach(func() {
+		callUpdateServiceInstance := func() {
 			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
 			handler.UpdateServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
-		})
+		}
+		JustBeforeEach(callUpdateServiceInstance)
 		BeforeEach(func() {
 			instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
@@ -609,6 +610,16 @@ var _ = Describe("BrokerHandler", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(string(bodyBytes)).To(MatchJSON(`{"code": "Internal Server Error","message": "Error retrieving broker plan Id"}`))
 					})
+				})
+			})
+			Context("Broker Catalog PlanId is cached", func() {
+				JustBeforeEach(callUpdateServiceInstance)
+				BeforeEach(func() {
+					setupCfClient("a-plan-id")
+				})
+				It("it call getBrokerCatalogPlanId only once", func() {
+					Expect(fakecfClient.GetServiceInstanceCallCount()).To(Equal(1))
+					Expect(fakecfClient.GetServicePlanCallCount()).To(Equal(1))
 				})
 			})
 		})

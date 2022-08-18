@@ -40,6 +40,7 @@ type BrokerHandler struct {
 	PlanChecker           plancheck.PlanChecker
 	cfClient              cf.CFClient
 	credentials           cred_helper.Credentials
+	brokerCatalogPlanId   *cf.Memoizer[string, string]
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
@@ -50,7 +51,7 @@ var errorDeleteServiceBinding = errors.New("Error deleting service binding")
 var errorCredentialNotDeleted = errors.New("Failed to delete custom metrics credential for unbinding")
 
 func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, cfClient cf.CFClient, credentials cred_helper.Credentials) *BrokerHandler {
-	return &BrokerHandler{
+	handler := &BrokerHandler{
 		logger:                logger,
 		conf:                  conf,
 		bindingdb:             bindingdb,
@@ -63,6 +64,8 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		cfClient:              cfClient,
 		credentials:           credentials,
 	}
+	handler.brokerCatalogPlanId = cf.NewMemoizer(handler.getBrokerCatalogPlanId)
+	return handler
 }
 
 func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
