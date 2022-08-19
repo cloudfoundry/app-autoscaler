@@ -1,11 +1,12 @@
 package memoizer_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
 	"errors"
 	"sync"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
 
 	"github.com/stretchr/testify/assert"
 )

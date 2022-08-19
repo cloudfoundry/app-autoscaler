@@ -670,6 +670,7 @@ var _ = Describe("BrokerHandler", func() {
 
 				By("updating the scheduler")
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+
 			})
 		})
 		Context("When the default is set to be removed and there was previously a default policy", func() {
@@ -790,17 +791,21 @@ var _ = Describe("BrokerHandler", func() {
 				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 						ServiceID: "a-service-id",
-						PlanID:    "a-plan-id-2",
+						PlanID:    "a-plan-id",
 					},
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				setupCfClient("a-plan-id")
+
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
+
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
 					DefaultPolicy:     testDefaultPolicy,
 					DefaultPolicyGuid: "default-policy-guid",
 				}, nil)
+				policydb.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
 			})
 
 			It("Succeeds and leaves the old default policy in place", func() {
@@ -809,6 +814,8 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
 				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
 				Expect(serviceInstance.DefaultPolicyGuid).To(Equal("default-policy-guid"))
+				Expect(policydb.GetAppPolicyArgsForCall(0)).To(Equal("app-id-1"))
+				Expect(policydb.GetAppPolicyArgsForCall(1)).To(Equal("app-id-2"))
 			})
 		})
 
@@ -829,7 +836,25 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"The plan is not updatable"}`))
+				Expect(resp.Body.String()).To(MatchJSON(`{"code":"Bad Request","message":"The plan is not updatable"}`))
+			})
+		})
+		Context("When the service does not exist", func() {
+			BeforeEach(func() {
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "non-existing-plan",
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				setupCfClient("non-existing-plan-catalog-id")
+				bindingdb.GetServiceInstanceReturns(nil, db.ErrDoesNotExist)
+			})
+			It("fails with 404", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+				Expect(resp.Body.String()).To(MatchJSON(`{"code": "Not Found","message": "Failed to find service instance to update"}`))
 			})
 		})
 		Context("Update service plan and policy both are updated together", func() {

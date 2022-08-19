@@ -1,13 +1,14 @@
 package brokerserver
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/quota"
@@ -73,6 +74,16 @@ func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 	handlers.WriteJSONResponse(w, statusCode, models.ErrorResponse{
 		Code:    http.StatusText(statusCode),
 		Message: message})
+}
+
+func (h *BrokerHandler) writeError(w http.ResponseWriter, err error) {
+	var brokerErr *BrokerError
+	if errors.As(err, &brokerErr) {
+		brokerErr.sendResponse(w, h.logger)
+	} else {
+		h.logger.Error("Unexpected error", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Unknown Error")
+	}
 }
 
 func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
@@ -188,6 +199,7 @@ func (h *BrokerHandler) planDefinitionExceeded(policyStr string, planID string, 
 	ok, checkResult, err := h.PlanChecker.CheckPlan(policy, planID)
 	if err != nil {
 		h.logger.Error("failed to check policy for plan adherence", err, lager.Data{"instanceId": instanceId, "policyStr": policyStr})
+		//TODO this should be a 400
 		writeErrorResponse(w, http.StatusInternalServerError, "Error generating validating policy")
 		return true
 	}
@@ -286,31 +298,14 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
-	existingServicePlan, err := h.getBrokerCatalogPlanId(instanceId)
+
+	newServicePlan := body.PlanID
+	servicePlan, err := h.getExistingOrUpdatedServicePlan(instanceId, body.PlanID)
 	if err != nil {
-		h.logger.Error("Error retrieving broker plan Id", err, lager.Data{"instanceId": instanceId})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving broker plan Id")
+		h.writeError(w, err)
 		return
 	}
-	//TODO check some edge cases around service Plan
-	servicePlan := existingServicePlan
-	newServicePlan := body.PlanID
-	if newServicePlan != "" {
-		servicePlan = newServicePlan
-		if !(existingServicePlan == newServicePlan) {
-			isPlanUpdatable, err := h.PlanChecker.IsPlanUpdatable(existingServicePlan)
-			if err != nil {
-				h.logger.Error("Plan not found", err)
-				writeErrorResponse(w, http.StatusBadRequest, "Unable to retrieve the service plan")
-				return
-			}
-			if !isPlanUpdatable {
-				h.logger.Error("The Plan is not updatable", nil)
-				writeErrorResponse(w, http.StatusBadRequest, "The plan is not updatable")
-				return
-			}
-		}
-	}
+
 	var updatedDefaultPolicy string
 	var updatedDefaultPolicyGuid string
 	if body.Parameters != nil && body.Parameters.DefaultPolicy != nil {
@@ -448,6 +443,44 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		h.logger.Error("unable to write body", err)
 	}
+}
+
+func (h *BrokerHandler) getExistingOrUpdatedServicePlan(instanceId string, updateToPlan string) (string, error) {
+	existingServicePlan, err := h.getBrokerCatalogPlanId(instanceId)
+	servicePlan := existingServicePlan
+
+	var brokerErr error
+	if err != nil {
+		brokerErr = &BrokerError{
+			Status:  http.StatusInternalServerError,
+			Message: "Error retrieving broker plan Id",
+			Err:     err,
+			Data:    lager.Data{"instanceId": instanceId},
+		}
+	} else {
+		if updateToPlan != "" {
+			servicePlan = updateToPlan
+			if existingServicePlan != updateToPlan {
+				isPlanUpdatable, err := h.PlanChecker.IsPlanUpdatable(existingServicePlan)
+				if err != nil {
+					brokerErr = &BrokerError{
+						Status:  http.StatusBadRequest,
+						Message: "Unable to retrieve the service plan",
+						Err:     err,
+						Data:    lager.Data{"instanceId": instanceId, "existingServicePlan": existingServicePlan, "newServicePlan": updateToPlan},
+					}
+				} else if !isPlanUpdatable {
+					brokerErr = &BrokerError{
+						Status:  http.StatusBadRequest,
+						Message: "The plan is not updatable",
+						Err:     err,
+						Data:    lager.Data{"instanceId": instanceId, "existingServicePlan": existingServicePlan, "newServicePlan": updateToPlan},
+					}
+				}
+			}
+		}
+	}
+	return servicePlan, brokerErr
 }
 
 func (h *BrokerHandler) getBrokerCatalogPlanId(instanceId string) (string, error) {
