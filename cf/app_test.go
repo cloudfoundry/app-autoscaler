@@ -66,6 +66,7 @@ var _ = Describe("Cf client App", func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("GET", "/v3/apps/test-app-id"),
+						VerifyHeaderKV("Authorization", "Bearer test-access-token"),
 						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
@@ -99,6 +100,7 @@ var _ = Describe("Cf client App", func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("GET", "/v3/apps/test-app-id/processes", "per_page=100"),
+						VerifyHeaderKV("Authorization", "Bearer test-access-token"),
 						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
@@ -139,7 +141,6 @@ var _ = Describe("Cf client App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
-						VerifyRequest("GET", "/v3/apps/invalid_json/processes"),
 						RespondWithJSONEncoded(http.StatusInternalServerError, ""),
 					),
 				)
@@ -154,46 +155,6 @@ var _ = Describe("Cf client App", func() {
 	})
 
 	Describe("GetAppAndProcesses", func() {
-
-		When("the mocks are used", func() {
-			var mocks = NewMockServer()
-			BeforeEach(func() {
-				conf.API = mocks.URL()
-				mocks.Add().GetAppProcesses(27).Info(fakeLoginServer.URL())
-				mocks.Add().GetApp("STARTED", http.StatusOK, "test_space_guid")
-				DeferCleanup(mocks.Close)
-			})
-			It("will return success", func() {
-				app, err := cfc.GetAppAndProcesses("test-app-id")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(app).To(Equal(&cf.AppAndProcesses{
-					App: &cf.App{
-						Guid:      "testing-guid-get-app",
-						Name:      "mock-get-app",
-						State:     "STARTED",
-						CreatedAt: ParseDate("2022-07-21T13:42:30Z"),
-						UpdatedAt: ParseDate("2022-07-21T14:30:17Z"),
-						Relationships: cf.Relationships{
-							Space: &cf.Space{
-								Data: cf.SpaceData{
-									Guid: "test_space_guid",
-								},
-							},
-						},
-					},
-					Processes: cf.Processes{
-						{
-							Guid:       "",
-							Type:       "",
-							Instances:  27,
-							MemoryInMb: 0,
-							DiskInMb:   0,
-							CreatedAt:  ParseDate("0001-01-01T00:00:00Z"),
-							UpdatedAt:  ParseDate("0001-01-01T00:00:00Z"),
-						},
-					}}))
-			})
-		})
 
 		When("get app & process return ok", func() {
 			BeforeEach(func() {
@@ -308,6 +269,7 @@ var _ = Describe("Cf client App", func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("POST", "/v3/apps/test-app-id/processes/web/actions/scale"),
+						VerifyHeaderKV("Authorization", "Bearer test-access-token"),
 						VerifyJSON(`{"instances":6}`),
 						RespondWith(http.StatusAccepted, LoadFile("scale_response.yml")),
 					),

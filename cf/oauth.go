@@ -95,7 +95,11 @@ func (c *Client) getUserScope(userToken string) ([]string, error) {
 }
 
 func (c *Client) getUserId(userToken string) (UserId, error) {
-	userInfoEndpoint := c.getUserInfoEndpoint()
+	endpoints, err := c.GetEndpoints()
+	if err != nil {
+		return "", err
+	}
+	userInfoEndpoint := endpoints.Uaa.Url + "/userinfo"
 
 	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
 	if err != nil {
@@ -150,10 +154,10 @@ func (c *Client) getUserScopeEndpoint(userToken string) (string, error) {
 	parameters := url.Values{}
 	parameters.Add("token", strings.Split(userToken, " ")[1])
 
-	userScopeEndpoint := c.endpoints.TokenEndpoint + "/check_token?" + parameters.Encode()
+	endpoints, err := c.GetEndpoints()
+	if err != nil {
+		return "", err
+	}
+	userScopeEndpoint := endpoints.Uaa.Url + "/check_token?" + parameters.Encode()
 	return userScopeEndpoint, nil
-}
-
-func (c *Client) getUserInfoEndpoint() string {
-	return c.endpoints.TokenEndpoint + "/userinfo"
 }

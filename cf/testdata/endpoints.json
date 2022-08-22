@@ -1,0 +1,52 @@
+{
+  "links": {
+    "self": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org"
+    },
+    "bits_service": null,
+    "cloud_controller_v2": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v2",
+      "meta": {
+        "version": "2.187.0"
+      }
+    },
+    "cloud_controller_v3": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/v3",
+      "meta": {
+        "version": "3.122.0"
+      }
+    },
+    "network_policy_v0": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/networking/v0/external"
+    },
+    "network_policy_v1": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/networking/v1/external"
+    },
+    "login": {
+      "href": "https://login.autoscaler.ci.cloudfoundry.org"
+    },
+    "uaa": {
+      "href": "https://uaa.autoscaler.ci.cloudfoundry.org"
+    },
+    "credhub": null,
+    "routing": {
+      "href": "https://api.autoscaler.ci.cloudfoundry.org/routing"
+    },
+    "logging": {
+      "href": "wss://doppler.autoscaler.ci.cloudfoundry.org:443"
+    },
+    "log_cache": {
+      "href": "https://log-cache.autoscaler.ci.cloudfoundry.org"
+    },
+    "log_stream": {
+      "href": "https://log-stream.autoscaler.ci.cloudfoundry.org"
+    },
+    "app_ssh": {
+      "href": "ssh.autoscaler.ci.cloudfoundry.org:2222",
+      "meta": {
+        "host_key_fingerprint": "WvVjrWw6KenSYhWesd6GnXW9LlrGAbz8JGVnr0Aqoyg",
+        "oauth_client": "ssh-proxy"
+      }
+    }
+  }
+}

@@ -64,17 +64,6 @@ var _ = Describe("Cf client Retriever", func() {
 	})
 
 	Describe("Client.Get", func() {
-		When("has an invalid url", func() {
-
-			It("should return error", func() {
-				app, err := cfc.Get("v3/invalid")
-				Expect(app).To(BeNil())
-				var urlErr *url.Error
-				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, &urlErr) && urlErr.Op == "parse").To(BeTrue())
-			})
-		})
-
 		When("getToken Fails", func() {
 			It("should return error", func() {
 				//TODO extract out a mock for token getting.
@@ -92,14 +81,16 @@ var _ = Describe("Cf client Retriever", func() {
 			})
 
 			It("should return IsNotFound error", func() {
-				_, err := cfc.Get("/v3/something/404")
+				req, _ := http.NewRequest("GET", cfc.ApiUrl("/v3/something/404"), nil)
+				_, err := cfc.SendRequest(req)
 				var cfError *models.CfError
 				Expect(err).To(MatchError(MatchRegexp(`GET request failed: cf api Error url='', resourceId='': \['CF-ResourceNotFound' code: 10010.*\]`)))
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
 				Expect(models.IsNotFound(err)).To(BeTrue())
 			})
 			It("should close the response body", func() {
-				resp, err := cfc.Get("/v3/something/404")
+				req, _ := http.NewRequest("GET", cfc.ApiUrl("/v3/something/404"), nil)
+				resp, err := cfc.SendRequest(req)
 				Expect(err).ToNot(BeNil())
 				_, err = resp.Body.Read([]byte{})
 				Expect(err).ToNot(BeNil())
@@ -120,7 +111,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					_, err := cfc.Get("/v3/some/url")
+					_, err := cf.ResourceRetriever[cf.App]{cfc}.Get("/v3/some/url")
 					Expect(fakeCC.Count().Requests(`^/v3/some/url$`)).To(Equal(4))
 					Expect(err).To(MatchError(MatchRegexp("GET request failed:.*'UnknownError'")))
 				})
@@ -137,7 +128,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should return success", func() {
-					app, err := cfc.Get("/v3/some/url")
+					app, err := cf.ResourceRetriever[cf.App]{cfc}.Get("/v3/some/url")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(app).ToNot(BeNil())
 					Expect(fakeCC.Count().Requests(`^/v3/some/url$`)).To(Equal(4))
@@ -151,7 +142,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					app, err := cfc.Get("/something")
+					app, err := cf.ResourceRetriever[*cf.App]{cfc}.Get("/something")
 					Expect(app).To(BeNil())
 					Expect(err).To(MatchError(MatchRegexp(`connection refused`)))
 					IsUrlNetOpError(err)
@@ -160,10 +151,10 @@ var _ = Describe("Cf client Retriever", func() {
 		})
 	})
 
-	Describe("Client.Post", func() {
+	Describe("ResourceRetriever.Post", func() {
 		When("has an invalid url", func() {
 			It("should return error", func() {
-				app, err := cfc.Post("v3/invalid", nil)
+				app, err := cf.ResourceRetriever[cf.App]{cfc}.Post("v3/invalid", nil)
 				Expect(app).To(BeNil())
 				var urlErr *url.Error
 				Expect(err).To(HaveOccurred())
@@ -172,7 +163,7 @@ var _ = Describe("Cf client Retriever", func() {
 		})
 		When("passed valid struct", func() {
 			It("should return error", func() {
-				app, err := cfc.Post("/v3/invalid", make(chan int))
+				app, err := cf.ResourceRetriever[cf.App]{cfc}.Post("/v3/invalid", make(chan int))
 				Expect(app).To(BeNil())
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(MatchRegexp(`failed post:.*`)))
@@ -193,7 +184,7 @@ var _ = Describe("Cf client Retriever", func() {
 				)
 			})
 			It("should return response", func() {
-				_, err := cfc.Post("/v3/post", struct {
+				_, err := cf.ResourceRetriever[cf.App]{cfc}.Post("/v3/post", struct {
 					Name string `json:"name"`
 				}{Name: "monty"})
 				Expect(err).ToNot(HaveOccurred())
@@ -201,25 +192,37 @@ var _ = Describe("Cf client Retriever", func() {
 		})
 	})
 
-	Describe("ResourceRetriever T", func() {
+	Describe("ResourceRetriever.Get", func() {
 		type TestItem struct {
 			Name string `json:"name"`
 			Type string `json:"type"`
 		}
-		When("A successful call is made", func() {
-			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					CombineHandlers(
-						VerifyRequest("GET", "/v3/something"),
-						RespondWithJSONEncoded(http.StatusOK, TestItem{Name: "test_name", Type: "test_type"}),
-					),
-				)
+		When("has an invalid url", func() {
+			It("should return error", func() {
+				app, err := cf.ResourceRetriever[*cf.App]{cfc}.Get("v3/invalid")
+				Expect(app).To(BeNil())
+				var urlErr *url.Error
+				Expect(err).To(HaveOccurred())
+				Expect(errors.As(err, &urlErr) && urlErr.Op == "parse").To(BeTrue())
 			})
+		})
 
-			It("should return correct test item", func() {
-				item, err := cf.ResourceRetriever[TestItem]{cfc}.Get("/v3/something")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(item).To(Equal(TestItem{Name: "test_name", Type: "test_type"}))
+		Context("Get", func() {
+			When("A successful call is made", func() {
+				BeforeEach(func() {
+					fakeCC.AppendHandlers(
+						CombineHandlers(
+							VerifyRequest("GET", "/v3/something"),
+							RespondWithJSONEncoded(http.StatusOK, TestItem{Name: "test_name", Type: "test_type"}),
+						),
+					)
+				})
+
+				It("should return correct test item", func() {
+					item, err := cf.ResourceRetriever[TestItem]{cfc}.Get("/v3/something")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(item).To(Equal(TestItem{Name: "test_name", Type: "test_type"}))
+				})
 			})
 		})
 	})

@@ -47,15 +47,17 @@ type FakeCFClient struct {
 		result1 cf.Processes
 		result2 error
 	}
-	GetEndpointsStub        func() cf.Endpoints
+	GetEndpointsStub        func() (cf.Endpoints, error)
 	getEndpointsMutex       sync.RWMutex
 	getEndpointsArgsForCall []struct {
 	}
 	getEndpointsReturns struct {
 		result1 cf.Endpoints
+		result2 error
 	}
 	getEndpointsReturnsOnCall map[int]struct {
 		result1 cf.Endpoints
+		result2 error
 	}
 	GetServiceInstanceStub        func(string) (*cf.ServiceInstance, error)
 	getServiceInstanceMutex       sync.RWMutex
@@ -366,7 +368,7 @@ func (fake *FakeCFClient) GetAppProcessesReturnsOnCall(i int, result1 cf.Process
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetEndpoints() cf.Endpoints {
+func (fake *FakeCFClient) GetEndpoints() (cf.Endpoints, error) {
 	fake.getEndpointsMutex.Lock()
 	ret, specificReturn := fake.getEndpointsReturnsOnCall[len(fake.getEndpointsArgsForCall)]
 	fake.getEndpointsArgsForCall = append(fake.getEndpointsArgsForCall, struct {
@@ -379,9 +381,9 @@ func (fake *FakeCFClient) GetEndpoints() cf.Endpoints {
 		return stub()
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeCFClient) GetEndpointsCallCount() int {
@@ -390,33 +392,36 @@ func (fake *FakeCFClient) GetEndpointsCallCount() int {
 	return len(fake.getEndpointsArgsForCall)
 }
 
-func (fake *FakeCFClient) GetEndpointsCalls(stub func() cf.Endpoints) {
+func (fake *FakeCFClient) GetEndpointsCalls(stub func() (cf.Endpoints, error)) {
 	fake.getEndpointsMutex.Lock()
 	defer fake.getEndpointsMutex.Unlock()
 	fake.GetEndpointsStub = stub
 }
 
-func (fake *FakeCFClient) GetEndpointsReturns(result1 cf.Endpoints) {
+func (fake *FakeCFClient) GetEndpointsReturns(result1 cf.Endpoints, result2 error) {
 	fake.getEndpointsMutex.Lock()
 	defer fake.getEndpointsMutex.Unlock()
 	fake.GetEndpointsStub = nil
 	fake.getEndpointsReturns = struct {
 		result1 cf.Endpoints
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints) {
+func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints, result2 error) {
 	fake.getEndpointsMutex.Lock()
 	defer fake.getEndpointsMutex.Unlock()
 	fake.GetEndpointsStub = nil
 	if fake.getEndpointsReturnsOnCall == nil {
 		fake.getEndpointsReturnsOnCall = make(map[int]struct {
 			result1 cf.Endpoints
+			result2 error
 		})
 	}
 	fake.getEndpointsReturnsOnCall[i] = struct {
 		result1 cf.Endpoints
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCFClient) GetServiceInstance(arg1 string) (*cf.ServiceInstance, error) {

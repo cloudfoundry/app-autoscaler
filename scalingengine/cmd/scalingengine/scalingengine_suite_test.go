@@ -58,8 +58,8 @@ var _ = SynchronizedBeforeSuite(
 		ccUAA = NewMockServer()
 		ccUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			cf.Endpoints{
-				TokenEndpoint:   ccUAA.URL(),
-				DopplerEndpoint: strings.Replace(ccUAA.URL(), "http", "ws", 1),
+				Uaa:     ccUAA.URL(),
+				Doppler: strings.Replace(ccUAA.URL(), "http", "ws", 1),
 			}))
 
 		ccUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))

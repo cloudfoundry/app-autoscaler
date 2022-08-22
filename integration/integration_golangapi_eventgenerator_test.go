@@ -72,8 +72,8 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						TokenEndpoint:   fakeCCNOAAUAA.URL(),
-						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+						Uaa:     fakeCCNOAAUAA.URL(),
+						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 			})
 			It("should error with status code 500", func() {
@@ -89,8 +89,8 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						TokenEndpoint:   fakeCCNOAAUAA.URL(),
-						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+						Uaa:     fakeCCNOAAUAA.URL(),
+						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {

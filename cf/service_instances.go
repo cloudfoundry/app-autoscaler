@@ -23,7 +23,7 @@ type (
 
 func (c *Client) GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error) {
 	theUrl := fmt.Sprintf("/v3/service_instances/%s", serviceInstanceGuid)
-	serviceInstance, err := ResourceRetriever[ServiceInstance]{c}.Get(theUrl)
+	serviceInstance, err := ResourceRetriever[ServiceInstance]{AuthenticatedClient{c}}.Get(theUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetServiceInstance guid(%s): %w", serviceInstanceGuid, err)
 	}

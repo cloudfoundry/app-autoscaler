@@ -91,7 +91,7 @@ func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
 func (c *Client) GetApp(appID string) (*App, error) {
 	url := fmt.Sprintf("/v3/apps/%s", appID)
 
-	resp, err := ResourceRetriever[*App]{c}.Get(url)
+	resp, err := ResourceRetriever[*App]{AuthenticatedClient{c}}.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting app '%s': %w", appID, err)
 	}
@@ -105,7 +105,7 @@ func (c *Client) GetApp(appID string) (*App, error) {
 func (c *Client) GetAppProcesses(appID string) (Processes, error) {
 	url := fmt.Sprintf("/v3/apps/%s/processes?per_page=%d", appID, c.conf.PerPage)
 
-	pages, err := PagedResourceRetriever[Process]{c}.GetAllPages(url)
+	pages, err := PagedResourceRetriever[Process]{AuthenticatedClient{c}}.GetAllPages(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetAppProcesses '%s': %w", appID, err)
 	}
@@ -121,7 +121,7 @@ func (c *Client) ScaleAppWebProcess(appID string, num int) error {
 	type scaleApp struct {
 		Instances int `json:"instances"`
 	}
-	_, err := c.Post(url, scaleApp{Instances: num})
+	_, err := ResourceRetriever[Process]{AuthenticatedClient{c}}.Post(url, scaleApp{Instances: num})
 	if err != nil {
 		return fmt.Errorf("failed scaling app '%s' to %d: %w", appID, num, err)
 	}

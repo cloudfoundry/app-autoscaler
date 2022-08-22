@@ -66,8 +66,8 @@ func initConfig() {
 	cfServer = testhelpers.NewMockServer()
 	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
-			TokenEndpoint:   cfServer.URL(),
-			DopplerEndpoint: strings.Replace(cfServer.URL(), "http", "ws", 1),
+			Uaa:     cfServer.URL(),
+			Doppler: strings.Replace(cfServer.URL(), "http", "ws", 1),
 		}))
 
 	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))

@@ -111,8 +111,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ccServer = ghttp.NewServer()
 	ccServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
-			AuthEndpoint:  ccServer.URL(),
-			TokenEndpoint: ccServer.URL(),
+			Login: ccServer.URL(),
+			Uaa:   ccServer.URL(),
 		}))
 
 	ccServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))

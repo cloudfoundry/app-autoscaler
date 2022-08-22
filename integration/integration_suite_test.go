@@ -763,9 +763,9 @@ func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA = testhelpers.NewMockServer()
 	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
-			AuthEndpoint:    fakeCCNOAAUAA.URL(),
-			TokenEndpoint:   fakeCCNOAAUAA.URL(),
-			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+			Login:   fakeCCNOAAUAA.URL(),
+			Uaa:     fakeCCNOAAUAA.URL(),
+			Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 	fakeCCNOAAUAA.Add().

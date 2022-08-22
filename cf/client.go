@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	PathCFInfo                                   = "/v2/info"
 	PathCFAuth                                   = "/oauth/token"
 	PathIntrospectToken                          = "/introspect"
 	GrantTypeClientCredentials                   = "client_credentials"
@@ -41,17 +40,11 @@ type (
 		ClientId string `json:"client_id"`
 	}
 
-	Endpoints struct {
-		AuthEndpoint    string `json:"authorization_endpoint"`
-		TokenEndpoint   string `json:"token_endpoint"`
-		DopplerEndpoint string `json:"doppler_logging_endpoint"`
-	}
-
 	CFClient interface {
 		Login() error
 		RefreshAuthToken() (string, error)
 		GetTokens() (Tokens, error)
-		GetEndpoints() Endpoints
+		GetEndpoints() (Endpoints, error)
 		GetApp(string) (*App, error)
 		GetAppProcesses(string) (Processes, error)
 		GetAppAndProcesses(string) (*AppAndProcesses, error)
@@ -64,20 +57,17 @@ type (
 	}
 
 	Client struct {
-		logger             lager.Logger
-		conf               *Config
-		clk                clock.Clock
-		tokens             Tokens
-		endpoints          Endpoints
-		infoURL            string
-		tokenURL           string
-		introspectTokenURL string
-		loginForm          url.Values
-		authHeader         string
-		httpClient         *http.Client
-		lock               *sync.Mutex
-		grantTime          time.Time
-		retryClient        *http.Client
+		logger      lager.Logger
+		conf        *Config
+		clk         clock.Clock
+		tokens      Tokens
+		endpoints   *Lazy[Endpoints]
+		loginForm   url.Values
+		authHeader  string
+		httpClient  *http.Client
+		lock        *sync.Mutex
+		grantTime   time.Time
+		retryClient *http.Client
 	}
 )
 
@@ -88,7 +78,6 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.logger = logger
 	c.conf = conf
 	c.clk = clk
-	c.infoURL = conf.API + PathCFInfo
 
 	c.loginForm = url.Values{
 		"grant_type":    {GrantTypeClientCredentials},
@@ -104,7 +93,7 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.httpClient.Transport = DrainingTransport{c.httpClient.Transport}
 	c.retryClient = createRetryClient(conf, c.httpClient, logger)
 	c.lock = &sync.Mutex{}
-
+	c.endpoints = NewLazy(c.getEndpoints)
 	if c.conf.PerPage == 0 {
 		c.conf.PerPage = defaultPerPage
 	}
@@ -128,37 +117,15 @@ func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *
 	return retryClient.StandardClient()
 }
 
-func (c *Client) retrieveEndpoints() error {
-	c.logger.Info("retrieve-endpoints", lager.Data{"infoURL": c.infoURL})
-
-	resp, err := c.httpClient.Get(c.infoURL)
-	if err != nil {
-		c.logger.Error("retrieve-endpoints-get", err)
-		return err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Error requesting endpoints: %s [%d] %s", c.infoURL, resp.StatusCode, resp.Status)
-		c.logger.Error("retrieve-endpoints-response", err)
-		return err
-	}
-
-	err = json.NewDecoder(resp.Body).Decode(&c.endpoints)
-	if err != nil {
-		c.logger.Error("retrieve-endpoints-decode", err)
-		return err
-	}
-
-	c.tokenURL = c.endpoints.TokenEndpoint + PathCFAuth
-	c.introspectTokenURL = c.endpoints.TokenEndpoint + PathIntrospectToken
-	return nil
-}
-
 func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
-	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": c.tokenURL, "form": *formData})
+	endpoints, err := c.GetEndpoints()
+	if err != nil {
+		return err
+	}
+	tokenUrl := endpoints.Uaa.Url + PathCFAuth
+	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": tokenUrl, "form": *formData})
 
-	req, err := http.NewRequest("POST", c.tokenURL, strings.NewReader(formData.Encode()))
+	req, err := http.NewRequest("POST", tokenUrl, strings.NewReader(formData.Encode()))
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-new-request", err)
 		return err
@@ -175,7 +142,7 @@ func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("request client credential grant failed: %s [%d] %s", c.tokenURL, resp.StatusCode, resp.Status)
+		err = fmt.Errorf("request client credential grant failed: %s [%d] %s", tokenUrl, resp.StatusCode, resp.Status)
 		c.logger.Error("request-client-credential-grant-response", err)
 		return err
 	}
@@ -190,27 +157,11 @@ func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
 }
 
 func (c *Client) Login() error {
-	c.logger.Info("login", lager.Data{"infoURL": c.infoURL})
-
-	err := c.retrieveEndpoints()
-	if err != nil {
-		return err
-	}
-
 	return c.requestClientCredentialGrant(&c.loginForm)
 }
 
 func (c *Client) RefreshAuthToken() (string, error) {
-	c.logger.Info("refresh-auth-token", lager.Data{"tokenURL": c.tokenURL})
-
-	var err error
-	if c.tokenURL == "" {
-		err = c.retrieveEndpoints()
-		if err != nil {
-			return "", err
-		}
-	}
-	err = c.requestClientCredentialGrant(&c.loginForm)
+	err := c.requestClientCredentialGrant(&c.loginForm)
 	if err != nil {
 		return "", err
 	}
@@ -234,13 +185,14 @@ func (c *Client) isTokenToBeExpired() bool {
 	return c.clk.Now().Sub(c.grantTime) > (time.Duration(c.tokens.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
 }
 
-func (c *Client) GetEndpoints() Endpoints {
-	return c.endpoints
-}
-
 func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
+	endpoints, err := c.GetEndpoints()
+	if err != nil {
+		return false, err
+	}
 	formData := url.Values{"token": {token}}
-	request, err := http.NewRequest("POST", c.introspectTokenURL, strings.NewReader(formData.Encode()))
+	tokenURL := endpoints.Uaa.Url + PathIntrospectToken
+	request, err := http.NewRequest("POST", tokenURL, strings.NewReader(formData.Encode()))
 	if err != nil {
 		return false, err
 	}

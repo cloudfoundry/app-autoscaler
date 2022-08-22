@@ -71,9 +71,9 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						AuthEndpoint:    fakeCCNOAAUAA.URL(),
-						TokenEndpoint:   fakeCCNOAAUAA.URL(),
-						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+						Login:   fakeCCNOAAUAA.URL(),
+						Uaa:     fakeCCNOAAUAA.URL(),
+						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
@@ -91,9 +91,9 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						AuthEndpoint:    fakeCCNOAAUAA.URL(),
-						TokenEndpoint:   fakeCCNOAAUAA.URL(),
-						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+						Login:   fakeCCNOAAUAA.URL(),
+						Uaa:     fakeCCNOAAUAA.URL(),
+						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {

@@ -27,7 +27,7 @@ type (
  */
 func (c *Client) GetServicePlan(servicePlanGuid string) (*ServicePlan, error) {
 	theUrl := fmt.Sprintf("/v3/service_plans/%s", servicePlanGuid)
-	plan, err := ResourceRetriever[*ServicePlan]{c}.Get(theUrl)
+	plan, err := ResourceRetriever[*ServicePlan]{AuthenticatedClient{c}}.Get(theUrl)
 	if err != nil {
 		return plan, fmt.Errorf("failed GetServicePlan(%s): %w", servicePlanGuid, err)
 	}

@@ -29,20 +29,27 @@ type (
 		Resources  []T        `json:"resources"`
 	}
 
-	PagedResourceRetriever[T any] struct {
-		Client *Client
-	}
+	PagedResourceRetriever[T any] ResourceRetriever[T]
+	ResourceRetriever[T any]      struct{ Retriever }
 
-	ResourceRetriever[T any] struct {
-		Client *Client
+	Retriever interface {
+		SendRequest(req *http.Request) (*http.Response, error)
+		ApiUrl(pathAndQuery string) string
+		CFClient
+	}
+	AuthenticatedClient struct {
+		Retriever
 	}
 )
+
+var _ Retriever = &Client{}
+var _ Retriever = AuthenticatedClient{}
 
 func (r PagedResourceRetriever[T]) GetAllPages(pathAndQuery string) ([]T, error) {
 	pageNumber := 1
 	var resources []T
 
-	url := r.Client.conf.API + pathAndQuery
+	url := r.Retriever.ApiUrl(pathAndQuery)
 
 	for url != "" {
 		page, err := r.getPage(url)
@@ -57,7 +64,7 @@ func (r PagedResourceRetriever[T]) GetAllPages(pathAndQuery string) ([]T, error)
 }
 
 func (r PagedResourceRetriever[T]) GetPage(pathAndQuery string) (Response[T], error) {
-	return r.getPage(r.Client.conf.API + pathAndQuery)
+	return r.getPage(r.Retriever.ApiUrl(pathAndQuery))
 }
 
 func (r PagedResourceRetriever[T]) getPage(url string) (Response[T], error) {
@@ -65,15 +72,22 @@ func (r PagedResourceRetriever[T]) getPage(url string) (Response[T], error) {
 }
 
 func (r ResourceRetriever[T]) Get(pathAndQuery string) (T, error) {
-	return r.get(r.Client.conf.API + pathAndQuery)
+	return r.get(r.Retriever.ApiUrl(pathAndQuery))
 }
 
 func (r ResourceRetriever[T]) get(url string) (T, error) {
 	var response T
-	resp, err := r.Client.get(url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return response, err
+	}
+
+	resp, err := Retriever(r).SendRequest(req)
 	if err != nil {
 		return response, fmt.Errorf("failed getting %T: %w", response, err)
 	}
+
 	defer func() { _ = resp.Body.Close() }()
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
@@ -82,38 +96,28 @@ func (r ResourceRetriever[T]) get(url string) (T, error) {
 	return response, nil
 }
 
-func (c *Client) Get(pathAndQuery string) (*http.Response, error) {
-	return c.get(c.conf.API + pathAndQuery)
-}
-
-func (c *Client) get(url string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	return c.sendRequest(req)
-}
-
-func (c *Client) Post(url string, bodyStuct any) (*http.Response, error) {
+func (r ResourceRetriever[T]) Post(url string, bodyStuct any) (*http.Response, error) {
 	body, err := json.Marshal(bodyStuct)
 	if err != nil {
 		return nil, fmt.Errorf("failed post: %w", err)
 	}
-	req, err := http.NewRequest("POST", c.conf.API+url, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", r.Retriever.ApiUrl(url), bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("post %s failed: %w", url, err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	return c.sendRequest(req)
+	return Retriever(r).SendRequest(req)
 }
 
-func (c *Client) sendRequest(req *http.Request) (*http.Response, error) {
-	tokens, err := c.GetTokens()
+func (r AuthenticatedClient) SendRequest(req *http.Request) (*http.Response, error) {
+	err := r.addAuth(req)
 	if err != nil {
-		return nil, fmt.Errorf("get token failed: %w", err)
+		return nil, err
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
+	return r.Retriever.SendRequest(req)
+}
 
+func (c *Client) SendRequest(req *http.Request) (*http.Response, error) {
 	resp, err := c.retryClient.Do(req)
 	if err != nil {
 		return resp, err
@@ -122,6 +126,7 @@ func (c *Client) sendRequest(req *http.Request) (*http.Response, error) {
 	statusCode := resp.StatusCode
 	if isError(statusCode) {
 		defer func() { _ = resp.Body.Close() }()
+		//TODO use limitReader here
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, fmt.Errorf("failed to read response[%d]: %w", statusCode, err)
@@ -129,6 +134,20 @@ func (c *Client) sendRequest(req *http.Request) (*http.Response, error) {
 		return resp, fmt.Errorf("%s request failed: %w", req.Method, models.NewCfError(req.RequestURI, req.RequestURI, statusCode, respBody))
 	}
 	return resp, nil
+}
+
+func (c *Client) ApiUrl(pathAndQuery string) string {
+	return c.conf.API + pathAndQuery
+}
+
+func (r AuthenticatedClient) addAuth(req *http.Request) error {
+	tokens, err := r.Retriever.GetTokens()
+	if err != nil {
+		return fmt.Errorf("get token failed: %w", err)
+	}
+
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
+	return nil
 }
 
 func isError(statusCode int) bool {

@@ -18,7 +18,7 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		fakeCC    *ghttp.Server
+		fakeCC    *MockServer
 		fakeUAA   *ghttp.Server
 		cfc       CFClient
 		conf      *Config
@@ -29,7 +29,7 @@ var _ = Describe("Client", func() {
 	)
 
 	BeforeEach(func() {
-		fakeCC = ghttp.NewServer()
+		fakeCC = NewMockServer()
 		fakeUAA = ghttp.NewServer()
 		conf = &Config{}
 		conf.API = fakeCC.URL()
@@ -53,67 +53,9 @@ var _ = Describe("Client", func() {
 			err = cfc.Login()
 		})
 
-		Context("when retrieving endpoints succeeds", func() {
-			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCFInfo),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    "test-auth-endpoint",
-							TokenEndpoint:   "test-token-endpoint",
-							DopplerEndpoint: "test-doppler-endpoint",
-						}),
-					),
-				)
-			})
-
-			It("has endpoints", func() {
-				Expect(cfc.GetEndpoints().AuthEndpoint).To(Equal("test-auth-endpoint"))
-				Expect(cfc.GetEndpoints().TokenEndpoint).To(Equal("test-token-endpoint"))
-				Expect(cfc.GetEndpoints().DopplerEndpoint).To(Equal("test-doppler-endpoint"))
-			})
-		})
-
-		Context("when retrieving endpoints fails", func() {
-			Context("when the Cloud Controller is not running", func() {
-				BeforeEach(func() {
-					fakeCC.Close()
-					fakeCC = nil
-				})
-
-				It("should error", func() {
-					IsUrlNetOpError(err)
-				})
-			})
-
-			Context("when a non-200 status code is returned", func() {
-				BeforeEach(func() {
-					fakeCC.AppendHandlers(
-						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("GET", PathCFInfo),
-							ghttp.RespondWith(500, ""),
-						),
-					)
-				})
-
-				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Error requesting endpoints: .*")))
-				})
-			})
-		})
-
 		Context("when the token url is valid", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCFInfo),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    "test-auth-endpoint",
-							TokenEndpoint:   fakeUAA.URL(),
-							DopplerEndpoint: "test-doppler-endpoint",
-						}),
-					),
-				)
+				fakeCC.Add().Info(fakeUAA.URL())
 			})
 
 			Context("when token server returns 200 status code", func() {
@@ -191,16 +133,7 @@ var _ = Describe("Client", func() {
 
 		Context("when not logged in", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCFInfo),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    "test-auth-endpoint",
-							TokenEndpoint:   fakeUAA.URL(),
-							DopplerEndpoint: "test-doppler-endpoint",
-						}),
-					),
-				)
+				fakeCC.Add().Info(fakeUAA.URL())
 			})
 
 			Context("when token server returns a 200 status code ", func() {
@@ -246,16 +179,7 @@ var _ = Describe("Client", func() {
 
 		Context("when already logged in", func() {
 			BeforeEach(func() {
-				fakeCC.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCFInfo),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    "test-auth-endpoint",
-							TokenEndpoint:   fakeUAA.URL(),
-							DopplerEndpoint: "test-doppler-endpoint",
-						}),
-					),
-				)
+				fakeCC.Add().Info(fakeUAA.URL())
 				fakeUAA.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", PathCFAuth),
@@ -325,16 +249,7 @@ var _ = Describe("Client", func() {
 
 		BeforeEach(func() {
 			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
-			fakeCC.AppendHandlers(
-				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", PathCFInfo),
-					ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-						AuthEndpoint:    "test-auth-endpoint",
-						TokenEndpoint:   fakeUAA.URL(),
-						DopplerEndpoint: "test-doppler-endpoint",
-					}),
-				),
-			)
+			fakeCC.Add().Info(fakeUAA.URL())
 			fakeUAA.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", PathCFAuth),
@@ -388,7 +303,7 @@ var _ = Describe("Client", func() {
 
 			Context("when refresh fails", func() {
 				BeforeEach(func() {
-					fakeCC.RouteToHandler("GET", "/v2/info", ghttp.RespondWith(200, ""))
+					fakeCC.RouteToHandler("GET", "/", ghttp.RespondWith(200, ""))
 					fakeUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
 					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
 				})
@@ -407,16 +322,7 @@ var _ = Describe("Client", func() {
 	Describe("IsTokenAuthorized", func() {
 		BeforeEach(func() {
 			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
-			fakeCC.AppendHandlers(
-				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", PathCFInfo),
-					ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-						AuthEndpoint:    "test-auth-endpoint",
-						TokenEndpoint:   fakeUAA.URL(),
-						DopplerEndpoint: "test-doppler-endpoint",
-					}),
-				),
-			)
+			fakeCC.Add().Info(fakeUAA.URL())
 			fakeUAA.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", PathCFAuth),

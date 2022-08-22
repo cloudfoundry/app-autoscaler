@@ -88,10 +88,11 @@ func (a AddMock) GetAppProcesses(processes int) AddMock {
 }
 
 func (a AddMock) Info(url string) AddMock {
-	a.server.RouteToHandler("GET", cf.PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Endpoints{
-		AuthEndpoint:    url,
-		TokenEndpoint:   url,
-		DopplerEndpoint: "test-doppler-endpoint",
+	a.server.RouteToHandler("GET", "/", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.EndpointsResponse{
+		Links: cf.Endpoints{
+			Login: cf.Href{Url: url},
+			Uaa:   cf.Href{Url: url},
+		},
 	}))
 	return a
 }

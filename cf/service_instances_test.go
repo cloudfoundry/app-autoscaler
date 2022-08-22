@@ -64,6 +64,7 @@ var _ = Describe("Cf client Service Instances", func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("GET", "/v3/service_instances/test_guid"),
+						VerifyHeaderKV("Authorization", "Bearer test-access-token"),
 						RespondWith(http.StatusOK, LoadFile("service_instance.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)

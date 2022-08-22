@@ -111,8 +111,8 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						TokenEndpoint:   fakeCCNOAAUAA.URL(),
-						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+						Uaa:     fakeCCNOAAUAA.URL(),
+						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 			})
 			Context("Create policy", func() {
@@ -142,8 +142,8 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						TokenEndpoint:   fakeCCNOAAUAA.URL(),
-						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+						Uaa:     fakeCCNOAAUAA.URL(),
+						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {
