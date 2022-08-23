@@ -217,4 +217,23 @@ var _ = Describe("Cf cloud controller", func() {
 			})
 		})
 	})
+
+	Describe("Info", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				conf.API = mocks.URL()
+				mocks.Add().Info(fakeLoginServer.URL())
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				endpoints, err := cfc.GetEndpoints()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(endpoints).To(Equal(cf.Endpoints{
+					Login: cf.Href{fakeLoginServer.URL()},
+					Uaa:   cf.Href{fakeLoginServer.URL()},
+				}))
+			})
+		})
+	})
 })
