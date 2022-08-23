@@ -761,12 +761,6 @@ func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap
 
 func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA = testhelpers.NewMockServer()
-	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		cf.Endpoints{
-			Login:   fakeCCNOAAUAA.URL(),
-			Uaa:     fakeCCNOAAUAA.URL(),
-			Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
-		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 	fakeCCNOAAUAA.Add().
 		GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
@@ -774,7 +768,8 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		ScaleAppWebProcess().
 		Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper}).
 		ServiceInstance("cc-free-plan-id").
-		ServicePlan("autoscaler-free-plan-id")
+		ServicePlan("autoscaler-free-plan-id").
+		Info(fakeCCNOAAUAA.URL())
 
 	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {

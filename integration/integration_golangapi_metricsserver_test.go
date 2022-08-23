@@ -3,9 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -72,12 +70,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-					cf.Endpoints{
-						Login:   fakeCCNOAAUAA.URL(),
-						Uaa:     fakeCCNOAAUAA.URL(),
-						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
-					}))
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL())
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
@@ -91,12 +84,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-					cf.Endpoints{
-						Login:   fakeCCNOAAUAA.URL(),
-						Uaa:     fakeCCNOAAUAA.URL(),
-						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
-					}))
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL())
 				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {
 						Scope []string `json:"scope"`

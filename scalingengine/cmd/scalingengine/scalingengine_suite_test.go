@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
 )
@@ -56,17 +55,13 @@ var _ = SynchronizedBeforeSuite(
 		enginePath = string(pathBytes)
 
 		ccUAA = NewMockServer()
-		ccUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-			cf.Endpoints{
-				Uaa:     ccUAA.URL(),
-				Doppler: strings.Replace(ccUAA.URL(), "http", "ws", 1),
-			}))
 
 		ccUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
 		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
 
 		ccUAA.Add().
+			Info(ccUAA.URL()).
 			GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 			GetAppProcesses(2).
 			ScaleAppWebProcess()

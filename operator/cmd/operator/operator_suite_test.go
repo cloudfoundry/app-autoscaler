@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
@@ -64,16 +63,11 @@ var _ = SynchronizedAfterSuite(func() {
 
 func initConfig() {
 	cfServer = testhelpers.NewMockServer()
-	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		cf.Endpoints{
-			Uaa:     cfServer.URL(),
-			Doppler: strings.Replace(cfServer.URL(), "http", "ws", 1),
-		}))
-
 	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-
-	cfServer.Add().GetApp(models2.AppStatusStarted, http.StatusOK, "test_space_guid")
-	cfServer.Add().GetAppProcesses(2)
+	cfServer.Add().
+		Info(cfServer.URL()).
+		GetApp(models2.AppStatusStarted, http.StatusOK, "test_space_guid").
+		GetAppProcesses(2)
 
 	cfg.CF = cf.Config{
 		API:      cfServer.URL(),

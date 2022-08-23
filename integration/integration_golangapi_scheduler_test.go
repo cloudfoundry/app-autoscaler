@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -109,11 +106,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-					cf.Endpoints{
-						Uaa:     fakeCCNOAAUAA.URL(),
-						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
-					}))
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL())
 			})
 			Context("Create policy", func() {
 				It("should error with status code 500", func() {
@@ -140,11 +133,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-					cf.Endpoints{
-						Uaa:     fakeCCNOAAUAA.URL(),
-						Doppler: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
-					}))
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL())
 				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {
 						Scope []string `json:"scope"`

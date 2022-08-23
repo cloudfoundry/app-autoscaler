@@ -49,7 +49,7 @@ var (
 	publicApiPort    int
 	healthport       int
 	infoBytes        string
-	ccServer         *ghttp.Server
+	ccServer         *MockServer
 )
 
 func TestApi(t *testing.T) {
@@ -108,12 +108,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	info := &testdata{}
 	err := json.Unmarshal(testParams, info)
 	Expect(err).NotTo(HaveOccurred())
-	ccServer = ghttp.NewServer()
-	ccServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		cf.Endpoints{
-			Login: ccServer.URL(),
-			Uaa:   ccServer.URL(),
-		}))
+	ccServer = NewMockServer()
+	ccServer.Add().Info(ccServer.URL())
 
 	ccServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 

@@ -89,6 +89,7 @@ var _ = Describe("Cf client Roles", func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("GET", "/v3/roles", "types=space_developer&space_guids=some_space_id&user_guids=someUserId"),
+						VerifyHeaderKV("Authorization", "Bearer test-access-token"),
 						RespondWith(http.StatusCreated, LoadFile("roles.json"), http.Header{"Content-Type": []string{"application/json"}}),
 					),
 				)
