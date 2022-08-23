@@ -1,17 +1,16 @@
 package testhelpers_test
 
 import (
-	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
+	"github.com/onsi/gomega/ghttp"
+
+	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/ghttp"
-
-	"net/http"
 )
 
 var _ = Describe("Cf cloud controller", func() {
@@ -20,14 +19,14 @@ var _ = Describe("Cf cloud controller", func() {
 		conf            *cf.Config
 		cfc             *cf.Client
 		fakeCC          *MockServer
-		fakeLoginServer *Server
+		fakeLoginServer *MockServer
 		err             error
 		logger          lager.Logger
 	)
 
-	var setCfcClient = func(maxRetries int) {
+	var setCfcClient = func(maxRetries int, apiUrl string) {
 		conf = &cf.Config{}
-		conf.API = fakeCC.URL()
+		conf.API = apiUrl
 		conf.MaxRetries = maxRetries
 		conf.MaxRetryWaitMs = 1
 		cfc = cf.NewCFClient(conf, logger, clock.NewClock())
@@ -37,15 +36,15 @@ var _ = Describe("Cf cloud controller", func() {
 
 	BeforeEach(func() {
 		fakeCC = NewMockServer()
-		fakeLoginServer = NewServer()
+		fakeLoginServer = NewMockServer()
 		fakeCC.Add().Info(fakeLoginServer.URL())
-		fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
+		fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 			AccessToken: "test-access-token",
 			ExpiresIn:   12000,
 		}))
 		logger = lager.NewLogger("cf")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
-		setCfcClient(0)
+		setCfcClient(0, fakeCC.URL())
 	})
 
 	AfterEach(func() {
@@ -233,6 +232,63 @@ var _ = Describe("Cf cloud controller", func() {
 					Login: cf.Href{fakeLoginServer.URL()},
 					Uaa:   cf.Href{fakeLoginServer.URL()},
 				}))
+			})
+		})
+	})
+
+	Describe("OauthToken", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				mocks.Add().Info(mocks.URL())
+				mocks.Add().OauthToken("a-access-token")
+				setCfcClient(0, mocks.URL())
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+
+				token, err := cfc.GetTokens()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(token).To(Equal(cf.Tokens{AccessToken: "a-access-token", ExpiresIn: 12000}))
+			})
+		})
+	})
+
+	Describe("CheckToken", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				testUserScope := []string{"cloud_controller.admin"}
+				mocks.Add().Info(mocks.URL())
+				mocks.Add().CheckToken(testUserScope).OauthToken("a-test-access-token")
+				setCfcClient(0, mocks.URL())
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				userAdmin, err := cfc.IsUserAdmin("bearer a-test-access-token")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(userAdmin).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("UserInfo", func() {
+		When("the mocks are used", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				mocks.Add().
+					Info(mocks.URL()).
+					GetApp("", 200, "some-space-guid").
+					Roles(http.StatusOK, cf.Role{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper}).
+					UserInfo("testUser").
+					OauthToken("a-test-access-token")
+				setCfcClient(0, mocks.URL())
+				DeferCleanup(mocks.Close)
+			})
+			It("will return success", func() {
+				userAdmin, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(userAdmin).To(BeTrue())
 			})
 		})
 	})

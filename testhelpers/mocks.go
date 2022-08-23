@@ -125,3 +125,31 @@ func (a AddMock) ServicePlan(brokerPlanId string) AddMock {
 	)
 	return a
 }
+
+func (a AddMock) UserInfo(testUserId string) AddMock {
+	a.server.RouteToHandler(http.MethodGet, "/userinfo",
+		ghttp.RespondWithJSONEncoded(http.StatusOK,
+			struct {
+				UserId string `json:"user_id"`
+			}{
+				testUserId,
+			}))
+	return a
+}
+
+func (a AddMock) CheckToken(testUserScope []string) AddMock {
+	a.server.RouteToHandler(http.MethodPost, "/check_token",
+		ghttp.RespondWithJSONEncoded(http.StatusOK,
+			struct {
+				Scope []string `json:"scope"`
+			}{
+				testUserScope,
+			}))
+	return a
+}
+
+func (a AddMock) OauthToken(accessToken string) AddMock {
+	a.server.RouteToHandler(http.MethodPost, "/oauth/token",
+		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{AccessToken: accessToken, ExpiresIn: 12000}))
+	return a
+}
