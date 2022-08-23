@@ -1,6 +1,8 @@
 package testhelpers_test
 
 import (
+	"errors"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"code.cloudfoundry.org/clock"
@@ -280,7 +282,7 @@ var _ = Describe("Cf cloud controller", func() {
 					Info(mocks.URL()).
 					GetApp("", 200, "some-space-guid").
 					Roles(http.StatusOK, cf.Role{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper}).
-					UserInfo("testUser").
+					UserInfo(http.StatusOK, "testUser").
 					OauthToken("a-test-access-token")
 				setCfcClient(0, mocks.URL())
 				DeferCleanup(mocks.Close)
@@ -289,6 +291,24 @@ var _ = Describe("Cf cloud controller", func() {
 				userAdmin, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(userAdmin).To(BeTrue())
+			})
+		})
+		When("the mocks return 401", func() {
+			var mocks = NewMockServer()
+			BeforeEach(func() {
+				mocks.Add().
+					Info(mocks.URL()).
+					GetApp("", 200, "some-space-guid").
+					Roles(http.StatusOK, cf.Role{Guid: "mock_guid", Type: cf.RoleSpaceDeveloper}).
+					UserInfo(http.StatusUnauthorized, "testUser").
+					OauthToken("a-test-access-token")
+				setCfcClient(0, mocks.URL())
+				DeferCleanup(mocks.Close)
+			})
+			It("will return unauthorised", func() {
+				_, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
+				Expect(err).To(HaveOccurred())
+				Expect(errors.Is(err, cf.ErrUnauthrorized)).To(BeTrue())
 			})
 		})
 	})

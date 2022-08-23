@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Integration_GolangApi_MetricsServer", func() {
@@ -84,14 +83,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL())
-				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
-					struct {
-						Scope []string `json:"scope"`
-					}{
-						[]string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"},
-					}))
-				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).CheckToken(testUserScope).UserInfo(http.StatusUnauthorized, "ERROR")
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {

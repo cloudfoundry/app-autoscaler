@@ -13,7 +13,6 @@ import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -109,9 +108,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	err := json.Unmarshal(testParams, info)
 	Expect(err).NotTo(HaveOccurred())
 	ccServer = NewMockServer()
-	ccServer.Add().Info(ccServer.URL())
-
-	ccServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
+	ccServer.Add().Info(ccServer.URL()).OauthToken("test-token")
 
 	apPath = info.ApPath
 	catalogBytes = info.CatalogBytes

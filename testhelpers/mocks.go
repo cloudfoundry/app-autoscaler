@@ -126,14 +126,12 @@ func (a AddMock) ServicePlan(brokerPlanId string) AddMock {
 	return a
 }
 
-func (a AddMock) UserInfo(testUserId string) AddMock {
+func (a AddMock) UserInfo(statusCode int, testUserId string) AddMock {
 	a.server.RouteToHandler(http.MethodGet, "/userinfo",
-		ghttp.RespondWithJSONEncoded(http.StatusOK,
+		ghttp.RespondWithJSONEncoded(statusCode,
 			struct {
 				UserId string `json:"user_id"`
-			}{
-				testUserId,
-			}))
+			}{testUserId}))
 	return a
 }
 

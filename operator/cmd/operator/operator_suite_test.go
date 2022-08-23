@@ -14,12 +14,10 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
+	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/onsi/gomega/ghttp"
-
-	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -63,11 +61,11 @@ var _ = SynchronizedAfterSuite(func() {
 
 func initConfig() {
 	cfServer = testhelpers.NewMockServer()
-	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 	cfServer.Add().
 		Info(cfServer.URL()).
 		GetApp(models2.AppStatusStarted, http.StatusOK, "test_space_guid").
-		GetAppProcesses(2)
+		GetAppProcesses(2).
+		OauthToken("some-test-token")
 
 	cfg.CF = cf.Config{
 		API:      cfServer.URL(),
