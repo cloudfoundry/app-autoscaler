@@ -32,15 +32,16 @@ import (
 	uuid "github.com/nu7hatch/gouuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon_v2"
 	"github.com/tedsuo/ifrit/grouper"
 )
 
 const (
-	serviceId = "autoscaler-guid"
-	planId    = "autoscaler-free-plan-id"
+	serviceId     = "autoscaler-guid"
+	planId        = "autoscaler-free-plan-id"
+	testUserId    = "testUserId"
+	testUserToken = "testUserOauthToken" // #nosec G101
 )
 
 var (
@@ -59,10 +60,8 @@ var (
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *testhelpers.MockServer
-	testUserId              = "testUserId"
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
-
-	processMap = map[string]ifrit.Process{}
+	processMap              = map[string]ifrit.Process{}
 
 	defaultHttpClientTimeout = 10 * time.Second
 
@@ -761,7 +760,6 @@ func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap
 
 func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA = testhelpers.NewMockServer()
-	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 	fakeCCNOAAUAA.Add().
 		GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 		GetAppProcesses(instanceCount).
@@ -769,20 +767,10 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		Roles(http.StatusOK, cf.Role{Type: cf.RoleSpaceDeveloper}).
 		ServiceInstance("cc-free-plan-id").
 		ServicePlan("autoscaler-free-plan-id").
-		Info(fakeCCNOAAUAA.URL())
-
-	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			Scope []string `json:"scope"`
-		}{
-			testUserScope,
-		}))
-	fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		struct {
-			UserId string `json:"user_id"`
-		}{
-			testUserId,
-		}))
+		Info(fakeCCNOAAUAA.URL()).
+		OauthToken(testUserToken).
+		CheckToken(testUserScope).
+		UserInfo(http.StatusOK, testUserId)
 }
 
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {

@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Integration_GolangApi_Scheduler", func() {
@@ -133,14 +132,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL())
-				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
-					struct {
-						Scope []string `json:"scope"`
-					}{
-						[]string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"},
-					}))
-				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).CheckToken(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
 			})
 			Context("Create policy", func() {
 				It("should error with status code 401", func() {

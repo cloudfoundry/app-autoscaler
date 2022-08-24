@@ -16,7 +16,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/onsi/gomega/ghttp"
 	yaml "gopkg.in/yaml.v2"
 
 	"fmt"
@@ -55,16 +54,13 @@ var _ = SynchronizedBeforeSuite(
 		enginePath = string(pathBytes)
 
 		ccUAA = NewMockServer()
-
-		ccUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-
 		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
-
 		ccUAA.Add().
 			Info(ccUAA.URL()).
 			GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 			GetAppProcesses(2).
-			ScaleAppWebProcess()
+			ScaleAppWebProcess().
+			OauthToken("test-token")
 
 		conf.CF = cf.Config{
 			API:      ccUAA.URL(),
