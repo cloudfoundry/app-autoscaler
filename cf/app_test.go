@@ -4,10 +4,12 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-
+	"errors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/ghttp"
+	"sync"
+	"sync/atomic"
 
 	"net/http"
 )
@@ -52,12 +54,24 @@ var _ = Describe("Cf client App", func() {
 
 		When("get app & process return ok", func() {
 			BeforeEach(func() {
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
-					RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
-				))
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", CombineHandlers(
-					RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
-				))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
+					RoundRobinWithMultiple(
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+					))
+
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id",
+					RoundRobinWithMultiple(
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+					))
 			})
 
 			It("returns correct state", func() {
@@ -149,6 +163,80 @@ var _ = Describe("Cf client App", func() {
 				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
 				Expect(err).To(MatchError(MatchRegexp(`get state&instances failed: .*'UnknownError'`)))
+			})
+		})
+
+		Context("Given a significant load", func() {
+			doAppProcessRequest := func() int64 {
+				numErr := 0
+				var cfError = &models.CfError{}
+				anErr := cfc.Login()
+				if anErr != nil && !errors.As(anErr, &cfError) {
+					GinkgoWriter.Printf(" Error: %+v\n", anErr, anErr)
+					numErr += 1
+				}
+				_, anErr = cfc.GetAppAndProcesses("test-app-id")
+
+				if anErr != nil && !errors.As(anErr, &cfError) {
+					GinkgoWriter.Printf(" Error: %+v\n", anErr, anErr)
+					numErr += 1
+				}
+				return int64(numErr)
+			}
+			BeforeEach(func() {
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
+					RoundRobinWithMultiple(
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+					))
+
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id",
+					RoundRobinWithMultiple(
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+					))
+			})
+			It("Should not leak file handles or cause errors", func() {
+				ccWatcher := NewConnectionWatcher(fakeCC.HTTPTestServer.Config.ConnState)
+				loginWatcher := NewConnectionWatcher(fakeLoginServer.HTTPTestServer.Config.ConnState)
+				fakeCC.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
+				fakeLoginServer.HTTPTestServer.Config.ConnState = loginWatcher.OnStateChange
+
+				var numErrors int64 = 0
+
+				wg := sync.WaitGroup{}
+				for i := 0; i < 10; i++ {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						for i := 0; i < 10; i++ {
+							atomic.AddInt64(&numErrors, doAppProcessRequest())
+						}
+					}()
+				}
+				wg.Wait()
+
+				GinkgoWriter.Printf("\n# CC states left\n")
+				for key, value := range ccWatcher.GetStates() {
+					GinkgoWriter.Printf("\t%s - %d\n", key, value)
+				}
+
+				GinkgoWriter.Printf("\n# login states left\n")
+				for key, value := range loginWatcher.GetStates() {
+					GinkgoWriter.Printf("\t%s - %d\n", key, value)
+				}
+
+				Expect(ccWatcher.GetStates()[http.StateActive.String()]).To(Equal(0))
+				Expect(loginWatcher.GetStates()[http.StateActive.String()]).To(Equal(0))
+				Expect(ccWatcher.MaxOpenConnections()).To(BeNumerically("<", 40))
+				Expect(numErrors).To(Equal(int64(0)))
 			})
 		})
 	})

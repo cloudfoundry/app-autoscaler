@@ -1,17 +1,15 @@
 package cf_test
 
 import (
-	"errors"
-	"net/url"
-	"regexp"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-
+	"errors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/ghttp"
+	"net/url"
+	"regexp"
 
 	"encoding/json"
 	"net/http"
@@ -90,6 +88,29 @@ var _ = Describe("Cf client Retriever", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(app).ToNot(BeNil())
 					Expect(fakeCC.Count().Requests(`^/v3/some/url$`)).To(Equal(4))
+				})
+			})
+
+			When("1000 requests are send then we dont loose connections", func() {
+				BeforeEach(func() {
+					fakeCC.RouteToHandler("GET", regexp.MustCompile(`^/v3/some/url$`),
+						RoundRobinWithMultiple(
+							RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+							RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
+							RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+						))
+				})
+
+				It("should return success", func() {
+					watcher := ConnectionWatcher{wrap: fakeCC.HTTPTestServer.Config.ConnState}
+					fakeCC.HTTPTestServer.Config.ConnState = watcher.OnStateChange
+					for i := 0; i < 1000; i++ {
+						_, _ = cf.ResourceRetriever[cf.App]{cfc}.Get("/v3/some/url")
+						//Expect(err).NotTo(HaveOccurred())
+						//Expect(app).ToNot(BeNil())
+					}
+
 				})
 			})
 

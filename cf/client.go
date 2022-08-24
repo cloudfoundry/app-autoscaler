@@ -95,7 +95,9 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	// #nosec G402 - this is intentionally configurable
 	c.httpClient = cfhttp.NewClient(
 		cfhttp.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}),
-		cfhttp.WithDialTimeout(30*time.Second),
+		cfhttp.WithDialTimeout(10*time.Second),
+		//cfhttp.WithIdleConnTimeout(1*time.Second),
+		cfhttp.WithMaxIdleConnsPerHost(200),
 	)
 	c.httpClient.Transport = DrainingTransport{c.httpClient.Transport}
 	c.retryClient = createRetryClient(conf, c.httpClient, logger)
