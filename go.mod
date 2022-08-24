@@ -47,7 +47,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.49.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
