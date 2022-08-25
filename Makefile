@@ -2,8 +2,9 @@ SHELL := /bin/bash
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
 PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
-CGO_ENABLED = 0
+CGO_ENABLED = 1
 BUILDTAGS :=
+BUILDFLAGS := -ldflags '-linkmode=external'
 export GO111MODULE=on
 
 #TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/564 allow the tests to be run in parallel

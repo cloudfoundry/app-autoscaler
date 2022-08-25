@@ -109,7 +109,7 @@ func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *
 	if conf.MaxRetryWaitMs != 0 {
 		retryClient.RetryWaitMax = time.Duration(conf.MaxRetryWaitMs) * time.Millisecond
 	}
-	retryClient.Logger = LeveledLoggerAdapter{logger}
+	retryClient.Logger = LeveledLoggerAdapter{logger.Session("retryablehttp")}
 	retryClient.HTTPClient = client
 	retryClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
 		return resp, err
