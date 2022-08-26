@@ -28,7 +28,6 @@ var (
 	handler               *BrokerHandler
 	conf                  *config.Config
 	schedulerServer       = ghttp.NewServer()
-	quotaServer           = ghttp.NewServer()
 	port                  = 10000 + GinkgoParallelProcess()
 	testBindingId         = "a-binding-id"
 	testServiceInstanceId = "a-service-instance-id"
@@ -42,7 +41,6 @@ var _ = Describe("BrokerHandler", func() {
 		Expect(err).ToNot(HaveOccurred())
 		schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 		schedulerServer = ghttp.NewServer()
-		quotaServer = ghttp.NewServer()
 
 		brokerCred1 := config.BrokerCredentialsConfig{
 			BrokerUsername:     "broker_username",
@@ -63,9 +61,6 @@ var _ = Describe("BrokerHandler", func() {
 				Port: port,
 			},
 			BrokerCredentials: brokerCreds,
-			QuotaManagement: &config.QuotaManagementConfig{
-				API: quotaServer.URL(),
-			},
 			PlanCheck: &config.PlanCheckConfig{
 				PlanDefinitions: map[string]config.PlanDefinition{
 					"a-plan-id": {

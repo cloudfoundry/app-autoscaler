@@ -67,14 +67,6 @@ type MetricsForwarderConfig struct {
 	MetricsForwarderMtlsUrl string `yaml:"metrics_forwarder_mtls_url"`
 }
 
-type QuotaManagementConfig struct {
-	API               string `yaml:"api"`
-	ClientID          string `yaml:"client_id"`
-	Secret            string `yaml:"secret"`
-	TokenURL          string `yaml:"oauth_url"`
-	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
-}
-
 type PlanDefinition struct {
 	PlanCheckEnabled  bool `yaml:"planCheckEnabled"`
 	SchedulesCount    int  `yaml:"schedules_count"`
@@ -105,7 +97,6 @@ type Config struct {
 	DB                    map[string]db.DatabaseConfig  `yaml:"db"`
 	BrokerCredentials     []BrokerCredentialsConfig     `yaml:"broker_credentials"`
 	APIClientId           string                        `yaml:"api_client_id"`
-	QuotaManagement       *QuotaManagementConfig        `yaml:"quota_management"`
 	PlanCheck             *PlanCheckConfig              `yaml:"plan_check"`
 	CatalogPath           string                        `yaml:"catalog_path"`
 	CatalogSchemaPath     string                        `yaml:"catalog_schema_path"`

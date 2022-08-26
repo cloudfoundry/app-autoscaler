@@ -20,8 +20,6 @@ import (
 
 	"github.com/onsi/gomega/ghttp"
 
-	"golang.org/x/oauth2"
-
 	"github.com/pivotal-cf/brokerapi/domain"
 
 	"code.cloudfoundry.org/lager/lagertest"
@@ -46,7 +44,6 @@ var _ = Describe("BrokerHandler", func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
-		installQuotaAPIHandlers()
 		fakecfClient = &fakes.FakeCFClient{}
 		fakeCredentials = &fakes.FakeCredentials{}
 		fakePlanChecker = nil
@@ -72,7 +69,7 @@ var _ = Describe("BrokerHandler", func() {
 		})
 		Context("When getBrokerCatalog is called", func() {
 			It("gets the catalog json", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusOK))
 				Expect(resp.Body.Bytes()).To(Equal(catalogBytes))
 			})
 		})
@@ -101,7 +98,7 @@ var _ = Describe("BrokerHandler", func() {
 				body = []byte("")
 			})
 			It("fails with 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Invalid request body format"}`))
 			})
 		})
@@ -113,7 +110,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -124,7 +121,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -135,7 +132,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -146,7 +143,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -154,13 +151,6 @@ var _ = Describe("BrokerHandler", func() {
 		})
 
 		Context("When all parameters are present", func() {
-			BeforeEach(func() {
-				installQuotaAPIHandlers()
-			})
-			AfterEach(func() {
-				Expect(tokenServer.ReceivedRequests()).To(HaveLen(1))
-				Expect(quotaServer.ReceivedRequests()).To(HaveLen(1))
-			})
 			Context("When database CreateServiceInstance call returns ErrAlreadyExists", func() {
 				BeforeEach(func() {
 					body, err = json.Marshal(instanceCreationReqBody)
@@ -169,7 +159,7 @@ var _ = Describe("BrokerHandler", func() {
 					conf.DashboardRedirectURI = ""
 				})
 				It("succeeds with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(resp.Body.String()).To(Equal(`{}`))
 				})
 			})
@@ -182,7 +172,7 @@ var _ = Describe("BrokerHandler", func() {
 					conf.DashboardRedirectURI = "https://service-dashboard-url.com"
 				})
 				It("succeeds with 200 and returns dashboard_url", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
 				})
 			})
@@ -194,7 +184,7 @@ var _ = Describe("BrokerHandler", func() {
 					bindingdb.CreateServiceInstanceReturns(db.ErrConflict)
 				})
 				It("fails with 409", func() {
-					Expect(resp.Code).To(Equal(http.StatusConflict), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusConflict))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Conflict","message":"Service instance with instance_id \"an-instance-id\" already exists with different parameters"}`))
 				})
 			})
@@ -206,7 +196,7 @@ var _ = Describe("BrokerHandler", func() {
 					bindingdb.CreateServiceInstanceReturns(fmt.Errorf("some sql error"))
 				})
 				It("fails with 500", func() {
-					Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service instance"}`))
 				})
 			})
@@ -218,7 +208,7 @@ var _ = Describe("BrokerHandler", func() {
 					conf.DashboardRedirectURI = "https://service-dashboard-url.com"
 				})
 				It("succeeds with 201 and returns dashboard_url", func() {
-					Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusCreated))
 					Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
 				})
 			})
@@ -228,12 +218,12 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("succeeds with 201", func() {
-					Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusCreated))
 				})
 			})
 			Context("When an invalid default policy is present", func() {
 				BeforeEach(func() {
-					invalidDefaultPolicy := `
+					invalidDefaultPolicyWithMissingInstanceMaxCount := `
 						{
 							"instance_min_count":1,
 							"scaling_rules":[
@@ -244,23 +234,10 @@ var _ = Describe("BrokerHandler", func() {
 								"adjustment":"-1"
 							}]
 						}`
-					m := json.RawMessage(invalidDefaultPolicy)
-					instanceCreationReqBody = &models.InstanceCreationRequestBody{
-						OrgGUID:   "an-org-guid",
-						SpaceGUID: "an-space-guid",
-						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-							ServiceID: "a-service-id",
-							PlanID:    "a-plan-id",
-						},
-						Parameters: models.InstanceParameters{
-							DefaultPolicy: &m,
-						},
-					}
-					body, err = json.Marshal(instanceCreationReqBody)
-					Expect(err).NotTo(HaveOccurred())
+					body = createInstanceCreationRequestBody(invalidDefaultPolicyWithMissingInstanceMaxCount)
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					bodyBytes, err := ioutil.ReadAll(resp.Body)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
@@ -268,7 +245,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			Context("When a default policy with too many rules is present", func() {
 				BeforeEach(func() {
-					invalidDefaultPolicy := `
+					invalidDefaultPolicyWithTooManyRules := `
 						{	"instance_max_count":4,
 							"instance_min_count":1,
 							"scaling_rules":[
@@ -285,20 +262,7 @@ var _ = Describe("BrokerHandler", func() {
 								"adjustment":"-1"
 							}]
 						}`
-					m := json.RawMessage(invalidDefaultPolicy)
-					instanceCreationReqBody = &models.InstanceCreationRequestBody{
-						OrgGUID:   "an-org-guid",
-						SpaceGUID: "an-space-guid",
-						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-							ServiceID: "a-service-id",
-							PlanID:    "a-plan-id",
-						},
-						Parameters: models.InstanceParameters{
-							DefaultPolicy: &m,
-						},
-					}
-					body, err = json.Marshal(instanceCreationReqBody)
-					Expect(err).NotTo(HaveOccurred())
+					body = createInstanceCreationRequestBody(invalidDefaultPolicyWithTooManyRules)
 				})
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
@@ -325,7 +289,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("succeeds with 201 and saves the default policy", func() {
-					Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusCreated))
 					Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
 					serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
 					Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
@@ -334,56 +298,6 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 
-		})
-	})
-
-	Describe("Quota checks", func() {
-		var err error
-		var instanceCreationReqBody *models.InstanceCreationRequestBody
-		var body []byte
-		//var quota int
-		JustBeforeEach(func() {
-			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-			handler.CreateServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
-		})
-		BeforeEach(func() {
-			instanceCreationReqBody = &models.InstanceCreationRequestBody{
-				OrgGUID:   "an-org-guid",
-				SpaceGUID: "an-space-guid",
-				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-					ServiceID: "a-service-id",
-					PlanID:    "a-plan-id",
-				},
-			}
-			installQuotaAPIHandlers()
-		})
-
-		Context("When all mandatory parameters are present", func() {
-			BeforeEach(func() {
-				d := json.RawMessage(testDefaultPolicy)
-				instanceCreationReqBody = &models.InstanceCreationRequestBody{
-					OrgGUID:   "an-org-guid",
-					SpaceGUID: "an-space-guid",
-					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-						ServiceID: "a-service-id",
-						PlanID:    "a-plan-id",
-					},
-					Parameters: models.InstanceParameters{
-						DefaultPolicy: &d,
-					},
-				}
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-				//quota = 0
-			})
-			It("succeeds with 201", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
-				Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
-				serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
-				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
-				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
-				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
-			})
 		})
 	})
 
@@ -417,7 +331,7 @@ var _ = Describe("BrokerHandler", func() {
 				body = []byte("")
 			})
 			It("fails with 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Invalid request body format"}`))
 			})
 		})
@@ -429,7 +343,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -445,7 +359,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("fails with 422", func() {
-				Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Unprocessable Entity","message":"Failed to update service instance: Only default policy and service plan updates are allowed"}`))
 			})
 		})
@@ -477,7 +391,7 @@ var _ = Describe("BrokerHandler", func() {
 				setupCfClient("a-plan-id")
 			})
 			It("fails with 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				bodyBytes, err := ioutil.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
@@ -497,7 +411,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(bindingdb.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
 			})
 			It("fails with 404", func() {
-				Expect(resp.Code).To(Equal(http.StatusNotFound), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
 			})
 		})
 		Context("When all mandatory parameters are present", func() {
@@ -512,7 +426,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
 			})
 			It("succeeds with 200", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 			It("retrieves the service instance", func() {
 				Expect(bindingdb.GetServiceInstanceCallCount()).To(Equal(1))
@@ -546,7 +460,7 @@ var _ = Describe("BrokerHandler", func() {
 				BeforeEach(func() { setupCfClient("a-plan-id") })
 				It("succeeds with 200, saves the default policy, and sets the default policy on the already bound apps", func() {
 					By("returning 200")
-					Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusOK))
 
 					By("saving the default policy")
 					Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
@@ -588,7 +502,7 @@ var _ = Describe("BrokerHandler", func() {
 					})
 
 					It("Fails correctly", func() {
-						Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+						Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 						bodyBytes, err := ioutil.ReadAll(resp.Body)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(string(bodyBytes)).To(MatchJSON(`{"code": "Internal Server Error","message": "Error retrieving broker plan Id"}`))
@@ -605,7 +519,7 @@ var _ = Describe("BrokerHandler", func() {
 						fakecfClient.GetServicePlanReturns(nil, errors.New("SomeError"))
 					})
 					It("Fails correctly", func() {
-						Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+						Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 						bodyBytes, err := ioutil.ReadAll(resp.Body)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(string(bodyBytes)).To(MatchJSON(`{"code": "Internal Server Error","message": "Error retrieving broker plan Id"}`))
@@ -704,7 +618,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeeds with 200 and removes the default policy", func() {
 				By("returning 200")
-				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusOK))
 
 				By("removing the default policy")
 				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
@@ -923,7 +837,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.DeleteServiceInstanceReturns(db.ErrDoesNotExist)
 			})
 			It("fails with 410", func() {
-				Expect(resp.Code).To(Equal(http.StatusGone), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusGone))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Service Instance Doesn't Exist"}`))
 			})
 		})
@@ -942,7 +856,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.DeleteServiceInstanceReturns(fmt.Errorf("error"))
 			})
 			It("fails with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service instance"}`))
 			})
 		})
@@ -960,7 +874,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("succeeds with 200", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 
@@ -1059,7 +973,7 @@ var _ = Describe("BrokerHandler", func() {
 				body = []byte("")
 			})
 			It("fails with 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Invalid request body format"}`))
 			})
 		})
@@ -1071,7 +985,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -1083,7 +997,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -1095,7 +1009,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("fails with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Malformed or missing mandatory data"}`))
 				})
 			})
@@ -1144,7 +1058,7 @@ var _ = Describe("BrokerHandler", func() {
 				verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 			})
 			It("succeeds with 201", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusCreated))
 
 				By("updating the scheduler")
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
@@ -1191,7 +1105,7 @@ var _ = Describe("BrokerHandler", func() {
 					verifyScheduleIsUpdatedInScheduler(testAppId, testBindingPolicy)
 				})
 				It("succeeds with 201 and saves the binding's policy", func() {
-					Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusCreated))
 					Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
 					appID, policy, _ := policydb.SaveAppPolicyArgsForCall(0)
 					Expect(appID).To(Equal(testAppId))
@@ -1217,7 +1131,7 @@ var _ = Describe("BrokerHandler", func() {
 					verifyScheduleIsUpdatedInScheduler(testAppId, testDefaultPolicy)
 				})
 				It("succeeds with 201 and saves the default policy", func() {
-					Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+					Expect(resp.Code).To(Equal(http.StatusCreated))
 					Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
 					appID, policy, _ := policydb.SaveAppPolicyArgsForCall(0)
 					Expect(appID).To(Equal(testAppId))
@@ -1236,7 +1150,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.CreateServiceBindingReturns(db.ErrAlreadyExists)
 			})
 			It("fails with 409", func() {
-				Expect(resp.Code).To(Equal(http.StatusConflict), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusConflict))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Conflict","message":"An autoscaler service instance is already bound to the application. Multiple bindings are not supported."}`))
 			})
 		})
@@ -1248,7 +1162,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.CreateServiceBindingReturns(fmt.Errorf("some sql error"))
 			})
 			It("fails with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
 		})
@@ -1262,7 +1176,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(policydb.GetCredentialCallCount()).To(Equal(0))
 				Expect(policydb.SaveCredentialCallCount()).To(Equal(0))
 				Expect(fakeCredentials.CreateCallCount()).To(Equal(1))
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
 		})
@@ -1283,7 +1197,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("fails with 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				bodyBytes, err := ioutil.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_min_count is required"}]`))
@@ -1328,7 +1242,7 @@ var _ = Describe("BrokerHandler", func() {
 				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("succeed with 200", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusOK))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
@@ -1342,7 +1256,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdByBindingIdReturns(testAppId, nil)
 			})
 			It("succeed with 410", func() {
-				Expect(resp.Code).To(Equal(http.StatusGone), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusGone))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Failed to unbind service: Service binding does not exist"}`))
 			})
 		})
@@ -1356,7 +1270,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdByBindingIdReturns(testAppId, nil)
 			})
 			It("succeed with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Failed to unbind service: Error deleting service binding"}`))
 			})
 		})
@@ -1368,7 +1282,7 @@ var _ = Describe("BrokerHandler", func() {
 				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("fails with 410", func() {
-				Expect(resp.Code).To(Equal(http.StatusGone), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusGone))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Failed to unbind service: Service binding does not exist"}`))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
@@ -1382,7 +1296,7 @@ var _ = Describe("BrokerHandler", func() {
 				verifyScheduleIsDeletedInScheduler(testAppId)
 			})
 			It("fails with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Failed to unbind service: Error deleting service binding"}`))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
@@ -1390,19 +1304,22 @@ var _ = Describe("BrokerHandler", func() {
 	})
 })
 
-func DebugTestInfo() string {
-	quota := debugMock("quota", quotaServer)
-	token := debugMock("token", tokenServer)
-	return fmt.Sprintf("%s\n%s\n", quota, token)
-}
-
-func debugMock(name string, server *ghttp.Server) string {
-	handler := server.GetHandler(0)
-	s := "nope"
-	if handler != nil {
-		s = "yup"
+func createInstanceCreationRequestBody(defaultPolicy string) []byte {
+	m := json.RawMessage(defaultPolicy)
+	instanceCreationReqBody := &models.InstanceCreationRequestBody{
+		OrgGUID:   "an-org-guid",
+		SpaceGUID: "an-space-guid",
+		BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+			ServiceID: "a-service-id",
+			PlanID:    "a-plan-id",
+		},
+		Parameters: models.InstanceParameters{
+			DefaultPolicy: &m,
+		},
 	}
-	return fmt.Sprintf("State of %s mock server handler handler 0:%s url:%s requests:%+v", name, s, server.URL(), server.ReceivedRequests())
+	body, err := json.Marshal(instanceCreationReqBody)
+	Expect(err).NotTo(HaveOccurred())
+	return body
 }
 
 func verifyScheduleIsUpdatedInScheduler(appId string, policy string) {
@@ -1421,28 +1338,6 @@ func verifyScheduleIsDeletedInScheduler(appId string) {
 	schedulerServer.Reset()
 	schedulerServer.AppendHandlers(ghttp.CombineHandlers(
 		ghttp.VerifyRequest("DELETE", deleteSchedulePath.String()),
-	))
-}
-
-func installQuotaAPIHandlers() {
-	/// only provide them for tests using them, or reset them if not used?
-	tokenServer.Reset()
-	tokenServer.AppendHandlers(ghttp.CombineHandlers(
-		ghttp.VerifyBasicAuth("client-id", "client-secret"),
-		ghttp.VerifyRequest("POST", "/"),
-		ghttp.RespondWithJSONEncoded(http.StatusOK, oauth2.Token{
-			AccessToken:  "secret-token",
-			TokenType:    "bearer",
-			RefreshToken: "refresh-token",
-		}),
-	))
-	quotaServer.Reset()
-	quotaServer.AppendHandlers(ghttp.CombineHandlers(
-		ghttp.VerifyHeaderKV("Authorization", "Bearer secret-token"),
-		ghttp.VerifyRequest("GET", "/api/v2.0/orgs/an-org-guid/services/autoscaler/plan/standard"),
-		ghttp.RespondWithJSONEncoded(http.StatusOK, struct {
-			Quota int `json:"quota"`
-		}{Quota: -1}),
 	))
 }
 

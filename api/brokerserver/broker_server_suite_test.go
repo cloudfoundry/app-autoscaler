@@ -43,8 +43,6 @@ var (
 	conf              *config.Config
 	catalogBytes      []byte
 	schedulerServer   *ghttp.Server
-	tokenServer       *ghttp.Server
-	quotaServer       *ghttp.Server
 	testDefaultPolicy string
 	testDefaultGuid   string
 	servers           []*ghttp.Server
@@ -72,10 +70,6 @@ var _ = BeforeSuite(func() {
 
 	schedulerServer = ghttp.NewServer()
 	servers = append(servers, schedulerServer)
-	tokenServer = ghttp.NewServer()
-	servers = append(servers, tokenServer)
-	quotaServer = ghttp.NewServer()
-	servers = append(servers, quotaServer)
 
 	port := 10000 + GinkgoParallelProcess()
 	brokerCred1 := config.BrokerCredentialsConfig{
@@ -98,12 +92,6 @@ var _ = BeforeSuite(func() {
 			Port: port,
 		},
 		BrokerCredentials: brokerCreds,
-		QuotaManagement: &config.QuotaManagementConfig{
-			API:      quotaServer.URL(),
-			ClientID: "client-id",
-			Secret:   "client-secret",
-			TokenURL: tokenServer.URL(),
-		},
 		PlanCheck: &config.PlanCheckConfig{
 			PlanDefinitions: map[string]config.PlanDefinition{
 				"a-plan-id": {

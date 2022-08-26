@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/quota"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
@@ -37,7 +36,6 @@ type BrokerHandler struct {
 	policydb                   db.PolicyDB
 	policyValidator            *policyvalidator.PolicyValidator
 	schedulerUtil              *schedulerutil.SchedulerUtil
-	quotaManagementClient      *quota.Client
 	catalog                    []domain.Service
 	PlanChecker                plancheck.PlanChecker
 	cfClient                   cf.CFClient
@@ -54,17 +52,16 @@ var errorCredentialNotDeleted = errors.New("Failed to delete custom metrics cred
 
 func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, cfClient cf.CFClient, credentials cred_helper.Credentials) *BrokerHandler {
 	handler := &BrokerHandler{
-		logger:                logger,
-		conf:                  conf,
-		bindingdb:             bindingdb,
-		policydb:              policydb,
-		catalog:               catalog,
-		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
-		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
-		quotaManagementClient: quota.NewClient(conf, logger),
-		PlanChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
-		cfClient:              cfClient,
-		credentials:           credentials,
+		logger:          logger,
+		conf:            conf,
+		bindingdb:       bindingdb,
+		policydb:        policydb,
+		catalog:         catalog,
+		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
+		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
+		PlanChecker:     plancheck.NewPlanChecker(conf.PlanCheck, logger),
+		cfClient:        cfClient,
+		credentials:     credentials,
 	}
 	handler.servicePlanBrokerCatalogId = memoizer.New(handler.getServicePlanBrokerCatalogId)
 	return handler
@@ -100,7 +97,6 @@ func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, _ *http.Request,
 }
 
 func (h *BrokerHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	//w.Write([]byte(`{"alive":"true"}`))
 	handlers.WriteJSONResponse(w, http.StatusOK, []byte(`{"alive":"true"}`))
 }
 
@@ -124,10 +120,6 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	if instanceId == "" || body.OrgGUID == "" || body.SpaceGUID == "" || body.ServiceID == "" || body.PlanID == "" {
 		h.logger.Error("failed to create service instance when trying to get mandatory data", nil, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID, "serviceId": body.ServiceID, "planId": body.PlanID})
 		writeErrorResponse(w, http.StatusBadRequest, "Malformed or missing mandatory data")
-		return
-	}
-
-	if h.quotaExceeded(body, instanceId, w) {
 		return
 	}
 
@@ -207,51 +199,6 @@ func (h *BrokerHandler) planDefinitionExceeded(policyStr string, planID string, 
 		h.logger.Error("policy did not adhere to plan", fmt.Errorf(checkResult), lager.Data{"instanceId": instanceId, "policyStr": policyStr})
 		writeErrorResponse(w, http.StatusBadRequest, checkResult)
 		return true
-	}
-	return false
-}
-
-func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreationRequestBody, instanceId string, w http.ResponseWriter) bool {
-	serviceName := ""
-	planName := ""
-	for _, service := range h.catalog {
-		if service.ID == creationRequestBody.ServiceID {
-			for _, plan := range service.Plans {
-				if plan.ID == creationRequestBody.PlanID {
-					serviceName = service.Name
-					planName = plan.Name
-				}
-			}
-		}
-	}
-	if serviceName == "" || planName == "" {
-		h.logger.Error("failed to find selected service and plan in catalog", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
-		writeErrorResponse(w, http.StatusBadRequest, "Unknown service or plan")
-		return true
-	}
-	quota, err := h.quotaManagementClient.GetQuota(creationRequestBody.OrgGUID, serviceName, planName)
-	if err != nil {
-		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
-		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available Application Autoscaler quota for your subaccount. Please try again later.")
-		return true
-	}
-	if quota == 0 {
-		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota})
-		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`No quota for this service "%s" and service plan "%s" has been assigned to your subaccount. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your subaccount.`, serviceName, planName))
-		return true
-	}
-	if quota > 0 {
-		instances, err := h.bindingdb.CountServiceInstancesInOrg(creationRequestBody.OrgGUID)
-		if err != nil {
-			h.logger.Error("failed to count currently existing service instances", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine used quota. Try again later.")
-			return true
-		}
-		if instances+1 > quota {
-			h.logger.Error("failed to create service instance due to insufficient quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota, "instances": instances})
-			writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`The quota of %d service instances of service "%s" with plan "%s" within this subaccount has been exceeded. Please contact your global account administrator for help on how to assign more Application Autoscaler quota to your subaccount.`, quota, serviceName, planName))
-			return true
-		}
 	}
 	return false
 }

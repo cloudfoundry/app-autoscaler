@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Plan check operations", func() {
 	var (
-		quotaConfig      *config.PlanCheckConfig
+		planCheckConfig  *config.PlanCheckConfig
 		validationResult string
 		planChecker      plancheck.PlanChecker
 		ok               bool
@@ -24,7 +24,7 @@ var _ = Describe("Plan check operations", func() {
 	BeforeEach(func() {})
 
 	JustBeforeEach(func() {
-		planChecker = plancheck.NewPlanChecker(quotaConfig, lagertest.NewTestLogger("Quota"))
+		planChecker = plancheck.NewPlanChecker(planCheckConfig, lagertest.NewTestLogger("Quota"))
 	})
 
 	Context("when not configured", func() {
@@ -39,7 +39,7 @@ var _ = Describe("Plan check operations", func() {
 				Schedules:    nil,
 			}
 			testPlanId = "test-plan"
-			quotaConfig = nil
+			planCheckConfig = nil
 
 		})
 
@@ -71,7 +71,7 @@ var _ = Describe("Plan check operations", func() {
 					Schedules:    nil,
 				}
 				testPlanId = "test-plan"
-				quotaConfig = &config.PlanCheckConfig{
+				planCheckConfig = &config.PlanCheckConfig{
 					PlanDefinitions: map[string]config.PlanDefinition{
 						"not-checked-plan-id": {
 							PlanCheckEnabled:  false,
@@ -183,7 +183,7 @@ var _ = Describe("Plan check operations", func() {
 
 			Context("IsUpdatable", func() {
 				BeforeEach(func() {
-					quotaConfig = &config.PlanCheckConfig{
+					planCheckConfig = &config.PlanCheckConfig{
 						PlanDefinitions: map[string]config.PlanDefinition{
 							"updatable-plan": {
 								false,
@@ -215,42 +215,6 @@ var _ = Describe("Plan check operations", func() {
 					Expect(isPlanUpdatable).To(Equal(false))
 					Expect(err.Error()).To(Equal("unknown plan id \"non-existent-plan\""))
 				})
-			})
-		})
-
-		Context("IsUpdatable", func() {
-			BeforeEach(func() {
-				quotaConfig = &config.PlanCheckConfig{
-					PlanDefinitions: map[string]config.PlanDefinition{
-						"updatable-plan": {
-							false,
-							0,
-							0,
-							true,
-						},
-						"non-updatable-plan": {
-							true,
-							1,
-							1,
-							false,
-						},
-					},
-				}
-			})
-			It("is plan updatable", func() {
-				isPlanUpdatable, err := planChecker.IsPlanUpdatable("updatable-plan")
-				Expect(isPlanUpdatable).To(Equal(true))
-				Expect(err).To(BeNil())
-			})
-			It("is plan not updatable", func() {
-				isPlanUpdatable, err := planChecker.IsPlanUpdatable("non-updatable-plan")
-				Expect(isPlanUpdatable).To(Equal(false))
-				Expect(err).To(BeNil())
-			})
-			It("if plan does not exist", func() {
-				isPlanUpdatable, err := planChecker.IsPlanUpdatable("non-existent-plan")
-				Expect(isPlanUpdatable).To(Equal(false))
-				Expect(err.Error()).To(Equal("unknown plan id \"non-existent-plan\""))
 			})
 		})
 	})
