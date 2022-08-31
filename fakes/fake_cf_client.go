@@ -304,18 +304,18 @@ func (fake *FakeCFClient) GetAppAndProcessesReturnsOnCall(i int, result1 *cf.App
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetAppProcesses(arg1 string) (cf.Processes, error) {
+func (fake *FakeCFClient) GetAppProcesses(appGuid interface{}, processType string) (cf.Processes, error) {
 	fake.getAppProcessesMutex.Lock()
 	ret, specificReturn := fake.getAppProcessesReturnsOnCall[len(fake.getAppProcessesArgsForCall)]
 	fake.getAppProcessesArgsForCall = append(fake.getAppProcessesArgsForCall, struct {
 		arg1 string
-	}{arg1})
+	}{appGuid})
 	stub := fake.GetAppProcessesStub
 	fakeReturns := fake.getAppProcessesReturns
-	fake.recordInvocation("GetAppProcesses", []interface{}{arg1})
+	fake.recordInvocation("GetAppProcesses", []interface{}{appGuid})
 	fake.getAppProcessesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(appGuid)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2

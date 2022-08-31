@@ -19,7 +19,7 @@ var (
 	ErrInvalidTokenFormat = fmt.Errorf("Invalid token format")
 )
 
-func (c *Client) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
+func (c *Client) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error) {
 	userId, err := c.getUserId(userToken)
 	if err != nil {
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
@@ -135,7 +135,7 @@ func (c *Client) getUserId(userToken string) (UserId, error) {
 	return userInfo.UserId, nil
 }
 
-func (c *Client) getSpaceId(appId string) (SpaceId, error) {
+func (c *Client) getSpaceId(appId Guid) (SpaceId, error) {
 	app, err := c.GetApp(appId)
 	if err != nil {
 		return "", fmt.Errorf("getSpaceId failed: %w", err)

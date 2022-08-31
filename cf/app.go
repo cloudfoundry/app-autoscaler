@@ -60,7 +60,7 @@ func (p Processes) GetInstances() int {
 /*GetAppAndProcesses
  * A utility function that gets the app and processes for the app in one call in parallel
  */
-func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
+func (c *Client) GetAppAndProcesses(appID Guid) (*AppAndProcesses, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
@@ -71,7 +71,7 @@ func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
 		wg.Done()
 	}()
 	go func() {
-		processes, errProc = c.GetAppProcesses(appID)
+		processes, errProc = c.GetAppProcesses(appID, ProcessTypeWeb)
 		wg.Done()
 	}()
 	wg.Wait()
@@ -87,8 +87,9 @@ func (c *Client) GetAppAndProcesses(appID string) (*AppAndProcesses, error) {
 /*GetApp
  * Get the information for a specific app
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
+ * using GET /v3/apps/:guid/processes/:type
  */
-func (c *Client) GetApp(appID string) (*App, error) {
+func (c *Client) GetApp(appID Guid) (*App, error) {
 	url := fmt.Sprintf("/v3/apps/%s", appID)
 
 	resp, err := ResourceRetriever[*App]{AuthenticatedClient{c}}.Get(url)
@@ -98,25 +99,11 @@ func (c *Client) GetApp(appID string) (*App, error) {
 	return resp, nil
 }
 
-/*GetAppProcesses
- * Get the processes information for a specific app
- * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
- */
-func (c *Client) GetAppProcesses(appID string) (Processes, error) {
-	url := fmt.Sprintf("/v3/apps/%s/processes?per_page=%d", appID, c.conf.PerPage)
-
-	pages, err := PagedResourceRetriever[Process]{AuthenticatedClient{c}}.GetAllPages(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed GetAppProcesses '%s': %w", appID, err)
-	}
-	return pages, nil
-}
-
 /*ScaleAppWebProcess
  * Scale the given application Web processes to the given amount
  * https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#scale-a-process
  */
-func (c *Client) ScaleAppWebProcess(appID string, num int) error {
+func (c *Client) ScaleAppWebProcess(appID Guid, num int) error {
 	url := fmt.Sprintf("/v3/apps/%s/processes/web/actions/scale", appID)
 	type scaleApp struct {
 		Instances int `json:"instances"`

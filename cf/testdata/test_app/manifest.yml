@@ -2,10 +2,10 @@
 applications:
 - name: test_app
   env:
-    NODE_TLS_REJECT_UNAUTHORIZED: 0
+    NODE_TLS_REJECT_UNAUTHORIZED: "0"
   stack: cflinuxfs3
   routes:
-  - route: test_app.autoscaler.ci.cloudfoundry.org
+  - route: test_app.((domain))
     protocol: http1
   processes:
   - type: web

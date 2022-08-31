@@ -24,8 +24,9 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	//TODO We should consider moving this to the acceptance tests.
 	logger := lager.NewLogger("cf")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
+	systemDomain := getEnv("SYSTEM_DOMAIN")
 	conf := &cf.Config{}
-	conf.API = "https://api.autoscaler.ci.cloudfoundry.org"
+	conf.API = "https://api." + systemDomain
 	conf.MaxRetries = 3
 	conf.ClientID = getEnv("CLIENT_ID")
 	conf.Secret = getEnv("CLIENT_SECRET")
@@ -36,13 +37,13 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	assert.Nil(t, err)
 	// #nosec G402
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	resp, err := http.Get("https://test_app.autoscaler.ci.cloudfoundry.org")
+	resp, err := http.Get("https://test_app." + systemDomain)
 	if err != nil {
 		panic("Please deploy the app in testdata/test_app using deploy.sh")
 	}
 	assert.Equal(t, resp.StatusCode, 200)
 
-	processes, err := client.GetAppProcesses("67ae15a0-2d76-4b04-99d4-807bcf95b9f5")
+	processes, err := client.GetAppProcesses("67ae15a0-2d76-4b04-99d4-807bcf95b9f5", cf.ProcessTypeWeb)
 	assert.Nil(t, err)
 	assert.Equal(t, processes.GetInstances(), 7)
 }

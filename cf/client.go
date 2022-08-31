@@ -29,6 +29,7 @@ const (
 )
 
 type (
+	Guid   string
 	Tokens struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int64  `json:"expires_in"`
@@ -45,12 +46,12 @@ type (
 		RefreshAuthToken() (string, error)
 		GetTokens() (Tokens, error)
 		GetEndpoints() (Endpoints, error)
-		GetApp(string) (*App, error)
-		GetAppProcesses(string) (Processes, error)
-		GetAppAndProcesses(string) (*AppAndProcesses, error)
-		ScaleAppWebProcess(string, int) error
+		GetApp(appId Guid) (*App, error)
+		GetAppProcesses(appId Guid, processTypes ...string) (Processes, error)
+		GetAppAndProcesses(appId Guid) (*AppAndProcesses, error)
+		ScaleAppWebProcess(appId Guid, numberOfProcesses int) error
 		IsUserAdmin(userToken string) (bool, error)
-		IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
+		IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error)
 		IsTokenAuthorized(token, clientId string) (bool, error)
 		GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error)
 		GetServicePlan(servicePlanGuid string) (*ServicePlan, error)

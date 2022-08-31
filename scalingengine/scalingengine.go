@@ -264,7 +264,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		}
 	}()
 
-	processes, err := s.cfClient.GetAppProcesses(appId)
+	processes, err := s.cfClient.GetAppProcesses(appId, cf.ProcessTypeWeb)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
@@ -345,7 +345,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		}
 	}()
 
-	processes, err := s.cfClient.GetAppProcesses(appId)
+	processes, err := s.cfClient.GetAppProcesses(appId, cf.ProcessTypeWeb)
 	if err != nil {
 		if models.IsNotFound(err) {
 			history.Status = models.ScalingStatusIgnored

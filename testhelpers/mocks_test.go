@@ -100,7 +100,7 @@ var _ = Describe("Cf cloud controller", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
-				app, err := cfc.GetAppProcesses("test-app-id")
+				app, err := cfc.GetAppProcesses("test-app-id", cf.ProcessTypeWeb)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(app).To(Equal(cf.Processes{{Instances: 27}}))
 			})
