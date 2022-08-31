@@ -37,7 +37,7 @@ func (as ApplicationSynchronizer) Operate() {
 	}
 	// For each app check if they really exist or not via CC api call
 	for appID := range appIds {
-		_, err = as.cfClient.GetApp(appID)
+		_, err = as.cfClient.GetApp(cf.Guid(appID))
 		if err != nil {
 			as.logger.Error("failed-to-get-app-info", err)
 			if models.IsNotFound(err) {

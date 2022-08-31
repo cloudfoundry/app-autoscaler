@@ -43,9 +43,9 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	}
 	assert.Equal(t, resp.StatusCode, 200)
 
-	processes, err := client.GetAppProcesses("67ae15a0-2d76-4b04-99d4-807bcf95b9f5", cf.ProcessTypeWeb)
+	processes, err := client.GetAppProcesses("f4734f0d-ec0f-46c7-a716-bffe3bcb0aa6", cf.ProcessTypeWeb)
 	assert.Nil(t, err)
-	assert.Equal(t, processes.GetInstances(), 7)
+	assert.Equal(t, 1, processes.GetInstances())
 }
 
 //nolint:unused

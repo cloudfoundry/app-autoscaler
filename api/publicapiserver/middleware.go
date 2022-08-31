@@ -69,7 +69,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(userToken, appId)
+		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(userToken, cf.Guid(appId))
 		if err != nil {
 			if errors.Is(err, cf.ErrUnauthrorized) {
 				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{

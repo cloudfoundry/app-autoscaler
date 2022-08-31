@@ -81,7 +81,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		CooldownExpiredAt: 0,
 	}
 
-	appAndProcesses, err := s.cfClient.GetAppAndProcesses(appId)
+	appAndProcesses, err := s.cfClient.GetAppAndProcesses(cf.Guid(appId))
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
@@ -173,7 +173,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		return result, nil
 	}
 
-	err = s.cfClient.ScaleAppWebProcess(appId, newInstances)
+	err = s.cfClient.ScaleAppWebProcess(cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		history.Status = models.ScalingStatusFailed
@@ -264,7 +264,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		}
 	}()
 
-	processes, err := s.cfClient.GetAppProcesses(appId, cf.ProcessTypeWeb)
+	processes, err := s.cfClient.GetAppProcesses(cf.Guid(appId), cf.ProcessTypeWeb)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
@@ -295,7 +295,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		return nil
 	}
 
-	err = s.cfClient.ScaleAppWebProcess(appId, newInstances)
+	err = s.cfClient.ScaleAppWebProcess(cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed
@@ -345,7 +345,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		}
 	}()
 
-	processes, err := s.cfClient.GetAppProcesses(appId, cf.ProcessTypeWeb)
+	processes, err := s.cfClient.GetAppProcesses(cf.Guid(appId), cf.ProcessTypeWeb)
 	if err != nil {
 		if models.IsNotFound(err) {
 			history.Status = models.ScalingStatusIgnored
@@ -388,7 +388,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		return nil
 	}
 
-	err = s.cfClient.ScaleAppWebProcess(appId, newInstances)
+	err = s.cfClient.ScaleAppWebProcess(cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed

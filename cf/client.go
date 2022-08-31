@@ -72,6 +72,12 @@ type (
 	}
 )
 
+var _ fmt.Stringer = Guid("some_guid")
+
+func (g Guid) String() string {
+	return string(g)
+}
+
 var _ CFClient = &Client{}
 
 func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {

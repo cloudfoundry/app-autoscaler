@@ -82,8 +82,8 @@ var _ = Describe("ScalingEngine", func() {
 
 			It("sets the new app instance number and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
-				id, num := cfc.ScaleAppWebProcessArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
+				guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				Expect(guid.String()).To(Equal("an-app-id"))
 				Expect(num).To(Equal(3))
 
 				id, expiredAt := scalingEngineDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
@@ -208,8 +208,8 @@ var _ = Describe("ScalingEngine", func() {
 			It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				id, num := cfc.ScaleAppWebProcessArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
+				guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				Expect(guid.String()).To(Equal("an-app-id"))
 				Expect(num).To(Equal(6))
 
 				id, expiredAt := scalingEngineDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
@@ -281,8 +281,8 @@ var _ = Describe("ScalingEngine", func() {
 			It("updates the app instance with  min instances and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				id, num := cfc.ScaleAppWebProcessArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
+				guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				Expect(guid.String()).To(Equal("an-app-id"))
 				Expect(num).To(Equal(2))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -325,7 +325,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(policyDB.GetAppPolicyCallCount()).To(BeZero())
 
 					id, num := cfc.ScaleAppWebProcessArgsForCall(0)
-					Expect(id).To(Equal("an-app-id"))
+					Expect(id.String()).To(Equal("an-app-id"))
 					Expect(num).To(Equal(7))
 
 					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -359,7 +359,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(policyDB.GetAppPolicyCallCount()).To(BeZero())
 
 					id, num := cfc.ScaleAppWebProcessArgsForCall(0)
-					Expect(id).To(Equal("an-app-id"))
+					Expect(id.String()).To(Equal("an-app-id"))
 					Expect(num).To(Equal(3))
 
 					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -669,7 +669,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
-				Expect(appid).To(Equal("an-app-id"))
+				Expect(appid.String()).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(10))
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
@@ -699,7 +699,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
-					Expect(appid).To(Equal("an-app-id"))
+					Expect(appid.String()).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(2))
 
 					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -747,7 +747,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
-					Expect(appid).To(Equal("an-app-id"))
+					Expect(appid.String()).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(5))
 
 					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -926,7 +926,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			It("changes the instance number to InstanceMin", func() {
 				appId, instances := cfc.ScaleAppWebProcessArgsForCall(0)
-				Expect(appId).To(Equal("an-app-id"))
+				Expect(appId.String()).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(3))
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
@@ -950,7 +950,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			It("changes the instance number to instance-max-count", func() {
 				appId, instances := cfc.ScaleAppWebProcessArgsForCall(0)
-				Expect(appId).To(Equal("an-app-id"))
+				Expect(appId.String()).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(6))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
