@@ -17,16 +17,15 @@ import (
 
 var _ = Describe("Client", func() {
 
+	BeforeEach(func() { fakeCC.Add().Info(fakeLoginServer.URL()) })
 	Describe("Login", func() {
-
-		JustBeforeEach(login)
+		var tokens Tokens
+		JustBeforeEach(func() { err = cfc.Login() })
 
 		Context("when the token url is valid", func() {
-
 			Context("when token server returns 200 status code", func() {
 
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -46,7 +45,7 @@ var _ = Describe("Client", func() {
 
 				It("returns the correct tokens", func() {
 					Expect(err).ToNot(HaveOccurred())
-					tokens, err := cfc.GetTokens()
+					tokens, err = cfc.GetTokens()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(tokens.AccessToken).To(Equal("test-access-token"))
 					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
@@ -57,17 +56,16 @@ var _ = Describe("Client", func() {
 			Context("when token server is not running", func() {
 				BeforeEach(func() {
 					fakeLoginServer.Close()
+					fakeLoginServer = nil
 				})
 
 				It("should error", func() {
-					Expect(err).To(HaveOccurred())
 					IsUrlNetOpError(err)
 				})
 			})
 
 			Context("when token returns a non-200 status code", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -92,13 +90,14 @@ var _ = Describe("Client", func() {
 		})
 
 		Context("when not logged in", func() {
+			var tokens Tokens
+
 			BeforeEach(func() {
 				fakeCC.Add().Info(fakeLoginServer.URL())
 			})
 
 			Context("when token server returns a 200 status code ", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -113,7 +112,7 @@ var _ = Describe("Client", func() {
 				It("returns valid token", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(authToken).To(Equal("Bearer test-access-token"))
-					tokens, err := cfc.GetTokens()
+					tokens, err = cfc.GetTokens()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(tokens.AccessToken).To(Equal("test-access-token"))
 					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
@@ -123,7 +122,6 @@ var _ = Describe("Client", func() {
 
 			Context("when token server returns a non-200 status code", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -141,7 +139,6 @@ var _ = Describe("Client", func() {
 
 		Context("when already logged in", func() {
 			BeforeEach(func() {
-				fakeLoginServer.Reset()
 				fakeCC.Add().Info(fakeLoginServer.URL())
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
@@ -158,7 +155,6 @@ var _ = Describe("Client", func() {
 
 			Context("when auth fails", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -179,7 +175,6 @@ var _ = Describe("Client", func() {
 
 			Context("when auth succeeds", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -243,7 +238,6 @@ var _ = Describe("Client", func() {
 		Context("when the token is going to be expired", func() {
 			Context("when refresh succeeds", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Reset()
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
@@ -315,7 +309,6 @@ var _ = Describe("Client", func() {
 		Context("when the token is invalid", func() {
 
 			BeforeEach(func() {
-				fakeLoginServer.Reset()
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", PathIntrospectToken),
@@ -338,7 +331,6 @@ var _ = Describe("Client", func() {
 		Context("when the token is valid, but for the wrong client id", func() {
 
 			BeforeEach(func() {
-				fakeLoginServer.Reset()
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", PathIntrospectToken),
@@ -362,7 +354,6 @@ var _ = Describe("Client", func() {
 		Context("when the token is valid, and for the right client id", func() {
 
 			BeforeEach(func() {
-				fakeLoginServer.Reset()
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", PathIntrospectToken),

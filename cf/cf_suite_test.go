@@ -1,7 +1,6 @@
 package cf_test
 
 import (
-	"net/http"
 	"testing"
 	"time"
 
@@ -11,14 +10,13 @@ import (
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/ghttp"
 )
 
 var (
 	conf            *cf.Config
 	cfc             *cf.Client
 	fakeCC          *MockServer
-	fakeLoginServer *Server
+	fakeLoginServer *MockServer
 	err             error
 	logger          lager.Logger
 	fclock          *fakeclock.FakeClock
@@ -38,16 +36,14 @@ func setCfcClient(maxRetries int) {
 
 func login() {
 	fakeCC.Add().Info(fakeLoginUrl)
+	fakeLoginServer.Add().OauthToken("test-access-token")
 	err = cfc.Login()
 }
 
 var _ = BeforeEach(func() {
+	err = nil
 	fakeCC = NewMockServer()
-	fakeLoginServer = NewServer()
-	fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
-		AccessToken: "test-access-token",
-		ExpiresIn:   12000,
-	}))
+	fakeLoginServer = NewMockServer()
 	logger = lager.NewLogger("cf")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 	fakeLoginUrl = fakeLoginServer.URL()
