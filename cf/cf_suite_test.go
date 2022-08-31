@@ -1,11 +1,67 @@
 package cf_test
 
 import (
+	"net/http"
 	"testing"
+	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"code.cloudfoundry.org/clock/fakeclock"
+	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/ghttp"
 )
+
+var (
+	conf            *cf.Config
+	cfc             *cf.Client
+	fakeCC          *MockServer
+	fakeLoginServer *Server
+	err             error
+	logger          lager.Logger
+	fclock          *fakeclock.FakeClock
+	fakeLoginUrl    string
+)
+
+func setCfcClient(maxRetries int) {
+	conf = &cf.Config{}
+	conf.ClientID = "test-client-id"
+	conf.Secret = "test-client-secret"
+	conf.API = fakeCC.URL()
+	conf.MaxRetries = maxRetries
+	conf.MaxRetryWaitMs = 1
+	fclock = fakeclock.NewFakeClock(time.Now())
+	cfc = cf.NewCFClient(conf, logger, fclock)
+}
+
+func login() {
+	fakeCC.Add().Info(fakeLoginUrl)
+	err = cfc.Login()
+}
+
+var _ = BeforeEach(func() {
+	fakeCC = NewMockServer()
+	fakeLoginServer = NewServer()
+	fakeLoginServer.RouteToHandler("POST", cf.PathCFAuth, RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
+		AccessToken: "test-access-token",
+		ExpiresIn:   12000,
+	}))
+	logger = lager.NewLogger("cf")
+	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+	fakeLoginUrl = fakeLoginServer.URL()
+	setCfcClient(0)
+})
+
+var _ = AfterEach(func() {
+	if fakeCC != nil {
+		fakeCC.Close()
+	}
+	if fakeLoginServer != nil {
+		fakeLoginServer.Close()
+	}
+})
 
 func TestCfClient(t *testing.T) {
 	RegisterFailHandler(Fail)
