@@ -33,3 +33,12 @@ func (d DrainingTransport) RoundTrip(request *http.Request) (*http.Response, err
 	resp.Body = TripBody{resp.Body}
 	return resp, nil
 }
+
+func (d DrainingTransport) CloseIdleConnections() {
+	type closeIdler interface {
+		CloseIdleConnections()
+	}
+	if tr, ok := d.Transport.(closeIdler); ok {
+		tr.CloseIdleConnections()
+	}
+}

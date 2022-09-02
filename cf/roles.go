@@ -1,6 +1,7 @@
 package cf
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 )
@@ -43,13 +44,17 @@ func (r Roles) HasRole(roleType RoleType) bool {
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#roles
  */
 func (c *Client) GetSpaceDeveloperRoles(spaceId SpaceId, userId UserId) (Roles, error) {
+	return c.GetSpaceDeveloperRolesWithCtx(context.Background(), spaceId, userId)
+}
+
+func (c *Client) GetSpaceDeveloperRolesWithCtx(ctx context.Context, spaceId SpaceId, userId UserId) (Roles, error) {
 	parameters := url.Values{}
 	parameters.Add("types", "space_developer")
 	parameters.Add("space_guids", string(spaceId))
 	parameters.Add("user_guids", string(userId))
 	params := parameters.Encode()
 	theUrl := fmt.Sprintf("/v3/roles?%s", params)
-	roles, err := PagedResourceRetriever[Role]{AuthenticatedClient{c}}.GetAllPages(theUrl)
+	roles, err := PagedResourceRetriever[Role]{AuthenticatedClient{c}}.GetAllPages(ctx, theUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetSpaceDeveloperRoles spaceId(%s) userId(%s): %w", spaceId, userId, err)
 	}

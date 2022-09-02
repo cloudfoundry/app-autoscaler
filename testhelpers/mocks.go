@@ -15,7 +15,7 @@ type MockServer struct {
 }
 
 func NewMockServer() *MockServer {
-	return &MockServer{ghttp.NewTLSServer()}
+	return &MockServer{ghttp.NewServer()}
 }
 
 func (m *MockServer) Add() *AddMock {

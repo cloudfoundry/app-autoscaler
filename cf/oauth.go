@@ -71,7 +71,7 @@ func (c *Client) getUserScope(userToken string) ([]string, error) {
 	}
 	req.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		c.logger.Error("Failed to getuserscope, request failed", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
 		return nil, err
@@ -109,7 +109,7 @@ func (c *Client) getUserId(userToken string) (UserId, error) {
 	req.Header.Set("Authorization", userToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		c.logger.Error("Failed to get user info, request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err

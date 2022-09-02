@@ -1,6 +1,7 @@
 package cf
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -22,12 +23,15 @@ type (
 	}
 )
 
+/*GetEndpoints
+ * Gets the root information from the v3 api. This consists mostly of the endpoints needed to use the cf environment.
+ */
 func (c *Client) GetEndpoints() (Endpoints, error) {
 	return c.endpoints.Get()
 }
 
 func (c *Client) getEndpoints() (Endpoints, error) {
-	endpoints, err := ResourceRetriever[EndpointsResponse]{&ResourceRetriever[EndpointsResponse]{c}}.Get("/")
+	endpoints, err := ResourceRetriever[EndpointsResponse]{&ResourceRetriever[EndpointsResponse]{c}}.Get(context.Background(), "/")
 	if err != nil {
 		return Endpoints{}, fmt.Errorf("failed GetEndpoints: %w", err)
 	}

@@ -1,18 +1,23 @@
 package cf_test
 
 import (
+	"errors"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-	"errors"
+	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/ghttp"
-	"sync"
-	"sync/atomic"
 
 	"net/http"
 )
+
+const maxIdleConnsPerHost = 50
 
 var _ = Describe("Cf client App", func() {
 	BeforeEach(login)
@@ -172,18 +177,22 @@ var _ = Describe("Cf client App", func() {
 				var cfError = &models.CfError{}
 				anErr := cfc.Login()
 				if anErr != nil && !errors.As(anErr, &cfError) {
-					GinkgoWriter.Printf(" Error: %+v\n", anErr, anErr)
+					GinkgoWriter.Printf(" Error: %+v\n", anErr)
 					numErr += 1
 				}
 				_, anErr = cfc.GetAppAndProcesses("test-app-id")
 
 				if anErr != nil && !errors.As(anErr, &cfError) {
-					GinkgoWriter.Printf(" Error: %+v\n", anErr, anErr)
+					GinkgoWriter.Printf(" Error: %+v\n", anErr)
 					numErr += 1
 				}
 				return int64(numErr)
 			}
 			BeforeEach(func() {
+				// quiet logger
+				logger = lager.NewLogger("cf")
+				setCfcClient(2)
+
 				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
 					RoundRobinWithMultiple(
 						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
@@ -232,9 +241,8 @@ var _ = Describe("Cf client App", func() {
 				for key, value := range loginWatcher.GetStates() {
 					GinkgoWriter.Printf("\t%s - %d\n", key, value)
 				}
-
-				Expect(ccWatcher.GetStates()[http.StateActive.String()]).To(Equal(0))
-				Expect(loginWatcher.GetStates()[http.StateActive.String()]).To(Equal(0))
+				Eventually(ccWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
+				Eventually(loginWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
 				Expect(ccWatcher.MaxOpenConnections()).To(BeNumerically("<", 40))
 				Expect(numErrors).To(Equal(int64(0)))
 			})

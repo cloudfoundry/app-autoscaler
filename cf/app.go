@@ -1,6 +1,7 @@
 package cf
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -61,17 +62,21 @@ func (p Processes) GetInstances() int {
  * A utility function that gets the app and processes for the app in one call in parallel
  */
 func (c *Client) GetAppAndProcesses(appID Guid) (*AppAndProcesses, error) {
+	return c.GetAppAndProcessesWithCtx(context.Background(), appID)
+}
+
+func (c *Client) GetAppAndProcessesWithCtx(ctx context.Context, appID Guid) (*AppAndProcesses, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
 	var processes Processes
 	var errApp, errProc error
 	go func() {
-		app, errApp = c.GetApp(appID)
+		app, errApp = c.GetAppWithCtx(ctx, appID)
 		wg.Done()
 	}()
 	go func() {
-		processes, errProc = c.GetAppProcesses(appID, ProcessTypeWeb)
+		processes, errProc = c.GetAppProcessesWithCtx(ctx, appID, ProcessTypeWeb)
 		wg.Done()
 	}()
 	wg.Wait()
@@ -90,9 +95,12 @@ func (c *Client) GetAppAndProcesses(appID Guid) (*AppAndProcesses, error) {
  * using GET /v3/apps/:guid/processes/:type
  */
 func (c *Client) GetApp(appID Guid) (*App, error) {
-	url := fmt.Sprintf("/v3/apps/%s", appID)
+	return c.GetAppWithCtx(context.Background(), appID)
+}
 
-	resp, err := ResourceRetriever[*App]{AuthenticatedClient{c}}.Get(url)
+func (c *Client) GetAppWithCtx(ctx context.Context, appID Guid) (*App, error) {
+	url := fmt.Sprintf("/v3/apps/%s", appID)
+	resp, err := ResourceRetriever[*App]{AuthenticatedClient{c}}.Get(ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting app '%s': %w", appID, err)
 	}
@@ -104,11 +112,15 @@ func (c *Client) GetApp(appID Guid) (*App, error) {
  * https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#scale-a-process
  */
 func (c *Client) ScaleAppWebProcess(appID Guid, num int) error {
+	return c.ScaleAppWebProcessWithCtx(context.Background(), appID, num)
+}
+
+func (c *Client) ScaleAppWebProcessWithCtx(ctx context.Context, appID Guid, num int) error {
 	url := fmt.Sprintf("/v3/apps/%s/processes/web/actions/scale", appID)
 	type scaleApp struct {
 		Instances int `json:"instances"`
 	}
-	_, err := ResourceRetriever[Process]{AuthenticatedClient{c}}.Post(url, scaleApp{Instances: num})
+	_, err := ResourceRetriever[Process]{AuthenticatedClient{c}}.Post(ctx, url, scaleApp{Instances: num})
 	if err != nil {
 		return fmt.Errorf("failed scaling app '%s' to %d: %w", appID, num, err)
 	}

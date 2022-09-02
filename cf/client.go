@@ -65,7 +65,7 @@ type (
 		endpoints   *Lazy[Endpoints]
 		loginForm   url.Values
 		authHeader  string
-		httpClient  *http.Client
+		Client      *http.Client
 		lock        *sync.Mutex
 		grantTime   time.Time
 		retryClient *http.Client
@@ -93,14 +93,14 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	}
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 	// #nosec G402 - this is intentionally configurable
-	c.httpClient = cfhttp.NewClient(
+	c.Client = cfhttp.NewClient(
 		cfhttp.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}),
 		cfhttp.WithDialTimeout(10*time.Second),
-		//cfhttp.WithIdleConnTimeout(1*time.Second),
-		cfhttp.WithMaxIdleConnsPerHost(200),
+		cfhttp.WithIdleConnTimeout(time.Duration(conf.IdleTimeoutMs)*time.Millisecond),
+		cfhttp.WithMaxIdleConnsPerHost(conf.MaxIdleConnsPerHost),
 	)
-	c.httpClient.Transport = DrainingTransport{c.httpClient.Transport}
-	c.retryClient = createRetryClient(conf, c.httpClient, logger)
+	c.Client.Transport = DrainingTransport{c.Client.Transport}
+	c.retryClient = createRetryClient(conf, c.Client, logger)
 	c.lock = &sync.Mutex{}
 	c.endpoints = NewLazy(c.getEndpoints)
 	if c.conf.PerPage == 0 {
@@ -143,7 +143,7 @@ func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
 	var resp *http.Response
-	resp, err = c.httpClient.Do(req)
+	resp, err = c.Client.Do(req)
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-do-request", err)
 		return err
@@ -208,7 +208,7 @@ func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
 	request.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
-	resp, err := c.httpClient.Do(request)
+	resp, err := c.Client.Do(request)
 	if err != nil {
 		return false, err
 	}

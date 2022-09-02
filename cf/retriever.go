@@ -2,6 +2,7 @@ package cf
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,14 +46,14 @@ type (
 var _ Retriever = &Client{}
 var _ Retriever = AuthenticatedClient{}
 
-func (r PagedResourceRetriever[T]) GetAllPages(pathAndQuery string) ([]T, error) {
+func (r PagedResourceRetriever[T]) GetAllPages(ctx context.Context, pathAndQuery string) ([]T, error) {
 	pageNumber := 1
 	var resources []T
 
 	url := r.Retriever.ApiUrl(pathAndQuery)
 
-	for url != "" {
-		page, err := r.getPage(url)
+	for url != "" && ctx.Err() == nil {
+		page, err := r.getPage(ctx, url)
 		if err != nil {
 			return nil, fmt.Errorf("failed getting page %d: %w", pageNumber, err)
 		}
@@ -60,25 +61,25 @@ func (r PagedResourceRetriever[T]) GetAllPages(pathAndQuery string) ([]T, error)
 		url = page.Pagination.Next.Url
 		pageNumber++
 	}
-	return resources, nil
+	return resources, ctx.Err()
 }
 
-func (r PagedResourceRetriever[T]) GetPage(pathAndQuery string) (Response[T], error) {
-	return r.getPage(r.Retriever.ApiUrl(pathAndQuery))
+func (r PagedResourceRetriever[T]) GetPage(ctx context.Context, pathAndQuery string) (Response[T], error) {
+	return r.getPage(ctx, r.Retriever.ApiUrl(pathAndQuery))
 }
 
-func (r PagedResourceRetriever[T]) getPage(url string) (Response[T], error) {
-	return ResourceRetriever[Response[T]](r).get(url)
+func (r PagedResourceRetriever[T]) getPage(ctx context.Context, url string) (Response[T], error) {
+	return ResourceRetriever[Response[T]](r).get(ctx, url)
 }
 
-func (r ResourceRetriever[T]) Get(pathAndQuery string) (T, error) {
-	return r.get(r.Retriever.ApiUrl(pathAndQuery))
+func (r ResourceRetriever[T]) Get(ctx context.Context, pathAndQuery string) (T, error) {
+	return r.get(ctx, r.Retriever.ApiUrl(pathAndQuery))
 }
 
-func (r ResourceRetriever[T]) get(url string) (T, error) {
+func (r ResourceRetriever[T]) get(ctx context.Context, url string) (T, error) {
 	var response T
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return response, err
 	}
@@ -96,12 +97,12 @@ func (r ResourceRetriever[T]) get(url string) (T, error) {
 	return response, nil
 }
 
-func (r ResourceRetriever[T]) Post(url string, bodyStuct any) (*http.Response, error) {
+func (r ResourceRetriever[T]) Post(ctx context.Context, url string, bodyStuct any) (*http.Response, error) {
 	body, err := json.Marshal(bodyStuct)
 	if err != nil {
 		return nil, fmt.Errorf("failed post: %w", err)
 	}
-	req, err := http.NewRequest("POST", r.Retriever.ApiUrl(url), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", r.Retriever.ApiUrl(url), bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("post %s failed: %w", url, err)
 	}

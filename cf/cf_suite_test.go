@@ -30,6 +30,8 @@ func setCfcClient(maxRetries int) {
 	conf.API = fakeCC.URL()
 	conf.MaxRetries = maxRetries
 	conf.MaxRetryWaitMs = 1
+	conf.IdleTimeoutMs = 50
+	conf.MaxIdleConnsPerHost = maxIdleConnsPerHost
 	conf.SkipSSLValidation = true
 	fclock = fakeclock.NewFakeClock(time.Now())
 	cfc = cf.NewCFClient(conf, logger, fclock)
