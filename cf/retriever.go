@@ -34,16 +34,17 @@ type (
 	ResourceRetriever[T any]      struct{ Retriever }
 
 	Retriever interface {
-		SendRequest(req *http.Request) (*http.Response, error)
+		SendRequest(ctx context.Context, req *http.Request) (*http.Response, error)
 		ApiUrl(pathAndQuery string) string
-		CFClient
+		ApiContextClient
+		AuthContextClient
 	}
 	AuthenticatedClient struct {
 		Retriever
 	}
 )
 
-var _ Retriever = &Client{}
+var _ Retriever = &CtxClient{}
 var _ Retriever = AuthenticatedClient{}
 
 func (r PagedResourceRetriever[T]) GetAllPages(ctx context.Context, pathAndQuery string) ([]T, error) {
@@ -84,7 +85,7 @@ func (r ResourceRetriever[T]) get(ctx context.Context, url string) (T, error) {
 		return response, err
 	}
 
-	resp, err := Retriever(r).SendRequest(req)
+	resp, err := Retriever(r).SendRequest(ctx, req)
 	if err != nil {
 		return response, fmt.Errorf("failed getting %T: %w", response, err)
 	}
@@ -107,18 +108,18 @@ func (r ResourceRetriever[T]) Post(ctx context.Context, url string, bodyStuct an
 		return nil, fmt.Errorf("post %s failed: %w", url, err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	return Retriever(r).SendRequest(req)
+	return Retriever(r).SendRequest(ctx, req)
 }
 
-func (r AuthenticatedClient) SendRequest(req *http.Request) (*http.Response, error) {
-	err := r.addAuth(req)
+func (r AuthenticatedClient) SendRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
+	err := r.addAuth(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return r.Retriever.SendRequest(req)
+	return r.Retriever.SendRequest(ctx, req)
 }
 
-func (c *Client) SendRequest(req *http.Request) (*http.Response, error) {
+func (c *CtxClient) SendRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := c.retryClient.Do(req)
 	if err != nil {
 		return resp, err
@@ -137,12 +138,12 @@ func (c *Client) SendRequest(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func (c *Client) ApiUrl(pathAndQuery string) string {
+func (c *CtxClient) ApiUrl(pathAndQuery string) string {
 	return c.conf.API + pathAndQuery
 }
 
-func (r AuthenticatedClient) addAuth(req *http.Request) error {
-	tokens, err := r.Retriever.GetTokens()
+func (r AuthenticatedClient) addAuth(ctx context.Context, req *http.Request) error {
+	tokens, err := r.Retriever.GetTokens(ctx)
 	if err != nil {
 		return fmt.Errorf("get token failed: %w", err)
 	}

@@ -145,7 +145,7 @@ var _ = Describe("Oauth", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper for appId\(test-app-id\): getSpaceId failed:.*connection refused`)))
+				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper for appId\(test-app-id\): .*connection refused`)))
 			})
 		})
 

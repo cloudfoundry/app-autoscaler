@@ -23,10 +23,10 @@ type (
 )
 
 func (c *Client) GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error) {
-	return c.GetServiceInstanceWithCtx(context.Background(), serviceInstanceGuid)
+	return c.CtxClient.GetServiceInstance(context.Background(), serviceInstanceGuid)
 }
 
-func (c *Client) GetServiceInstanceWithCtx(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error) {
+func (c *CtxClient) GetServiceInstance(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error) {
 	theUrl := fmt.Sprintf("/v3/service_instances/%s", serviceInstanceGuid)
 	serviceInstance, err := ResourceRetriever[ServiceInstance]{AuthenticatedClient{c}}.Get(ctx, theUrl)
 	if err != nil {

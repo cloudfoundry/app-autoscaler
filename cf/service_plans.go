@@ -28,10 +28,10 @@ type (
  *  v3 api docs https://v3-apidocs.cloudfoundry.org/version/3.123.0/index.html#service-plans
  */
 func (c *Client) GetServicePlan(servicePlanGuid string) (*ServicePlan, error) {
-	return c.GetServicePlanWithCtx(context.Background(), servicePlanGuid)
+	return c.CtxClient.GetServicePlan(context.Background(), servicePlanGuid)
 }
 
-func (c *Client) GetServicePlanWithCtx(ctx context.Context, servicePlanGuid string) (*ServicePlan, error) {
+func (c *CtxClient) GetServicePlan(ctx context.Context, servicePlanGuid string) (*ServicePlan, error) {
 	theUrl := fmt.Sprintf("/v3/service_plans/%s", servicePlanGuid)
 	plan, err := ResourceRetriever[*ServicePlan]{AuthenticatedClient{c}}.Get(ctx, theUrl)
 	if err != nil {

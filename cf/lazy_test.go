@@ -1,6 +1,7 @@
 package cf_test
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"testing"
@@ -11,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testFunc(counter *int, err error) func() (string, error) {
-	return func() (string, error) {
+func testFunc(counter *int, err error) func(ctx context.Context) (string, error) {
+	return func(ctx context.Context) (string, error) {
 		*counter++
 		time.Sleep(10 * time.Millisecond)
 		return "someString", err
@@ -22,7 +23,7 @@ func testFunc(counter *int, err error) func() (string, error) {
 func TestLazy_init(t *testing.T) {
 	counter := 0
 	lazy := cf.NewLazy(testFunc(&counter, nil))
-	res, err := lazy.Get()
+	res, err := lazy.Get(context.Background())
 	assert.Equal(t, "someString", res)
 	assert.Nil(t, err)
 	assert.Equal(t, counter, 1)
@@ -31,10 +32,10 @@ func TestLazy_init(t *testing.T) {
 func TestLazy_hit(t *testing.T) {
 	counter := 0
 	lazy := cf.NewLazy(testFunc(&counter, nil))
-	res, err := lazy.Get()
+	res, err := lazy.Get(context.Background())
 	assert.Equal(t, "someString", res)
 	assert.Nil(t, err)
-	_, err = lazy.Get()
+	_, err = lazy.Get(context.Background())
 	assert.Nil(t, err)
 	assert.Equal(t, 1, counter)
 }
@@ -42,9 +43,9 @@ func TestLazy_hit(t *testing.T) {
 func TestLazy_errorsDontGetCached(t *testing.T) {
 	counter := 0
 	lazy := cf.NewLazy(testFunc(&counter, errors.New("someErr")))
-	_, err := lazy.Get()
+	_, err := lazy.Get(context.Background())
 	assert.NotNil(t, err)
-	_, err = lazy.Get()
+	_, err = lazy.Get(context.Background())
 	assert.NotNil(t, err)
 	assert.Equal(t, 2, counter)
 }
@@ -60,7 +61,7 @@ func TestLazy_Thread_test(t *testing.T) {
 	for i := 0; i < numThreads; i++ {
 		go func() {
 			mu.RLock()
-			_, _ = lazy.Get()
+			_, _ = lazy.Get(context.Background())
 			wg.Done()
 		}()
 	}

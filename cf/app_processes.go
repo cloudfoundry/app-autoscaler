@@ -18,10 +18,10 @@ const (
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#apps
  */
 func (c *Client) GetAppProcesses(appGuid Guid, processTypes ...string) (Processes, error) {
-	return c.GetAppProcessesWithCtx(context.Background(), appGuid, processTypes...)
+	return c.CtxClient.GetAppProcesses(context.Background(), appGuid, processTypes...)
 }
 
-func (c *Client) GetAppProcessesWithCtx(ctx context.Context, appGuid Guid, processTypes ...string) (Processes, error) {
+func (c *CtxClient) GetAppProcesses(ctx context.Context, appGuid Guid, processTypes ...string) (Processes, error) {
 	query := url.Values{"per_page": {strconv.Itoa(c.conf.PerPage)}, "types": {strings.Join(processTypes, ",")}}
 	aUrl := fmt.Sprintf("/v3/apps/%s/processes?%s", appGuid, query.Encode())
 	pages, err := PagedResourceRetriever[Process]{AuthenticatedClient{c}}.GetAllPages(ctx, aUrl)

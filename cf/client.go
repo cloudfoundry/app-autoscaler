@@ -1,6 +1,7 @@
 package cf
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -23,7 +24,6 @@ const (
 	PathCFAuth                                   = "/oauth/token"
 	PathIntrospectToken                          = "/introspect"
 	GrantTypeClientCredentials                   = "client_credentials"
-	GrantTypeRefreshToken                        = "refresh_token"
 	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
 	defaultPerPage                               = 100
 )
@@ -41,23 +41,59 @@ type (
 		ClientId string `json:"client_id"`
 	}
 
-	CFClient interface {
+	AuthClient interface {
 		Login() error
 		RefreshAuthToken() (string, error)
 		GetTokens() (Tokens, error)
+		IsUserAdmin(userToken string) (bool, error)
+		IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error)
+		IsTokenAuthorized(token, clientId string) (bool, error)
+	}
+
+	AuthContextClient interface {
+		Login(ctx context.Context) error
+		RefreshAuthToken(ctx context.Context) (string, error)
+		GetTokens(ctx context.Context) (Tokens, error)
+		IsUserAdmin(ctx context.Context, userToken string) (bool, error)
+		IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error)
+		IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error)
+	}
+
+	CFClient interface {
+		AuthClient
+		ApiClient
+	}
+
+	ContextClient interface {
+		AuthContextClient
+		ApiContextClient
+	}
+
+	ApiClient interface {
 		GetEndpoints() (Endpoints, error)
 		GetApp(appId Guid) (*App, error)
 		GetAppProcesses(appId Guid, processTypes ...string) (Processes, error)
 		GetAppAndProcesses(appId Guid) (*AppAndProcesses, error)
 		ScaleAppWebProcess(appId Guid, numberOfProcesses int) error
-		IsUserAdmin(userToken string) (bool, error)
-		IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error)
-		IsTokenAuthorized(token, clientId string) (bool, error)
 		GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error)
 		GetServicePlan(servicePlanGuid string) (*ServicePlan, error)
 	}
 
+	ApiContextClient interface {
+		GetEndpoints(ctx context.Context) (Endpoints, error)
+		GetApp(ctx context.Context, appId Guid) (*App, error)
+		GetAppProcesses(ctx context.Context, appId Guid, processTypes ...string) (Processes, error)
+		GetAppAndProcesses(ctx context.Context, appId Guid) (*AppAndProcesses, error)
+		ScaleAppWebProcess(ctx context.Context, appId Guid, numberOfProcesses int) error
+		GetServiceInstance(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error)
+		GetServicePlan(ctx context.Context, servicePlanGuid string) (*ServicePlan, error)
+	}
+
 	Client struct {
+		*CtxClient
+	}
+
+	CtxClient struct {
 		logger      lager.Logger
 		conf        *Config
 		clk         clock.Clock
@@ -79,9 +115,10 @@ func (g Guid) String() string {
 }
 
 var _ CFClient = &Client{}
+var _ ContextClient = &CtxClient{}
 
 func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
-	c := &Client{}
+	c := &Client{&CtxClient{}}
 	c.logger = logger
 	c.conf = conf
 	c.clk = clk
@@ -102,7 +139,7 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.Client.Transport = DrainingTransport{c.Client.Transport}
 	c.retryClient = createRetryClient(conf, c.Client, logger)
 	c.lock = &sync.Mutex{}
-	c.endpoints = NewLazy(c.getEndpoints)
+	c.endpoints = NewLazy(c.CtxClient.GetEndpoints)
 	if c.conf.PerPage == 0 {
 		c.conf.PerPage = defaultPerPage
 	}
@@ -126,15 +163,15 @@ func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *
 	return retryClient.StandardClient()
 }
 
-func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
-	endpoints, err := c.GetEndpoints()
+func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *url.Values) error {
+	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
 		return err
 	}
 	tokenUrl := endpoints.Uaa.Url + PathCFAuth
 	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": tokenUrl, "form": *formData})
 
-	req, err := http.NewRequest("POST", tokenUrl, strings.NewReader(formData.Encode()))
+	req, err := http.NewRequestWithContext(ctx, "POST", tokenUrl, strings.NewReader(formData.Encode()))
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-new-request", err)
 		return err
@@ -149,7 +186,7 @@ func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("request client credential grant failed: %s [%d] %s", tokenUrl, resp.StatusCode, resp.Status)
 		c.logger.Error("request-client-credential-grant-response", err)
@@ -166,11 +203,18 @@ func (c *Client) requestClientCredentialGrant(formData *url.Values) error {
 }
 
 func (c *Client) Login() error {
-	return c.requestClientCredentialGrant(&c.loginForm)
+	return c.CtxClient.Login(context.Background())
+}
+
+func (c *CtxClient) Login(ctx context.Context) error {
+	return c.requestClientCredentialGrant(ctx, &c.loginForm)
 }
 
 func (c *Client) RefreshAuthToken() (string, error) {
-	err := c.requestClientCredentialGrant(&c.loginForm)
+	return c.CtxClient.RefreshAuthToken(context.Background())
+}
+func (c *CtxClient) RefreshAuthToken(ctx context.Context) (string, error) {
+	err := c.requestClientCredentialGrant(ctx, &c.loginForm)
 	if err != nil {
 		return "", err
 	}
@@ -178,11 +222,15 @@ func (c *Client) RefreshAuthToken() (string, error) {
 }
 
 func (c *Client) GetTokens() (Tokens, error) {
+	return c.CtxClient.GetTokens(context.Background())
+}
+
+func (c *CtxClient) GetTokens(ctx context.Context) (Tokens, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	if c.isTokenToBeExpired() {
-		_, err := c.RefreshAuthToken()
+		_, err := c.RefreshAuthToken(ctx)
 		if err != nil {
 			return c.tokens, err
 		}
@@ -190,18 +238,21 @@ func (c *Client) GetTokens() (Tokens, error) {
 	return c.tokens, nil
 }
 
-func (c *Client) isTokenToBeExpired() bool {
+func (c *CtxClient) isTokenToBeExpired() bool {
 	return c.clk.Now().Sub(c.grantTime) > (time.Duration(c.tokens.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
 }
 
 func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
-	endpoints, err := c.GetEndpoints()
+	return c.CtxClient.IsTokenAuthorized(context.Background(), token, clientId)
+}
+func (c *CtxClient) IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error) {
+	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
 		return false, err
 	}
 	formData := url.Values{"token": {token}}
 	tokenURL := endpoints.Uaa.Url + PathIntrospectToken
-	request, err := http.NewRequest("POST", tokenURL, strings.NewReader(formData.Encode()))
+	request, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(formData.Encode()))
 	if err != nil {
 		return false, err
 	}
@@ -215,7 +266,7 @@ func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
 	if resp.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("received status code %v while calling /introspect endpoint", resp.Status)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {

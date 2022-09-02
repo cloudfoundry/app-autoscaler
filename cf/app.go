@@ -62,21 +62,21 @@ func (p Processes) GetInstances() int {
  * A utility function that gets the app and processes for the app in one call in parallel
  */
 func (c *Client) GetAppAndProcesses(appID Guid) (*AppAndProcesses, error) {
-	return c.GetAppAndProcessesWithCtx(context.Background(), appID)
+	return c.CtxClient.GetAppAndProcesses(context.Background(), appID)
 }
 
-func (c *Client) GetAppAndProcessesWithCtx(ctx context.Context, appID Guid) (*AppAndProcesses, error) {
+func (c *CtxClient) GetAppAndProcesses(ctx context.Context, appID Guid) (*AppAndProcesses, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var app *App
 	var processes Processes
 	var errApp, errProc error
 	go func() {
-		app, errApp = c.GetAppWithCtx(ctx, appID)
+		app, errApp = c.GetApp(ctx, appID)
 		wg.Done()
 	}()
 	go func() {
-		processes, errProc = c.GetAppProcessesWithCtx(ctx, appID, ProcessTypeWeb)
+		processes, errProc = c.GetAppProcesses(ctx, appID, ProcessTypeWeb)
 		wg.Done()
 	}()
 	wg.Wait()
@@ -95,10 +95,10 @@ func (c *Client) GetAppAndProcessesWithCtx(ctx context.Context, appID Guid) (*Ap
  * using GET /v3/apps/:guid/processes/:type
  */
 func (c *Client) GetApp(appID Guid) (*App, error) {
-	return c.GetAppWithCtx(context.Background(), appID)
+	return c.CtxClient.GetApp(context.Background(), appID)
 }
 
-func (c *Client) GetAppWithCtx(ctx context.Context, appID Guid) (*App, error) {
+func (c *CtxClient) GetApp(ctx context.Context, appID Guid) (*App, error) {
 	url := fmt.Sprintf("/v3/apps/%s", appID)
 	resp, err := ResourceRetriever[*App]{AuthenticatedClient{c}}.Get(ctx, url)
 	if err != nil {
@@ -112,10 +112,10 @@ func (c *Client) GetAppWithCtx(ctx context.Context, appID Guid) (*App, error) {
  * https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#scale-a-process
  */
 func (c *Client) ScaleAppWebProcess(appID Guid, num int) error {
-	return c.ScaleAppWebProcessWithCtx(context.Background(), appID, num)
+	return c.CtxClient.ScaleAppWebProcess(context.Background(), appID, num)
 }
 
-func (c *Client) ScaleAppWebProcessWithCtx(ctx context.Context, appID Guid, num int) error {
+func (c *CtxClient) ScaleAppWebProcess(ctx context.Context, appID Guid, num int) error {
 	url := fmt.Sprintf("/v3/apps/%s/processes/web/actions/scale", appID)
 	type scaleApp struct {
 		Instances int `json:"instances"`

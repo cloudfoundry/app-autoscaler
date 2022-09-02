@@ -40,7 +40,7 @@ var _ = Describe("Cf client Retriever", func() {
 
 			It("should return IsNotFound error", func() {
 				req, _ := http.NewRequest("GET", cfc.ApiUrl("/v3/something/404"), nil)
-				_, err := cfc.SendRequest(req)
+				_, err := cfc.SendRequest(context.Background(), req)
 				var cfError *models.CfError
 				Expect(err).To(MatchError(MatchRegexp(`GET request failed: cf api Error url='', resourceId='': \['CF-ResourceNotFound' code: 10010.*\]`)))
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
@@ -48,7 +48,7 @@ var _ = Describe("Cf client Retriever", func() {
 			})
 			It("should close the response body", func() {
 				req, _ := http.NewRequest("GET", cfc.ApiUrl("/v3/something/404"), nil)
-				resp, err := cfc.SendRequest(req)
+				resp, err := cfc.SendRequest(context.Background(), req)
 				Expect(err).ToNot(BeNil())
 				_, err = resp.Body.Read([]byte{})
 				Expect(err).ToNot(BeNil())
@@ -69,7 +69,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					_, err := cf.ResourceRetriever[cf.App]{cfc}.Get(context.Background(), "/v3/some/url")
+					_, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Get(context.Background(), "/v3/some/url")
 					Expect(fakeCC.Count().Requests(`^/v3/some/url$`)).To(Equal(4))
 					Expect(err).To(MatchError(MatchRegexp("GET request failed:.*'UnknownError'")))
 				})
@@ -86,7 +86,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should return success", func() {
-					app, err := cf.ResourceRetriever[cf.App]{cfc}.Get(context.Background(), "/v3/some/url")
+					app, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Get(context.Background(), "/v3/some/url")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(app).ToNot(BeNil())
 					Expect(fakeCC.Count().Requests(`^/v3/some/url$`)).To(Equal(4))
@@ -108,7 +108,7 @@ var _ = Describe("Cf client Retriever", func() {
 					watcher := ConnectionWatcher{wrap: fakeCC.HTTPTestServer.Config.ConnState}
 					fakeCC.HTTPTestServer.Config.ConnState = watcher.OnStateChange
 					for i := 0; i < 1000; i++ {
-						_, _ = cf.ResourceRetriever[cf.App]{cfc}.Get(context.Background(), "/v3/some/url")
+						_, _ = cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Get(context.Background(), "/v3/some/url")
 						//Expect(err).NotTo(HaveOccurred())
 						//Expect(app).ToNot(BeNil())
 					}
@@ -123,7 +123,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					app, err := cf.ResourceRetriever[*cf.App]{cfc}.Get(context.Background(), "/something")
+					app, err := cf.ResourceRetriever[*cf.App]{cfc.CtxClient}.Get(context.Background(), "/something")
 					Expect(app).To(BeNil())
 					Expect(err).To(MatchError(MatchRegexp(`connection refused`)))
 					IsUrlNetOpError(err)
@@ -135,7 +135,7 @@ var _ = Describe("Cf client Retriever", func() {
 	Describe("ResourceRetriever.Post", func() {
 		When("has an invalid url", func() {
 			It("should return error", func() {
-				app, err := cf.ResourceRetriever[cf.App]{cfc}.Post(context.Background(), "v3/invalid", nil)
+				app, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Post(context.Background(), "v3/invalid", nil)
 				Expect(app).To(BeNil())
 				var urlErr *url.Error
 				Expect(err).To(HaveOccurred())
@@ -144,7 +144,7 @@ var _ = Describe("Cf client Retriever", func() {
 		})
 		When("passed valid struct", func() {
 			It("should return error", func() {
-				app, err := cf.ResourceRetriever[cf.App]{cfc}.Post(context.Background(), "/v3/invalid", make(chan int))
+				app, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Post(context.Background(), "/v3/invalid", make(chan int))
 				Expect(app).To(BeNil())
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(MatchRegexp(`failed post:.*`)))
@@ -165,7 +165,7 @@ var _ = Describe("Cf client Retriever", func() {
 				)
 			})
 			It("should return response", func() {
-				_, err := cf.ResourceRetriever[cf.App]{cfc}.Post(context.Background(), "/v3/post", struct {
+				_, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Post(context.Background(), "/v3/post", struct {
 					Name string `json:"name"`
 				}{Name: "monty"})
 				Expect(err).ToNot(HaveOccurred())
@@ -180,7 +180,7 @@ var _ = Describe("Cf client Retriever", func() {
 		}
 		When("has an invalid url", func() {
 			It("should return error", func() {
-				app, err := cf.ResourceRetriever[*cf.App]{cfc}.Get(context.Background(), "v3/invalid")
+				app, err := cf.ResourceRetriever[*cf.App]{cfc.CtxClient}.Get(context.Background(), "v3/invalid")
 				Expect(app).To(BeNil())
 				var urlErr *url.Error
 				Expect(err).To(HaveOccurred())
@@ -200,7 +200,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should return correct test item", func() {
-					item, err := cf.ResourceRetriever[TestItem]{cfc}.Get(context.Background(), "/v3/something")
+					item, err := cf.ResourceRetriever[TestItem]{cfc.CtxClient}.Get(context.Background(), "/v3/something")
 					Expect(err).ToNot(HaveOccurred())
 					Expect(item).To(Equal(TestItem{Name: "test_name", Type: "test_type"}))
 				})
@@ -216,7 +216,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					_, err := cf.PagedResourceRetriever[cf.Process]{cfc}.GetPage(context.Background(), "/v3/apps/invalid_json")
+					_, err := cf.PagedResourceRetriever[cf.Process]{cfc.CtxClient}.GetPage(context.Background(), "/v3/apps/invalid_json")
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(MatchRegexp(`failed unmarshalling cf.Response\[.*cf.Process\]: unexpected EOF`))
 				})
@@ -233,7 +233,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("should error", func() {
-					_, err := cf.PagedResourceRetriever[cf.Process]{cfc}.GetPage(context.Background(), "/v3/incorrect_object")
+					_, err := cf.PagedResourceRetriever[cf.Process]{cfc.CtxClient}.GetPage(context.Background(), "/v3/incorrect_object")
 					Expect(err).To(MatchError(MatchRegexp(`failed unmarshalling cf.Response\[.*cf.Process\]: json: cannot unmarshal string into Go value.*`)))
 					var errType *json.UnmarshalTypeError
 					Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
@@ -275,7 +275,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("counts all processes", func() {
-					resp, err := cf.PagedResourceRetriever[cf.Process]{cfc}.GetAllPages(context.Background(), "/v3/items")
+					resp, err := cf.PagedResourceRetriever[cf.Process]{cfc.CtxClient}.GetAllPages(context.Background(), "/v3/items")
 					Expect(err).ToNot(HaveOccurred())
 					Expect(len(resp)).To(Equal(6))
 				})
@@ -304,7 +304,7 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 
 				It("returns correct state", func() {
-					_, err := cf.PagedResourceRetriever[cf.Process]{cfc}.GetAllPages(context.Background(), "/v3/items")
+					_, err := cf.PagedResourceRetriever[cf.Process]{cfc.CtxClient}.GetAllPages(context.Background(), "/v3/items")
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError(MatchRegexp(`failed getting page 3: failed getting cf.Response\[.*cf.Process\]:.*'UnknownError'.*`)))
 				})

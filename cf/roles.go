@@ -44,10 +44,10 @@ func (r Roles) HasRole(roleType RoleType) bool {
  * from the v3 api https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#roles
  */
 func (c *Client) GetSpaceDeveloperRoles(spaceId SpaceId, userId UserId) (Roles, error) {
-	return c.GetSpaceDeveloperRolesWithCtx(context.Background(), spaceId, userId)
+	return c.CtxClient.GetSpaceDeveloperRoles(context.Background(), spaceId, userId)
 }
 
-func (c *Client) GetSpaceDeveloperRolesWithCtx(ctx context.Context, spaceId SpaceId, userId UserId) (Roles, error) {
+func (c *CtxClient) GetSpaceDeveloperRoles(ctx context.Context, spaceId SpaceId, userId UserId) (Roles, error) {
 	parameters := url.Values{}
 	parameters.Add("types", "space_developer")
 	parameters.Add("space_guids", string(spaceId))
