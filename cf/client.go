@@ -62,6 +62,7 @@ type (
 	CFClient interface {
 		AuthClient
 		ApiClient
+		GetCtxClient() ContextClient
 	}
 
 	ContextClient interface {
@@ -107,6 +108,10 @@ type (
 		retryClient *http.Client
 	}
 )
+
+func (c *Client) GetCtxClient() ContextClient {
+	return c.CtxClient
+}
 
 var _ fmt.Stringer = Guid("some_guid")
 
@@ -199,6 +204,7 @@ func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *
 		return err
 	}
 	c.grantTime = time.Now()
+
 	return nil
 }
 

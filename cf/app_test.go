@@ -1,7 +1,10 @@
 package cf_test
 
 import (
+	"context"
 	"errors"
+	"net/http"
+	"net/http/httptrace"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,11 +16,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/ghttp"
-
-	"net/http"
 )
 
-const maxIdleConnsPerHost = 50
+const maxIdleConnsPerHost = 200
 
 var _ = Describe("Cf client App", func() {
 	BeforeEach(login)
@@ -172,7 +173,33 @@ var _ = Describe("Cf client App", func() {
 		})
 
 		Context("Given a significant load", func() {
+			idleUsed := int32(0)
+			reUsed := int32(0)
+			numRequests := int32(0)
+			numResponses := int32(0)
+			numberConcurrentUsers := 100
+			numberSequentialPerUser := 10
+			/*
+			 * Note there is a login that goes to a separate host then 2 concurrent requests to the api server.
+			 */
 			doAppProcessRequest := func() int64 {
+				clientTrace := &httptrace.ClientTrace{
+					GotConn: func(info httptrace.GotConnInfo) {
+						if info.WasIdle {
+							atomic.AddInt32(&idleUsed, 1)
+						}
+						if info.Reused {
+							atomic.AddInt32(&reUsed, 1)
+						}
+					},
+					WroteRequest: func(info httptrace.WroteRequestInfo) {
+						atomic.AddInt32(&numRequests, 1)
+					},
+					GotFirstResponseByte: func() {
+						atomic.AddInt32(&numResponses, 1)
+					},
+				}
+				traceCtx := httptrace.WithClientTrace(context.Background(), clientTrace)
 				numErr := 0
 				var cfError = &models.CfError{}
 				anErr := cfc.Login()
@@ -180,7 +207,7 @@ var _ = Describe("Cf client App", func() {
 					GinkgoWriter.Printf(" Error: %+v\n", anErr)
 					numErr += 1
 				}
-				_, anErr = cfc.GetAppAndProcesses("test-app-id")
+				_, anErr = cfc.GetCtxClient().GetAppAndProcesses(traceCtx, "test-app-id")
 
 				if anErr != nil && !errors.As(anErr, &cfError) {
 					GinkgoWriter.Printf(" Error: %+v\n", anErr)
@@ -196,8 +223,8 @@ var _ = Describe("Cf client App", func() {
 				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
 					RoundRobinWithMultiple(
 						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
 						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
 						RespondWith(http.StatusOK, LoadFile("testdata/app_processes.json"), http.Header{"Content-Type": []string{"application/json"}}),
 						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 					))
@@ -207,7 +234,6 @@ var _ = Describe("Cf client App", func() {
 						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
-						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 						RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
 						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
 					))
@@ -221,11 +247,11 @@ var _ = Describe("Cf client App", func() {
 				var numErrors int64 = 0
 
 				wg := sync.WaitGroup{}
-				for i := 0; i < 10; i++ {
+				for i := 0; i < numberConcurrentUsers; i++ {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						for i := 0; i < 10; i++ {
+						for i := 0; i < numberSequentialPerUser; i++ {
 							atomic.AddInt64(&numErrors, doAppProcessRequest())
 						}
 					}()
@@ -234,17 +260,32 @@ var _ = Describe("Cf client App", func() {
 
 				GinkgoWriter.Printf("\n# CC states left\n")
 				for key, value := range ccWatcher.GetStates() {
-					GinkgoWriter.Printf("\t%s - %d\n", key, value)
+					GinkgoWriter.Printf("\t%s:\t%d\n", key, value)
 				}
 
 				GinkgoWriter.Printf("\n# login states left\n")
 				for key, value := range loginWatcher.GetStates() {
-					GinkgoWriter.Printf("\t%s - %d\n", key, value)
+					GinkgoWriter.Printf("\t%s:\t%d\n", key, value)
 				}
 				Eventually(ccWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
 				Eventually(loginWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
-				Expect(ccWatcher.MaxOpenConnections()).To(BeNumerically("<", 40))
-				Expect(numErrors).To(Equal(int64(0)))
+
+				GinkgoWriter.Printf("\n# Client trace stats\n")
+				GinkgoWriter.Printf("\tidle pool connections used:\t%d\n", atomic.LoadInt32(&idleUsed))
+				GinkgoWriter.Printf("\tconnections re-used:\t\t%d\n", atomic.LoadInt32(&reUsed))
+				GinkgoWriter.Printf("\tnumber of requests:\t\t\t%d\n", atomic.LoadInt32(&numRequests))
+				GinkgoWriter.Printf("\tnumber of responses:\t\t\t%d\n", atomic.LoadInt32(&numResponses))
+
+				//Each sequence is
+				// - a login to the login server
+				// - 2 parallel requests to the api server.
+				numberOfConcurrentRequests := numberConcurrentUsers * 2
+				numberOfRetriedRequests := (numberConcurrentUsers * numberSequentialPerUser) / 5
+				Expect(ccWatcher.MaxOpenConnections()).To(BeNumerically("<=", numberOfConcurrentRequests+numberOfRetriedRequests), "maximum number of api connections in play at one time")
+				Expect(loginWatcher.MaxOpenConnections()).To(BeNumerically("<=", 2*numberConcurrentUsers), "number of login connections open at one time")
+				Expect(numErrors).To(Equal(int64(0)), "Number of errors received while under stress")
+				//There are 2 different servers so there has to be 2 new and unused connections
+				Expect(reUsed).To(BeNumerically(">=", numRequests-2), "Number of re-used connections")
 			})
 		})
 	})

@@ -119,7 +119,7 @@ func (r AuthenticatedClient) SendRequest(ctx context.Context, req *http.Request)
 	return r.Retriever.SendRequest(ctx, req)
 }
 
-func (c *CtxClient) SendRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
+func (c *CtxClient) SendRequest(_ context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := c.retryClient.Do(req)
 	if err != nil {
 		return resp, err

@@ -18,6 +18,10 @@ func NewMockServer() *MockServer {
 	return &MockServer{ghttp.NewServer()}
 }
 
+func NewMockTlsServer() *MockServer {
+	return &MockServer{ghttp.NewTLSServer()}
+}
+
 func (m *MockServer) Add() *AddMock {
 	return &AddMock{m}
 }

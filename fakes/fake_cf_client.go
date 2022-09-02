@@ -48,6 +48,16 @@ type FakeCFClient struct {
 		result1 cf.Processes
 		result2 error
 	}
+	GetCtxClientStub        func() cf.ContextClient
+	getCtxClientMutex       sync.RWMutex
+	getCtxClientArgsForCall []struct {
+	}
+	getCtxClientReturns struct {
+		result1 cf.ContextClient
+	}
+	getCtxClientReturnsOnCall map[int]struct {
+		result1 cf.ContextClient
+	}
 	GetEndpointsStub        func() (cf.Endpoints, error)
 	getEndpointsMutex       sync.RWMutex
 	getEndpointsArgsForCall []struct {
@@ -368,6 +378,59 @@ func (fake *FakeCFClient) GetAppProcessesReturnsOnCall(i int, result1 cf.Process
 		result1 cf.Processes
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetCtxClient() cf.ContextClient {
+	fake.getCtxClientMutex.Lock()
+	ret, specificReturn := fake.getCtxClientReturnsOnCall[len(fake.getCtxClientArgsForCall)]
+	fake.getCtxClientArgsForCall = append(fake.getCtxClientArgsForCall, struct {
+	}{})
+	stub := fake.GetCtxClientStub
+	fakeReturns := fake.getCtxClientReturns
+	fake.recordInvocation("GetCtxClient", []interface{}{})
+	fake.getCtxClientMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeCFClient) GetCtxClientCallCount() int {
+	fake.getCtxClientMutex.RLock()
+	defer fake.getCtxClientMutex.RUnlock()
+	return len(fake.getCtxClientArgsForCall)
+}
+
+func (fake *FakeCFClient) GetCtxClientCalls(stub func() cf.ContextClient) {
+	fake.getCtxClientMutex.Lock()
+	defer fake.getCtxClientMutex.Unlock()
+	fake.GetCtxClientStub = stub
+}
+
+func (fake *FakeCFClient) GetCtxClientReturns(result1 cf.ContextClient) {
+	fake.getCtxClientMutex.Lock()
+	defer fake.getCtxClientMutex.Unlock()
+	fake.GetCtxClientStub = nil
+	fake.getCtxClientReturns = struct {
+		result1 cf.ContextClient
+	}{result1}
+}
+
+func (fake *FakeCFClient) GetCtxClientReturnsOnCall(i int, result1 cf.ContextClient) {
+	fake.getCtxClientMutex.Lock()
+	defer fake.getCtxClientMutex.Unlock()
+	fake.GetCtxClientStub = nil
+	if fake.getCtxClientReturnsOnCall == nil {
+		fake.getCtxClientReturnsOnCall = make(map[int]struct {
+			result1 cf.ContextClient
+		})
+	}
+	fake.getCtxClientReturnsOnCall[i] = struct {
+		result1 cf.ContextClient
+	}{result1}
 }
 
 func (fake *FakeCFClient) GetEndpoints() (cf.Endpoints, error) {
@@ -984,6 +1047,8 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getAppAndProcessesMutex.RUnlock()
 	fake.getAppProcessesMutex.RLock()
 	defer fake.getAppProcessesMutex.RUnlock()
+	fake.getCtxClientMutex.RLock()
+	defer fake.getCtxClientMutex.RUnlock()
 	fake.getEndpointsMutex.RLock()
 	defer fake.getEndpointsMutex.RUnlock()
 	fake.getServiceInstanceMutex.RLock()

@@ -37,7 +37,7 @@ type (
 		Data SpaceData `json:"data"`
 	}
 
-	//Processes the processes information for an App from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#processes
+	//Process information for an App from cf for full version look at https://v3-apidocs.cloudfoundry.org/version/3.122.0/index.html#processes
 	Process struct {
 		Guid       string    `json:"guid"`
 		Type       string    `json:"type"`

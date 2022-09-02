@@ -85,7 +85,7 @@ func (c *CtxClient) getUserScope(ctx context.Context, userToken string) ([]strin
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		c.logger.Error("Failed to get user scope", nil, lager.Data{"userScopeEndpoint": userScopeEndpoint, "statusCode": resp.StatusCode})
 		return nil, fmt.Errorf("Failed to get user scope, statusCode : %v", resp.StatusCode)
@@ -122,7 +122,7 @@ func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, er
 		c.logger.Error("Failed to get user info, request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusUnauthorized {
 		c.logger.Error("Failed to get user info, token invalid", nil, lager.Data{"userInfoEndpoint": userInfoEndpoint, "statusCode": resp.StatusCode})
 		return "", ErrUnauthrorized
