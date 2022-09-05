@@ -250,7 +250,13 @@ func (c *CtxClient) GetTokens(ctx context.Context) (Tokens, error) {
 }
 
 func (c *CtxClient) isTokenToBeExpired() bool {
-	return c.clk.Now().Sub(c.getToken().grantTime) > (time.Duration(c.getToken().ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
+	token := c.getToken()
+	if token != nil {
+		grantTime := token.grantTime
+		return c.clk.Now().Sub(grantTime) > (time.Duration(token.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
+	} else {
+		return true
+	}
 }
 
 func (c *CtxClient) getToken() *Tokens {

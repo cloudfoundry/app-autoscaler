@@ -72,12 +72,12 @@ func (c *CtxClient) GetAppAndProcesses(ctx context.Context, appID Guid) (*AppAnd
 	var processes Processes
 	var errApp, errProc error
 	go func() {
+		defer wg.Done()
 		app, errApp = c.GetApp(ctx, appID)
-		wg.Done()
 	}()
 	go func() {
+		defer wg.Done()
 		processes, errProc = c.GetAppProcesses(ctx, appID, ProcessTypeWeb)
-		wg.Done()
 	}()
 	wg.Wait()
 	if errApp != nil {

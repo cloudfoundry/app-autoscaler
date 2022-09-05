@@ -93,29 +93,6 @@ var _ = Describe("Cf client Retriever", func() {
 				})
 			})
 
-			When("1000 requests are send then we dont loose connections", func() {
-				BeforeEach(func() {
-					fakeCC.RouteToHandler("GET", regexp.MustCompile(`^/v3/some/url$`),
-						RoundRobinWithMultiple(
-							RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
-							RespondWith(http.StatusOK, LoadFile("testdata/app.json"), http.Header{"Content-Type": []string{"application/json"}}),
-							RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
-							RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
-						))
-				})
-
-				It("should return success", func() {
-					watcher := ConnectionWatcher{wrap: fakeCC.HTTPTestServer.Config.ConnState}
-					fakeCC.HTTPTestServer.Config.ConnState = watcher.OnStateChange
-					for i := 0; i < 1000; i++ {
-						_, _ = cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Get(context.Background(), "/v3/some/url")
-						//Expect(err).NotTo(HaveOccurred())
-						//Expect(app).ToNot(BeNil())
-					}
-
-				})
-			})
-
 			When("cloud controller is not reachable", func() {
 				BeforeEach(func() {
 					fakeCC.Close()
