@@ -15,7 +15,10 @@ type MockServer struct {
 }
 
 func NewMockServer() *MockServer {
-	return &MockServer{ghttp.NewServer()}
+	return NewMockWithServer(ghttp.NewServer())
+}
+func NewMockWithServer(server *ghttp.Server) *MockServer {
+	return &MockServer{server}
 }
 
 func NewMockTlsServer() *MockServer {

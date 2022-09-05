@@ -11,7 +11,9 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/hashicorp/go-retryablehttp"
 
@@ -33,6 +35,7 @@ type (
 	Tokens struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int64  `json:"expires_in"`
+		grantTime   time.Time
 	}
 
 	IntrospectionResponse struct {
@@ -98,13 +101,12 @@ type (
 		logger      lager.Logger
 		conf        *Config
 		clk         clock.Clock
-		tokens      Tokens
+		tokens      *Tokens
 		endpoints   *Lazy[Endpoints]
 		loginForm   url.Values
 		authHeader  string
 		Client      *http.Client
 		lock        *sync.Mutex
-		grantTime   time.Time
 		retryClient *http.Client
 	}
 )
@@ -198,12 +200,15 @@ func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *
 		return err
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&c.tokens)
+	tokens := &Tokens{}
+	err = json.NewDecoder(resp.Body).Decode(&tokens)
+	tokens.grantTime = time.Now()
+	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokens)), unsafe.Pointer(tokens))
+
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-decode", err)
 		return err
 	}
-	c.grantTime = time.Now()
 
 	return nil
 }
@@ -224,7 +229,7 @@ func (c *CtxClient) RefreshAuthToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return TokenTypeBearer + " " + c.tokens.AccessToken, nil
+	return TokenTypeBearer + " " + c.getToken().AccessToken, nil
 }
 
 func (c *Client) GetTokens() (Tokens, error) {
@@ -238,14 +243,18 @@ func (c *CtxClient) GetTokens(ctx context.Context) (Tokens, error) {
 	if c.isTokenToBeExpired() {
 		_, err := c.RefreshAuthToken(ctx)
 		if err != nil {
-			return c.tokens, err
+			return *c.getToken(), err
 		}
 	}
-	return c.tokens, nil
+	return *c.getToken(), nil
 }
 
 func (c *CtxClient) isTokenToBeExpired() bool {
-	return c.clk.Now().Sub(c.grantTime) > (time.Duration(c.tokens.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
+	return c.clk.Now().Sub(c.getToken().grantTime) > (time.Duration(c.getToken().ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
+}
+
+func (c *CtxClient) getToken() *Tokens {
+	return (*Tokens)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokens))))
 }
 
 func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {

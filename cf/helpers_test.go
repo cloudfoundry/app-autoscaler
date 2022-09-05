@@ -27,7 +27,9 @@ func (cw *ConnectionWatcher) OnStateChange(conn net.Conn, state http.ConnState) 
 	default:
 		cw.Add(conn, state)
 	}
-	cw.wrap(conn, state)
+	if cw.wrap != nil {
+		cw.wrap(conn, state)
+	}
 }
 
 // Count returns the number of connections at the time

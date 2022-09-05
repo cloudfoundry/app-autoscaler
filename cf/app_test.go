@@ -179,6 +179,8 @@ var _ = Describe("Cf client App", func() {
 			numResponses := int32(0)
 			numberConcurrentUsers := 100
 			numberSequentialPerUser := 10
+			var ccWatcher *ConnectionWatcher
+			var loginWatcher *ConnectionWatcher
 			/*
 			 * Note there is a login that goes to a separate host then 2 concurrent requests to the api server.
 			 */
@@ -216,9 +218,26 @@ var _ = Describe("Cf client App", func() {
 				return int64(numErr)
 			}
 			BeforeEach(func() {
+
+				fakeCC.Close()
+				server := NewUnstartedServer()
+				fakeCC = NewMockWithServer(server)
+				ccWatcher = NewConnectionWatcher(fakeCC.HTTPTestServer.Config.ConnState)
+				fakeCC.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
+				fakeCC.Start()
+
+				fakeLoginServer.Close()
+				server = NewUnstartedServer()
+				fakeLoginServer = NewMockWithServer(server)
+				loginWatcher = NewConnectionWatcher(fakeLoginServer.HTTPTestServer.Config.ConnState)
+				fakeLoginServer.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
+				fakeLoginServer.Start()
+				fakeLoginUrl = fakeLoginServer.URL()
+
 				// quiet logger
 				logger = lager.NewLogger("cf")
 				setCfcClient(2)
+				login()
 
 				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
 					RoundRobinWithMultiple(
@@ -239,10 +258,6 @@ var _ = Describe("Cf client App", func() {
 					))
 			})
 			It("Should not leak file handles or cause errors", func() {
-				ccWatcher := NewConnectionWatcher(fakeCC.HTTPTestServer.Config.ConnState)
-				loginWatcher := NewConnectionWatcher(fakeLoginServer.HTTPTestServer.Config.ConnState)
-				fakeCC.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
-				fakeLoginServer.HTTPTestServer.Config.ConnState = loginWatcher.OnStateChange
 
 				var numErrors int64 = 0
 
@@ -285,7 +300,7 @@ var _ = Describe("Cf client App", func() {
 				Expect(loginWatcher.MaxOpenConnections()).To(BeNumerically("<=", 2*numberConcurrentUsers), "number of login connections open at one time")
 				Expect(numErrors).To(Equal(int64(0)), "Number of errors received while under stress")
 				//There are 2 different servers so there has to be 2 new and unused connections
-				Expect(reUsed).To(BeNumerically(">=", numRequests-2), "Number of re-used connections")
+				Expect(reUsed).To(BeNumerically(">=", numberConcurrentUsers/2), "Number of re-used connections")
 			})
 		})
 	})
