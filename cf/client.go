@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -23,11 +22,11 @@ import (
 )
 
 const (
-	PathCFAuth                                   = "/oauth/token"
-	PathIntrospectToken                          = "/introspect"
-	GrantTypeClientCredentials                   = "client_credentials"
-	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
-	defaultPerPage                               = 100
+	PathCFAuth                     = "/oauth/token"
+	PathIntrospectToken            = "/introspect"
+	GrantTypeClientCredentials     = "client_credentials"
+	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
+	defaultPerPage                 = 100
 )
 
 type (
@@ -35,7 +34,11 @@ type (
 	Tokens struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int64  `json:"expires_in"`
-		grantTime   time.Time
+	}
+
+	TokensInfo struct {
+		*Tokens
+		grantTime time.Time
 	}
 
 	IntrospectionResponse struct {
@@ -101,12 +104,11 @@ type (
 		logger      lager.Logger
 		conf        *Config
 		clk         clock.Clock
-		tokens      *Tokens
+		tokenInfo   *TokensInfo
 		endpoints   *Lazy[Endpoints]
 		loginForm   url.Values
 		authHeader  string
 		Client      *http.Client
-		lock        *sync.Mutex
 		retryClient *http.Client
 	}
 )
@@ -145,7 +147,6 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	)
 	c.Client.Transport = DrainingTransport{c.Client.Transport}
 	c.retryClient = createRetryClient(conf, c.Client, logger)
-	c.lock = &sync.Mutex{}
 	c.endpoints = NewLazy(c.CtxClient.GetEndpoints)
 	if c.conf.PerPage == 0 {
 		c.conf.PerPage = defaultPerPage
@@ -175,13 +176,30 @@ func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *
 	if err != nil {
 		return err
 	}
-	tokenUrl := endpoints.Uaa.Url + PathCFAuth
+	tokens, err := c.doRequestCredGrant(ctx, formData, endpoints.Uaa.Url)
+	if err != nil {
+		return err
+	}
+	tokenInfo := &TokensInfo{&tokens, c.clk.Now()}
+	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokenInfo)), unsafe.Pointer(tokenInfo))
+
+	if err != nil {
+		c.logger.Error("request-client-credential-grant-decode", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *CtxClient) doRequestCredGrant(ctx context.Context, formData *url.Values, credUrl string) (Tokens, error) {
+	tokens := Tokens{}
+	tokenUrl := credUrl + PathCFAuth
 	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": tokenUrl, "form": *formData})
 
 	req, err := http.NewRequestWithContext(ctx, "POST", tokenUrl, strings.NewReader(formData.Encode()))
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-new-request", err)
-		return err
+		return tokens, err
 	}
 	req.Header.Set("Authorization", c.authHeader)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
@@ -190,27 +208,22 @@ func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *
 	resp, err = c.Client.Do(req)
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-do-request", err)
-		return err
+		return tokens, err
 	}
 
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("request client credential grant failed: %s [%d] %s", tokenUrl, resp.StatusCode, resp.Status)
 		c.logger.Error("request-client-credential-grant-response", err)
-		return err
+		return tokens, err
 	}
 
-	tokens := &Tokens{}
 	err = json.NewDecoder(resp.Body).Decode(&tokens)
-	tokens.grantTime = time.Now()
-	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokens)), unsafe.Pointer(tokens))
-
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-decode", err)
-		return err
+		return tokens, err
 	}
-
-	return nil
+	return tokens, nil
 }
 
 func (c *Client) Login() error {
@@ -237,16 +250,18 @@ func (c *Client) GetTokens() (Tokens, error) {
 }
 
 func (c *CtxClient) GetTokens(ctx context.Context) (Tokens, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	if c.isTokenToBeExpired() {
 		_, err := c.RefreshAuthToken(ctx)
 		if err != nil {
-			return *c.getToken(), err
+			tokens := c.getToken()
+			if tokens != nil {
+				return *tokens.Tokens, err
+			} else {
+				return Tokens{}, err
+			}
 		}
 	}
-	return *c.getToken(), nil
+	return *c.getToken().Tokens, nil
 }
 
 func (c *CtxClient) isTokenToBeExpired() bool {
@@ -259,8 +274,8 @@ func (c *CtxClient) isTokenToBeExpired() bool {
 	}
 }
 
-func (c *CtxClient) getToken() *Tokens {
-	return (*Tokens)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokens))))
+func (c *CtxClient) getToken() *TokensInfo {
+	return (*TokensInfo)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokenInfo))))
 }
 
 func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {

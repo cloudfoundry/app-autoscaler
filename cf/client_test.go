@@ -264,12 +264,13 @@ var _ = Describe("Client", func() {
 
 			Context("when refresh fails", func() {
 				BeforeEach(func() {
-					fakeCC.RouteToHandler("GET", "/", ghttp.RespondWith(200, ""))
+					fakeCC.Add().Info(fakeLoginServer.URL())
 					fakeLoginServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
 					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
 				})
 
 				It("returns existing tokens", func() {
+					Expect(err).To(HaveOccurred())
 					Expect(tokens.AccessToken).To(Equal("test-access-token"))
 					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
 				})
