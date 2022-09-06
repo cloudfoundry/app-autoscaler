@@ -13,7 +13,7 @@ func RespondWithMultiple(handlers ...http.HandlerFunc) http.HandlerFunc {
 	var responseNumber int32 = 0
 	if len(handlers) > 0 {
 		return func(w http.ResponseWriter, req *http.Request) {
-			responseNum := atomic.LoadInt32(&responseNumber) % int32(len(handlers))
+			responseNum := atomic.LoadInt32(&responseNumber)
 			handlerNumber := Min(responseNum, int32(len(handlers)-1))
 			handlers[handlerNumber](w, req)
 			atomic.AddInt32(&responseNumber, 1)
