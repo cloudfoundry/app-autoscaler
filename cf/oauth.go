@@ -1,6 +1,7 @@
 package cf
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,17 +21,21 @@ var (
 )
 
 func (c *Client) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error) {
-	userId, err := c.getUserId(userToken)
+	return c.CtxClient.IsUserSpaceDeveloper(context.Background(), userToken, appId)
+}
+
+func (c *CtxClient) IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error) {
+	userId, err := c.getUserId(ctx, userToken)
 	if err != nil {
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	spaceId, err := c.getSpaceId(appId)
+	spaceId, err := c.getSpaceId(ctx, appId)
 	if err != nil {
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	roles, err := c.GetSpaceDeveloperRoles(spaceId, userId)
+	roles, err := c.GetSpaceDeveloperRoles(ctx, spaceId, userId)
 	if err != nil {
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
@@ -43,7 +48,10 @@ func (c *Client) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error
 }
 
 func (c *Client) IsUserAdmin(userToken string) (bool, error) {
-	scopes, err := c.getUserScope(userToken)
+	return c.CtxClient.IsUserAdmin(context.Background(), userToken)
+}
+func (c *CtxClient) IsUserAdmin(ctx context.Context, userToken string) (bool, error) {
+	scopes, err := c.getUserScope(ctx, userToken)
 	if err != nil {
 		return false, err
 	}
@@ -58,26 +66,26 @@ func (c *Client) IsUserAdmin(userToken string) (bool, error) {
 	return false, nil
 }
 
-func (c *Client) getUserScope(userToken string) ([]string, error) {
-	userScopeEndpoint, err := c.getUserScopeEndpoint(userToken)
+func (c *CtxClient) getUserScope(ctx context.Context, userToken string) ([]string, error) {
+	userScopeEndpoint, err := c.getUserScopeEndpoint(ctx, userToken)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", userScopeEndpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", userScopeEndpoint, nil)
 	if err != nil {
 		c.logger.Error("Failed to create getuserscope request", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
 		return nil, err
 	}
 	req.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		c.logger.Error("Failed to getuserscope, request failed", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		c.logger.Error("Failed to get user scope", nil, lager.Data{"userScopeEndpoint": userScopeEndpoint, "statusCode": resp.StatusCode})
 		return nil, fmt.Errorf("Failed to get user scope, statusCode : %v", resp.StatusCode)
@@ -94,14 +102,14 @@ func (c *Client) getUserScope(userToken string) ([]string, error) {
 	return userScope.Scope, nil
 }
 
-func (c *Client) getUserId(userToken string) (UserId, error) {
-	endpoints, err := c.GetEndpoints()
+func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, error) {
+	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
 		return "", err
 	}
 	userInfoEndpoint := endpoints.Uaa.Url + "/userinfo"
 
-	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, userInfoEndpoint, nil)
 	if err != nil {
 		c.logger.Error("Failed to get user info, create request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
@@ -109,12 +117,12 @@ func (c *Client) getUserId(userToken string) (UserId, error) {
 	req.Header.Set("Authorization", userToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		c.logger.Error("Failed to get user info, request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusUnauthorized {
 		c.logger.Error("Failed to get user info, token invalid", nil, lager.Data{"userInfoEndpoint": userInfoEndpoint, "statusCode": resp.StatusCode})
 		return "", ErrUnauthrorized
@@ -135,8 +143,8 @@ func (c *Client) getUserId(userToken string) (UserId, error) {
 	return userInfo.UserId, nil
 }
 
-func (c *Client) getSpaceId(appId Guid) (SpaceId, error) {
-	app, err := c.GetApp(appId)
+func (c *CtxClient) getSpaceId(ctx context.Context, appId Guid) (SpaceId, error) {
+	app, err := c.GetApp(ctx, appId)
 	if err != nil {
 		return "", fmt.Errorf("getSpaceId failed: %w", err)
 	}
@@ -150,11 +158,11 @@ func (c *Client) getSpaceId(appId Guid) (SpaceId, error) {
 	return spaceId, nil
 }
 
-func (c *Client) getUserScopeEndpoint(userToken string) (string, error) {
+func (c *CtxClient) getUserScopeEndpoint(ctx context.Context, userToken string) (string, error) {
 	parameters := url.Values{}
 	parameters.Add("token", strings.Split(userToken, " ")[1])
 
-	endpoints, err := c.GetEndpoints()
+	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
 		return "", err
 	}

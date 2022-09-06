@@ -21,6 +21,7 @@ var (
 	logger          lager.Logger
 	fclock          *fakeclock.FakeClock
 	fakeLoginUrl    string
+	useTlsMocks     bool
 )
 
 func setCfcClient(maxRetries int) {
@@ -30,6 +31,9 @@ func setCfcClient(maxRetries int) {
 	conf.API = fakeCC.URL()
 	conf.MaxRetries = maxRetries
 	conf.MaxRetryWaitMs = 1
+	conf.IdleTimeoutMs = 50
+	conf.MaxIdleConnsPerHost = maxIdleConnsPerHost
+	conf.SkipSSLValidation = true
 	fclock = fakeclock.NewFakeClock(time.Now())
 	cfc = cf.NewCFClient(conf, logger, fclock)
 }
@@ -42,8 +46,14 @@ func login() {
 
 var _ = BeforeEach(func() {
 	err = nil
-	fakeCC = NewMockServer()
-	fakeLoginServer = NewMockServer()
+	if useTlsMocks {
+		fakeCC = NewMockTlsServer()
+		fakeLoginServer = NewMockTlsServer()
+	} else {
+		fakeCC = NewMockServer()
+		fakeLoginServer = NewMockServer()
+	}
+
 	logger = lager.NewLogger("cf")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 	fakeLoginUrl = fakeLoginServer.URL()

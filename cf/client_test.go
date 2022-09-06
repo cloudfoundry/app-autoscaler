@@ -3,6 +3,7 @@ package cf_test
 import (
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -82,8 +83,44 @@ var _ = Describe("Client", func() {
 		})
 	})
 
+	Context("Thread safety", func() {
+		Context("when there are several threads calling refresh at the same time", func() {
+			//var tokens Tokens
+			BeforeEach(func() {
+				fakeCC.Add().Info(fakeLoginServer.URL())
+				fakeLoginServer.RouteToHandler(http.MethodPost, PathCFAuth,
+					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+						AccessToken: "test-access-token",
+						ExpiresIn:   12000,
+					}),
+				)
+			})
+
+			It("returns the correct tokens", func() {
+				Expect(err).ToNot(HaveOccurred())
+				wg := sync.WaitGroup{}
+				mu := sync.RWMutex{}
+				mu.Lock()
+				for i := 0; i < 100; i++ {
+					wg.Add(1)
+					go func() {
+						mu.RLock()
+						defer mu.RUnlock()
+						_, innerErr := cfc.RefreshAuthToken()
+						Expect(innerErr).ToNot(HaveOccurred())
+						wg.Done()
+					}()
+				}
+				mu.Unlock()
+				wg.Wait()
+				Expect(fakeLoginServer.Count().Requests(PathCFAuth)).To(Equal(1))
+			})
+
+		})
+	})
+
 	Describe("RefreshAuthToken", func() {
-		var authToken string
+		var authToken Tokens
 
 		JustBeforeEach(func() {
 			authToken, err = cfc.RefreshAuthToken()
@@ -111,7 +148,10 @@ var _ = Describe("Client", func() {
 
 				It("returns valid token", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(authToken).To(Equal("Bearer test-access-token"))
+					Expect(authToken).To(Equal(Tokens{
+						AccessToken: "test-access-token",
+						ExpiresIn:   12000,
+					}))
 					tokens, err = cfc.GetTokens()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(tokens.AccessToken).To(Equal("test-access-token"))
@@ -166,6 +206,7 @@ var _ = Describe("Client", func() {
 							ghttp.RespondWith(401, ""),
 						),
 					)
+					cfc.InvalidateToken()
 				})
 
 				It("should error", func() {
@@ -192,7 +233,10 @@ var _ = Describe("Client", func() {
 				})
 				It("returns valid tokens", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(authToken).To(Equal("Bearer test-access-token"))
+					Expect(authToken).To(Equal(Tokens{
+						AccessToken: "test-access-token",
+						ExpiresIn:   12000,
+					}))
 					tokens, err := cfc.GetTokens()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(tokens.AccessToken).To(Equal("test-access-token"))
@@ -264,12 +308,13 @@ var _ = Describe("Client", func() {
 
 			Context("when refresh fails", func() {
 				BeforeEach(func() {
-					fakeCC.RouteToHandler("GET", "/", ghttp.RespondWith(200, ""))
+					fakeCC.Add().Info(fakeLoginServer.URL())
 					fakeLoginServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
 					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
 				})
 
 				It("returns existing tokens", func() {
+					Expect(err).To(HaveOccurred())
 					Expect(tokens.AccessToken).To(Equal("test-access-token"))
 					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
 				})
