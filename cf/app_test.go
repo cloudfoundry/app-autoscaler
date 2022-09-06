@@ -64,24 +64,12 @@ var _ = Describe("Cf client App", func() {
 
 		When("get app & process return ok", func() {
 			BeforeEach(func() {
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
-					RoundRobinWithMultiple(
-						RespondWith(http.StatusOK, appProcessesJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
-						RespondWith(http.StatusOK, appProcessesJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWith(http.StatusOK, appProcessesJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
-					))
-
-				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id",
-					RoundRobinWithMultiple(
-						RespondWith(http.StatusOK, appTestJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWith(http.StatusOK, appTestJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
-						RespondWith(http.StatusOK, appTestJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWith(http.StatusOK, appTestJson, http.Header{"Content-Type": []string{"application/json"}}),
-						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
-					))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes", CombineHandlers(
+					RespondWith(http.StatusOK, appProcessesJson, http.Header{"Content-Type": []string{"application/json"}}),
+				))
+				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id", CombineHandlers(
+					RespondWith(http.StatusOK, appTestJson, http.Header{"Content-Type": []string{"application/json"}}),
+				))
 			})
 
 			It("returns correct state", func() {

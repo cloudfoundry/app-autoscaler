@@ -108,6 +108,10 @@ type FakeCFClient struct {
 		result1 cf.Tokens
 		result2 error
 	}
+	InvalidateTokenStub        func()
+	invalidateTokenMutex       sync.RWMutex
+	invalidateTokenArgsForCall []struct {
+	}
 	IsTokenAuthorizedStub        func(string, string) (bool, error)
 	isTokenAuthorizedMutex       sync.RWMutex
 	isTokenAuthorizedArgsForCall []struct {
@@ -159,16 +163,16 @@ type FakeCFClient struct {
 	loginReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RefreshAuthTokenStub        func() (string, error)
+	RefreshAuthTokenStub        func() (cf.Tokens, error)
 	refreshAuthTokenMutex       sync.RWMutex
 	refreshAuthTokenArgsForCall []struct {
 	}
 	refreshAuthTokenReturns struct {
-		result1 string
+		result1 cf.Tokens
 		result2 error
 	}
 	refreshAuthTokenReturnsOnCall map[int]struct {
-		result1 string
+		result1 cf.Tokens
 		result2 error
 	}
 	ScaleAppWebProcessStub        func(cf.Guid, int) error
@@ -673,6 +677,30 @@ func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens, resul
 	}{result1, result2}
 }
 
+func (fake *FakeCFClient) InvalidateToken() {
+	fake.invalidateTokenMutex.Lock()
+	fake.invalidateTokenArgsForCall = append(fake.invalidateTokenArgsForCall, struct {
+	}{})
+	stub := fake.InvalidateTokenStub
+	fake.recordInvocation("InvalidateToken", []interface{}{})
+	fake.invalidateTokenMutex.Unlock()
+	if stub != nil {
+		fake.InvalidateTokenStub()
+	}
+}
+
+func (fake *FakeCFClient) InvalidateTokenCallCount() int {
+	fake.invalidateTokenMutex.RLock()
+	defer fake.invalidateTokenMutex.RUnlock()
+	return len(fake.invalidateTokenArgsForCall)
+}
+
+func (fake *FakeCFClient) InvalidateTokenCalls(stub func()) {
+	fake.invalidateTokenMutex.Lock()
+	defer fake.invalidateTokenMutex.Unlock()
+	fake.InvalidateTokenStub = stub
+}
+
 func (fake *FakeCFClient) IsTokenAuthorized(arg1 string, arg2 string) (bool, error) {
 	fake.isTokenAuthorizedMutex.Lock()
 	ret, specificReturn := fake.isTokenAuthorizedReturnsOnCall[len(fake.isTokenAuthorizedArgsForCall)]
@@ -920,7 +948,7 @@ func (fake *FakeCFClient) LoginReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCFClient) RefreshAuthToken() (string, error) {
+func (fake *FakeCFClient) RefreshAuthToken() (cf.Tokens, error) {
 	fake.refreshAuthTokenMutex.Lock()
 	ret, specificReturn := fake.refreshAuthTokenReturnsOnCall[len(fake.refreshAuthTokenArgsForCall)]
 	fake.refreshAuthTokenArgsForCall = append(fake.refreshAuthTokenArgsForCall, struct {
@@ -944,34 +972,34 @@ func (fake *FakeCFClient) RefreshAuthTokenCallCount() int {
 	return len(fake.refreshAuthTokenArgsForCall)
 }
 
-func (fake *FakeCFClient) RefreshAuthTokenCalls(stub func() (string, error)) {
+func (fake *FakeCFClient) RefreshAuthTokenCalls(stub func() (cf.Tokens, error)) {
 	fake.refreshAuthTokenMutex.Lock()
 	defer fake.refreshAuthTokenMutex.Unlock()
 	fake.RefreshAuthTokenStub = stub
 }
 
-func (fake *FakeCFClient) RefreshAuthTokenReturns(result1 string, result2 error) {
+func (fake *FakeCFClient) RefreshAuthTokenReturns(result1 cf.Tokens, result2 error) {
 	fake.refreshAuthTokenMutex.Lock()
 	defer fake.refreshAuthTokenMutex.Unlock()
 	fake.RefreshAuthTokenStub = nil
 	fake.refreshAuthTokenReturns = struct {
-		result1 string
+		result1 cf.Tokens
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) RefreshAuthTokenReturnsOnCall(i int, result1 string, result2 error) {
+func (fake *FakeCFClient) RefreshAuthTokenReturnsOnCall(i int, result1 cf.Tokens, result2 error) {
 	fake.refreshAuthTokenMutex.Lock()
 	defer fake.refreshAuthTokenMutex.Unlock()
 	fake.RefreshAuthTokenStub = nil
 	if fake.refreshAuthTokenReturnsOnCall == nil {
 		fake.refreshAuthTokenReturnsOnCall = make(map[int]struct {
-			result1 string
+			result1 cf.Tokens
 			result2 error
 		})
 	}
 	fake.refreshAuthTokenReturnsOnCall[i] = struct {
-		result1 string
+		result1 cf.Tokens
 		result2 error
 	}{result1, result2}
 }
@@ -1057,6 +1085,8 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getServicePlanMutex.RUnlock()
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
+	fake.invalidateTokenMutex.RLock()
+	defer fake.invalidateTokenMutex.RUnlock()
 	fake.isTokenAuthorizedMutex.RLock()
 	defer fake.isTokenAuthorizedMutex.RUnlock()
 	fake.isUserAdminMutex.RLock()

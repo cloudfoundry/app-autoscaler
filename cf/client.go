@@ -10,9 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/hashicorp/go-retryablehttp"
 
@@ -37,7 +36,7 @@ type (
 	}
 
 	TokensInfo struct {
-		*Tokens
+		Tokens
 		grantTime time.Time
 	}
 
@@ -49,7 +48,8 @@ type (
 
 	AuthClient interface {
 		Login() error
-		RefreshAuthToken() (string, error)
+		InvalidateToken()
+		RefreshAuthToken() (Tokens, error)
 		GetTokens() (Tokens, error)
 		IsUserAdmin(userToken string) (bool, error)
 		IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error)
@@ -58,7 +58,8 @@ type (
 
 	AuthContextClient interface {
 		Login(ctx context.Context) error
-		RefreshAuthToken(ctx context.Context) (string, error)
+		InvalidateToken()
+		RefreshAuthToken(ctx context.Context) (Tokens, error)
 		GetTokens(ctx context.Context) (Tokens, error)
 		IsUserAdmin(ctx context.Context, userToken string) (bool, error)
 		IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error)
@@ -101,10 +102,13 @@ type (
 	}
 
 	CtxClient struct {
-		logger      lager.Logger
-		conf        *Config
-		clk         clock.Clock
-		tokenInfo   *TokensInfo
+		logger lager.Logger
+		conf   *Config
+		clk    clock.Clock
+
+		tokenInfoMu sync.RWMutex
+		tokenInfo   TokensInfo
+
 		endpoints   *Lazy[Endpoints]
 		loginForm   url.Values
 		authHeader  string
@@ -171,24 +175,29 @@ func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *
 	return retryClient.StandardClient()
 }
 
-func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *url.Values) error {
+func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *url.Values) (Tokens, error) {
+	tokens := Tokens{}
 	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
-		return err
-	}
-	tokens, err := c.doRequestCredGrant(ctx, formData, endpoints.Uaa.Url)
-	if err != nil {
-		return err
-	}
-	tokenInfo := &TokensInfo{&tokens, c.clk.Now()}
-	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokenInfo)), unsafe.Pointer(tokenInfo))
-
-	if err != nil {
-		c.logger.Error("request-client-credential-grant-decode", err)
-		return err
+		return tokens, err
 	}
 
-	return nil
+	c.tokenInfoMu.Lock()
+	defer c.tokenInfoMu.Unlock()
+
+	if !c.tokenInfo.isTokenExpired(c.clk.Now) {
+		return c.tokenInfo.Tokens, nil
+	}
+
+	tokens, err = c.doRequestCredGrant(ctx, formData, endpoints.Uaa.Url)
+	if err != nil {
+		return c.tokenInfo.Tokens, err
+	}
+
+	c.tokenInfo.Tokens = tokens
+	c.tokenInfo.grantTime = c.clk.Now()
+
+	return tokens, nil
 }
 
 func (c *CtxClient) doRequestCredGrant(ctx context.Context, formData *url.Values, credUrl string) (Tokens, error) {
@@ -231,18 +240,25 @@ func (c *Client) Login() error {
 }
 
 func (c *CtxClient) Login(ctx context.Context) error {
-	return c.requestClientCredentialGrant(ctx, &c.loginForm)
+	_, err := c.requestClientCredentialGrant(ctx, &c.loginForm)
+	return err
 }
 
-func (c *Client) RefreshAuthToken() (string, error) {
+func (c *Client) InvalidateToken() {
+	c.CtxClient.InvalidateToken()
+}
+func (c *CtxClient) InvalidateToken() {
+	c.tokenInfoMu.Lock()
+	defer c.tokenInfoMu.Unlock()
+	c.tokenInfo.grantTime = time.Time{}
+}
+
+func (c *Client) RefreshAuthToken() (Tokens, error) {
 	return c.CtxClient.RefreshAuthToken(context.Background())
 }
-func (c *CtxClient) RefreshAuthToken(ctx context.Context) (string, error) {
-	err := c.requestClientCredentialGrant(ctx, &c.loginForm)
-	if err != nil {
-		return "", err
-	}
-	return TokenTypeBearer + " " + c.getToken().AccessToken, nil
+
+func (c *CtxClient) RefreshAuthToken(ctx context.Context) (Tokens, error) {
+	return c.requestClientCredentialGrant(ctx, &c.loginForm)
 }
 
 func (c *Client) GetTokens() (Tokens, error) {
@@ -250,32 +266,27 @@ func (c *Client) GetTokens() (Tokens, error) {
 }
 
 func (c *CtxClient) GetTokens(ctx context.Context) (Tokens, error) {
-	if c.isTokenToBeExpired() {
-		_, err := c.RefreshAuthToken(ctx)
+	tokenInfo := c.getTokenInfo()
+	token := tokenInfo.Tokens
+	var err error
+	if tokenInfo.isTokenExpired(c.clk.Now) {
+		token, err = c.RefreshAuthToken(ctx)
 		if err != nil {
-			tokens := c.getToken()
-			if tokens != nil {
-				return *tokens.Tokens, err
-			} else {
-				return Tokens{}, err
-			}
+			return token, err
 		}
 	}
-	return *c.getToken().Tokens, nil
+	return token, nil
 }
 
-func (c *CtxClient) isTokenToBeExpired() bool {
-	token := c.getToken()
-	if token != nil {
-		grantTime := token.grantTime
-		return c.clk.Now().Sub(grantTime) > (time.Duration(token.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
-	} else {
-		return true
-	}
+func (c *CtxClient) getTokenInfo() TokensInfo {
+	c.tokenInfoMu.RLock()
+	defer c.tokenInfoMu.RUnlock()
+	//Note this is a copy not a pointer
+	return c.tokenInfo
 }
 
-func (c *CtxClient) getToken() *TokensInfo {
-	return (*TokensInfo)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&c.tokenInfo))))
+func (t TokensInfo) isTokenExpired(now func() time.Time) bool {
+	return now().Sub(t.grantTime) > (time.Duration(t.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
 }
 
 func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
