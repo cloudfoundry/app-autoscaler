@@ -16,16 +16,21 @@ func CreateHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
 	}
 	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 	client := cfhttp.NewClient()
+
+	transport := client.Transport.(*http.Transport)
+	transport.DialContext = (&net.Dialer{
+		Timeout: 30 * time.Second,
+	}).DialContext
+	transport.IdleConnTimeout = 5 * time.Second
+	transport.MaxIdleConnsPerHost = 200
+
 	if tlsCerts != nil {
 		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
 		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
 		if err != nil {
 			return nil, err
 		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
-		client.Transport.(*http.Transport).DialContext = (&net.Dialer{
-			Timeout: 30 * time.Second,
-		}).DialContext
+		transport.TLSClientConfig = tlsConfig
 	}
 
 	return client, nil
