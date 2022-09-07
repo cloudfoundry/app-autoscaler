@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
-go 1.18
+go 1.19
 
 replace (
 	code.cloudfoundry.org/cfhttp => github.com/KevinJCross/cfhttp v1.0.1
