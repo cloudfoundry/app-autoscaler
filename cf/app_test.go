@@ -67,7 +67,7 @@ var _ = Describe("Cf client App", func() {
 		server = NewUnstartedServer()
 		fakeLoginServer = NewMockWithServer(server)
 		loginWatcher = NewConnectionWatcher(fakeLoginServer.HTTPTestServer.Config.ConnState)
-		fakeLoginServer.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
+		fakeLoginServer.HTTPTestServer.Config.ConnState = loginWatcher.OnStateChange
 		fakeLoginServer.Start()
 		fakeLoginUrl = fakeLoginServer.URL()
 
