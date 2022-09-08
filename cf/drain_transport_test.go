@@ -53,6 +53,7 @@ func TestRoundTripper(t *testing.T) {
 
 	transport := cf.DrainingTransport{Transport: testT}
 	req, _ := http.NewRequest("GET", "some-url", nil)
+	//nolint:bodyclose
 	resp, _ := transport.RoundTrip(req)
 
 	assert.Equal(t, testT.req, req)

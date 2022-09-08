@@ -112,7 +112,7 @@ var _ = Describe("Cf client Retriever", func() {
 	Describe("ResourceRetriever.Post", func() {
 		When("has an invalid url", func() {
 			It("should return error", func() {
-				app, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Post(context.Background(), "v3/invalid", nil)
+				app, err := cf.ResourceRetriever[*cf.App]{cfc.CtxClient}.Post(context.Background(), "v3/invalid", nil)
 				Expect(app).To(BeNil())
 				var urlErr *url.Error
 				Expect(err).To(HaveOccurred())
@@ -121,7 +121,7 @@ var _ = Describe("Cf client Retriever", func() {
 		})
 		When("passed valid struct", func() {
 			It("should return error", func() {
-				app, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Post(context.Background(), "/v3/invalid", make(chan int))
+				app, err := cf.ResourceRetriever[*cf.App]{cfc.CtxClient}.Post(context.Background(), "/v3/invalid", make(chan int))
 				Expect(app).To(BeNil())
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(MatchRegexp(`failed post:.*`)))
@@ -131,21 +131,26 @@ var _ = Describe("Cf client Retriever", func() {
 			})
 		})
 		When("post is called", func() {
+			type ResultT struct {
+				Result string `json:"result"`
+			}
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("POST", "/v3/post"),
 						VerifyContentType("application/json"),
 						VerifyBody([]byte(`{"name":"monty"}`)),
-						RespondWithJSONEncoded(http.StatusOK, `{}`),
+						RespondWithJSONEncoded(http.StatusOK, ResultT{Result: "Passed"}),
 					),
 				)
 			})
 			It("should return response", func() {
-				_, err := cf.ResourceRetriever[cf.App]{cfc.CtxClient}.Post(context.Background(), "/v3/post", struct {
+
+				result, err := cf.ResourceRetriever[ResultT]{cfc.CtxClient}.Post(context.Background(), "/v3/post", struct {
 					Name string `json:"name"`
 				}{Name: "monty"})
 				Expect(err).ToNot(HaveOccurred())
+				Expect(result).To(Equal(ResultT{Result: "Passed"}))
 			})
 		})
 	})
@@ -283,7 +288,7 @@ var _ = Describe("Cf client Retriever", func() {
 				It("returns correct state", func() {
 					_, err := cf.PagedResourceRetriever[cf.Process]{cfc.CtxClient}.GetAllPages(context.Background(), "/v3/items")
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError(MatchRegexp(`failed getting page 3: failed getting cf.Response\[.*cf.Process\]:.*'UnknownError'.*`)))
+					Expect(err).To(MatchError(MatchRegexp(`failed getting page 3: failed GET-ing cf.Response\[.*cf.Process\]:.*'UnknownError'.*`)))
 				})
 			})
 		})

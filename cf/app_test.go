@@ -2,11 +2,7 @@ package cf_test
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"net/http/httptrace"
-	"sync"
-	"sync/atomic"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -57,6 +53,30 @@ var _ = Describe("Cf client App", func() {
 			})
 		})
 	})
+
+	setupStress := func() (*ConnectionWatcher, *ConnectionWatcher) {
+		var ccWatcher, loginWatcher *ConnectionWatcher
+		fakeCC.Close()
+		server := NewUnstartedServer()
+		fakeCC = NewMockWithServer(server)
+		ccWatcher = NewConnectionWatcher(fakeCC.HTTPTestServer.Config.ConnState)
+		fakeCC.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
+		fakeCC.Start()
+
+		fakeLoginServer.Close()
+		server = NewUnstartedServer()
+		fakeLoginServer = NewMockWithServer(server)
+		loginWatcher = NewConnectionWatcher(fakeLoginServer.HTTPTestServer.Config.ConnState)
+		fakeLoginServer.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
+		fakeLoginServer.Start()
+		fakeLoginUrl = fakeLoginServer.URL()
+
+		// quiet logger
+		logger = lager.NewLogger("cf")
+		setCfcClient(2)
+		login()
+		return ccWatcher, loginWatcher
+	}
 
 	Describe("GetAppAndProcesses", func() {
 
@@ -126,7 +146,7 @@ var _ = Describe("Cf client App", func() {
 			It("should error", func() {
 				appAndProcesses, err := cfc.GetAppAndProcesses("test-app-id")
 				Expect(appAndProcesses).To(BeNil())
-				Expect(err).To(MatchError(MatchRegexp(`get state&instances failed: failed GetAppProcesses 'test-app-id': failed getting page 1: failed getting cf.Response\[.*cf.Process\]:.*'UnknownError'`)))
+				Expect(err).To(MatchError(MatchRegexp(`get state&instances failed: failed GetAppProcesses 'test-app-id': failed getting page 1: failed GET-ing cf.Response\[.*cf.Process\]:.*'UnknownError'`)))
 			})
 		})
 
@@ -165,71 +185,18 @@ var _ = Describe("Cf client App", func() {
 		})
 
 		Context("Given a significant load", func() {
-			idleUsed := int32(0)
-			reUsed := int32(0)
-			numRequests := int32(0)
-			numResponses := int32(0)
 			numberConcurrentUsers := 100
 			numberSequentialPerUser := 10
 			var ccWatcher *ConnectionWatcher
 			var loginWatcher *ConnectionWatcher
+			stats := &reqStats{}
 			/*
 			 * Note there is a login that goes to a separate host then 2 concurrent requests to the api server.
 			 */
-			doAppProcessRequest := func() int64 {
-				clientTrace := &httptrace.ClientTrace{
-					GotConn: func(info httptrace.GotConnInfo) {
-						if info.WasIdle {
-							atomic.AddInt32(&idleUsed, 1)
-						}
-						if info.Reused {
-							atomic.AddInt32(&reUsed, 1)
-						}
-					},
-					WroteRequest: func(info httptrace.WroteRequestInfo) {
-						atomic.AddInt32(&numRequests, 1)
-					},
-					GotFirstResponseByte: func() {
-						atomic.AddInt32(&numResponses, 1)
-					},
-				}
-				traceCtx := httptrace.WithClientTrace(context.Background(), clientTrace)
-				numErr := 0
-				var cfError = &models.CfError{}
-				anErr := cfc.Login()
-				if anErr != nil && !errors.As(anErr, &cfError) {
-					GinkgoWriter.Printf(" Error: %+v\n", anErr)
-					numErr += 1
-				}
-				_, anErr = cfc.GetCtxClient().GetAppAndProcesses(traceCtx, "test-app-id")
 
-				if anErr != nil && !errors.As(anErr, &cfError) {
-					GinkgoWriter.Printf(" Error: %+v\n", anErr)
-					numErr += 1
-				}
-				return int64(numErr)
-			}
 			BeforeEach(func() {
 
-				fakeCC.Close()
-				server := NewUnstartedServer()
-				fakeCC = NewMockWithServer(server)
-				ccWatcher = NewConnectionWatcher(fakeCC.HTTPTestServer.Config.ConnState)
-				fakeCC.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
-				fakeCC.Start()
-
-				fakeLoginServer.Close()
-				server = NewUnstartedServer()
-				fakeLoginServer = NewMockWithServer(server)
-				loginWatcher = NewConnectionWatcher(fakeLoginServer.HTTPTestServer.Config.ConnState)
-				fakeLoginServer.HTTPTestServer.Config.ConnState = ccWatcher.OnStateChange
-				fakeLoginServer.Start()
-				fakeLoginUrl = fakeLoginServer.URL()
-
-				// quiet logger
-				logger = lager.NewLogger("cf")
-				setCfcClient(2)
-				login()
+				ccWatcher, loginWatcher = setupStress()
 
 				fakeCC.RouteToHandler("GET", "/v3/apps/test-app-id/processes",
 					RoundRobinWithMultiple(
@@ -251,38 +218,20 @@ var _ = Describe("Cf client App", func() {
 			})
 			It("Should not leak file handles or cause errors", func() {
 
-				var numErrors int64 = 0
-
-				wg := sync.WaitGroup{}
-				for i := 0; i < numberConcurrentUsers; i++ {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						for i := 0; i < numberSequentialPerUser; i++ {
-							atomic.AddInt64(&numErrors, doAppProcessRequest())
-						}
-					}()
-				}
-				wg.Wait()
-
-				GinkgoWriter.Printf("\n# CC states left\n")
-				for key, value := range ccWatcher.GetStates() {
-					GinkgoWriter.Printf("\t%s:\t%d\n", key, value)
+				apiCall := func(ctx context.Context, client cf.ContextClient) error {
+					_, err := client.GetAppAndProcesses(ctx, "test-app-id")
+					return err
 				}
 
-				GinkgoWriter.Printf("\n# login states left\n")
-				for key, value := range loginWatcher.GetStates() {
-					GinkgoWriter.Printf("\t%s:\t%d\n", key, value)
-				}
+				numErrors := doStressTest(numberConcurrentUsers, numberSequentialPerUser, stats, apiCall)
+
+				ccWatcher.printStats("CC states left")
+				loginWatcher.printStats("login states left")
+
 				Eventually(ccWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
 				Eventually(loginWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
 
-				GinkgoWriter.Printf("\n# Client trace stats\n")
-				GinkgoWriter.Printf("\tidle pool connections used:\t%d\n", atomic.LoadInt32(&idleUsed))
-				GinkgoWriter.Printf("\tconnections re-used:\t\t%d\n", atomic.LoadInt32(&reUsed))
-				GinkgoWriter.Printf("\tnumber of requests:\t\t\t%d\n", atomic.LoadInt32(&numRequests))
-				GinkgoWriter.Printf("\tnumber of responses:\t\t\t%d\n", atomic.LoadInt32(&numResponses))
-
+				stats.Report()
 				//Each sequence is
 				// - a login to the login server
 				// - 2 parallel requests to the api server.
@@ -292,7 +241,7 @@ var _ = Describe("Cf client App", func() {
 				Expect(loginWatcher.MaxOpenConnections()).To(BeNumerically("<=", 2*numberConcurrentUsers), "number of login connections open at one time")
 				Expect(numErrors).To(Equal(int64(0)), "Number of errors received while under stress")
 				//There are 2 different servers so there has to be 2 new and unused connections
-				Expect(reUsed).To(BeNumerically(">=", reUsed-int32(numberConcurrentUsers/2)), "Number of re-used connections")
+				Expect(stats.GetReused()).To(BeNumerically(">=", stats.reUsed-int32(numberConcurrentUsers/2)), "Number of re-used connections")
 			})
 		})
 	})
@@ -302,6 +251,7 @@ var _ = Describe("Cf client App", func() {
 			err = cfc.ScaleAppWebProcess("test-app-id", 6)
 		})
 
+		scaleResponse := LoadFile("scale_response.yml")
 		When("scaling web app succeeds", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
@@ -309,7 +259,7 @@ var _ = Describe("Cf client App", func() {
 						VerifyRequest("POST", "/v3/apps/test-app-id/processes/web/actions/scale"),
 						VerifyHeaderKV("Authorization", "Bearer test-access-token"),
 						VerifyJSON(`{"instances":6}`),
-						RespondWith(http.StatusAccepted, LoadFile("scale_response.yml")),
+						RespondWith(http.StatusAccepted, scaleResponse),
 					),
 				)
 			})
@@ -328,7 +278,54 @@ var _ = Describe("Cf client App", func() {
 			})
 
 			It("should error correctly", func() {
-				Expect(err).To(MatchError(MatchRegexp("failed scaling app 'test-app-id' to 6: POST request failed:.*'UnknownError'.*")))
+				Expect(err).To(MatchError(MatchRegexp("failed scaling app 'test-app-id' to 6: failed POST-ing cf.Process: POST request failed:.*'UnknownError'.*")))
+			})
+		})
+
+		Context("Given a significant load", func() {
+
+			numberConcurrentUsers := 100
+			numberSequentialPerUser := 10
+			var ccWatcher *ConnectionWatcher
+			var loginWatcher *ConnectionWatcher
+			stats := &reqStats{}
+
+			BeforeEach(func() {
+				ccWatcher, loginWatcher = setupStress()
+				fakeCC.RouteToHandler("POST", "/v3/apps/test-app-id/processes/web/actions/scale",
+					RoundRobinWithMultiple(
+						RespondWith(http.StatusAccepted, scaleResponse, http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWith(http.StatusAccepted, scaleResponse, http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusNotFound, models.CfResourceNotFound),
+						RespondWith(http.StatusAccepted, scaleResponse, http.Header{"Content-Type": []string{"application/json"}}),
+						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+					))
+			})
+			It("Should not leak file handles or cause errors", func() {
+
+				apiCall := func(ctx context.Context, client cf.ContextClient) error {
+					return client.ScaleAppWebProcess(ctx, "test-app-id", 6)
+				}
+
+				numErrors := doStressTest(numberConcurrentUsers, numberSequentialPerUser, stats, apiCall)
+
+				ccWatcher.printStats("CC states left")
+				loginWatcher.printStats("login states left")
+
+				Eventually(ccWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
+				Eventually(loginWatcher.Count()).WithTimeout(100 * time.Millisecond).Should(BeNumerically("<=", maxIdleConnsPerHost))
+
+				stats.Report()
+				//Each sequence is
+				// - a login to the login server
+				// - 1 request to the api server.
+				numberOfConcurrentRequests := numberConcurrentUsers
+				numberOfRetriedRequests := (numberConcurrentUsers * numberSequentialPerUser) / 5
+				Expect(ccWatcher.MaxOpenConnections()).To(BeNumerically("<=", numberOfConcurrentRequests+numberOfRetriedRequests), "maximum number of api connections in play at one time")
+				Expect(loginWatcher.MaxOpenConnections()).To(BeNumerically("<=", 2*numberConcurrentUsers), "number of login connections open at one time")
+				Expect(numErrors).To(Equal(int64(0)), "Number of errors received while under stress")
+				//There are 2 different servers so there has to be 2 new and unused connections
+				Expect(stats.GetReused()).To(BeNumerically(">=", stats.reUsed-int32(numberConcurrentUsers/2)), "Number of re-used connections")
 			})
 		})
 

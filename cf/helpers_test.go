@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 	"sync/atomic"
+
+	. "github.com/onsi/ginkgo/v2"
 )
 
 type ConnectionWatcher struct {
@@ -79,4 +81,11 @@ func (cw *ConnectionWatcher) Count() int32 {
 		return true
 	})
 	return count
+}
+
+func (cw *ConnectionWatcher) printStats(title string) {
+	GinkgoWriter.Printf("\n# %s\n", title)
+	for key, value := range cw.GetStates() {
+		GinkgoWriter.Printf("\t%s:\t%d\n", key, value)
+	}
 }

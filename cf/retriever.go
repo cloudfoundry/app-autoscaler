@@ -80,14 +80,19 @@ func (r ResourceRetriever[T]) Get(ctx context.Context, pathAndQuery string) (T, 
 func (r ResourceRetriever[T]) get(ctx context.Context, url string) (T, error) {
 	var response T
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return response, err
 	}
 
+	return r.sendAndDeserialise(ctx, req)
+}
+
+func (r ResourceRetriever[T]) sendAndDeserialise(ctx context.Context, req *http.Request) (T, error) {
+	var response T
 	resp, err := Retriever(r).SendRequest(ctx, req)
 	if err != nil {
-		return response, fmt.Errorf("failed getting %T: %w", response, err)
+		return response, fmt.Errorf("failed %s-ing %T: %w", req.Method, response, err)
 	}
 
 	defer func() { _ = resp.Body.Close() }()
@@ -98,17 +103,23 @@ func (r ResourceRetriever[T]) get(ctx context.Context, url string) (T, error) {
 	return response, nil
 }
 
-func (r ResourceRetriever[T]) Post(ctx context.Context, url string, bodyStuct any) (*http.Response, error) {
+func (r ResourceRetriever[T]) Post(ctx context.Context, pathAndQuery string, bodyStuct any) (T, error) {
+	return r.post(ctx, r.Retriever.ApiUrl(pathAndQuery), bodyStuct)
+}
+
+func (r ResourceRetriever[T]) post(ctx context.Context, url string, bodyStuct any) (T, error) {
 	body, err := json.Marshal(bodyStuct)
 	if err != nil {
-		return nil, fmt.Errorf("failed post: %w", err)
+		var result T
+		return result, fmt.Errorf("failed post: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", r.Retriever.ApiUrl(url), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		return nil, fmt.Errorf("post %s failed: %w", url, err)
+		var result T
+		return result, fmt.Errorf("post %s failed: %w", url, err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	return Retriever(r).SendRequest(ctx, req)
+	return r.sendAndDeserialise(ctx, req)
 }
 
 func (r AuthenticatedClient) SendRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
