@@ -2,7 +2,6 @@ package cf
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -11,7 +10,7 @@ type TripBody struct {
 }
 
 func (t TripBody) Close() error {
-	_, _ = io.Copy(ioutil.Discard, t.ReadCloser)
+	_, _ = io.Copy(io.Discard, t.ReadCloser)
 
 	return t.ReadCloser.Close()
 }

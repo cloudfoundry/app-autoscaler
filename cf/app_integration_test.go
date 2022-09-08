@@ -41,6 +41,7 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	if err != nil {
 		panic("Please deploy the app in testdata/test_app using deploy.sh")
 	}
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, resp.StatusCode, 200)
 
 	processes, err := client.GetAppProcesses("f4734f0d-ec0f-46c7-a716-bffe3bcb0aa6", cf.ProcessTypeWeb)
