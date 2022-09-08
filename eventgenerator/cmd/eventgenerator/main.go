@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
@@ -16,7 +17,6 @@ import (
 
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -158,7 +158,7 @@ func loadConfig(path string) (*config.Config, error) {
 		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
 
-	configFileBytes, err := ioutil.ReadAll(configFile)
+	configFileBytes, err := io.ReadAll(configFile)
 	_ = configFile.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)

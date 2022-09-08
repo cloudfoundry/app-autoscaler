@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -161,11 +160,11 @@ func initDB() {
 func initHttpEndPoints() {
 	testCertDir := "../../../../../test-certs"
 
-	_, err := ioutil.ReadFile(filepath.Join(testCertDir, "eventgenerator.key"))
+	_, err := os.ReadFile(filepath.Join(testCertDir, "eventgenerator.key"))
 	Expect(err).NotTo(HaveOccurred())
-	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "eventgenerator.crt"))
+	_, err = os.ReadFile(filepath.Join(testCertDir, "eventgenerator.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	_, err = os.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
 
 	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
@@ -289,12 +288,12 @@ func initConfig() {
 }
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "eg")
+	cfg, err := os.CreateTemp("", "eg")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
-	err = ioutil.WriteFile(cfg.Name(), configBytes, 0600)
+	err = os.WriteFile(cfg.Name(), configBytes, 0600)
 	Expect(err).NotTo(HaveOccurred())
 	return cfg
 }

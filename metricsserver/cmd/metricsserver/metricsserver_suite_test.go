@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -139,7 +138,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "ms")
+	cfg, err := os.CreateTemp("", "ms")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
 

@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
 
@@ -135,7 +135,7 @@ func loadConfig(path string) (*config.Config, error) {
 		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
 
-	configFileBytes, err := ioutil.ReadAll(configFile)
+	configFileBytes, err := io.ReadAll(configFile)
 	_ = configFile.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)

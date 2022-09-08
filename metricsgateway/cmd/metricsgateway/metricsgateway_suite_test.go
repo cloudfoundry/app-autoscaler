@@ -1,7 +1,7 @@
 package main_test
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -75,7 +75,7 @@ var (
 )
 
 func TestMetricsgateway(t *testing.T) {
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, ioutil.Discard, ioutil.Discard))
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, io.Discard, io.Discard))
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Metricsgateway Suite")
@@ -202,12 +202,12 @@ func initFakeServers() {
 }
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "mg")
+	cfg, err := os.CreateTemp("", "mg")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
-	err = ioutil.WriteFile(cfg.Name(), configBytes, 0600)
+	err = os.WriteFile(cfg.Name(), configBytes, 0600)
 	Expect(err).NotTo(HaveOccurred())
 	return cfg
 }

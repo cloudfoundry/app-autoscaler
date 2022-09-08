@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"io"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -15,7 +16,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 )
@@ -105,10 +105,10 @@ var _ = Describe("Main", func() {
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				badfile, err := ioutil.TempFile("", "bad-engine-config")
+				badfile, err := os.CreateTemp("", "bad-engine-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
-				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				err = os.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -218,7 +218,7 @@ var _ = Describe("Main", func() {
 				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d", healthport))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := ioutil.ReadAll(rsp.Body)
+				raw, _ := io.ReadAll(rsp.Body)
 				healthData := string(raw)
 				Expect(healthData).To(ContainSubstring("autoscaler_scalingengine_concurrent_http_request"))
 				Expect(healthData).To(ContainSubstring("autoscaler_scalingengine_schedulerDB"))

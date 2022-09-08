@@ -1,7 +1,7 @@
 package brokerserver_test
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -73,7 +73,7 @@ var _ = Describe("BrokerServer", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				bodyBytes, err := io.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(bodyBytes).To(Equal(catalogBytes))
@@ -94,7 +94,7 @@ var _ = Describe("BrokerServer", func() {
 			It("should get the catalog", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				bodyBytes, err := io.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(bodyBytes).To(Equal(catalogBytes))

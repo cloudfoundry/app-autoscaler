@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -205,7 +205,7 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		e.logger.Error("failed-read-response-body-from-scaling-engine", err)
 	}

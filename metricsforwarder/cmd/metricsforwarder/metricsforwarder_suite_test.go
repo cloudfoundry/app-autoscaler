@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"io/ioutil"
-
 	"os"
 	"os/exec"
 	"time"
@@ -172,7 +170,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "mf")
+	cfg, err := os.CreateTemp("", "mf")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
 

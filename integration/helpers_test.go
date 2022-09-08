@@ -3,7 +3,7 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -171,7 +171,7 @@ func doDetachPolicy(appId string, statusCode int, msg string, apiServerPort int,
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(statusCode))
 	if msg != "" {
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(respBody)).To(Equal(msg))
 	}

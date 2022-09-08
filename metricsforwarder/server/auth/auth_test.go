@@ -6,7 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
 
@@ -183,7 +183,7 @@ var _ = Describe("Authentication", func() {
 })
 
 func MustReadXFCCcert(fileName string) string {
-	file, err := ioutil.ReadFile(fileName)
+	file, err := os.ReadFile(fileName)
 	Expect(err).ShouldNot(HaveOccurred())
 	block, _ := pem.Decode(file)
 	Expect(block).ShouldNot(BeNil())

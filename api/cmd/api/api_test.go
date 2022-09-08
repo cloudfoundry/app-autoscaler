@@ -2,7 +2,7 @@ package main_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -62,10 +62,10 @@ var _ = Describe("Api", func() {
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				badfile, err := ioutil.TempFile("", "bad-ap-config")
+				badfile, err := os.CreateTemp("", "bad-ap-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
-				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				err = os.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 				runner.Start()
 			})
@@ -178,7 +178,7 @@ var _ = Describe("Api", func() {
 					Fail(fmt.Sprintf("Not ok:%d", rsp.StatusCode))
 				}
 
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				bodyBytes, err := io.ReadAll(rsp.Body)
 
 				FailOnError("Read failed:", err)
 				if len(bodyBytes) == 0 {
@@ -207,7 +207,7 @@ var _ = Describe("Api", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				bodyBytes, err := io.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(MatchJSON(infoBytes))
 			})
@@ -230,7 +230,7 @@ var _ = Describe("Api", func() {
 				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d", healthport))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := ioutil.ReadAll(rsp.Body)
+				raw, _ := io.ReadAll(rsp.Body)
 				healthData := string(raw)
 				Expect(healthData).To(ContainSubstring("autoscaler_golangapiserver_concurrent_http_request"))
 				Expect(healthData).To(ContainSubstring("autoscaler_golangapiserver_policyDB"))
@@ -300,7 +300,7 @@ var _ = Describe("Api", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
-				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				bodyBytes, err := io.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(MatchJSON(infoBytes))
 			})

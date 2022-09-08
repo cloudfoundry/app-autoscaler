@@ -19,7 +19,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -153,11 +152,11 @@ var _ = SynchronizedBeforeSuite(
 	})
 
 func verifyCertExistence(testCertDir string) {
-	_, err := ioutil.ReadFile(filepath.Join(testCertDir, "scalingengine.key"))
+	_, err := os.ReadFile(filepath.Join(testCertDir, "scalingengine.key"))
 	Expect(err).NotTo(HaveOccurred())
-	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "scalingengine.crt"))
+	_, err = os.ReadFile(filepath.Join(testCertDir, "scalingengine.crt"))
 	Expect(err).NotTo(HaveOccurred())
-	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	_, err = os.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
 }
 
@@ -171,7 +170,7 @@ var _ = SynchronizedAfterSuite(
 	})
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "engine")
+	cfg, err := os.CreateTemp("", "engine")
 	Expect(err).NotTo(HaveOccurred())
 
 	defer func() { _ = cfg.Close() }()

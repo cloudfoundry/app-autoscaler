@@ -2,10 +2,10 @@ package publicapiserver_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -88,33 +88,33 @@ var _ = BeforeSuite(func() {
 	conf = CreateConfig(true, apiPort)
 
 	// verify MetricCollector certs
-	_, err := ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.KeyFile)
+	_, err := os.ReadFile(conf.MetricsCollector.TLSClientCerts.KeyFile)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.CertFile)
+	_, err = os.ReadFile(conf.MetricsCollector.TLSClientCerts.CertFile)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.CACertFile)
+	_, err = os.ReadFile(conf.MetricsCollector.TLSClientCerts.CACertFile)
 	Expect(err).NotTo(HaveOccurred())
 
 	// verify EventGenerator certs
-	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
+	_, err = os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.CertFile)
+	_, err = os.ReadFile(conf.EventGenerator.TLSClientCerts.CertFile)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.CACertFile)
+	_, err = os.ReadFile(conf.EventGenerator.TLSClientCerts.CACertFile)
 	Expect(err).NotTo(HaveOccurred())
 
 	// verify ScalingEngine certs
-	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.KeyFile)
+	_, err = os.ReadFile(conf.ScalingEngine.TLSClientCerts.KeyFile)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.CertFile)
+	_, err = os.ReadFile(conf.ScalingEngine.TLSClientCerts.CertFile)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.CACertFile)
+	_, err = os.ReadFile(conf.ScalingEngine.TLSClientCerts.CACertFile)
 	Expect(err).NotTo(HaveOccurred())
 
 	fakePolicyDB = &fakes.FakePolicyDB{}
@@ -138,7 +138,7 @@ var _ = BeforeSuite(func() {
 
 	httpClient = &http.Client{}
 
-	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
+	infoBytes, err = os.ReadFile("../exampleconfig/info-file.json")
 	Expect(err).NotTo(HaveOccurred())
 
 	scalingHistoryPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/scaling_histories`)

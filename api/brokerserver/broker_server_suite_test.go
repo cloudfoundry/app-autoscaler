@@ -1,9 +1,9 @@
 package brokerserver_test
 
 import (
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
@@ -134,7 +134,7 @@ var _ = BeforeSuite(func() {
 
 	httpClient = &http.Client{}
 
-	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
+	catalogBytes, err = os.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
 
 	urlPath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)

@@ -2,7 +2,7 @@ package schedulerutil
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -61,7 +61,7 @@ func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr stri
 		return nil
 	}
 
-	responseData, err := ioutil.ReadAll(resp.Body)
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		su.logger.Error("Failed to read response body", err, lager.Data{"appId": appId})
 		return err
@@ -107,7 +107,7 @@ func (su *SchedulerUtil) DeleteSchedule(appId string) error {
 		return nil
 	}
 
-	responseData, err := ioutil.ReadAll(resp.Body)
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		su.logger.Error("Failed to read response body", err, lager.Data{"appId": appId})
 		return err

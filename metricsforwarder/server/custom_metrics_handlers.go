@@ -3,13 +3,13 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -88,7 +88,7 @@ func (mh *CustomMetricsHandler) VerifyCredentialsAndPublishMetrics(w http.Respon
 }
 
 func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Request, appID string) error {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
 		return ErrorReadingBody

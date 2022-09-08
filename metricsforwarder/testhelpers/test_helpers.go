@@ -3,8 +3,8 @@ package testhelpers
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net"
+	"os"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 
@@ -35,7 +35,7 @@ func NewTestIngressServer(serverCert, serverKey, caCert string) (*TestIngressSer
 		InsecureSkipVerify: false,
 		MinVersion:         tls.VersionTLS12,
 	}
-	caCertBytes, err := ioutil.ReadFile(caCert)
+	caCertBytes, err := os.ReadFile(caCert)
 	if err != nil {
 		return nil, err
 	}

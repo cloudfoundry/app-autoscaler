@@ -1,20 +1,18 @@
 package integration_test
 
 import (
+	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
-	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	egConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	mgConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
 	msConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	opConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 	seConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -389,7 +387,7 @@ spring.main.allow-bean-definition-overriding=true
 		int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
-	err = ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0600)
+	err = os.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0600)
 	Expect(err).NotTo(HaveOccurred())
 	cfgFile.Close()
 	return cfgFile.Name()
@@ -655,12 +653,12 @@ func (components *Components) PrepareMetricsServerConfig(dbURI string, httpClien
 }
 
 func writeYmlConfig(dir string, componentName string, c interface{}) string {
-	cfgFile, err := ioutil.TempFile(dir, componentName)
+	cfgFile, err := os.CreateTemp(dir, componentName)
 	Expect(err).NotTo(HaveOccurred())
 	defer cfgFile.Close()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
-	err = ioutil.WriteFile(cfgFile.Name(), configBytes, 0600)
+	err = os.WriteFile(cfgFile.Name(), configBytes, 0600)
 	Expect(err).NotTo(HaveOccurred())
 	return cfgFile.Name()
 }

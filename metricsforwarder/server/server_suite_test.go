@@ -2,7 +2,7 @@ package server_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -39,13 +39,13 @@ func TestServer(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 
-	_, err := ioutil.ReadFile("../../../../test-certs/metron.key")
+	_, err := os.ReadFile("../../../../test-certs/metron.key")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile("../../../../test-certs/metron.crt")
+	_, err = os.ReadFile("../../../../test-certs/metron.crt")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = ioutil.ReadFile("../../../../test-certs/loggregator-ca.crt")
+	_, err = os.ReadFile("../../../../test-certs/loggregator-ca.crt")
 	Expect(err).NotTo(HaveOccurred())
 
 	return nil

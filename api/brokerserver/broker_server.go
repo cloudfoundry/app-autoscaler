@@ -3,7 +3,6 @@ package brokerserver
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -100,7 +99,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		middleWareBrokerCredentials = append(middleWareBrokerCredentials, middleWareBrokerCredential)
 	}
 
-	catalogBytes, err := ioutil.ReadFile(conf.CatalogPath)
+	catalogBytes, err := os.ReadFile(conf.CatalogPath)
 	if err != nil {
 		logger.Error("failed to read catalog file", err)
 		return nil, err

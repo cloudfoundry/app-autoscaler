@@ -3,7 +3,6 @@ package main_test
 import (
 	"database/sql"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -248,7 +247,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "ap")
+	cfg, err := os.CreateTemp("", "ap")
 	Expect(err).NotTo(HaveOccurred())
 	defer func() { _ = cfg.Close() }()
 
@@ -300,7 +299,7 @@ func (ap *ApiRunner) Interrupt() {
 }
 
 func readFile(filename string) string {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	FailOnError("Failed to read file:"+filename+" ", err)
 	return string(contents)
 }

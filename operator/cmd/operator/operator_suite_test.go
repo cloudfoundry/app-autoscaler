@@ -3,7 +3,6 @@ package main_test
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -137,7 +136,7 @@ func initConfig() {
 }
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := ioutil.TempFile("", "pr")
+	cfg, err := os.CreateTemp("", "pr")
 	Expect(err).NotTo(HaveOccurred())
 	defer func() { _ = cfg.Close() }()
 

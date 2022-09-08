@@ -1,7 +1,7 @@
 package metricsgateway_test
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestMetricsgateway(t *testing.T) {
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, ioutil.Discard, ioutil.Discard))
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, io.Discard, io.Discard))
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Metricsgateway Suite")

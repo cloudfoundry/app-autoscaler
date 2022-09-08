@@ -5,9 +5,9 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -156,7 +156,7 @@ func NewServerMutualTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config
 		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
-	certBytes, err := ioutil.ReadFile(caCertFile)
+	certBytes, err := os.ReadFile(caCertFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ca cert file: %w", err)
 	}
@@ -188,7 +188,7 @@ func NewClientMutualTLSConfig(
 		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
-	certBytes, err := ioutil.ReadFile(caCertFile)
+	certBytes, err := os.ReadFile(caCertFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ca cert file: %w", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 
@@ -238,7 +238,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					bodyBytes, err := ioutil.ReadAll(resp.Body)
+					bodyBytes, err := io.ReadAll(resp.Body)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
 				})
@@ -266,7 +266,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					bodyBytes, err := ioutil.ReadAll(resp.Body)
+					bodyBytes, err := io.ReadAll(resp.Body)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(bodyBytes)).To(Equal(`{"code":"Bad Request","message":"Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
 				})
@@ -392,7 +392,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				bodyBytes, err := io.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
 			})
@@ -503,7 +503,7 @@ var _ = Describe("BrokerHandler", func() {
 
 					It("Fails correctly", func() {
 						Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-						bodyBytes, err := ioutil.ReadAll(resp.Body)
+						bodyBytes, err := io.ReadAll(resp.Body)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(string(bodyBytes)).To(MatchJSON(`{"code": "Internal Server Error","message": "Error retrieving broker plan Id"}`))
 					})
@@ -520,7 +520,7 @@ var _ = Describe("BrokerHandler", func() {
 					})
 					It("Fails correctly", func() {
 						Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-						bodyBytes, err := ioutil.ReadAll(resp.Body)
+						bodyBytes, err := io.ReadAll(resp.Body)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(string(bodyBytes)).To(MatchJSON(`{"code": "Internal Server Error","message": "Error retrieving broker plan Id"}`))
 					})
@@ -674,7 +674,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				bodyBytes, err := io.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(Equal(`{"code":"Bad Request","message":"Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
 			})
@@ -1198,7 +1198,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				bodyBytes, err := io.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_min_count is required"}]`))
 			})

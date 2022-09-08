@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"regexp"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/memoizer"
@@ -84,7 +85,7 @@ func (h *BrokerHandler) writeError(w http.ResponseWriter, err error) {
 }
 
 func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
-	catalog, err := ioutil.ReadFile(h.conf.CatalogPath)
+	catalog, err := os.ReadFile(h.conf.CatalogPath)
 	if err != nil {
 		h.logger.Error("failed to read catalog file", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load catalog")
@@ -104,7 +105,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	instanceId := vars["instanceId"]
 
 	body := &models.InstanceCreationRequestBody{}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("failed to read service provision request body", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
@@ -207,7 +208,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	instanceId := vars["instanceId"]
 
 	body := &models.InstanceUpdateRequestBody{}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("failed to read service update request body", err, lager.Data{"instanceId": instanceId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
@@ -488,7 +489,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	bindingId := vars["bindingId"]
 	var policyGuidStr string
 	body := &models.BindingRequestBody{}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("failed to read bind request body", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")

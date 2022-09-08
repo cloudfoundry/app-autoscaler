@@ -1,11 +1,13 @@
 package testhelpers
 
-import "io/ioutil"
+import (
+	"os"
+)
 
 func LoadFile(filename string) string {
-	file, err := ioutil.ReadFile(filename)
+	file, err := os.ReadFile(filename)
 	if err != nil {
-		file, err = ioutil.ReadFile("testdata/" + filename)
+		file, err = os.ReadFile("testdata/" + filename)
 	}
 	FailOnError("Could not read file", err)
 	return string(file)

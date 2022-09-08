@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -66,7 +66,7 @@ func registerConfig(cfg *MySQLConfig) error {
 		// Do nothing here
 		return nil
 	} else if cfg.cert != "" {
-		certBytes, err := ioutil.ReadFile(cfg.cert)
+		certBytes, err := os.ReadFile(cfg.cert)
 		if err != nil {
 			return err
 		}

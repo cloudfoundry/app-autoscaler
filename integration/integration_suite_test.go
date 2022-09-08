@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -117,7 +117,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 	components.Ports = PreparePorts()
 
-	tmpDir, err = ioutil.TempDir("", "autoscaler")
+	tmpDir, err = os.MkdirTemp("", "autoscaler")
 	Expect(err).NotTo(HaveOccurred())
 
 	dbUrl = testhelpers.GetDbUrl()
@@ -573,7 +573,7 @@ func getAppAggregatedMetrics(apiServerPort int, pathVariables []string, paramete
 }
 
 func readPolicyFromFile(filename string) []byte {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
 	return content
 }
@@ -720,7 +720,7 @@ func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectR
 func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
 	Expect(err).NotTo(HaveOccurred())
 	defer func() { _ = resp.Body.Close() }()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(body).To(HaveLen(0))
 	Expect(resp.StatusCode).To(Equal(expectedStatus))

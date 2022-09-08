@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
@@ -128,7 +127,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 
 	h.logger.Info("Attach Scaling Policy", lager.Data{"appId": appId})
 
-	policyBytes, err := ioutil.ReadAll(r.Body)
+	policyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("Failed to read request body", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
@@ -256,7 +255,7 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	}
 	defer resp.Body.Close()
 
-	responseData, err := ioutil.ReadAll(resp.Body)
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.logger.Error("Error occurred during parsing scaling histories result", err, lager.Data{"url": url})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing scaling history from scaling engine")
@@ -307,7 +306,7 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	}
 	defer resp.Body.Close()
 
-	responseData, err := ioutil.ReadAll(resp.Body)
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from eventgenerator")
@@ -363,7 +362,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	}
 	defer resp.Body.Close()
 
-	responseData, err := ioutil.ReadAll(resp.Body)
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from metricscollector")
@@ -385,7 +384,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 }
 
 func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
-	info, err := ioutil.ReadFile(h.conf.InfoFilePath)
+	info, err := os.ReadFile(h.conf.InfoFilePath)
 	if err != nil {
 		h.logger.Error("Failed to info file", err, lager.Data{"info-file-path": h.conf.InfoFilePath})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load info")
@@ -413,7 +412,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	var userProvidedCredential *models.Credential
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("Failed to read user provided credential request body", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")

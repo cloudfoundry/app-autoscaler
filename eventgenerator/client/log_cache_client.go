@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
@@ -149,7 +149,7 @@ func NewTLSConfig(caPath string, certPath string, keyPath string) (*tls.Config, 
 		MinVersion:         tls.VersionTLS12,
 	}
 
-	caCertBytes, err := ioutil.ReadFile(caPath)
+	caCertBytes, err := os.ReadFile(caPath)
 	if err != nil {
 		return nil, err
 	}

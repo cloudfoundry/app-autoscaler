@@ -3,7 +3,7 @@ package integration_test
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -595,7 +595,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 })
 
 func ResponseMessage(resp *http.Response) string {
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
 	return fmt.Sprintf("Error retrieved status %d - '%s'", resp.StatusCode, body)
 }
