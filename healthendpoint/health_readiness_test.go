@@ -1,6 +1,7 @@
 package healthendpoint_test
 
 import (
+	"io"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -318,4 +319,68 @@ var _ = Describe("Health Readiness", func() {
 
 	})
 
+	Context("pprof endpoint", func() {
+		When("basic auth is not configured", func() {
+			BeforeEach(func() {
+				config.HealthCheckUsername = ""
+				config.HealthCheckPassword = ""
+			})
+			It("should not be available", func() {
+				apitest.New().
+					Handler(healthRoute).
+					Get("/debug/pprof").
+					Expect(t).
+					Assert(assertBody(func(body string) bool {
+						return Expect(body).To(Not(ContainSubstring("Types of profiles available")))
+					})).
+					Status(http.StatusOK).
+					End()
+			})
+		})
+
+		When("basic auth is configured", func() {
+			When("no credentials are sent", func() {
+				It("should return unauthorized and not be available", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/debug/pprof").
+						Expect(t).
+						Assert(assertBody(func(body string) bool {
+							return Expect(body).To(Not(ContainSubstring("Types of profiles available")))
+						})).
+						Status(http.StatusUnauthorized).
+						End()
+				})
+			})
+
+			When("the correct credentials are sent", func() {
+				It("should be available", func() {
+					apitest.New().
+						Handler(healthRoute).
+						Get("/debug/pprof").
+						BasicAuth("test-user-name", "test-user-password").
+						Expect(t).
+						Assert(assertBody(func(body string) bool {
+							return Expect(body).To(ContainSubstring("Types of profiles available"))
+						})).
+						Status(http.StatusOK).
+						End()
+				})
+			})
+		})
+	})
 })
+
+func assertBody(p func(body string) bool) func(res *http.Response, _ *http.Request) error {
+	return func(res *http.Response, _ *http.Request) error {
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return errors.New("failed reading body")
+		}
+		if p(string(b)) {
+			return nil
+		}
+		// should not be reachable
+		return errors.New("assertion failed")
+	}
+}
