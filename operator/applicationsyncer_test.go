@@ -3,7 +3,6 @@ package operator_test
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 
 	"code.cloudfoundry.org/lager/lagertest"
@@ -50,7 +49,7 @@ var _ = Describe("AppSynchronizer", func() {
 
 		Context("when trying to delete non-existent application records from policy db", func() {
 			BeforeEach(func() {
-				cfc.GetAppReturns(nil, models.CfResourceNotFound)
+				cfc.GetAppReturns(nil, cf.CfResourceNotFound)
 			})
 			It("should successfully delete", func() {
 				Eventually(policyDB.GetAppIdsCallCount).Should(Equal(1))

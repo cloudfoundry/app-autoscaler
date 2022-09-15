@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c ${SHELLFLAGS}
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
 PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
@@ -25,16 +26,16 @@ build: $(addprefix build-,$(binaries))
 build_tests: $(addprefix build_test-,$(test_dirs))
 
 build_test-%:
-	@echo " - $* tests"
-	@export build_folder=${PWD}/build/$* && \
- 	mkdir -p $${build_folder} && \
-  	cd $* && \
-  	for package in $$( find . -name "*.go" -exec dirname {} \; | sort | uniq  ); \
- 	  do \
- 	    name=tests_$$(echo "$${package}" | sed "s|\.|$*|" | sed 's|/|_|');\
- 	    echo " -- compiling $*/$${package} to $${build_folder}/$${name}"; \
- 	  	go test -c -o $${build_folder}/$${name} $${package};\
- 	done;
+	@echo " - building '$*' tests"
+	@export build_folder=${PWD}/build/tests/$* &&\
+	 mkdir -p $${build_folder} &&\
+	 cd $* &&\
+	 for package in $$(  go list ./... | sed 's|.*/autoscaler/$*|.|' | awk '{ print length, $$0 }' | sort -n -r | cut -d" " -f2- );\
+	 do\
+	   export test_file=$${build_folder}/$${package}.test;\
+	   echo "   - compiling $${package} to $${test_file}";\
+	   go test -c -o $${test_file} $${package};\
+	 done;
 
 check: fmt lint build test
 
