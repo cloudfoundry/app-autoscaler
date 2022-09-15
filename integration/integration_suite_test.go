@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"

@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -9,6 +8,8 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
 	models2 "code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 

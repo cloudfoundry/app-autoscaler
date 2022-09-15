@@ -1,8 +1,9 @@
 package mocks_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"errors"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"

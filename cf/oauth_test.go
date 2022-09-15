@@ -1,8 +1,9 @@
 package cf_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/clock"
