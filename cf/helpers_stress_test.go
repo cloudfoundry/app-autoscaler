@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -52,7 +51,7 @@ func doApiRequest(stats *reqStats, apiCall apiCall) int64 {
 	}
 	traceCtx := httptrace.WithClientTrace(context.Background(), clientTrace)
 	numErr := 0
-	var cfError = &models.CfError{}
+	var cfError = &cf.CfError{}
 	anErr := cfc.Login()
 	if anErr != nil && !errors.As(anErr, &cfError) {
 		GinkgoWriter.Printf(" Error: %+v\n", anErr)

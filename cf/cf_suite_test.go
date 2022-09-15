@@ -1,11 +1,11 @@
 package cf_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"testing"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo/v2"
@@ -15,8 +15,8 @@ import (
 var (
 	conf            *cf.Config
 	cfc             *cf.Client
-	fakeCC          *MockServer
-	fakeLoginServer *MockServer
+	fakeCC          *mocks.Server
+	fakeLoginServer *mocks.Server
 	err             error
 	logger          lager.Logger
 	fclock          *fakeclock.FakeClock
@@ -47,11 +47,11 @@ func login() {
 var _ = BeforeEach(func() {
 	err = nil
 	if useTlsMocks {
-		fakeCC = NewMockTlsServer()
-		fakeLoginServer = NewMockTlsServer()
+		fakeCC = mocks.NewMockTlsServer()
+		fakeLoginServer = mocks.NewMockTlsServer()
 	} else {
-		fakeCC = NewMockServer()
-		fakeLoginServer = NewMockServer()
+		fakeCC = mocks.NewServer()
+		fakeLoginServer = mocks.NewServer()
 	}
 
 	logger = lager.NewLogger("cf")

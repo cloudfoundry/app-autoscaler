@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"path/filepath"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -37,7 +38,7 @@ var (
 	port             int
 	healthport       int
 	configFile       *os.File
-	ccUAA            *MockServer
+	ccUAA            *mocks.Server
 	appId            string
 	httpClient       *http.Client
 	healthHttpClient *http.Client
@@ -52,7 +53,7 @@ var _ = SynchronizedBeforeSuite(
 	func(pathBytes []byte) {
 		enginePath = string(pathBytes)
 
-		ccUAA = NewMockServer()
+		ccUAA = mocks.NewServer()
 		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
 		ccUAA.Add().
 			Info(ccUAA.URL()).

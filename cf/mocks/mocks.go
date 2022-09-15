@@ -1,4 +1,4 @@
-package testhelpers
+package mocks
 
 import (
 	"net/http"
@@ -10,30 +10,30 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-type MockServer struct {
+type Server struct {
 	*ghttp.Server
 }
 
-func NewMockServer() *MockServer {
-	return NewMockWithServer(ghttp.NewServer())
+func NewServer() *Server {
+	return NewWithServer(ghttp.NewServer())
 }
-func NewMockWithServer(server *ghttp.Server) *MockServer {
-	return &MockServer{server}
-}
-
-func NewMockTlsServer() *MockServer {
-	return &MockServer{ghttp.NewTLSServer()}
+func NewWithServer(server *ghttp.Server) *Server {
+	return &Server{server}
 }
 
-func (m *MockServer) Add() *AddMock {
+func NewMockTlsServer() *Server {
+	return &Server{ghttp.NewTLSServer()}
+}
+
+func (m *Server) Add() *AddMock {
 	return &AddMock{m}
 }
 
-func (m *MockServer) Count() *CountMock {
+func (m *Server) Count() *CountMock {
 	return &CountMock{m}
 }
 
-type CountMock struct{ server *MockServer }
+type CountMock struct{ server *Server }
 
 func (m CountMock) Requests(urlRegExp string) int {
 	count := 0
@@ -58,7 +58,7 @@ type InstanceCount struct {
 	Previous int `json:"previous"`
 }
 
-type AddMock struct{ server *MockServer }
+type AddMock struct{ server *Server }
 
 func (a AddMock) GetApp(appState string, statusCode int, spaceGuid cf.SpaceId) AddMock {
 	created, err := time.Parse(time.RFC3339, "2022-07-21T13:42:30Z")

@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bytes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -59,7 +60,7 @@ var (
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	dbHelper                *sqlx.DB
-	fakeCCNOAAUAA           *testhelpers.MockServer
+	fakeCCNOAAUAA           *mocks.Server
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 	processMap              = map[string]ifrit.Process{}
 
@@ -759,7 +760,7 @@ func checkScheduleContents(appId string, expectHttpStatus int, expectResponseMap
 }
 
 func startFakeCCNOAAUAA(instanceCount int) {
-	fakeCCNOAAUAA = testhelpers.NewMockServer()
+	fakeCCNOAAUAA = mocks.NewServer()
 	fakeCCNOAAUAA.Add().
 		GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 		GetAppProcesses(instanceCount).

@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -47,7 +48,7 @@ var (
 	publicApiPort    int
 	healthport       int
 	infoBytes        string
-	ccServer         *MockServer
+	ccServer         *mocks.Server
 )
 
 func TestApi(t *testing.T) {
@@ -106,7 +107,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	info := &testdata{}
 	err := json.Unmarshal(testParams, info)
 	Expect(err).NotTo(HaveOccurred())
-	ccServer = NewMockServer()
+	ccServer = mocks.NewServer()
 	ccServer.Add().Info(ccServer.URL()).OauthToken("test-token")
 
 	apPath = info.ApPath

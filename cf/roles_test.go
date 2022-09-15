@@ -2,7 +2,6 @@ package cf_test
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -77,7 +76,7 @@ var _ = Describe("Cf client Roles", func() {
 				fakeCC.AppendHandlers(
 					CombineHandlers(
 						VerifyRequest("GET", "/v3/roles", "types=space_developer&space_guids=some_space_id&user_guids=someUserId"),
-						RespondWithJSONEncoded(http.StatusInternalServerError, models.CfInternalServerError),
+						RespondWithJSONEncoded(http.StatusInternalServerError, cf.CfInternalServerError),
 					),
 				)
 			})
