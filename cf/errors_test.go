@@ -1,10 +1,9 @@
-package models_test
+package cf_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"encoding/json"
 	"errors"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,39 +13,39 @@ var _ = Describe("Errors test", func() {
 	url := "https://some.cf.install/v3/apps/guid/processes/web/action/scale"
 	Context("nil type error", func() {
 		It("should be invalid", func() {
-			var err *models.CfError
+			var err *cf.CfError
 			Expect(err.IsValid()).To(BeFalse())
 		})
 		It("should IsNotFound == false ", func() {
-			var err *models.CfError
+			var err *cf.CfError
 			Expect(err.IsNotFound()).To(BeFalse())
 		})
 	})
 	Context("Constructing Errors", func() {
 		It("should be able to construct from call", func() {
-			err := models.NewCfError(url, "some-id", 404, []byte(`{"errors": [{"code": 1,"title": "Title","detail": "Detail"}]}`))
-			Expect(err).To(BeAssignableToTypeOf(&models.CfError{}))
+			err := cf.NewCfError(url, "some-id", 404, []byte(`{"errors": [{"code": 1,"title": "Title","detail": "Detail"}]}`))
+			Expect(err).To(BeAssignableToTypeOf(&cf.CfError{}))
 			Expect(err.Error()).To(Equal("cf api Error url='https://some.cf.install/v3/apps/guid/processes/web/action/scale', resourceId='some-id': ['Title' code: 1, Detail: 'Detail']"))
 		})
 		It("should return error if not marshalable", func() {
-			err := models.NewCfError(url, "some-id", 404, []byte(`{"errors": [{"code" "Title","detail": "Detail"}]}`))
-			Expect(err).ToNot(BeAssignableToTypeOf(&models.CfError{}))
+			err := cf.NewCfError(url, "some-id", 404, []byte(`{"errors": [{"code" "Title","detail": "Detail"}]}`))
+			Expect(err).ToNot(BeAssignableToTypeOf(&cf.CfError{}))
 			var errType *json.SyntaxError
 			Expect(errors.As(err, &errType)).Should(BeTrue(), "Error was: %#v", interface{}(err))
 			Expect(err.Error()).To(MatchRegexp("failed to unmarshal id:some-id error status '404' body:'{\\\"errors\\\": "))
 		})
 		It("should return error if not incorrect Json", func() {
-			err := models.NewCfError(url, "some-id", 404, []byte(`{"Some":"JSON"}`))
-			Expect(err).ToNot(BeAssignableToTypeOf(&models.CfError{}))
-			Expect(errors.Is(err, models.ErrInvalidJson)).To(BeTrue())
+			err := cf.NewCfError(url, "some-id", 404, []byte(`{"Some":"JSON"}`))
+			Expect(err).ToNot(BeAssignableToTypeOf(&cf.CfError{}))
+			Expect(errors.Is(err, cf.ErrInvalidJson)).To(BeTrue())
 			Expect(err.Error()).To(MatchRegexp("invalid cfError: resource some-id status:404 body:{\"Some\":\"JSON\"}"))
 		})
 	})
 	Context("Parsing tests", func() {
 		var errorResponse string
-		var cfError *models.CfError
+		var cfError *cf.CfError
 		JustBeforeEach(func() {
-			cfError = &models.CfError{}
+			cfError = &cf.CfError{}
 			err := json.Unmarshal([]byte(errorResponse), cfError)
 			Expect(err).NotTo(HaveOccurred())
 		})

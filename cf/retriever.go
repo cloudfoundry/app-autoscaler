@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 type (
@@ -144,7 +142,7 @@ func (c *CtxClient) SendRequest(_ context.Context, req *http.Request) (*http.Res
 		if err != nil {
 			return resp, fmt.Errorf("failed to read response[%d]: %w", statusCode, err)
 		}
-		return resp, fmt.Errorf("%s request failed: %w", req.Method, models.NewCfError(req.RequestURI, req.RequestURI, statusCode, respBody))
+		return resp, fmt.Errorf("%s request failed: %w", req.Method, NewCfError(req.RequestURI, req.RequestURI, statusCode, respBody))
 	}
 	return resp, nil
 }

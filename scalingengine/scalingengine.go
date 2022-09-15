@@ -347,7 +347,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 
 	processes, err := s.cfClient.GetAppProcesses(cf.Guid(appId), cf.ProcessTypeWeb)
 	if err != nil {
-		if models.IsNotFound(err) {
+		if cf.IsNotFound(err) {
 			history.Status = models.ScalingStatusIgnored
 			return nil
 		}

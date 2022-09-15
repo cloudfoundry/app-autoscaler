@@ -139,7 +139,6 @@ func addPSQLFunctions() {
 }
 
 func addCreateFunction() {
-	//nolint:rowserrcheck
 	rows, err := dbHelper.Query(`
 create or replace function create_creds(
   username varchar,
@@ -154,7 +153,6 @@ as $$ SELECT $2 || ' from create', $1 || ' from create' $$`)
 }
 
 func addDeleteFunction() {
-	//nolint:rowserrcheck
 	rows, err := dbHelper.Query(fmt.Sprintf(`
 create or replace function "deleteCreds"(
   username varchar,
@@ -176,7 +174,6 @@ $$`, instanceId, bindingId))
 }
 
 func addDeleteAllFunction() {
-	//nolint:rowserrcheck
 	rows, err := dbHelper.Query(fmt.Sprintf(`
 create or replace function "deleteAll"( instanceId varchar) 
 returns integer
@@ -196,7 +193,6 @@ $$`, instanceId))
 }
 
 func addValidateFunction() {
-	//nolint:rowserrcheck
 	rows, err := dbHelper.Query(fmt.Sprintf(`
 create or replace function "validate"( username text, password text) 
 returns TABLE( instanceId text, bindingId text)
@@ -216,7 +212,6 @@ $$`, instanceId, bindingId))
 }
 
 func deleteFunction(name string) {
-	//nolint:rowserrcheck
 	rows, err := dbHelper.Query(fmt.Sprintf("Drop function if exists public.%s", pq.QuoteIdentifier(name)))
 	defer func() { _ = rows.Close() }()
 	if err != nil {

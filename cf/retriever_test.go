@@ -44,7 +44,7 @@ var _ = Describe("Cf client Retriever", func() {
 				var cfError *models.CfError
 				Expect(err).To(MatchError(MatchRegexp(`GET request failed: cf api Error url='', resourceId='': \['CF-ResourceNotFound' code: 10010.*\]`)))
 				Expect(errors.As(err, &cfError) && cfError.IsNotFound()).To(BeTrue())
-				Expect(models.IsNotFound(err)).To(BeTrue())
+				Expect(cf.IsNotFound(err)).To(BeTrue())
 			})
 			It("should close the response body", func() {
 				req, _ := http.NewRequest("GET", cfc.ApiUrl("/v3/something/404"), nil)
