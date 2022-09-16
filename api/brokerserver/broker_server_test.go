@@ -76,7 +76,7 @@ var _ = Describe("BrokerServer", func() {
 				bodyBytes, err := io.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(bodyBytes).To(Equal(catalogBytes))
+				Expect(bodyBytes).To(MatchJSON(catalogBytes))
 			})
 		})
 
@@ -97,7 +97,7 @@ var _ = Describe("BrokerServer", func() {
 				bodyBytes, err := io.ReadAll(rsp.Body)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(bodyBytes).To(Equal(catalogBytes))
+				Expect(bodyBytes).To(MatchJSON(catalogBytes))
 			})
 		})
 		BeforeEach(func() {

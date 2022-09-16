@@ -9,10 +9,14 @@ type BrokerContext struct {
 	SpaceGUID string `json:"space_guid"`
 }
 
+type PreviousValues struct {
+	PlanID string `json:"plan_id"`
+}
 type BrokerCommonRequestBody struct {
-	ServiceID     string        `json:"service_id"`
-	PlanID        string        `json:"plan_id"`
-	BrokerContext BrokerContext `json:"context"`
+	ServiceID      string         `json:"service_id"`
+	PlanID         string         `json:"plan_id,omitempty"`
+	BrokerContext  BrokerContext  `json:"context"`
+	PreviousValues PreviousValues `json:"previous_values"`
 }
 
 type InstanceParameters struct {

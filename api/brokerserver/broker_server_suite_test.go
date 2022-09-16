@@ -1,10 +1,13 @@
 package brokerserver_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
@@ -42,6 +45,7 @@ var (
 	httpClient        *http.Client
 	conf              *config.Config
 	catalogBytes      []byte
+	services          []domain.Service
 	schedulerServer   *ghttp.Server
 	testDefaultPolicy string
 	testDefaultGuid   string
@@ -94,7 +98,7 @@ var _ = BeforeSuite(func() {
 		BrokerCredentials: brokerCreds,
 		PlanCheck: &config.PlanCheckConfig{
 			PlanDefinitions: map[string]config.PlanDefinition{
-				"a-plan-id": {
+				"autoscaler-free-plan-id": {
 					PlanCheckEnabled:  true,
 					PlanUpdateable:    true,
 					SchedulesCount:    1,
@@ -136,6 +140,12 @@ var _ = BeforeSuite(func() {
 
 	catalogBytes, err = os.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
+	catalog := &struct {
+		Services []domain.Service `json:"services"`
+	}{}
+	err = json.Unmarshal(catalogBytes, catalog)
+	Expect(err).NotTo(HaveOccurred())
+	services = catalog.Services
 
 	urlPath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
 	if err != nil {

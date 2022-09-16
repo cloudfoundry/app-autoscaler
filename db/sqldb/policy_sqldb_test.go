@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -270,7 +271,7 @@ var _ = Describe("PolicySQLDB", func() {
 						"adjustment":"+1"
 					}]
 				}`
-				err = pdb.SaveAppPolicy(appId, policyJsonStr, policyGuid)
+				err = pdb.SaveAppPolicy(context.Background(), appId, policyJsonStr, policyGuid)
 			})
 			It("saves the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -307,7 +308,7 @@ var _ = Describe("PolicySQLDB", func() {
 					}]
 				}`
 
-				err = pdb.SaveAppPolicy(appId, policyJsonStr, policyGuid)
+				err = pdb.SaveAppPolicy(context.Background(), appId, policyJsonStr, policyGuid)
 			})
 			It("updates the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -320,7 +321,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 	Describe("DeletePolicy", func() {
 		JustBeforeEach(func() {
-			err = pdb.DeletePolicy(appId)
+			err = pdb.DeletePolicy(context.Background(), appId)
 		})
 
 		Context("when there is no policy in the table", func() {
@@ -357,7 +358,7 @@ var _ = Describe("PolicySQLDB", func() {
 		var updatedApps []string
 
 		JustBeforeEach(func() {
-			updatedApps, err = pdb.DeletePoliciesByPolicyGuid(policyGuid)
+			updatedApps, err = pdb.DeletePoliciesByPolicyGuid(context.Background(), policyGuid)
 		})
 
 		Context("when there is no policy in the table", func() {
@@ -401,7 +402,7 @@ var _ = Describe("PolicySQLDB", func() {
 		newPolicy := `{"new": "policy"}`
 		var modifiedApps []string
 		JustBeforeEach(func() {
-			modifiedApps, err = pdb.SetOrUpdateDefaultAppPolicy([]string{appId, appId2, appId3}, policyGuid, newPolicy, policyGuid2)
+			modifiedApps, err = pdb.SetOrUpdateDefaultAppPolicy(context.Background(), []string{appId, appId2, appId3}, policyGuid, newPolicy, policyGuid2)
 		})
 
 		Context("when policy table is empty", func() {
@@ -470,7 +471,7 @@ var _ = Describe("PolicySQLDB", func() {
 	Describe("SaveCredential", func() {
 
 		JustBeforeEach(func() {
-			err = pdb.SaveCredential(appId, models.Credential{
+			err = pdb.SaveCredential(context.Background(), appId, models.Credential{
 				Username: username,
 				Password: password,
 			})
@@ -505,7 +506,7 @@ var _ = Describe("PolicySQLDB", func() {
 	Describe("DeleteCred", func() {
 
 		JustBeforeEach(func() {
-			err = pdb.DeleteCredential(appId)
+			err = pdb.DeleteCredential(context.Background(), appId)
 		})
 		Context("when there is no credential in the table", func() {
 			It("should not error", func() {
@@ -539,7 +540,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 func deleteCredentials(pdb *PolicySQLDB, logger lager.Logger, appIds ...string) {
 	for _, appId := range appIds {
-		err := pdb.DeleteCredential(appId)
+		err := pdb.DeleteCredential(context.Background(), appId)
 		if err != nil {
 			logger.Error(fmt.Sprintf("DeleteCredential app: %s", appId), err)
 		}
@@ -548,7 +549,7 @@ func deleteCredentials(pdb *PolicySQLDB, logger lager.Logger, appIds ...string) 
 
 func deletePolicies(pdb *PolicySQLDB, logger lager.Logger, policyGuids ...string) {
 	for _, policyGuid := range policyGuids {
-		_, err := pdb.DeletePoliciesByPolicyGuid(policyGuid)
+		_, err := pdb.DeletePoliciesByPolicyGuid(context.Background(), policyGuid)
 		if err != nil {
 			logger.Error(fmt.Sprintf("DeletePoliciesByPolicyGuid policy: %s", policyGuid), err)
 		}
@@ -557,7 +558,7 @@ func deletePolicies(pdb *PolicySQLDB, logger lager.Logger, policyGuids ...string
 
 func deleteApps(pdb *PolicySQLDB, logger lager.Logger, appIds ...string) {
 	for _, appId := range appIds {
-		err := pdb.DeletePolicy(appId)
+		err := pdb.DeletePolicy(context.Background(), appId)
 		if err != nil {
 			logger.Error(fmt.Sprintf("DeletePolicy app: %s", appId), err)
 		}

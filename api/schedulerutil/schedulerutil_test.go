@@ -1,6 +1,7 @@
 package schedulerutil_test
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 
@@ -66,7 +67,7 @@ var _ = Describe("Schedulerutil", func() {
 			schedulerServer.Close()
 		})
 		It("should fail", func() {
-			err = schedulerUtil.CreateOrUpdateSchedule(testAppId, testPolicyStr, testPolicyGuid)
+			err = schedulerUtil.CreateOrUpdateSchedule(context.Background(), testAppId, testPolicyStr, testPolicyGuid)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -77,7 +78,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.CreateOrUpdateSchedule(testAppId, testPolicyStr, testPolicyGuid)
+				err = schedulerUtil.CreateOrUpdateSchedule(context.Background(), testAppId, testPolicyStr, testPolicyGuid)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -87,7 +88,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.CreateOrUpdateSchedule(testAppId, testPolicyStr, testPolicyGuid)
+				err = schedulerUtil.CreateOrUpdateSchedule(context.Background(), testAppId, testPolicyStr, testPolicyGuid)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -97,7 +98,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusBadRequest, "error in schedules"))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.CreateOrUpdateSchedule(testAppId, testPolicyStr, testPolicyGuid)
+				err = schedulerUtil.CreateOrUpdateSchedule(context.Background(), testAppId, testPolicyStr, testPolicyGuid)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Failed to create schedules due to validation errors in schedule : error in schedules"))
 			})
@@ -108,7 +109,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusInternalServerError, "error creating schedules"))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.CreateOrUpdateSchedule(testAppId, testPolicyStr, testPolicyGuid)
+				err = schedulerUtil.CreateOrUpdateSchedule(context.Background(), testAppId, testPolicyStr, testPolicyGuid)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Error occurred in scheduler module during creation/update : error creating schedules"))
 			})
@@ -121,7 +122,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.DeleteSchedule(testAppId)
+				err = schedulerUtil.DeleteSchedule(context.Background(), testAppId)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -131,7 +132,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.DeleteSchedule(testAppId)
+				err = schedulerUtil.DeleteSchedule(context.Background(), testAppId)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -141,7 +142,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusNotFound, nil))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.DeleteSchedule(testAppId)
+				err = schedulerUtil.DeleteSchedule(context.Background(), testAppId)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -151,7 +152,7 @@ var _ = Describe("Schedulerutil", func() {
 				schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusInternalServerError, "error deleting schedules"))
 			})
 			It("should succeed", func() {
-				err = schedulerUtil.DeleteSchedule(testAppId)
+				err = schedulerUtil.DeleteSchedule(context.Background(), testAppId)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Error occurred in scheduler module during deletion : error deleting schedules"))
 			})

@@ -2,6 +2,7 @@
 package fakes
 
 import (
+	"context"
 	"sync"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
@@ -19,11 +20,12 @@ type FakeCredentials struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CreateStub        func(string, *models.Credential) (*models.Credential, error)
+	CreateStub        func(context.Context, string, *models.Credential) (*models.Credential, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []struct {
-		arg1 string
-		arg2 *models.Credential
+		arg1 context.Context
+		arg2 string
+		arg3 *models.Credential
 	}
 	createReturns struct {
 		result1 *models.Credential
@@ -33,10 +35,11 @@ type FakeCredentials struct {
 		result1 *models.Credential
 		result2 error
 	}
-	DeleteStub        func(string) error
+	DeleteStub        func(context.Context, string) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	deleteReturns struct {
 		result1 error
@@ -125,19 +128,20 @@ func (fake *FakeCredentials) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCredentials) Create(arg1 string, arg2 *models.Credential) (*models.Credential, error) {
+func (fake *FakeCredentials) Create(arg1 context.Context, arg2 string, arg3 *models.Credential) (*models.Credential, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
 	fake.createArgsForCall = append(fake.createArgsForCall, struct {
-		arg1 string
-		arg2 *models.Credential
-	}{arg1, arg2})
+		arg1 context.Context
+		arg2 string
+		arg3 *models.Credential
+	}{arg1, arg2, arg3})
 	stub := fake.CreateStub
 	fakeReturns := fake.createReturns
-	fake.recordInvocation("Create", []interface{}{arg1, arg2})
+	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3})
 	fake.createMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -151,17 +155,17 @@ func (fake *FakeCredentials) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *FakeCredentials) CreateCalls(stub func(string, *models.Credential) (*models.Credential, error)) {
+func (fake *FakeCredentials) CreateCalls(stub func(context.Context, string, *models.Credential) (*models.Credential, error)) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = stub
 }
 
-func (fake *FakeCredentials) CreateArgsForCall(i int) (string, *models.Credential) {
+func (fake *FakeCredentials) CreateArgsForCall(i int) (context.Context, string, *models.Credential) {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	argsForCall := fake.createArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeCredentials) CreateReturns(result1 *models.Credential, result2 error) {
@@ -190,18 +194,19 @@ func (fake *FakeCredentials) CreateReturnsOnCall(i int, result1 *models.Credenti
 	}{result1, result2}
 }
 
-func (fake *FakeCredentials) Delete(arg1 string) error {
+func (fake *FakeCredentials) Delete(arg1 context.Context, arg2 string) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.DeleteStub
 	fakeReturns := fake.deleteReturns
-	fake.recordInvocation("Delete", []interface{}{arg1})
+	fake.recordInvocation("Delete", []interface{}{arg1, arg2})
 	fake.deleteMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -215,17 +220,17 @@ func (fake *FakeCredentials) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeCredentials) DeleteCalls(stub func(string) error) {
+func (fake *FakeCredentials) DeleteCalls(stub func(context.Context, string) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeCredentials) DeleteArgsForCall(i int) string {
+func (fake *FakeCredentials) DeleteArgsForCall(i int) (context.Context, string) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeCredentials) DeleteReturns(result1 error) {

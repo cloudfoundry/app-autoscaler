@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -70,7 +71,7 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 	appIds := make(map[string]bool)
 	query := "SELECT app_id FROM policy_json"
 
-	rows, err := pdb.sqldb.Query(query)
+	rows, err := pdb.sqldb.QueryContext(context.Background(), query)
 	if err != nil {
 		pdb.logger.Error("get-appids-from-policy-table", err, lager.Data{"query": query})
 		return nil, err
@@ -140,7 +141,7 @@ func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error
 	return scalingPolicy, nil
 }
 
-func (pdb *PolicySQLDB) SaveAppPolicy(appId string, policyJSON string, policyGuid string) error {
+func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policyJSON string, policyGuid string) error {
 	var query string
 	queryPrefix := "INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?,?,?) "
 	switch pdb.sqldb.DriverName() {
@@ -156,7 +157,7 @@ func (pdb *PolicySQLDB) SaveAppPolicy(appId string, policyJSON string, policyGui
 	return err
 }
 
-func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error) {
+func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundApps []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error) {
 	if len(boundApps) == 0 && oldPolicyGuid == "" {
 		return nil, nil
 	}
@@ -185,7 +186,7 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 		// determine which apps had the existing default policy set
 		query := tx.Rebind("SELECT app_id FROM policy_json WHERE guid = ?")
 
-		rows, err := tx.Query(query, oldPolicyGuid)
+		rows, err := tx.QueryContext(ctx, query, oldPolicyGuid)
 		if err != nil {
 			pdb.logger.Error("rollback-set-or-update-app-policies", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid})
 			return nil, err
@@ -221,7 +222,7 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 		// now replace the default policy
 		query = tx.Rebind("UPDATE policy_json SET guid = ?, policy_json = ? WHERE guid = ?")
 
-		_, err = tx.Exec(query, newPolicyGuid, newPolicy, oldPolicyGuid)
+		_, err = tx.ExecContext(ctx, query, newPolicyGuid, newPolicy, oldPolicyGuid)
 		if err != nil {
 			pdb.logger.Error("rollback-set-or-update-app-policies", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
 			return nil, err
@@ -260,16 +261,16 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(boundApps []string, oldPolic
 	return modifiedApps, nil
 }
 
-func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
+func (pdb *PolicySQLDB) DeletePolicy(ctx context.Context, appId string) error {
 	query := pdb.sqldb.Rebind("DELETE FROM policy_json WHERE app_id =?")
-	_, err := pdb.sqldb.Exec(query, appId)
+	_, err := pdb.sqldb.ExecContext(ctx, query, appId)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-application-details", err, lager.Data{"query": query, "appId": appId})
 	}
 	return err
 }
 
-func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) ([]string, error) {
+func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error) {
 	var appIds []string
 
 	tx, err := pdb.sqldb.Beginx()
@@ -291,7 +292,7 @@ func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) ([]string,
 
 	// first determine for which apps the policy will be removed
 	query := tx.Rebind("SELECT app_id FROM policy_json WHERE guid = ?")
-	rows, err := tx.Query(query, policyGuid)
+	rows, err := tx.QueryContext(ctx, query, policyGuid)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-policies-by-policy-guid", err, lager.Data{"query": query, "policyGuid": policyGuid})
 		return nil, err
@@ -315,7 +316,7 @@ func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) ([]string,
 
 	// then actually delete them
 	query = tx.Rebind("DELETE FROM policy_json WHERE guid = ?")
-	_, err = tx.Exec(query, policyGuid)
+	_, err = tx.ExecContext(ctx, query, policyGuid)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-policies-by-policy-guid", err, lager.Data{"query": query, "policyGuid": policyGuid})
 		return nil, err
@@ -352,7 +353,7 @@ func (pdb *PolicySQLDB) GetCredential(appId string) (*models.Credential, error) 
 		Password: password,
 	}, nil
 }
-func (pdb *PolicySQLDB) SaveCredential(appId string, cred models.Credential) error {
+func (pdb *PolicySQLDB) SaveCredential(ctx context.Context, appId string, cred models.Credential) error {
 	var query string
 	queryPrefix := "INSERT INTO credentials (id, username, password, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) "
 	switch pdb.sqldb.DriverName() {
@@ -361,15 +362,15 @@ func (pdb *PolicySQLDB) SaveCredential(appId string, cred models.Credential) err
 	case "mysql":
 		query = pdb.sqldb.Rebind(queryPrefix + "ON DUPLICATE KEY UPDATE username=VALUES(username), password=VALUES(password), updated_at=CURRENT_TIMESTAMP")
 	}
-	_, err := pdb.sqldb.Exec(query, appId, cred.Username, cred.Password)
+	_, err := pdb.sqldb.ExecContext(ctx, query, appId, cred.Username, cred.Password)
 	if err != nil {
 		pdb.logger.Error("save-custom-metric-credential", err, lager.Data{"query": query, "app_id": appId})
 	}
 	return err
 }
-func (pdb *PolicySQLDB) DeleteCredential(appId string) error {
+func (pdb *PolicySQLDB) DeleteCredential(ctx context.Context, appId string) error {
 	query := pdb.sqldb.Rebind("DELETE FROM credentials WHERE id =?")
-	_, err := pdb.sqldb.Exec(query, appId)
+	_, err := pdb.sqldb.ExecContext(ctx, query, appId)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-custom-metric-credential", err, lager.Data{"query": query, "appId": appId})
 	}

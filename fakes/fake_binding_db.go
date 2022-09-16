@@ -2,6 +2,7 @@
 package fakes
 
 import (
+	"context"
 	"database/sql"
 	"sync"
 
@@ -44,12 +45,13 @@ type FakeBindingDB struct {
 		result1 int
 		result2 error
 	}
-	CreateServiceBindingStub        func(string, string, string) error
+	CreateServiceBindingStub        func(context.Context, string, string, string) error
 	createServiceBindingMutex       sync.RWMutex
 	createServiceBindingArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
 		arg2 string
 		arg3 string
+		arg4 string
 	}
 	createServiceBindingReturns struct {
 		result1 error
@@ -57,10 +59,11 @@ type FakeBindingDB struct {
 	createServiceBindingReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CreateServiceInstanceStub        func(models.ServiceInstance) error
+	CreateServiceInstanceStub        func(context.Context, models.ServiceInstance) error
 	createServiceInstanceMutex       sync.RWMutex
 	createServiceInstanceArgsForCall []struct {
-		arg1 models.ServiceInstance
+		arg1 context.Context
+		arg2 models.ServiceInstance
 	}
 	createServiceInstanceReturns struct {
 		result1 error
@@ -68,10 +71,11 @@ type FakeBindingDB struct {
 	createServiceInstanceReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteServiceBindingStub        func(string) error
+	DeleteServiceBindingStub        func(context.Context, string) error
 	deleteServiceBindingMutex       sync.RWMutex
 	deleteServiceBindingArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	deleteServiceBindingReturns struct {
 		result1 error
@@ -79,10 +83,11 @@ type FakeBindingDB struct {
 	deleteServiceBindingReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteServiceBindingByAppIdStub        func(string) error
+	DeleteServiceBindingByAppIdStub        func(context.Context, string) error
 	deleteServiceBindingByAppIdMutex       sync.RWMutex
 	deleteServiceBindingByAppIdArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	deleteServiceBindingByAppIdReturns struct {
 		result1 error
@@ -90,10 +95,11 @@ type FakeBindingDB struct {
 	deleteServiceBindingByAppIdReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteServiceInstanceStub        func(string) error
+	DeleteServiceInstanceStub        func(context.Context, string) error
 	deleteServiceInstanceMutex       sync.RWMutex
 	deleteServiceInstanceArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	deleteServiceInstanceReturns struct {
 		result1 error
@@ -101,10 +107,11 @@ type FakeBindingDB struct {
 	deleteServiceInstanceReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetAppIdByBindingIdStub        func(string) (string, error)
+	GetAppIdByBindingIdStub        func(context.Context, string) (string, error)
 	getAppIdByBindingIdMutex       sync.RWMutex
 	getAppIdByBindingIdArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	getAppIdByBindingIdReturns struct {
 		result1 string
@@ -114,10 +121,11 @@ type FakeBindingDB struct {
 		result1 string
 		result2 error
 	}
-	GetAppIdsByInstanceIdStub        func(string) ([]string, error)
+	GetAppIdsByInstanceIdStub        func(context.Context, string) ([]string, error)
 	getAppIdsByInstanceIdMutex       sync.RWMutex
 	getAppIdsByInstanceIdArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	getAppIdsByInstanceIdReturns struct {
 		result1 []string
@@ -127,10 +135,11 @@ type FakeBindingDB struct {
 		result1 []string
 		result2 error
 	}
-	GetBindingIdsByInstanceIdStub        func(string) ([]string, error)
+	GetBindingIdsByInstanceIdStub        func(context.Context, string) ([]string, error)
 	getBindingIdsByInstanceIdMutex       sync.RWMutex
 	getBindingIdsByInstanceIdArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	getBindingIdsByInstanceIdReturns struct {
 		result1 []string
@@ -150,10 +159,11 @@ type FakeBindingDB struct {
 	getDBStatusReturnsOnCall map[int]struct {
 		result1 sql.DBStats
 	}
-	GetServiceInstanceStub        func(string) (*models.ServiceInstance, error)
+	GetServiceInstanceStub        func(context.Context, string) (*models.ServiceInstance, error)
 	getServiceInstanceMutex       sync.RWMutex
 	getServiceInstanceArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	getServiceInstanceReturns struct {
 		result1 *models.ServiceInstance
@@ -176,10 +186,11 @@ type FakeBindingDB struct {
 		result1 *models.ServiceInstance
 		result2 error
 	}
-	UpdateServiceInstanceStub        func(models.ServiceInstance) error
+	UpdateServiceInstanceStub        func(context.Context, models.ServiceInstance) error
 	updateServiceInstanceMutex       sync.RWMutex
 	updateServiceInstanceArgsForCall []struct {
-		arg1 models.ServiceInstance
+		arg1 context.Context
+		arg2 models.ServiceInstance
 	}
 	updateServiceInstanceReturns struct {
 		result1 error
@@ -369,20 +380,21 @@ func (fake *FakeBindingDB) CountServiceInstancesInOrgReturnsOnCall(i int, result
 	}{result1, result2}
 }
 
-func (fake *FakeBindingDB) CreateServiceBinding(arg1 string, arg2 string, arg3 string) error {
+func (fake *FakeBindingDB) CreateServiceBinding(arg1 context.Context, arg2 string, arg3 string, arg4 string) error {
 	fake.createServiceBindingMutex.Lock()
 	ret, specificReturn := fake.createServiceBindingReturnsOnCall[len(fake.createServiceBindingArgsForCall)]
 	fake.createServiceBindingArgsForCall = append(fake.createServiceBindingArgsForCall, struct {
-		arg1 string
+		arg1 context.Context
 		arg2 string
 		arg3 string
-	}{arg1, arg2, arg3})
+		arg4 string
+	}{arg1, arg2, arg3, arg4})
 	stub := fake.CreateServiceBindingStub
 	fakeReturns := fake.createServiceBindingReturns
-	fake.recordInvocation("CreateServiceBinding", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("CreateServiceBinding", []interface{}{arg1, arg2, arg3, arg4})
 	fake.createServiceBindingMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
@@ -396,17 +408,17 @@ func (fake *FakeBindingDB) CreateServiceBindingCallCount() int {
 	return len(fake.createServiceBindingArgsForCall)
 }
 
-func (fake *FakeBindingDB) CreateServiceBindingCalls(stub func(string, string, string) error) {
+func (fake *FakeBindingDB) CreateServiceBindingCalls(stub func(context.Context, string, string, string) error) {
 	fake.createServiceBindingMutex.Lock()
 	defer fake.createServiceBindingMutex.Unlock()
 	fake.CreateServiceBindingStub = stub
 }
 
-func (fake *FakeBindingDB) CreateServiceBindingArgsForCall(i int) (string, string, string) {
+func (fake *FakeBindingDB) CreateServiceBindingArgsForCall(i int) (context.Context, string, string, string) {
 	fake.createServiceBindingMutex.RLock()
 	defer fake.createServiceBindingMutex.RUnlock()
 	argsForCall := fake.createServiceBindingArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeBindingDB) CreateServiceBindingReturns(result1 error) {
@@ -432,18 +444,19 @@ func (fake *FakeBindingDB) CreateServiceBindingReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
-func (fake *FakeBindingDB) CreateServiceInstance(arg1 models.ServiceInstance) error {
+func (fake *FakeBindingDB) CreateServiceInstance(arg1 context.Context, arg2 models.ServiceInstance) error {
 	fake.createServiceInstanceMutex.Lock()
 	ret, specificReturn := fake.createServiceInstanceReturnsOnCall[len(fake.createServiceInstanceArgsForCall)]
 	fake.createServiceInstanceArgsForCall = append(fake.createServiceInstanceArgsForCall, struct {
-		arg1 models.ServiceInstance
-	}{arg1})
+		arg1 context.Context
+		arg2 models.ServiceInstance
+	}{arg1, arg2})
 	stub := fake.CreateServiceInstanceStub
 	fakeReturns := fake.createServiceInstanceReturns
-	fake.recordInvocation("CreateServiceInstance", []interface{}{arg1})
+	fake.recordInvocation("CreateServiceInstance", []interface{}{arg1, arg2})
 	fake.createServiceInstanceMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -457,17 +470,17 @@ func (fake *FakeBindingDB) CreateServiceInstanceCallCount() int {
 	return len(fake.createServiceInstanceArgsForCall)
 }
 
-func (fake *FakeBindingDB) CreateServiceInstanceCalls(stub func(models.ServiceInstance) error) {
+func (fake *FakeBindingDB) CreateServiceInstanceCalls(stub func(context.Context, models.ServiceInstance) error) {
 	fake.createServiceInstanceMutex.Lock()
 	defer fake.createServiceInstanceMutex.Unlock()
 	fake.CreateServiceInstanceStub = stub
 }
 
-func (fake *FakeBindingDB) CreateServiceInstanceArgsForCall(i int) models.ServiceInstance {
+func (fake *FakeBindingDB) CreateServiceInstanceArgsForCall(i int) (context.Context, models.ServiceInstance) {
 	fake.createServiceInstanceMutex.RLock()
 	defer fake.createServiceInstanceMutex.RUnlock()
 	argsForCall := fake.createServiceInstanceArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) CreateServiceInstanceReturns(result1 error) {
@@ -493,18 +506,19 @@ func (fake *FakeBindingDB) CreateServiceInstanceReturnsOnCall(i int, result1 err
 	}{result1}
 }
 
-func (fake *FakeBindingDB) DeleteServiceBinding(arg1 string) error {
+func (fake *FakeBindingDB) DeleteServiceBinding(arg1 context.Context, arg2 string) error {
 	fake.deleteServiceBindingMutex.Lock()
 	ret, specificReturn := fake.deleteServiceBindingReturnsOnCall[len(fake.deleteServiceBindingArgsForCall)]
 	fake.deleteServiceBindingArgsForCall = append(fake.deleteServiceBindingArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.DeleteServiceBindingStub
 	fakeReturns := fake.deleteServiceBindingReturns
-	fake.recordInvocation("DeleteServiceBinding", []interface{}{arg1})
+	fake.recordInvocation("DeleteServiceBinding", []interface{}{arg1, arg2})
 	fake.deleteServiceBindingMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -518,17 +532,17 @@ func (fake *FakeBindingDB) DeleteServiceBindingCallCount() int {
 	return len(fake.deleteServiceBindingArgsForCall)
 }
 
-func (fake *FakeBindingDB) DeleteServiceBindingCalls(stub func(string) error) {
+func (fake *FakeBindingDB) DeleteServiceBindingCalls(stub func(context.Context, string) error) {
 	fake.deleteServiceBindingMutex.Lock()
 	defer fake.deleteServiceBindingMutex.Unlock()
 	fake.DeleteServiceBindingStub = stub
 }
 
-func (fake *FakeBindingDB) DeleteServiceBindingArgsForCall(i int) string {
+func (fake *FakeBindingDB) DeleteServiceBindingArgsForCall(i int) (context.Context, string) {
 	fake.deleteServiceBindingMutex.RLock()
 	defer fake.deleteServiceBindingMutex.RUnlock()
 	argsForCall := fake.deleteServiceBindingArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) DeleteServiceBindingReturns(result1 error) {
@@ -554,18 +568,19 @@ func (fake *FakeBindingDB) DeleteServiceBindingReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
-func (fake *FakeBindingDB) DeleteServiceBindingByAppId(arg1 string) error {
+func (fake *FakeBindingDB) DeleteServiceBindingByAppId(arg1 context.Context, arg2 string) error {
 	fake.deleteServiceBindingByAppIdMutex.Lock()
 	ret, specificReturn := fake.deleteServiceBindingByAppIdReturnsOnCall[len(fake.deleteServiceBindingByAppIdArgsForCall)]
 	fake.deleteServiceBindingByAppIdArgsForCall = append(fake.deleteServiceBindingByAppIdArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.DeleteServiceBindingByAppIdStub
 	fakeReturns := fake.deleteServiceBindingByAppIdReturns
-	fake.recordInvocation("DeleteServiceBindingByAppId", []interface{}{arg1})
+	fake.recordInvocation("DeleteServiceBindingByAppId", []interface{}{arg1, arg2})
 	fake.deleteServiceBindingByAppIdMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -579,17 +594,17 @@ func (fake *FakeBindingDB) DeleteServiceBindingByAppIdCallCount() int {
 	return len(fake.deleteServiceBindingByAppIdArgsForCall)
 }
 
-func (fake *FakeBindingDB) DeleteServiceBindingByAppIdCalls(stub func(string) error) {
+func (fake *FakeBindingDB) DeleteServiceBindingByAppIdCalls(stub func(context.Context, string) error) {
 	fake.deleteServiceBindingByAppIdMutex.Lock()
 	defer fake.deleteServiceBindingByAppIdMutex.Unlock()
 	fake.DeleteServiceBindingByAppIdStub = stub
 }
 
-func (fake *FakeBindingDB) DeleteServiceBindingByAppIdArgsForCall(i int) string {
+func (fake *FakeBindingDB) DeleteServiceBindingByAppIdArgsForCall(i int) (context.Context, string) {
 	fake.deleteServiceBindingByAppIdMutex.RLock()
 	defer fake.deleteServiceBindingByAppIdMutex.RUnlock()
 	argsForCall := fake.deleteServiceBindingByAppIdArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) DeleteServiceBindingByAppIdReturns(result1 error) {
@@ -615,18 +630,19 @@ func (fake *FakeBindingDB) DeleteServiceBindingByAppIdReturnsOnCall(i int, resul
 	}{result1}
 }
 
-func (fake *FakeBindingDB) DeleteServiceInstance(arg1 string) error {
+func (fake *FakeBindingDB) DeleteServiceInstance(arg1 context.Context, arg2 string) error {
 	fake.deleteServiceInstanceMutex.Lock()
 	ret, specificReturn := fake.deleteServiceInstanceReturnsOnCall[len(fake.deleteServiceInstanceArgsForCall)]
 	fake.deleteServiceInstanceArgsForCall = append(fake.deleteServiceInstanceArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.DeleteServiceInstanceStub
 	fakeReturns := fake.deleteServiceInstanceReturns
-	fake.recordInvocation("DeleteServiceInstance", []interface{}{arg1})
+	fake.recordInvocation("DeleteServiceInstance", []interface{}{arg1, arg2})
 	fake.deleteServiceInstanceMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -640,17 +656,17 @@ func (fake *FakeBindingDB) DeleteServiceInstanceCallCount() int {
 	return len(fake.deleteServiceInstanceArgsForCall)
 }
 
-func (fake *FakeBindingDB) DeleteServiceInstanceCalls(stub func(string) error) {
+func (fake *FakeBindingDB) DeleteServiceInstanceCalls(stub func(context.Context, string) error) {
 	fake.deleteServiceInstanceMutex.Lock()
 	defer fake.deleteServiceInstanceMutex.Unlock()
 	fake.DeleteServiceInstanceStub = stub
 }
 
-func (fake *FakeBindingDB) DeleteServiceInstanceArgsForCall(i int) string {
+func (fake *FakeBindingDB) DeleteServiceInstanceArgsForCall(i int) (context.Context, string) {
 	fake.deleteServiceInstanceMutex.RLock()
 	defer fake.deleteServiceInstanceMutex.RUnlock()
 	argsForCall := fake.deleteServiceInstanceArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) DeleteServiceInstanceReturns(result1 error) {
@@ -676,18 +692,19 @@ func (fake *FakeBindingDB) DeleteServiceInstanceReturnsOnCall(i int, result1 err
 	}{result1}
 }
 
-func (fake *FakeBindingDB) GetAppIdByBindingId(arg1 string) (string, error) {
+func (fake *FakeBindingDB) GetAppIdByBindingId(arg1 context.Context, arg2 string) (string, error) {
 	fake.getAppIdByBindingIdMutex.Lock()
 	ret, specificReturn := fake.getAppIdByBindingIdReturnsOnCall[len(fake.getAppIdByBindingIdArgsForCall)]
 	fake.getAppIdByBindingIdArgsForCall = append(fake.getAppIdByBindingIdArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.GetAppIdByBindingIdStub
 	fakeReturns := fake.getAppIdByBindingIdReturns
-	fake.recordInvocation("GetAppIdByBindingId", []interface{}{arg1})
+	fake.recordInvocation("GetAppIdByBindingId", []interface{}{arg1, arg2})
 	fake.getAppIdByBindingIdMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -701,17 +718,17 @@ func (fake *FakeBindingDB) GetAppIdByBindingIdCallCount() int {
 	return len(fake.getAppIdByBindingIdArgsForCall)
 }
 
-func (fake *FakeBindingDB) GetAppIdByBindingIdCalls(stub func(string) (string, error)) {
+func (fake *FakeBindingDB) GetAppIdByBindingIdCalls(stub func(context.Context, string) (string, error)) {
 	fake.getAppIdByBindingIdMutex.Lock()
 	defer fake.getAppIdByBindingIdMutex.Unlock()
 	fake.GetAppIdByBindingIdStub = stub
 }
 
-func (fake *FakeBindingDB) GetAppIdByBindingIdArgsForCall(i int) string {
+func (fake *FakeBindingDB) GetAppIdByBindingIdArgsForCall(i int) (context.Context, string) {
 	fake.getAppIdByBindingIdMutex.RLock()
 	defer fake.getAppIdByBindingIdMutex.RUnlock()
 	argsForCall := fake.getAppIdByBindingIdArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) GetAppIdByBindingIdReturns(result1 string, result2 error) {
@@ -740,18 +757,19 @@ func (fake *FakeBindingDB) GetAppIdByBindingIdReturnsOnCall(i int, result1 strin
 	}{result1, result2}
 }
 
-func (fake *FakeBindingDB) GetAppIdsByInstanceId(arg1 string) ([]string, error) {
+func (fake *FakeBindingDB) GetAppIdsByInstanceId(arg1 context.Context, arg2 string) ([]string, error) {
 	fake.getAppIdsByInstanceIdMutex.Lock()
 	ret, specificReturn := fake.getAppIdsByInstanceIdReturnsOnCall[len(fake.getAppIdsByInstanceIdArgsForCall)]
 	fake.getAppIdsByInstanceIdArgsForCall = append(fake.getAppIdsByInstanceIdArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.GetAppIdsByInstanceIdStub
 	fakeReturns := fake.getAppIdsByInstanceIdReturns
-	fake.recordInvocation("GetAppIdsByInstanceId", []interface{}{arg1})
+	fake.recordInvocation("GetAppIdsByInstanceId", []interface{}{arg1, arg2})
 	fake.getAppIdsByInstanceIdMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -765,17 +783,17 @@ func (fake *FakeBindingDB) GetAppIdsByInstanceIdCallCount() int {
 	return len(fake.getAppIdsByInstanceIdArgsForCall)
 }
 
-func (fake *FakeBindingDB) GetAppIdsByInstanceIdCalls(stub func(string) ([]string, error)) {
+func (fake *FakeBindingDB) GetAppIdsByInstanceIdCalls(stub func(context.Context, string) ([]string, error)) {
 	fake.getAppIdsByInstanceIdMutex.Lock()
 	defer fake.getAppIdsByInstanceIdMutex.Unlock()
 	fake.GetAppIdsByInstanceIdStub = stub
 }
 
-func (fake *FakeBindingDB) GetAppIdsByInstanceIdArgsForCall(i int) string {
+func (fake *FakeBindingDB) GetAppIdsByInstanceIdArgsForCall(i int) (context.Context, string) {
 	fake.getAppIdsByInstanceIdMutex.RLock()
 	defer fake.getAppIdsByInstanceIdMutex.RUnlock()
 	argsForCall := fake.getAppIdsByInstanceIdArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) GetAppIdsByInstanceIdReturns(result1 []string, result2 error) {
@@ -804,18 +822,19 @@ func (fake *FakeBindingDB) GetAppIdsByInstanceIdReturnsOnCall(i int, result1 []s
 	}{result1, result2}
 }
 
-func (fake *FakeBindingDB) GetBindingIdsByInstanceId(arg1 string) ([]string, error) {
+func (fake *FakeBindingDB) GetBindingIdsByInstanceId(arg1 context.Context, arg2 string) ([]string, error) {
 	fake.getBindingIdsByInstanceIdMutex.Lock()
 	ret, specificReturn := fake.getBindingIdsByInstanceIdReturnsOnCall[len(fake.getBindingIdsByInstanceIdArgsForCall)]
 	fake.getBindingIdsByInstanceIdArgsForCall = append(fake.getBindingIdsByInstanceIdArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.GetBindingIdsByInstanceIdStub
 	fakeReturns := fake.getBindingIdsByInstanceIdReturns
-	fake.recordInvocation("GetBindingIdsByInstanceId", []interface{}{arg1})
+	fake.recordInvocation("GetBindingIdsByInstanceId", []interface{}{arg1, arg2})
 	fake.getBindingIdsByInstanceIdMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -829,17 +848,17 @@ func (fake *FakeBindingDB) GetBindingIdsByInstanceIdCallCount() int {
 	return len(fake.getBindingIdsByInstanceIdArgsForCall)
 }
 
-func (fake *FakeBindingDB) GetBindingIdsByInstanceIdCalls(stub func(string) ([]string, error)) {
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdCalls(stub func(context.Context, string) ([]string, error)) {
 	fake.getBindingIdsByInstanceIdMutex.Lock()
 	defer fake.getBindingIdsByInstanceIdMutex.Unlock()
 	fake.GetBindingIdsByInstanceIdStub = stub
 }
 
-func (fake *FakeBindingDB) GetBindingIdsByInstanceIdArgsForCall(i int) string {
+func (fake *FakeBindingDB) GetBindingIdsByInstanceIdArgsForCall(i int) (context.Context, string) {
 	fake.getBindingIdsByInstanceIdMutex.RLock()
 	defer fake.getBindingIdsByInstanceIdMutex.RUnlock()
 	argsForCall := fake.getBindingIdsByInstanceIdArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) GetBindingIdsByInstanceIdReturns(result1 []string, result2 error) {
@@ -921,18 +940,19 @@ func (fake *FakeBindingDB) GetDBStatusReturnsOnCall(i int, result1 sql.DBStats) 
 	}{result1}
 }
 
-func (fake *FakeBindingDB) GetServiceInstance(arg1 string) (*models.ServiceInstance, error) {
+func (fake *FakeBindingDB) GetServiceInstance(arg1 context.Context, arg2 string) (*models.ServiceInstance, error) {
 	fake.getServiceInstanceMutex.Lock()
 	ret, specificReturn := fake.getServiceInstanceReturnsOnCall[len(fake.getServiceInstanceArgsForCall)]
 	fake.getServiceInstanceArgsForCall = append(fake.getServiceInstanceArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.GetServiceInstanceStub
 	fakeReturns := fake.getServiceInstanceReturns
-	fake.recordInvocation("GetServiceInstance", []interface{}{arg1})
+	fake.recordInvocation("GetServiceInstance", []interface{}{arg1, arg2})
 	fake.getServiceInstanceMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -946,17 +966,17 @@ func (fake *FakeBindingDB) GetServiceInstanceCallCount() int {
 	return len(fake.getServiceInstanceArgsForCall)
 }
 
-func (fake *FakeBindingDB) GetServiceInstanceCalls(stub func(string) (*models.ServiceInstance, error)) {
+func (fake *FakeBindingDB) GetServiceInstanceCalls(stub func(context.Context, string) (*models.ServiceInstance, error)) {
 	fake.getServiceInstanceMutex.Lock()
 	defer fake.getServiceInstanceMutex.Unlock()
 	fake.GetServiceInstanceStub = stub
 }
 
-func (fake *FakeBindingDB) GetServiceInstanceArgsForCall(i int) string {
+func (fake *FakeBindingDB) GetServiceInstanceArgsForCall(i int) (context.Context, string) {
 	fake.getServiceInstanceMutex.RLock()
 	defer fake.getServiceInstanceMutex.RUnlock()
 	argsForCall := fake.getServiceInstanceArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) GetServiceInstanceReturns(result1 *models.ServiceInstance, result2 error) {
@@ -1049,18 +1069,19 @@ func (fake *FakeBindingDB) GetServiceInstanceByAppIdReturnsOnCall(i int, result1
 	}{result1, result2}
 }
 
-func (fake *FakeBindingDB) UpdateServiceInstance(arg1 models.ServiceInstance) error {
+func (fake *FakeBindingDB) UpdateServiceInstance(arg1 context.Context, arg2 models.ServiceInstance) error {
 	fake.updateServiceInstanceMutex.Lock()
 	ret, specificReturn := fake.updateServiceInstanceReturnsOnCall[len(fake.updateServiceInstanceArgsForCall)]
 	fake.updateServiceInstanceArgsForCall = append(fake.updateServiceInstanceArgsForCall, struct {
-		arg1 models.ServiceInstance
-	}{arg1})
+		arg1 context.Context
+		arg2 models.ServiceInstance
+	}{arg1, arg2})
 	stub := fake.UpdateServiceInstanceStub
 	fakeReturns := fake.updateServiceInstanceReturns
-	fake.recordInvocation("UpdateServiceInstance", []interface{}{arg1})
+	fake.recordInvocation("UpdateServiceInstance", []interface{}{arg1, arg2})
 	fake.updateServiceInstanceMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -1074,17 +1095,17 @@ func (fake *FakeBindingDB) UpdateServiceInstanceCallCount() int {
 	return len(fake.updateServiceInstanceArgsForCall)
 }
 
-func (fake *FakeBindingDB) UpdateServiceInstanceCalls(stub func(models.ServiceInstance) error) {
+func (fake *FakeBindingDB) UpdateServiceInstanceCalls(stub func(context.Context, models.ServiceInstance) error) {
 	fake.updateServiceInstanceMutex.Lock()
 	defer fake.updateServiceInstanceMutex.Unlock()
 	fake.UpdateServiceInstanceStub = stub
 }
 
-func (fake *FakeBindingDB) UpdateServiceInstanceArgsForCall(i int) models.ServiceInstance {
+func (fake *FakeBindingDB) UpdateServiceInstanceArgsForCall(i int) (context.Context, models.ServiceInstance) {
 	fake.updateServiceInstanceMutex.RLock()
 	defer fake.updateServiceInstanceMutex.RUnlock()
 	argsForCall := fake.updateServiceInstanceArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeBindingDB) UpdateServiceInstanceReturns(result1 error) {

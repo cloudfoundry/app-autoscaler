@@ -151,7 +151,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	}
 
 	h.logger.Info("saving policy json", lager.Data{"policy": policy})
-	err = h.policydb.SaveAppPolicy(appId, policy, policyGuid.String())
+	err = h.policydb.SaveAppPolicy(r.Context(), appId, policy, policyGuid.String())
 	if err != nil {
 		h.logger.Error("Failed to save policy", err, nil)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
@@ -159,7 +159,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	}
 
 	h.logger.Info("creating/updating schedules", lager.Data{"policy": policy})
-	err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policy, policyGuid.String())
+	err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid.String())
 	if err != nil {
 		h.logger.Error("Failed to create/update schedule", err, nil)
 	}
@@ -170,7 +170,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
@@ -179,14 +179,14 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, _ *http.Re
 	}
 
 	h.logger.Info("Deleting policy json", lager.Data{"appId": appId})
-	err := h.policydb.DeletePolicy(appId)
+	err := h.policydb.DeletePolicy(r.Context(), appId)
 	if err != nil {
 		h.logger.Error("Failed to delete policy from database", err, nil)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting policy")
 		return
 	}
 	h.logger.Info("Deleting schedules", lager.Data{"appId": appId})
-	err = h.schedulerUtil.DeleteSchedule(appId)
+	err = h.schedulerUtil.DeleteSchedule(r.Context(), appId)
 	if err != nil {
 		h.logger.Error("Failed to delete schedule", err, nil)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting schedules")
@@ -205,7 +205,7 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, _ *http.Re
 			policyStr := serviceinstance.DefaultPolicy
 			policyGuidStr := serviceinstance.DefaultPolicyGuid
 			h.logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
-			err = h.policydb.SaveAppPolicy(appId, policyStr, policyGuidStr)
+			err = h.policydb.SaveAppPolicy(r.Context(), appId, policyStr, policyGuidStr)
 			if err != nil {
 				h.logger.Error("failed to save policy", err, lager.Data{"appId": appId, "policy": policyStr})
 				writeErrorResponse(w, http.StatusInternalServerError, "Error attaching the default policy")
@@ -213,7 +213,7 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, _ *http.Re
 			}
 
 			h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
-			err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policyStr, policyGuidStr)
+			err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policyStr, policyGuidStr)
 			//while there is synchronization between policy and schedule, so creating schedule error does not break
 			//the whole creating binding process
 			if err != nil {
@@ -434,7 +434,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.logger.Info("Create credential", lager.Data{"appId": appId})
-	cred, err := h.credentials.Create(appId, userProvidedCredential)
+	cred, err := h.credentials.Create(r.Context(), appId, userProvidedCredential)
 	if err != nil {
 		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")
@@ -451,7 +451,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
@@ -460,7 +460,7 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, _ *http.Reque
 	}
 
 	h.logger.Info("Delete credential", lager.Data{"appId": appId})
-	err := h.credentials.Delete(appId)
+	err := h.credentials.Delete(r.Context(), appId)
 	if err != nil {
 		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting credential")

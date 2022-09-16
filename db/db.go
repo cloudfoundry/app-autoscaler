@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"time"
@@ -56,32 +57,32 @@ type PolicyDB interface {
 	healthendpoint.Pinger
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
-	SaveAppPolicy(appId string, policy string, policyGuid string) error
-	SetOrUpdateDefaultAppPolicy(appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
-	DeletePoliciesByPolicyGuid(policyGuid string) ([]string, error)
+	SaveAppPolicy(ctx context.Context, appId string, policy string, policyGuid string) error
+	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
+	DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	io.Closer
-	DeletePolicy(appId string) error
-	SaveCredential(appId string, cred models.Credential) error
-	DeleteCredential(appId string) error
+	DeletePolicy(ctx context.Context, appId string) error
+	SaveCredential(ctx context.Context, appId string, cred models.Credential) error
+	DeleteCredential(ctx context.Context, appId string) error
 	GetCredential(appId string) (*models.Credential, error)
 }
 
 type BindingDB interface {
 	healthendpoint.DatabaseStatus
-	CreateServiceInstance(serviceInstance models.ServiceInstance) error
-	GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error)
+	CreateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error
+	GetServiceInstance(ctx context.Context, serviceInstanceId string) (*models.ServiceInstance, error)
 	GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error)
-	UpdateServiceInstance(serviceInstance models.ServiceInstance) error
-	DeleteServiceInstance(serviceInstanceId string) error
-	CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error
-	DeleteServiceBinding(bindingId string) error
-	DeleteServiceBindingByAppId(appId string) error
+	UpdateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error
+	DeleteServiceInstance(ctx context.Context, serviceInstanceId string) error
+	CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error
+	DeleteServiceBinding(ctx context.Context, bindingId string) error
+	DeleteServiceBindingByAppId(ctx context.Context, appId string) error
 	CheckServiceBinding(appId string) bool
-	GetAppIdByBindingId(bindingId string) (string, error)
-	GetAppIdsByInstanceId(instanceId string) ([]string, error)
+	GetAppIdByBindingId(ctx context.Context, bindingId string) (string, error)
+	GetAppIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	CountServiceInstancesInOrg(orgId string) (int, error)
-	GetBindingIdsByInstanceId(instanceId string) ([]string, error)
+	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	io.Closer
 }
 
@@ -123,8 +124,8 @@ type LockDB interface {
 type StoredProcedureDB interface {
 	healthendpoint.Pinger
 	io.Closer
-	CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error)
-	DeleteCredentials(credOptions models.CredentialsOptions) error
+	CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error)
+	DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error
 	DeleteAllInstanceCredentials(instanceId string) error
 	ValidateCredentials(creds models.Credential) (*models.CredentialsOptions, error)
 }

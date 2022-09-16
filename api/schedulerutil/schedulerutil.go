@@ -1,6 +1,7 @@
 package schedulerutil
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +36,7 @@ func NewSchedulerUtil(conf *config.Config, logger lager.Logger) *SchedulerUtil {
 	return schedulerUtil
 }
 
-func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr string, policyGuid string) error {
+func (su *SchedulerUtil) CreateOrUpdateSchedule(ctx context.Context, appId string, policyJSONStr string, policyGuid string) error {
 	var url string
 	path, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", appId)
 	parameters := path.Query()
@@ -43,7 +44,7 @@ func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr stri
 
 	url = su.schedulerUrl + path.RequestURI() + "?" + parameters.Encode()
 
-	req, err := http.NewRequest("PUT", url, strings.NewReader(policyJSONStr))
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, strings.NewReader(policyJSONStr))
 	if err != nil {
 		su.logger.Error("Failed to create request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})
 		return err
@@ -75,7 +76,7 @@ func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr stri
 	return fmt.Errorf("Error occurred in scheduler module during creation/update : " + string(responseData))
 }
 
-func (su *SchedulerUtil) DeleteSchedule(appId string) error {
+func (su *SchedulerUtil) DeleteSchedule(ctx context.Context, appId string) error {
 	var url string
 	path, err := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
 	if err != nil {
@@ -84,7 +85,7 @@ func (su *SchedulerUtil) DeleteSchedule(appId string) error {
 
 	url = su.schedulerUrl + path.RequestURI()
 
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
 	if err != nil {
 		su.logger.Error("Failed to create request to scheduler", err, lager.Data{"appId": appId})
 		return err

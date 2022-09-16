@@ -1,6 +1,7 @@
 package cred_helper
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -50,12 +51,12 @@ func NewCustomMetricsCredHelperWithCache(policyDb db.PolicyDB, maxRetry int, cre
 	}
 }
 
-func (c *customMetricsCredentials) Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
-	return createCredential(appId, userProvidedCredential, c.policyDB, c.maxRetry)
+func (c *customMetricsCredentials) Create(ctx context.Context, appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
+	return createCredential(ctx, appId, userProvidedCredential, c.policyDB, c.maxRetry)
 }
 
-func (c *customMetricsCredentials) Delete(appId string) error {
-	return deleteCredential(appId, c.policyDB, c.maxRetry)
+func (c *customMetricsCredentials) Delete(ctx context.Context, appId string) error {
+	return deleteCredential(ctx, appId, c.policyDB, c.maxRetry)
 }
 
 func (c *customMetricsCredentials) Validate(appId string, credential models.Credential) (bool, error) {
@@ -92,7 +93,7 @@ func (c *customMetricsCredentials) Validate(appId string, credential models.Cred
 
 var _ Credentials = &customMetricsCredentials{}
 
-func _createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
+func _createCredential(ctx context.Context, appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
 	var credUsername, credPassword string
 	if userProvidedCredential == nil {
 		credUsernameUUID, err := uuid.NewV4()
@@ -124,7 +125,7 @@ func _createCredential(appId string, userProvidedCredential *models.Credential, 
 		Password: credPassword,
 	}
 
-	err = policyDB.SaveCredential(appId, models.Credential{
+	err = policyDB.SaveCredential(ctx, appId, models.Credential{
 		Username: string(userNameHash),
 		Password: string(passwordHash),
 	})
@@ -134,7 +135,7 @@ func _createCredential(appId string, userProvidedCredential *models.Credential, 
 	return &cred, nil
 }
 
-func createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
+func createCredential(ctx context.Context, appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
 	var err error
 	var count int
 	var cred *models.Credential
@@ -142,7 +143,7 @@ func createCredential(appId string, userProvidedCredential *models.Credential, p
 		if count == maxRetry {
 			return nil, err
 		}
-		cred, err = _createCredential(appId, userProvidedCredential, policyDB)
+		cred, err = _createCredential(ctx, appId, userProvidedCredential, policyDB)
 		if err == nil {
 			return cred, nil
 		}
@@ -150,22 +151,22 @@ func createCredential(appId string, userProvidedCredential *models.Credential, p
 	}
 }
 
-func _deleteCredential(appId string, policyDB db.PolicyDB) error {
-	err := policyDB.DeleteCredential(appId)
+func _deleteCredential(ctx context.Context, appId string, policyDB db.PolicyDB) error {
+	err := policyDB.DeleteCredential(ctx, appId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func deleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
+func deleteCredential(ctx context.Context, appId string, policyDB db.PolicyDB, maxRetry int) error {
 	var err error
 	var count int
 	for {
 		if count == maxRetry {
 			return err
 		}
-		err = _deleteCredential(appId, policyDB)
+		err = _deleteCredential(ctx, appId, policyDB)
 		if err == nil {
 			return nil
 		}

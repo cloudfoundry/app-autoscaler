@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -68,8 +69,8 @@ func nullableString(s string) interface{} {
 	return s
 }
 
-func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceInstance) error {
-	existingInstance, err := bdb.GetServiceInstance(serviceInstance.ServiceInstanceId)
+func (bdb *BindingSQLDB) CreateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error {
+	existingInstance, err := bdb.GetServiceInstance(context.Background(), serviceInstance.ServiceInstanceId)
 	if err != nil && !errors.Is(err, db.ErrDoesNotExist) {
 		bdb.logger.Error("create-service-instance-get-existing", err, lager.Data{"serviceinstance": serviceInstance})
 		return err
@@ -87,7 +88,7 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceIns
 		"(service_instance_id, org_id, space_id, default_policy, default_policy_guid) " +
 		" VALUES(?, ?, ?, ?, ?)")
 
-	_, err = bdb.sqldb.Exec(query, serviceInstance.ServiceInstanceId, serviceInstance.OrgId, serviceInstance.SpaceId, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid))
+	_, err = bdb.sqldb.ExecContext(ctx, query, serviceInstance.ServiceInstanceId, serviceInstance.OrgId, serviceInstance.SpaceId, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid))
 
 	if err != nil {
 		bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "serviceinstance": serviceInstance})
@@ -103,10 +104,10 @@ type bdServiceInstance struct {
 	DefaultPolicyGuid sql.NullString `db:"default_policy_guid"`
 }
 
-func (bdb *BindingSQLDB) GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error) {
+func (bdb *BindingSQLDB) GetServiceInstance(ctx context.Context, serviceInstanceId string) (*models.ServiceInstance, error) {
 	query := bdb.sqldb.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ?")
 	result := bdServiceInstance{}
-	err := bdb.sqldb.Get(&result, query, serviceInstanceId)
+	err := bdb.sqldb.GetContext(ctx, &result, query, serviceInstanceId)
 	if err != nil {
 		bdb.logger.Error("get-service-instance", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId})
 		if errors.Is(err, sql.ErrNoRows) {
@@ -137,13 +138,13 @@ func (bdb *BindingSQLDB) GetServiceInstanceByAppId(appId string) (*models.Servic
 		return nil, err
 	}
 
-	return bdb.GetServiceInstance(serviceInstanceId)
+	return bdb.GetServiceInstance(context.Background(), serviceInstanceId)
 }
 
-func (bdb *BindingSQLDB) UpdateServiceInstance(serviceInstance models.ServiceInstance) error {
+func (bdb *BindingSQLDB) UpdateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error {
 	query := bdb.sqldb.Rebind("UPDATE service_instance SET default_policy = ?, default_policy_guid = ? WHERE service_instance_id = ?")
 
-	result, err := bdb.sqldb.Exec(query, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid), serviceInstance.ServiceInstanceId)
+	result, err := bdb.sqldb.ExecContext(ctx, query, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid), serviceInstance.ServiceInstanceId)
 	if err != nil {
 		bdb.logger.Error("update-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstance.ServiceInstanceId})
 		return err
@@ -157,7 +158,7 @@ func (bdb *BindingSQLDB) UpdateServiceInstance(serviceInstance models.ServiceIns
 	return nil
 }
 
-func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
+func (bdb *BindingSQLDB) DeleteServiceInstance(ctx context.Context, serviceInstanceId string) error {
 	query := bdb.sqldb.Rebind("SELECT * FROM service_instance WHERE service_instance_id =?")
 	rows, err := bdb.sqldb.Query(query, serviceInstanceId)
 	if err != nil {
@@ -186,9 +187,9 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 	return db.ErrDoesNotExist
 }
 
-func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error {
+func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error {
 	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE app_id =?")
-	rows, err := bdb.sqldb.Query(query, appId)
+	rows, err := bdb.sqldb.QueryContext(ctx, query, appId)
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
 		return err
@@ -209,14 +210,14 @@ func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceI
 	query = bdb.sqldb.Rebind("INSERT INTO binding" +
 		"(binding_id, service_instance_id, app_id, created_at) " +
 		"VALUES(?, ?, ?, ?)")
-	_, err = bdb.sqldb.Exec(query, bindingId, serviceInstanceId, appId, time.Now())
+	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now())
 
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "bindingid": bindingId, "appid": appId})
 	}
 	return err
 }
-func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
+func (bdb *BindingSQLDB) DeleteServiceBinding(ctx context.Context, bindingId string) error {
 	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE binding_id =?")
 	rows, err := bdb.sqldb.Query(query, bindingId)
 	if err != nil {
@@ -228,7 +229,7 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 
 	if rows.Next() {
 		query = bdb.sqldb.Rebind("DELETE FROM binding WHERE binding_id =?")
-		_, err = bdb.sqldb.Exec(query, bindingId)
+		_, err = bdb.sqldb.ExecContext(ctx, query, bindingId)
 
 		if err != nil {
 			bdb.logger.Error("delete-service-binding", err, lager.Data{"query": query, "bindingid": bindingId})
@@ -244,9 +245,9 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 
 	return db.ErrDoesNotExist
 }
-func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(appId string) error {
+func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(ctx context.Context, appId string) error {
 	query := bdb.sqldb.Rebind("DELETE FROM binding WHERE app_id =?")
-	_, err := bdb.sqldb.Exec(query, appId)
+	_, err := bdb.sqldb.ExecContext(ctx, query, appId)
 
 	if err != nil {
 		bdb.logger.Error("delete-service-binding-by-appid", err, lager.Data{"query": query, "appId": appId})
@@ -266,10 +267,10 @@ func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
 	return bdb.sqldb.Stats()
 }
-func (bdb *BindingSQLDB) GetAppIdByBindingId(bindingId string) (string, error) {
+func (bdb *BindingSQLDB) GetAppIdByBindingId(ctx context.Context, bindingId string) (string, error) {
 	var appId string
 	query := bdb.sqldb.Rebind("SELECT app_id FROM binding WHERE binding_id=?")
-	err := bdb.sqldb.QueryRow(query, bindingId).Scan(&appId)
+	err := bdb.sqldb.QueryRowContext(ctx, query, bindingId).Scan(&appId)
 	if err != nil {
 		bdb.logger.Error("get-appid-from-binding-table", err, lager.Data{"query": query, "bindingId": bindingId})
 		return "", err
@@ -277,10 +278,10 @@ func (bdb *BindingSQLDB) GetAppIdByBindingId(bindingId string) (string, error) {
 	return appId, nil
 }
 
-func (bdb *BindingSQLDB) GetAppIdsByInstanceId(instanceId string) ([]string, error) {
+func (bdb *BindingSQLDB) GetAppIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error) {
 	var appIds []string
 	query := bdb.sqldb.Rebind("SELECT app_id FROM binding WHERE service_instance_id = ?")
-	rows, err := bdb.sqldb.Query(query, instanceId)
+	rows, err := bdb.sqldb.QueryContext(ctx, query, instanceId)
 	if err != nil {
 		bdb.logger.Error("get-appids-from-binding-table", err, lager.Data{"query": query, "instanceId": instanceId})
 		return appIds, err
@@ -311,10 +312,10 @@ func (bdb *BindingSQLDB) CountServiceInstancesInOrg(orgId string) (int, error) {
 	return count, nil
 }
 
-func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(instanceId string) ([]string, error) {
+func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error) {
 	var bindingIds []string
 	query := bdb.sqldb.Rebind("SELECT binding_id FROM binding WHERE service_instance_id=?")
-	rows, err := bdb.sqldb.Query(query, instanceId)
+	rows, err := bdb.sqldb.QueryContext(ctx, query, instanceId)
 	if err != nil {
 		bdb.logger.Error("get-appids-from-binding-table", err, lager.Data{"query": query, "instanceId": instanceId})
 		return bindingIds, err

@@ -1,6 +1,7 @@
 package cred_helper_test
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -42,7 +43,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 	Context("CreateCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			credResult, err = creds.Create(appId, userProvidedCredential)
+			credResult, err = creds.Create(context.Background(), appId, userProvidedCredential)
 		})
 		Context("when userProvideCredential is not nil", func() {
 			BeforeEach(func() {
@@ -87,7 +88,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 	Context("DeleteCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			err = creds.Delete(appId)
+			err = creds.Delete(context.Background(), appId)
 		})
 		Context("when there is no error when calling policydb", func() {
 			BeforeEach(func() {

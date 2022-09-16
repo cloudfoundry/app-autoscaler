@@ -6,15 +6,17 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"code.cloudfoundry.org/cfhttp/handlers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-
-	"github.com/pivotal-cf/brokerapi/domain"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"github.com/pivotal-cf/brokerapi/v8"
+	"github.com/pivotal-cf/brokerapi/v8/domain"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
@@ -117,19 +119,15 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		brokerCredentials: middleWareBrokerCredentials,
 	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services, cfClient, credentials)
+	broker := NewBroker(logger.Session("broker"), conf, bindingdb, policydb, catalog.Services, cfClient, credentials)
 
-	r := routes.BrokerRoutes()
+	r := mux.NewRouter()
 
 	r.Use(basicAuthentication.Middleware)
 	r.Use(httpStatusCollectMiddleware.Collect)
-	r.Get(routes.BrokerCatalogRouteName).Handler(VarsFunc(ah.GetBrokerCatalog))
-	r.Get(routes.BrokerCreateInstanceRouteName).Handler(VarsFunc(ah.CreateServiceInstance))
-	r.Get(routes.BrokerUpdateInstanceRouteName).Handler(VarsFunc(ah.UpdateServiceInstance))
-	r.Get(routes.BrokerDeleteInstanceRouteName).Handler(VarsFunc(ah.DeleteServiceInstance))
-	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
-	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
-	r.Get(routes.BrokerHealthRouteName).Handler(VarsFunc(ah.GetHealth))
+	brokerapi.AttachRoutes(r, broker, logger.Session("broker_handler"))
+
+	r.HandleFunc(routes.BrokerHealthPath, GetHealth)
 
 	var addr string
 	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
@@ -155,6 +153,6 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	return runner, nil
 }
 
-func GetDashboardURL(conf *config.Config, instanceId string) string {
-	return fmt.Sprintf("%s/manage/%s", conf.DashboardRedirectURI, instanceId)
+func GetHealth(w http.ResponseWriter, _ *http.Request) {
+	handlers.WriteJSONResponse(w, http.StatusOK, []byte(`{"alive":"true"}`))
 }

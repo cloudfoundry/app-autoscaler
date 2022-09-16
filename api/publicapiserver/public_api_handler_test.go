@@ -362,7 +362,8 @@ var _ = Describe("PublicApiHandler", func() {
 						It("should succeed and set the default policy", func() {
 							Expect(resp.Code).To(Equal(http.StatusOK))
 							Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
-							a, p, g := policydb.SaveAppPolicyArgsForCall(0)
+							c, a, p, g := policydb.SaveAppPolicyArgsForCall(0)
+							Expect(c).NotTo(BeNil())
 							Expect(a).To(Equal(TEST_APP_ID))
 							Expect(p).To(Equal(VALID_POLICY_STR))
 							Expect(g).To(Equal("test-policy-guid"))

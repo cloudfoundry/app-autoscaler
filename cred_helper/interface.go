@@ -1,6 +1,7 @@
 package cred_helper
 
 import (
+	"context"
 	"io"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -14,7 +15,7 @@ const (
 type Credentials interface {
 	healthendpoint.Pinger
 	io.Closer
-	Create(appId string, userProvidedCredential *models.Credential) (*models.Credential, error)
-	Delete(appId string) error
+	Create(ctx context.Context, appId string, userProvidedCredential *models.Credential) (*models.Credential, error)
+	Delete(ctx context.Context, appId string) error
 	Validate(appId string, credential models.Credential) (bool, error)
 }

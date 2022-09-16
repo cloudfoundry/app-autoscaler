@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -72,7 +73,7 @@ var _ = Describe("Stored Procedure test", func() {
 
 		When("create is called", func() {
 			It("it returns the bindingId and instanceId as result", func() {
-				creds, err := storedProcedure.CreateCredentials(models.CredentialsOptions{
+				creds, err := storedProcedure.CreateCredentials(context.Background(), models.CredentialsOptions{
 					InstanceId: instanceId,
 					BindingId:  bindingId,
 				})
@@ -83,7 +84,7 @@ var _ = Describe("Stored Procedure test", func() {
 		})
 		When("delete is called", func() {
 			It("is successful", func() {
-				err := storedProcedure.DeleteCredentials(models.CredentialsOptions{
+				err := storedProcedure.DeleteCredentials(context.Background(), models.CredentialsOptions{
 					InstanceId: instanceId,
 					BindingId:  bindingId,
 				})

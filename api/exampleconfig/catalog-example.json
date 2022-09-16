@@ -5,11 +5,17 @@
       "name": "autoscaler",
       "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
       "bindable": true,
+      "plan_updateable": false,
       "plans": [
         {
           "id": "autoscaler-free-plan-id",
           "name": "autoscaler-free-plan",
           "description": "This is the free service plan for the Auto-Scaling service."
+        },
+        {
+          "id": "a-plan-id-not-updatable",
+          "name": "a-plan-not-updatable",
+          "description": "This is the not updatable service plan for the Auto-Scaling service."
         }
       ]
     }

@@ -1,6 +1,7 @@
 package cred_helper_test
 
 import (
+	"context"
 	"errors"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
@@ -31,7 +32,7 @@ var _ = Describe("StoredProcedureCredHelper", func() {
 	Context("CreateCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			credResult, err = credentials.Create(appId, nil)
+			credResult, err = credentials.Create(context.Background(), appId, nil)
 		})
 		Context("when there is no error when calling storedProcedureDb", func() {
 			BeforeEach(func() {
@@ -66,7 +67,7 @@ var _ = Describe("StoredProcedureCredHelper", func() {
 	Context("DeleteCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			err = credentials.Delete(appId)
+			err = credentials.Delete(context.Background(), appId)
 		})
 		Context("when there is no error when calling storedProcedureDb", func() {
 			BeforeEach(func() {

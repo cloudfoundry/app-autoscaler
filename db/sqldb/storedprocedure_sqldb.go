@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -61,11 +62,11 @@ func (sdb *StoredProcedureSQLDb) Close() error {
 	return nil
 }
 
-func (sdb *StoredProcedureSQLDb) CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error) {
+func (sdb *StoredProcedureSQLDb) CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error) {
 	credentials := &models.Credential{}
 	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.CreateBindingCredentialProcedureName))
 	sdb.logger.Info(query)
-	err := sdb.sqldb.QueryRow(query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
+	err := sdb.sqldb.QueryRowContext(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -76,10 +77,10 @@ func (sdb *StoredProcedureSQLDb) CreateCredentials(credOptions models.Credential
 	return credentials, nil
 }
 
-func (sdb *StoredProcedureSQLDb) DeleteCredentials(credOptions models.CredentialsOptions) error {
+func (sdb *StoredProcedureSQLDb) DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error {
 	var count int
 	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.DropBindingCredentialProcedureName))
-	err := sdb.sqldb.QueryRow(query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
+	err := sdb.sqldb.QueryRowContext(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
 	if err == sql.ErrNoRows {
 		return nil
 	}

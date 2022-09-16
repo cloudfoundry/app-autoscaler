@@ -1,6 +1,8 @@
 package cred_helper
 
 import (
+	"context"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -31,7 +33,7 @@ func NewStoredProcedureCredHelper(storedProcedureDb db.StoredProcedureDB, maxRet
 	}
 }
 
-func (c *storedProcedureCredentials) Create(appId string, _ *models.Credential) (*models.Credential, error) {
+func (c *storedProcedureCredentials) Create(ctx context.Context, appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
 	logger := c.logger.Session("create-stored-procedure-credential", lager.Data{"appId": appId})
 	var err error
 	var count int
@@ -41,20 +43,20 @@ func (c *storedProcedureCredentials) Create(appId string, _ *models.Credential) 
 		if count == c.maxRetry {
 			return nil, err
 		}
-		cred, err = c.storedProcedureDb.CreateCredentials(options)
+		cred, err = c.storedProcedureDb.CreateCredentials(ctx, options)
 		if err == nil {
 			return cred, nil
 		}
 		logger.Error("stored-procedure-create-credentials-call-failed", err, lager.Data{"try": count})
 		// try to clean up the credentials if they were already there
-		if cleanUpErr := c.storedProcedureDb.DeleteCredentials(options); cleanUpErr != nil {
+		if cleanUpErr := c.storedProcedureDb.DeleteCredentials(ctx, options); cleanUpErr != nil {
 			logger.Error("stored-procedure-delete-credentials-cleanup-call-failed", cleanUpErr, lager.Data{"try": count})
 		}
 		count++
 	}
 }
 
-func (c *storedProcedureCredentials) Delete(appId string) error {
+func (c *storedProcedureCredentials) Delete(ctx context.Context, appId string) error {
 	logger := c.logger.Session("delete-stored-procedure-credential", lager.Data{"appId": appId})
 	var err error
 	var count int
@@ -63,7 +65,7 @@ func (c *storedProcedureCredentials) Delete(appId string) error {
 		if count == c.maxRetry {
 			return err
 		}
-		err = c.storedProcedureDb.DeleteCredentials(options)
+		err = c.storedProcedureDb.DeleteCredentials(ctx, options)
 		if err == nil {
 			return nil
 		}

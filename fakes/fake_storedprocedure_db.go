@@ -2,6 +2,7 @@
 package fakes
 
 import (
+	"context"
 	"sync"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -19,10 +20,11 @@ type FakeStoredProcedureDB struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CreateCredentialsStub        func(models.CredentialsOptions) (*models.Credential, error)
+	CreateCredentialsStub        func(context.Context, models.CredentialsOptions) (*models.Credential, error)
 	createCredentialsMutex       sync.RWMutex
 	createCredentialsArgsForCall []struct {
-		arg1 models.CredentialsOptions
+		arg1 context.Context
+		arg2 models.CredentialsOptions
 	}
 	createCredentialsReturns struct {
 		result1 *models.Credential
@@ -43,10 +45,11 @@ type FakeStoredProcedureDB struct {
 	deleteAllInstanceCredentialsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteCredentialsStub        func(models.CredentialsOptions) error
+	DeleteCredentialsStub        func(context.Context, models.CredentialsOptions) error
 	deleteCredentialsMutex       sync.RWMutex
 	deleteCredentialsArgsForCall []struct {
-		arg1 models.CredentialsOptions
+		arg1 context.Context
+		arg2 models.CredentialsOptions
 	}
 	deleteCredentialsReturns struct {
 		result1 error
@@ -134,18 +137,19 @@ func (fake *FakeStoredProcedureDB) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeStoredProcedureDB) CreateCredentials(arg1 models.CredentialsOptions) (*models.Credential, error) {
+func (fake *FakeStoredProcedureDB) CreateCredentials(arg1 context.Context, arg2 models.CredentialsOptions) (*models.Credential, error) {
 	fake.createCredentialsMutex.Lock()
 	ret, specificReturn := fake.createCredentialsReturnsOnCall[len(fake.createCredentialsArgsForCall)]
 	fake.createCredentialsArgsForCall = append(fake.createCredentialsArgsForCall, struct {
-		arg1 models.CredentialsOptions
-	}{arg1})
+		arg1 context.Context
+		arg2 models.CredentialsOptions
+	}{arg1, arg2})
 	stub := fake.CreateCredentialsStub
 	fakeReturns := fake.createCredentialsReturns
-	fake.recordInvocation("CreateCredentials", []interface{}{arg1})
+	fake.recordInvocation("CreateCredentials", []interface{}{arg1, arg2})
 	fake.createCredentialsMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -159,17 +163,17 @@ func (fake *FakeStoredProcedureDB) CreateCredentialsCallCount() int {
 	return len(fake.createCredentialsArgsForCall)
 }
 
-func (fake *FakeStoredProcedureDB) CreateCredentialsCalls(stub func(models.CredentialsOptions) (*models.Credential, error)) {
+func (fake *FakeStoredProcedureDB) CreateCredentialsCalls(stub func(context.Context, models.CredentialsOptions) (*models.Credential, error)) {
 	fake.createCredentialsMutex.Lock()
 	defer fake.createCredentialsMutex.Unlock()
 	fake.CreateCredentialsStub = stub
 }
 
-func (fake *FakeStoredProcedureDB) CreateCredentialsArgsForCall(i int) models.CredentialsOptions {
+func (fake *FakeStoredProcedureDB) CreateCredentialsArgsForCall(i int) (context.Context, models.CredentialsOptions) {
 	fake.createCredentialsMutex.RLock()
 	defer fake.createCredentialsMutex.RUnlock()
 	argsForCall := fake.createCredentialsArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeStoredProcedureDB) CreateCredentialsReturns(result1 *models.Credential, result2 error) {
@@ -259,18 +263,19 @@ func (fake *FakeStoredProcedureDB) DeleteAllInstanceCredentialsReturnsOnCall(i i
 	}{result1}
 }
 
-func (fake *FakeStoredProcedureDB) DeleteCredentials(arg1 models.CredentialsOptions) error {
+func (fake *FakeStoredProcedureDB) DeleteCredentials(arg1 context.Context, arg2 models.CredentialsOptions) error {
 	fake.deleteCredentialsMutex.Lock()
 	ret, specificReturn := fake.deleteCredentialsReturnsOnCall[len(fake.deleteCredentialsArgsForCall)]
 	fake.deleteCredentialsArgsForCall = append(fake.deleteCredentialsArgsForCall, struct {
-		arg1 models.CredentialsOptions
-	}{arg1})
+		arg1 context.Context
+		arg2 models.CredentialsOptions
+	}{arg1, arg2})
 	stub := fake.DeleteCredentialsStub
 	fakeReturns := fake.deleteCredentialsReturns
-	fake.recordInvocation("DeleteCredentials", []interface{}{arg1})
+	fake.recordInvocation("DeleteCredentials", []interface{}{arg1, arg2})
 	fake.deleteCredentialsMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -284,17 +289,17 @@ func (fake *FakeStoredProcedureDB) DeleteCredentialsCallCount() int {
 	return len(fake.deleteCredentialsArgsForCall)
 }
 
-func (fake *FakeStoredProcedureDB) DeleteCredentialsCalls(stub func(models.CredentialsOptions) error) {
+func (fake *FakeStoredProcedureDB) DeleteCredentialsCalls(stub func(context.Context, models.CredentialsOptions) error) {
 	fake.deleteCredentialsMutex.Lock()
 	defer fake.deleteCredentialsMutex.Unlock()
 	fake.DeleteCredentialsStub = stub
 }
 
-func (fake *FakeStoredProcedureDB) DeleteCredentialsArgsForCall(i int) models.CredentialsOptions {
+func (fake *FakeStoredProcedureDB) DeleteCredentialsArgsForCall(i int) (context.Context, models.CredentialsOptions) {
 	fake.deleteCredentialsMutex.RLock()
 	defer fake.deleteCredentialsMutex.RUnlock()
 	argsForCall := fake.deleteCredentialsArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeStoredProcedureDB) DeleteCredentialsReturns(result1 error) {
