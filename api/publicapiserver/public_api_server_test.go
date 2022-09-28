@@ -593,7 +593,10 @@ func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, he
 		}
 	}
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	rsp, err := httpClient.Do(req)
+	resp, err := httpClient.Do(req)
+	if err == nil {
+		defer func() { _ = resp.Body.Close() }()
+	}
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, rsp.StatusCode).To(Equal(expectResponseStatusCode))
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectResponseStatusCode))
 }

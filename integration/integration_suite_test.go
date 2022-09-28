@@ -482,6 +482,9 @@ func getActiveSchedule(appId string) (*http.Response, error) {
 
 func activeScheduleExists(appId string) bool {
 	resp, err := getActiveSchedule(appId)
+	if err == nil {
+		defer func() { _ = resp.Body.Close() }()
+	}
 	Expect(err).NotTo(HaveOccurred())
 
 	return resp.StatusCode == http.StatusOK

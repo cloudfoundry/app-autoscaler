@@ -35,8 +35,10 @@ func (s ScheduleSynchronizer) Operate() {
 		s.logger.Error("failed-to-create-sync-scheduler-request", err)
 	}
 
-	_, err = s.client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		s.logger.Error("failed-to-send-sync-scheduler-request", err)
+		return
 	}
+	defer func() { _ = resp.Body.Close() }()
 }
