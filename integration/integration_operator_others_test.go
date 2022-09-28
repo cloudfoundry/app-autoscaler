@@ -100,26 +100,31 @@ var _ = Describe("Integration_Operator_Others", func() {
 						policyStr = setPolicySpecificDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"), 70*time.Second, 140*time.Second)
 						doAttachPolicy(testAppId, []byte(policyStr), http.StatusOK, components.Ports[GolangAPIServer], httpClient)
 
+						//TODO why just sleep for a minute ?
 						time.Sleep(70 * time.Second)
-						Consistently(func() bool {
-							return activeScheduleExists(testAppId)
-						}, 10*time.Second, 5*time.Second).Should(BeTrue())
+						Consistently(func() bool { return activeScheduleExists(testAppId) }).
+							WithTimeout(10 * time.Second).
+							WithPolling(1 * time.Second).Should(BeTrue())
 
 					})
 
 					It("should delete an active schedule in scaling engine after restart", func() {
 
 						By("ensure scaling server is down when the active schedule is deleted from scheduler")
+						//TODO there is a better check than waiting 80 seconds for consecutive errors.
 						Consistently(func() error {
 							_, err := getActiveSchedule(testAppId)
 							return err
-						}, 80*time.Second, 10*time.Second).Should(HaveOccurred())
+						}).WithTimeout(80 * time.Second).
+							WithPolling(10 * time.Second).
+							Should(HaveOccurred())
 
 						By("The active schedule is removed from scaling engine")
 						startScalingEngine()
-						Eventually(func() bool {
-							return !activeScheduleExists(testAppId)
-						}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+						Eventually(func() bool { return activeScheduleExists(testAppId) }).
+							WithTimeout(2*time.Minute).
+							WithPolling(5*time.Second).
+							ShouldNot(BeTrue(), "Active schedule should be removed after restart")
 					})
 
 				})
