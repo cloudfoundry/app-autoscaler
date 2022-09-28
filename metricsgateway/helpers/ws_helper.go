@@ -62,6 +62,8 @@ func (wh *wshelper) SetupConn() error {
 	}
 	retryCount := 1
 	for {
+		// dial docs says not to close the response body by the application
+		//nolint:bodyclose
 		con, _, err := wh.dialer.Dial(wh.metricServerURL, nil)
 		if err != nil {
 			wh.logger.Error("failed-to-create-websocket-connection-to-metricserver", err, lager.Data{"metricServerURL": wh.metricServerURL})
