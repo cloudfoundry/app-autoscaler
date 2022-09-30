@@ -3,6 +3,7 @@ package healthendpoint_test
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -355,21 +356,38 @@ var _ = Describe("Health Readiness", func() {
 
 			When("the correct credentials are sent", func() {
 				It("should be available", func() {
-					apitest.New().
-						Handler(healthRoute).
-						Get("/debug/pprof").
-						BasicAuth("test-user-name", "test-user-password").
-						Expect(t).
-						Assert(assertBody(func(body string) bool {
-							return Expect(body).To(ContainSubstring("Types of profiles available"))
-						})).
-						Status(http.StatusOK).
-						End()
+					By("returning the index page", func() {
+						testPprofEndpoint(healthRoute, "", "Types of profiles available", t)
+					})
+					By("returning the command line", func() {
+						testPprofEndpoint(healthRoute, "/cmdline", "test", t)
+					})
+					By("dumping the goroutines", func() {
+						testPprofEndpoint(healthRoute, "/goroutine?debug=2", "goroutine 1", t)
+					})
 				})
 			})
 		})
 	})
 })
+
+func testPprofEndpoint(handler http.Handler, page string, expectedBodySubstring string, t apitest.TestingT) apitest.Result {
+	u, _ := url.Parse(page)
+	m, _ := url.ParseQuery(u.RawQuery)
+
+	return apitest.New().
+		Handler(handler).
+		Get("/debug/pprof"+u.Path).
+		QueryCollection(m).
+		BasicAuth("test-user-name", "test-user-password").
+		Expect(t).
+		//nolint:bodyclose
+		Assert(assertBody(func(body string) bool {
+			return Expect(body).To(ContainSubstring(expectedBodySubstring))
+		})).
+		Status(http.StatusOK).
+		End()
+}
 
 func assertBody(p func(body string) bool) func(res *http.Response, _ *http.Request) error {
 	return func(res *http.Response, _ *http.Request) error {

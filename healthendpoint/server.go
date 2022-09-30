@@ -100,11 +100,11 @@ func healthBasicAuthRouter(conf models.HealthConfig, healthCheckers []Checker, l
 	pprofRouter := router.PathPrefix("/debug/pprof").Subrouter()
 	pprofRouter.Use(basicAuthentication.middleware)
 
-	pprofRouter.HandleFunc("", pprof.Index)
 	pprofRouter.HandleFunc("/cmdline", pprof.Cmdline)
 	pprofRouter.HandleFunc("/profile", pprof.Profile)
 	pprofRouter.HandleFunc("/symbol", pprof.Symbol)
 	pprofRouter.HandleFunc("/trace", pprof.Trace)
+	pprofRouter.PathPrefix("").HandlerFunc(pprof.Index)
 
 	everything := router.PathPrefix("").Subrouter()
 	everything.Use(basicAuthentication.middleware)
