@@ -3,7 +3,9 @@ package testhelpers
 //nolint:stylecheck
 import (
 	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp/v2"
@@ -34,13 +36,28 @@ func NewSchedulerClient() *http.Client {
 }
 
 func CreateClientFor(name string) *http.Client {
-	return CreateClient(filepath.Join(testCertDir, name+".crt"),
-		filepath.Join(testCertDir, name+".key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	certFolder := testCertFolder()
+	return CreateClient(filepath.Join(certFolder, name+".crt"),
+		filepath.Join(certFolder, name+".key"),
+		filepath.Join(certFolder, "autoscaler-ca.crt"))
 }
 
 func CreateClient(certFileName, keyFileName, caCertFileName string) *http.Client {
 	tlsConf, err := Build(WithIdentityFromFile(certFileName, keyFileName)).Client(WithAuthorityFromFile(caCertFileName))
-	FailOnError("Failed to setup tls config", err)
+	FailOnError("Failed to setup tls config:", err)
 	return cfhttp.NewClient(cfhttp.WithTLSConfig(tlsConf), cfhttp.WithRequestTimeout(10*time.Second))
+}
+
+func testCertFolder() string {
+	dir, err := os.Getwd()
+	FailOnError("failed getting working directory", err)
+	splitPath := strings.Split(dir, string(os.PathSeparator))
+	certPath := "/"
+	for _, path := range splitPath {
+		if path == "autoscaler" {
+			break
+		}
+		certPath = filepath.Join(certPath, path)
+	}
+	return filepath.Join(certPath, "../test-certs")
 }
