@@ -1,5 +1,6 @@
 SHELL := /bin/bash
-.SHELLFLAGS := -eu -o pipefail -c ${SHELLFLAGS}
+.SHELLFLAGS = -euo pipefail -c
+MAKEFLAGS = -s
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
 PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
