@@ -8,7 +8,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
@@ -28,11 +27,10 @@ func NewWSServer(logger lager.Logger, tls models.TLSCerts, port int, keepAlive t
 	if (tls.KeyFile == "") || (tls.CertFile == "") {
 		runner = http_server.New(addr, wsHandler)
 	} else {
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		tlsConfig, err := cfhttp.NewTLSConfig(tls.CertFile, tls.KeyFile, tls.CACertFile)
+		tlsConfig, err := tls.CreateServerConfig()
 		if err != nil {
 			logger.Error("failed-new-websocket-server-new-tls-config", err)
-			return nil, err
+			return nil, fmt.Errorf("ws server tls config error:%w", err)
 		}
 		runner = http_server.NewTLSServer(addr, wsHandler, tlsConfig)
 	}

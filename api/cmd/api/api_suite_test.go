@@ -17,8 +17,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/cfhttp"
-
 	"github.com/onsi/gomega/ghttp"
 
 	"github.com/onsi/gomega/gbytes"
@@ -211,22 +209,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CredHelperImpl = "default"
 
 	configFile = writeConfig(&cfg)
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "api.crt"),
-		filepath.Join(testCertDir, "api.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	apiHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: apiClientTLSConfig,
-		},
-	}
 
-	Expect(err).NotTo(HaveOccurred())
+	apiHttpClient = NewApiClient()
 
 	healthHttpClient = &http.Client{}
-
 })
 
 var _ = SynchronizedAfterSuite(func() {

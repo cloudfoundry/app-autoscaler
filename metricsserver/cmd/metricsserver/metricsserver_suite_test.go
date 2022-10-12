@@ -10,7 +10,6 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
@@ -115,19 +114,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Health.HealthCheckPassword = "metricsserverhealthcheckpassword"
 
 	configFile = writeConfig(&cfg)
-
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	tlsConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "metricserver.crt"),
-		filepath.Join(testCertDir, "metricserver.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
-
+	httpClient = testhelpers.NewMetricServerClient()
 	healthHttpClient = &http.Client{}
 })
 

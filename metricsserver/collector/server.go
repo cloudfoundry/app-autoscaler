@@ -8,7 +8,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
@@ -41,11 +40,10 @@ func NewServer(logger lager.Logger, serverConfig *ServerConfig, query MetricQuer
 	if (serverConfig.TLS.KeyFile == "") || (serverConfig.TLS.CertFile == "") {
 		runner = http_server.New(addr, r)
 	} else {
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		tlsConfig, err := cfhttp.NewTLSConfig(serverConfig.TLS.CertFile, serverConfig.TLS.KeyFile, serverConfig.TLS.CACertFile)
+		tlsConfig, err := serverConfig.TLS.CreateServerConfig()
 		if err != nil {
 			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": serverConfig.TLS})
-			return nil, err
+			return nil, fmt.Errorf("metrics collector tls error: %w", err)
 		}
 		runner = http_server.NewTLSServer(addr, r, tlsConfig)
 	}

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -20,7 +22,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 	)
 
 	BeforeEach(func() {
-		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
+		httpClient = testhelpers.NewApiClient()
 
 		testAppId = getRandomIdRef("testAppId")
 		testGuid = getRandomIdRef("testGuid")

@@ -12,7 +12,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
-	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
@@ -138,19 +137,8 @@ var _ = SynchronizedBeforeSuite(
 		_, err = testDB.Exec(testDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)"), appId, policy, "1234")
 		FailOnError("insert failed", err)
 
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		tlsConfig, err := cfhttp.NewTLSConfig(
-			filepath.Join(testCertDir, "eventgenerator.crt"),
-			filepath.Join(testCertDir, "eventgenerator.key"),
-			filepath.Join(testCertDir, "autoscaler-ca.crt"))
-		Expect(err).NotTo(HaveOccurred())
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
-			},
-		}
+		httpClient = NewEventGeneratorClient()
 		healthHttpClient = &http.Client{}
-
 	})
 
 func verifyCertExistence(testCertDir string) {

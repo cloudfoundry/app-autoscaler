@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,7 +20,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	)
 
 	BeforeEach(func() {
-		initializeHttpClient("scheduler.crt", "scheduler.key", "autoscaler-ca.crt", schedulerScalingEngineHttpRequestTimeout)
+		httpClient = testhelpers.NewSchedulerClient()
 
 		testAppId = getRandomIdRef("testAppId")
 		testGuid = getRandomIdRef("testGuid")

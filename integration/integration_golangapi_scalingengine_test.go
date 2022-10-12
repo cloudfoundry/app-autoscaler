@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
 )
@@ -18,8 +19,8 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 	)
 
 	BeforeEach(func() {
-		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiScalingEngineHttpRequestTimeout)
-		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
+		httpClient = testhelpers.NewApiClient()
+		httpClientForPublicApi = testhelpers.NewPublicApiClient()
 		startFakeCCNOAAUAA(initInstanceCount)
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
