@@ -12,7 +12,9 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-	"github.com/golang/protobuf/proto" //nolint:staticcheck
+	//TODO remove static check and use non deprecated version https://github.com/cloudfoundry/app-autoscaler-release/issues/978
+	//nolint:staticcheck
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
 

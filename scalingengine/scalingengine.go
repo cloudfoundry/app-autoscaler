@@ -348,9 +348,11 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	processes, err := s.cfClient.GetAppProcesses(cf.Guid(appId), cf.ProcessTypeWeb)
 	if err != nil {
 		if cf.IsNotFound(err) {
+			s.logger.Info(fmt.Sprintf("app(%s) missing ignoring scale request", appId))
 			history.Status = models.ScalingStatusIgnored
 			return nil
 		}
+		s.logger.Error(fmt.Sprintf("failed getting %s process info", appId), err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
 		return err
@@ -368,6 +370,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	}
 
 	if policy == nil {
+		s.logger.Info(fmt.Sprintf("app(%s) has no policy ignoring scale", appId))
 		history.Status = models.ScalingStatusIgnored
 		return nil
 	}
@@ -384,6 +387,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	history.NewInstances = newInstances
 
 	if newInstances == instances {
+		s.logger.Info(fmt.Sprintf("ignoring scale app:%s already has %d instances", appId, newInstances))
 		history.Status = models.ScalingStatusIgnored
 		return nil
 	}
