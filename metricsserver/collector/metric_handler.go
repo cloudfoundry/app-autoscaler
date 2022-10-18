@@ -56,10 +56,10 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 	start := int64(0)
 	end := int64(-1)
 	order := db.ASC
-	instanceIndex := int64(-1)
+	instanceIndex := -1
 
 	if len(instanceIndexParam) == 1 {
-		instanceIndex, err = strconv.ParseInt(instanceIndexParam[0], 10, 64)
+		instanceIndex, err = strconv.Atoi(instanceIndexParam[0])
 		if err != nil {
 			h.logger.Error("get-metric-histories-parse-instance-index", err, lager.Data{"instanceIndex": instanceIndexParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
@@ -138,7 +138,7 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	mtrcs, err := h.queryFunc(appId, int(instanceIndex), metricType, start, end, order)
+	mtrcs, err := h.queryFunc(appId, instanceIndex, metricType, start, end, order)
 	if err != nil {
 		h.logger.Error("get-metric-histories-retrieve-metrics", err, lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
