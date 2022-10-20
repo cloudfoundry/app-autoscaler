@@ -528,8 +528,6 @@ var _ = Describe("ScalingEngine", func() {
 			It("should error and store the failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(Equal(errors.New("app does not have policy set")))
-				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-policy"))
-				Eventually(buffer).Should(gbytes.Say("app does not have policy set"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
