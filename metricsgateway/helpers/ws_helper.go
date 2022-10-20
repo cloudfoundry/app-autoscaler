@@ -135,6 +135,7 @@ func (wh *wshelper) Write(envelope *loggregator_v2.Envelope) error {
 		return err
 	}
 	wh.logger.Debug("writing-envelope-to-server", lager.Data{"envelope": envelope})
+	//TODO should retry sending a message.
 	err = wh.wsConn.WriteMessage(websocket.BinaryMessage, bytes)
 	if err != nil {
 		wh.logger.Error("failed-to-write-envelope", err)

@@ -109,6 +109,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	}
 	result.CooldownExpiredAt = expiredAt
 	if !ok {
+		logger.Info("scaling ignored: App in cooldown")
 		history.Status = models.ScalingStatusIgnored
 		history.NewInstances = instances
 		history.Message = "app in cooldown period"
@@ -146,10 +147,10 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 			return nil, err
 		}
 		if policy == nil {
+			logger.Error("failed-to-get-app-policy", err)
 			history.Status = models.ScalingStatusFailed
 			history.Error = "app does not have policy set"
 			err = errors.New("app does not have policy set")
-			logger.Error("failed-to-get-app-policy", err)
 			return nil, err
 		}
 		instanceMin = policy.InstanceMin
@@ -166,6 +167,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	history.NewInstances = newInstances
 
 	if newInstances == instances {
+		logger.Info("scaling ignored: correct amount of instances")
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
 		result.Adjustment = 0
@@ -189,7 +191,8 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	if err != nil {
 		logger.Error("failed-to-update-scaling-cool-down-expire-time", err, lager.Data{"newInstances": newInstances})
 	}
-
+	//TODO remove after debugging.
+	logger.Info("scaling successful", lager.Data{"newInstances": newInstances, "history": history, "result": result})
 	return result, nil
 }
 

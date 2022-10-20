@@ -139,9 +139,7 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 				if appBreaker.Tripped() {
 					e.logger.Info("circuit-tripped", lager.Data{"appId": trigger.AppId, "consecutiveFailures": appBreaker.ConsecFailures()})
 				}
-				err = appBreaker.Call(func() error {
-					return e.sendTriggerAlarm(trigger)
-				}, 0)
+				err = appBreaker.Call(func() error { return e.sendTriggerAlarm(trigger) }, 0)
 				if err != nil {
 					e.logger.Error("circuit-alarm-failed", err, lager.Data{"appId": trigger.AppId})
 				}
@@ -192,7 +190,7 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 		return nil
 	}
 
-	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
+	path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
 	if err != nil {
 		return fmt.Errorf("failed to create url ScaleRouteName, %s: %w", trigger.AppId, err)
 	}
@@ -223,7 +221,7 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 		}
 		return nil
 	}
-	err = fmt.Errorf("Got %d when sending trigger alarm", resp.StatusCode)
+	err = fmt.Errorf("got %d when sending trigger alarm", resp.StatusCode)
 	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 	return err
 }
