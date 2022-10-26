@@ -42,8 +42,7 @@ const (
 	PublicApiScalingHistoryPath      = "/{appId}/scaling_histories"
 	PublicApiScalingHistoryRouteName = "GetPublicApiScalingHistories"
 
-	PublicApiMetricsHistoryPath      = "/{appId}/metric_histories/{metricType}"
-	PublicApiMetricsHistoryRouteName = "GetPublicApiMetricsHistories"
+	PublicApiMetricsHistoryPath = "/{appId}/metric_histories/{metricType}"
 
 	PublicApiAggregatedMetricsHistoryPath      = "/{appId}/aggregated_metric_histories/{metricType}"
 	PublicApiAggregatedMetricsHistoryRouteName = "GetPublicApiAggregatedMetricsHistories"
@@ -115,7 +114,6 @@ func newRouters() *AutoScalerRoute {
 
 	instance.apiRoutes = instance.apiOpenRoutes.PathPrefix("/v1/apps").Subrouter()
 	instance.apiRoutes.Path(PublicApiScalingHistoryPath).Methods(http.MethodGet).Name(PublicApiScalingHistoryRouteName)
-	instance.apiRoutes.Path(PublicApiMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiMetricsHistoryRouteName)
 	instance.apiRoutes.Path(PublicApiAggregatedMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiAggregatedMetricsHistoryRouteName)
 
 	instance.apiPolicyRoutes = instance.apiOpenRoutes.Path(PublicApiPolicyPath).Subrouter()

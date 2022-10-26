@@ -47,7 +47,6 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rp.Use(mw.Oauth)
 	rp.Use(httpStatusCollectMiddleware.Collect)
 	rp.Get(routes.PublicApiScalingHistoryRouteName).Handler(VarsFunc(pah.GetScalingHistories))
-	rp.Get(routes.PublicApiMetricsHistoryRouteName).Handler(VarsFunc(pah.GetInstanceMetricsHistories))
 	rp.Get(routes.PublicApiAggregatedMetricsHistoryRouteName).Handler(VarsFunc(pah.GetAggregatedMetricsHistories))
 
 	rpolicy := routes.ApiPolicyRoutes()

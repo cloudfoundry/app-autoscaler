@@ -174,14 +174,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Scheduler.SchedulerURL = schedulerServer.URL()
 	cfg.InfoFilePath = "../../exampleconfig/info-file.json"
 
-	cfg.MetricsCollector = config.MetricsCollectorConfig{
-		MetricsCollectorUrl: "http://localhost:8083",
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
-			CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
 	cfg.EventGenerator = config.EventGeneratorConfig{
 		EventGeneratorUrl: "http://localhost:8084",
 		TLSClientCerts: models.TLSCerts{
