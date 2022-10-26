@@ -36,7 +36,7 @@ func NewSchedulerClient() *http.Client {
 }
 
 func CreateClientFor(name string) *http.Client {
-	certFolder := testCertFolder()
+	certFolder := TestCertFolder()
 	return CreateClient(filepath.Join(certFolder, name+".crt"),
 		filepath.Join(certFolder, name+".key"),
 		filepath.Join(certFolder, "autoscaler-ca.crt"))
@@ -48,7 +48,7 @@ func CreateClient(certFileName, keyFileName, caCertFileName string) *http.Client
 	return cfhttp.NewClient(cfhttp.WithTLSConfig(tlsConf), cfhttp.WithRequestTimeout(10*time.Second))
 }
 
-func testCertFolder() string {
+func TestCertFolder() string {
 	dir, err := os.Getwd()
 	FailOnError("failed getting working directory", err)
 	splitPath := strings.Split(dir, string(os.PathSeparator))

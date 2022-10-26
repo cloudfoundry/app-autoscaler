@@ -106,6 +106,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	egPath = string(pathByte)
 	initHttpEndPoints()
 	initConfig()
+	httpClient = testhelpers.NewApiClient()
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -157,15 +158,6 @@ func initDB() {
 }
 
 func initHttpEndPoints() {
-	testCertDir := "../../../../../test-certs"
-
-	_, err := os.ReadFile(filepath.Join(testCertDir, "eventgenerator.key"))
-	Expect(err).NotTo(HaveOccurred())
-	_, err = os.ReadFile(filepath.Join(testCertDir, "eventgenerator.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	_, err = os.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-
 	metricCollector = ghttp.NewUnstartedServer()
 	metricCollector.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("metricscollector")
 	metricCollector.HTTPTestServer.StartTLS()
@@ -180,7 +172,7 @@ func initHttpEndPoints() {
 }
 
 func initConfig() {
-	testCertDir := "../../../../../test-certs"
+	testCertDir := testhelpers.TestCertFolder()
 
 	egPort = 7000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
@@ -258,13 +250,12 @@ func initConfig() {
 		},
 	}
 	configFile = writeConfig(&conf)
-	httpClient = testhelpers.NewApiClient()
 }
 
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := os.CreateTemp("", "eg")
 	Expect(err).NotTo(HaveOccurred())
-	defer cfg.Close()
+	defer func() { _ = cfg.Close() }()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 	err = os.WriteFile(cfg.Name(), configBytes, 0600)
