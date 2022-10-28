@@ -15,8 +15,6 @@ scheduler:
   scheduler_url: https://localhost:8083
 scaling_engine:
   scaling_engine_url: https://localhost:8083
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
 event_generator:
   event_generator_url: https://localhost:8083
 metrics_forwarder:

@@ -95,13 +95,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 			})
 
-			Context("when calling instance metrics endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
-						nil, http.MethodGet, "", http.StatusTooManyRequests)
-				})
-			})
-
 			Context("when calling aggregated metrics endpoint", func() {
 				It("should fail with 429", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
@@ -153,13 +146,6 @@ var _ = Describe("PublicApiServer", func() {
 			Context("when calling scaling_histories endpoint", func() {
 				It("should fail with 401", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						nil, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling instance metrics endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
 						nil, http.MethodGet, "", http.StatusUnauthorized)
 				})
 			})
@@ -222,16 +208,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should fail with 401", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling instance metric endpoint", func() {
-				BeforeEach(func() {
-					metricsCollectorStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
 						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
 				})
 			})
@@ -310,16 +286,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 			})
 
-			Context("when calling instance metric endpoint", func() {
-				BeforeEach(func() {
-					metricsCollectorStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
 			Context("when calling aggregated metric endpoint", func() {
 				BeforeEach(func() {
 					eventGeneratorStatus = http.StatusOK
@@ -389,16 +355,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should fail with 401", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling instance metric endpoint", func() {
-				BeforeEach(func() {
-					metricsCollectorStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
 						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
 				})
 			})
@@ -473,16 +429,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
-				})
-			})
-
-			Context("when calling instance metric endpoint", func() {
-				BeforeEach(func() {
-					metricsCollectorStatus = http.StatusOK
-				})
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
 						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
 				})
 			})
