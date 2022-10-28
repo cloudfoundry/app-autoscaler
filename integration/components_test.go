@@ -258,14 +258,6 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		MetricsCollector: apiConfig.MetricsCollectorConfig{
-			MetricsCollectorUrl: metricsCollectorUri,
-			TLSClientCerts: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
-				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
 		EventGenerator: apiConfig.EventGeneratorConfig{
 			EventGeneratorUrl: eventGeneratorUri,
 			TLSClientCerts: models.TLSCerts{
