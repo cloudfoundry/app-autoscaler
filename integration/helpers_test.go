@@ -78,49 +78,6 @@ func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, para
 	compareAppAggregatedMetricResult(actual, result)
 }
 
-func getInstanceMetricsUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
-	return fmt.Sprintf("/v1/apps/%s/metric_histories/%s?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, metricType, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
-}
-
-func getInstanceMetricsUrlWithInstanceIndex(appId string, metricType string, parameteters map[string]string, pageNo int) string {
-	return fmt.Sprintf("/v1/apps/%s/metric_histories/%s?any=any&instance-index=%s&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, metricType, parameteters["instance-index"], parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
-}
-
-func compareAppInstanceMetricResult(o1, o2 AppInstanceMetricResult) {
-	Expect(o1.Page).To(Equal(o2.Page))
-	Expect(o1.TotalPages).To(Equal(o2.TotalPages))
-	Expect(o1.TotalResults).To(Equal(o2.TotalResults))
-	Expect(o1.Resources).To(Equal(o2.Resources))
-
-	prevUrl1, err1 := url.Parse(o1.PrevUrl)
-	Expect(err1).NotTo(HaveOccurred())
-	prevUrl2, err2 := url.Parse(o2.PrevUrl)
-	Expect(err2).NotTo(HaveOccurred())
-	queries1 := prevUrl1.Query()
-	queries2 := prevUrl2.Query()
-	Expect(queries1).To(Equal(queries2))
-
-	nextUrl1, err1 := url.Parse(o1.NextUrl)
-	Expect(err1).NotTo(HaveOccurred())
-	nextUrl2, err2 := url.Parse(o2.NextUrl)
-	Expect(err2).NotTo(HaveOccurred())
-	queries1 = nextUrl1.Query()
-	queries2 = nextUrl2.Query()
-	Expect(queries1).To(Equal(queries2))
-}
-
-func checkAppInstanceMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppInstanceMetricResult) {
-	var actual AppInstanceMetricResult
-	resp, err := getAppInstanceMetrics(apiServerPort, pathVariables, parameters)
-	Expect(err).NotTo(HaveOccurred())
-	defer resp.Body.Close()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	err = json.NewDecoder(resp.Body).Decode(&actual)
-	Expect(err).NotTo(HaveOccurred())
-	compareAppInstanceMetricResult(actual, result)
-}
-
 func getScalingHistoriesUrl(appId string, parameteters map[string]string, pageNo int) string {
 	return fmt.Sprintf("/v1/apps/%s/scaling_histories?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
 }
