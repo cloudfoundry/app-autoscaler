@@ -542,8 +542,8 @@ github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea h1:sKwxy1H95npauw
 github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea/go.mod h1:1VcHEd3ro4QMoHfiNl/j7Jkln9+KQuorp0PItHMJYNg=
 github.com/phayes/checkstyle v0.0.0-20170904204023-bfd46e6a821d h1:CdDQnGF8Nq9ocOS/xlSptM1N3BbrA6/kmaep5ggwaIA=
 github.com/phayes/checkstyle v0.0.0-20170904204023-bfd46e6a821d/go.mod h1:3OzsM7FXDQlpCiw2j81fOmAwQLnZnLGXVKUzeKQXIAw=
-github.com/pivotal-cf/brokerapi/v8 v8.2.2 h1:wsNvJbZr8DyCudZOwl3D8AYHzKwvcWxKJSpEhSDOnFo=
-github.com/pivotal-cf/brokerapi/v8 v8.2.2/go.mod h1:WP40q2NqgHbyj8zRx+QGOcPyIXQ7xp1E+CQ8qep455w=
+github.com/pivotal-cf/brokerapi/v8 v8.2.3 h1:hoi6SpOk5kL8eIEa6q4Q88uVNuPqI1b6zTlpWDLsEoA=
+github.com/pivotal-cf/brokerapi/v8 v8.2.3/go.mod h1:MGZMnpFeMjZ/JVEYDv92uJMf8QMohfOFaSgPwzEQ5/c=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
