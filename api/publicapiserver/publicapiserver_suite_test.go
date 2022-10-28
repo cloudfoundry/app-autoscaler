@@ -88,16 +88,6 @@ var _ = BeforeSuite(func() {
 	conf = CreateConfig(true, apiPort)
 
 	// verify MetricCollector certs
-	_, err := os.ReadFile(conf.MetricsCollector.TLSClientCerts.KeyFile)
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = os.ReadFile(conf.MetricsCollector.TLSClientCerts.CertFile)
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = os.ReadFile(conf.MetricsCollector.TLSClientCerts.CACertFile)
-	Expect(err).NotTo(HaveOccurred())
-
-	// verify EventGenerator certs
 	_, err = os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
 	Expect(err).NotTo(HaveOccurred())
 

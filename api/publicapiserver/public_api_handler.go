@@ -25,16 +25,15 @@ import (
 )
 
 type PublicApiHandler struct {
-	logger                 lager.Logger
-	conf                   *config.Config
-	policydb               db.PolicyDB
-	bindingdb              db.BindingDB
-	scalingEngineClient    *http.Client
-	metricsCollectorClient *http.Client
-	eventGeneratorClient   *http.Client
-	policyValidator        *policyvalidator.PolicyValidator
-	schedulerUtil          *schedulerutil.SchedulerUtil
-	credentials            cred_helper.Credentials
+	logger               lager.Logger
+	conf                 *config.Config
+	policydb             db.PolicyDB
+	bindingdb            db.BindingDB
+	scalingEngineClient  *http.Client
+	eventGeneratorClient *http.Client
+	policyValidator      *policyvalidator.PolicyValidator
+	schedulerUtil        *schedulerutil.SchedulerUtil
+	credentials          cred_helper.Credentials
 }
 
 func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB, credentials cred_helper.Credentials) *PublicApiHandler {
