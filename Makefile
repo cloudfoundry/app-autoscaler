@@ -85,9 +85,8 @@ buildtools-force:
 .PHONY: buildtools
 buildtools:
 	@echo "# Installing build tools"
-	@go mod download
 	@which certstrap >/dev/null || go install github.com/square/certstrap
-	@which ginkgo >/dev/null || go install github.com/onsi/ginkgo/v2/ginkgo
+	@which ginkgo >/dev/null  && [ "v$(shell ginkgo version | awk '{ print $$3}')" = "$(shell cat go.mod | grep ginkgo | awk '{ print $$2}')" ] ||  go install github.com/onsi/ginkgo/v2/ginkgo
 	@which counterfeiter >/dev/null || go install github.com/maxbrunsfeld/counterfeiter/v6
 
 lint:
