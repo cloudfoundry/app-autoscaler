@@ -57,6 +57,7 @@ func main() {
 	}
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "api")
+	logger.Debug("Logger initialized")
 
 	members := grouper.Members{}
 
@@ -67,6 +68,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() { _ = policyDb.Close() }()
+	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 	prometheusCollectors := []prometheus.Collector{
@@ -81,6 +83,7 @@ func main() {
 		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
 		os.Exit(1)
 	}
+	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
 	var credentials cred_helper.Credentials
 	switch conf.CredHelperImpl {
@@ -100,6 +103,7 @@ func main() {
 	default:
 		credentials = cred_helper.NewCustomMetricsCredHelper(policyDb, cred_helper.MaxRetry, logger)
 	}
+	logger.Debug("Successfully loaded credentials (broker or stored-proc-db)")
 
 	var checkBindingFunc api.CheckBindingFunc
 	var bindingDB db.BindingDB
@@ -122,6 +126,7 @@ func main() {
 			os.Exit(1)
 		}
 		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
+		logger.Debug("Created db-connection and http-server of broker because of running in buildin-mode")
 	} else {
 		checkBindingFunc = func(appId string) bool {
 			return true
@@ -138,11 +143,14 @@ func main() {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
+	logger.Debug("Created http-server for public api")
+
 	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)
 	}
+	logger.Debug("Successfully created health server")
 
 	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer}, grouper.Member{"health_server", healthServer})
 
