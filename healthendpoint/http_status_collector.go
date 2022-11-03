@@ -24,6 +24,7 @@ func NewHTTPStatusCollector(namespace, subSystem string) HTTPStatusCollector {
 			}),
 	}
 }
+
 func (c *httpStatusCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.concurrentHTTPRequestGuage.Desc()
 }
