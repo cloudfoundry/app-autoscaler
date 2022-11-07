@@ -546,7 +546,7 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM app_scaling_active_schedule")
 	Expect(err).NotTo(HaveOccurred())
-
+	git
 	_, err = dbHelper.Exec("DELETE FROM activeschedule")
 	Expect(err).NotTo(HaveOccurred())
 
@@ -723,7 +723,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		UserInfo(http.StatusOK, testUserId)
 }
 
-func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *testhelpers.FakeEventProducer {
+func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *FakeEventProducer {
 	fakeRLPServer, err := NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
 	Expect(err).NotTo(HaveOccurred())
 	fakeRLPServer.SetEnvelops(envelopes)
