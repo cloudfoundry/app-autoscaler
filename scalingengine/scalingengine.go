@@ -191,8 +191,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	if err != nil {
 		logger.Error("failed-to-update-scaling-cool-down-expire-time", err, lager.Data{"newInstances": newInstances})
 	}
-	//TODO remove after debugging.
-	logger.Info("scaling successful", lager.Data{"newInstances": newInstances, "history": history, "result": result})
 	return result, nil
 }
 
