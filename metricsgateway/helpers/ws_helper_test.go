@@ -168,7 +168,8 @@ var _ = Describe("WsHelper", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(messageChan).Should(Receive())
 		})
-		Context("when server is down", func() {
+		Context("when server is down", Pending, func() {
+			//TODO disabling due to flakeynes https://github.com/cloudfoundry/app-autoscaler-release/issues/1013
 			BeforeEach(func() {
 				fakeMetricServer.Close()
 				wsh.CloseWSConnection()
