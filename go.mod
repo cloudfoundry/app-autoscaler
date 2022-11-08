@@ -34,7 +34,7 @@ require (
 	github.com/prometheus/client_golang v1.13.1
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/square/certstrap v1.3.0
-	github.com/steinfletcher/apitest v1.5.13
+	github.com/steinfletcher/apitest v1.5.14
 	github.com/stretchr/testify v1.8.1
 	github.com/tedsuo/ifrit v0.0.0-20220120221754-dd274de71113
 	github.com/xeipuuv/gojsonschema v1.2.0
