@@ -87,31 +87,6 @@ var _ = Describe("Routes", func() {
 				})
 			})
 		})
-		Context("PublicApiMetricsHistoryRouteName", func() {
-
-			Context("when provide correct route variable", func() {
-				It("should return the correct path", func() {
-					path, err := routes.ApiRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath("appId", testAppId, "metricType", testMetricType)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metric_histories/" + testMetricType))
-				})
-			})
-
-			Context("when provide wrong route variable", func() {
-				It("should return error", func() {
-					_, err := routes.ApiRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath("wrongVariable", testAppId)
-					Expect(err).To(HaveOccurred())
-
-				})
-			})
-
-			Context("when provide not enough route variable", func() {
-				It("should return error", func() {
-					_, err := routes.ApiRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath()
-					Expect(err).To(HaveOccurred())
-				})
-			})
-		})
 		Context("PublicApiAggregatedMetricsHistoryRouteName", func() {
 
 			Context("when provide correct route variable", func() {

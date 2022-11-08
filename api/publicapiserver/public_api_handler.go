@@ -25,28 +25,21 @@ import (
 )
 
 type PublicApiHandler struct {
-	logger                 lager.Logger
-	conf                   *config.Config
-	policydb               db.PolicyDB
-	bindingdb              db.BindingDB
-	scalingEngineClient    *http.Client
-	metricsCollectorClient *http.Client
-	eventGeneratorClient   *http.Client
-	policyValidator        *policyvalidator.PolicyValidator
-	schedulerUtil          *schedulerutil.SchedulerUtil
-	credentials            cred_helper.Credentials
+	logger               lager.Logger
+	conf                 *config.Config
+	policydb             db.PolicyDB
+	bindingdb            db.BindingDB
+	scalingEngineClient  *http.Client
+	eventGeneratorClient *http.Client
+	policyValidator      *policyvalidator.PolicyValidator
+	schedulerUtil        *schedulerutil.SchedulerUtil
+	credentials          cred_helper.Credentials
 }
 
 func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB, credentials cred_helper.Credentials) *PublicApiHandler {
 	seClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
-		os.Exit(1)
-	}
-
-	mcClient, err := helpers.CreateHTTPClient(&conf.MetricsCollector.TLSClientCerts)
-	if err != nil {
-		logger.Error("Failed to create http client for MetricsCollector", err, lager.Data{"metricscollector": conf.MetricsCollector.TLSClientCerts})
 		os.Exit(1)
 	}
 
@@ -57,16 +50,15 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 	}
 
 	return &PublicApiHandler{
-		logger:                 logger,
-		conf:                   conf,
-		policydb:               policydb,
-		bindingdb:              bindingdb,
-		scalingEngineClient:    seClient,
-		metricsCollectorClient: mcClient,
-		eventGeneratorClient:   egClient,
-		policyValidator:        policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
-		schedulerUtil:          schedulerutil.NewSchedulerUtil(conf, logger),
-		credentials:            credentials,
+		logger:               logger,
+		conf:                 conf,
+		policydb:             policydb,
+		bindingdb:            bindingdb,
+		scalingEngineClient:  seClient,
+		eventGeneratorClient: egClient,
+		policyValidator:      policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
+		schedulerUtil:        schedulerutil.NewSchedulerUtil(conf, logger),
+		credentials:          credentials,
 	}
 }
 
@@ -310,62 +302,6 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	if err != nil {
 		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from eventgenerator")
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occurred during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
-		writeErrorResponse(w, resp.StatusCode, string(responseData))
-		return
-	}
-	paginatedResponse, err := paginateResource(responseData, parameters, r)
-	if err != nil {
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
-}
-
-func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	appId := vars["appId"]
-
-	metricType := vars["metricType"]
-	instanceIndex := r.URL.Query().Get("instance-index")
-
-	h.logger.Info("GetInstanceMetricsHistories", lager.Data{"appId": appId, "metricType": metricType, "instanceIndex": instanceIndex})
-
-	parameters, err := parseParameter(r, vars)
-	if err != nil {
-		h.logger.Error("Bad Request", err, lager.Data{"appId": appId})
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if metricType == "" {
-		h.logger.Error("Bad Request", nil, lager.Data{"appId": appId})
-		writeErrorResponse(w, http.StatusBadRequest, "Metrictype is required")
-		return
-	}
-	if instanceIndex != "" {
-		parameters.Add("instanceindex", instanceIndex)
-	}
-
-	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
-
-	url := h.conf.MetricsCollector.MetricsCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
-
-	resp, err := h.metricsCollectorClient.Get(url)
-	if err != nil {
-		h.logger.Error("Failed to retrieve metrics history from metricscollector", err, lager.Data{"url": url})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving metrics history from metricscollector")
-		return
-	}
-	defer resp.Body.Close()
-
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from metricscollector")
 		return
 	}
 

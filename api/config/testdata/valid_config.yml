@@ -43,12 +43,6 @@ scaling_engine:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-metrics_collector:
-  metrics_collector_url: https://localhost:8084
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
   event_generator_url: https://localhost:8083
   tls:

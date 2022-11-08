@@ -90,7 +90,7 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 
 	err := json.Unmarshal(resourceList, &resourceListItems)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal resources")
+		return nil, fmt.Errorf("failed to unmarshal resources")
 	}
 	totalResults := len(resourceListItems)
 	perPage, _ := strconv.Atoi(parameters.Get("results-per-page"))

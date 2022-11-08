@@ -52,11 +52,6 @@ type ScalingEngineConfig struct {
 	TLSClientCerts   models.TLSCerts `yaml:"tls"`
 }
 
-type MetricsCollectorConfig struct {
-	MetricsCollectorUrl string          `yaml:"metrics_collector_url"`
-	TLSClientCerts      models.TLSCerts `yaml:"tls"`
-}
-
 type EventGeneratorConfig struct {
 	EventGeneratorUrl string          `yaml:"event_generator_url"`
 	TLSClientCerts    models.TLSCerts `yaml:"tls"`
@@ -103,7 +98,6 @@ type Config struct {
 	PolicySchemaPath      string                        `yaml:"policy_schema_path"`
 	Scheduler             SchedulerConfig               `yaml:"scheduler"`
 	ScalingEngine         ScalingEngineConfig           `yaml:"scaling_engine"`
-	MetricsCollector      MetricsCollectorConfig        `yaml:"metrics_collector"`
 	EventGenerator        EventGeneratorConfig          `yaml:"event_generator"`
 	CF                    cf.Config                     `yaml:"cf"`
 	UseBuildInMode        bool                          `yaml:"use_buildin_mode"`
@@ -170,9 +164,6 @@ func (c *Config) Validate() error {
 	}
 	if c.ScalingEngine.ScalingEngineUrl == "" {
 		return fmt.Errorf("Configuration error: scaling_engine.scaling_engine_url is empty")
-	}
-	if c.MetricsCollector.MetricsCollectorUrl == "" {
-		return fmt.Errorf("Configuration error: metrics_collector.metrics_collector_url is empty")
 	}
 	if c.EventGenerator.EventGeneratorUrl == "" {
 		return fmt.Errorf("Configuration error: event_generator.event_generator_url is empty")

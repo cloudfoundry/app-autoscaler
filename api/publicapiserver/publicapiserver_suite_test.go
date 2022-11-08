@@ -88,17 +88,7 @@ var _ = BeforeSuite(func() {
 	conf = CreateConfig(true, apiPort)
 
 	// verify MetricCollector certs
-	_, err := os.ReadFile(conf.MetricsCollector.TLSClientCerts.KeyFile)
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = os.ReadFile(conf.MetricsCollector.TLSClientCerts.CertFile)
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = os.ReadFile(conf.MetricsCollector.TLSClientCerts.CACertFile)
-	Expect(err).NotTo(HaveOccurred())
-
-	// verify EventGenerator certs
-	_, err = os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
+	_, err := os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = os.ReadFile(conf.EventGenerator.TLSClientCerts.CertFile)
@@ -195,14 +185,6 @@ func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
 			SchedulerURL: schedulerServer.URL(),
 		},
 		InfoFilePath: "../exampleconfig/info-file.json",
-		MetricsCollector: config.MetricsCollectorConfig{
-			MetricsCollectorUrl: metricsCollectorServer.URL(),
-			TLSClientCerts: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
-				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
 		EventGenerator: config.EventGeneratorConfig{
 			EventGeneratorUrl: eventGeneratorServer.URL(),
 			TLSClientCerts: models.TLSCerts{

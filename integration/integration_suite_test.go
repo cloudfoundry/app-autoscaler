@@ -5,13 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -26,9 +23,7 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry/sonde-go/events"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gogo/protobuf/proto"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	uuid "github.com/nu7hatch/gouuid"
@@ -59,7 +54,6 @@ var (
 	brokerAuth              string
 	dbUrl                   string
 	LOGLEVEL                string
-	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *mocks.Server
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
@@ -70,7 +64,6 @@ var (
 	apiSchedulerHttpRequestTimeout           = 10 * time.Second
 	apiScalingEngineHttpRequestTimeout       = 10 * time.Second
 	apiMetricsCollectorHttpRequestTimeout    = 10 * time.Second
-	apiMetricsServerHttpRequestTimeout       = 10 * time.Second
 	apiEventGeneratorHttpRequestTimeout      = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout = 10 * time.Second
 
@@ -545,22 +538,6 @@ func getScalingHistories(apiServerPort int, pathVariables []string, parameters m
 	return httpClientTmp.Do(req)
 }
 
-func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	httpClientTmp := httpClientForPublicApi
-	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
-	if len(parameters) > 0 {
-		url += "?any=any"
-		for paramName, paramValue := range parameters {
-			url += "&" + paramName + "=" + paramValue
-		}
-	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0], pathVariables[1]), strings.NewReader(""))
-	Expect(err).NotTo(HaveOccurred())
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "bearer fake-token")
-	return httpClientTmp.Do(req)
-}
-
 func getAppAggregatedMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
@@ -778,27 +755,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		UserInfo(http.StatusOK, testUserId)
 }
 
-func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
-	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,
-		func(rw http.ResponseWriter, r *http.Request) {
-			mp := multipart.NewWriter(rw)
-			defer func() { _ = mp.Close() }()
-
-			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
-			timestamp := time.Now().UnixNano()
-			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
-			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
-			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
-
-			messages := [][]byte{message1, message2, message3}
-			for _, msg := range messages {
-				partWriter, _ := mp.CreatePart(nil)
-				_, _ = partWriter.Write(msg)
-			}
-		},
-	)
-}
-
 func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *testhelpers.FakeEventProducer {
 	fakeRLPServer, err := testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
 	Expect(err).NotTo(HaveOccurred())
@@ -810,28 +766,6 @@ func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emit
 func stopFakeRLPServer(fakeRLPServer *testhelpers.FakeEventProducer) {
 	stopped := fakeRLPServer.Stop()
 	Expect(stopped).To(Equal(true))
-}
-
-func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, memQuota uint64, diskQuota uint64, timestamp int64) *events.Envelope {
-	if timestamp == 0 {
-		timestamp = time.Now().UnixNano()
-	}
-	cm := &events.ContainerMetric{
-		ApplicationId:    proto.String(appId),
-		InstanceIndex:    proto.Int32(instanceIndex),
-		CpuPercentage:    proto.Float64(cpuPercentage),
-		MemoryBytes:      proto.Uint64(memoryBytes),
-		DiskBytes:        proto.Uint64(diskByte),
-		MemoryBytesQuota: proto.Uint64(memQuota),
-		DiskBytesQuota:   proto.Uint64(diskQuota),
-	}
-
-	return &events.Envelope{
-		ContainerMetric: cm,
-		EventType:       events.Envelope_ContainerMetric.Enum(),
-		Origin:          proto.String("fake-origin-1"),
-		Timestamp:       proto.Int64(timestamp),
-	}
 }
 
 func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64) []*loggregator_v2.Envelope {
@@ -905,13 +839,4 @@ func createCustomEnvelope(appId string, name string, unit string, value float64)
 			},
 		},
 	}
-}
-
-func marshalMessage(message *events.Envelope) []byte {
-	data, err := proto.Marshal(message)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	return data
 }

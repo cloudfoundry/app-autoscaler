@@ -240,7 +240,6 @@ rate_limit:
 
 			conf.Scheduler.SchedulerURL = "https://localhost:8083"
 
-			conf.MetricsCollector.MetricsCollectorUrl = "https://localhost:8083"
 			conf.ScalingEngine.ScalingEngineUrl = "https://localhost:8084"
 			conf.EventGenerator.EventGeneratorUrl = "https://localhost:8085"
 			conf.MetricsForwarder.MetricsForwarderUrl = "https://localhost:8088"
@@ -384,15 +383,6 @@ rate_limit:
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_password_hash is not a valid bcrypt hash")))
-			})
-		})
-
-		Context("when metricscollector url is not set", func() {
-			BeforeEach(func() {
-				conf.MetricsCollector.MetricsCollectorUrl = ""
-			})
-			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: metrics_collector.metrics_collector_url is empty")))
 			})
 		})
 
