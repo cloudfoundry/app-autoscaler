@@ -546,7 +546,7 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM app_scaling_active_schedule")
 	Expect(err).NotTo(HaveOccurred())
-	git
+
 	_, err = dbHelper.Exec("DELETE FROM activeschedule")
 	Expect(err).NotTo(HaveOccurred())
 
