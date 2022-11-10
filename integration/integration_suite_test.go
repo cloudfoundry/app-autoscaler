@@ -18,9 +18,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	_ "github.com/go-sql-driver/mysql"
@@ -61,12 +60,6 @@ var (
 
 	defaultHttpClientTimeout = 10 * time.Second
 
-	apiSchedulerHttpRequestTimeout           = 10 * time.Second
-	apiScalingEngineHttpRequestTimeout       = 10 * time.Second
-	apiMetricsCollectorHttpRequestTimeout    = 10 * time.Second
-	apiEventGeneratorHttpRequestTimeout      = 10 * time.Second
-	schedulerScalingEngineHttpRequestTimeout = 10 * time.Second
-
 	saveInterval              = 1 * time.Second
 	aggregatorExecuteInterval = 1 * time.Second
 	policyPollerInterval      = 1 * time.Second
@@ -93,7 +86,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	payload, err := json.Marshal(&components)
 	Expect(err).NotTo(HaveOccurred())
 
-	dbUrl = testhelpers.GetDbUrl()
+	dbUrl = GetDbUrl()
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
@@ -115,7 +108,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	tmpDir, err = os.MkdirTemp("", "autoscaler")
 	Expect(err).NotTo(HaveOccurred())
 
-	dbUrl = testhelpers.GetDbUrl()
+	dbUrl = GetDbUrl()
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -137,10 +130,8 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-	httpClient = cfhttp.NewClient()
-	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-	httpClientForPublicApi = cfhttp.NewClient()
+	httpClient = NewApiClient()
+	httpClientForPublicApi = NewPublicApiClient()
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 })
@@ -271,29 +262,6 @@ func testFileFragment(filename string) string {
 		return base[(len(base) - 15):]
 	}
 	return base
-}
-
-func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	TLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, certFileName),
-		filepath.Join(testCertDir, keyFileName),
-		filepath.Join(testCertDir, caCertFileName),
-	)
-	Expect(err).NotTo(HaveOccurred())
-	httpClient.Transport.(*http.Transport).TLSClientConfig = TLSConfig
-	httpClient.Timeout = httpRequestTimeout
-}
-func initializeHttpClientForPublicApi(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	TLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, certFileName),
-		filepath.Join(testCertDir, keyFileName),
-		filepath.Join(testCertDir, caCertFileName),
-	)
-	Expect(err).NotTo(HaveOccurred())
-	httpClientForPublicApi.Transport.(*http.Transport).TLSClientConfig = TLSConfig
-	httpClientForPublicApi.Timeout = httpRequestTimeout
 }
 
 func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
@@ -755,15 +723,15 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		UserInfo(http.StatusOK, testUserId)
 }
 
-func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *testhelpers.FakeEventProducer {
-	fakeRLPServer, err := testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
+func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *FakeEventProducer {
+	fakeRLPServer, err := NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
 	Expect(err).NotTo(HaveOccurred())
 	fakeRLPServer.SetEnvelops(envelopes)
 	fakeRLPServer.Start()
 	return fakeRLPServer
 }
 
-func stopFakeRLPServer(fakeRLPServer *testhelpers.FakeEventProducer) {
+func stopFakeRLPServer(fakeRLPServer *FakeEventProducer) {
 	stopped := fakeRLPServer.Stop()
 	Expect(stopped).To(Equal(true))
 }

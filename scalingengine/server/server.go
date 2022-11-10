@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
@@ -52,11 +51,10 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
 
 	if (conf.Server.TLS.KeyFile != "") && (conf.Server.TLS.CertFile != "") {
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		tlsConfig, err := cfhttp.NewTLSConfig(conf.Server.TLS.CertFile, conf.Server.TLS.KeyFile, conf.Server.TLS.CACertFile)
+		tlsConfig, err := conf.Server.TLS.CreateServerConfig()
 		if err != nil {
 			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.Server.TLS})
-			return nil, err
+			return nil, fmt.Errorf("scalingengine tls config error: %w", err)
 		}
 		return http_server.NewTLSServer(addr, r, tlsConfig), nil
 	}

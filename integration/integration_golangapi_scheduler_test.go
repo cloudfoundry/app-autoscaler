@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -27,8 +28,8 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 	BeforeEach(func() {
 		startFakeCCNOAAUAA(initInstanceCount)
-		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
-		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
+		httpClient = testhelpers.NewApiClient()
+		httpClientForPublicApi = testhelpers.NewPublicApiClient()
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, defaultHttpClientTimeout)
 		startScheduler()

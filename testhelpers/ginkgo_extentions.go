@@ -8,6 +8,6 @@ import (
 
 func FailOnError(message string, err error) {
 	if err != nil {
-		ginkgo.Fail(fmt.Sprintf("%s: %s", message, err.Error()))
+		ginkgo.Fail(fmt.Sprintf("%s: %s", message, err.Error()), 1)
 	}
 }

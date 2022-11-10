@@ -5,12 +5,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-
-	"code.cloudfoundry.org/cfhttp"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -30,17 +27,7 @@ var _ = Describe("Api", func() {
 	)
 
 	BeforeEach(func() {
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		brokerClientTLSConfig, err := cfhttp.NewTLSConfig(
-			filepath.Join(testCertDir, "servicebroker.crt"),
-			filepath.Join(testCertDir, "servicebroker.key"),
-			filepath.Join(testCertDir, "autoscaler-ca.crt"))
-		FailOnError("cfhttp.NewTLSConfig failed:", err)
-		brokerHttpClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: brokerClientTLSConfig,
-			},
-		}
+		brokerHttpClient = NewServiceBrokerClient()
 		runner = NewApiRunner()
 	})
 

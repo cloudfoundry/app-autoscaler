@@ -19,7 +19,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/cfhttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/onsi/gomega/gbytes"
@@ -107,6 +106,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	egPath = string(pathByte)
 	initHttpEndPoints()
 	initConfig()
+	httpClient = testhelpers.NewApiClient()
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -158,35 +158,12 @@ func initDB() {
 }
 
 func initHttpEndPoints() {
-	testCertDir := "../../../../../test-certs"
-
-	_, err := os.ReadFile(filepath.Join(testCertDir, "eventgenerator.key"))
-	Expect(err).NotTo(HaveOccurred())
-	_, err = os.ReadFile(filepath.Join(testCertDir, "eventgenerator.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	_, err = os.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	mcTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "metricscollector.crt"),
-		filepath.Join(testCertDir, "metricscollector.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-
 	metricCollector = ghttp.NewUnstartedServer()
-	metricCollector.HTTPTestServer.TLS = mcTLSConfig
+	metricCollector.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("metricscollector")
 	metricCollector.HTTPTestServer.StartTLS()
 
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	seTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "scalingengine.crt"),
-		filepath.Join(testCertDir, "scalingengine.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-
 	scalingEngine = ghttp.NewUnstartedServer()
-	scalingEngine.HTTPTestServer.TLS = seTLSConfig
+	scalingEngine.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("scalingengine")
 	scalingEngine.HTTPTestServer.StartTLS()
 
 	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metric_histories/"+metricType, ghttp.RespondWithJSONEncoded(http.StatusOK,
@@ -195,7 +172,7 @@ func initHttpEndPoints() {
 }
 
 func initConfig() {
-	testCertDir := "../../../../../test-certs"
+	testCertDir := testhelpers.TestCertFolder()
 
 	egPort = 7000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
@@ -273,24 +250,12 @@ func initConfig() {
 		},
 	}
 	configFile = writeConfig(&conf)
-
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	tlsConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "api.crt"),
-		filepath.Join(testCertDir, "api.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
 }
 
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := os.CreateTemp("", "eg")
 	Expect(err).NotTo(HaveOccurred())
-	defer cfg.Close()
+	defer func() { _ = cfg.Close() }()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 	err = os.WriteFile(cfg.Name(), configBytes, 0600)

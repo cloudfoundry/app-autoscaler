@@ -1,37 +1,24 @@
 package helpers
 
 import (
-	"net"
+	"fmt"
 	"net/http"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/cfhttp/v2"
 )
 
 func CreateHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
-	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
-		tlsCerts = nil
+	tlsConfig, err := tlsCerts.CreateClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tls config: %w", err)
 	}
-	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-	client := cfhttp.NewClient()
-
-	transport := client.Transport.(*http.Transport)
-	transport.DialContext = (&net.Dialer{
-		Timeout: 30 * time.Second,
-	}).DialContext
-	transport.IdleConnTimeout = 5 * time.Second
-	transport.MaxIdleConnsPerHost = 200
-
-	if tlsCerts != nil {
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		transport.TLSClientConfig = tlsConfig
-	}
-
-	return client, nil
+	return cfhttp.NewClient(
+		cfhttp.WithTLSConfig(tlsConfig),
+		cfhttp.WithDialTimeout(30*time.Second),
+		cfhttp.WithIdleConnTimeout(5*time.Second),
+		cfhttp.WithMaxIdleConnsPerHost(200),
+	), nil
 }

@@ -7,7 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
-	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/cfhttp/v2"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
 
@@ -29,7 +29,6 @@ var _ = Describe("ScheduleSynchronizer", func() {
 		buffer = logger.Buffer()
 		fclock := fakeclock.NewFakeClock(time.Now())
 		fakeSyncServer = ghttp.NewServer()
-		//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
 		scheduleSynchronizer = operator.NewScheduleSynchronizer(cfhttp.NewClient(), fakeSyncServer.URL(), fclock, logger)
 
 	})
