@@ -18,7 +18,6 @@ import (
 	"github.com/pivotal-cf/brokerapi/v8"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
@@ -140,11 +139,10 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {
 		runner = http_server.New(addr, r)
 	} else {
-		//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-		tlsConfig, err := cfhttp.NewTLSConfig(conf.BrokerServer.TLS.CertFile, conf.BrokerServer.TLS.KeyFile, conf.BrokerServer.TLS.CACertFile)
+		tlsConfig, err := conf.BrokerServer.TLS.CreateServerConfig()
 		if err != nil {
 			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.BrokerServer.TLS})
-			return nil, err
+			return nil, fmt.Errorf("broker server tls error: %w", err)
 		}
 		runner = http_server.NewTLSServer(addr, r, tlsConfig)
 	}

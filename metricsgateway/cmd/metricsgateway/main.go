@@ -8,8 +8,6 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/cfhttp"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -50,8 +48,8 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	//nolint:staticcheck  // SA1019 TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/548
-	metricServerClientTLSConfig, err := cfhttp.NewTLSConfig(conf.Emitter.MetricsServerClientTLS.CertFile, conf.Emitter.MetricsServerClientTLS.KeyFile, conf.Emitter.MetricsServerClientTLS.CACertFile)
+
+	metricServerClientTLSConfig, err := conf.Emitter.MetricsServerClientTLS.CreateClientConfig()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
@@ -164,6 +162,7 @@ func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr
 func createEmitters(logger lager.Logger, bufferSize int, eclock clock.Clock, keepAliveInterval time.Duration, metricsServerAddrs []string, metricServerClientTLSConfig *tls.Config, handshakeTimeout time.Duration, maxSetupRetryCount int, maxCloseRetryCount int, retryDelay time.Duration) []metricsgateway.Emitter {
 	emitters := make([]metricsgateway.Emitter, len(metricsServerAddrs))
 	for i := 0; i < len(metricsServerAddrs); i++ {
+		//TODO mgHelpers.NewWSHelper should be injected via a provider function because metricServerClientTLSConfig has nothing to do with the emitter only the WebSocket.
 		emitter := metricsgateway.NewEnvelopeEmitter(logger, bufferSize, eclock, keepAliveInterval, mgHelpers.NewWSHelper(metricsServerAddrs[i]+routes.EnvelopePath, metricServerClientTLSConfig, handshakeTimeout, logger, maxSetupRetryCount, maxCloseRetryCount, retryDelay))
 		emitters[i] = emitter
 	}
