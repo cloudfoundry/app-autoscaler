@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/cfhttp/handlers"
 
@@ -118,13 +120,13 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		brokerCredentials: middleWareBrokerCredentials,
 	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	broker := NewBroker(logger.Session("broker"), conf, bindingdb, policydb, catalog.Services, cfClient, credentials)
+	autoscalerBroker := broker.New(logger.Session("broker"), conf, bindingdb, policydb, catalog.Services, credentials)
 
 	r := mux.NewRouter()
 
 	r.Use(basicAuthentication.Middleware)
 	r.Use(httpStatusCollectMiddleware.Collect)
-	brokerapi.AttachRoutes(r, broker, logger.Session("broker_handler"))
+	brokerapi.AttachRoutes(r, autoscalerBroker, logger.Session("broker_handler"))
 
 	r.HandleFunc(routes.BrokerHealthPath, GetHealth)
 

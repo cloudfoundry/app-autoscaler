@@ -1,4 +1,4 @@
-package brokerserver
+package broker
 
 import (
 	"context"
@@ -9,13 +9,10 @@ import (
 	"net/http"
 	"regexp"
 
-	"golang.org/x/exp/slices"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerutil"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -23,6 +20,7 @@ import (
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/pivotal-cf/brokerapi/v8/domain"
 	"github.com/pivotal-cf/brokerapi/v8/domain/apiresponses"
+	"golang.org/x/exp/slices"
 )
 
 var _ domain.ServiceBroker = &Broker{}
@@ -36,7 +34,6 @@ type Broker struct {
 	schedulerUtil   *schedulerutil.SchedulerUtil
 	catalog         []domain.Service
 	PlanChecker     plancheck.PlanChecker
-	cfClient        cf.CFClient
 	credentials     cred_helper.Credentials
 }
 
@@ -51,7 +48,7 @@ var (
 	ErrCredentialNotDeleted        = errors.New("failed to delete custom metrics credential for unbinding")
 )
 
-func NewBroker(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, cfClient cf.CFClient, credentials cred_helper.Credentials) *Broker {
+func New(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, credentials cred_helper.Credentials) *Broker {
 	broker := &Broker{
 		logger:          logger,
 		conf:            conf,
@@ -61,7 +58,6 @@ func NewBroker(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB,
 		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
 		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
 		PlanChecker:     plancheck.NewPlanChecker(conf.PlanCheck, logger),
-		cfClient:        cfClient,
 		credentials:     credentials,
 	}
 	return broker
@@ -208,14 +204,30 @@ func (b *Broker) Deprovision(ctx context.Context, instanceID string, details dom
 
 // GetInstance fetches information about a service instance
 // GET /v2/service_instances/{instance_id}
-func (b *Broker) GetInstance(_ context.Context, instanceID string, details domain.FetchInstanceDetails) (domain.GetInstanceDetailsSpec, error) {
+func (b *Broker) GetInstance(ctx context.Context, instanceID string, details domain.FetchInstanceDetails) (domain.GetInstanceDetailsSpec, error) {
 	logger := b.logger.Session("get-instance", lager.Data{"instanceID": instanceID, "fetchInstanceDetails": details})
 	logger.Info("begin")
 	defer logger.Info("end")
 
-	err := errors.New("error: get-instance is not implemented and this call should not have been allowed as instances_retrievable should be set to false")
-	logger.Error("get-instance-is-not-implemented", err)
-	return domain.GetInstanceDetailsSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "get-instance-is-not-implemented")
+	serviceInstance, err := b.getServiceInstance(ctx, instanceID)
+	if err != nil {
+		return domain.GetInstanceDetailsSpec{}, err
+	}
+
+	result := domain.GetInstanceDetailsSpec{
+		ServiceID:    details.ServiceID,
+		PlanID:       details.PlanID,
+		DashboardURL: GetDashboardURL(b.conf, instanceID),
+	}
+
+	if serviceInstance.DefaultPolicy != "" {
+		policy := json.RawMessage(serviceInstance.DefaultPolicy)
+		result.Parameters = models.InstanceParameters{
+			DefaultPolicy: &policy,
+		}
+	}
+
+	return result, nil
 }
 
 // Update modifies an existing service instance
@@ -262,7 +274,7 @@ func (b *Broker) Update(ctx context.Context, instanceID string, details domain.U
 	}
 
 	if servicePlanIsNew {
-		if err := b.checkScalingPoliciesUnderNewPlan(allBoundApps, servicePlan, instanceID); err != nil {
+		if err := b.checkScalingPoliciesUnderNewPlan(ctx, allBoundApps, servicePlan, instanceID); err != nil {
 			return result, err
 		}
 	}
@@ -368,12 +380,12 @@ func (b *Broker) removeDefaultPolicyFromApps(ctx context.Context, serviceInstanc
 	return nil
 }
 
-func (b *Broker) checkScalingPoliciesUnderNewPlan(allBoundApps []string, servicePlan string, instanceID string) error {
+func (b *Broker) checkScalingPoliciesUnderNewPlan(ctx context.Context, allBoundApps []string, servicePlan string, instanceID string) error {
 	var existingPolicy *models.ScalingPolicy
 	var existingPolicyByteArray []byte
 	var err error
 	for _, appId := range allBoundApps {
-		existingPolicy, err = b.policydb.GetAppPolicy(appId)
+		existingPolicy, err = b.policydb.GetAppPolicy(ctx, appId)
 		if err != nil {
 			b.logger.Error("failed to retrieve policy from db", err, lager.Data{"appId": appId})
 			return apiresponses.NewFailureResponse(ErrUpdatingServiceInstance, http.StatusInternalServerError, "failed to retrieve policy from db")
@@ -487,11 +499,12 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	// create binding in DB
 	err = b.bindingdb.CreateServiceBinding(ctx, bindingID, instanceID, appGUID)
 	if err != nil {
-		logger.Error("create-service-binding", err)
+		actionCreateServiceBinding := "create-service-binding"
+		logger.Error(actionCreateServiceBinding, err)
 		if errors.Is(err, db.ErrAlreadyExists) {
-			return result, apiresponses.NewFailureResponse(errors.New("error: an autoscaler service instance is already bound to the application and multiple bindings are not supported"), http.StatusConflict, "create-service-binding")
+			return result, apiresponses.NewFailureResponse(errors.New("error: an autoscaler service instance is already bound to the application and multiple bindings are not supported"), http.StatusConflict, actionCreateServiceBinding)
 		}
-		return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, "create-service-binding")
+		return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, actionCreateServiceBinding)
 	}
 
 	// create credentials
@@ -609,14 +622,44 @@ func (b *Broker) Unbind(ctx context.Context, instanceID string, bindingID string
 
 // GetBinding fetches an existing service binding
 // GET /v2/service_instances/{instance_id}/service_bindings/{binding_id}
-func (b *Broker) GetBinding(_ context.Context, instanceID string, bindingID string, details domain.FetchBindingDetails) (domain.GetBindingSpec, error) {
+func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID string, details domain.FetchBindingDetails) (domain.GetBindingSpec, error) {
 	logger := b.logger.Session("get-binding", lager.Data{"instanceID": instanceID, "bindingID": bindingID, "fetchBindingDetails": details})
 	logger.Info("begin")
 	defer logger.Info("end")
 
-	err := errors.New("error: get-instance is not implemented and this call should not have been allowed as bindings_retrievable should be set to false")
-	logger.Error("get-binding-is-not-implemented", err)
-	return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "get-binding-is-not-implemented")
+	result := domain.GetBindingSpec{}
+
+	serviceBinding, err := b.getServiceBinding(ctx, bindingID)
+	if err != nil {
+		return result, err
+	}
+
+	policy, err := b.policydb.GetAppPolicy(ctx, serviceBinding.AppID)
+	if err != nil && !errors.Is(err, db.ErrDoesNotExist) {
+		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
+	}
+
+	if policy != nil {
+		result.Parameters = policy
+	}
+
+	return result, nil
+}
+
+func (b *Broker) getServiceBinding(ctx context.Context, bindingID string) (*models.ServiceBinding, error) {
+	logger := b.logger.Session("get-service-binding", lager.Data{"bindingID": bindingID})
+
+	serviceBinding, err := b.bindingdb.GetServiceBinding(ctx, bindingID)
+	if err != nil {
+		if errors.Is(err, db.ErrDoesNotExist) {
+			logger.Error("failed to find service binding", err)
+			return nil, apiresponses.ErrBindingDoesNotExist
+		} else {
+			logger.Error("failed to retrieve service binding", err)
+			return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service binding"), http.StatusInternalServerError, "retrieving-service-binding")
+		}
+	}
+	return serviceBinding, nil
 }
 
 // LastBindingOperation fetches last operation state for a service binding

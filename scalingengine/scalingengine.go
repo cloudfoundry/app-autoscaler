@@ -1,6 +1,8 @@
 package scalingengine
 
 import (
+	"context"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -139,7 +141,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		instanceMin = schedule.InstanceMin
 		instanceMax = schedule.InstanceMax
 	} else {
-		policy, err := s.policyDB.GetAppPolicy(appId)
+		policy, err := s.policyDB.GetAppPolicy(context.TODO(), appId)
 		if err != nil {
 			logger.Error("failed-to-get-app-policy", err)
 			history.Status = models.ScalingStatusFailed
@@ -362,7 +364,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 
 	history.OldInstances = instances
 
-	policy, err := s.policyDB.GetAppPolicy(appId)
+	policy, err := s.policyDB.GetAppPolicy(context.TODO(), appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-policy", err)
 		history.Status = models.ScalingStatusFailed

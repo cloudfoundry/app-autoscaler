@@ -56,7 +56,7 @@ type PolicyDB interface {
 	healthendpoint.DatabaseStatus
 	healthendpoint.Pinger
 	GetAppIds() (map[string]bool, error)
-	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
+	GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(ctx context.Context, appId string, policy string, policyGuid string) error
 	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error)
@@ -82,6 +82,7 @@ type BindingDB interface {
 	GetAppIdByBindingId(ctx context.Context, bindingId string) (string, error)
 	GetAppIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	CountServiceInstancesInOrg(orgId string) (int, error)
+	GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error)
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	io.Closer
 }
