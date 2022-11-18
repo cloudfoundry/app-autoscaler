@@ -32,6 +32,8 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeTLSConfig                  fakes.FakeTLSConfig
 		expectedTLSLogCacheClient      logcache.Client
 		expectedTLSTransportCredential credentials.TransportCredentials
+		expectedOauth2HTTPClient       *logcache.Oauth2HTTPClient
+		expectedClientOption           logcache.ClientOption
 		logger                         *lagertest.TestLogger
 		metricCollectorURL             string
 		//expectedOauthLogCacheClient    *logcache.HTTPClient
@@ -59,6 +61,7 @@ var _ = Describe("MetricClientFactory", func() {
 		GoLogCacheNewClient = fakeGoLogCacheClient.NewClient
 		GoLogCacheNewOauth2HTTPClient = fakeGoLogCacheClient.NewOauth2HTTPClient
 		GoLogCacheWithViaGRPC = fakeGoLogCacheClient.WithViaGRPC
+		GoLogCacheWithHTTPClient = fakeGoLogCacheClient.WithHTTPClient
 
 		GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
 		NewTLS = fakeTLSConfig.NewTLS
@@ -163,14 +166,20 @@ var _ = Describe("MetricClientFactory", func() {
 
 			Describe("when uaa client and secret is provided", func() {
 				BeforeEach(func() {
+
 					uaaCreds = models.UAACreds{
 						URL:          "https:some-uaa",
 						ClientID:     "some-id",
 						ClientSecret: "some-secret",
 					}
+
+					expectedOauth2HTTPClient = logcache.NewOauth2HTTPClient(uaaCreds.URL, uaaCreds.ClientID, uaaCreds.ClientSecret)
+
+					fakeGoLogCacheClient.NewOauth2HTTPClientReturns(expectedOauth2HTTPClient)
+					fakeGoLogCacheClient.WithHTTPClientReturns(expectedClientOption)
 				})
 
-				It("Should create a LogCacheClient", func() {
+				It("Should create a LogCacheClient via OauthHTTP", func() {
 					Expect(metricClient).To(BeAssignableToTypeOf(&LogCacheClient{}))
 					Expect(fakeMetricServerClientCreator.NewMetricServerClientCallCount()).To(Equal(0))
 					Expect(fakeLogCacheClientCreator.NewLogCacheClientCallCount()).To(Equal(1))
@@ -181,6 +190,12 @@ var _ = Describe("MetricClientFactory", func() {
 					Expect(uaaClientID).NotTo(BeNil())
 					Expect(uaaClientSecret).NotTo(BeNil())
 					Expect(oauthOpts).To(BeEmpty())
+					actualLogCacheAddrs, actualClientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
+					Expect(actualLogCacheAddrs).To(Equal(conf.MetricCollector.MetricCollectorURL))
+					Expect(fakeGoLogCacheClient.WithHTTPClientCallCount()).To(Equal(1))
+					actualHTTPClient := fakeGoLogCacheClient.WithHTTPClientArgsForCall(0)
+					Expect(actualHTTPClient).To(Equal(expectedOauth2HTTPClient))
+					Expect(&actualClientOptions).NotTo(Equal(expectedClientOption))
 
 					// when creating logcache.NewClient we use option WithHttpClient that receive = expectedOauthLogCacheClient
 				})

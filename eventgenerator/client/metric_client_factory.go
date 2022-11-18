@@ -25,6 +25,7 @@ type newMetricServerClient func(logger lager.Logger, metricCollectorUrl string, 
 var GoLogCacheNewClient = logcache.NewClient
 var GoLogCacheNewOauth2HTTPClient = logcache.NewOauth2HTTPClient
 var GoLogCacheWithViaGRPC = logcache.WithViaGRPC
+var GoLogCacheWithHTTPClient = logcache.WithHTTPClient
 
 var NewProcessor = envelopeprocessor.NewProcessor
 var GRPCWithTransportCredentials = gogrpc.WithTransportCredentials
@@ -65,7 +66,7 @@ func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, c
 	var logCacheClient LogCacheClientReader
 
 	if hasUAACreds(conf) {
-		logCacheClient = createHttpLogCacheClient(conf)
+		logCacheClient = createOauth2HTTPLogCacheClient(conf)
 	} else {
 		logCacheClient = createGRPCLogCacheClient(conf)
 	}
@@ -83,13 +84,11 @@ func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logge
 	return mc.newMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
 }
 
-func createHttpLogCacheClient(conf *config.Config) *logcache.Client {
-	_ = GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
+func createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.Client {
+	clientOpt := GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
 		conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret)
 
-	// do the oauth stuff
-
-	return &logcache.Client{}
+	return GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, GoLogCacheWithHTTPClient(clientOpt))
 }
 func createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
 	// GRPC based logCacheClient
