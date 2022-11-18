@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -135,7 +136,7 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		allowedMetricTypeSet = res.(map[string]struct{})
 	} else {
 		//  AllowedMetrics not found in cache, find AllowedMetrics from Database
-		scalingPolicy, err := mh.policyDB.GetAppPolicy(appGUID)
+		scalingPolicy, err := mh.policyDB.GetAppPolicy(context.TODO(), appGUID)
 		if err != nil {
 			mh.logger.Error("error-getting-policy", err, lager.Data{"appId": appGUID})
 			return errors.New("not able to get policy details")

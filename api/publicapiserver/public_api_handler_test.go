@@ -94,7 +94,7 @@ var _ = Describe("PublicApiHandler", func() {
 		credentials = &fakes.FakeCredentials{}
 		bindingdb = nil
 		resp = httptest.NewRecorder()
-
+		req = httptest.NewRequest("GET", "/v1/info", nil)
 		pathVariables = map[string]string{}
 	})
 	JustBeforeEach(func() {

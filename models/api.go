@@ -43,6 +43,12 @@ type ServiceInstance struct {
 	DefaultPolicyGuid string
 }
 
+type ServiceBinding struct {
+	ServiceBindingID  string `db:"binding_id"`
+	ServiceInstanceID string `db:"service_instance_id"`
+	AppID             string `db:"app_id"`
+}
+
 type BindingRequestBody struct {
 	BrokerCommonRequestBody
 	AppID  string          `json:"app_guid"`

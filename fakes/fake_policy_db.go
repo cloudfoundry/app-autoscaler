@@ -71,10 +71,11 @@ type FakePolicyDB struct {
 		result1 map[string]bool
 		result2 error
 	}
-	GetAppPolicyStub        func(string) (*models.ScalingPolicy, error)
+	GetAppPolicyStub        func(context.Context, string) (*models.ScalingPolicy, error)
 	getAppPolicyMutex       sync.RWMutex
 	getAppPolicyArgsForCall []struct {
-		arg1 string
+		arg1 context.Context
+		arg2 string
 	}
 	getAppPolicyReturns struct {
 		result1 *models.ScalingPolicy
@@ -475,18 +476,19 @@ func (fake *FakePolicyDB) GetAppIdsReturnsOnCall(i int, result1 map[string]bool,
 	}{result1, result2}
 }
 
-func (fake *FakePolicyDB) GetAppPolicy(arg1 string) (*models.ScalingPolicy, error) {
+func (fake *FakePolicyDB) GetAppPolicy(arg1 context.Context, arg2 string) (*models.ScalingPolicy, error) {
 	fake.getAppPolicyMutex.Lock()
 	ret, specificReturn := fake.getAppPolicyReturnsOnCall[len(fake.getAppPolicyArgsForCall)]
 	fake.getAppPolicyArgsForCall = append(fake.getAppPolicyArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.GetAppPolicyStub
 	fakeReturns := fake.getAppPolicyReturns
-	fake.recordInvocation("GetAppPolicy", []interface{}{arg1})
+	fake.recordInvocation("GetAppPolicy", []interface{}{arg1, arg2})
 	fake.getAppPolicyMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -500,17 +502,17 @@ func (fake *FakePolicyDB) GetAppPolicyCallCount() int {
 	return len(fake.getAppPolicyArgsForCall)
 }
 
-func (fake *FakePolicyDB) GetAppPolicyCalls(stub func(string) (*models.ScalingPolicy, error)) {
+func (fake *FakePolicyDB) GetAppPolicyCalls(stub func(context.Context, string) (*models.ScalingPolicy, error)) {
 	fake.getAppPolicyMutex.Lock()
 	defer fake.getAppPolicyMutex.Unlock()
 	fake.GetAppPolicyStub = stub
 }
 
-func (fake *FakePolicyDB) GetAppPolicyArgsForCall(i int) string {
+func (fake *FakePolicyDB) GetAppPolicyArgsForCall(i int) (context.Context, string) {
 	fake.getAppPolicyMutex.RLock()
 	defer fake.getAppPolicyMutex.RUnlock()
 	argsForCall := fake.getAppPolicyArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakePolicyDB) GetAppPolicyReturns(result1 *models.ScalingPolicy, result2 error) {

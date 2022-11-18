@@ -11,10 +11,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
+
 	"github.com/gorilla/mux"
 	"github.com/pivotal-cf/brokerapi/v8/handlers"
 
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -30,31 +31,29 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
-		fakecfClient    *fakes.FakeCFClient
 		bindingdb       *fakes.FakeBindingDB
 		policydb        *fakes.FakePolicyDB
 		fakeCredentials *fakes.FakeCredentials
 		fakePlanChecker *fakes.FakePlanChecker
 
-		handler handlers.APIHandler
-		broker  *Broker
-		resp    *httptest.ResponseRecorder
-		req     *http.Request
+		handler          handlers.APIHandler
+		autoscalerBroker *broker.Broker
+		resp             *httptest.ResponseRecorder
+		req              *http.Request
 	)
 	BeforeEach(func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
-		fakecfClient = &fakes.FakeCFClient{}
 		fakeCredentials = &fakes.FakeCredentials{}
 		fakePlanChecker = nil
 	})
 
 	JustBeforeEach(func() {
-		broker = NewBroker(lagertest.NewTestLogger("testbroker"), conf, bindingdb, policydb, services, fakecfClient, fakeCredentials)
-		handler = handlers.NewApiHandler(broker, lagertest.NewTestLogger(("testhandler")))
+		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf, bindingdb, policydb, services, fakeCredentials)
+		handler = handlers.NewApiHandler(autoscalerBroker, lagertest.NewTestLogger(("testhandler")))
 		if fakePlanChecker != nil {
-			broker.PlanChecker = fakePlanChecker
+			autoscalerBroker.PlanChecker = fakePlanChecker
 		}
 	})
 

@@ -182,7 +182,7 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			scalingPolicy, err = pdb.GetAppPolicy(appId)
+			scalingPolicy, err = pdb.GetAppPolicy(context.Background(), appId)
 		})
 
 		Context("when policy table has the app", func() {
@@ -338,7 +338,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 			It("should delete the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				policy, err := pdb.GetAppPolicy(appId)
+				policy, err := pdb.GetAppPolicy(context.Background(), appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).To(BeNil())
 			})
@@ -379,10 +379,10 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedApps).To(ConsistOf(appId))
 
-				policy, err := pdb.GetAppPolicy(appId)
+				policy, err := pdb.GetAppPolicy(context.Background(), appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).To(BeNil())
-				policy, err = pdb.GetAppPolicy(appId2)
+				policy, err = pdb.GetAppPolicy(context.Background(), appId2)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).NotTo(BeNil())
 			})

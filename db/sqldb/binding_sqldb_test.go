@@ -384,6 +384,37 @@ var _ = Describe("BindingSqldb", func() {
 		})
 	})
 
+	Describe("GetServiceBinding", func() {
+		var retrievedServiceBinding *models.ServiceBinding
+		JustBeforeEach(func() {
+			retrievedServiceBinding, err = bdb.GetServiceBinding(context.Background(), testBindingId)
+		})
+		Context("when the service Binding does not exist", func() {
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrDoesNotExist))
+				Expect(retrievedServiceBinding).To(BeNil())
+			})
+		})
+
+		Context("when the service Binding exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should return what was created", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrievedServiceBinding).To(Equal(&models.ServiceBinding{
+					ServiceBindingID:  testBindingId,
+					ServiceInstanceID: testInstanceId,
+					AppID:             testAppId,
+				}))
+			})
+		})
+	})
+
 	Describe("DeleteServiceBinding", func() {
 		JustBeforeEach(func() {
 			err = bdb.DeleteServiceBinding(context.Background(), testBindingId)
