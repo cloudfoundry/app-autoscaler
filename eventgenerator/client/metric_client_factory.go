@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 	"time"
@@ -26,6 +27,7 @@ var GoLogCacheNewClient = logcache.NewClient
 var GoLogCacheNewOauth2HTTPClient = logcache.NewOauth2HTTPClient
 var GoLogCacheWithViaGRPC = logcache.WithViaGRPC
 var GoLogCacheWithHTTPClient = logcache.WithHTTPClient
+var GoLogCacheWithOauth2HTTPClient = logcache.WithOauth2HTTPClient
 
 var NewProcessor = envelopeprocessor.NewProcessor
 var GRPCWithTransportCredentials = gogrpc.WithTransportCredentials
@@ -85,10 +87,23 @@ func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logge
 }
 
 func createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.Client {
+	httpClient := createHttpClient(conf.MetricCollector.UAACreds.SkipSSLValidation)
+	oauthHTTPOpt := GoLogCacheWithOauth2HTTPClient(httpClient)
+
 	clientOpt := GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
-		conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret)
+		conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret,
+		oauthHTTPOpt)
 
 	return GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, GoLogCacheWithHTTPClient(clientOpt))
+}
+
+func createHttpClient(skipSSLValidation bool) *http.Client {
+	return &http.Client{
+		Timeout: 5 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSSLValidation},
+		},
+	}
 }
 func createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
 	// GRPC based logCacheClient

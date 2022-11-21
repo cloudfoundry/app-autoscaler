@@ -1,10 +1,12 @@
 package client_test
 
 import (
+	"crypto/tls"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
@@ -34,6 +36,8 @@ var _ = Describe("MetricClientFactory", func() {
 		expectedTLSTransportCredential credentials.TransportCredentials
 		expectedOauth2HTTPClient       *logcache.Oauth2HTTPClient
 		expectedClientOption           logcache.ClientOption
+		expectedHTTPClient             logcache.HTTPClient
+		expectedOauth2HTTPClientOpt    logcache.Oauth2Option
 		logger                         *lagertest.TestLogger
 		metricCollectorURL             string
 		//expectedOauthLogCacheClient    *logcache.HTTPClient
@@ -62,10 +66,15 @@ var _ = Describe("MetricClientFactory", func() {
 		GoLogCacheNewOauth2HTTPClient = fakeGoLogCacheClient.NewOauth2HTTPClient
 		GoLogCacheWithViaGRPC = fakeGoLogCacheClient.WithViaGRPC
 		GoLogCacheWithHTTPClient = fakeGoLogCacheClient.WithHTTPClient
-
+		GoLogCacheWithOauth2HTTPClient = fakeGoLogCacheClient.WithOauth2HTTPClient
 		GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
+
 		NewTLS = fakeTLSConfig.NewTLS
 		fakeGoLogCacheClient.NewClientReturns(&expectedTLSLogCacheClient)
+		//expectedHTTPClient := logcache.NewOauth2HTTPClient(uaaCreds.URL, uaaCreds.ClientID, uaaCreds.ClientSecret,
+		//	logcache.WithOauth2HTTPClient(skipSSLClient))
+		expectedOauth2HTTPClientOpt = logcache.WithOauth2HTTPClient(expectedHTTPClient)
+		fakeGoLogCacheClient.WithOauth2HTTPClientReturns(expectedOauth2HTTPClientOpt)
 		//fakeGoLogCacheOauth2HTTPClient.NewOauth2HTTPClientReturns(&expectedOauthLogCacheClient)
 	})
 
@@ -167,17 +176,36 @@ var _ = Describe("MetricClientFactory", func() {
 
 			Describe("when uaa client and secret is provided", func() {
 				BeforeEach(func() {
-
 					uaaCreds = models.UAACreds{
 						URL:          "https:some-uaa",
 						ClientID:     "some-id",
 						ClientSecret: "some-secret",
 					}
 
-					expectedOauth2HTTPClient = logcache.NewOauth2HTTPClient(uaaCreds.URL, uaaCreds.ClientID, uaaCreds.ClientSecret)
+				})
 
+				JustBeforeEach(func() {
+					expectedOauth2HTTPClient = logcache.NewOauth2HTTPClient(uaaCreds.URL, uaaCreds.ClientID, uaaCreds.ClientSecret)
 					fakeGoLogCacheClient.NewOauth2HTTPClientReturns(expectedOauth2HTTPClient)
 					fakeGoLogCacheClient.WithHTTPClientReturns(expectedClientOption)
+				})
+
+				Describe("when skip_ssl_validation is enabled", func() {
+					BeforeEach(func() {
+						uaaCreds.SkipSSLValidation = true
+						expectedHTTPClient = &http.Client{
+							Timeout: 5 * time.Second,
+							Transport: &http.Transport{
+								TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+							},
+						}
+					})
+					FIt("Should create a LogCacheClient Clientvia OauthHTTP", func() {
+						_, _, _, actualNewOauth2HTTPClientOpts := fakeGoLogCacheClient.NewOauth2HTTPClientArgsForCall(0)
+						Expect(reflect.ValueOf(actualNewOauth2HTTPClientOpts[0]).Pointer()).Should(Equal(reflect.ValueOf(expectedOauth2HTTPClientOpt).Pointer()))
+						actualHttpClient := fakeGoLogCacheClient.WithOauth2HTTPClientArgsForCall(0)
+						Expect(actualHttpClient).To(BeEquivalentTo(expectedHTTPClient))
+					})
 				})
 
 				It("Should create a LogCacheClient via OauthHTTP", func() {

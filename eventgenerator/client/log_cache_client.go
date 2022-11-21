@@ -42,6 +42,7 @@ type GoLogCacheClient interface {
 	WithViaGRPC(opts ...grpc.DialOption) logcache.ClientOption
 	WithHTTPClient(h logcache.HTTPClient) logcache.ClientOption
 	NewOauth2HTTPClient(oauth2Addr, client, clientSecret string, opts ...logcache.Oauth2Option) *logcache.Oauth2HTTPClient
+	WithOauth2HTTPClient(client logcache.HTTPClient) logcache.Oauth2Option
 }
 
 type LogCacheClientCreator interface {

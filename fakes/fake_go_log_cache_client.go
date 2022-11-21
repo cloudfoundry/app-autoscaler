@@ -47,6 +47,17 @@ type FakeGoLogCacheClient struct {
 	withHTTPClientReturnsOnCall map[int]struct {
 		result1 clienta.ClientOption
 	}
+	WithOauth2HTTPClientStub        func(clienta.HTTPClient) clienta.Oauth2Option
+	withOauth2HTTPClientMutex       sync.RWMutex
+	withOauth2HTTPClientArgsForCall []struct {
+		arg1 clienta.HTTPClient
+	}
+	withOauth2HTTPClientReturns struct {
+		result1 clienta.Oauth2Option
+	}
+	withOauth2HTTPClientReturnsOnCall map[int]struct {
+		result1 clienta.Oauth2Option
+	}
 	WithViaGRPCStub        func(...grpc.DialOption) clienta.ClientOption
 	withViaGRPCMutex       sync.RWMutex
 	withViaGRPCArgsForCall []struct {
@@ -135,7 +146,7 @@ func (fake *FakeGoLogCacheClient) NewOauth2HTTPClient(arg1 string, arg2 string, 
 	}{arg1, arg2, arg3, arg4})
 	stub := fake.NewOauth2HTTPClientStub
 	fakeReturns := fake.newOauth2HTTPClientReturns
-	fake.recordInvocation("GoLogCacheNewOauth2HTTPClient", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("NewOauth2HTTPClient", []interface{}{arg1, arg2, arg3, arg4})
 	fake.newOauth2HTTPClientMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3, arg4...)
@@ -249,6 +260,67 @@ func (fake *FakeGoLogCacheClient) WithHTTPClientReturnsOnCall(i int, result1 cli
 	}{result1}
 }
 
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClient(arg1 clienta.HTTPClient) clienta.Oauth2Option {
+	fake.withOauth2HTTPClientMutex.Lock()
+	ret, specificReturn := fake.withOauth2HTTPClientReturnsOnCall[len(fake.withOauth2HTTPClientArgsForCall)]
+	fake.withOauth2HTTPClientArgsForCall = append(fake.withOauth2HTTPClientArgsForCall, struct {
+		arg1 clienta.HTTPClient
+	}{arg1})
+	stub := fake.WithOauth2HTTPClientStub
+	fakeReturns := fake.withOauth2HTTPClientReturns
+	fake.recordInvocation("WithOauth2HTTPClient", []interface{}{arg1})
+	fake.withOauth2HTTPClientMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientCallCount() int {
+	fake.withOauth2HTTPClientMutex.RLock()
+	defer fake.withOauth2HTTPClientMutex.RUnlock()
+	return len(fake.withOauth2HTTPClientArgsForCall)
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientCalls(stub func(clienta.HTTPClient) clienta.Oauth2Option) {
+	fake.withOauth2HTTPClientMutex.Lock()
+	defer fake.withOauth2HTTPClientMutex.Unlock()
+	fake.WithOauth2HTTPClientStub = stub
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientArgsForCall(i int) clienta.HTTPClient {
+	fake.withOauth2HTTPClientMutex.RLock()
+	defer fake.withOauth2HTTPClientMutex.RUnlock()
+	argsForCall := fake.withOauth2HTTPClientArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientReturns(result1 clienta.Oauth2Option) {
+	fake.withOauth2HTTPClientMutex.Lock()
+	defer fake.withOauth2HTTPClientMutex.Unlock()
+	fake.WithOauth2HTTPClientStub = nil
+	fake.withOauth2HTTPClientReturns = struct {
+		result1 clienta.Oauth2Option
+	}{result1}
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientReturnsOnCall(i int, result1 clienta.Oauth2Option) {
+	fake.withOauth2HTTPClientMutex.Lock()
+	defer fake.withOauth2HTTPClientMutex.Unlock()
+	fake.WithOauth2HTTPClientStub = nil
+	if fake.withOauth2HTTPClientReturnsOnCall == nil {
+		fake.withOauth2HTTPClientReturnsOnCall = make(map[int]struct {
+			result1 clienta.Oauth2Option
+		})
+	}
+	fake.withOauth2HTTPClientReturnsOnCall[i] = struct {
+		result1 clienta.Oauth2Option
+	}{result1}
+}
+
 func (fake *FakeGoLogCacheClient) WithViaGRPC(arg1 ...grpc.DialOption) clienta.ClientOption {
 	fake.withViaGRPCMutex.Lock()
 	ret, specificReturn := fake.withViaGRPCReturnsOnCall[len(fake.withViaGRPCArgsForCall)]
@@ -319,6 +391,8 @@ func (fake *FakeGoLogCacheClient) Invocations() map[string][][]interface{} {
 	defer fake.newOauth2HTTPClientMutex.RUnlock()
 	fake.withHTTPClientMutex.RLock()
 	defer fake.withHTTPClientMutex.RUnlock()
+	fake.withOauth2HTTPClientMutex.RLock()
+	defer fake.withOauth2HTTPClientMutex.RUnlock()
 	fake.withViaGRPCMutex.RLock()
 	defer fake.withViaGRPCMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
