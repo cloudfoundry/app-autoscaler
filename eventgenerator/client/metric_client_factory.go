@@ -101,12 +101,12 @@ func createHttpClient(skipSSLValidation bool) *http.Client {
 	return &http.Client{
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
+			//nolint:gosec
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSSLValidation},
 		},
 	}
 }
 func createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
-	// GRPC based logCacheClient
 	creds, err := NewTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile,
 		conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
 	if err != nil {
