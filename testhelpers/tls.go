@@ -13,13 +13,13 @@ func ServerTlsConfig(serverName string) *tls.Config {
 
 func ServerTlsConfigFiles(certFile, keyFile string) *tls.Config {
 	certFolder := TestCertFolder()
-	config, err := tlsconfig.
-		Build(
-			tlsconfig.WithIdentityFromFile(
-				filepath.Join(certFolder, certFile),
-				filepath.Join(certFolder, keyFile),
-			),
-		).Server(tlsconfig.WithClientAuthenticationFromFile(filepath.Join(certFolder, "autoscaler-ca.crt")))
+	serverTls, err := tlsconfig.Build(
+		tlsconfig.WithInternalServiceDefaults(),
+		tlsconfig.WithIdentityFromFile(
+			filepath.Join(certFolder, certFile),
+			filepath.Join(certFolder, keyFile),
+		),
+	).Server(tlsconfig.WithClientAuthenticationFromFile(filepath.Join(certFolder, "autoscaler-ca.crt")))
 	FailOnError("Creating server tls config failed", err)
-	return config
+	return serverTls
 }

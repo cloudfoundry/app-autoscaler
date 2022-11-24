@@ -14,22 +14,26 @@ type TLSCerts struct {
 
 func (t *TLSCerts) CreateClientConfig() (*tls.Config, error) {
 	if t != nil && t.CertFile != "" && t.KeyFile != "" {
-		client := tlsconfig.Build(tlsconfig.WithIdentityFromFile(t.CertFile, t.KeyFile))
+		clientTls := tlsconfig.Build(
+			tlsconfig.WithInternalServiceDefaults(),
+			tlsconfig.WithIdentityFromFile(t.CertFile, t.KeyFile))
 		if t.CACertFile != "" {
-			return client.Client(tlsconfig.WithAuthorityFromFile(t.CACertFile))
+			return clientTls.Client(tlsconfig.WithAuthorityFromFile(t.CACertFile))
 		}
-		return client.Client()
+		return clientTls.Client()
 	}
 	return nil, nil
 }
 
 func (t *TLSCerts) CreateServerConfig() (*tls.Config, error) {
 	if t != nil && t.CertFile != "" && t.KeyFile != "" {
-		build := tlsconfig.Build(tlsconfig.WithIdentityFromFile(t.CertFile, t.KeyFile))
+		serverTls := tlsconfig.Build(
+			tlsconfig.WithInternalServiceDefaults(),
+			tlsconfig.WithIdentityFromFile(t.CertFile, t.KeyFile))
 		if t.CACertFile != "" {
-			return build.Server(tlsconfig.WithClientAuthenticationFromFile(t.CACertFile))
+			return serverTls.Server(tlsconfig.WithClientAuthenticationFromFile(t.CACertFile))
 		}
-		return build.Server()
+		return serverTls.Server()
 	}
 	return nil, nil
 }
