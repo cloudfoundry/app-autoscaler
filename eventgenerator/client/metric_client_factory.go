@@ -107,7 +107,7 @@ func createHttpClient(skipSSLValidation bool) *http.Client {
 	}
 }
 func createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
-	creds, err := NewTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile,
+	creds, err := newTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile,
 		conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
 	if err != nil {
 		log.Fatalf("failed to load TLS config: %s", err)

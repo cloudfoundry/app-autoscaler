@@ -17,36 +17,34 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager/lagertest"
-	credentials "google.golang.org/grpc/credentials"
 )
 
 const testCertDir = "../../../../test-certs"
 
 var _ = Describe("MetricClientFactory", func() {
 	var (
-		conf                           config.Config
-		metricClient                   MetricClient
-		metricClientFactory            *MetricClientFactory
-		fakeLogCacheClientCreator      fakes.FakeLogCacheClientCreator
-		fakeMetricServerClientCreator  fakes.FakeMetricServerClientCreator
-		fakeEnvelopeProcessorCreator   fakes.FakeEnvelopeProcessorCreator
-		fakeGoLogCacheClient           fakes.FakeGoLogCacheClient
-		fakeGRPC                       fakes.FakeGrpcDialOptions
-		fakeTLSConfig                  fakes.FakeTLSConfig
-		expectedTLSLogCacheClient      logcache.Client
-		expectedTLSTransportCredential credentials.TransportCredentials
-		expectedOauth2HTTPClient       *logcache.Oauth2HTTPClient
-		expectedClientOption           logcache.ClientOption
-		expectedHTTPClient             logcache.HTTPClient
-		expectedOauth2HTTPClientOpt    logcache.Oauth2Option
-		logger                         *lagertest.TestLogger
-		metricCollectorURL             string
-		tlsCerts                       models.TLSCerts
-		uaaCreds                       models.UAACreds
-		useLogCache                    bool
-		caCertFilePath                 string
-		certFilePath                   string
-		keyFilePath                    string
+		conf                          config.Config
+		metricClient                  MetricClient
+		metricClientFactory           *MetricClientFactory
+		fakeLogCacheClientCreator     fakes.FakeLogCacheClientCreator
+		fakeMetricServerClientCreator fakes.FakeMetricServerClientCreator
+		fakeEnvelopeProcessorCreator  fakes.FakeEnvelopeProcessorCreator
+		fakeGoLogCacheClient          fakes.FakeGoLogCacheClient
+		fakeGRPC                      fakes.FakeGrpcDialOptions
+		fakeTLSConfig                 fakes.FakeTLSConfig
+		expectedTLSLogCacheClient     logcache.Client
+		expectedOauth2HTTPClient      *logcache.Oauth2HTTPClient
+		expectedClientOption          logcache.ClientOption
+		expectedHTTPClient            logcache.HTTPClient
+		expectedOauth2HTTPClientOpt   logcache.Oauth2Option
+		logger                        *lagertest.TestLogger
+		metricCollectorURL            string
+		tlsCerts                      models.TLSCerts
+		uaaCreds                      models.UAACreds
+		useLogCache                   bool
+		caCertFilePath                string
+		certFilePath                  string
+		keyFilePath                   string
 	)
 
 	BeforeEach(func() {
@@ -94,16 +92,16 @@ var _ = Describe("MetricClientFactory", func() {
 	Describe("GetMetricClient", func() {
 		BeforeEach(func() {
 			metricCollectorURL = "some-metric-server-url"
-			useLogCache = false
+			tlsCerts = models.TLSCerts{
+				KeyFile:    keyFilePath,
+				CertFile:   certFilePath,
+				CACertFile: caCertFilePath,
+			}
 		})
 
 		Describe("when logCacheEnabled is false", func() {
 			BeforeEach(func() {
-				tlsCerts = models.TLSCerts{
-					KeyFile:    keyFilePath,
-					CertFile:   certFilePath,
-					CACertFile: caCertFilePath,
-				}
+				useLogCache = false
 			})
 
 			It("should create a MetricServerClient by default", func() {
@@ -126,7 +124,7 @@ var _ = Describe("MetricClientFactory", func() {
 				useLogCache = true
 			})
 
-			It("Should create a LogCacheClient", func() {
+			It("Should create a LogCacheClient and not a metricserver client", func() {
 				Expect(metricClient).To(BeAssignableToTypeOf(&LogCacheClient{}))
 				Expect(fakeMetricServerClientCreator.NewMetricServerClientCallCount()).To(Equal(0))
 				Expect(fakeLogCacheClientCreator.NewLogCacheClientCallCount()).To(Equal(1))
@@ -139,45 +137,26 @@ var _ = Describe("MetricClientFactory", func() {
 				Expect(now).NotTo(BeNil())
 			})
 
-			Describe("when tls is provided", func() {
-				BeforeEach(func() {
-					tlsCerts = models.TLSCerts{
-						KeyFile:    keyFilePath,
-						CertFile:   certFilePath,
-						CACertFile: caCertFilePath,
-					}
-				})
+			It("Should provision logCacheClient with the correct tls configurations", func() {
+				expectedTLSCreds, err := NewTLSConfig(caCertFilePath, certFilePath, keyFilePath)
+				Expect(err).NotTo(HaveOccurred())
 
-				It("Created tlsConfigs properly", func() {
-					expectedTLSCreds, err := NewTLSConfig(caCertFilePath, certFilePath, keyFilePath)
-					Expect(err).NotTo(HaveOccurred())
-
-					expectedTLSTransportCredential = credentials.NewTLS(expectedTLSCreds.Clone())
-					Expect(err).NotTo(HaveOccurred())
-
-					fakeTLSConfig.NewTLSReturns(expectedTLSTransportCredential)
-				})
-
-				It("Should provision tls configuration to the logCacheClient", func() {
-					expectedTLSCreds, err := NewTLSConfig(caCertFilePath, certFilePath, keyFilePath)
-					Expect(err).NotTo(HaveOccurred())
-
-					actualAddrs, clientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
-					Expect(actualAddrs).To(Equal("some-log-cache-url:8080"))
-					Expect(clientOptions).NotTo(BeNil())
-					Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
-					actualTLSCreds := fakeTLSConfig.NewTLSArgsForCall(0)
-					Expect(actualTLSCreds.Certificates).To(Equal(expectedTLSCreds.Certificates))
-				})
+				actualAddrs, clientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
+				Expect(actualAddrs).To(Equal("some-log-cache-url:8080"))
+				Expect(clientOptions).NotTo(BeNil())
+				Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
+				actualTLSCreds := fakeTLSConfig.NewTLSArgsForCall(0)
+				Expect(actualTLSCreds.Certificates).To(Equal(expectedTLSCreds.Certificates))
 			})
 
-			Describe("when uaa client and secret is provided", func() {
+			Describe("when uaa client and secret are provided", func() {
 				BeforeEach(func() {
 					uaaCreds = models.UAACreds{
 						URL:          "https:some-uaa",
 						ClientID:     "some-id",
 						ClientSecret: "some-secret",
 					}
+					tlsCerts = models.TLSCerts{}
 					expectedOauth2HTTPClient = logcache.NewOauth2HTTPClient(uaaCreds.URL, uaaCreds.ClientID, uaaCreds.ClientSecret)
 					fakeGoLogCacheClient.NewOauth2HTTPClientReturns(expectedOauth2HTTPClient)
 					fakeGoLogCacheClient.WithHTTPClientReturns(expectedClientOption)

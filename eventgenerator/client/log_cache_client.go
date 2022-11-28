@@ -131,7 +131,7 @@ func getEnvelopeType(metricType string) rpc.EnvelopeType {
 	return metricName
 }
 
-func NewTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
+func newTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
 	cfg, err := NewTLSConfig(caPath, certPath, keyPath)
 	if err != nil {
 		return nil, err
