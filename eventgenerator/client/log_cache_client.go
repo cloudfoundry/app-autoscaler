@@ -40,6 +40,9 @@ type LogCacheClientReader interface {
 type GoLogCacheClient interface {
 	NewClient(addr string, opts ...logcache.ClientOption) *logcache.Client
 	WithViaGRPC(opts ...grpc.DialOption) logcache.ClientOption
+	WithHTTPClient(h logcache.HTTPClient) logcache.ClientOption
+	NewOauth2HTTPClient(oauth2Addr, client, clientSecret string, opts ...logcache.Oauth2Option) *logcache.Oauth2HTTPClient
+	WithOauth2HTTPClient(client logcache.HTTPClient) logcache.Oauth2Option
 }
 
 type LogCacheClientCreator interface {
@@ -128,7 +131,7 @@ func getEnvelopeType(metricType string) rpc.EnvelopeType {
 	return metricName
 }
 
-func NewTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
+func newTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
 	cfg, err := NewTLSConfig(caPath, certPath, keyPath)
 	if err != nil {
 		return nil, err

@@ -22,6 +22,42 @@ type FakeGoLogCacheClient struct {
 	newClientReturnsOnCall map[int]struct {
 		result1 *clienta.Client
 	}
+	NewOauth2HTTPClientStub        func(string, string, string, ...clienta.Oauth2Option) *clienta.Oauth2HTTPClient
+	newOauth2HTTPClientMutex       sync.RWMutex
+	newOauth2HTTPClientArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 string
+		arg4 []clienta.Oauth2Option
+	}
+	newOauth2HTTPClientReturns struct {
+		result1 *clienta.Oauth2HTTPClient
+	}
+	newOauth2HTTPClientReturnsOnCall map[int]struct {
+		result1 *clienta.Oauth2HTTPClient
+	}
+	WithHTTPClientStub        func(clienta.HTTPClient) clienta.ClientOption
+	withHTTPClientMutex       sync.RWMutex
+	withHTTPClientArgsForCall []struct {
+		arg1 clienta.HTTPClient
+	}
+	withHTTPClientReturns struct {
+		result1 clienta.ClientOption
+	}
+	withHTTPClientReturnsOnCall map[int]struct {
+		result1 clienta.ClientOption
+	}
+	WithOauth2HTTPClientStub        func(clienta.HTTPClient) clienta.Oauth2Option
+	withOauth2HTTPClientMutex       sync.RWMutex
+	withOauth2HTTPClientArgsForCall []struct {
+		arg1 clienta.HTTPClient
+	}
+	withOauth2HTTPClientReturns struct {
+		result1 clienta.Oauth2Option
+	}
+	withOauth2HTTPClientReturnsOnCall map[int]struct {
+		result1 clienta.Oauth2Option
+	}
 	WithViaGRPCStub        func(...grpc.DialOption) clienta.ClientOption
 	withViaGRPCMutex       sync.RWMutex
 	withViaGRPCArgsForCall []struct {
@@ -99,6 +135,192 @@ func (fake *FakeGoLogCacheClient) NewClientReturnsOnCall(i int, result1 *clienta
 	}{result1}
 }
 
+func (fake *FakeGoLogCacheClient) NewOauth2HTTPClient(arg1 string, arg2 string, arg3 string, arg4 ...clienta.Oauth2Option) *clienta.Oauth2HTTPClient {
+	fake.newOauth2HTTPClientMutex.Lock()
+	ret, specificReturn := fake.newOauth2HTTPClientReturnsOnCall[len(fake.newOauth2HTTPClientArgsForCall)]
+	fake.newOauth2HTTPClientArgsForCall = append(fake.newOauth2HTTPClientArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 string
+		arg4 []clienta.Oauth2Option
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.NewOauth2HTTPClientStub
+	fakeReturns := fake.newOauth2HTTPClientReturns
+	fake.recordInvocation("NewOauth2HTTPClient", []interface{}{arg1, arg2, arg3, arg4})
+	fake.newOauth2HTTPClientMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeGoLogCacheClient) NewOauth2HTTPClientCallCount() int {
+	fake.newOauth2HTTPClientMutex.RLock()
+	defer fake.newOauth2HTTPClientMutex.RUnlock()
+	return len(fake.newOauth2HTTPClientArgsForCall)
+}
+
+func (fake *FakeGoLogCacheClient) NewOauth2HTTPClientCalls(stub func(string, string, string, ...clienta.Oauth2Option) *clienta.Oauth2HTTPClient) {
+	fake.newOauth2HTTPClientMutex.Lock()
+	defer fake.newOauth2HTTPClientMutex.Unlock()
+	fake.NewOauth2HTTPClientStub = stub
+}
+
+func (fake *FakeGoLogCacheClient) NewOauth2HTTPClientArgsForCall(i int) (string, string, string, []clienta.Oauth2Option) {
+	fake.newOauth2HTTPClientMutex.RLock()
+	defer fake.newOauth2HTTPClientMutex.RUnlock()
+	argsForCall := fake.newOauth2HTTPClientArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeGoLogCacheClient) NewOauth2HTTPClientReturns(result1 *clienta.Oauth2HTTPClient) {
+	fake.newOauth2HTTPClientMutex.Lock()
+	defer fake.newOauth2HTTPClientMutex.Unlock()
+	fake.NewOauth2HTTPClientStub = nil
+	fake.newOauth2HTTPClientReturns = struct {
+		result1 *clienta.Oauth2HTTPClient
+	}{result1}
+}
+
+func (fake *FakeGoLogCacheClient) NewOauth2HTTPClientReturnsOnCall(i int, result1 *clienta.Oauth2HTTPClient) {
+	fake.newOauth2HTTPClientMutex.Lock()
+	defer fake.newOauth2HTTPClientMutex.Unlock()
+	fake.NewOauth2HTTPClientStub = nil
+	if fake.newOauth2HTTPClientReturnsOnCall == nil {
+		fake.newOauth2HTTPClientReturnsOnCall = make(map[int]struct {
+			result1 *clienta.Oauth2HTTPClient
+		})
+	}
+	fake.newOauth2HTTPClientReturnsOnCall[i] = struct {
+		result1 *clienta.Oauth2HTTPClient
+	}{result1}
+}
+
+func (fake *FakeGoLogCacheClient) WithHTTPClient(arg1 clienta.HTTPClient) clienta.ClientOption {
+	fake.withHTTPClientMutex.Lock()
+	ret, specificReturn := fake.withHTTPClientReturnsOnCall[len(fake.withHTTPClientArgsForCall)]
+	fake.withHTTPClientArgsForCall = append(fake.withHTTPClientArgsForCall, struct {
+		arg1 clienta.HTTPClient
+	}{arg1})
+	stub := fake.WithHTTPClientStub
+	fakeReturns := fake.withHTTPClientReturns
+	fake.recordInvocation("WithHTTPClient", []interface{}{arg1})
+	fake.withHTTPClientMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeGoLogCacheClient) WithHTTPClientCallCount() int {
+	fake.withHTTPClientMutex.RLock()
+	defer fake.withHTTPClientMutex.RUnlock()
+	return len(fake.withHTTPClientArgsForCall)
+}
+
+func (fake *FakeGoLogCacheClient) WithHTTPClientCalls(stub func(clienta.HTTPClient) clienta.ClientOption) {
+	fake.withHTTPClientMutex.Lock()
+	defer fake.withHTTPClientMutex.Unlock()
+	fake.WithHTTPClientStub = stub
+}
+
+func (fake *FakeGoLogCacheClient) WithHTTPClientArgsForCall(i int) clienta.HTTPClient {
+	fake.withHTTPClientMutex.RLock()
+	defer fake.withHTTPClientMutex.RUnlock()
+	argsForCall := fake.withHTTPClientArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeGoLogCacheClient) WithHTTPClientReturns(result1 clienta.ClientOption) {
+	fake.withHTTPClientMutex.Lock()
+	defer fake.withHTTPClientMutex.Unlock()
+	fake.WithHTTPClientStub = nil
+	fake.withHTTPClientReturns = struct {
+		result1 clienta.ClientOption
+	}{result1}
+}
+
+func (fake *FakeGoLogCacheClient) WithHTTPClientReturnsOnCall(i int, result1 clienta.ClientOption) {
+	fake.withHTTPClientMutex.Lock()
+	defer fake.withHTTPClientMutex.Unlock()
+	fake.WithHTTPClientStub = nil
+	if fake.withHTTPClientReturnsOnCall == nil {
+		fake.withHTTPClientReturnsOnCall = make(map[int]struct {
+			result1 clienta.ClientOption
+		})
+	}
+	fake.withHTTPClientReturnsOnCall[i] = struct {
+		result1 clienta.ClientOption
+	}{result1}
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClient(arg1 clienta.HTTPClient) clienta.Oauth2Option {
+	fake.withOauth2HTTPClientMutex.Lock()
+	ret, specificReturn := fake.withOauth2HTTPClientReturnsOnCall[len(fake.withOauth2HTTPClientArgsForCall)]
+	fake.withOauth2HTTPClientArgsForCall = append(fake.withOauth2HTTPClientArgsForCall, struct {
+		arg1 clienta.HTTPClient
+	}{arg1})
+	stub := fake.WithOauth2HTTPClientStub
+	fakeReturns := fake.withOauth2HTTPClientReturns
+	fake.recordInvocation("WithOauth2HTTPClient", []interface{}{arg1})
+	fake.withOauth2HTTPClientMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientCallCount() int {
+	fake.withOauth2HTTPClientMutex.RLock()
+	defer fake.withOauth2HTTPClientMutex.RUnlock()
+	return len(fake.withOauth2HTTPClientArgsForCall)
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientCalls(stub func(clienta.HTTPClient) clienta.Oauth2Option) {
+	fake.withOauth2HTTPClientMutex.Lock()
+	defer fake.withOauth2HTTPClientMutex.Unlock()
+	fake.WithOauth2HTTPClientStub = stub
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientArgsForCall(i int) clienta.HTTPClient {
+	fake.withOauth2HTTPClientMutex.RLock()
+	defer fake.withOauth2HTTPClientMutex.RUnlock()
+	argsForCall := fake.withOauth2HTTPClientArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientReturns(result1 clienta.Oauth2Option) {
+	fake.withOauth2HTTPClientMutex.Lock()
+	defer fake.withOauth2HTTPClientMutex.Unlock()
+	fake.WithOauth2HTTPClientStub = nil
+	fake.withOauth2HTTPClientReturns = struct {
+		result1 clienta.Oauth2Option
+	}{result1}
+}
+
+func (fake *FakeGoLogCacheClient) WithOauth2HTTPClientReturnsOnCall(i int, result1 clienta.Oauth2Option) {
+	fake.withOauth2HTTPClientMutex.Lock()
+	defer fake.withOauth2HTTPClientMutex.Unlock()
+	fake.WithOauth2HTTPClientStub = nil
+	if fake.withOauth2HTTPClientReturnsOnCall == nil {
+		fake.withOauth2HTTPClientReturnsOnCall = make(map[int]struct {
+			result1 clienta.Oauth2Option
+		})
+	}
+	fake.withOauth2HTTPClientReturnsOnCall[i] = struct {
+		result1 clienta.Oauth2Option
+	}{result1}
+}
+
 func (fake *FakeGoLogCacheClient) WithViaGRPC(arg1 ...grpc.DialOption) clienta.ClientOption {
 	fake.withViaGRPCMutex.Lock()
 	ret, specificReturn := fake.withViaGRPCReturnsOnCall[len(fake.withViaGRPCArgsForCall)]
@@ -165,6 +387,12 @@ func (fake *FakeGoLogCacheClient) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.newClientMutex.RLock()
 	defer fake.newClientMutex.RUnlock()
+	fake.newOauth2HTTPClientMutex.RLock()
+	defer fake.newOauth2HTTPClientMutex.RUnlock()
+	fake.withHTTPClientMutex.RLock()
+	defer fake.withHTTPClientMutex.RUnlock()
+	fake.withOauth2HTTPClientMutex.RLock()
+	defer fake.withOauth2HTTPClientMutex.RUnlock()
 	fake.withViaGRPCMutex.RLock()
 	defer fake.withViaGRPCMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
