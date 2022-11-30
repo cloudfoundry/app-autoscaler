@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("LogCacheClient", func() {
+var _ = Describe("LogCacheClient", func() {
 	var (
 		fakeEnvelopeProcessor        *fakes.FakeEnvelopeProcessor
 		fakeGoLogCacheReader         *fakes.FakeLogCacheClientReader
@@ -42,7 +42,7 @@ var _ = FDescribe("LogCacheClient", func() {
 		clientOptions                []ClientOption
 		expectedTransportCredentials grpc.DialOption
 		expectedClientOption         logcache.ClientOption
-		expectedGoLogCacheClient     logcache.Client
+		expectedGoLogCacheClient     *logcache.Client
 	)
 
 	BeforeEach(func() {
@@ -72,8 +72,9 @@ var _ = FDescribe("LogCacheClient", func() {
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(1, nil, errors.New("some error"))
 		expectedClientOption = logcache.WithViaGRPC(expectedTransportCredentials)
+
 		fakeGoLogCacheClient.WithViaGRPCReturns(expectedClientOption)
-		fakeGoLogCacheClient.NewClientReturns(fakeGoLogCacheReader)
+		fakeGoLogCacheClient.NewClientReturns(expectedGoLogCacheClient)
 
 		logCacheClient = NewLogCacheClient(
 			logger, func() time.Time { return collectedAt },
@@ -102,6 +103,7 @@ var _ = FDescribe("LogCacheClient", func() {
 				expectedTLSCreds, err := expectedTlSCreds.CreateClientConfig()
 				Expect(err).NotTo(HaveOccurred())
 
+				expectedGoLogCacheClient = &logcache.Client{}
 				expectedTransportCredentials = grpc.WithTransportCredentials(credentials.NewTLS(expectedTLSCreds))
 				clientOptions = append(clientOptions, WithGRPCTransportCredentials(expectedTransportCredentials))
 			})
@@ -112,7 +114,7 @@ var _ = FDescribe("LogCacheClient", func() {
 				Expect(reflect.ValueOf(actualClientOptions[0]).Pointer()).To(Equal(reflect.ValueOf(expectedClientOption).Pointer()))
 				actualGRPCDialOpts := fakeGoLogCacheClient.WithViaGRPCArgsForCall(0)
 				Expect(actualGRPCDialOpts[0]).To(Equal(expectedTransportCredentials))
-				Expect(logCacheClient.Client).To(Equal(&expectedGoLogCacheClient))
+				Expect(logCacheClient.Client).To(Equal(expectedGoLogCacheClient))
 				//	Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
 				//	actualTLSCreds := fakeTLSConfig.NewTLSArgsForCall(0)
 				//	Expect(actualTLSCreds.Certificates).To(Equal(expectedTLSCreds.Certificates))
@@ -122,6 +124,10 @@ var _ = FDescribe("LogCacheClient", func() {
 	})
 
 	Context("GetMetrics", func() {
+		JustBeforeEach(func() {
+			logCacheClient.Client = fakeGoLogCacheReader
+		})
+
 		Describe("when log cache returns error on read", func() {
 			BeforeEach(func() {
 				logCacheClientReadError = errors.New("some Read error")
@@ -147,10 +153,11 @@ var _ = FDescribe("LogCacheClient", func() {
 				Expect(actualMetrics).To(Equal(metrics))
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeLogCacheClient.ReadCallCount()).To(Equal(1))
+				Expect(fakeGoLogCacheReader.ReadCallCount()).To(Equal(1))
 
 				By("Sends the right arguments to log-cache-client")
-				actualContext, actualAppId, actualStartTime, readOptions := fakeLogCacheClient.ReadArgsForCall(0)
+				actualContext, actualAppId, actualStartTime, readOptions := fakeGoLogCacheReader.ReadArgsForCall(0)
+
 				Expect(actualContext).To(Equal(context.Background()))
 				Expect(actualAppId).To(Equal(appId))
 				Expect(actualStartTime).To(Equal(startTime))
@@ -186,7 +193,7 @@ var _ = FDescribe("LogCacheClient", func() {
 				Expect(actualMetrics).To(Equal(metrics))
 
 				By("Sends the right arguments to log-cache-client")
-				actualContext, actualAppId, actualStartTime, readOptions := fakeLogCacheClient.ReadArgsForCall(0)
+				actualContext, actualAppId, actualStartTime, readOptions := fakeGoLogCacheReader.ReadArgsForCall(0)
 				Expect(actualContext).To(Equal(context.Background()))
 				Expect(actualAppId).To(Equal(appId))
 				Expect(actualStartTime).To(Equal(startTime))

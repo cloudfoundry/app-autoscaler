@@ -20,7 +20,6 @@ import (
 
 type LogCacheClient struct {
 	logger lager.Logger
-	// TODO: to be removed?
 	Client LogCacheClientReader
 
 	now                  func() time.Time
