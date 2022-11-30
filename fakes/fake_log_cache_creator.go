@@ -11,13 +11,14 @@ import (
 )
 
 type FakeLogCacheClientCreator struct {
-	NewLogCacheClientStub        func(lager.Logger, func() time.Time, client.LogCacheClientReader, envelopeprocessor.EnvelopeProcessor) *client.LogCacheClient
+	NewLogCacheClientStub        func(lager.Logger, func() time.Time, envelopeprocessor.EnvelopeProcessor, string, ...client.ClientOption) *client.LogCacheClient
 	newLogCacheClientMutex       sync.RWMutex
 	newLogCacheClientArgsForCall []struct {
 		arg1 lager.Logger
 		arg2 func() time.Time
-		arg3 client.LogCacheClientReader
-		arg4 envelopeprocessor.EnvelopeProcessor
+		arg3 envelopeprocessor.EnvelopeProcessor
+		arg4 string
+		arg5 []client.ClientOption
 	}
 	newLogCacheClientReturns struct {
 		result1 *client.LogCacheClient
@@ -29,21 +30,22 @@ type FakeLogCacheClientCreator struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeLogCacheClientCreator) NewLogCacheClient(arg1 lager.Logger, arg2 func() time.Time, arg3 client.LogCacheClientReader, arg4 envelopeprocessor.EnvelopeProcessor) *client.LogCacheClient {
+func (fake *FakeLogCacheClientCreator) NewLogCacheClient(arg1 lager.Logger, arg2 func() time.Time, arg3 envelopeprocessor.EnvelopeProcessor, arg4 string, arg5 ...client.ClientOption) *client.LogCacheClient {
 	fake.newLogCacheClientMutex.Lock()
 	ret, specificReturn := fake.newLogCacheClientReturnsOnCall[len(fake.newLogCacheClientArgsForCall)]
 	fake.newLogCacheClientArgsForCall = append(fake.newLogCacheClientArgsForCall, struct {
 		arg1 lager.Logger
 		arg2 func() time.Time
-		arg3 client.LogCacheClientReader
-		arg4 envelopeprocessor.EnvelopeProcessor
-	}{arg1, arg2, arg3, arg4})
+		arg3 envelopeprocessor.EnvelopeProcessor
+		arg4 string
+		arg5 []client.ClientOption
+	}{arg1, arg2, arg3, arg4, arg5})
 	stub := fake.NewLogCacheClientStub
 	fakeReturns := fake.newLogCacheClientReturns
-	fake.recordInvocation("NewLogCacheClient", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("NewLogCacheClient", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.newLogCacheClientMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4)
+		return stub(arg1, arg2, arg3, arg4, arg5...)
 	}
 	if specificReturn {
 		return ret.result1
@@ -57,17 +59,17 @@ func (fake *FakeLogCacheClientCreator) NewLogCacheClientCallCount() int {
 	return len(fake.newLogCacheClientArgsForCall)
 }
 
-func (fake *FakeLogCacheClientCreator) NewLogCacheClientCalls(stub func(lager.Logger, func() time.Time, client.LogCacheClientReader, envelopeprocessor.EnvelopeProcessor) *client.LogCacheClient) {
+func (fake *FakeLogCacheClientCreator) NewLogCacheClientCalls(stub func(lager.Logger, func() time.Time, envelopeprocessor.EnvelopeProcessor, string, ...client.ClientOption) *client.LogCacheClient) {
 	fake.newLogCacheClientMutex.Lock()
 	defer fake.newLogCacheClientMutex.Unlock()
 	fake.NewLogCacheClientStub = stub
 }
 
-func (fake *FakeLogCacheClientCreator) NewLogCacheClientArgsForCall(i int) (lager.Logger, func() time.Time, client.LogCacheClientReader, envelopeprocessor.EnvelopeProcessor) {
+func (fake *FakeLogCacheClientCreator) NewLogCacheClientArgsForCall(i int) (lager.Logger, func() time.Time, envelopeprocessor.EnvelopeProcessor, string, []client.ClientOption) {
 	fake.newLogCacheClientMutex.RLock()
 	defer fake.newLogCacheClientMutex.RUnlock()
 	argsForCall := fake.newLogCacheClientArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
 }
 
 func (fake *FakeLogCacheClientCreator) NewLogCacheClientReturns(result1 *client.LogCacheClient) {

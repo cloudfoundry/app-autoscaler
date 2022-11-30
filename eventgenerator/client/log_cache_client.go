@@ -25,7 +25,7 @@ type LogCacheClient struct {
 	now                  func() time.Time
 	envelopeProcessor    envelopeprocessor.EnvelopeProcessor
 	goLogCache           GoLogCache
-	transportCredentials grpc.DialOption
+	TransportCredentials grpc.DialOption
 }
 
 // ClientOption configures the LogCache client.
@@ -59,7 +59,7 @@ type GoLogCacheClient interface {
 }
 
 type LogCacheClientCreator interface {
-	NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient
+	NewLogCacheClient(logger lager.Logger, getTime func() time.Time, envelopeProcessor envelopeprocessor.EnvelopeProcessor, addrs string, opts ...ClientOption) *LogCacheClient
 }
 
 type GoLogCache struct {
@@ -90,7 +90,7 @@ func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, envelopePr
 	}
 
 	c.Client = c.goLogCache.NewClientFn(addrs,
-		c.goLogCache.WithViaGRPCFn(c.transportCredentials),
+		c.goLogCache.WithViaGRPCFn(c.TransportCredentials),
 	)
 
 	return c
@@ -111,7 +111,7 @@ func WithGRPCTransportCredentials(d grpc.DialOption) ClientOption {
 	return clientOptionFunc(func(c interface{}) {
 		switch c := c.(type) {
 		case *LogCacheClient:
-			c.transportCredentials = d
+			c.TransportCredentials = d
 
 		default:
 			panic("unknown type")

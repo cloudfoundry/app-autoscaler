@@ -44,14 +44,14 @@ func (g grpcCreds) WithTransportCredentials(creds credentials.TransportCredentia
 }
 
 type MetricClientFactory struct {
-	newLogCacheClient     newLogCacheClient
-	newMetricServerClient newMetricServerClient
+	newLogCacheClientFn     LogCacheClientCreator
+	newMetricServerClientFn newMetricServerClient
 }
 
-func NewMetricClientFactory(newMetricLogCacheClient newLogCacheClient, newMetricServerClient newMetricServerClient) *MetricClientFactory {
+func NewMetricClientFactory(newMetricLogCacheClient LogCacheClientCreator, newMetricServerClient newMetricServerClient) *MetricClientFactory {
 	return &MetricClientFactory{
-		newMetricServerClient: newMetricServerClient,
-		newLogCacheClient:     newMetricLogCacheClient,
+		newMetricServerClientFn: newMetricServerClient,
+		newLogCacheClientFn:     newMetricLogCacheClient,
 	}
 }
 
@@ -64,16 +64,19 @@ func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config
 }
 
 func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
-	var logCacheClient LogCacheClientReader
+	var _ LogCacheClientReader
+	var clientOptions []ClientOption
 
 	if hasUAACreds(conf) {
-		logCacheClient = createOauth2HTTPLogCacheClient(conf)
+		_ = createOauth2HTTPLogCacheClient(conf)
 	} else {
-		logCacheClient = createGRPCLogCacheClient(conf)
+		clientOptions = append(clientOptions, WithGRPCTransportCredentials(nil))
+		_ = createGRPCLogCacheClient(conf)
+
 	}
 
 	envelopeProcessor := NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
-	return mc.newLogCacheClient(logger, time.Now, logCacheClient, envelopeProcessor)
+	return mc.newLogCacheClientFn.NewLogCacheClient(logger, time.Now, envelopeProcessor, conf.MetricCollector.MetricCollectorURL, clientOptions...)
 }
 
 func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
@@ -82,7 +85,7 @@ func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logge
 	if err != nil {
 		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": httpClient})
 	}
-	return mc.newMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
+	return mc.newMetricServerClientFn(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
 }
 
 func createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.Client {

@@ -2,6 +2,8 @@ package client_test
 
 import (
 	"crypto/tls"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"net/http"
 	"path/filepath"
 	"reflect"
@@ -38,7 +40,7 @@ var _ = Describe("MetricClientFactory", func() {
 		expectedHTTPClient            logcache.HTTPClient
 		expectedOauth2HTTPClientOpt   logcache.Oauth2Option
 		logger                        *lagertest.TestLogger
-		metricCollectorURL            string
+		expectedMetricCollectorURL    string
 		tlsCerts                      models.TLSCerts
 		uaaCreds                      models.UAACreds
 		useLogCache                   bool
@@ -48,15 +50,6 @@ var _ = Describe("MetricClientFactory", func() {
 	)
 
 	BeforeEach(func() {
-		expectedTLSLogCacheClient = logcache.Client{}
-		expectedOauth2HTTPClient = nil
-		expectedClientOption = nil
-		expectedHTTPClient = nil
-		expectedOauth2HTTPClientOpt = nil
-		logger = lagertest.NewTestLogger("MetricServer")
-		uaaCreds = models.UAACreds{}
-		tlsCerts = models.TLSCerts{}
-
 		caCertFilePath = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		certFilePath = filepath.Join(testCertDir, "eventgenerator.crt")
 		keyFilePath = filepath.Join(testCertDir, "eventgenerator.key")
@@ -65,20 +58,21 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeMetricServerClientCreator = fakes.FakeMetricServerClientCreator{}
 		fakeTLSConfig = fakes.FakeTLSConfig{}
 		fakeGRPC = fakes.FakeGrpcDialOptions{}
-		metricClientFactory = NewMetricClientFactory(fakeLogCacheClientCreator.NewLogCacheClient, fakeMetricServerClientCreator.NewMetricServerClient)
-		metricClientFactory.Factory.NewProcessor = fakeEnvelopeProcessorCreator.NewProcessor
-		metricClientFactory.Factory.GoLogCacheNewClient = fakeGoLogCacheClient.NewClient
-		metricClientFactory.Factory.GoLogCacheNewOauth2HTTPClient = fakeGoLogCacheClient.NewOauth2HTTPClient
-		metricClientFactory.Factory.GoLogCacheWithViaGRPC = fakeGoLogCacheClient.WithViaGRPC
-		metricClientFactory.Factory.GoLogCacheWithHTTPClient = fakeGoLogCacheClient.WithHTTPClient
-		metricClientFactory.Factory.GoLogCacheWithOauth2HTTPClient = fakeGoLogCacheClient.WithOauth2HTTPClient
-		metricClientFactory.Factory.GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
-		metricClientFactory.Factory.NewTLS = fakeTLSConfig.NewTLS
+		metricClientFactory = NewMetricClientFactory(&fakeLogCacheClientCreator, fakeMetricServerClientCreator.NewMetricServerClient)
+		NewProcessor = fakeEnvelopeProcessorCreator.NewProcessor
 
+		// Stub public go-log-cache functions
+		GoLogCacheNewClient = fakeGoLogCacheClient.NewClient
+		GoLogCacheNewOauth2HTTPClient = fakeGoLogCacheClient.NewOauth2HTTPClient
+		GoLogCacheWithViaGRPC = fakeGoLogCacheClient.WithViaGRPC
+		GoLogCacheWithHTTPClient = fakeGoLogCacheClient.WithHTTPClient
+		GoLogCacheWithOauth2HTTPClient = fakeGoLogCacheClient.WithOauth2HTTPClient
+		GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
+
+		NewTLS = fakeTLSConfig.NewTLS
 		fakeGoLogCacheClient.NewClientReturns(&expectedTLSLogCacheClient)
 		expectedOauth2HTTPClientOpt = logcache.WithOauth2HTTPClient(expectedHTTPClient)
 		fakeGoLogCacheClient.WithOauth2HTTPClientReturns(expectedOauth2HTTPClientOpt)
-
 	})
 
 	JustBeforeEach(func() {
@@ -88,17 +82,18 @@ var _ = Describe("MetricClientFactory", func() {
 			},
 			MetricCollector: config.MetricCollectorConfig{
 				UseLogCache:        useLogCache,
-				MetricCollectorURL: metricCollectorURL,
+				MetricCollectorURL: expectedMetricCollectorURL,
 				TLSClientCerts:     tlsCerts,
 				UAACreds:           uaaCreds,
 			},
 		}
 
+		logger = lagertest.NewTestLogger("MetricServer")
 		metricClient = metricClientFactory.GetMetricClient(logger, &conf)
 	})
 	Describe("GetMetricClient", func() {
 		BeforeEach(func() {
-			metricCollectorURL = "some-metric-server-url"
+			expectedMetricCollectorURL = "some-metric-server-url"
 			tlsCerts = models.TLSCerts{
 				KeyFile:    keyFilePath,
 				CertFile:   certFilePath,
@@ -127,7 +122,7 @@ var _ = Describe("MetricClientFactory", func() {
 
 		Describe("when logCacheEnabled is true", func() {
 			BeforeEach(func() {
-				metricCollectorURL = "some-log-cache-url:8080"
+				expectedMetricCollectorURL = "some-log-cache-url:8080"
 				useLogCache = true
 			})
 
@@ -136,14 +131,31 @@ var _ = Describe("MetricClientFactory", func() {
 				Expect(fakeMetricServerClientCreator.NewMetricServerClientCallCount()).To(Equal(0))
 				Expect(fakeLogCacheClientCreator.NewLogCacheClientCallCount()).To(Equal(1))
 
-				logger, now, actualLogCacheClient, actualEnvelopeProcessor := fakeLogCacheClientCreator.NewLogCacheClientArgsForCall(0)
+				logger, now, actualEnvelopeProcessor, actualLogCacheAddrs, _ := fakeLogCacheClientCreator.NewLogCacheClientArgsForCall(0)
 				Expect(logger).NotTo(BeNil())
-				Expect(fakeGoLogCacheClient.NewClientCallCount()).To(Equal(1))
-				Expect(actualLogCacheClient).To(Equal(&expectedTLSLogCacheClient))
-				Expect(actualEnvelopeProcessor).To(BeAssignableToTypeOf(envelopeprocessor.Processor{}))
 				Expect(now).NotTo(BeNil())
+				Expect(actualEnvelopeProcessor).To(BeAssignableToTypeOf(envelopeprocessor.Processor{}))
+				Expect(actualLogCacheAddrs).To(Equal(expectedMetricCollectorURL))
+
 			})
 
+			Describe("when uaa client and secret are not provided", func() {
+				BeforeEach(func() {
+					uaaCreds = models.UAACreds{}
+				})
+
+				FIt("Should configure LogCacheClient via GRPC Options", func() {
+					expectedTlSCreds := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
+					expectedTLSCreds, err := expectedTlSCreds.CreateClientConfig()
+					Expect(err).NotTo(HaveOccurred())
+					expectedTransportCredentials := grpc.WithTransportCredentials(credentials.NewTLS(expectedTLSCreds))
+					expectedActualClientOpt := WithGRPCTransportCredentials(expectedTransportCredentials)
+					_, _, _, _, actualClientOpts := fakeLogCacheClientCreator.NewLogCacheClientArgsForCall(0)
+
+					Expect(actualClientOpts).To(ContainElement(expectedActualClientOpt))
+				})
+
+			})
 
 			Describe("when uaa client and secret are provided", func() {
 				BeforeEach(func() {
@@ -207,5 +219,6 @@ var _ = Describe("MetricClientFactory", func() {
 			})
 
 		})
+
 	})
 })
