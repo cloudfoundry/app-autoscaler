@@ -2,10 +2,13 @@ package client_test
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
-	"google.golang.org/grpc"
+	gogrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"net/http"
 	"net/url"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"time"
@@ -23,32 +26,32 @@ import (
 
 var _ = Describe("LogCacheClient", func() {
 	var (
-		fakeEnvelopeProcessor        *fakes.FakeEnvelopeProcessor
-		fakeGoLogCacheReader         *fakes.FakeLogCacheClientReader
-		fakeGoLogCacheClient         *fakes.FakeGoLogCacheClient
-		appId                        string
-		logger                       *lagertest.TestLogger
-		logCacheClient               *LogCacheClient
-		envelopes                    []*loggregator_v2.Envelope
-		metrics                      []models.AppInstanceMetric
-		startTime                    time.Time
-		endTime                      time.Time
-		collectedAt                  time.Time
-		logCacheClientReadError      error
-		expectedAddrs                string
-		caCertFilePath               string
-		certFilePath                 string
-		keyFilePath                  string
-		clientOptions                []ClientOption
-		expectedTransportCredentials grpc.DialOption
-		expectedClientOption         logcache.ClientOption
-		expectedGoLogCacheClient     *logcache.Client
+		fakeEnvelopeProcessor   *fakes.FakeEnvelopeProcessor
+		fakeGoLogCacheReader    *fakes.FakeLogCacheClientReader
+		fakeGoLogCacheClient    *fakes.FakeGoLogCacheClient
+		fakeGRPC                *fakes.FakeGrpc
+		appId                   string
+		logger                  *lagertest.TestLogger
+		logCacheClient          *LogCacheClient
+		envelopes               []*loggregator_v2.Envelope
+		metrics                 []models.AppInstanceMetric
+		startTime               time.Time
+		endTime                 time.Time
+		collectedAt             time.Time
+		logCacheClientReadError error
+		expectedAddrs           string
+		caCertFilePath          string
+		certFilePath            string
+		keyFilePath             string
+		expectedClientOption    logcache.ClientOption
+		//expectedGoLogCacheClient *logcache.Client
 	)
 
 	BeforeEach(func() {
 		fakeEnvelopeProcessor = &fakes.FakeEnvelopeProcessor{}
 		fakeGoLogCacheReader = &fakes.FakeLogCacheClientReader{}
 		fakeGoLogCacheClient = &fakes.FakeGoLogCacheClient{}
+		fakeGRPC = &fakes.FakeGrpc{}
 
 		logCacheClientReadError = nil
 		logger = lagertest.NewTestLogger("MetricPoller-test")
@@ -71,60 +74,153 @@ var _ = Describe("LogCacheClient", func() {
 		fakeEnvelopeProcessor.GetTimerMetricsReturns(metrics)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(1, nil, errors.New("some error"))
-		expectedClientOption = logcache.WithViaGRPC(expectedTransportCredentials)
 
 		fakeGoLogCacheClient.WithViaGRPCReturns(expectedClientOption)
-		fakeGoLogCacheClient.NewClientReturns(expectedGoLogCacheClient)
 
-		logCacheClient = NewLogCacheClient(
-			logger, func() time.Time { return collectedAt },
-			fakeEnvelopeProcessor, expectedAddrs, clientOptions...)
-
-	})
-	BeforeEach(func() {
 		goLogCache := GoLogCache{
-			NewClientFn:   fakeGoLogCacheClient.NewClient,
-			WithViaGRPCFn: fakeGoLogCacheClient.WithViaGRPC,
+			NewClient:   fakeGoLogCacheClient.NewClient,
+			WithViaGRPC: fakeGoLogCacheClient.WithViaGRPC,
 
-			WithHTTPClientFn:       fakeGoLogCacheClient.WithHTTPClient,
-			NewOauth2HTTPClientFn:  fakeGoLogCacheClient.NewOauth2HTTPClient,
-			WithOauth2HTTPClientFn: fakeGoLogCacheClient.WithOauth2HTTPClient,
+			WithHTTPClient:       fakeGoLogCacheClient.WithHTTPClient,
+			NewOauth2HTTPClient:  fakeGoLogCacheClient.NewOauth2HTTPClient,
+			WithOauth2HTTPClient: fakeGoLogCacheClient.WithOauth2HTTPClient,
 		}
 
-		clientOptions = append(clientOptions, WithLogCacheLibrary(goLogCache))
+		logCacheClient.SetGoLogCache(goLogCache)
+		logCacheClient.Configure()
 	})
 
 	Context("NewLogCacheClient", func() {
+		BeforeEach(func() {
+			expectedAddrs = "logcache:8080"
+			logCacheClient = NewLogCacheClient(
+				logger, func() time.Time { return collectedAt },
+				fakeEnvelopeProcessor, expectedAddrs)
 
-		Context("when using log cache via grpc/mtls", func() {
+		})
+
+		Context("when consuming log cache via grpc/mtls", func() {
+			var expectedTransportCredential credentials.TransportCredentials
+			var expectedDialOpt gogrpc.DialOption
+
 			BeforeEach(func() {
-				expectedAddrs = "logcache:8080"
-				expectedTlSCreds := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
-				expectedTLSCreds, err := expectedTlSCreds.CreateClientConfig()
+				caCertFilePath = filepath.Join(testCertDir, "autoscaler-ca.crt")
+				certFilePath = filepath.Join(testCertDir, "eventgenerator.crt")
+				keyFilePath = filepath.Join(testCertDir, "eventgenerator.key")
+
+				expectedTlSCerts := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
+				expectedTLSConfig, err := expectedTlSCerts.CreateClientConfig()
+				logCacheClient.SetTLSConfig(expectedTLSConfig)
+				expectedTransportCredential = credentials.NewTLS(expectedTLSConfig)
+				expectedDialOpt = gogrpc.WithTransportCredentials(expectedTransportCredential)
+				expectedClientOption = logcache.WithViaGRPC(expectedDialOpt)
+				fakeGRPC.WithTransportCredentialsReturns(expectedDialOpt)
 				Expect(err).NotTo(HaveOccurred())
 
-				expectedGoLogCacheClient = &logcache.Client{}
-				expectedTransportCredentials = grpc.WithTransportCredentials(credentials.NewTLS(expectedTLSCreds))
-				clientOptions = append(clientOptions, WithGRPCTransportCredentials(expectedTransportCredentials))
+				grpc := GRPC{
+					WithTransportCredentials: fakeGRPC.WithTransportCredentials,
+				}
+				logCacheClient.SetGRPC(grpc)
+			})
+
+			JustBeforeEach(func() {
+				fakeGoLogCacheClient.WithViaGRPCReturns(expectedClientOption)
 			})
 
 			It("Should setup correct tls configurations", func() {
 				actualAddrs, actualClientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
+
+				By("Creating the go log cache client with the correct params")
 				Expect(actualAddrs).To(Equal(expectedAddrs))
+				Expect(actualClientOptions).NotTo(BeEmpty())
 				Expect(reflect.ValueOf(actualClientOptions[0]).Pointer()).To(Equal(reflect.ValueOf(expectedClientOption).Pointer()))
+
+				By("Configuring GRPC client options to the logcache client")
 				actualGRPCDialOpts := fakeGoLogCacheClient.WithViaGRPCArgsForCall(0)
-				Expect(actualGRPCDialOpts[0]).To(Equal(expectedTransportCredentials))
-				Expect(logCacheClient.Client).To(Equal(expectedGoLogCacheClient))
-				//	Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
-				//	actualTLSCreds := fakeTLSConfig.NewTLSArgsForCall(0)
-				//	Expect(actualTLSCreds.Certificates).To(Equal(expectedTLSCreds.Certificates))
+				Expect(actualGRPCDialOpts).NotTo(BeEmpty())
+				Expect(reflect.ValueOf(actualGRPCDialOpts[0]).Pointer()).To(Equal(reflect.ValueOf(expectedDialOpt).Pointer()))
+
+				By("Sending the right transport credentials to the logcache client")
+				Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
+				actualTransportCredentials := fakeGRPC.WithTransportCredentialsArgsForCall(0)
+				Expect(actualTransportCredentials).To(Equal(expectedTransportCredential))
 			})
 		})
 
+		Describe("when consuming log cache via uaa/oauth", func() {
+			var (
+				uaaCreds                    models.UAACreds
+				expectedHTTPClient          *http.Client
+				expectedOauth2HTTPClient    *logcache.Oauth2HTTPClient
+				expectedOauth2HTTPClientOpt logcache.Oauth2Option
+			)
+
+			BeforeEach(func() {
+				uaaCreds = models.UAACreds{
+					URL:          "https:some-uaa",
+					ClientID:     "some-id",
+					ClientSecret: "some-secret",
+				}
+
+				expectedHTTPClient = &http.Client{
+					Timeout: 5 * time.Second,
+					Transport: &http.Transport{
+						//nolint:gosec
+						TLSClientConfig: &tls.Config{InsecureSkipVerify: uaaCreds.SkipSSLValidation},
+					},
+				}
+				logCacheClient.SetUAACreds(uaaCreds)
+				expectedOauth2HTTPClient = &logcache.Oauth2HTTPClient{}
+				expectedOauth2HTTPClientOpt = logcache.WithOauth2HTTPClient(expectedHTTPClient)
+				fakeGoLogCacheClient.NewOauth2HTTPClientReturns(expectedOauth2HTTPClient)
+				fakeGoLogCacheClient.WithOauth2HTTPClientReturns(expectedOauth2HTTPClientOpt)
+				fakeGoLogCacheClient.WithHTTPClientReturns(expectedClientOption)
+			})
+
+			JustBeforeEach(func() {
+			})
+
+			Describe("when skip_ssl_validation is enabled", func() {
+				BeforeEach(func() {
+					uaaCreds.SkipSSLValidation = true
+				})
+
+				It("Should create a LogCacheClient Clientvia OauthHTTP", func() {
+					_, _, _, actualNewOauth2HTTPClientOpts := fakeGoLogCacheClient.NewOauth2HTTPClientArgsForCall(0)
+					Expect(reflect.ValueOf(actualNewOauth2HTTPClientOpts[0]).Pointer()).Should(Equal(reflect.ValueOf(expectedOauth2HTTPClientOpt).Pointer()))
+					actualHttpClient := fakeGoLogCacheClient.WithOauth2HTTPClientArgsForCall(0)
+					Expect(actualHttpClient).To(Equal(expectedHTTPClient))
+					//Expect(logCacheClient.GetUaaTlsConfig().InsecureSkipVerify).To(BeTrue())
+				})
+			})
+
+			It("Should create a LogCacheClient via OauthHTTP", func() {
+				By("Sending the right argument when creating the Oauth2HTTPClient")
+				Expect(fakeGoLogCacheClient.NewOauth2HTTPClientCallCount()).To(Equal(1))
+				uaaURL, uaaClientID, uaaClientSecret, oauthOpts := fakeGoLogCacheClient.NewOauth2HTTPClientArgsForCall(0)
+				Expect(uaaURL).NotTo(BeNil())
+				Expect(uaaClientID).NotTo(BeNil())
+				Expect(uaaClientSecret).NotTo(BeNil())
+				Expect(oauthOpts).NotTo(BeEmpty())
+
+				By("Calling logcache.NewClient with an Oauth2HTTPClient as an option")
+				Expect(fakeGoLogCacheClient.NewClientCallCount()).To(Equal(1))
+				actualLogCacheAddrs, actualClientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
+				Expect(actualLogCacheAddrs).To(Equal(expectedAddrs))
+				Expect(fakeGoLogCacheClient.WithHTTPClientCallCount()).To(Equal(1))
+				actualHTTPClient := fakeGoLogCacheClient.WithHTTPClientArgsForCall(0)
+				Expect(actualHTTPClient).NotTo(BeNil())
+				Expect(actualHTTPClient).To(Equal(expectedOauth2HTTPClient))
+				Expect(&actualClientOptions).NotTo(Equal(expectedClientOption))
+			})
+		})
 	})
 
 	Context("GetMetrics", func() {
 		JustBeforeEach(func() {
+			logCacheClient = NewLogCacheClient(
+				logger, func() time.Time { return collectedAt },
+				fakeEnvelopeProcessor, expectedAddrs)
 			logCacheClient.Client = fakeGoLogCacheReader
 		})
 
@@ -134,12 +230,12 @@ var _ = Describe("LogCacheClient", func() {
 			})
 
 			It("return error", func() {
-				_, err := logCacheClient.GetMetric(appId, models.MetricNameMemoryUtil, startTime, endTime)
+				_, err := logCacheClient.GetMetrics(appId, models.MetricNameMemoryUtil, startTime, endTime)
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
-		DescribeTable("GetMetric for startStop Metrics",
+		DescribeTable("GetMetrics for startStop Metrics",
 			func(metricType string, requiredFilters []string) {
 				metrics = []models.AppInstanceMetric{
 					{
@@ -148,7 +244,7 @@ var _ = Describe("LogCacheClient", func() {
 					},
 				}
 				fakeEnvelopeProcessor.GetTimerMetricsReturnsOnCall(0, metrics)
-				actualMetrics, err := logCacheClient.GetMetric(appId, metricType, startTime, endTime)
+				actualMetrics, err := logCacheClient.GetMetrics(appId, metricType, startTime, endTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualMetrics).To(Equal(metrics))
 
@@ -165,7 +261,7 @@ var _ = Describe("LogCacheClient", func() {
 				readOptions[0](nil, values)
 				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
 				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("TIMER"))
-				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
+				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetrics")
 				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
 
 				By("Sends the right arguments to the timer processor")
@@ -179,7 +275,7 @@ var _ = Describe("LogCacheClient", func() {
 			Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime, []string{"endtime", "envelope_type", "http"}),
 		)
 
-		DescribeTable("GetMetric for Gauge Metrics",
+		DescribeTable("GetMetrics for Gauge Metrics",
 			func(autoscalerMetricType string, requiredFilters []string) {
 				metrics = []models.AppInstanceMetric{
 					{
@@ -188,7 +284,7 @@ var _ = Describe("LogCacheClient", func() {
 					},
 				}
 				fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
-				actualMetrics, err := logCacheClient.GetMetric(appId, autoscalerMetricType, startTime, endTime)
+				actualMetrics, err := logCacheClient.GetMetrics(appId, autoscalerMetricType, startTime, endTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualMetrics).To(Equal(metrics))
 
@@ -200,7 +296,7 @@ var _ = Describe("LogCacheClient", func() {
 
 				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
 
-				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetric")
+				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetrics")
 				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("GAUGE"))
 
 				// after starTime and envelopeType we filter the metric names
@@ -242,7 +338,7 @@ var _ = Describe("LogCacheClient", func() {
 			})
 
 			It("should retrieve requested metrics only", func() {
-				actualMetrics, err := logCacheClient.GetMetric(appId, models.MetricNameMemoryUsed, startTime, endTime)
+				actualMetrics, err := logCacheClient.GetMetrics(appId, models.MetricNameMemoryUsed, startTime, endTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(actualMetrics)).To(Equal(1))
 				Expect(actualMetrics[0]).To(Equal(metrics[0]))

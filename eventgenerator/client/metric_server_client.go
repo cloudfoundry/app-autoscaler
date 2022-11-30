@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,26 +16,29 @@ import (
 )
 
 type MetricServerClient struct {
-	metricCollectorUrl string
-	httpClient         *http.Client
-	logger             lager.Logger
+	httpClient *http.Client
+	logger     lager.Logger
+	url        string
+	tlsConfig  *tls.Config
 }
+
+type NewMetricsServerClientFunc func(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) MetricClient
 
 type MetricServerClientCreator interface {
-	NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient
+	NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) MetricClient
 }
 
-func NewMetricServerClient(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient {
+func NewMetricServerClient(logger lager.Logger, url string, httpClient *http.Client) *MetricServerClient {
 	if httpClient.Transport != nil {
 		httpClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 1
 	}
 	return &MetricServerClient{
-		logger:             logger.Session("MetricServerClient"),
-		metricCollectorUrl: metricCollectorUrl,
-		httpClient:         httpClient,
+		logger:     logger.Session("MetricServerClient"),
+		url:        url,
+		httpClient: httpClient,
 	}
 }
-func (c *MetricServerClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
+func (c *MetricServerClient) GetMetrics(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	c.logger.Debug("GetMetric")
 	var url string
 	path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
@@ -47,7 +51,7 @@ func (c *MetricServerClient) GetMetric(appId string, metricType string, startTim
 	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
 	parameters.Add("order", db.ASCSTR)
 
-	url = c.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
+	url = c.url + path.RequestURI() + "?" + parameters.Encode()
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		c.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "url": url})
@@ -69,4 +73,12 @@ func (c *MetricServerClient) GetMetric(appId string, metricType string, startTim
 	}
 
 	return metrics, nil
+}
+
+func (c *MetricServerClient) GetTLSConfig() *tls.Config {
+	return c.httpClient.Transport.(*http.Transport).TLSClientConfig
+}
+
+func (c *MetricServerClient) GetUrl() string {
+	return c.url
 }

@@ -1,58 +1,28 @@
 package client
 
 import (
-	"crypto/tls"
-	"net/http"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager"
-	gogrpc "google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
+type GetMetricFunc func(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error)
+
 type MetricClient interface {
-	GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error)
+	GetMetrics(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error)
 }
-
-type newLogCacheClient func(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient
-type newMetricServerClient func(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient
-
-var GoLogCacheNewClient = logcache.NewClient
-var GoLogCacheNewOauth2HTTPClient = logcache.NewOauth2HTTPClient
-var GoLogCacheWithViaGRPC = logcache.WithViaGRPC
-var GoLogCacheWithHTTPClient = logcache.WithHTTPClient
-var GoLogCacheWithOauth2HTTPClient = logcache.WithOauth2HTTPClient
 
 var NewProcessor = envelopeprocessor.NewProcessor
-var GRPCWithTransportCredentials = gogrpc.WithTransportCredentials
-
-type grpcDialOptions interface {
-	WithTransportCredentials(creds credentials.TransportCredentials) gogrpc.DialOption
-}
-
-type grpcCreds struct {
-	grpcDialOptions
-}
-
-func (g grpcCreds) WithTransportCredentials(creds credentials.TransportCredentials) gogrpc.DialOption {
-	return GRPCWithTransportCredentials(creds)
-}
 
 type MetricClientFactory struct {
-	newLogCacheClientFn     LogCacheClientCreator
-	newMetricServerClientFn newMetricServerClient
 }
 
-func NewMetricClientFactory(newMetricLogCacheClient LogCacheClientCreator, newMetricServerClient newMetricServerClient) *MetricClientFactory {
-	return &MetricClientFactory{
-		newMetricServerClientFn: newMetricServerClient,
-		newLogCacheClientFn:     newMetricLogCacheClient,
-	}
+func NewMetricClientFactory() *MetricClientFactory {
+	return &MetricClientFactory{}
 }
 
 func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
@@ -64,19 +34,27 @@ func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config
 }
 
 func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
-	var _ LogCacheClientReader
-	var clientOptions []ClientOption
+	envelopeProcessor := NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
+	c := NewLogCacheClient(logger, time.Now, envelopeProcessor, conf.MetricCollector.MetricCollectorURL)
 
 	if hasUAACreds(conf) {
-		_ = createOauth2HTTPLogCacheClient(conf)
+		uaaCreds := models.UAACreds{
+			URL:               conf.MetricCollector.UAACreds.URL,
+			ClientID:          conf.MetricCollector.UAACreds.ClientID,
+			ClientSecret:      conf.MetricCollector.UAACreds.ClientSecret,
+			SkipSSLValidation: false,
+		}
+		c.SetUAACreds(uaaCreds)
 	} else {
-		clientOptions = append(clientOptions, WithGRPCTransportCredentials(nil))
-		_ = createGRPCLogCacheClient(conf)
-
+		tlsCerts := &models.TLSCerts{
+			KeyFile:    conf.MetricCollector.TLSClientCerts.KeyFile,
+			CertFile:   conf.MetricCollector.TLSClientCerts.CertFile,
+			CACertFile: conf.MetricCollector.TLSClientCerts.CACertFile,
+		}
+		tlsConfig, _ := tlsCerts.CreateClientConfig()
+		c.SetTLSConfig(tlsConfig)
 	}
-
-	envelopeProcessor := NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
-	return mc.newLogCacheClientFn.NewLogCacheClient(logger, time.Now, envelopeProcessor, conf.MetricCollector.MetricCollectorURL, clientOptions...)
+	return c
 }
 
 func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
@@ -85,37 +63,7 @@ func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logge
 	if err != nil {
 		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": httpClient})
 	}
-	return mc.newMetricServerClientFn(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
-}
-
-func createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.Client {
-	httpClient := createHttpClient(conf.MetricCollector.UAACreds.SkipSSLValidation)
-	oauthHTTPOpt := GoLogCacheWithOauth2HTTPClient(httpClient)
-
-	clientOpt := GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
-		conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret,
-		oauthHTTPOpt)
-
-	return GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, GoLogCacheWithHTTPClient(clientOpt))
-}
-
-func createHttpClient(skipSSLValidation bool) *http.Client {
-	return &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			//nolint:gosec
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSSLValidation},
-		},
-	}
-}
-func createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
-	//creds, err := newTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile,
-	//	conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
-	//if err != nil {
-	//	log.Fatalf("failed to load TLS config: %s", err)
-	//}
-	//return GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, GoLogCacheWithViaGRPC(new(grpcCreds).WithTransportCredentials(creds)))
-	return &logcache.Client{}
+	return NewMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
 }
 
 func hasUAACreds(conf *config.Config) bool {

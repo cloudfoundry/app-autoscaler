@@ -10,7 +10,7 @@ import (
 )
 
 type FakeMetricServerClientCreator struct {
-	NewMetricServerClientStub        func(lager.Logger, string, *http.Client) *client.MetricServerClient
+	NewMetricServerClientStub        func(lager.Logger, string, *http.Client) client.MetricClient
 	newMetricServerClientMutex       sync.RWMutex
 	newMetricServerClientArgsForCall []struct {
 		arg1 lager.Logger
@@ -18,16 +18,16 @@ type FakeMetricServerClientCreator struct {
 		arg3 *http.Client
 	}
 	newMetricServerClientReturns struct {
-		result1 *client.MetricServerClient
+		result1 client.MetricClient
 	}
 	newMetricServerClientReturnsOnCall map[int]struct {
-		result1 *client.MetricServerClient
+		result1 client.MetricClient
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricServerClientCreator) NewMetricServerClient(arg1 lager.Logger, arg2 string, arg3 *http.Client) *client.MetricServerClient {
+func (fake *FakeMetricServerClientCreator) NewMetricServerClient(arg1 lager.Logger, arg2 string, arg3 *http.Client) client.MetricClient {
 	fake.newMetricServerClientMutex.Lock()
 	ret, specificReturn := fake.newMetricServerClientReturnsOnCall[len(fake.newMetricServerClientArgsForCall)]
 	fake.newMetricServerClientArgsForCall = append(fake.newMetricServerClientArgsForCall, struct {
@@ -54,7 +54,7 @@ func (fake *FakeMetricServerClientCreator) NewMetricServerClientCallCount() int 
 	return len(fake.newMetricServerClientArgsForCall)
 }
 
-func (fake *FakeMetricServerClientCreator) NewMetricServerClientCalls(stub func(lager.Logger, string, *http.Client) *client.MetricServerClient) {
+func (fake *FakeMetricServerClientCreator) NewMetricServerClientCalls(stub func(lager.Logger, string, *http.Client) client.MetricClient) {
 	fake.newMetricServerClientMutex.Lock()
 	defer fake.newMetricServerClientMutex.Unlock()
 	fake.NewMetricServerClientStub = stub
@@ -67,26 +67,26 @@ func (fake *FakeMetricServerClientCreator) NewMetricServerClientArgsForCall(i in
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeMetricServerClientCreator) NewMetricServerClientReturns(result1 *client.MetricServerClient) {
+func (fake *FakeMetricServerClientCreator) NewMetricServerClientReturns(result1 client.MetricClient) {
 	fake.newMetricServerClientMutex.Lock()
 	defer fake.newMetricServerClientMutex.Unlock()
 	fake.NewMetricServerClientStub = nil
 	fake.newMetricServerClientReturns = struct {
-		result1 *client.MetricServerClient
+		result1 client.MetricClient
 	}{result1}
 }
 
-func (fake *FakeMetricServerClientCreator) NewMetricServerClientReturnsOnCall(i int, result1 *client.MetricServerClient) {
+func (fake *FakeMetricServerClientCreator) NewMetricServerClientReturnsOnCall(i int, result1 client.MetricClient) {
 	fake.newMetricServerClientMutex.Lock()
 	defer fake.newMetricServerClientMutex.Unlock()
 	fake.NewMetricServerClientStub = nil
 	if fake.newMetricServerClientReturnsOnCall == nil {
 		fake.newMetricServerClientReturnsOnCall = make(map[int]struct {
-			result1 *client.MetricServerClient
+			result1 client.MetricClient
 		})
 	}
 	fake.newMetricServerClientReturnsOnCall[i] = struct {
-		result1 *client.MetricServerClient
+		result1 client.MetricClient
 	}{result1}
 }
 

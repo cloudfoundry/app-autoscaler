@@ -4,11 +4,12 @@ package fakes
 import (
 	"sync"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-type FakeGrpcDialOptions struct {
+type FakeGRPCOptions struct {
 	WithTransportCredentialsStub        func(credentials.TransportCredentials) grpc.DialOption
 	withTransportCredentialsMutex       sync.RWMutex
 	withTransportCredentialsArgsForCall []struct {
@@ -24,7 +25,7 @@ type FakeGrpcDialOptions struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeGrpcDialOptions) WithTransportCredentials(arg1 credentials.TransportCredentials) grpc.DialOption {
+func (fake *FakeGRPCOptions) WithTransportCredentials(arg1 credentials.TransportCredentials) grpc.DialOption {
 	fake.withTransportCredentialsMutex.Lock()
 	ret, specificReturn := fake.withTransportCredentialsReturnsOnCall[len(fake.withTransportCredentialsArgsForCall)]
 	fake.withTransportCredentialsArgsForCall = append(fake.withTransportCredentialsArgsForCall, struct {
@@ -43,26 +44,26 @@ func (fake *FakeGrpcDialOptions) WithTransportCredentials(arg1 credentials.Trans
 	return fakeReturns.result1
 }
 
-func (fake *FakeGrpcDialOptions) WithTransportCredentialsCallCount() int {
+func (fake *FakeGRPCOptions) WithTransportCredentialsCallCount() int {
 	fake.withTransportCredentialsMutex.RLock()
 	defer fake.withTransportCredentialsMutex.RUnlock()
 	return len(fake.withTransportCredentialsArgsForCall)
 }
 
-func (fake *FakeGrpcDialOptions) WithTransportCredentialsCalls(stub func(credentials.TransportCredentials) grpc.DialOption) {
+func (fake *FakeGRPCOptions) WithTransportCredentialsCalls(stub func(credentials.TransportCredentials) grpc.DialOption) {
 	fake.withTransportCredentialsMutex.Lock()
 	defer fake.withTransportCredentialsMutex.Unlock()
 	fake.WithTransportCredentialsStub = stub
 }
 
-func (fake *FakeGrpcDialOptions) WithTransportCredentialsArgsForCall(i int) credentials.TransportCredentials {
+func (fake *FakeGRPCOptions) WithTransportCredentialsArgsForCall(i int) credentials.TransportCredentials {
 	fake.withTransportCredentialsMutex.RLock()
 	defer fake.withTransportCredentialsMutex.RUnlock()
 	argsForCall := fake.withTransportCredentialsArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeGrpcDialOptions) WithTransportCredentialsReturns(result1 grpc.DialOption) {
+func (fake *FakeGRPCOptions) WithTransportCredentialsReturns(result1 grpc.DialOption) {
 	fake.withTransportCredentialsMutex.Lock()
 	defer fake.withTransportCredentialsMutex.Unlock()
 	fake.WithTransportCredentialsStub = nil
@@ -71,7 +72,7 @@ func (fake *FakeGrpcDialOptions) WithTransportCredentialsReturns(result1 grpc.Di
 	}{result1}
 }
 
-func (fake *FakeGrpcDialOptions) WithTransportCredentialsReturnsOnCall(i int, result1 grpc.DialOption) {
+func (fake *FakeGRPCOptions) WithTransportCredentialsReturnsOnCall(i int, result1 grpc.DialOption) {
 	fake.withTransportCredentialsMutex.Lock()
 	defer fake.withTransportCredentialsMutex.Unlock()
 	fake.WithTransportCredentialsStub = nil
@@ -85,7 +86,7 @@ func (fake *FakeGrpcDialOptions) WithTransportCredentialsReturnsOnCall(i int, re
 	}{result1}
 }
 
-func (fake *FakeGrpcDialOptions) Invocations() map[string][][]interface{} {
+func (fake *FakeGRPCOptions) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.withTransportCredentialsMutex.RLock()
@@ -97,7 +98,7 @@ func (fake *FakeGrpcDialOptions) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeGrpcDialOptions) recordInvocation(key string, args []interface{}) {
+func (fake *FakeGRPCOptions) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -108,3 +109,5 @@ func (fake *FakeGrpcDialOptions) recordInvocation(key string, args []interface{}
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
+
+var _ client.GRPCOptions = new(FakeGRPCOptions)
