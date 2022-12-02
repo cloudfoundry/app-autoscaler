@@ -48,6 +48,15 @@ var _ = Describe("MetricClientFactory", func() {
 	)
 
 	BeforeEach(func() {
+		expectedTLSLogCacheClient = logcache.Client{}
+		expectedOauth2HTTPClient = nil
+		expectedClientOption = nil
+		expectedHTTPClient = nil
+		expectedOauth2HTTPClientOpt = nil
+		logger = lagertest.NewTestLogger("MetricServer")
+		uaaCreds = models.UAACreds{}
+		tlsCerts = models.TLSCerts{}
+
 		caCertFilePath = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		certFilePath = filepath.Join(testCertDir, "eventgenerator.crt")
 		keyFilePath = filepath.Join(testCertDir, "eventgenerator.key")
@@ -69,6 +78,7 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeGoLogCacheClient.NewClientReturns(&expectedTLSLogCacheClient)
 		expectedOauth2HTTPClientOpt = logcache.WithOauth2HTTPClient(expectedHTTPClient)
 		fakeGoLogCacheClient.WithOauth2HTTPClientReturns(expectedOauth2HTTPClientOpt)
+
 	})
 
 	JustBeforeEach(func() {
@@ -84,7 +94,6 @@ var _ = Describe("MetricClientFactory", func() {
 			},
 		}
 
-		logger = lagertest.NewTestLogger("MetricServer")
 		metricClient = metricClientFactory.GetMetricClient(logger, &conf)
 	})
 	Describe("GetMetricClient", func() {
