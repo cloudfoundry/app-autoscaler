@@ -108,9 +108,7 @@ func (f *Factory) createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.
 	httpClient := createHttpClient(conf.MetricCollector.UAACreds.SkipSSLValidation)
 	oauthHTTPOpt := f.GoLogCacheWithOauth2HTTPClient(httpClient)
 
-	clientOpt := f.GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
-		conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret,
-		oauthHTTPOpt)
+	clientOpt := f.GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL, conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret, oauthHTTPOpt)
 
 	return f.GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, f.GoLogCacheWithHTTPClient(clientOpt))
 }
