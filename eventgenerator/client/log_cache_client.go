@@ -28,8 +28,6 @@ type LogCacheClient struct {
 	envelopeProcessor envelopeprocessor.EnvelopeProcessor
 }
 
-var NewTLS = credentials.NewTLS
-
 type TLSConfig interface {
 	NewTLS(c *tls.Config) credentials.TransportCredentials
 }
@@ -131,13 +129,13 @@ func getEnvelopeType(metricType string) rpc.EnvelopeType {
 	return metricName
 }
 
-func newTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
+func (f *Factory) newTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
 	cfg, err := NewTLSConfig(caPath, certPath, keyPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewTLS(cfg), nil
+	return f.NewTLS(cfg), nil
 }
 
 func NewTLSConfig(caPath string, certPath string, keyPath string) (*tls.Config, error) {
