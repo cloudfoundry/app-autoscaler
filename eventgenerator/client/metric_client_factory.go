@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	logcache "code.cloudfoundry.org/go-log-cache"
 	"code.cloudfoundry.org/lager"
-	gogrpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -23,36 +23,54 @@ type MetricClient interface {
 type newLogCacheClient func(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient
 type newMetricServerClient func(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) *MetricServerClient
 
-var GoLogCacheNewClient = logcache.NewClient
-var GoLogCacheNewOauth2HTTPClient = logcache.NewOauth2HTTPClient
-var GoLogCacheWithViaGRPC = logcache.WithViaGRPC
-var GoLogCacheWithHTTPClient = logcache.WithHTTPClient
-var GoLogCacheWithOauth2HTTPClient = logcache.WithOauth2HTTPClient
-
-var NewProcessor = envelopeprocessor.NewProcessor
-var GRPCWithTransportCredentials = gogrpc.WithTransportCredentials
+type Factory struct {
+	GoLogCacheNewClient            func(addr string, opts ...logcache.ClientOption) *logcache.Client
+	GoLogCacheNewOauth2HTTPClient  func(oauth2Addr, client, clientSecret string, opts ...logcache.Oauth2Option) *logcache.Oauth2HTTPClient
+	GoLogCacheWithViaGRPC          func(opts ...grpc.DialOption) logcache.ClientOption
+	GoLogCacheWithHTTPClient       func(h logcache.HTTPClient) logcache.ClientOption
+	GoLogCacheWithOauth2HTTPClient func(client logcache.HTTPClient) logcache.Oauth2Option
+	NewProcessor                   func(logger lager.Logger, collectionInterval time.Duration) envelopeprocessor.Processor
+	GRPCWithTransportCredentials   func(creds credentials.TransportCredentials) grpc.DialOption
+	NewTLS                         func(config *tls.Config) credentials.TransportCredentials
+}
 
 type grpcDialOptions interface {
-	WithTransportCredentials(creds credentials.TransportCredentials) gogrpc.DialOption
+	WithTransportCredentials(creds credentials.TransportCredentials) grpc.DialOption
 }
 
 type grpcCreds struct {
 	grpcDialOptions
+	*Factory
 }
 
-func (g grpcCreds) WithTransportCredentials(creds credentials.TransportCredentials) gogrpc.DialOption {
-	return GRPCWithTransportCredentials(creds)
+func newFactory() *Factory {
+	return &Factory{
+		GoLogCacheNewClient:            logcache.NewClient,
+		GoLogCacheNewOauth2HTTPClient:  logcache.NewOauth2HTTPClient,
+		GoLogCacheWithViaGRPC:          logcache.WithViaGRPC,
+		GoLogCacheWithHTTPClient:       logcache.WithHTTPClient,
+		GoLogCacheWithOauth2HTTPClient: logcache.WithOauth2HTTPClient,
+		NewProcessor:                   envelopeprocessor.NewProcessor,
+		GRPCWithTransportCredentials:   grpc.WithTransportCredentials,
+		NewTLS:                         credentials.NewTLS,
+	}
+}
+
+func (g grpcCreds) WithTransportCredentials(creds credentials.TransportCredentials) grpc.DialOption {
+	return g.Factory.GRPCWithTransportCredentials(creds)
 }
 
 type MetricClientFactory struct {
 	newLogCacheClient     newLogCacheClient
 	newMetricServerClient newMetricServerClient
+	Factory               *Factory
 }
 
 func NewMetricClientFactory(newMetricLogCacheClient newLogCacheClient, newMetricServerClient newMetricServerClient) *MetricClientFactory {
 	return &MetricClientFactory{
 		newMetricServerClient: newMetricServerClient,
 		newLogCacheClient:     newMetricLogCacheClient,
+		Factory:               newFactory(),
 	}
 }
 
@@ -68,12 +86,12 @@ func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, c
 	var logCacheClient LogCacheClientReader
 
 	if hasUAACreds(conf) {
-		logCacheClient = createOauth2HTTPLogCacheClient(conf)
+		logCacheClient = mc.Factory.createOauth2HTTPLogCacheClient(conf)
 	} else {
-		logCacheClient = createGRPCLogCacheClient(conf)
+		logCacheClient = mc.Factory.createGRPCLogCacheClient(conf)
 	}
 
-	envelopeProcessor := NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
+	envelopeProcessor := mc.Factory.NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
 	return mc.newLogCacheClient(logger, time.Now, logCacheClient, envelopeProcessor)
 }
 
@@ -86,15 +104,15 @@ func (mc *MetricClientFactory) createMetricServerMetricClient(logger lager.Logge
 	return mc.newMetricServerClient(logger, conf.MetricCollector.MetricCollectorURL, httpClient)
 }
 
-func createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.Client {
+func (f *Factory) createOauth2HTTPLogCacheClient(conf *config.Config) *logcache.Client {
 	httpClient := createHttpClient(conf.MetricCollector.UAACreds.SkipSSLValidation)
-	oauthHTTPOpt := GoLogCacheWithOauth2HTTPClient(httpClient)
+	oauthHTTPOpt := f.GoLogCacheWithOauth2HTTPClient(httpClient)
 
-	clientOpt := GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
+	clientOpt := f.GoLogCacheNewOauth2HTTPClient(conf.MetricCollector.UAACreds.URL,
 		conf.MetricCollector.UAACreds.ClientID, conf.MetricCollector.UAACreds.ClientSecret,
 		oauthHTTPOpt)
 
-	return GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, GoLogCacheWithHTTPClient(clientOpt))
+	return f.GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, f.GoLogCacheWithHTTPClient(clientOpt))
 }
 
 func createHttpClient(skipSSLValidation bool) *http.Client {
@@ -106,13 +124,13 @@ func createHttpClient(skipSSLValidation bool) *http.Client {
 		},
 	}
 }
-func createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
-	creds, err := newTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile,
+func (f *Factory) createGRPCLogCacheClient(conf *config.Config) *logcache.Client {
+	creds, err := f.newTLSCredentials(conf.MetricCollector.TLSClientCerts.CACertFile,
 		conf.MetricCollector.TLSClientCerts.CertFile, conf.MetricCollector.TLSClientCerts.KeyFile)
 	if err != nil {
 		log.Fatalf("failed to load TLS config: %s", err)
 	}
-	return GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, GoLogCacheWithViaGRPC(new(grpcCreds).WithTransportCredentials(creds)))
+	return f.GoLogCacheNewClient(conf.MetricCollector.MetricCollectorURL, f.GoLogCacheWithViaGRPC(grpcCreds{Factory: f}.WithTransportCredentials(creds)))
 }
 
 func hasUAACreds(conf *config.Config) bool {
