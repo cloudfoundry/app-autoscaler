@@ -57,17 +57,15 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeTLSConfig = fakes.FakeTLSConfig{}
 		fakeGRPC = fakes.FakeGrpcDialOptions{}
 		metricClientFactory = NewMetricClientFactory(fakeLogCacheClientCreator.NewLogCacheClient, fakeMetricServerClientCreator.NewMetricServerClient)
-		NewProcessor = fakeEnvelopeProcessorCreator.NewProcessor
+		metricClientFactory.Factory.NewProcessor = fakeEnvelopeProcessorCreator.NewProcessor
+		metricClientFactory.Factory.GoLogCacheNewClient = fakeGoLogCacheClient.NewClient
+		metricClientFactory.Factory.GoLogCacheNewOauth2HTTPClient = fakeGoLogCacheClient.NewOauth2HTTPClient
+		metricClientFactory.Factory.GoLogCacheWithViaGRPC = fakeGoLogCacheClient.WithViaGRPC
+		metricClientFactory.Factory.GoLogCacheWithHTTPClient = fakeGoLogCacheClient.WithHTTPClient
+		metricClientFactory.Factory.GoLogCacheWithOauth2HTTPClient = fakeGoLogCacheClient.WithOauth2HTTPClient
+		metricClientFactory.Factory.GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
+		metricClientFactory.Factory.NewTLS = fakeTLSConfig.NewTLS
 
-		// Stub public go-log-cache functions
-		GoLogCacheNewClient = fakeGoLogCacheClient.NewClient
-		GoLogCacheNewOauth2HTTPClient = fakeGoLogCacheClient.NewOauth2HTTPClient
-		GoLogCacheWithViaGRPC = fakeGoLogCacheClient.WithViaGRPC
-		GoLogCacheWithHTTPClient = fakeGoLogCacheClient.WithHTTPClient
-		GoLogCacheWithOauth2HTTPClient = fakeGoLogCacheClient.WithOauth2HTTPClient
-		GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
-
-		NewTLS = fakeTLSConfig.NewTLS
 		fakeGoLogCacheClient.NewClientReturns(&expectedTLSLogCacheClient)
 		expectedOauth2HTTPClientOpt = logcache.WithOauth2HTTPClient(expectedHTTPClient)
 		fakeGoLogCacheClient.WithOauth2HTTPClientReturns(expectedOauth2HTTPClientOpt)
