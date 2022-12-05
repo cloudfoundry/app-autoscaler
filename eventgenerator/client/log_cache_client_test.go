@@ -29,7 +29,7 @@ var _ = Describe("LogCacheClient", func() {
 		fakeEnvelopeProcessor   *fakes.FakeEnvelopeProcessor
 		fakeGoLogCacheReader    *fakes.FakeLogCacheClientReader
 		fakeGoLogCacheClient    *fakes.FakeGoLogCacheClient
-		fakeGRPC                *fakes.FakeGrpc
+		fakeGRPC                *fakes.FakeGRPCOptions
 		appId                   string
 		logger                  *lagertest.TestLogger
 		logCacheClient          *LogCacheClient
@@ -51,7 +51,7 @@ var _ = Describe("LogCacheClient", func() {
 		fakeEnvelopeProcessor = &fakes.FakeEnvelopeProcessor{}
 		fakeGoLogCacheReader = &fakes.FakeLogCacheClientReader{}
 		fakeGoLogCacheClient = &fakes.FakeGoLogCacheClient{}
-		fakeGRPC = &fakes.FakeGrpc{}
+		fakeGRPC = &fakes.FakeGRPCOptions{}
 
 		logCacheClientReadError = nil
 		logger = lagertest.NewTestLogger("MetricPoller-test")
