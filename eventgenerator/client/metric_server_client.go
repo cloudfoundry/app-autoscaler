@@ -19,7 +19,6 @@ type MetricServerClient struct {
 	httpClient *http.Client
 	logger     lager.Logger
 	url        string
-	tlsConfig  *tls.Config
 }
 
 type NewMetricsServerClientFunc func(logger lager.Logger, metricCollectorUrl string, httpClient *http.Client) MetricClient

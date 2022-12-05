@@ -24,13 +24,12 @@ type LogCacheClient struct {
 	logger lager.Logger
 	Client LogCacheClientReader
 
-	now                  func() time.Time
-	envelopeProcessor    envelopeprocessor.EnvelopeProcessor
-	goLogCache           GoLogCache
-	transportCredentials gogrpc.DialOption
-	TLSConfig            *tls.Config
-	uaaCreds             models.UAACreds
-	url                  string
+	now               func() time.Time
+	envelopeProcessor envelopeprocessor.EnvelopeProcessor
+	goLogCache        GoLogCache
+	TLSConfig         *tls.Config
+	uaaCreds          models.UAACreds
+	url               string
 
 	grpc GRPC
 }
@@ -155,6 +154,7 @@ func (c *LogCacheClient) Configure() {
 }
 
 func (c *LogCacheClient) GetUaaTlsConfig() *tls.Config {
+	//nolint:gosec
 	return &tls.Config{InsecureSkipVerify: c.uaaCreds.SkipSSLValidation}
 }
 
@@ -212,9 +212,7 @@ func (c *LogCacheClient) getUaaHttpClient() logcache.HTTPClient {
 	return &http.Client{
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
-			//nolint:gosec
 			TLSClientConfig: c.GetUaaTlsConfig(),
 		},
 	}
-
 }
