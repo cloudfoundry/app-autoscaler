@@ -39,12 +39,7 @@ var _ = Describe("LogCacheClient", func() {
 		endTime                 time.Time
 		collectedAt             time.Time
 		logCacheClientReadError error
-		expectedAddrs           string
-		caCertFilePath          string
-		certFilePath            string
-		keyFilePath             string
 		expectedClientOption    logcache.ClientOption
-		//expectedGoLogCacheClient *logcache.Client
 	)
 
 	BeforeEach(func() {
@@ -67,6 +62,9 @@ var _ = Describe("LogCacheClient", func() {
 			{AppId: "some-id"},
 		}
 
+		logCacheClient = NewLogCacheClient(
+			logger, func() time.Time { return collectedAt },
+			fakeEnvelopeProcessor, "")
 	})
 
 	JustBeforeEach(func() {
@@ -91,17 +89,23 @@ var _ = Describe("LogCacheClient", func() {
 	})
 
 	Context("NewLogCacheClient", func() {
+		var expectedAddrs string
+
 		BeforeEach(func() {
 			expectedAddrs = "logcache:8080"
 			logCacheClient = NewLogCacheClient(
 				logger, func() time.Time { return collectedAt },
 				fakeEnvelopeProcessor, expectedAddrs)
-
 		})
 
 		Context("when consuming log cache via grpc/mtls", func() {
-			var expectedTransportCredential credentials.TransportCredentials
-			var expectedDialOpt gogrpc.DialOption
+			var (
+				expectedTransportCredential credentials.TransportCredentials
+				expectedDialOpt             gogrpc.DialOption
+				caCertFilePath              string
+				certFilePath                string
+				keyFilePath                 string
+			)
 
 			BeforeEach(func() {
 				caCertFilePath = filepath.Join(testCertDir, "autoscaler-ca.crt")
@@ -177,9 +181,6 @@ var _ = Describe("LogCacheClient", func() {
 				fakeGoLogCacheClient.WithHTTPClientReturns(expectedClientOption)
 			})
 
-			JustBeforeEach(func() {
-			})
-
 			Describe("when skip_ssl_validation is enabled", func() {
 				BeforeEach(func() {
 					uaaCreds.SkipSSLValidation = true
@@ -190,7 +191,6 @@ var _ = Describe("LogCacheClient", func() {
 					Expect(reflect.ValueOf(actualNewOauth2HTTPClientOpts[0]).Pointer()).Should(Equal(reflect.ValueOf(expectedOauth2HTTPClientOpt).Pointer()))
 					actualHttpClient := fakeGoLogCacheClient.WithOauth2HTTPClientArgsForCall(0)
 					Expect(actualHttpClient).To(Equal(expectedHTTPClient))
-					//Expect(logCacheClient.GetUaaTlsConfig().InsecureSkipVerify).To(BeTrue())
 				})
 			})
 
@@ -218,9 +218,6 @@ var _ = Describe("LogCacheClient", func() {
 
 	Context("GetMetrics", func() {
 		JustBeforeEach(func() {
-			logCacheClient = NewLogCacheClient(
-				logger, func() time.Time { return collectedAt },
-				fakeEnvelopeProcessor, expectedAddrs)
 			logCacheClient.Client = fakeGoLogCacheReader
 		})
 

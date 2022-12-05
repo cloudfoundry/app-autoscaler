@@ -44,9 +44,6 @@ var _ = Describe("MetricClientFactory", func() {
 		fakeGoLogCacheClient = fakes.FakeGoLogCacheClient{}
 		metricClientFactory = NewMetricClientFactory()
 		NewProcessor = fakeEnvelopeProcessorCreator.NewProcessor
-
-		//GRPCWithTransportCredentials = fakeGRPC.WithTransportCredentials
-
 		fakeGoLogCacheClient.NewClientReturns(&expectedTLSLogCacheClient)
 		expectedOauth2HTTPClientOpt = logcache.WithOauth2HTTPClient(expectedHTTPClient)
 		fakeGoLogCacheClient.WithOauth2HTTPClientReturns(expectedOauth2HTTPClientOpt)
@@ -89,10 +86,6 @@ var _ = Describe("MetricClientFactory", func() {
 
 				actualURL := metricClient.(*MetricServerClient).GetUrl()
 				Expect(actualURL).To(Equal("some-metric-server-url"))
-
-				//Expect(httpClient).NotTo(BeNil())
-				//	Expect(httpClient).To(BeAssignableToTypeOf(&http.Client{}))
-				//	Expect(httpClient.Transport.(*http.Transport).TLSClientConfig).NotTo(BeNil())
 			})
 
 			It("Should set TLSConfig from config opts", func() {

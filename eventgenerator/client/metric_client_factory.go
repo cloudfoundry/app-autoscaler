@@ -42,7 +42,7 @@ func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, c
 			URL:               conf.MetricCollector.UAACreds.URL,
 			ClientID:          conf.MetricCollector.UAACreds.ClientID,
 			ClientSecret:      conf.MetricCollector.UAACreds.ClientSecret,
-			SkipSSLValidation: false,
+			SkipSSLValidation: conf.MetricCollector.UAACreds.SkipSSLValidation,
 		}
 		c.SetUAACreds(uaaCreds)
 	} else {
