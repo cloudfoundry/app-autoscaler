@@ -248,9 +248,13 @@ func getRandomIdRef(ref string) string {
 	return id
 }
 
-func randomBits() string {
+func getUUID() string {
 	v4, _ := uuid.NewV4()
-	randomBits := v4.String()
+	return v4.String()
+}
+
+func randomBits() string {
+	randomBits := getUUID()
 	return strings.ReplaceAll(randomBits, "-", "")
 }
 
