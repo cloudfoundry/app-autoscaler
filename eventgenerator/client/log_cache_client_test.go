@@ -3,7 +3,10 @@ package client_test
 import (
 	"context"
 	"errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"net/url"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -18,24 +21,35 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("LogCacheClient", func() {
+var _ = FDescribe("LogCacheClient", func() {
 	var (
-		fakeEnvelopeProcessor   *fakes.FakeEnvelopeProcessor
-		fakeLogCacheClient      *fakes.FakeLogCacheClientReader
-		appId                   string
-		logger                  *lagertest.TestLogger
-		logCacheClient          *LogCacheClient
-		envelopes               []*loggregator_v2.Envelope
-		metrics                 []models.AppInstanceMetric
-		startTime               time.Time
-		endTime                 time.Time
-		collectedAt             time.Time
-		logCacheClientReadError error
+		fakeEnvelopeProcessor        *fakes.FakeEnvelopeProcessor
+		fakeGoLogCacheReader         *fakes.FakeLogCacheClientReader
+		fakeGoLogCacheClient         *fakes.FakeGoLogCacheClient
+		appId                        string
+		logger                       *lagertest.TestLogger
+		logCacheClient               *LogCacheClient
+		envelopes                    []*loggregator_v2.Envelope
+		metrics                      []models.AppInstanceMetric
+		startTime                    time.Time
+		endTime                      time.Time
+		collectedAt                  time.Time
+		logCacheClientReadError      error
+		expectedAddrs                string
+		caCertFilePath               string
+		certFilePath                 string
+		keyFilePath                  string
+		clientOptions                []ClientOption
+		expectedTransportCredentials grpc.DialOption
+		expectedClientOption         logcache.ClientOption
+		expectedGoLogCacheClient     logcache.Client
 	)
 
 	BeforeEach(func() {
 		fakeEnvelopeProcessor = &fakes.FakeEnvelopeProcessor{}
-		fakeLogCacheClient = &fakes.FakeLogCacheClientReader{}
+		fakeGoLogCacheReader = &fakes.FakeLogCacheClientReader{}
+		fakeGoLogCacheClient = &fakes.FakeGoLogCacheClient{}
+
 		logCacheClientReadError = nil
 		logger = lagertest.NewTestLogger("MetricPoller-test")
 		startTime = time.Now()
@@ -53,12 +67,57 @@ var _ = Describe("LogCacheClient", func() {
 	})
 
 	JustBeforeEach(func() {
-		fakeLogCacheClient.ReadReturns(envelopes, logCacheClientReadError)
+		fakeGoLogCacheReader.ReadReturns(envelopes, logCacheClientReadError)
 		fakeEnvelopeProcessor.GetTimerMetricsReturns(metrics)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(1, nil, errors.New("some error"))
+		expectedClientOption = logcache.WithViaGRPC(expectedTransportCredentials)
+		fakeGoLogCacheClient.WithViaGRPCReturns(expectedClientOption)
+		fakeGoLogCacheClient.NewClientReturns(fakeGoLogCacheReader)
 
-		logCacheClient = NewLogCacheClient(logger, func() time.Time { return collectedAt }, fakeLogCacheClient, fakeEnvelopeProcessor)
+		logCacheClient = NewLogCacheClient(
+			logger, func() time.Time { return collectedAt },
+			fakeEnvelopeProcessor, expectedAddrs, clientOptions...)
+
+	})
+	BeforeEach(func() {
+		goLogCache := GoLogCache{
+			NewClientFn:   fakeGoLogCacheClient.NewClient,
+			WithViaGRPCFn: fakeGoLogCacheClient.WithViaGRPC,
+
+			WithHTTPClientFn:       fakeGoLogCacheClient.WithHTTPClient,
+			NewOauth2HTTPClientFn:  fakeGoLogCacheClient.NewOauth2HTTPClient,
+			WithOauth2HTTPClientFn: fakeGoLogCacheClient.WithOauth2HTTPClient,
+		}
+
+		clientOptions = append(clientOptions, WithLogCacheLibrary(goLogCache))
+	})
+
+	Context("NewLogCacheClient", func() {
+
+		Context("when using log cache via grpc/mtls", func() {
+			BeforeEach(func() {
+				expectedAddrs = "logcache:8080"
+				expectedTlSCreds := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
+				expectedTLSCreds, err := expectedTlSCreds.CreateClientConfig()
+				Expect(err).NotTo(HaveOccurred())
+
+				expectedTransportCredentials = grpc.WithTransportCredentials(credentials.NewTLS(expectedTLSCreds))
+				clientOptions = append(clientOptions, WithGRPCTransportCredentials(expectedTransportCredentials))
+			})
+
+			It("Should setup correct tls configurations", func() {
+				actualAddrs, actualClientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
+				Expect(actualAddrs).To(Equal(expectedAddrs))
+				Expect(reflect.ValueOf(actualClientOptions[0]).Pointer()).To(Equal(reflect.ValueOf(expectedClientOption).Pointer()))
+				actualGRPCDialOpts := fakeGoLogCacheClient.WithViaGRPCArgsForCall(0)
+				Expect(actualGRPCDialOpts[0]).To(Equal(expectedTransportCredentials))
+				Expect(logCacheClient.Client).To(Equal(&expectedGoLogCacheClient))
+				//	Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
+				//	actualTLSCreds := fakeTLSConfig.NewTLSArgsForCall(0)
+				//	Expect(actualTLSCreds.Certificates).To(Equal(expectedTLSCreds.Certificates))
+			})
+		})
 
 	})
 

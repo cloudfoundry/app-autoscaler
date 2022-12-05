@@ -3,11 +3,8 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
@@ -22,11 +19,30 @@ import (
 )
 
 type LogCacheClient struct {
-	logger            lager.Logger
-	client            LogCacheClientReader
-	now               func() time.Time
-	envelopeProcessor envelopeprocessor.EnvelopeProcessor
+	logger lager.Logger
+	// TODO: to be removed?
+	Client LogCacheClientReader
+
+	now                  func() time.Time
+	envelopeProcessor    envelopeprocessor.EnvelopeProcessor
+	goLogCache           GoLogCache
+	transportCredentials grpc.DialOption
 }
+
+// ClientOption configures the LogCache client.
+type ClientOption interface {
+	configure(client interface{})
+}
+
+// clientOptionFunc enables regular functions to be a ClientOption.
+type clientOptionFunc func(client interface{})
+
+// configure Implements clientOptionFunc.
+func (f clientOptionFunc) configure(client interface{}) {
+	f(client)
+}
+
+var NewTLS = credentials.NewTLS
 
 type TLSConfig interface {
 	NewTLS(c *tls.Config) credentials.TransportCredentials
@@ -47,15 +63,63 @@ type LogCacheClientCreator interface {
 	NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient
 }
 
-func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, client LogCacheClientReader, envelopeProcessor envelopeprocessor.EnvelopeProcessor) *LogCacheClient {
-	return &LogCacheClient{
+type GoLogCache struct {
+	NewClientFn            func(addr string, opts ...logcache.ClientOption) *logcache.Client
+	WithViaGRPCFn          func(opts ...grpc.DialOption) logcache.ClientOption
+	WithHTTPClientFn       func(h logcache.HTTPClient) logcache.ClientOption
+	NewOauth2HTTPClientFn  func(oauth2Addr string, client string, clientSecret string, opts ...logcache.Oauth2Option) *logcache.Oauth2HTTPClient
+	WithOauth2HTTPClientFn func(client logcache.HTTPClient) logcache.Oauth2Option
+}
+
+func NewLogCacheClient(logger lager.Logger, getTime func() time.Time, envelopeProcessor envelopeprocessor.EnvelopeProcessor, addrs string, opts ...ClientOption) *LogCacheClient {
+	c := &LogCacheClient{
 		logger: logger.Session("LogCacheClient"),
-		client: client,
 
 		envelopeProcessor: envelopeProcessor,
 		now:               getTime,
+		goLogCache: GoLogCache{
+			NewClientFn:            logcache.NewClient,
+			WithViaGRPCFn:          logcache.WithViaGRPC,
+			WithHTTPClientFn:       logcache.WithHTTPClient,
+			NewOauth2HTTPClientFn:  logcache.NewOauth2HTTPClient,
+			WithOauth2HTTPClientFn: logcache.WithOauth2HTTPClient,
+		},
 	}
+
+	for _, o := range opts {
+		o.configure(c)
+	}
+
+	c.Client = c.goLogCache.NewClientFn(addrs,
+		c.goLogCache.WithViaGRPCFn(c.transportCredentials),
+	)
+
+	return c
 }
+
+func WithLogCacheLibrary(l GoLogCache) ClientOption {
+	return clientOptionFunc(func(c interface{}) {
+		switch c := c.(type) {
+		case *LogCacheClient:
+			c.goLogCache = l
+		default:
+			panic("unknown type")
+		}
+	})
+}
+
+func WithGRPCTransportCredentials(d grpc.DialOption) ClientOption {
+	return clientOptionFunc(func(c interface{}) {
+		switch c := c.(type) {
+		case *LogCacheClient:
+			c.transportCredentials = d
+
+		default:
+			panic("unknown type")
+		}
+	})
+}
+
 func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	var metrics []models.AppInstanceMetric
 
@@ -63,7 +127,7 @@ func (c *LogCacheClient) GetMetric(appId string, metricType string, startTime ti
 
 	filters := logCacheFiltersFor(endTime, metricType)
 	c.logger.Debug("GetMetric", lager.Data{"filters": valuesFrom(filters)})
-	envelopes, err := c.client.Read(context.Background(), appId, startTime, filters...)
+	envelopes, err := c.Client.Read(context.Background(), appId, startTime, filters...)
 
 	if err != nil {
 		return metrics, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", getEnvelopeType(metricType), appId, err)
@@ -129,38 +193,11 @@ func getEnvelopeType(metricType string) rpc.EnvelopeType {
 	return metricName
 }
 
-func (f *Factory) newTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
-	cfg, err := NewTLSConfig(caPath, certPath, keyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return f.NewTLS(cfg), nil
-}
-
-func NewTLSConfig(caPath string, certPath string, keyPath string) (*tls.Config, error) {
-	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: false,
-		MinVersion:         tls.VersionTLS12,
-	}
-
-	caCertBytes, err := os.ReadFile(caPath)
-	if err != nil {
-		return nil, err
-	}
-
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(caCertBytes); !ok {
-		return nil, errors.New("cannot parse ca cert")
-	}
-
-	tlsConfig.RootCAs = caCertPool
-
-	return tlsConfig, nil
-}
+//func newTLSCredentials(caPath string, certPath string, keyPath string) (credentials.TransportCredentials, error) {
+//	cfg, err := NewTLSConfig(caPath, certPath, keyPath)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return NewTLS(cfg), nil
+//}

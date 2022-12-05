@@ -144,17 +144,6 @@ var _ = Describe("MetricClientFactory", func() {
 				Expect(now).NotTo(BeNil())
 			})
 
-			It("Should provision logCacheClient with the correct tls configurations", func() {
-				expectedTLSCreds, err := NewTLSConfig(caCertFilePath, certFilePath, keyFilePath)
-				Expect(err).NotTo(HaveOccurred())
-
-				actualAddrs, clientOptions := fakeGoLogCacheClient.NewClientArgsForCall(0)
-				Expect(actualAddrs).To(Equal("some-log-cache-url:8080"))
-				Expect(clientOptions).NotTo(BeNil())
-				Expect(fakeGRPC.WithTransportCredentialsCallCount()).To(Equal(1))
-				actualTLSCreds := fakeTLSConfig.NewTLSArgsForCall(0)
-				Expect(actualTLSCreds.Certificates).To(Equal(expectedTLSCreds.Certificates))
-			})
 
 			Describe("when uaa client and secret are provided", func() {
 				BeforeEach(func() {
