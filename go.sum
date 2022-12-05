@@ -71,8 +71,6 @@ github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24 h1:sHglBQTwgx+rW
 github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24/go.mod h1:4UJr5HIiMZrwgkSPdsjy2uOQExX/WEILpIrO9UPGuXs=
 github.com/GaijinEntertainment/go-exhaustruct/v2 v2.3.0 h1:+r1rSv4gvYn0wmRjC8X7IAzX8QezqtFV9m0MUHFJgts=
 github.com/GaijinEntertainment/go-exhaustruct/v2 v2.3.0/go.mod h1:b3g59n2Y+T5xmcxJL+UEG2f8cQploZm1mR/v6BW0mU0=
-github.com/KevinJCross/cfhttp v1.0.1 h1:i9tn+qC2NBhDqUhir87zMzWzv8i79lhj32O17n4fb5g=
-github.com/KevinJCross/cfhttp v1.0.1/go.mod h1:I0B8044L6eoWE6EOZHlVLCWk/6h+FdMm6h1SyaMOcoc=
 github.com/KevinJCross/lager v1.2.0 h1:D+v+SsFzd1+8mMcAS1AO6+HoYGTzohGoCsKH7zd45+o=
 github.com/KevinJCross/lager v1.2.0/go.mod h1:ppro2YzfwiOF619yvtAvti6xJ3Cs0rV9Cb/VP0vLsXs=
 github.com/Masterminds/goutils v1.1.1/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
