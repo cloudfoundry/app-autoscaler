@@ -6,3 +6,7 @@ type UAACreds struct {
 	ClientSecret      string `yaml:"client_secret" json:"clientSecret"`
 	SkipSSLValidation bool   `yaml:"skip_ssl_validation" json:"skipSSLValidation"`
 }
+
+func (c UAACreds) IsEmpty() bool {
+	return c.URL == ""
+}

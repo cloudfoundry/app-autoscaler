@@ -114,7 +114,6 @@ func main() {
 		{"http_server", httpServer},
 		{"health_server", healthServer},
 	}
-
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
 	logger.Info("started")
@@ -197,7 +196,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
 	var metricClient client.MetricClient
 
-	clientFactory := client.NewMetricClientFactory(client.NewLogCacheClient, client.NewMetricServerClient)
+	clientFactory := client.NewMetricClientFactory()
 	metricClient = clientFactory.GetMetricClient(logger, conf)
 
 	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)
