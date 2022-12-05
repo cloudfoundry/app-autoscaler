@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"context"
 	"crypto/rand"
 	"crypto/tls"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	rpc "code.cloudfoundry.org/go-log-cache/rpc/logcache_v1"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
