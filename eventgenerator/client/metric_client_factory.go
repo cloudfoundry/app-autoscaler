@@ -54,6 +54,7 @@ func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, c
 		tlsConfig, _ := tlsCerts.CreateClientConfig()
 		c.SetTLSConfig(tlsConfig)
 	}
+	c.Configure()
 	return c
 }
 
