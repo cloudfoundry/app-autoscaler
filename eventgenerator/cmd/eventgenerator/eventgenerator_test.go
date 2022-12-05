@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"context"
 	"crypto/rand"
 	"crypto/tls"
@@ -14,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	rpc "code.cloudfoundry.org/go-log-cache/rpc/logcache_v1"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"google.golang.org/grpc"
@@ -294,8 +294,10 @@ type stubGrpcLogCache struct {
 
 func newStubGrpcLogCache(caCert, certFile, keyFile string) *stubGrpcLogCache {
 	s := &stubGrpcLogCache{}
-	config, err := client.NewTLSConfig(caCert, certFile, keyFile)
+	tlsCerts := &models.TLSCerts{CACertFile: caCert, CertFile: certFile, KeyFile: keyFile}
+	config, err := tlsCerts.CreateClientConfig()
 	Expect(err).NotTo(HaveOccurred())
+
 	config.Rand = rand.Reader
 	lis, err := tls.Listen("tcp", "127.0.0.1:0", config)
 	Expect(err).ToNot(HaveOccurred())
