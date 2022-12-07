@@ -22,8 +22,8 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	BeforeEach(func() {
 		httpClient = testhelpers.NewSchedulerClient()
 
-		testAppId = getRandomIdRef("testAppId")
-		testGuid = getRandomIdRef("testGuid")
+		testAppId = getUUID()
+		testGuid = getUUID()
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)

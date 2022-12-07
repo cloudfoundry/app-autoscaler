@@ -2,9 +2,10 @@
 package fakes
 
 import (
+	"sync"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"sync"
 )
 
 type FakeMetricForwarder struct {
@@ -22,9 +23,10 @@ func (fake *FakeMetricForwarder) EmitMetric(arg1 *models.CustomMetric) {
 	fake.emitMetricArgsForCall = append(fake.emitMetricArgsForCall, struct {
 		arg1 *models.CustomMetric
 	}{arg1})
+	stub := fake.EmitMetricStub
 	fake.recordInvocation("EmitMetric", []interface{}{arg1})
 	fake.emitMetricMutex.Unlock()
-	if fake.EmitMetricStub != nil {
+	if stub != nil {
 		fake.EmitMetricStub(arg1)
 	}
 }
@@ -35,10 +37,17 @@ func (fake *FakeMetricForwarder) EmitMetricCallCount() int {
 	return len(fake.emitMetricArgsForCall)
 }
 
+func (fake *FakeMetricForwarder) EmitMetricCalls(stub func(*models.CustomMetric)) {
+	fake.emitMetricMutex.Lock()
+	defer fake.emitMetricMutex.Unlock()
+	fake.EmitMetricStub = stub
+}
+
 func (fake *FakeMetricForwarder) EmitMetricArgsForCall(i int) *models.CustomMetric {
 	fake.emitMetricMutex.RLock()
 	defer fake.emitMetricMutex.RUnlock()
-	return fake.emitMetricArgsForCall[i].arg1
+	argsForCall := fake.emitMetricArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeMetricForwarder) Invocations() map[string][][]interface{} {

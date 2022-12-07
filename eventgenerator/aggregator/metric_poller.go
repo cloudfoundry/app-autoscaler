@@ -62,7 +62,7 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 	endTime := time.Now()
 	startTime := endTime.Add(0 - statWindow)
 
-	metrics, err := m.metricClient.GetMetric(appId, metricType, startTime, endTime)
+	metrics, err := m.metricClient.GetMetrics(appId, metricType, startTime, endTime)
 	m.logger.Debug("received metrics from metricClient:", lager.Data{"retrivedMetrics": metrics})
 	if err != nil {
 		return fmt.Errorf("retriveMetric Failed: %w", err)

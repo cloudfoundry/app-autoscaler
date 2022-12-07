@@ -24,8 +24,8 @@ var _ = Describe("Integration_Operator_Others", func() {
 	BeforeEach(func() {
 		httpClient = testhelpers.NewApiClient()
 
-		testAppId = getRandomIdRef("testAppId")
-		testGuid = getRandomIdRef("testGuid")
+		testAppId = getUUID()
+		testGuid = getUUID()
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		golangApiServerConfPath = components.PrepareGolangApiServerConfig(

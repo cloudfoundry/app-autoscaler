@@ -40,9 +40,9 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		bindingId = getRandomIdRef("bindingId")
 		binding2Id = getRandomIdRef("binding2Id")
 		binding3Id = getRandomIdRef("binding3Id")
-		appId = getRandomIdRef("appId")
-		app2Id = getRandomIdRef("app2Id")
-		app3Id = getRandomIdRef("app3Id")
+		appId = getUUID()
+		app2Id = getUUID()
+		app3Id = getUUID()
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 	})
 
