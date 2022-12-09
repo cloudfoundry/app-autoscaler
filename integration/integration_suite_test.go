@@ -670,7 +670,6 @@ func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectR
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).WithOffset(1).NotTo(HaveOccurred())
 	Expect(actual).WithOffset(1).To(Equal(expectResponseMap))
-
 }
 
 func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
