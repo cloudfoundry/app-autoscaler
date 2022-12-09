@@ -653,22 +653,24 @@ type GetResponseWithParameters func(apiServerPort int, pathVariables []string, p
 
 func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}, port int, httpClient *http.Client) {
 	resp, err := getResponse(id, port, httpClient)
+	defer func() { _ = resp.Body.Close() }()
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
 
 func checkPublicAPIResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, apiServerPort int, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
 	resp, err := getResponseWithParameters(apiServerPort, pathVariables, parameters)
+	defer func() { _ = resp.Body.Close() }()
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
 
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
+	Expect(err).WithOffset(1).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).WithOffset(1).To(Equal(expectHttpStatus))
 	var actual map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&actual)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(actual).To(Equal(expectResponseMap))
-	_ = resp.Body.Close()
+	Expect(err).WithOffset(1).NotTo(HaveOccurred())
+	Expect(actual).WithOffset(1).To(Equal(expectResponseMap))
+
 }
 
 func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
