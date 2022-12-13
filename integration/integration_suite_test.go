@@ -664,12 +664,12 @@ func checkPublicAPIResponseContentWithParameters(getResponseWithParameters GetRe
 }
 
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {
-	Expect(err).WithOffset(1).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).WithOffset(1).To(Equal(expectHttpStatus))
+	Expect(err).WithOffset(2).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).WithOffset(2).To(Equal(expectHttpStatus))
 	var actual map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&actual)
-	Expect(err).WithOffset(1).NotTo(HaveOccurred())
-	Expect(actual).WithOffset(1).To(Equal(expectResponseMap))
+	Expect(err).WithOffset(2).NotTo(HaveOccurred())
+	Expect(actual).WithOffset(2).To(Equal(expectResponseMap))
 }
 
 func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
