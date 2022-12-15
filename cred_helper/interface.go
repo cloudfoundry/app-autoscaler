@@ -17,5 +17,5 @@ type Credentials interface {
 	io.Closer
 	Create(ctx context.Context, appId string, userProvidedCredential *models.Credential) (*models.Credential, error)
 	Delete(ctx context.Context, appId string) error
-	Validate(appId string, credential models.Credential) (bool, error)
+	Validate(ctx context.Context, appId string, credential models.Credential) (bool, error)
 }

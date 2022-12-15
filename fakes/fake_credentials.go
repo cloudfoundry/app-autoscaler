@@ -57,11 +57,12 @@ type FakeCredentials struct {
 	pingReturnsOnCall map[int]struct {
 		result1 error
 	}
-	ValidateStub        func(string, models.Credential) (bool, error)
+	ValidateStub        func(context.Context, string, models.Credential) (bool, error)
 	validateMutex       sync.RWMutex
 	validateArgsForCall []struct {
-		arg1 string
-		arg2 models.Credential
+		arg1 context.Context
+		arg2 string
+		arg3 models.Credential
 	}
 	validateReturns struct {
 		result1 bool
@@ -309,19 +310,20 @@ func (fake *FakeCredentials) PingReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCredentials) Validate(arg1 string, arg2 models.Credential) (bool, error) {
+func (fake *FakeCredentials) Validate(arg1 context.Context, arg2 string, arg3 models.Credential) (bool, error) {
 	fake.validateMutex.Lock()
 	ret, specificReturn := fake.validateReturnsOnCall[len(fake.validateArgsForCall)]
 	fake.validateArgsForCall = append(fake.validateArgsForCall, struct {
-		arg1 string
-		arg2 models.Credential
-	}{arg1, arg2})
+		arg1 context.Context
+		arg2 string
+		arg3 models.Credential
+	}{arg1, arg2, arg3})
 	stub := fake.ValidateStub
 	fakeReturns := fake.validateReturns
-	fake.recordInvocation("Validate", []interface{}{arg1, arg2})
+	fake.recordInvocation("Validate", []interface{}{arg1, arg2, arg3})
 	fake.validateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -335,17 +337,17 @@ func (fake *FakeCredentials) ValidateCallCount() int {
 	return len(fake.validateArgsForCall)
 }
 
-func (fake *FakeCredentials) ValidateCalls(stub func(string, models.Credential) (bool, error)) {
+func (fake *FakeCredentials) ValidateCalls(stub func(context.Context, string, models.Credential) (bool, error)) {
 	fake.validateMutex.Lock()
 	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = stub
 }
 
-func (fake *FakeCredentials) ValidateArgsForCall(i int) (string, models.Credential) {
+func (fake *FakeCredentials) ValidateArgsForCall(i int) (context.Context, string, models.Credential) {
 	fake.validateMutex.RLock()
 	defer fake.validateMutex.RUnlock()
 	argsForCall := fake.validateArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeCredentials) ValidateReturns(result1 bool, result2 error) {

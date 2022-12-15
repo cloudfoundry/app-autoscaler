@@ -16,7 +16,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -115,7 +114,7 @@ var _ = Describe("BindingSqldb", func() {
 			})
 			It("should throw an error", func() {
 				abdb, err := NewBindingSQLDB(dbConfig, logger)
-				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+				Expect(err).To(HaveOccurred())
 				if abdb != nil {
 					err = bdb.Close()
 					Expect(err).NotTo(HaveOccurred())

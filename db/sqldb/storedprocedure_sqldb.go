@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/lib/pq"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"code.cloudfoundry.org/lager"
 )
@@ -19,31 +19,36 @@ type StoredProcedureSQLDb struct {
 	config   models.StoredProcedureConfig
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
-	sqldb    *sql.DB
+	sqldb    *pgxpool.Pool
 }
 
 func (sdb *StoredProcedureSQLDb) Ping() error {
-	return sdb.sqldb.Ping()
+	return sdb.sqldb.Ping(context.Background())
 }
 
 func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	poolConfig, err := pgxpool.ParseConfig(dbConfig.URL)
+	if err != nil {
+		logger.Error("parse-procedure-db-url", err, lager.Data{"dbConfig": dbConfig})
+		return nil, err
+	}
+
+	poolConfig.MaxConnLifetime = dbConfig.ConnectionMaxLifetime
+	poolConfig.MaxConns = dbConfig.MaxOpenConnections
+	poolConfig.MaxConnIdleTime = dbConfig.ConnectionMaxIdleTime
+
+	sqldb, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
 		logger.Error("open-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
-	err = sqldb.Ping()
+	err = sqldb.Ping(context.Background())
 	if err != nil {
 		sqldb.Close()
 		logger.Error("ping-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
-
-	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
-	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
-	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &StoredProcedureSQLDb{
 		config:   config,
@@ -54,19 +59,16 @@ func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.Da
 }
 
 func (sdb *StoredProcedureSQLDb) Close() error {
-	err := sdb.sqldb.Close()
-	if err != nil {
-		sdb.logger.Error("close-stored-procedure-db", err, lager.Data{"dbConfig": sdb.dbConfig})
-		return err
-	}
+	sdb.sqldb.Close()
 	return nil
 }
 
 func (sdb *StoredProcedureSQLDb) CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error) {
 	credentials := &models.Credential{}
-	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.CreateBindingCredentialProcedureName))
+	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.CreateBindingCredentialProcedureName}
+	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
 	sdb.logger.Info(query)
-	err := sdb.sqldb.QueryRowContext(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
+	err := sdb.sqldb.QueryRow(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -79,8 +81,9 @@ func (sdb *StoredProcedureSQLDb) CreateCredentials(ctx context.Context, credOpti
 
 func (sdb *StoredProcedureSQLDb) DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error {
 	var count int
-	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.DropBindingCredentialProcedureName))
-	err := sdb.sqldb.QueryRowContext(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
+	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.DropBindingCredentialProcedureName}
+	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
+	err := sdb.sqldb.QueryRow(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
 	if err == sql.ErrNoRows {
 		return nil
 	}
@@ -91,10 +94,11 @@ func (sdb *StoredProcedureSQLDb) DeleteCredentials(ctx context.Context, credOpti
 	return nil
 }
 
-func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(instanceId string) error {
+func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(ctx context.Context, instanceId string) error {
 	var count int
-	query := fmt.Sprintf("SELECT * from %s.%s($1)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.DropAllBindingCredentialProcedureName))
-	err := sdb.sqldb.QueryRow(query, instanceId).Scan(&count)
+	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.DropAllBindingCredentialProcedureName}
+	query := fmt.Sprintf("SELECT * from %s($1)", procedureIdentifier.Sanitize())
+	err := sdb.sqldb.QueryRow(ctx, query, instanceId).Scan(&count)
 	if err == sql.ErrNoRows {
 		return nil
 	}
@@ -105,10 +109,11 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(instanceId string)
 	return nil
 }
 
-func (sdb *StoredProcedureSQLDb) ValidateCredentials(creds models.Credential) (*models.CredentialsOptions, error) {
+func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential) (*models.CredentialsOptions, error) {
 	credOptions := &models.CredentialsOptions{}
-	query := fmt.Sprintf("SELECT * from %s.%s($1,$2)", pq.QuoteIdentifier(sdb.config.SchemaName), pq.QuoteIdentifier(sdb.config.ValidateBindingCredentialProcedureName))
-	err := sdb.sqldb.QueryRow(query, creds.Username, creds.Password).Scan(&credOptions.InstanceId, &credOptions.BindingId)
+	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.ValidateBindingCredentialProcedureName}
+	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
+	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password).Scan(&credOptions.InstanceId, &credOptions.BindingId)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

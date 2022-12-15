@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"github.com/jackc/pgx/v5"
 
-	"github.com/lib/pq"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -93,13 +93,13 @@ var _ = Describe("Stored Procedure test", func() {
 		})
 		When("DeleteAllInstanceCredentials is called", func() {
 			It("is successful", func() {
-				err := storedProcedure.DeleteAllInstanceCredentials(instanceId)
+				err := storedProcedure.DeleteAllInstanceCredentials(context.Background(), instanceId)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 		When("DeleteAllInstanceCredentials is called", func() {
 			It("is successful", func() {
-				credOpts, err := storedProcedure.ValidateCredentials(models.Credential{
+				credOpts, err := storedProcedure.ValidateCredentials(context.Background(), models.Credential{
 					Username: instanceId,
 					Password: bindingId,
 				})
@@ -213,7 +213,8 @@ $$`, instanceId, bindingId))
 }
 
 func deleteFunction(name string) {
-	rows, err := dbHelper.Query(fmt.Sprintf("Drop function if exists public.%s", pq.QuoteIdentifier(name)))
+	identifier := pgx.Identifier{"public", name}
+	rows, err := dbHelper.Query(fmt.Sprintf("Drop function if exists %s", identifier.Sanitize()))
 	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not remove procedure %s: %s", name, err.Error()))

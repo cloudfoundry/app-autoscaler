@@ -74,8 +74,8 @@ func (c *storedProcedureCredentials) Delete(ctx context.Context, appId string) e
 	}
 }
 
-func (c *storedProcedureCredentials) Validate(appId string, credential models.Credential) (bool, error) {
-	_, err := c.storedProcedureDb.ValidateCredentials(credential)
+func (c *storedProcedureCredentials) Validate(ctx context.Context, appId string, credential models.Credential) (bool, error) {
+	_, err := c.storedProcedureDb.ValidateCredentials(ctx, credential)
 	if err != nil {
 		return false, err
 	}

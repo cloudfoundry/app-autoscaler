@@ -59,7 +59,7 @@ func (c *customMetricsCredentials) Delete(ctx context.Context, appId string) err
 	return deleteCredential(ctx, appId, c.policyDB, c.maxRetry)
 }
 
-func (c *customMetricsCredentials) Validate(appId string, credential models.Credential) (bool, error) {
+func (c *customMetricsCredentials) Validate(ctx context.Context, appId string, credential models.Credential) (bool, error) {
 	var isValid bool
 
 	res, found := c.credentialCache.Get(appId)

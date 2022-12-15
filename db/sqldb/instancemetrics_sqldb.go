@@ -1,17 +1,14 @@
 package sqldb
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
-	"code.cloudfoundry.org/lager"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
-
 	"context"
 	"database/sql"
-	"strings"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/lager"
+	"github.com/jmoiron/sqlx"
 )
 
 type InstanceMetricsSQLDB struct {
@@ -40,8 +37,8 @@ func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*
 	}
 
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
-	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetMaxIdleConns(int(dbConfig.MaxIdleConnections))
+	sqldb.SetMaxOpenConns(int(dbConfig.MaxOpenConnections))
 	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &InstanceMetricsSQLDB{
@@ -71,78 +68,26 @@ func (idb *InstanceMetricsSQLDB) SaveMetric(metric *models.AppInstanceMetric) er
 }
 
 func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
-	txn, err := idb.sqldb.BeginTx(ctx, nil)
+
+	txn, err := idb.sqldb.BeginTxx(ctx, nil)
 	if err != nil {
 		idb.logger.Error("failed-to-start-transaction", err)
 		return err
 	}
-	switch idb.sqldb.DriverName() {
-	case "postgres":
-		stmt, err := txn.Prepare(pq.CopyIn("appinstancemetrics", "appid", "instanceindex", "collectedat", "name", "unit", "value", "timestamp"))
-		if err != nil {
-			idb.logger.Error("failed-to-prepare-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-		for _, metric := range metrics {
-			_, err := stmt.Exec(metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
-			if err != nil {
-				idb.logger.Error("failed-to-execute", err)
-				_ = txn.Rollback()
-				return err
-			}
-		}
 
-		_, err = stmt.Exec()
-		if err != nil {
-			idb.logger.Error("failed-to-execute-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
+	sqlStr := "INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp) VALUES (:app_id, :instance_index, :collected_at, :name, :unit, :value, :timestamp)"
 
-		err = stmt.Close()
-		if err != nil {
-			idb.logger.Error("failed-to-close-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-	case "mysql":
-		sqlStr := "INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp)VALUES"
-		vals := []interface{}{}
-		if len(metrics) == 0 {
-			err = txn.Rollback()
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		for _, metric := range metrics {
-			sqlStr += "(?, ?, ?, ?, ?, ?, ?),"
-			vals = append(vals, metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
-		}
-		sqlStr = strings.TrimSuffix(sqlStr, ",")
-
-		stmt, err := txn.Prepare(sqlStr)
-		if err != nil {
-			idb.logger.Error("failed-to-prepare-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-
-		_, err = stmt.Exec(vals...)
-		if err != nil {
-			idb.logger.Error("failed-to-execute-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-		err = stmt.Close()
-		if err != nil {
-			idb.logger.Error("failed-to-close-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
+	_, err = txn.NamedExec(sqlStr, metrics)
+	if err != nil {
+		idb.logger.Error("failed-to-execute-statement", err)
+		_ = txn.Rollback()
+		return err
 	}
 
 	err = txn.Commit()

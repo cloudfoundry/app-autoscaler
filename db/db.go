@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	PostgresDriverName = "postgres"
+	PostgresDriverName = "pgx"
 	MysqlDriverName    = "mysql"
 	PolicyDb           = "policy_db"
 	BindingDb          = "binding_db"
@@ -37,8 +37,8 @@ var ErrConflict = fmt.Errorf("conflicting entry exists")
 
 type DatabaseConfig struct {
 	URL                   string        `yaml:"url"`
-	MaxOpenConnections    int           `yaml:"max_open_connections"`
-	MaxIdleConnections    int           `yaml:"max_idle_connections"`
+	MaxOpenConnections    int32         `yaml:"max_open_connections"`
+	MaxIdleConnections    int32         `yaml:"max_idle_connections"`
 	ConnectionMaxLifetime time.Duration `yaml:"connection_max_lifetime"`
 	ConnectionMaxIdleTime time.Duration `yaml:"connection_max_idletime"`
 }
@@ -127,6 +127,6 @@ type StoredProcedureDB interface {
 	io.Closer
 	CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error)
 	DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error
-	DeleteAllInstanceCredentials(instanceId string) error
-	ValidateCredentials(creds models.Credential) (*models.CredentialsOptions, error)
+	DeleteAllInstanceCredentials(ctx context.Context, instanceId string) error
+	ValidateCredentials(ctx context.Context, creds models.Credential) (*models.CredentialsOptions, error)
 }

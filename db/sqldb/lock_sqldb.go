@@ -8,8 +8,8 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -42,8 +42,8 @@ func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger)
 	}
 
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
-	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetMaxIdleConns(int(dbConfig.MaxIdleConnections))
+	sqldb.SetMaxOpenConns(int(dbConfig.MaxOpenConnections))
 	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &LockSQLDB{
@@ -71,7 +71,7 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 		ttl       time.Duration
 	)
 
-	if ldb.sqldb.DriverName() == "postgres" {
+	if ldb.sqldb.DriverName() == "pgx" {
 		tquery := "LOCK TABLE " + ldb.table + " IN ACCESS EXCLUSIVE MODE"
 		if _, err := tx.Exec(tquery); err != nil {
 			ldb.logger.Error("failed-to-set-table-level-lock", err)
@@ -80,7 +80,7 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 	}
 
 	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE"
-	if ldb.sqldb.DriverName() == "postgres" {
+	if ldb.sqldb.DriverName() == "pgx" {
 		query = query + " NOWAIT "
 	}
 	row := tx.QueryRow(query)
@@ -219,7 +219,7 @@ func (ldb *LockSQLDB) getDatabaseTimestamp(tx *sql.Tx) (time.Time, error) {
 	var currentTimestamp time.Time
 	var query string
 	switch ldb.sqldb.DriverName() {
-	case "postgres":
+	case "pgx":
 		query = "SELECT NOW() AT TIME ZONE 'utc'"
 	case "mysql":
 		query = "SELECT UTC_TIMESTAMP()"

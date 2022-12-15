@@ -14,7 +14,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/go-sql-driver/mysql"
-	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -100,7 +99,7 @@ var _ = Describe("PolicySQLDB", func() {
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
