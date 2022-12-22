@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -60,7 +61,7 @@ type Config struct {
 	Health            models.HealthConfig   `yaml:"health"`
 }
 
-func LoadConfig(bytes []byte) (*Config, error) {
+func LoadConfig(config []byte) (*Config, error) {
 	conf := &Config{
 		Logging: helpers.LoggingConfig{
 			Level: DefaultLoggingLevel,
@@ -83,7 +84,9 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		},
 	}
 
-	err := yaml.UnmarshalStrict(bytes, conf)
+	dec := yaml.NewDecoder(bytes.NewBuffer(config))
+	dec.KnownFields(true)
+	err := dec.Decode(conf)
 	if err != nil {
 		return nil, err
 	}

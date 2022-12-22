@@ -23,7 +23,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon_v2"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (

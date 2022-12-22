@@ -20,7 +20,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"google.golang.org/grpc/grpclog"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"testing"
 

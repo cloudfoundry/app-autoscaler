@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -77,12 +77,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		},
 	}
 
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
+	dec := yaml.NewDecoder(reader)
+	dec.KnownFields(true)
+	err := dec.Decode(conf)
 
-	err = yaml.UnmarshalStrict(bytes, conf)
 	if err != nil {
 		return nil, err
 	}
