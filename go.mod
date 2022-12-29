@@ -3,7 +3,7 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 go 1.19
 
 replace (
-	code.cloudfoundry.org/cfhttp => github.com/KevinJCross/cfhttp v1.0.1
+	code.cloudfoundry.org/cfhttp => github.com/KevinJCross/cfhttp/v2 v2.0.0
 	code.cloudfoundry.org/lager => github.com/KevinJCross/lager v1.2.0
 )
 
