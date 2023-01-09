@@ -78,7 +78,7 @@ var _ = Describe("Helper", func() {
 			It("returns postgres database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName: "postgres",
+					DriverName: "pgx",
 					DSN:        "postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable",
 				}))
 			})

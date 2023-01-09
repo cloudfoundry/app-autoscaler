@@ -1,10 +1,12 @@
 package db_test
 
 import (
+	"bytes"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var _ = Describe("Config", func() {
@@ -18,7 +20,10 @@ var _ = Describe("Config", func() {
 	Describe("LoadConfig", func() {
 
 		JustBeforeEach(func() {
-			err = yaml.UnmarshalStrict(configBytes, &conf)
+			dec := yaml.NewDecoder(bytes.NewBuffer(configBytes))
+			dec.KnownFields(true)
+			err = dec.Decode(&conf)
+
 		})
 
 		Context("when the config is valid", func() {

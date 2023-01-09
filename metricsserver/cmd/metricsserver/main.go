@@ -14,7 +14,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
@@ -52,8 +51,6 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
-	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-	cfhttp.Initialize(conf.HttpClientTimeout)
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsserver")
 	msClock := clock.NewClock()

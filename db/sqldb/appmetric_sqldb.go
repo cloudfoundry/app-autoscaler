@@ -2,17 +2,15 @@ package sqldb
 
 import (
 	"context"
-	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/lager"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
-
 	"database/sql"
 	"time"
+
+	"code.cloudfoundry.org/lager"
+	"github.com/jmoiron/sqlx"
 )
 
 type AppMetricSQLDB struct {
@@ -41,8 +39,8 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 		return nil, err
 	}
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
-	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetMaxIdleConns(int(dbConfig.MaxIdleConnections))
+	sqldb.SetMaxOpenConns(int(dbConfig.MaxOpenConnections))
 	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &AppMetricSQLDB{
@@ -67,78 +65,25 @@ func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *models.AppMetric) error {
 	return err
 }
 func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) error {
+	if len(appMetrics) == 0 {
+		return nil
+	}
+
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
-	txn, err := adb.sqldb.BeginTx(ctx, nil)
+	txn, err := adb.sqldb.BeginTxx(ctx, nil)
 	if err != nil {
 		adb.logger.Error("failed-to-start-transaction", err)
 		return err
 	}
 
-	switch adb.sqldb.DriverName() {
-	case "postgres":
-		stmt, err := txn.Prepare(pq.CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
-		if err != nil {
-			adb.logger.Error("failed-to-prepare-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-		for _, appMetric := range appMetrics {
-			_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
-			if err != nil {
-				adb.logger.Error("failed-to-execute", err)
-				_ = txn.Rollback()
-				return err
-			}
-		}
-		_, err = stmt.Exec()
-		if err != nil {
-			adb.logger.Error("failed-to-execute-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-		err = stmt.Close()
-		if err != nil {
-			adb.logger.Error("failed-to-close-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
+	sqlStr := "INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) VALUES (:app_id, :metric_type, :unit, :timestamp, :value)"
 
-	case "mysql":
-		sqlStr := "INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
-		vals := []interface{}{}
-		if len(appMetrics) == 0 {
-			err = txn.Rollback()
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		for _, appMetric := range appMetrics {
-			sqlStr += "(?, ?, ?, ?, ?),"
-			vals = append(vals, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
-		}
-		sqlStr = strings.TrimSuffix(sqlStr, ",")
-
-		stmt, err := txn.Prepare(sqlStr)
-		if err != nil {
-			adb.logger.Error("failed-to-prepare-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-
-		_, err = stmt.Exec(vals...)
-		if err != nil {
-			adb.logger.Error("failed-to-execute-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
-		err = stmt.Close()
-		if err != nil {
-			adb.logger.Error("failed-to-close-statement", err)
-			_ = txn.Rollback()
-			return err
-		}
+	_, err = txn.NamedExec(sqlStr, appMetrics)
+	if err != nil {
+		adb.logger.Error("failed-to-execute-statement", err)
+		_ = txn.Rollback()
+		return err
 	}
 
 	err = txn.Commit()

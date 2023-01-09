@@ -8,8 +8,8 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-	"code.cloudfoundry.org/cfhttp/handlers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
@@ -41,8 +40,6 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	//nolint:staticcheck //TODO https://github.com/cloudfoundry/app-autoscaler-release/issues/549
-	cfhttp.Initialize(conf.HttpClientTimeout)
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "eventgenerator")
 	egClock := clock.NewClock()
 

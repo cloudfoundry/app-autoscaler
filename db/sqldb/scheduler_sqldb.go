@@ -6,7 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"database/sql"
 	"strconv"
@@ -37,8 +37,8 @@ func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Schedu
 	}
 
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
-	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetMaxIdleConns(int(dbConfig.MaxIdleConnections))
+	sqldb.SetMaxOpenConns(int(dbConfig.MaxOpenConnections))
 	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &SchedulerSQLDB{

@@ -3,12 +3,11 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 go 1.19
 
 replace (
-	code.cloudfoundry.org/cfhttp => github.com/KevinJCross/cfhttp v1.0.1
+	code.cloudfoundry.org/cfhttp => github.com/KevinJCross/cfhttp/v2 v2.0.0
 	code.cloudfoundry.org/lager => github.com/KevinJCross/lager v1.2.0
 )
 
 require (
-	code.cloudfoundry.org/cfhttp v2.0.0+incompatible
 	code.cloudfoundry.org/cfhttp/v2 v2.0.0
 	code.cloudfoundry.org/clock v1.0.0
 	code.cloudfoundry.org/go-log-cache v1.0.1-0.20220413184527-638a438c46f0
@@ -23,12 +22,12 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/imdario/mergo v0.3.13
+	github.com/jackc/pgx/v5 v5.2.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/lib/pq v1.10.7
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
-	github.com/onsi/ginkgo/v2 v2.5.1
-	github.com/onsi/gomega v1.24.1
+	github.com/onsi/ginkgo/v2 v2.6.1
+	github.com/onsi/gomega v1.24.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pivotal-cf/brokerapi/v8 v8.2.3
 	github.com/pkg/errors v0.9.1
@@ -39,12 +38,11 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tedsuo/ifrit v0.0.0-20220120221754-dd274de71113
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.3.0
-	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db
-	golang.org/x/net v0.3.0
+	golang.org/x/crypto v0.5.0
+	golang.org/x/exp v0.0.0-20221227203929-1b447090c38c
+	golang.org/x/net v0.5.0
 	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.51.0
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -128,6 +126,9 @@ require (
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/puddle/v2 v2.1.2 // indirect
 	github.com/jgautheron/goconst v1.5.1 // indirect
 	github.com/jingyugao/rowserrcheck v1.1.1 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
@@ -214,19 +215,20 @@ require (
 	github.com/yeya24/promlinter v0.2.0 // indirect
 	gitlab.com/bosi/decorder v0.2.3 // indirect
 	go.step.sm/crypto v0.16.2 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20220827204233-334a2380cb91 // indirect
-	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
-	golang.org/x/tools v0.2.0 // indirect
+	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/term v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/tools v0.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	honnef.co/go/tools v0.3.3 // indirect
 	mvdan.cc/gofumpt v0.4.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect

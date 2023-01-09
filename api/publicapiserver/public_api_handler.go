@@ -19,7 +19,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
-	"code.cloudfoundry.org/cfhttp/handlers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/lager"
 	uuid "github.com/nu7hatch/gouuid"
 )

@@ -36,11 +36,11 @@ type InstanceUpdateRequestBody struct {
 }
 
 type ServiceInstance struct {
-	ServiceInstanceId string
-	OrgId             string
-	SpaceId           string
-	DefaultPolicy     string
-	DefaultPolicyGuid string
+	ServiceInstanceId string `db:"service_instance_id"`
+	OrgId             string `db:"org_id"`
+	SpaceId           string `db:"space_id"`
+	DefaultPolicy     string `db:"default_policy"`
+	DefaultPolicyGuid string `db:"default_policy_guid"`
 }
 
 type ServiceBinding struct {

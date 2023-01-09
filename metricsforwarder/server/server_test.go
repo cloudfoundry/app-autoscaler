@@ -8,7 +8,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

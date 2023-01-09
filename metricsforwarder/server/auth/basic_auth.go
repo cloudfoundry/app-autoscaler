@@ -14,7 +14,7 @@ func (a *Auth) BasicAuth(r *http.Request, appID string) error {
 		return ErrorAuthNotFound
 	}
 
-	valid, err := a.credentials.Validate(appID, models.Credential{Username: username, Password: password})
+	valid, err := a.credentials.Validate(r.Context(), appID, models.Credential{Username: username, Password: password})
 	if err != nil {
 		return err
 	}

@@ -10,8 +10,8 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 )
@@ -44,8 +44,8 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 	}
 
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
-	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetMaxIdleConns(int(dbConfig.MaxIdleConnections))
+	sqldb.SetMaxOpenConns(int(dbConfig.MaxOpenConnections))
 	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &BindingSQLDB{
@@ -64,11 +64,12 @@ func (bdb *BindingSQLDB) Close() error {
 	return nil
 }
 
-func nullableString(s string) interface{} {
-	if len(s) == 0 {
-		return sql.NullString{}
+func nullableString(s string) *string {
+	if s == "" {
+		return nil
+	} else {
+		return &s
 	}
-	return s
 }
 
 func (bdb *BindingSQLDB) CreateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error {

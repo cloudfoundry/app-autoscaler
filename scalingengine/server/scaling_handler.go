@@ -5,7 +5,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 
-	"code.cloudfoundry.org/cfhttp/handlers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/lager"
 
 	"encoding/json"

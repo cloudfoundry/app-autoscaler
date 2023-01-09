@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -69,12 +69,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
 
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
+	dec := yaml.NewDecoder(reader)
+	dec.KnownFields(true)
+	err := dec.Decode(conf)
 
-	err = yaml.UnmarshalStrict(bytes, conf)
 	if err != nil {
 		return nil, err
 	}

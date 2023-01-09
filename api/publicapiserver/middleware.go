@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/cfhttp/handlers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 )
