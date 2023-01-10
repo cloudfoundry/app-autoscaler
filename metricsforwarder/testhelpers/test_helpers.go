@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -20,7 +20,8 @@ type TestIngressServer struct {
 	addr         string
 	tlsConfig    *tls.Config
 	grpcServer   *grpc.Server
-	grpc.Stream
+	grpc.ServerStream
+	loggregator_v2.UnimplementedIngressServer
 }
 
 func NewTestIngressServer(serverCert, serverKey, caCert string) (*TestIngressServer, error) {

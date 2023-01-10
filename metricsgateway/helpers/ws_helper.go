@@ -11,7 +11,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	//TODO remove static check and use non deprecated version https://github.com/cloudfoundry/app-autoscaler-release/issues/978
 	//nolint:staticcheck
 	"github.com/golang/protobuf/proto"

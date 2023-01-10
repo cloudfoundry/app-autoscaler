@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -29,6 +29,7 @@ type FakeEventProducer struct {
 	keyFile            string
 	caCertFile         string
 	emitInterval       time.Duration
+	loggregator_v2.UnimplementedEgressServer
 }
 
 func NewFakeEventProducer(certFile string, keyFile string, caCertFile string, emitInterval time.Duration) (*FakeEventProducer, error) {
