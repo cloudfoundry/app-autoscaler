@@ -59,6 +59,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CertFile:   filepath.Join(testCertDir, "metron.crt"),
 			CACertFile: filepath.Join(testCertDir, "loggregator-ca.crt"),
 		},
+		MetronAddress: "invalid-host-name-blah:12345",
 	}
 	serverConfig := config.ServerConfig{
 		Port: 2222 + GinkgoParallelProcess(),

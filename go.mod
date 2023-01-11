@@ -39,7 +39,7 @@ require (
 	golang.org/x/exp v0.0.0-20230108222341-4b8118a2686a
 	golang.org/x/net v0.5.0
 	golang.org/x/time v0.3.0
-	google.golang.org/grpc v1.51.0
+	google.golang.org/grpc v1.52.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
