@@ -13,7 +13,6 @@ import (
 )
 
 var ErrorAuthNotFound = errors.New("authentication method not found")
-var ErrCAFileEmpty = errors.New("CA file empty")
 
 type Auth struct {
 	logger      lager.Logger
