@@ -2,13 +2,10 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
 go 1.19
 
-replace (
-	code.cloudfoundry.org/cfhttp => github.com/KevinJCross/cfhttp/v2 v2.0.0
-	code.cloudfoundry.org/lager => code.cloudfoundry.org/lager v1.1.1-0.20221206004056-ec47ef5d1a44
-)
+replace code.cloudfoundry.org/lager => code.cloudfoundry.org/lager v1.1.1-0.20221206004056-ec47ef5d1a44
 
 require (
-	code.cloudfoundry.org/cfhttp/v2 v2.0.0
+	code.cloudfoundry.org/cfhttp/v2 v2.0.1-0.20230113212937-05beac96f8c7
 	code.cloudfoundry.org/clock v1.0.0
 	code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.3
