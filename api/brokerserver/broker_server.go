@@ -75,6 +75,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	var middleWareBrokerCredentials []MiddleWareBrokerCredentials
 
 	for _, brokerCredential := range conf.BrokerCredentials {
+		brokerCredential = restrictToMaxBcryptLength(logger, brokerCredential)
 		if string(brokerCredential.BrokerUsernameHash) == "" {
 			var err error
 			brokerCredential.BrokerUsernameHash, err = bcrypt.GenerateFromPassword([]byte(brokerCredential.BrokerUsername), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
@@ -151,6 +152,19 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 
 	logger.Info("broker-http-server-created", lager.Data{"serverConfig": conf.BrokerServer})
 	return runner, nil
+}
+
+func restrictToMaxBcryptLength(logger lager.Logger, brokerCredential config.BrokerCredentialsConfig) config.BrokerCredentialsConfig {
+	if len(brokerCredential.BrokerUsername) > 72 {
+		logger.Error("warning-configured-username-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"username-length": len(brokerCredential.BrokerUsername)})
+		brokerCredential.BrokerUsername = brokerCredential.BrokerUsername[:72]
+	}
+	if len(brokerCredential.BrokerPassword) > 72 {
+		logger.Error("warning-configured-password-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"password-length": len(brokerCredential.BrokerPassword)})
+		brokerCredential.BrokerPassword = brokerCredential.BrokerPassword[:72]
+	}
+
+	return brokerCredential
 }
 
 func GetHealth(w http.ResponseWriter, _ *http.Request) {

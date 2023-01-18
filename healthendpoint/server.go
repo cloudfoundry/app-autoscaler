@@ -135,6 +135,10 @@ func getPasswordHashBytes(logger lager.Logger, passwordHash string, password str
 	var passwordHashByte []byte
 	var err error
 	if passwordHash == "" {
+		if len(password) > 72 {
+			logger.Error("warning-configured-password-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"password-length": len(password)})
+			password = password[:72]
+		}
 		passwordHashByte, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
 		if err != nil {
 			logger.Error("failed-new-server-password", err)
@@ -150,6 +154,10 @@ func getUserHashBytes(logger lager.Logger, usernameHash string, username string)
 	var usernameHashByte []byte
 	var err error
 	if usernameHash == "" {
+		if len(username) > 72 {
+			logger.Error("warning-configured-username-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"username-length": len(username)})
+			username = username[:72]
+		}
 		// when username and password are set for health check
 		usernameHashByte, err = bcrypt.GenerateFromPassword([]byte(username), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
 		if err != nil {
