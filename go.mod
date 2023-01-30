@@ -36,7 +36,7 @@ require (
 	github.com/tedsuo/ifrit v0.0.0-20220120221754-dd274de71113
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.5.0
-	golang.org/x/exp v0.0.0-20230125214544-b3c2aaf6208d
+	golang.org/x/exp v0.0.0-20230129154200-a960b3787bd2
 	golang.org/x/net v0.5.0
 	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.52.3
