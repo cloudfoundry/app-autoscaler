@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 	var (
 		adb            *AppMetricSQLDB
 		dbConfig       db.DatabaseConfig
+		dbHost         = os.Getenv("DB_HOST")
 		logger         lager.Logger
 		err            error
 		appMetrics     []*models.AppMetric
@@ -86,7 +88,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 				if strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
-				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(" + dbHost + ")/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))

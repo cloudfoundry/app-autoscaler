@@ -1,7 +1,9 @@
 package sqldb_test
 
 import (
+	"os"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -13,8 +15,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"time"
 )
 
 var _ = Describe("SchedulerSqldb", func() {
@@ -24,6 +24,7 @@ var _ = Describe("SchedulerSqldb", func() {
 		sdb       *SchedulerSQLDB
 		err       error
 		schedules map[string]*models.ActiveSchedule
+		dbHost    = os.Getenv("DB_HOST")
 	)
 
 	dbUrl := testhelpers.GetDbUrl()
@@ -56,7 +57,7 @@ var _ = Describe("SchedulerSqldb", func() {
 				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
-				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.URL = "postgres://not-exist-user:not-exist-password@" + dbHost + "/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(HaveOccurred())
@@ -68,7 +69,7 @@ var _ = Describe("SchedulerSqldb", func() {
 				if strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
-				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(" + dbHost + ")/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))

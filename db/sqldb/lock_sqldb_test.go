@@ -2,6 +2,7 @@ package sqldb_test
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ var _ = Describe("LockSqldb", func() {
 	var (
 		ldb            *LockSQLDB
 		dbConfig       db.DatabaseConfig
+		dbHost         = os.Getenv("DB_HOST")
 		logger         lager.Logger
 		err            error
 		lock           *models.Lock
@@ -82,7 +84,7 @@ var _ = Describe("LockSqldb", func() {
 				if strings.Contains(dbUrl, "postgres") {
 					Skip("Mysql test")
 				}
-				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(" + dbHost + ")/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))

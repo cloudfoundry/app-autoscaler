@@ -1,7 +1,10 @@
 package sqldb_test
 
 import (
+	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -14,14 +17,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
-
-	"sync"
-	"time"
 )
 
 var _ = Describe("InstancemetricsSqldb", func() {
 	var (
 		dbConfig  db.DatabaseConfig
+		dbHost    = os.Getenv("DB_HOST")
 		idb       *InstanceMetricsSQLDB
 		logger    lager.Logger
 		err       error
@@ -89,7 +90,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				if strings.Contains(dbUrl, "postgres") {
 					Skip("Mysql test")
 				}
-				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(" + dbHost + ")/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))

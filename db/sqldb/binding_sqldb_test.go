@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ var _ = Describe("BindingSqldb", func() {
 	var (
 		bdb            *BindingSQLDB
 		dbConfig       db.DatabaseConfig
+		dbHost         = os.Getenv("DB_HOST")
 		logger         lager.Logger
 		err            error
 		testInstanceId = addProcessIdTo("test-instance-id")
@@ -110,7 +112,7 @@ var _ = Describe("BindingSqldb", func() {
 				if !strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for postgres")
 				}
-				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.URL = "postgres://not-exist-user:not-exist-password@" + dbHost + "/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
 				abdb, err := NewBindingSQLDB(dbConfig, logger)
@@ -127,7 +129,7 @@ var _ = Describe("BindingSqldb", func() {
 				if strings.Contains(dbUrl, "postgres") {
 					Skip("Not configured for mysql")
 				}
-				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(" + dbHost + ")/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
 				abdb, err := NewBindingSQLDB(dbConfig, logger)
