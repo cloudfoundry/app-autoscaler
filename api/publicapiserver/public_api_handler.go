@@ -3,11 +3,12 @@ package publicapiserver
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
-	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
@@ -75,18 +76,18 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
-
-	h.logger.Info("Get Scaling Policy", lager.Data{"appId": appId})
+	logger := h.logger.Session("GetScalingPolicy", lager.Data{"appId": appId})
+	logger.Info("Get Scaling Policy")
 
 	scalingPolicy, err := h.policydb.GetAppPolicy(r.Context(), appId)
 	if err != nil {
-		h.logger.Error("Failed to retrieve scaling policy from database", err, lager.Data{"appId": appId, "err": err})
+		logger.Error("Failed to retrieve scaling policy from database", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling policy")
 		return
 	}
 
 	if scalingPolicy == nil {
-		h.logger.Info("policy doesn't exist", lager.Data{"appId": appId})
+		logger.Info("policy doesn't exist")
 		writeErrorResponse(w, http.StatusNotFound, "Policy Not Found")
 		return
 	}
@@ -96,16 +97,14 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	jsonEncoder.SetEscapeHTML(false)
 	err = jsonEncoder.Encode(scalingPolicy)
 	if err != nil {
-		h.logger.Error("Failed to json encode scaling policy", err, lager.Data{"appId": appId, "policy": scalingPolicy})
+		logger.Error("Failed to json encode scaling policy", err, lager.Data{"policy": fmt.Sprintf("%+v", scalingPolicy)})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error encode scaling policy")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(bf.Bytes())))
-	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(bf.Bytes())
 	if err != nil {
-		h.logger.Error("failed-to-write-body", err)
+		logger.Error("failed-to-write-body", err)
 	}
 }
 
@@ -117,11 +116,12 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.logger.Info("Attach Scaling Policy", lager.Data{"appId": appId})
+	logger := h.logger.Session("AttachScalingPolicy", lager.Data{"appId": appId})
+	logger.Info("Attach Scaling Policy")
 
 	policyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("Failed to read request body", err, lager.Data{"appId": appId})
+		logger.Error("Failed to read request body", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
 		return
 	}
@@ -130,35 +130,33 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 
 	errResults, valid, policy := h.policyValidator.ValidatePolicy(policy)
 	if !valid {
-		h.logger.Error("Failed to validate policy", nil, lager.Data{"errResults": errResults})
+		logger.Error("Failed to validate policy", nil, lager.Data{"errors": errResults})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 		return
 	}
 
 	policyGuid, err := uuid.NewV4()
 	if err != nil {
-		h.logger.Error("Failed to generate policy guid", err, nil)
+		logger.Error("Failed to generate policy guid", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error generating policy guid")
 		return
 	}
 
-	h.logger.Info("saving policy json", lager.Data{"policy": policy})
 	err = h.policydb.SaveAppPolicy(r.Context(), appId, policy, policyGuid.String())
 	if err != nil {
-		h.logger.Error("Failed to save policy", err, nil)
+		logger.Error("Failed to save policy", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
 		return
 	}
-
 	h.logger.Info("creating/updating schedules", lager.Data{"policy": policy})
 	err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid.String())
 	if err != nil {
-		h.logger.Error("Failed to create/update schedule", err, nil)
+		logger.Error("Failed to create/update schedule", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	_, err = io.WriteString(w, policy)
 	if err != nil {
-		h.logger.Error("failed-to-write-body", err)
+		logger.Error("Failed to write body", err)
 	}
 }
 
@@ -169,47 +167,48 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
-
-	h.logger.Info("Deleting policy json", lager.Data{"appId": appId})
+	logger := h.logger.Session("DetachScalingPolicy", lager.Data{"appId": appId})
+	logger.Info("Deleting policy json", lager.Data{"appId": appId})
 	err := h.policydb.DeletePolicy(r.Context(), appId)
 	if err != nil {
-		h.logger.Error("Failed to delete policy from database", err, nil)
+		logger.Error("Failed to delete policy from database", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting policy")
 		return
 	}
-	h.logger.Info("Deleting schedules", lager.Data{"appId": appId})
+	logger.Info("Deleting schedules")
 	err = h.schedulerUtil.DeleteSchedule(r.Context(), appId)
 	if err != nil {
-		h.logger.Error("Failed to delete schedule", err, nil)
+		logger.Error("Failed to delete schedule", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting schedules")
 		return
 	}
 
 	if h.bindingdb != nil && !reflect.ValueOf(h.bindingdb).IsNil() {
+		//TODO this is a copy of part of the attach ... this should use a common function.
 		// brokered offering: check if there's a default policy that could apply
-		serviceinstance, err := h.bindingdb.GetServiceInstanceByAppId(appId)
+		serviceInstance, err := h.bindingdb.GetServiceInstanceByAppId(appId)
 		if err != nil {
-			h.logger.Error("Failed to find service instance for app", err, lager.Data{"appId": appId})
+			logger.Error("Failed to find service instance for app", err)
 			writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving service instance")
 			return
 		}
-		if serviceinstance.DefaultPolicy != "" {
-			policyStr := serviceinstance.DefaultPolicy
-			policyGuidStr := serviceinstance.DefaultPolicyGuid
-			h.logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
+		if serviceInstance.DefaultPolicy != "" {
+			policyStr := serviceInstance.DefaultPolicy
+			policyGuidStr := serviceInstance.DefaultPolicyGuid
+			logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
 			err = h.policydb.SaveAppPolicy(r.Context(), appId, policyStr, policyGuidStr)
 			if err != nil {
-				h.logger.Error("failed to save policy", err, lager.Data{"appId": appId, "policy": policyStr})
+				logger.Error("failed to save policy", err, lager.Data{"policy": policyStr})
 				writeErrorResponse(w, http.StatusInternalServerError, "Error attaching the default policy")
 				return
 			}
 
-			h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
+			logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
 			err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policyStr, policyGuidStr)
 			//while there is synchronization between policy and schedule, so creating schedule error does not break
 			//the whole creating binding process
 			if err != nil {
-				h.logger.Error("failed to create/update schedules", err, lager.Data{"policy": policyStr})
+				logger.Error("failed to create/update schedules", err, lager.Data{"policy": policyStr})
 			}
 		}
 	}
@@ -219,47 +218,51 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte("{}"))
 	if err != nil {
-		h.logger.Error("failed-to-write-body", err)
+		logger.Error("failed-to-write-body", err)
 	}
 }
 
-func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, req *http.Request, vars map[string]string) {
 	appId := vars["appId"]
+	logger := h.logger.Session("GetScalingHistories", lager.Data{"appId": appId})
+	logger.Info("Get ScalingHistories")
 
-	h.logger.Info("Get ScalingHistories", lager.Data{"appId": appId})
-
-	parameters, err := parseParameter(r, vars)
+	parameters, err := parseParameter(req, vars)
 	if err != nil {
-		h.logger.Error("Bad Request", err, lager.Data{"appId": appId})
+		logger.Error("Bad Request", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	pathFn := func() string {
+		path, _ := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("appid", appId)
+		return h.conf.ScalingEngine.ScalingEngineUrl + path.RequestURI() + "?" + parameters.Encode()
+	}
+	proxyRequest(pathFn, h.scalingEngineClient.Get, w, req.URL, parameters, "scaling history from scaling engine", logger)
+}
 
-	path, _ := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("appid", appId)
-
-	url := h.conf.ScalingEngine.ScalingEngineUrl + path.RequestURI() + "?" + parameters.Encode()
-
-	resp, err := h.scalingEngineClient.Get(url)
+func proxyRequest(pathFn func() string, call func(url string) (*http.Response, error), w http.ResponseWriter, reqUrl *url.URL, parameters *url.Values, requestDescription string, logger lager.Logger) {
+	aUrl := pathFn()
+	resp, err := call(aUrl)
 	if err != nil {
-		h.logger.Error("Failed to retrieve scaling history from scaling engine", err, lager.Data{"url": url})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling history from scaling engine")
+		logger.Error("Failed to retrieve "+requestDescription, err, lager.Data{"url": aUrl})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving "+requestDescription)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occurred during parsing scaling histories result", err, lager.Data{"url": url})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing scaling history from scaling engine")
+		logger.Error("Error occurred during parsing "+requestDescription+" result", err, lager.Data{"url": aUrl})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing "+requestDescription)
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occurred during getting scaling histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		logger.Error("Error occurred during getting "+requestDescription, nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData), "url": aUrl})
 		writeErrorResponse(w, resp.StatusCode, string(responseData))
 		return
 	}
-	paginatedResponse, err := paginateResource(responseData, parameters, r)
+	paginatedResponse, err := paginateResource(responseData, parameters, reqUrl)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -268,55 +271,29 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
 }
 
-func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, req *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	metricType := vars["metricType"]
+	logger := h.logger.Session("GetScalingHistories", lager.Data{"appId": appId, "metricType": metricType})
+	logger.Info("Get AggregatedMetricHistories", lager.Data{"appId": appId, "metricType": metricType})
 
-	h.logger.Info("Get AggregatedMetricHistories", lager.Data{"appId": appId, "metricType": metricType})
-
-	parameters, err := parseParameter(r, vars)
+	parameters, err := parseParameter(req, vars)
 	if err != nil {
-		h.logger.Error("Bad Request", err, lager.Data{"appId": appId})
+		logger.Error("Bad Request", err)
 		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if metricType == "" {
-		h.logger.Error("Bad Request", nil, lager.Data{"appId": appId})
+		logger.Error("Bad Request", nil)
 		writeErrorResponse(w, http.StatusBadRequest, "Metrictype is required")
 		return
 	}
 
-	path, _ := routes.EventGeneratorRoutes().Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
-
-	url := h.conf.EventGenerator.EventGeneratorUrl + path.RequestURI() + "?" + parameters.Encode()
-
-	resp, err := h.eventGeneratorClient.Get(url)
-	if err != nil {
-		h.logger.Error("Failed to retrieve metrics history from eventgenerator", err, lager.Data{"url": url})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving metrics history from eventgenerator")
-		return
+	pathFn := func() string {
+		path, _ := routes.EventGeneratorRoutes().Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
+		return h.conf.EventGenerator.EventGeneratorUrl + path.RequestURI() + "?" + parameters.Encode()
 	}
-	defer resp.Body.Close()
-
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from eventgenerator")
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occurred during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
-		writeErrorResponse(w, resp.StatusCode, string(responseData))
-		return
-	}
-	paginatedResponse, err := paginateResource(responseData, parameters, r)
-	if err != nil {
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
+	proxyRequest(pathFn, h.eventGeneratorClient.Get, w, req.URL, parameters, "metrics history from eventgenerator", logger)
 }
 
 func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
@@ -347,10 +324,11 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
+	logger := h.logger.Session("CreateCredential", lager.Data{"appId": appId})
 	var userProvidedCredential *models.Credential
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("Failed to read user provided credential request body", err, lager.Data{"appId": appId})
+		logger.Error("Failed to read user provided credential request body", err, lager.Data{"appId": appId})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")
 		return
 	}
@@ -358,21 +336,21 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		userProvidedCredential = &models.Credential{}
 		err = json.Unmarshal(bodyBytes, userProvidedCredential)
 		if err != nil {
-			h.logger.Error("Failed to unmarshal user provided credential", err, lager.Data{"appId": appId, "body": bodyBytes})
+			logger.Error("Failed to unmarshal user provided credential", err, lager.Data{"body": bodyBytes})
 			writeErrorResponse(w, http.StatusBadRequest, "Invalid credential format")
 			return
 		}
 		if !(userProvidedCredential.Username != "" && userProvidedCredential.Password != "") {
-			h.logger.Info("Username or password is missing", lager.Data{"appId": appId, "userProvidedCredential": userProvidedCredential})
+			logger.Info("Username or password is missing", lager.Data{"userProvidedCredential": userProvidedCredential})
 			writeErrorResponse(w, http.StatusBadRequest, "Username and password are both required")
 			return
 		}
 	}
 
-	h.logger.Info("Create credential", lager.Data{"appId": appId})
+	logger.Info("Create credential")
 	cred, err := h.credentials.Create(r.Context(), appId, userProvidedCredential)
 	if err != nil {
-		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
+		logger.Error("Failed to create credential", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")
 		return
 	}
@@ -394,11 +372,11 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
-
-	h.logger.Info("Delete credential", lager.Data{"appId": appId})
+	logger := h.logger.Session("DeleteCredential", lager.Data{"appId": appId})
+	logger.Info("Delete credential")
 	err := h.credentials.Delete(r.Context(), appId)
 	if err != nil {
-		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
+		logger.Error("Failed to delete credential", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting credential")
 		return
 	}
