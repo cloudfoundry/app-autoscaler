@@ -62,12 +62,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	policyDB, err := sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
-	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
-		os.Exit(1)
-	}
-	defer func() { _ = policyDB.Close() }()
+	policyDb := sqldb.CreatePolicyDb(conf.DB.PolicyDB, logger)
+	defer func() { _ = policyDb.Close() }()
 
 	scalingEngineDB, err := sqldb.NewScalingEngineSQLDB(conf.DB.ScalingEngineDB, logger.Session("scalingengine-db"))
 	if err != nil {
@@ -86,13 +82,13 @@ func main() {
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine")
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "policyDB", policyDb),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "scalingengineDB", scalingEngineDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "schedulerDB", schedulerDB),
 		httpStatusCollector,
 	}, true, logger.Session("scalingengine-prometheus"))
 
-	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
+	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDb, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB, scalingEngineDB, scalingEngine)
 
 	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, synchronizer, httpStatusCollector)

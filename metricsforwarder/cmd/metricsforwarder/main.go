@@ -32,43 +32,44 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file")
+		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
 		os.Exit(1)
 	}
 	configFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 
 	var conf *config.Config
 	conf, err = config.LoadConfig(configFile)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	configFile.Close()
+	_ = configFile.Close()
 
 	err = conf.Validate()
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsforwarder")
 	mfClock := clock.NewClock()
 
-	policyDB := createPolicyDb(conf, logger)
-	defer func() { _ = policyDB.Close() }()
+	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
+	defer func() { _ = policyDb.Close() }()
 
-	credentialProvider := credentialsProvider(conf, logger, policyDB)
+	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, conf.CacheTTL, conf.CacheCleanupInterval, logger, policyDb)
 	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
+
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
-	customMetricsServer := createCustomMetricsServer(conf, logger, policyDB, credentialProvider, allowedMetricCache, httpStatusCollector)
-	cacheUpdater := cacheUpdater(logger, mfClock, conf, policyDB, allowedMetricCache)
-	healthServer := createHealthServer(policyDB, credentialProvider, logger, conf, createPrometheusRegistry(policyDB, httpStatusCollector, logger))
+	customMetricsServer := createCustomMetricsServer(conf, logger, policyDb, credentialProvider, allowedMetricCache, httpStatusCollector)
+	cacheUpdater := cacheUpdater(logger, mfClock, conf, policyDb, allowedMetricCache)
+	healthServer := createHealthServer(policyDb, credentialProvider, logger, conf, createPrometheusRegistry(policyDb, httpStatusCollector, logger))
 
 	members := grouper.Members{
 		{"cacheUpdater", cacheUpdater},
@@ -86,15 +87,6 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("exited")
-}
-
-func createPolicyDb(conf *config.Config, logger lager.Logger) *sqldb.PolicySQLDB {
-	policyDB, err := sqldb.NewPolicySQLDB(conf.Db[db.PolicyDb], logger.Session("policy-db"))
-	if err != nil {
-		logger.Fatal("Failed To connect to policyDB", err, lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
-		os.Exit(1)
-	}
-	return policyDB
 }
 
 func createPrometheusRegistry(policyDB *sqldb.PolicySQLDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {
@@ -136,25 +128,4 @@ func createHealthServer(policyDB *sqldb.PolicySQLDB, credDb cred_helper.Credenti
 		os.Exit(1)
 	}
 	return healthServer
-}
-
-func credentialsProvider(conf *config.Config, logger lager.Logger, policyDB db.PolicyDB) cred_helper.Credentials {
-	var credentials cred_helper.Credentials
-	switch conf.CredHelperImpl {
-	case "stored_procedure":
-		if conf.StoredProcedureConfig == nil {
-			logger.Fatal("cannot create a storedProcedureCredHelper without StoredProcedureConfig", nil)
-			os.Exit(1)
-		}
-		storedProcedureDb, err := sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.Db[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
-		if err != nil {
-			logger.Fatal("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.Db[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
-	default:
-		credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
-		credentials = cred_helper.NewCustomMetricsCredHelperWithCache(policyDB, cred_helper.MaxRetry, *credentialCache, conf.CacheTTL, logger)
-	}
-	return credentials
 }

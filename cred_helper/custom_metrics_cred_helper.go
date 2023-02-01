@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -31,6 +34,27 @@ func (c *customMetricsCredentials) Ping() error {
 
 func (c *customMetricsCredentials) Close() error {
 	return c.policyDB.Close()
+}
+
+func CredentialsProvider(credHelperImpl string, storedProcedureConfig *models.StoredProcedureConfig, dbConf map[string]db.DatabaseConfig, cacheTTL time.Duration, cacheCleanupInterval time.Duration, logger lager.Logger, policyDB db.PolicyDB) Credentials {
+	var credentials Credentials
+	switch credHelperImpl {
+	case "stored_procedure":
+		if storedProcedureConfig == nil {
+			logger.Fatal("cannot create a storedProcedureCredHelper without StoredProcedureConfig", nil)
+			os.Exit(1)
+		}
+		storedProcedureDb, err := sqldb.NewStoredProcedureSQLDb(*storedProcedureConfig, dbConf[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
+		if err != nil {
+			logger.Fatal("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": dbConf[db.StoredProcedureDb]})
+			os.Exit(1)
+		}
+		credentials = NewStoredProcedureCredHelper(storedProcedureDb, MaxRetry, logger.Session("storedprocedure-cred-helper"))
+	default:
+		credentialCache := cache.New(cacheTTL, cacheCleanupInterval)
+		credentials = NewCustomMetricsCredHelperWithCache(policyDB, MaxRetry, *credentialCache, cacheTTL, logger)
+	}
+	return credentials
 }
 
 func NewCustomMetricsCredHelper(policyDb db.PolicyDB, maxRetry int, logger lager.Logger) Credentials {

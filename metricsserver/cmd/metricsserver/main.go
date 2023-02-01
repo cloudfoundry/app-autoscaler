@@ -63,13 +63,8 @@ func main() {
 	}
 	defer func() { _ = instanceMetricsDB.Close() }()
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
-	if err != nil {
-		logger.Error("failed to connect policy database", err)
-		os.Exit(1)
-	}
-	defer func() { _ = policyDB.Close() }()
+	policyDb := sqldb.CreatePolicyDb(conf.DB.PolicyDB, logger)
+	defer func() { _ = policyDb.Close() }()
 
 	metricsChan := make(chan *models.AppInstanceMetric, conf.Collector.MetricChannelSize)
 
@@ -77,12 +72,12 @@ func main() {
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsserver", "instanceMetricsDB", instanceMetricsDB),
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsserver", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsserver", "policyDB", policyDb),
 		httpStatusCollector,
 	}, true, logger.Session("metricsserver-prometheus"))
 
 	coll := collector.NewCollector(logger.Session("metricsserver-collector"), conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.PersistMetrics,
-		conf.Collector.SaveInterval, conf.NodeIndex, len(conf.NodeAddrs), conf.Collector.MetricCacheSizePerApp, policyDB, instanceMetricsDB, msClock, metricsChan)
+		conf.Collector.SaveInterval, conf.NodeIndex, len(conf.NodeAddrs), conf.Collector.MetricCacheSizePerApp, policyDb, instanceMetricsDB, msClock, metricsChan)
 
 	envelopeChannels := make([]chan *loggregator_v2.Envelope, conf.Collector.EnvelopeProcessorCount)
 	for i := 0; i < conf.Collector.EnvelopeProcessorCount; i++ {

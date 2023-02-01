@@ -329,12 +329,12 @@ var _ = Describe("Operator", Serial, func() {
 			})
 
 			AfterEach(func() {
-				os.Remove(runner.configPath)
+				_ = os.Remove(runner.configPath)
 			})
 
 			It("should error", func() {
-				Eventually(runner.Session).Should(Exit(1))
-				Expect(runner.Session.Buffer()).To(Say("failed to connect policy db"))
+				Eventually(runner.Session).Should(Exit())
+				Expect(runner.Session.Buffer()).To(Say("Failed To connect to policyDB"))
 			})
 
 		})

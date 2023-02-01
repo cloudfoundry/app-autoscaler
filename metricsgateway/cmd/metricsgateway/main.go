@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway"
@@ -55,23 +55,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.AppManager.PolicyDB, logger.Session("policy-db"))
-	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.AppManager.PolicyDB})
-		os.Exit(1)
-	}
-	defer func() { _ = policyDB.Close() }()
+	policyDb := sqldb.CreatePolicyDb(conf.AppManager.PolicyDB, logger)
+	defer func() { _ = policyDb.Close() }()
+
 	envelopeCounterCollector := healthendpoint.NewCounterCollector()
 
 	envelopChan := make(chan *loggregator_v2.Envelope, conf.EnvelopChanSize)
 	emitters := createEmitters(logger, conf.Emitter.BufferSize, gatewayClock, conf.Emitter.KeepAliveInterval, conf.MetricServerAddrs, metricServerClientTLSConfig, conf.Emitter.HandshakeTimeout, conf.Emitter.MaxSetupRetryCount, conf.Emitter.MaxCloseRetryCount, conf.Emitter.RetryDelay)
-	appManager := metricsgateway.NewAppManager(logger, gatewayClock, conf.AppManager.AppRefreshInterval, policyDB)
+	appManager := metricsgateway.NewAppManager(logger, gatewayClock, conf.AppManager.AppRefreshInterval, policyDb)
 	dispatcher := metricsgateway.NewDispatcher(logger, envelopChan, emitters)
 	nozzles := createNozzles(logger, conf.NozzleCount, conf.Nozzle.ShardID, conf.Nozzle.RLPAddr, loggregatorClientTLSConfig, envelopChan, appManager.GetAppIDs, envelopeCounterCollector)
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsgateway", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsgateway", "policyDB", policyDb),
 		healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsgateway"),
 		envelopeCounterCollector,
 	}, true, logger.Session("metricsgateway-prometheus"))

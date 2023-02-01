@@ -82,16 +82,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	policyDB, err := sqldb.NewPolicySQLDB(conf.AppSyncer.DB, logger.Session("policy-db"))
-	if err != nil {
-		logger.Error("failed to connect policy db", err, lager.Data{"dbConfig": conf.AppSyncer.DB})
-		os.Exit(1)
-	}
-	defer policyDB.Close()
+	policyDb := sqldb.CreatePolicyDb(conf.AppSyncer.DB, logger)
+	defer func() { _ = policyDb.Close() }()
 
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDb),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "instanceMetricsDB", instanceMetricsDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "appMetricsDB", appMetricsDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "scalingEngineDB", scalingEngineDB),
@@ -128,7 +124,7 @@ func main() {
 	schedulerSyncRunner := operator.NewOperatorRunner(schedulerSync, conf.Scheduler.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "application-sync"
-	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDB, logger.Session(loggerSessionName))
+	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDb, logger.Session(loggerSessionName))
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	members := grouper.Members{

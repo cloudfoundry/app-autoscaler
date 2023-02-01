@@ -50,22 +50,18 @@ func main() {
 	}
 	defer func() { _ = appMetricDB.Close() }()
 
-	policyDB, err := sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
-	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
-		os.Exit(1)
-	}
-	defer func() { _ = policyDB.Close() }()
+	policyDb := sqldb.CreatePolicyDb(conf.DB.PolicyDB, logger)
+	defer func() { _ = policyDb.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "eventgenerator")
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB),
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDb),
 		httpStatusCollector,
 	}, true, logger.Session("eventgenerator-prometheus"))
 
-	appManager := aggregator.NewAppManager(logger, egClock, conf.Aggregator.PolicyPollerInterval, len(conf.Server.NodeAddrs), conf.Server.NodeIndex, conf.Aggregator.MetricCacheSizePerApp, policyDB, appMetricDB)
+	appManager := aggregator.NewAppManager(logger, egClock, conf.Aggregator.PolicyPollerInterval, len(conf.Server.NodeAddrs), conf.Server.NodeIndex, conf.Aggregator.MetricCacheSizePerApp, policyDb, appMetricDB)
 
 	triggersChan := make(chan []*models.Trigger, conf.Evaluator.TriggerArrayChannelSize)
 

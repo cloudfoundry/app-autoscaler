@@ -57,18 +57,15 @@ func main() {
 	}
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "api")
-	logger.Debug("Logger initialized")
 
 	members := grouper.Members{}
 
-	var policyDb db.PolicyDB
-	policyDb, err = sqldb.NewPolicySQLDB(conf.DB[db.PolicyDb], logger.Session("policydb-db"))
-	if err != nil {
-		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
-		os.Exit(1)
-	}
+	policyDb := sqldb.CreatePolicyDb(conf.DB[db.PolicyDb], logger)
 	defer func() { _ = policyDb.Close() }()
 	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
+
+	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.DB, 10*time.Second, 10*time.Minute, logger, policyDb)
+	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 	prometheusCollectors := []prometheus.Collector{
@@ -85,26 +82,6 @@ func main() {
 	}
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
-	var credentials cred_helper.Credentials
-	switch conf.CredHelperImpl {
-	case "stored_procedure":
-		if conf.StoredProcedureConfig == nil {
-			logger.Error("cannot create a storedProcedureCredHelper without StoredProcedureConfig", err, lager.Data{"dbConfig": conf.DB[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		var storedProcedureDb db.StoredProcedureDB
-		storedProcedureDb, err = sqldb.NewStoredProcedureSQLDb(*conf.StoredProcedureConfig, conf.DB[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
-		if err != nil {
-			logger.Error("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": conf.DB[db.StoredProcedureDb]})
-			os.Exit(1)
-		}
-		defer func() { _ = storedProcedureDb.Close() }()
-		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger.Session("storedprocedure-cred-helper"))
-	default:
-		credentials = cred_helper.NewCustomMetricsCredHelper(policyDb, cred_helper.MaxRetry, logger)
-	}
-	logger.Debug("Successfully loaded credentials (broker or stored-proc-db)")
-
 	var checkBindingFunc api.CheckBindingFunc
 	var bindingDB db.BindingDB
 
@@ -120,39 +97,31 @@ func main() {
 			return bindingDB.CheckServiceBinding(appId)
 		}
 		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf,
-			bindingDB, policyDb, httpStatusCollector, cfClient, credentials)
+			bindingDB, policyDb, httpStatusCollector, cfClient, credentialProvider)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)
 		}
 		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
-		logger.Debug("Created db-connection and http-server of broker because of running in buildin-mode")
 	} else {
-		checkBindingFunc = func(appId string) bool {
-			return true
-		}
+		checkBindingFunc = func(appId string) bool { return true }
 	}
 
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
 
-	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf,
-		policyDb, credentials, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
-	if err != nil {
-		logger.Error("failed to create public api http server", err)
-		os.Exit(1)
-	}
-	logger.Debug("Created http-server for public api")
-
+	publicApiHttpServer := createApiServer(conf, logger, policyDb, credentialProvider, checkBindingFunc, cfClient, httpStatusCollector, bindingDB)
 	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
 	if err != nil {
-		logger.Error("failed to create health server", err)
+		logger.Fatal("Failed to create health server:", err)
 		os.Exit(1)
 	}
 	logger.Debug("Successfully created health server")
 
-	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer}, grouper.Member{"health_server", healthServer})
+	members = append(members,
+		grouper.Member{"public_api_http_server", publicApiHttpServer},
+		grouper.Member{"health_server", healthServer},
+	)
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
@@ -166,4 +135,14 @@ func main() {
 	}
 
 	logger.Info("exited")
+}
+
+func createApiServer(conf *config.Config, logger lager.Logger, policyDb *sqldb.PolicySQLDB, credentialProvider cred_helper.Credentials, checkBindingFunc api.CheckBindingFunc, cfClient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector, bindingDB db.BindingDB) ifrit.Runner {
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, credentialProvider, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
+	if err != nil {
+		logger.Error("failed to create public api http server", err)
+		os.Exit(1)
+	}
+	return publicApiHttpServer
 }
