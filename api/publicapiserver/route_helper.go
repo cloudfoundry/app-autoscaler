@@ -85,7 +85,7 @@ func parseParameter(r *http.Request, vars map[string]string) (*url.Values, error
 	return parameters, nil
 }
 
-func paginateResource(resourceList []byte, parameters *url.Values, r *http.Request) (interface{}, error) {
+func paginateResource(resourceList []byte, parameters *url.Values, r *url.URL) (interface{}, error) {
 	var resourceListItems []interface{}
 
 	err := json.Unmarshal(resourceList, &resourceListItems)
@@ -135,9 +135,9 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 	return result, nil
 }
 
-func getPageUrl(r *http.Request, targetPageNo int) string {
-	pageUrl, _ := url.Parse(r.URL.String())
-	queries := r.URL.Query()
+func getPageUrl(r *url.URL, targetPageNo int) string {
+	pageUrl := *r
+	queries := pageUrl.Query()
 	pageParams := url.Values{}
 	for key, value := range queries {
 		if key == "page" {
