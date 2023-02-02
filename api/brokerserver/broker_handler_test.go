@@ -1140,7 +1140,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeed with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error deleting service binding"}`))
+				Expect(resp.Body.String()).To(MatchJSON(`{"description":"unbind failed: error deleting service binding"}`))
 			})
 		})
 		Context("When database DeleteServiceBinding call returns ErrDoesnotExist", func() {
@@ -1161,7 +1161,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error deleting service binding"}`))
+				Expect(resp.Body.String()).To(MatchJSON(`{"description":"unbind failed: error deleting service binding"}`))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})

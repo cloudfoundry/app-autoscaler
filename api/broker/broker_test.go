@@ -158,7 +158,7 @@ var _ = Describe("Broker", func() {
 			})
 			Context("without policy", func() {
 				BeforeEach(func() {
-					fakePolicyDB.GetAppPolicyReturns(nil, db.ErrDoesNotExist)
+					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})
 				It("returns the empty binding without parameters", func() {
 					By("querying the DB", func() {
@@ -169,7 +169,6 @@ var _ = Describe("Broker", func() {
 					})
 					By("returning an empty response", func() {
 						Expect(err).ShouldNot(HaveOccurred())
-						//TODO check this is correct
 						Expect(Binding).To(Equal(domain.GetBindingSpec{}))
 					})
 				})
