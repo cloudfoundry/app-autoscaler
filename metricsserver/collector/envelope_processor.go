@@ -33,16 +33,24 @@ type envelopeProcessor struct {
 	mu                     sync.RWMutex
 }
 
-func NewEnvelopeProcessor(logger lager.Logger, collectInterval time.Duration, clock clock.Clock, processsorIndex, numProcesssors int,
-	envelopeChan <-chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric, getAppIDs func() map[string]bool) *envelopeProcessor {
+func NewEnvelopeProcessor(
+	logger lager.Logger,
+	collectInterval time.Duration,
+	clock clock.Clock,
+	processorIndex,
+	numProcessors int,
+	envelopeChan <-chan *loggregator_v2.Envelope,
+	metricChan chan<- *models.AppInstanceMetric,
+	getAppIDs func() map[string]bool,
+) *envelopeProcessor {
 	return &envelopeProcessor{
 		logger:                 logger,
 		collectInterval:        collectInterval,
 		doneChan:               make(chan bool),
 		clock:                  clock,
 		httpStartStopEnvelopes: map[string][]*loggregator_v2.Envelope{},
-		processorIndex:         processsorIndex,
-		numProcessors:          numProcesssors,
+		processorIndex:         processorIndex,
+		numProcessors:          numProcessors,
 		envelopeChan:           envelopeChan,
 		metricChan:             metricChan,
 		getAppIDs:              getAppIDs,
@@ -110,13 +118,14 @@ func (ep *envelopeProcessor) processHttpStartStopMetrics() {
 			continue
 		}
 
-		metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(ep.httpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano(),
-			ep.collectInterval)
+		metrics := envelopeprocessor.GetHttpStartStopInstanceMetrics(ep.httpStartStopEnvelopes[appID], appID, ep.clock.Now().UnixNano(), ep.collectInterval)
 		for i := range metrics {
 			ep.metricChan <- &metrics[i]
 		}
 	}
 
+	//TODO we should grab the old and replace with and empty one in the beginning of the function to relieve lock contention.
+	//i.e. save the old one and replease with empty then release the lock and process the envelopes.
 	ep.httpStartStopEnvelopes = map[string][]*loggregator_v2.Envelope{}
 }
 

@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/collection"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -137,7 +139,7 @@ func (c *metricCollector) Stop() {
 func (c *metricCollector) GetAppIDs() map[string]bool {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
-	return c.appIDs
+	return maps.Clone(c.appIDs)
 }
 
 func (c *metricCollector) QueryMetrics(appID string, instanceIndex int, name string, start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
@@ -214,8 +216,11 @@ func (c *metricCollector) saveMetrics() {
 			}
 		case <-ticker.C():
 			if c.PersistMetrics && len(metrics) > 0 {
-				go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
-					_ = instancemetricsDb.SaveMetricsInBulk(metrics)
+				go func(db db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
+					err := db.SaveMetricsInBulk(metrics)
+					if err != nil {
+						c.logger.Error("Failed to save metrics", err)
+					}
 				}(c.instancemetricsDb, metrics)
 				metrics = nil
 			}

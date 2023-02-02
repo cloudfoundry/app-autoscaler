@@ -2,6 +2,7 @@ package metricsgateway
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"golang.org/x/exp/maps"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -35,7 +36,7 @@ func NewAppManager(logger lager.Logger, clock clock.Clock, interval time.Duratio
 func (am *AppManager) GetAppIDs() map[string]bool {
 	am.pLock.RLock()
 	defer am.pLock.RUnlock()
-	return am.appIDMap
+	return maps.Clone(am.appIDMap)
 }
 func (am *AppManager) Start() {
 	go am.startAppIDsRetrieve()

@@ -276,9 +276,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 			getAppIDs = func() map[string]bool {
 				return map[string]bool{"test-app-id": true}
 			}
-
-			processor = NewEnvelopeProcessor(logger, TestCollectInterval, fclock,
-				processorIndex, numProcessors, envelopeChan, metricChan, getAppIDs)
+			processor = NewEnvelopeProcessor(logger, TestCollectInterval, fclock, processorIndex, numProcessors, envelopeChan, metricChan, getAppIDs)
 			processor.Start()
 		})
 		It("Stops processing the envelops", func() {
