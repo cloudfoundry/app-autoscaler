@@ -21,24 +21,51 @@ import (
 type WSHelper interface {
 	SetupConn() error
 	CloseConn() error
+	IsClosed() bool
 	Write(envelope *loggregator_v2.Envelope) error
 	Read() error
 	Ping() error
 }
 
-type wshelper struct {
-	lock               sync.Mutex
+type connection struct {
+	rwMu sync.RWMutex
+	conn *websocket.Conn
+}
+
+func (c *connection) getConnection() *websocket.Conn {
+	c.rwMu.RLock()
+	defer c.rwMu.RUnlock()
+	return c.conn
+}
+func (c *connection) setConnection(conn *websocket.Conn) {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+	c.conn = conn
+}
+
+func (c *connection) Close() error {
+	c.rwMu.Lock()
+	defer c.rwMu.Unlock()
+	err := c.conn.Close()
+	c.conn = nil
+	return err
+}
+
+var _ WSHelper = &WsHelper{}
+
+type WsHelper struct {
 	dialer             websocket.Dialer
 	maxSetupRetryCount int
 	maxCloseRetryCount int
 	retryDelay         time.Duration
 	logger             lager.Logger
 	metricServerURL    string
-	wsConn             *websocket.Conn
+	connection         connection
+	CloseWaitTime      time.Duration
 }
 
-func NewWSHelper(metricServerURL string, tlsConfig *tls.Config, handshakeTimeout time.Duration, logger lager.Logger, maxSetupRetryCount int, maxCloseRetryCount int, retryDelay time.Duration) WSHelper {
-	return &wshelper{
+func NewWSHelper(metricServerURL string, tlsConfig *tls.Config, handshakeTimeout time.Duration, logger lager.Logger, maxSetupRetryCount int, maxCloseRetryCount int, retryDelay time.Duration) *WsHelper {
+	return &WsHelper{
 		metricServerURL: metricServerURL,
 		dialer: websocket.Dialer{
 			TLSClientConfig:  tlsConfig,
@@ -49,10 +76,11 @@ func NewWSHelper(metricServerURL string, tlsConfig *tls.Config, handshakeTimeout
 		maxSetupRetryCount: maxSetupRetryCount,
 		maxCloseRetryCount: maxCloseRetryCount,
 		retryDelay:         retryDelay,
+		CloseWaitTime:      5 * time.Second,
 	}
 }
 
-func (wh *wshelper) SetupConn() error {
+func (wh *WsHelper) SetupConn() error {
 	wh.logger.Info("setup-new-ws-connection")
 	URL, err := url.Parse(wh.metricServerURL)
 	if err != nil {
@@ -62,19 +90,18 @@ func (wh *wshelper) SetupConn() error {
 	if URL.Scheme != "wss" && URL.Scheme != "ws" {
 		return fmt.Errorf("Invalid scheme '%s'", URL.Scheme)
 	}
-	retryCount := 1
+	retryCount := 0
 	for {
 		// dial docs says not to close the response body by the application
 		//nolint:bodyclose
 		con, _, err := wh.dialer.Dial(wh.metricServerURL, nil)
 		if err != nil {
 			wh.logger.Error("failed-to-create-websocket-connection-to-metricserver", err, lager.Data{"metricServerURL": wh.metricServerURL})
-			if retryCount <= wh.maxSetupRetryCount {
+			if retryCount < wh.maxSetupRetryCount {
 				retryCount++
 				time.Sleep(wh.retryDelay)
 			} else {
-				wh.logger.Error("maximum-number-of-setup-retries-reached", err, lager.Data{"maxSetupRetryCount": wh.maxSetupRetryCount})
-				return err
+				return fmt.Errorf("failed after %d retries: %w", retryCount, err)
 			}
 		} else {
 			go func() {
@@ -86,41 +113,32 @@ func (wh *wshelper) SetupConn() error {
 					}
 				}
 			}()
-			wh.lock.Lock()
-			defer wh.lock.Unlock()
-			wh.wsConn = con
+			wh.connection.setConnection(con)
 			return nil
 		}
 	}
 }
 
-func (wh *wshelper) CloseConn() error {
-	retryCount := 1
+func (wh *WsHelper) IsClosed() bool {
+	return wh.connection.getConnection() == nil
+}
+
+func (wh *WsHelper) CloseConn() error {
+	retryCount := 0
 	for {
 		wh.logger.Info("close-ws-connection")
-		err := wh.wsConn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+		err := wh.connection.getConnection().WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
 		if err != nil {
-			wh.logger.Error("failed-to-send-close-message-to-metricserver", err, lager.Data{"current": retryCount})
-			if retryCount <= wh.maxCloseRetryCount {
+			if retryCount < wh.maxCloseRetryCount {
 				retryCount++
-				wh.logger.Info("retry", lager.Data{"RETRY": retryCount})
 				time.Sleep(wh.retryDelay)
 			} else {
-				wh.logger.Error("maximum-number-of-close-retries-reached", err, lager.Data{"maxCloseRetryCount": wh.maxCloseRetryCount})
-				return err
+				return fmt.Errorf("failed to close correctly after %d retries: %w", retryCount, err)
 			}
 		} else {
 			go func() {
-				wh.lock.Lock()
-				con := wh.wsConn
-				wh.lock.Unlock()
-				time.AfterFunc(5*time.Second, func() {
-					err := con.Close()
-					if err != nil {
-						wh.logger.Error("failed-to-close-ws-connection", err)
-					} else {
-						wh.logger.Info("successfully-close-ws-connection")
-					}
+				time.AfterFunc(wh.CloseWaitTime, func() {
+					_ = wh.connection.Close()
 				})
 			}()
 			return nil
@@ -128,26 +146,26 @@ func (wh *wshelper) CloseConn() error {
 	}
 }
 
-func (wh *wshelper) Write(envelope *loggregator_v2.Envelope) error {
+func (wh *WsHelper) Write(envelope *loggregator_v2.Envelope) error {
 	bytes, err := proto.Marshal(envelope)
 	if err != nil {
 		wh.logger.Error("failed-to-marshal-envelope", err, lager.Data{"envelope": envelope})
 		return err
 	}
 	wh.logger.Debug("writing-envelope-to-server", lager.Data{"envelope": envelope})
+	err = wh.connection.getConnection().WriteMessage(websocket.BinaryMessage, bytes)
 	//TODO should retry sending a message.
-	err = wh.wsConn.WriteMessage(websocket.BinaryMessage, bytes)
 	if err != nil {
 		wh.logger.Error("failed-to-write-envelope", err)
 		return wh.reconnect()
 	}
 	return nil
 }
-func (wh *wshelper) Read() error {
+func (wh *WsHelper) Read() error {
 	return nil
 }
-func (wh *wshelper) Ping() error {
-	err := wh.wsConn.WriteControl(websocket.PingMessage, nil, time.Now().Add(1*time.Second))
+func (wh *WsHelper) Ping() error {
+	err := wh.connection.getConnection().WriteControl(websocket.PingMessage, nil, time.Now().Add(1*time.Second))
 	if err != nil {
 		wh.logger.Error("failed-to-send-ping", err)
 		return wh.reconnect()
@@ -155,7 +173,7 @@ func (wh *wshelper) Ping() error {
 	return nil
 }
 
-func (wh *wshelper) reconnect() error {
+func (wh *WsHelper) reconnect() error {
 	err := wh.CloseConn()
 	if err != nil {
 		wh.logger.Error("failed-to-close-websocket-connection", err)
