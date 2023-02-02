@@ -234,9 +234,14 @@ var _ = Describe("PublicApiHandler", func() {
 				pathVariables["appId"] = TEST_APP_ID
 				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				schedulerStatus = 500
+				msg, err := json.Marshal([]string{"err one", "err two"})
+				Expect(err).ToNot(HaveOccurred())
+				schedulerErrJson = string(msg)
 			})
-			It("should succeed", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK))
+			It("should fail with valid error", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+
+				Expect(resp.Body.String()).To(MatchJSON(`{"code":"Internal Server Error","message":"unable to creation/update schedule: [\"err one\",\"err two\"]"}`))
 			})
 		})
 
@@ -365,7 +370,7 @@ var _ = Describe("PublicApiHandler", func() {
 							c, a, p, g := policydb.SaveAppPolicyArgsForCall(0)
 							Expect(c).NotTo(BeNil())
 							Expect(a).To(Equal(TEST_APP_ID))
-							Expect(p).To(Equal(VALID_POLICY_STR))
+							Expect(p).To(MatchJSON(VALID_POLICY_STR))
 							Expect(g).To(Equal("test-policy-guid"))
 						})
 					})

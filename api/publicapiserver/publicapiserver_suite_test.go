@@ -58,6 +58,7 @@ var (
 	metricsCollectorStatus int
 	eventGeneratorStatus   int
 	schedulerStatus        int
+	schedulerErrJson       string
 
 	scalingEngineResponse    []models.AppScalingHistory
 	metricsCollectorResponse []models.AppInstanceMetric
@@ -145,8 +146,9 @@ var _ = BeforeSuite(func() {
 
 	schedulerPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/schedules`)
 	Expect(err).NotTo(HaveOccurred())
-	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
-	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
+	schedulerErrJson = "{}"
+	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithPtr(&schedulerStatus, &schedulerErrJson))
+	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithPtr(&schedulerStatus, &schedulerErrJson))
 
 })
 

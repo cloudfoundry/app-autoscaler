@@ -3,7 +3,7 @@ package broker_test
 import (
 	"encoding/json"
 
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("Broker", func() {
 	var (
-		broker          *Broker
+		aBroker         *broker.Broker
 		err             error
 		fakeBindingDB   *fakes.FakeBindingDB
 		fakePolicyDB    *fakes.FakePolicyDB
@@ -33,13 +33,13 @@ var _ = Describe("Broker", func() {
 		fakeCredentials = &fakes.FakeCredentials{}
 	})
 	JustBeforeEach(func() {
-		broker = New(testLogger, conf, fakeBindingDB, fakePolicyDB, services, fakeCredentials)
+		aBroker = broker.New(testLogger, conf, fakeBindingDB, fakePolicyDB, services, fakeCredentials)
 	})
 
 	Describe("Services", func() {
 		var retrievedServices []domain.Service
 		JustBeforeEach(func() {
-			retrievedServices, err = broker.Services(context.TODO())
+			retrievedServices, err = aBroker.Services(context.TODO())
 		})
 		It("returns the retrievedServices", func() {
 			Expect(err).ToNot(HaveOccurred())
@@ -57,7 +57,7 @@ var _ = Describe("Broker", func() {
 			}
 		})
 		JustBeforeEach(func() {
-			instance, err = broker.GetInstance(context.TODO(), testInstanceId, fetchInstanceDetails)
+			instance, err = aBroker.GetInstance(context.TODO(), testInstanceId, fetchInstanceDetails)
 		})
 		Context("when there is no instance", func() {
 			BeforeEach(func() {
@@ -115,7 +115,7 @@ var _ = Describe("Broker", func() {
 						PlanID:       testPlanID,
 						DashboardURL: dashBoardURL + "/manage/" + testInstanceId,
 						Parameters: models.InstanceParameters{
-							DefaultPolicy: &policy,
+							DefaultPolicy: policy,
 						},
 						Metadata: domain.InstanceMetadata{},
 					}))
@@ -134,7 +134,7 @@ var _ = Describe("Broker", func() {
 			}
 		})
 		JustBeforeEach(func() {
-			Binding, err = broker.GetBinding(context.TODO(), testInstanceId, testBindingId, fetchBindingDetails)
+			Binding, err = aBroker.GetBinding(context.TODO(), testInstanceId, testBindingId, fetchBindingDetails)
 		})
 		Context("when there is no binding", func() {
 			BeforeEach(func() {
@@ -154,11 +154,7 @@ var _ = Describe("Broker", func() {
 		})
 		Context("when the binding exists", func() {
 			BeforeEach(func() {
-				fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
-					ServiceBindingID:  testBindingId,
-					ServiceInstanceID: testInstanceId,
-					AppID:             testAppId,
-				}, nil)
+				fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId, ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
 			})
 			Context("without policy", func() {
 				BeforeEach(func() {
@@ -173,6 +169,7 @@ var _ = Describe("Broker", func() {
 					})
 					By("returning an empty response", func() {
 						Expect(err).ShouldNot(HaveOccurred())
+						//TODO check this is correct
 						Expect(Binding).To(Equal(domain.GetBindingSpec{}))
 					})
 				})
@@ -183,9 +180,7 @@ var _ = Describe("Broker", func() {
 				})
 				It("returns the Binding with parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{
-						Parameters: scalingPolicy,
-					}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: scalingPolicy}))
 				})
 			})
 		})

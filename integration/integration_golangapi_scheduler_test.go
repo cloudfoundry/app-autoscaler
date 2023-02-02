@@ -187,18 +187,17 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				stopScheduler()
 			})
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 
 			Context("Create policy", func() {
 				Context("public api", func() {
 					It("should create policy", func() {
 						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+						doAttachPolicy(appId, policyStr, http.StatusInternalServerError, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						checkApiServerStatus(appId, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					})
 				})
-
 			})
 
 			Context("Delete policy", func() {
@@ -221,7 +220,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Create policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
@@ -261,7 +260,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("creating and binding a service instance without a default policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
@@ -426,7 +425,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Update policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
@@ -455,7 +454,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Delete Policies", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)

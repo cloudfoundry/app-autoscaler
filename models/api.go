@@ -20,7 +20,7 @@ type BrokerCommonRequestBody struct {
 }
 
 type InstanceParameters struct {
-	DefaultPolicy *json.RawMessage `json:"default_policy,omitempty"`
+	DefaultPolicy json.RawMessage `json:"default_policy,omitempty"`
 }
 
 type InstanceCreationRequestBody struct {

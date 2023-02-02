@@ -130,12 +130,12 @@ type FakePolicyDB struct {
 		result1 []*models.PolicyJson
 		result2 error
 	}
-	SaveAppPolicyStub        func(context.Context, string, string, string) error
+	SaveAppPolicyStub        func(context.Context, string, *models.ScalingPolicy, string) error
 	saveAppPolicyMutex       sync.RWMutex
 	saveAppPolicyArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
-		arg3 string
+		arg3 *models.ScalingPolicy
 		arg4 string
 	}
 	saveAppPolicyReturns struct {
@@ -157,13 +157,13 @@ type FakePolicyDB struct {
 	saveCredentialReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetOrUpdateDefaultAppPolicyStub        func(context.Context, []string, string, string, string) ([]string, error)
+	SetOrUpdateDefaultAppPolicyStub        func(context.Context, []string, string, *models.ScalingPolicy, string) ([]string, error)
 	setOrUpdateDefaultAppPolicyMutex       sync.RWMutex
 	setOrUpdateDefaultAppPolicyArgsForCall []struct {
 		arg1 context.Context
 		arg2 []string
 		arg3 string
-		arg4 string
+		arg4 *models.ScalingPolicy
 		arg5 string
 	}
 	setOrUpdateDefaultAppPolicyReturns struct {
@@ -767,13 +767,13 @@ func (fake *FakePolicyDB) RetrievePoliciesReturnsOnCall(i int, result1 []*models
 	}{result1, result2}
 }
 
-func (fake *FakePolicyDB) SaveAppPolicy(arg1 context.Context, arg2 string, arg3 string, arg4 string) error {
+func (fake *FakePolicyDB) SaveAppPolicy(arg1 context.Context, arg2 string, arg3 *models.ScalingPolicy, arg4 string) error {
 	fake.saveAppPolicyMutex.Lock()
 	ret, specificReturn := fake.saveAppPolicyReturnsOnCall[len(fake.saveAppPolicyArgsForCall)]
 	fake.saveAppPolicyArgsForCall = append(fake.saveAppPolicyArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
-		arg3 string
+		arg3 *models.ScalingPolicy
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
 	stub := fake.SaveAppPolicyStub
@@ -795,13 +795,13 @@ func (fake *FakePolicyDB) SaveAppPolicyCallCount() int {
 	return len(fake.saveAppPolicyArgsForCall)
 }
 
-func (fake *FakePolicyDB) SaveAppPolicyCalls(stub func(context.Context, string, string, string) error) {
+func (fake *FakePolicyDB) SaveAppPolicyCalls(stub func(context.Context, string, *models.ScalingPolicy, string) error) {
 	fake.saveAppPolicyMutex.Lock()
 	defer fake.saveAppPolicyMutex.Unlock()
 	fake.SaveAppPolicyStub = stub
 }
 
-func (fake *FakePolicyDB) SaveAppPolicyArgsForCall(i int) (context.Context, string, string, string) {
+func (fake *FakePolicyDB) SaveAppPolicyArgsForCall(i int) (context.Context, string, *models.ScalingPolicy, string) {
 	fake.saveAppPolicyMutex.RLock()
 	defer fake.saveAppPolicyMutex.RUnlock()
 	argsForCall := fake.saveAppPolicyArgsForCall[i]
@@ -894,7 +894,7 @@ func (fake *FakePolicyDB) SaveCredentialReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicy(arg1 context.Context, arg2 []string, arg3 string, arg4 string, arg5 string) ([]string, error) {
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicy(arg1 context.Context, arg2 []string, arg3 string, arg4 *models.ScalingPolicy, arg5 string) ([]string, error) {
 	var arg2Copy []string
 	if arg2 != nil {
 		arg2Copy = make([]string, len(arg2))
@@ -906,7 +906,7 @@ func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicy(arg1 context.Context, arg2
 		arg1 context.Context
 		arg2 []string
 		arg3 string
-		arg4 string
+		arg4 *models.ScalingPolicy
 		arg5 string
 	}{arg1, arg2Copy, arg3, arg4, arg5})
 	stub := fake.SetOrUpdateDefaultAppPolicyStub
@@ -928,13 +928,13 @@ func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyCallCount() int {
 	return len(fake.setOrUpdateDefaultAppPolicyArgsForCall)
 }
 
-func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyCalls(stub func(context.Context, []string, string, string, string) ([]string, error)) {
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyCalls(stub func(context.Context, []string, string, *models.ScalingPolicy, string) ([]string, error)) {
 	fake.setOrUpdateDefaultAppPolicyMutex.Lock()
 	defer fake.setOrUpdateDefaultAppPolicyMutex.Unlock()
 	fake.SetOrUpdateDefaultAppPolicyStub = stub
 }
 
-func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyArgsForCall(i int) (context.Context, []string, string, string, string) {
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyArgsForCall(i int) (context.Context, []string, string, *models.ScalingPolicy, string) {
 	fake.setOrUpdateDefaultAppPolicyMutex.RLock()
 	defer fake.setOrUpdateDefaultAppPolicyMutex.RUnlock()
 	argsForCall := fake.setOrUpdateDefaultAppPolicyArgsForCall[i]

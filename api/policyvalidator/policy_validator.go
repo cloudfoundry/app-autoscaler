@@ -3,6 +3,7 @@ package policyvalidator
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -16,33 +17,47 @@ const (
 	TimeLayout     = "15:04"
 )
 
-type ScalingRulesConfig struct {
-	CPU CPUConfig
-}
+type (
+	ScalingRulesConfig struct {
+		CPU CPUConfig
+	}
 
-type CPUConfig struct {
-	LowerThreshold int
-	UpperThreshold int
-}
+	CPUConfig struct {
+		LowerThreshold int
+		UpperThreshold int
+	}
 
-type PolicyValidator struct {
-	scalingRules       ScalingRulesConfig
-	policySchemaPath   string
-	policySchemaLoader gojsonschema.JSONLoader
-}
+	PolicyValidator struct {
+		scalingRules       ScalingRulesConfig
+		policySchemaPath   string
+		policySchemaLoader gojsonschema.JSONLoader
+	}
 
-type PolicyValidationError struct {
-	gojsonschema.ResultErrorFields
-}
+	PolicyValidationError struct {
+		gojsonschema.ResultErrorFields
+	}
 
-type PolicyValidationErrors struct {
-	Context     string `json:"context"`
-	Description string `json:"description"`
-}
+	PolicyValidationErrors struct {
+		Context     string `json:"context"`
+		Description string `json:"description"`
+	}
 
-type DateTimeRange struct {
-	startDateTime time.Time
-	endDateTime   time.Time
+	DateTimeRange struct {
+		startDateTime time.Time
+		endDateTime   time.Time
+	}
+
+	ValidationErrors []PolicyValidationErrors
+)
+
+var _ error = ValidationErrors{}
+
+func (v ValidationErrors) Error() string {
+	var errs []string
+	for _, failure := range v {
+		errs = append(errs, fmt.Sprintf("%s-%s", failure.Context, failure.Description))
+	}
+	return strings.Join(errs, ", ")
 }
 
 func newDateTimeRange(startDateTime string, endDateTime string, timezone string) *DateTimeRange {
@@ -83,45 +98,37 @@ func NewPolicyValidator(policySchemaPath string, lowerThreshold int, upperThresh
 	return policyValidator
 }
 
-func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidationErrors, bool, string) {
-	policyLoader := gojsonschema.NewStringLoader(policyStr)
+func (pv *PolicyValidator) ValidatePolicy(rawJson json.RawMessage) (*models.ScalingPolicy, ValidationErrors) {
+	policyLoader := gojsonschema.NewBytesLoader(rawJson)
+	policy := &models.ScalingPolicy{}
+
+	err := json.Unmarshal(rawJson, &policy)
+	if err != nil {
+		resultErrors := []PolicyValidationErrors{
+			{Context: "(root)", Description: err.Error()},
+		}
+		return policy, resultErrors
+	}
 
 	result, err := gojsonschema.Validate(pv.policySchemaLoader, policyLoader)
 	if err != nil {
 		resultErrors := []PolicyValidationErrors{
 			{Context: "(root)", Description: err.Error()},
 		}
-		return &resultErrors, false, ""
+		return policy, resultErrors
 	}
 
 	if !result.Valid() {
-		return getErrorsObject(result.Errors()), false, ""
+		return policy, getErrorsObject(result.Errors())
 	}
 
-	policy := models.ScalingPolicy{}
-	err = json.Unmarshal([]byte(policyStr), &policy)
-	if err != nil {
-		resultErrors := []PolicyValidationErrors{
-			{Context: "(root)", Description: err.Error()},
-		}
-		return &resultErrors, false, ""
-	}
-
-	pv.validateAttributes(&policy, result)
+	pv.validateAttributes(policy, result)
 
 	if len(result.Errors()) > 0 {
-		return getErrorsObject(result.Errors()), false, ""
+		return policy, getErrorsObject(result.Errors())
 	}
 
-	validatedPolicyStr, err := json.Marshal(policy)
-	if err != nil {
-		resultErrors := []PolicyValidationErrors{
-			{Context: "(root)", Description: err.Error()},
-		}
-		return &resultErrors, false, ""
-	}
-
-	return nil, true, string(validatedPolicyStr)
+	return policy, nil
 }
 
 func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, result *gojsonschema.Result) {
@@ -426,15 +433,15 @@ func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *mo
 	}
 }
 
-func getErrorsObject(resErr []gojsonschema.ResultError) *[]PolicyValidationErrors {
-	policyValidationErrorsResult := []PolicyValidationErrors{}
+func getErrorsObject(resErr []gojsonschema.ResultError) []PolicyValidationErrors {
+	var policyValidationErrorsResult []PolicyValidationErrors
 	for _, err := range resErr {
 		policyValidationErrorsResult = append(policyValidationErrorsResult, PolicyValidationErrors{
 			Context:     err.Context().String(),
 			Description: err.Description(),
 		})
 	}
-	return &policyValidationErrorsResult
+	return policyValidationErrorsResult
 }
 
 func hasIntersection(a []int, b []int) bool {

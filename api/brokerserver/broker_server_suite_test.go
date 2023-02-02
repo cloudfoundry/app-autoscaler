@@ -68,7 +68,22 @@ var _ = BeforeSuite(func() {
 								"threshold":30,
 								"operator":"<",
 								"adjustment":"-1"
-							}]
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							}
 						}`
 	testDefaultGuid = "a-not-so-guid"
 
@@ -127,8 +142,7 @@ var _ = BeforeSuite(func() {
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	fakeCredentials := &fakes.FakeCredentials{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB,
-		httpStatusCollector, nil, fakeCredentials)
+	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil, fakeCredentials)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))
@@ -152,8 +166,8 @@ var _ = BeforeSuite(func() {
 		Fail(err.Error())
 	}
 
-	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
-	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
+	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, "{}"))
+	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, "{}"))
 })
 
 var _ = AfterSuite(func() {

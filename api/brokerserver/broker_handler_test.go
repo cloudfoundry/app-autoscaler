@@ -272,7 +272,7 @@ var _ = Describe("BrokerHandler", func() {
 							PlanID:    "autoscaler-free-plan-id",
 						},
 						Parameters: models.InstanceParameters{
-							DefaultPolicy: &d,
+							DefaultPolicy: d,
 						},
 					}
 					body, err = json.Marshal(instanceCreationReqBody)
@@ -299,25 +299,21 @@ var _ = Describe("BrokerHandler", func() {
 		servicePlanGuid := "autoscaler-free-plan-id"
 		callUpdateServiceInstance := func() {
 			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			Expect(err).NotTo(HaveOccurred())
 			req = mux.SetURLVars(req, map[string]string{"instance_id": testInstanceId})
 			handler.Update(resp, req)
 		}
-		updatePlanAndDefaultPolicy := func(fromPlan string, targetPlan string, defaultPolicy *json.RawMessage) {
+		updatePlanAndDefaultPolicy := func(fromPlan string, targetPlan string, defaultPolicy json.RawMessage) {
 			instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-					ServiceID: "autoscaler-guid",
-					PlanID:    targetPlan,
-					PreviousValues: models.PreviousValues{
-						PlanID: fromPlan,
-					},
+					ServiceID:      "autoscaler-guid",
+					PlanID:         targetPlan,
+					PreviousValues: models.PreviousValues{PlanID: fromPlan},
 				},
 			}
 
 			if defaultPolicy != nil {
-				instanceUpdateRequestBody.Parameters =
-					&models.InstanceParameters{
-						DefaultPolicy: defaultPolicy,
-					}
+				instanceUpdateRequestBody.Parameters = &models.InstanceParameters{DefaultPolicy: defaultPolicy}
 			}
 
 			body, err = json.Marshal(instanceUpdateRequestBody)
@@ -328,7 +324,7 @@ var _ = Describe("BrokerHandler", func() {
 			updatePlanAndDefaultPolicy(fromPlan, targetPlan, nil)
 		}
 
-		updateDefaultPolicy := func(defaultPolicy *json.RawMessage) {
+		updateDefaultPolicy := func(defaultPolicy json.RawMessage) {
 			updatePlanAndDefaultPolicy(servicePlanGuid, "", defaultPolicy)
 		}
 
@@ -370,7 +366,7 @@ var _ = Describe("BrokerHandler", func() {
 								}]
 							}`
 				m := json.RawMessage(invalidDefaultPolicy)
-				updateDefaultPolicy(&m)
+				updateDefaultPolicy(m)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
 			})
 			It("fails with 400", func() {
@@ -383,7 +379,7 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When the service instance to be updated does not exist", func() {
 			BeforeEach(func() {
 				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				updateDefaultPolicy(&emptyPolicyParameter)
+				updateDefaultPolicy(emptyPolicyParameter)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, db.ErrDoesNotExist)
 			})
 			It("retrieves the service instance", func() {
@@ -400,7 +396,7 @@ var _ = Describe("BrokerHandler", func() {
 
 			BeforeEach(func() {
 				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				updateDefaultPolicy(&emptyPolicyParameter)
+				updateDefaultPolicy(emptyPolicyParameter)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
 			})
 			It("succeeds with 200", func() {
@@ -417,7 +413,7 @@ var _ = Describe("BrokerHandler", func() {
 
 			BeforeEach(func() {
 				d := json.RawMessage(testDefaultPolicy)
-				updateDefaultPolicy(&d)
+				updateDefaultPolicy(d)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
 				}, nil)
@@ -444,11 +440,11 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(ctx).To(Not(BeNil()))
 					Expect(lookedUpInstance).To(Equal(testInstanceId))
 					Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
-					ctx, appsUpdated, oldPolicyGuid, policySet, policySetGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+					ctx, appsUpdated, oldPolicyGuid, policy, policySetGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
 					Expect(ctx).To(Not(BeNil()))
 					Expect(oldPolicyGuid).To(BeEmpty())
 					Expect(policySetGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
-					Expect(policySet).To(Equal(serviceInstance.DefaultPolicy))
+					Expect(policy).To(MatchJSON(serviceInstance.DefaultPolicy))
 					Expect(appsUpdated).To(Equal([]string{"app-id-1", "app-id-2"}))
 
 					By("updating the scheduler")
@@ -466,10 +462,10 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When a default policy is present and there was previously a default policy", func() {
 			BeforeEach(func() {
 				d := json.RawMessage(testDefaultPolicy)
-				updateDefaultPolicy(&d)
+				updateDefaultPolicy(d)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
-					DefaultPolicy:     "a-default-policy",
+					DefaultPolicy:     "{}",
 					DefaultPolicyGuid: "a-default-policy-guid",
 				}, nil)
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
@@ -478,7 +474,9 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeeds with 200, saves the default policy, and updates the default policy", func() {
 				By("returning 200")
-				Expect(resp.Code).To(Equal(http.StatusOK))
+				all, err2 := io.ReadAll(resp.Body)
+				Expect(err2).ToNot(HaveOccurred())
+				Expect(resp.Code).To(Equal(http.StatusOK), "error response: '%s'", all)
 
 				By("saving the default policy")
 				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
@@ -491,24 +489,26 @@ var _ = Describe("BrokerHandler", func() {
 				By("setting the default policy on the already bound apps")
 				Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
 				ctx, appToUpdate, oldPolicyGuid, newPolicy, newPolicyGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+				newPolicyStr, err := json.Marshal(newPolicy)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(ctx).To(Not(BeNil()))
 				Expect(appToUpdate).To(Equal([]string{"app-id-1", "app-id-2"}))
 				Expect(oldPolicyGuid).To(Equal("a-default-policy-guid"))
 				Expect(newPolicyGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
-				Expect(newPolicy).To(Equal(serviceInstance.DefaultPolicy))
+
+				Expect(newPolicyStr).To(MatchJSON(serviceInstance.DefaultPolicy))
 
 				By("updating the scheduler")
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
-
 			})
 		})
 		Context("When the default is set to be removed and there was previously a default policy", func() {
 			BeforeEach(func() {
 				emptyJsonObject := json.RawMessage("\n{\n}\n")
-				updateDefaultPolicy(&emptyJsonObject)
+				updateDefaultPolicy(emptyJsonObject)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
-					DefaultPolicy:     "a-default-policy",
+					DefaultPolicy:     "{}",
 					DefaultPolicyGuid: "a-default-policy-guid",
 				}, nil)
 				policydb.DeletePoliciesByPolicyGuidReturns([]string{"app-id-2"}, nil)
@@ -523,7 +523,9 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeeds with 200 and removes the default policy", func() {
 				By("returning 200")
-				Expect(resp.Code).To(Equal(http.StatusOK))
+				all, anErr := io.ReadAll(resp.Body)
+				Expect(anErr).ToNot(HaveOccurred())
+				Expect(resp.Code).To(Equal(http.StatusOK), "Failed with resp:'%s'", all)
 
 				By("removing the default policy")
 				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
@@ -562,7 +564,7 @@ var _ = Describe("BrokerHandler", func() {
 							}]
 						}`
 				m := json.RawMessage(invalidDefaultPolicy)
-				updateDefaultPolicy(&m)
+				updateDefaultPolicy(m)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
 				}, nil)
@@ -652,16 +654,17 @@ var _ = Describe("BrokerHandler", func() {
 		Context("Update service plan and policy both are updated together", func() {
 			BeforeEach(func() {
 				d := json.RawMessage(testDefaultPolicy)
-				updatePlanAndDefaultPolicy("autoscaler-free-plan-id", "a-plan-id-not-updatable", &d)
+				updatePlanAndDefaultPolicy("autoscaler-free-plan-id", "a-plan-id-not-updatable", d)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
 					ServiceInstanceId: testInstanceId,
-					DefaultPolicy:     "a-default-policy",
+					DefaultPolicy:     "{}",
 					DefaultPolicyGuid: "a-default-policy-guid",
 				}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 			})
+
 			It("fails with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 				By("saving the default policy")
@@ -679,7 +682,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(appToUpdate).To(Equal([]string{"app-id-1", "app-id-2"}))
 				Expect(oldPolicyGuid).To(Equal("a-default-policy-guid"))
 				Expect(newPolicyGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
-				Expect(newPolicy).To(Equal(serviceInstance.DefaultPolicy))
+				Expect(newPolicy).To(MatchJSON(serviceInstance.DefaultPolicy))
 
 				By("updating the scheduler")
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
@@ -785,6 +788,21 @@ var _ = Describe("BrokerHandler", func() {
 			bindingPolicy = `{
 					"instance_max_count":4,
 					"instance_min_count":1,
+					"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							},
 					"scaling_rules":[
 					{
 						"metric_type":"memoryused",
@@ -923,7 +941,22 @@ var _ = Describe("BrokerHandler", func() {
 								"threshold":99,
 								"operator":"<",
 								"adjustment":"-1"
-							}]
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							}
 						}`
 				BeforeEach(func() {
 					bindingRequestBody = &models.BindingRequestBody{
@@ -1145,7 +1178,7 @@ func createInstanceCreationRequestBody(defaultPolicy string) []byte {
 			PlanID:    "autoscaler-free-plan-id",
 		},
 		Parameters: models.InstanceParameters{
-			DefaultPolicy: &m,
+			DefaultPolicy: m,
 		},
 	}
 	body, err := json.Marshal(instanceCreationReqBody)
