@@ -25,22 +25,30 @@ var _ = Describe("Config", func() {
 			BeforeEach(func() {
 				objectbytes = `
 api: https://api.example.com
+per_page: 3
 client_id: client-id
 secret: client-secret
-skip_ssl_validation: false
+skip_ssl_validation: true
 max_retries: 3
 max_retry_wait_ms: 27
+max_idle_conns_per_host_ms: 200
+idle_connection_timeout_ms: 200
 `
 			})
 			It("should deserialise correctly", func() {
 				Expect(err).To(Not(HaveOccurred()))
 				Expect(conf).To(Equal(&Config{
-					API:               "https://api.example.com",
-					ClientID:          "client-id",
-					Secret:            "client-secret",
-					SkipSSLValidation: false,
-					MaxRetries:        3,
-					MaxRetryWaitMs:    27,
+					API:      "https://api.example.com",
+					ClientID: "client-id",
+					Secret:   "client-secret",
+					PerPage:  3,
+					ClientConfig: ClientConfig{
+						SkipSSLValidation:       true,
+						MaxRetries:              3,
+						MaxRetryWaitMs:          27,
+						MaxIdleConnsPerHost:     200,
+						IdleConnectionTimeoutMs: 200,
+					},
 				}))
 			})
 		})

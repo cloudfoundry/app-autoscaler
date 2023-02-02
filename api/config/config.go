@@ -121,7 +121,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		PublicApiServer: defaultPublicApiServerConfig,
 		UseBuildInMode:  false,
 		CF: cf.Config{
-			SkipSSLValidation: false,
+			ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
 		},
 		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,

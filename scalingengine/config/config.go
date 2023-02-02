@@ -19,7 +19,7 @@ const (
 )
 
 var defaultCFConfig = cf.Config{
-	SkipSSLValidation: false,
+	ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
 }
 
 type ServerConfig struct {

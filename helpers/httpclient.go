@@ -5,20 +5,32 @@ import (
 	"net/http"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/lager"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp/v2"
 )
 
-func CreateHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
+func DefaultClientConfig() cf.ClientConfig {
+	return cf.ClientConfig{
+		MaxIdleConnsPerHost:     200,
+		IdleConnectionTimeoutMs: 5 * 1000,
+	}
+}
+func CreateHTTPClient(tlsCerts *models.TLSCerts, config cf.ClientConfig, logger lager.Logger) (*http.Client, error) {
 	tlsConfig, err := tlsCerts.CreateClientConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tls config: %w", err)
 	}
-	return cfhttp.NewClient(
+
+	client := cfhttp.NewClient(
 		cfhttp.WithTLSConfig(tlsConfig),
 		cfhttp.WithDialTimeout(30*time.Second),
-		cfhttp.WithIdleConnTimeout(5*time.Second),
-		cfhttp.WithMaxIdleConnsPerHost(200),
-	), nil
+		cfhttp.WithIdleConnTimeout(time.Duration(config.IdleConnectionTimeoutMs)*time.Millisecond),
+		cfhttp.WithMaxIdleConnsPerHost(config.MaxIdleConnsPerHost),
+	)
+
+	return cf.RetryClient(config, client, logger), nil
 }

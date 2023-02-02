@@ -102,12 +102,14 @@ var _ = Describe("Config", func() {
 				Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 				Expect(conf.CF).To(Equal(
 					cf.Config{
-						API:               "https://api.example.com",
-						ClientID:          "client-id",
-						Secret:            "client-secret",
-						SkipSSLValidation: false,
-						MaxRetries:        3,
-						MaxRetryWaitMs:    27,
+						API:      "https://api.example.com",
+						ClientID: "client-id",
+						Secret:   "client-secret",
+						ClientConfig: cf.ClientConfig{
+							SkipSSLValidation: false,
+							MaxRetries:        3,
+							MaxRetryWaitMs:    27,
+						},
 					},
 				))
 				Expect(conf.CredHelperImpl).To(Equal("default"))

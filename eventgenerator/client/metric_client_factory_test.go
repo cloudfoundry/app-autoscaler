@@ -87,14 +87,6 @@ var _ = Describe("MetricClientFactory", func() {
 				actualURL := metricClient.(*MetricServerClient).GetUrl()
 				Expect(actualURL).To(Equal("some-metric-server-url"))
 			})
-
-			It("Should set TLSConfig from config opts", func() {
-				expectedTlSCreds := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
-				expectedTLSConfig, err := expectedTlSCreds.CreateClientConfig()
-				Expect(err).NotTo(HaveOccurred())
-				actualTLSConfig := metricClient.(*MetricServerClient).GetTLSConfig()
-				Expect(actualTLSConfig.Certificates).To(Equal(expectedTLSConfig.Certificates))
-			})
 		})
 
 		Describe("when logCacheEnabled is true", func() {
@@ -125,7 +117,6 @@ var _ = Describe("MetricClientFactory", func() {
 			})
 
 			Describe("when uaa client and secret are provided", func() {
-
 				BeforeEach(func() {
 					uaaCreds = models.UAACreds{
 						URL:          "log-cache.some-url.com",

@@ -79,7 +79,8 @@ func main() {
 
 	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 	appMetricChan := make(chan *models.AppMetric, conf.Aggregator.AppMetricChannelSize)
-	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan)
+	metricClient := client.NewMetricClientFactory().GetMetricClient(logger, conf)
+	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan, metricClient)
 	if err != nil {
 		logger.Error("failed to create MetricPoller", err)
 		os.Exit(1)
@@ -171,7 +172,7 @@ func loadConfig(path string) (*config.Config, error) {
 func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger, queryMetrics aggregator.QueryAppMetricsFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 
-	aClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
+	aClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
 	if err != nil {
 		logger.Error("failed to create http client for ScalingEngine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
 		os.Exit(1)
@@ -186,16 +187,10 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	return evaluators, nil
 }
 
-func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-	var metricClient client.MetricClient
-
-	clientFactory := client.NewMetricClientFactory()
-	metricClient = clientFactory.GetMetricClient(logger, conf)
-
+func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric, metricClient client.MetricClient) ([]*aggregator.MetricPoller, error) {
 	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)
 	for i := 0; i < len(pollers); i++ {
 		pollers[i] = aggregator.NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 	}
-
 	return pollers, nil
 }

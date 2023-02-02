@@ -146,7 +146,7 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.Client = cfhttp.NewClient(
 		cfhttp.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}),
 		cfhttp.WithDialTimeout(10*time.Second),
-		cfhttp.WithIdleConnTimeout(time.Duration(conf.IdleTimeoutMs)*time.Millisecond),
+		cfhttp.WithIdleConnTimeout(time.Duration(conf.IdleConnectionTimeoutMs)*time.Millisecond),
 		cfhttp.WithMaxIdleConnsPerHost(conf.MaxIdleConnsPerHost),
 	)
 	c.Client.Transport = DrainingTransport{c.Client.Transport}
@@ -159,13 +159,17 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 }
 
 func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *http.Client {
+	return RetryClient(conf.ClientConfig, client, logger)
+}
+
+func RetryClient(config ClientConfig, client *http.Client, logger lager.Logger) *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 0
-	if conf.MaxRetries != 0 {
-		retryClient.RetryMax = conf.MaxRetries
+	if config.MaxRetries != 0 {
+		retryClient.RetryMax = config.MaxRetries
 	}
-	if conf.MaxRetryWaitMs != 0 {
-		retryClient.RetryWaitMax = time.Duration(conf.MaxRetryWaitMs) * time.Millisecond
+	if config.MaxRetryWaitMs != 0 {
+		retryClient.RetryWaitMax = time.Duration(config.MaxRetryWaitMs) * time.Millisecond
 	}
 	retryClient.Logger = LeveledLoggerAdapter{logger.Session("retryablehttp")}
 	retryClient.HTTPClient = client

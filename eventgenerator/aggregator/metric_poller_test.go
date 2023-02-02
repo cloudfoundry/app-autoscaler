@@ -3,9 +3,10 @@ package aggregator_test
 import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-	cfhttp "code.cloudfoundry.org/cfhttp/v2"
+	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -94,7 +95,8 @@ var _ = Describe("MetricPoller", func() {
 		BeforeEach(func() {
 			metricServer = ghttp.NewUnstartedServer()
 
-			httpClient := cfhttp.NewClient()
+			httpClient, err := helpers.CreateHTTPClient(nil, helpers.DefaultClientConfig(), lager.NewLogger("metrics_server"))
+			Expect(err).ToNot(HaveOccurred())
 			metricClient = NewMetricServerClient(logger, metricServer.URL(), httpClient)
 			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
@@ -108,6 +110,7 @@ var _ = Describe("MetricPoller", func() {
 		})
 
 		It("logs an error", func() {
+			//TODO this should be a prometheus counter not a log statement check
 			Eventually(logger.Buffer).Should(Say("Failed to retrieve metric"))
 		})
 
@@ -125,7 +128,8 @@ var _ = Describe("MetricPoller", func() {
 			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
 
-			httpClient := cfhttp.NewClient()
+			httpClient, err := helpers.CreateHTTPClient(nil, helpers.DefaultClientConfig(), lager.NewLogger("metric_server"))
+			Expect(err).ToNot(HaveOccurred())
 			metricClient = NewMetricServerClient(logger, metricServer.URL(), httpClient)
 		})
 

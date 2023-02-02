@@ -78,7 +78,7 @@ type Config struct {
 
 var defaultConfig = Config{
 	CF: cf.Config{
-		SkipSSLValidation: false,
+		ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
 	},
 	Health:  defaultHealthConfig,
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},

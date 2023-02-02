@@ -1,7 +1,6 @@
 package client
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,9 +27,6 @@ type MetricServerClientCreator interface {
 }
 
 func NewMetricServerClient(logger lager.Logger, url string, httpClient *http.Client) *MetricServerClient {
-	if httpClient.Transport != nil {
-		httpClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 1
-	}
 	return &MetricServerClient{
 		logger:     logger.Session("MetricServerClient"),
 		url:        url,
@@ -72,10 +68,6 @@ func (c *MetricServerClient) GetMetrics(appId string, metricType string, startTi
 	}
 
 	return metrics, nil
-}
-
-func (c *MetricServerClient) GetTLSConfig() *tls.Config {
-	return c.httpClient.Transport.(*http.Transport).TLSClientConfig
 }
 
 func (c *MetricServerClient) GetUrl() string {
