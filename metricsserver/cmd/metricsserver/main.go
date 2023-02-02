@@ -147,14 +147,19 @@ func main() {
 	logger.Info("exit")
 }
 
-func createEnvelopeProcessors(logger lager.Logger, clock clock.Clock, conf *config.Config, envelopeChan []chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric,
-	getAppIDs func() map[string]bool) ([]collector.EnvelopeProcessor, error) {
+func createEnvelopeProcessors(
+	logger lager.Logger,
+	clock clock.Clock,
+	conf *config.Config,
+	envelopeChan []chan *loggregator_v2.Envelope,
+	metricChan chan<- *models.AppInstanceMetric,
+	getAppIDs func() map[string]bool,
+) ([]collector.EnvelopeProcessor, error) {
 	count := conf.Collector.EnvelopeProcessorCount
 	envelopeProcessors := make([]collector.EnvelopeProcessor, count)
 
 	for i := 0; i < count; i++ {
-		envelopeProcessors[i] = collector.NewEnvelopeProcessor(logger, conf.Collector.CollectInterval, clock, i, count,
-			envelopeChan[i], metricChan, getAppIDs)
+		envelopeProcessors[i] = collector.NewEnvelopeProcessor(logger, conf.Collector.CollectInterval, clock, i, count, envelopeChan[i], metricChan, getAppIDs)
 	}
 	return envelopeProcessors, nil
 }

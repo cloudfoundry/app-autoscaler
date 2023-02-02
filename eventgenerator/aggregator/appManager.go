@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/collection"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -53,7 +55,7 @@ func NewAppManager(logger lager.Logger, clock clock.Clock, interval time.Duratio
 func (am *AppManager) GetPolicies() map[string]*models.AppPolicy {
 	am.pLock.RLock()
 	defer am.pLock.RUnlock()
-	return am.policyMap
+	return maps.Clone(am.policyMap)
 }
 func (am *AppManager) Start() {
 	go am.startPolicyRetrieve()

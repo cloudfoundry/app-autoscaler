@@ -135,6 +135,13 @@ var _ = Describe("Collector", func() {
 					Eventually(mc.GetAppIDs).Should(Equal(map[string]bool{"app-id-1": true, "app-id-2": true}), "mc.GetAppIds match after poll loop %d", policyDb.GetAppIdsCallCount())
 				})
 
+				It("The app list is cloned", func() {
+					Eventually(mc.GetAppIDs).Should(Equal(map[string]bool{"app-id-1": true, "app-id-3": true}), "mc.GetAppIds match after poll loop %d", policyDb.GetAppIdsCallCount())
+					apps := mc.GetAppIDs()
+					delete(apps, "app-id-1")
+					Expect(mc.GetAppIDs()).To(Equal(map[string]bool{"app-id-1": true, "app-id-3": true}))
+				})
+
 			})
 
 			Context("when running with 3 nodes", func() {
