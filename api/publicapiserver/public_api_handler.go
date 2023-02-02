@@ -14,7 +14,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerutil"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerclient"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -33,7 +33,7 @@ type PublicApiHandler struct {
 	scalingEngineClient  *http.Client
 	eventGeneratorClient *http.Client
 	policyValidator      *policyvalidator.PolicyValidator
-	schedulerUtil        *schedulerutil.SchedulerUtil
+	schedulerUtil        *schedulerclient.Client
 	credentials          cred_helper.Credentials
 }
 
@@ -58,7 +58,7 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		scalingEngineClient:  seClient,
 		eventGeneratorClient: egClient,
 		policyValidator:      policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
-		schedulerUtil:        schedulerutil.NewSchedulerUtil(conf, logger),
+		schedulerUtil:        schedulerclient.New(conf, logger),
 		credentials:          credentials,
 	}
 }
@@ -126,11 +126,9 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	policy := string(policyBytes)
-
-	errResults, valid, policy := h.policyValidator.ValidatePolicy(policy)
-	if !valid {
-		logger.Error("Failed to validate policy", nil, lager.Data{"errors": errResults})
+	policy, errResults := h.policyValidator.ValidatePolicy(policyBytes)
+	if errResults != nil {
+		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 		return
 	}
@@ -152,9 +150,17 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid.String())
 	if err != nil {
 		logger.Error("Failed to create/update schedule", err)
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
 	}
-	w.WriteHeader(http.StatusOK)
-	_, err = io.WriteString(w, policy)
+
+	response, err := json.Marshal(policy)
+	if err != nil {
+		logger.Error("Failed to marshal policy", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Error marshaling policy")
+		return
+	}
+	_, err = w.Write(response)
 	if err != nil {
 		logger.Error("Failed to write body", err)
 	}
@@ -196,7 +202,15 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 			policyStr := serviceInstance.DefaultPolicy
 			policyGuidStr := serviceInstance.DefaultPolicyGuid
 			logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
-			err = h.policydb.SaveAppPolicy(r.Context(), appId, policyStr, policyGuidStr)
+			var policy *models.ScalingPolicy
+			err := json.Unmarshal([]byte(policyStr), &policy)
+			if err != nil {
+				h.logger.Error("default policy invalid", err, lager.Data{"appId": appId, "policy": policyStr})
+				writeErrorResponse(w, http.StatusInternalServerError, "Default policy not valid")
+				return
+			}
+
+			err = h.policydb.SaveAppPolicy(r.Context(), appId, policy, policyGuidStr)
 			if err != nil {
 				logger.Error("failed to save policy", err, lager.Data{"policy": policyStr})
 				writeErrorResponse(w, http.StatusInternalServerError, "Error attaching the default policy")
@@ -204,11 +218,12 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 			}
 
 			logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
-			err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policyStr, policyGuidStr)
+			err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuidStr)
 			//while there is synchronization between policy and schedule, so creating schedule error does not break
 			//the whole creating binding process
 			if err != nil {
 				logger.Error("failed to create/update schedules", err, lager.Data{"policy": policyStr})
+				writeErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Failed to update schedule:%s", err))
 			}
 		}
 	}

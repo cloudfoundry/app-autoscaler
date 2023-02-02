@@ -57,8 +57,8 @@ type PolicyDB interface {
 	healthendpoint.Pinger
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error)
-	SaveAppPolicy(ctx context.Context, appId string, policy string, policyGuid string) error
-	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
+	SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error
+	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.ScalingPolicy, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	io.Closer

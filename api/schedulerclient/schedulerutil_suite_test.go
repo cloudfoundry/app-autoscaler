@@ -1,4 +1,4 @@
-package schedulerutil_test
+package schedulerclient_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestSchedulerutil(t *testing.T) {
+func TestScheduler(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Schedulerutil Suite")
+	RunSpecs(t, "Scheduler client Suite")
 }

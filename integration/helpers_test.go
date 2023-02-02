@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -45,35 +47,33 @@ func getAppAggregatedMetricUrl(appId string, metricType string, parameteters map
 }
 
 func compareAppAggregatedMetricResult(o1, o2 AppAggregatedMetricResult) {
-	Expect(o1.Page).To(Equal(o2.Page))
-	Expect(o1.TotalPages).To(Equal(o2.TotalPages))
-	Expect(o1.TotalResults).To(Equal(o2.TotalResults))
-	Expect(o1.Resources).To(Equal(o2.Resources))
+	compareUrlValues(o1.NextUrl, o2.NextUrl)
+	compareUrlValues(o1.PrevUrl, o2.PrevUrl)
+	o1.PrevUrl = ""
+	o2.PrevUrl = ""
+	o1.NextUrl = ""
+	o2.NextUrl = ""
+	Expect(o1).To(Equal(o2))
+}
 
-	prevUrl1, err1 := url.Parse(o1.PrevUrl)
+func compareUrlValues(o1 string, o2 string) {
+	prevUrl1, err1 := url.Parse(o1)
 	Expect(err1).NotTo(HaveOccurred())
-	prevUrl2, err2 := url.Parse(o2.PrevUrl)
+	prevUrl2, err2 := url.Parse(o2)
 	Expect(err2).NotTo(HaveOccurred())
 	queries1 := prevUrl1.Query()
 	queries2 := prevUrl2.Query()
-	Expect(queries1).To(Equal(queries2))
-
-	nextUrl1, err1 := url.Parse(o1.NextUrl)
-	Expect(err1).NotTo(HaveOccurred())
-	nextUrl2, err2 := url.Parse(o2.NextUrl)
-	Expect(err2).NotTo(HaveOccurred())
-	queries1 = nextUrl1.Query()
-	queries2 = nextUrl2.Query()
 	Expect(queries1).To(Equal(queries2))
 }
 
 func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
 	var actual AppAggregatedMetricResult
 	resp, err := getAppAggregatedMetrics(apiServerPort, pathVariables, parameters)
-	Expect(err).NotTo(HaveOccurred())
-	defer resp.Body.Close()
+	body := MustReadAll(resp.Body)
+	FailOnError(fmt.Sprintf("getAppAggregatedMetrics failed: %d-%s", resp.StatusCode, body), err)
+	defer func() { _ = resp.Body.Close() }()
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	err = json.NewDecoder(resp.Body).Decode(&actual)
+	err = json.Unmarshal([]byte(body), &actual)
 	Expect(err).NotTo(HaveOccurred())
 	compareAppAggregatedMetricResult(actual, result)
 }
@@ -83,64 +83,60 @@ func getScalingHistoriesUrl(appId string, parameteters map[string]string, pageNo
 }
 
 func compareScalingHistoryResult(o1, o2 ScalingHistoryResult) {
-	Expect(o1.Page).To(Equal(o2.Page))
-	Expect(o1.TotalPages).To(Equal(o2.TotalPages))
-	Expect(o1.TotalResults).To(Equal(o2.TotalResults))
-	Expect(o1.Resources).To(Equal(o2.Resources))
-
-	prevUrl1, err1 := url.Parse(o1.PrevUrl)
-	Expect(err1).NotTo(HaveOccurred())
-	prevUrl2, err2 := url.Parse(o2.PrevUrl)
-	Expect(err2).NotTo(HaveOccurred())
-	queries1 := prevUrl1.Query()
-	queries2 := prevUrl2.Query()
-	Expect(queries1).To(Equal(queries2))
-
-	nextUrl1, err1 := url.Parse(o1.NextUrl)
-	Expect(err1).NotTo(HaveOccurred())
-	nextUrl2, err2 := url.Parse(o2.NextUrl)
-	Expect(err2).NotTo(HaveOccurred())
-	queries1 = nextUrl1.Query()
-	queries2 = nextUrl2.Query()
-	Expect(queries1).To(Equal(queries2))
+	compareUrlValues(o1.NextUrl, o2.NextUrl)
+	compareUrlValues(o1.PrevUrl, o2.PrevUrl)
+	o1.PrevUrl = ""
+	o2.PrevUrl = ""
+	o1.NextUrl = ""
+	o2.NextUrl = ""
+	Expect(o1).To(Equal(o2))
 }
 
 func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
 	var actual ScalingHistoryResult
 	resp, err := getScalingHistories(apiServerPort, pathVariables, parameters)
-	Expect(err).NotTo(HaveOccurred())
-	defer resp.Body.Close()
-	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	err = json.NewDecoder(resp.Body).Decode(&actual)
-	Expect(err).NotTo(HaveOccurred())
+	body := MustReadAll(resp.Body)
+	FailOnError(fmt.Sprintf("getScalingHistories failed: %d-%s", resp.StatusCode, body), err)
+	defer func() { _ = resp.Body.Close() }()
+	Expect(resp.StatusCode).WithOffset(1).To(Equal(http.StatusOK), "status code")
+	err = json.Unmarshal([]byte(body), &actual)
+	Expect(err).WithOffset(1).NotTo(HaveOccurred(), "UnmarshalJson")
 	compareScalingHistoryResult(actual, result)
 }
 
 func doAttachPolicy(appId string, policyStr []byte, statusCode int, apiServerPort int, httpClient *http.Client) {
 	resp, err := attachPolicy(appId, policyStr, apiServerPort, httpClient)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, resp.StatusCode).To(Equal(statusCode))
-	resp.Body.Close()
+	body := MustReadAll(resp.Body)
+	FailOnError(fmt.Sprintf("attachPolicy failed: %d-%s", resp.StatusCode, body), err)
+	defer func() { _ = resp.Body.Close() }()
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(statusCode), fmt.Sprintf("Got response:%s", body))
+}
+
+func MustReadAll(reader io.ReadCloser) string {
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		panic(err)
+	}
+	return string(body)
 }
 
 func doDetachPolicy(appId string, statusCode int, msg string, apiServerPort int, httpClient *http.Client) {
 	resp, err := detachPolicy(appId, apiServerPort, httpClient)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(statusCode))
+	FailOnError("detachPolicy failed", err)
+	defer func() { _ = resp.Body.Close() }()
+	body := MustReadAll(resp.Body)
+	Expect(resp.StatusCode).WithOffset(1).To(Equal(statusCode), fmt.Sprintf("response '%s'", body))
 	if msg != "" {
-		respBody, err := io.ReadAll(resp.Body)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(respBody)).To(Equal(msg))
+		Expect(body).WithOffset(1).To(Equal(msg))
 	}
-	resp.Body.Close()
 }
 
 func checkApiServerStatus(appId string, statusCode int, apiServerPort int, httpClient *http.Client) {
 	By("checking the API Server")
 	resp, err := getPolicy(appId, apiServerPort, httpClient)
-	Expect(err).NotTo(HaveOccurred())
+	FailOnError(fmt.Sprintf("getPolicy failed: %d-%s", resp.StatusCode, MustReadAll(resp.Body)), err)
+	defer func() { _ = resp.Body.Close() }()
 	Expect(resp.StatusCode).To(Equal(statusCode))
-	resp.Body.Close()
 }
 
 func checkApiServerContent(appId string, policyStr []byte, statusCode int, port int, httpClient *http.Client) {

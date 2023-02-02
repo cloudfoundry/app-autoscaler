@@ -65,6 +65,7 @@ var _ = Describe("Policy", func() {
 }`
 	var p1, p2, policyJson *PolicyJson
 	var err error
+
 	Context("PolicyJson.Equals", func() {
 		Context("when p1 and p2 are all nil", func() {
 			BeforeEach(func() {
@@ -139,6 +140,14 @@ var _ = Describe("Policy", func() {
 		})
 
 	})
+
+	DescribeTable("IsEmpty tests",
+		func(schedule *ScalingSchedules, value bool) { Expect(schedule.IsEmpty()).To(Equal(value)) },
+		Entry("nul", nil, true),
+		Entry("nil arrays", &ScalingSchedules{}, true),
+		Entry("one recurring schedule", &ScalingSchedules{RecurringSchedules: []*RecurringSchedule{{}}}, false),
+		Entry("one Specific schedule", &ScalingSchedules{SpecificDateSchedules: []*SpecificDateSchedule{{}}}, false),
+	)
 
 	Context("ScalingRules", func() {
 		JustBeforeEach(func() {

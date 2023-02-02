@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerutil"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerclient"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -31,7 +32,7 @@ type Broker struct {
 	bindingdb       db.BindingDB
 	policydb        db.PolicyDB
 	policyValidator *policyvalidator.PolicyValidator
-	schedulerUtil   *schedulerutil.SchedulerUtil
+	schedulerUtil   *schedulerclient.Client
 	catalog         []domain.Service
 	PlanChecker     plancheck.PlanChecker
 	credentials     cred_helper.Credentials
@@ -48,15 +49,27 @@ var (
 	ErrCredentialNotDeleted        = errors.New("failed to delete custom metrics credential for unbinding")
 )
 
-func New(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, catalog []domain.Service, credentials cred_helper.Credentials) *Broker {
+type Errors []error
+
+func (e Errors) Error() string {
+	var theErrors []string
+	for _, err := range e {
+		theErrors = append(theErrors, err.Error())
+	}
+	return strings.Join(theErrors, ", ")
+}
+
+var _ error = Errors{}
+
+func New(logger lager.Logger, conf *config.Config, bindingDb db.BindingDB, policyDb db.PolicyDB, catalog []domain.Service, credentials cred_helper.Credentials) *Broker {
 	broker := &Broker{
 		logger:          logger,
 		conf:            conf,
-		bindingdb:       bindingdb,
-		policydb:        policydb,
+		bindingdb:       bindingDb,
+		policydb:        policyDb,
 		catalog:         catalog,
 		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
-		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
+		schedulerUtil:   schedulerclient.New(conf, logger),
 		PlanChecker:     plancheck.NewPlanChecker(conf.PlanCheck, logger),
 		credentials:     credentials,
 	}
@@ -91,15 +104,39 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 
 	var policyJson json.RawMessage
 	if parameters.DefaultPolicy != nil {
-		policyJson = *parameters.DefaultPolicy
+		policyJson = parameters.DefaultPolicy
 	}
 
-	policyStr, policyGuidStr, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
+	var policyGuidStr, policyStr string
+	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		return result, err
 	}
 
-	err = b.bindingdb.CreateServiceInstance(ctx, models.ServiceInstance{ServiceInstanceId: instanceID, OrgId: details.OrganizationGUID, SpaceId: details.SpaceGUID, DefaultPolicy: policyStr, DefaultPolicyGuid: policyGuidStr})
+	if policy != nil {
+		policyGuid, err := uuid.NewV4()
+		if err != nil {
+			b.logger.Error("get-default-policy-create-guid", err, lager.Data{"instanceID": instanceID})
+			return result, apiresponses.NewFailureResponse(errors.New("error generating policy guid"), http.StatusInternalServerError, "get-default-policy-create-guid")
+		}
+		policyGuidStr = policyGuid.String()
+		policyBytes, err := json.Marshal(policy)
+		if err != nil {
+			b.logger.Error("marshal policy failed", err, lager.Data{"instanceID": instanceID})
+			return result, apiresponses.NewFailureResponse(errors.New("error marshaling policy"), http.StatusInternalServerError, "marshal-policy")
+		}
+		policyStr = string(policyBytes)
+	}
+	b.logger.Error("setting default policy", err, lager.Data{"policy": policyStr})
+
+	instance := models.ServiceInstance{
+		ServiceInstanceId: instanceID,
+		OrgId:             details.OrganizationGUID,
+		SpaceId:           details.SpaceGUID,
+		DefaultPolicy:     policyStr,
+		DefaultPolicyGuid: policyGuidStr,
+	}
+	err = b.bindingdb.CreateServiceInstance(ctx, instance)
 	switch {
 	case err == nil:
 		result.DashboardURL = GetDashboardURL(b.conf, instanceID)
@@ -118,46 +155,30 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 	return result, err
 }
 
-func (b *Broker) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanceID string, planID string) (string, string, error) {
-	var (
-		policyGuidStr string
-		err           error
-	)
-	policyStr := string(policyJson)
-	if policyStr != "" {
-		policyStr, err = b.validateAndCheckPolicy(policyStr, instanceID, planID)
-		if err != nil {
-			return "", "", err
-		}
-
-		policyGuid, err := uuid.NewV4()
-		if err != nil {
-			b.logger.Error("get-default-policy-create-guid", err, lager.Data{"instanceID": instanceID})
-			return "", "", apiresponses.NewFailureResponse(errors.New("error generating policy guid"), http.StatusInternalServerError, "get-default-policy-create-guid")
-		}
-		policyGuidStr = policyGuid.String()
+func (b *Broker) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
+	if policyJson != nil || len(policyJson) != 0 {
+		return b.validateAndCheckPolicy(policyJson, instanceID, planID)
 	}
-	return policyStr, policyGuidStr, nil
+	//TODO should we error if there is no policy??
+	return nil, nil
 }
 
-func (b *Broker) validateAndCheckPolicy(policyStr string, instanceID string, planID string) (string, error) {
-	errResults, valid, validatedPolicy := b.policyValidator.ValidatePolicy(policyStr)
-	logger := b.logger.Session("validate-and-check-policy", lager.Data{"instanceID": instanceID, "policy": policyStr, "planID": planID, "errResults": errResults})
+func (b *Broker) validateAndCheckPolicy(rawJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
+	policy, errResults := b.policyValidator.ValidatePolicy(rawJson)
+	logger := b.logger.Session("validate-and-check-policy", lager.Data{"instanceID": instanceID, "policy": policy, "planID": planID, "errResults": errResults})
 
-	if !valid {
+	if errResults != nil {
 		logger.Info("got-invalid-default-policy")
 		resultsJson, err := json.Marshal(errResults)
 		if err != nil {
 			logger.Error("failed-marshalling-errors", err)
 		}
-		return "", apiresponses.NewFailureResponse(fmt.Errorf("invalid policy provided: %s", string(resultsJson)), http.StatusBadRequest, "failed-to-validate-policy")
+		return policy, apiresponses.NewFailureResponse(fmt.Errorf("invalid policy provided: %s", string(resultsJson)), http.StatusBadRequest, "failed-to-validate-policy")
 	}
-	policyStr = validatedPolicy
-
-	if err := b.planDefinitionExceeded(policyStr, planID, instanceID); err != nil {
-		return "", err
+	if err := b.planDefinitionExceeded(policy, planID, instanceID); err != nil {
+		return policy, err
 	}
-	return policyStr, nil
+	return policy, nil
 }
 
 // Deprovision deletes an existing service instance
@@ -223,7 +244,7 @@ func (b *Broker) GetInstance(ctx context.Context, instanceID string, details dom
 	if serviceInstance.DefaultPolicy != "" {
 		policy := json.RawMessage(serviceInstance.DefaultPolicy)
 		result.Parameters = models.InstanceParameters{
-			DefaultPolicy: &policy,
+			DefaultPolicy: policy,
 		}
 	}
 
@@ -283,14 +304,21 @@ func (b *Broker) Update(ctx context.Context, instanceID string, details domain.U
 		if err := b.applyDefaultPolicyUpdate(ctx, allBoundApps, serviceInstance, defaultPolicy, defaultPolicyGuid); err != nil {
 			return result, err
 		}
-
+		defaultPolicyBytes := []byte("")
+		if defaultPolicy != nil {
+			defaultPolicyBytes, err = json.Marshal(defaultPolicy)
+			logger.Info("saving default policy", lager.Data{"policy": defaultPolicy, "policyStr": string(defaultPolicyBytes), "err": err})
+			if err != nil {
+				return result, err
+			}
+		}
 		// persist the changes to the default policy
 		// NOTE: As the plan is not persisted, we do not need to this if we are only performing a plan change!
 		updatedServiceInstance := models.ServiceInstance{
 			ServiceInstanceId: serviceInstance.ServiceInstanceId,
 			OrgId:             serviceInstance.OrgId,
 			SpaceId:           serviceInstance.SpaceId,
-			DefaultPolicy:     defaultPolicy,
+			DefaultPolicy:     string(defaultPolicyBytes),
 			DefaultPolicyGuid: defaultPolicyGuid,
 		}
 
@@ -304,19 +332,12 @@ func (b *Broker) Update(ctx context.Context, instanceID string, details domain.U
 	return result, nil
 }
 
-func (b *Broker) applyDefaultPolicyUpdate(ctx context.Context, allBoundApps []string, serviceInstance *models.ServiceInstance, defaultPolicy string, defaultPolicyGuid string) error {
-	if defaultPolicy == "" {
+func (b *Broker) applyDefaultPolicyUpdate(ctx context.Context, allBoundApps []string, serviceInstance *models.ServiceInstance, defaultPolicy *models.ScalingPolicy, defaultPolicyGuid string) error {
+	if defaultPolicy == nil {
 		// default policy was present and will now be removed
-		if err := b.removeDefaultPolicyFromApps(ctx, serviceInstance); err != nil {
-			return err
-		}
-	} else {
-		// a new default policy needs to be set
-		if err := b.setDefaultPolicyOnApps(ctx, defaultPolicy, defaultPolicyGuid, allBoundApps, serviceInstance); err != nil {
-			return err
-		}
+		return b.removeDefaultPolicyFromApps(ctx, serviceInstance)
 	}
-	return nil
+	return b.setDefaultPolicyOnApps(ctx, defaultPolicy, defaultPolicyGuid, allBoundApps, serviceInstance)
 }
 
 func parseInstanceParameters(rawParameters json.RawMessage) (*models.InstanceParameters, error) {
@@ -344,22 +365,25 @@ func (b *Broker) getServiceInstance(ctx context.Context, instanceID string) (*mo
 	return serviceInstance, nil
 }
 
-func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolicy string, updatedDefaultPolicyGuid string, allBoundApps []string, serviceInstance *models.ServiceInstance) error {
+func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolicy *models.ScalingPolicy, updatedDefaultPolicyGuid string, allBoundApps []string, serviceInstance *models.ServiceInstance) error {
 	instanceID := serviceInstance.ServiceInstanceId
 	b.logger.Info("update-service-instance-set-or-update", lager.Data{"instanceID": instanceID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "serviceInstance": serviceInstance})
 
-	updatedAppIds, err := b.policydb.SetOrUpdateDefaultAppPolicy(ctx, allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
+	appIds, err := b.policydb.SetOrUpdateDefaultAppPolicy(ctx, allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
 	if err != nil {
 		b.logger.Error("failed to set default policies", err, lager.Data{"instanceID": instanceID})
 		return apiresponses.NewFailureResponse(errors.New("failed to set default policy"), http.StatusInternalServerError, "updating-default-policy")
 	}
-
-	// there is synchronization between policy and schedule, so errors creating schedules should not break
-	// the whole update process
-	for _, appId := range updatedAppIds {
-		if err = b.schedulerUtil.CreateOrUpdateSchedule(ctx, appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
+	var errs Errors
+	for _, appId := range appIds {
+		err = b.schedulerUtil.CreateOrUpdateSchedule(ctx, appId, updatedDefaultPolicy, updatedDefaultPolicyGuid)
+		if err != nil {
 			b.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
+			errs = append(errs, err)
 		}
+	}
+	if errs != nil {
+		return errs
 	}
 	return nil
 }
@@ -382,7 +406,6 @@ func (b *Broker) removeDefaultPolicyFromApps(ctx context.Context, serviceInstanc
 
 func (b *Broker) checkScalingPoliciesUnderNewPlan(ctx context.Context, allBoundApps []string, servicePlan string, instanceID string) error {
 	var existingPolicy *models.ScalingPolicy
-	var existingPolicyByteArray []byte
 	var err error
 	for _, appId := range allBoundApps {
 		existingPolicy, err = b.policydb.GetAppPolicy(ctx, appId)
@@ -390,53 +413,51 @@ func (b *Broker) checkScalingPoliciesUnderNewPlan(ctx context.Context, allBoundA
 			b.logger.Error("failed to retrieve policy from db", err, lager.Data{"appId": appId})
 			return apiresponses.NewFailureResponse(ErrUpdatingServiceInstance, http.StatusInternalServerError, "failed to retrieve policy from db")
 		}
-		existingPolicyByteArray, err = json.Marshal(existingPolicy)
+
+		err := b.planDefinitionExceeded(existingPolicy, servicePlan, instanceID)
 		if err != nil {
-			b.logger.Error("failed to marshal policy from db", err, lager.Data{"appId": appId})
-			return apiresponses.NewFailureResponse(ErrUpdatingServiceInstance, http.StatusInternalServerError, "failed to marshal policy from db")
-		}
-		existingPolicyStr := string(existingPolicyByteArray)
-		if err := b.planDefinitionExceeded(existingPolicyStr, servicePlan, instanceID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *Broker) determineDefaultPolicy(parameters *models.InstanceParameters, serviceInstance *models.ServiceInstance, planID string) (string, string, bool, error) {
-	defaultPolicy := serviceInstance.DefaultPolicy
-	defaultPolicyGuid := serviceInstance.DefaultPolicyGuid
-	defaultPolicyIsNew := false
-	var err error
+func (b *Broker) determineDefaultPolicy(parameters *models.InstanceParameters, serviceInstance *models.ServiceInstance, planID string) (defaultPolicy *models.ScalingPolicy, defaultPolicyGuid string, defaultPolicyIsNew bool, err error) {
+	if serviceInstance.DefaultPolicy != "" {
+		err = json.Unmarshal([]byte(serviceInstance.DefaultPolicy), &defaultPolicy)
+		if err != nil {
+			return nil, "", false, fmt.Errorf("unmarhaling default policy failed: %w", err)
+		}
+	}
 
-	if parameters.DefaultPolicy == nil {
+	defaultPolicyGuid = serviceInstance.DefaultPolicyGuid
+	defaultPolicyIsNew = false
+
+	if string(parameters.DefaultPolicy) == "" {
 		return defaultPolicy, defaultPolicyGuid, false, nil
 	}
 
-	newDefaultPolicy := string(*parameters.DefaultPolicy)
-	if emptyJSONObject.MatchString(newDefaultPolicy) {
+	newDefaultPolicy := parameters.DefaultPolicy
+	if emptyJSONObject.MatchString(string(newDefaultPolicy)) {
 		// accept an empty json object "{}" as a default policy update to specify the removal of the default policy
-		if defaultPolicy != "" {
-			defaultPolicy = ""
+		if defaultPolicy != nil {
+			defaultPolicy = nil
 			defaultPolicyGuid = ""
 			defaultPolicyIsNew = true
 		}
 	} else {
-		if newDefaultPolicy != defaultPolicy {
-			newDefaultPolicy, err = b.validateAndCheckPolicy(newDefaultPolicy, serviceInstance.ServiceInstanceId, planID)
-			if err != nil {
-				return "", "", false, err
-			}
-
-			policyGuid, err := uuid.NewV4()
-			if err != nil {
-				b.logger.Error("determine-default-policy-create-guid", err, lager.Data{"instanceID": serviceInstance.ServiceInstanceId})
-				return "", "", false, apiresponses.NewFailureResponse(errors.New("failed to create policy guid"), http.StatusInternalServerError, "determine-default-policy-create-guidz")
-			}
-			defaultPolicy = newDefaultPolicy
-			defaultPolicyGuid = policyGuid.String()
-			defaultPolicyIsNew = true
+		newPolicy, err := b.validateAndCheckPolicy(newDefaultPolicy, serviceInstance.ServiceInstanceId, planID)
+		if err != nil {
+			return nil, "", false, err
 		}
+		policyGuid, err := uuid.NewV4()
+		if err != nil {
+			b.logger.Error("determine-default-policy-create-guid", err, lager.Data{"instanceID": serviceInstance.ServiceInstanceId})
+			return newPolicy, "", false, apiresponses.NewFailureResponse(errors.New("failed to create policy guid"), http.StatusInternalServerError, "determine-default-policy-create-guidz")
+		}
+		defaultPolicy = newPolicy
+		defaultPolicyGuid = policyGuid.String()
+		defaultPolicyIsNew = true
 	}
 
 	return defaultPolicy, defaultPolicyGuid, defaultPolicyIsNew, nil
@@ -475,19 +496,30 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		policyJson = details.RawParameters
 	}
 
-	policyStr, policyGuidStr, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
+	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		logger.Error("get-default-policy", err)
 		return result, err
 	}
+	policyGuid, err := uuid.NewV4()
+	if err != nil {
+		b.logger.Error("get-default-policy-create-guid", err, lager.Data{"instanceID": instanceID})
+		return result, apiresponses.NewFailureResponse(errors.New("error generating policy guid"), http.StatusInternalServerError, "get-default-policy-create-guid")
+	}
+	policyGuidStr := policyGuid.String()
 
 	// fallback to default policy if no policy was provided
-	if policyStr == "" {
-		if serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID); err != nil {
+	if policy == nil {
+		serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
+		if err != nil {
 			logger.Error("get-service-instance", err)
 			return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, "get-service-instance")
-		} else {
-			policyStr = serviceInstance.DefaultPolicy
+		}
+		if serviceInstance.DefaultPolicy != "" {
+			err = json.Unmarshal([]byte(serviceInstance.DefaultPolicy), &policy)
+			if err != nil {
+				return result, apiresponses.NewFailureResponse(fmt.Errorf("unmarshalling default policy: '%s' failed: %w", serviceInstance.DefaultPolicy, err), http.StatusInternalServerError, "unmarshal default policy")
+			}
 			policyGuidStr = serviceInstance.DefaultPolicyGuid
 		}
 	}
@@ -520,7 +552,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	}
 
 	// attach policy to appGUID
-	if err := b.attachPolicyToApp(ctx, appGUID, policyStr, policyGuidStr, logger); err != nil {
+	if err := b.attachPolicyToApp(ctx, appGUID, policy, policyGuidStr, logger); err != nil {
 		return result, err
 	}
 
@@ -535,13 +567,13 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	return result, nil
 }
 
-func (b *Broker) attachPolicyToApp(ctx context.Context, appGUID string, policyStr string, policyGuidStr string, logger lager.Logger) error {
-	logger = logger.Session("saving-policy-json", lager.Data{"policy": policyStr})
-	if policyStr == "" {
+func (b *Broker) attachPolicyToApp(ctx context.Context, appGUID string, policy *models.ScalingPolicy, policyGuidStr string, logger lager.Logger) error {
+	logger = logger.Session("saving-policy-json", lager.Data{"policy": policy})
+	if policy == nil {
 		logger.Info("no-policy-json-provided")
 	} else {
 		logger.Info("saving-policy-json")
-		if err := b.policydb.SaveAppPolicy(ctx, appGUID, policyStr, policyGuidStr); err != nil {
+		if err := b.policydb.SaveAppPolicy(ctx, appGUID, policy, policyGuidStr); err != nil {
 			logger.Error("save-appGUID-policy", err)
 			//failed to save policy, so revert creating binding and custom metrics credential
 			err = b.credentials.Delete(ctx, appGUID)
@@ -556,10 +588,8 @@ func (b *Broker) attachPolicyToApp(ctx context.Context, appGUID string, policySt
 		}
 
 		logger.Info("creating/updating schedules")
-		if err := b.schedulerUtil.CreateOrUpdateSchedule(ctx, appGUID, policyStr, policyGuidStr); err != nil {
-			//while there is synchronization between policy and schedule, so creating schedule error does not break
-			//the whole creating binding process
-			logger.Error("failed to create/update schedules", err)
+		if err := b.schedulerUtil.CreateOrUpdateSchedule(ctx, appGUID, policy, policyGuidStr); err != nil {
+			return fmt.Errorf("attachPolicyToApp failed update/create: %w", err)
 		}
 	}
 	return nil
@@ -635,7 +665,13 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 	}
 
 	policy, err := b.policydb.GetAppPolicy(ctx, serviceBinding.AppID)
-	if err != nil && !errors.Is(err, db.ErrDoesNotExist) {
+	if err != nil {
+		b.logger.Error("get-binding", err, lager.Data{"instanceID": instanceID, "bindingID": bindingID, "fetchBindingDetails": details})
+
+		//special not found handling
+		if errors.Is(err, db.ErrDoesNotExist) {
+			return domain.GetBindingSpec{}, nil
+		}
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
 
@@ -674,20 +710,14 @@ func (b *Broker) LastBindingOperation(_ context.Context, instanceID string, bind
 	return domain.LastOperation{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "last-binding-operation-is-not-implemented")
 }
 
-func (b *Broker) planDefinitionExceeded(policyStr string, planID string, instanceID string) error {
-	policy := models.ScalingPolicy{}
-	err := json.Unmarshal([]byte(policyStr), &policy)
-	if err != nil {
-		b.logger.Error("failed to unmarshal policy", err, lager.Data{"instanceID": instanceID, "policyStr": policyStr})
-		return apiresponses.NewFailureResponse(errors.New("error reading policy"), http.StatusBadRequest, "failed to unmarshal policy")
-	}
+func (b *Broker) planDefinitionExceeded(policy *models.ScalingPolicy, planID string, instanceID string) error {
 	ok, checkResult, err := b.PlanChecker.CheckPlan(policy, planID)
 	if err != nil {
-		b.logger.Error("failed to check policy for plan adherence", err, lager.Data{"instanceID": instanceID, "policyStr": policyStr})
+		b.logger.Error("failed to check policy for plan adherence", err, lager.Data{"instanceID": instanceID, "policy": policy})
 		return apiresponses.NewFailureResponse(errors.New("error validating policy"), http.StatusInternalServerError, "failed to check policy for plan adherence")
 	}
 	if !ok {
-		b.logger.Error("policy did not adhere to plan", fmt.Errorf(checkResult), lager.Data{"instanceID": instanceID, "policyStr": policyStr})
+		b.logger.Error("policy did not adhere to plan", fmt.Errorf(checkResult), lager.Data{"instanceID": instanceID, "policy": policy})
 		return apiresponses.NewFailureResponse(fmt.Errorf("error: policy did not adhere to plan: %s", checkResult), http.StatusBadRequest, "policy did not adhere to plan")
 	}
 	return nil
@@ -745,12 +775,10 @@ func (b *Broker) getExistingOrUpdatedServicePlan(instanceID string, updateDetail
 }
 
 func GetDashboardURL(conf *config.Config, instanceID string) string {
-	result := ""
 	if conf.DashboardRedirectURI != "" {
-		result = fmt.Sprintf("%s/manage/%s", conf.DashboardRedirectURI, instanceID)
+		return fmt.Sprintf("%s/manage/%s", conf.DashboardRedirectURI, instanceID)
 	}
-
-	return result
+	return ""
 }
 
 func (b *Broker) deleteBinding(ctx context.Context, bindingId string, serviceInstanceId string) error {

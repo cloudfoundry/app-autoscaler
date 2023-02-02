@@ -269,11 +269,12 @@ func testFileFragment(filename string) string {
 }
 
 func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("provisionServiceInstance")
 	var bindBody map[string]interface{}
 	if defaultPolicy != nil {
 		defaultPolicy := json.RawMessage(defaultPolicy)
 		parameters := map[string]interface{}{
-			"default_policy": &defaultPolicy,
+			"default_policy": defaultPolicy,
 		}
 		bindBody = map[string]interface{}{
 			"organization_guid": orgId,
@@ -301,6 +302,7 @@ func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId st
 }
 
 func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("updateServiceInstance")
 	var updateBody map[string]interface{}
 	if defaultPolicy != nil {
 		defaultPolicy := json.RawMessage(defaultPolicy)
@@ -325,6 +327,7 @@ func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, broke
 }
 
 func deProvisionServiceInstance(serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("deProvisionServiceInstance")
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s?service_id=%s&plan_id=%s", brokerPort, serviceInstanceId, serviceId, planId), nil)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -333,6 +336,7 @@ func deProvisionServiceInstance(serviceInstanceId string, brokerPort int, httpCl
 }
 
 func bindService(bindingId string, appId string, serviceInstanceId string, policy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("bindService")
 	var bindBody map[string]interface{}
 	if policy != nil {
 		rawParameters := json.RawMessage(policy)
@@ -340,7 +344,7 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 			"app_guid":   appId,
 			"service_id": serviceId,
 			"plan_id":    planId,
-			"parameters": &rawParameters,
+			"parameters": rawParameters,
 		}
 	} else {
 		bindBody = map[string]interface{}{
@@ -360,6 +364,7 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 }
 
 func unbindService(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("unbindService")
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s", brokerPort, serviceInstanceId, bindingId, serviceId, planId), nil)
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -367,15 +372,15 @@ func unbindService(bindingId string, appId string, serviceInstanceId string, bro
 	return httpClient.Do(req)
 }
 
-func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, bindingId string, appId string, policy []byte, brokerPort int, httpClient *http.Client) {
-	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, brokerPort, httpClient)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, brokerPort int, httpClient *http.Client) {
+	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, nil, brokerPort, httpClient)
+	Expect(err).WithOffset(1).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).WithOffset(1).To(Equal(http.StatusCreated), fmt.Sprintf("response was '%s'", MustReadAll(resp.Body)))
 	_ = resp.Body.Close()
 
-	resp, err = bindService(bindingId, appId, serviceInstanceId, policy, brokerPort, httpClient)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+	resp, err = bindService(bindingId, appId, serviceInstanceId, nil, brokerPort, httpClient)
+	Expect(err).WithOffset(1).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).WithOffset(1).To(Equal(http.StatusCreated), fmt.Sprintf("response was '%s'", MustReadAll(resp.Body)))
 	_ = resp.Body.Close()
 }
 
@@ -392,6 +397,7 @@ func unbindAndDeProvision(bindingId string, appId string, serviceInstanceId stri
 }
 
 func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("getPolicy")
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), nil)
 	req.Header.Set("Authorization", "bearer fake-token")
 	Expect(err).NotTo(HaveOccurred())
@@ -399,6 +405,7 @@ func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.
 }
 
 func detachPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("detachPolicy")
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -407,6 +414,7 @@ func detachPolicy(appId string, apiServerPort int, httpClient *http.Client) (*ht
 }
 
 func attachPolicy(appId string, policy []byte, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
+	By("attachPolicy")
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), bytes.NewReader(policy))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -415,6 +423,7 @@ func attachPolicy(appId string, policy []byte, apiServerPort int, httpClient *ht
 }
 
 func getSchedules(appId string) (*http.Response, error) {
+	By("getSchedules")
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules", components.Ports[Scheduler], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -422,6 +431,7 @@ func getSchedules(appId string) (*http.Response, error) {
 }
 
 func createSchedule(appId string, guid string, schedule string) (*http.Response, error) {
+	By("createSchedule")
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules?guid=%s", components.Ports[Scheduler], appId, guid), bytes.NewReader([]byte(schedule)))
 	if err != nil {
 		panic(err)
@@ -432,6 +442,7 @@ func createSchedule(appId string, guid string, schedule string) (*http.Response,
 }
 
 func deleteSchedule(appId string) (*http.Response, error) {
+	By("deleteSchedule")
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules", components.Ports[Scheduler], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -439,6 +450,7 @@ func deleteSchedule(appId string) (*http.Response, error) {
 }
 
 func getActiveSchedule(appId string) (*http.Response, error) {
+	By("getActiveSchedule")
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/active_schedules", components.Ports[ScalingEngine], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -495,6 +507,7 @@ func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.
 }
 
 func getScalingHistories(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
+	By("getScalingHistories")
 	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
 	if len(parameters) > 0 {
@@ -511,6 +524,7 @@ func getScalingHistories(apiServerPort int, pathVariables []string, parameters m
 }
 
 func getAppAggregatedMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
+	By("getAppAggregatedMetrics")
 	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
 	if len(parameters) > 0 {

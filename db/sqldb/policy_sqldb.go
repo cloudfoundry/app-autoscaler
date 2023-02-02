@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -141,7 +142,7 @@ func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models
 	return scalingPolicy, nil
 }
 
-func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policyJSON string, policyGuid string) error {
+func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error {
 	var query string
 	queryPrefix := "INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?,?,?) "
 	switch pdb.sqldb.DriverName() {
@@ -150,33 +151,44 @@ func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policyJ
 	case "mysql":
 		query = pdb.sqldb.Rebind(queryPrefix + "ON DUPLICATE KEY UPDATE policy_json=VALUES(policy_json), guid=VALUES(guid)")
 	}
-	_, err := pdb.sqldb.Exec(query, appId, policyJSON, policyGuid)
+	policyJSON, err := json.Marshal(policy)
+	if err != nil {
+		return fmt.Errorf("SaveAppPolicy failed to marshal policy:  %w", err)
+	}
+	_, err = pdb.sqldb.ExecContext(ctx, query, appId, policyJSON, policyGuid)
 	if err != nil {
 		pdb.logger.Error("save-app-policy", err, lager.Data{"query": query, "app_id": appId, "policyJSON": policyJSON, "policyGuid": policyGuid})
 	}
 	return err
 }
 
-func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundApps []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error) {
+func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundApps []string, oldPolicyGuid string, policy *models.ScalingPolicy, newPolicyGuid string) ([]string, error) {
 	if len(boundApps) == 0 && oldPolicyGuid == "" {
 		return nil, nil
 	}
 
 	var modifiedApps []string
+	newPolicyBytes, err := json.Marshal(policy)
+	if err != nil {
+		pdb.logger.Error("marshal policy", err, lager.Data{"newPolicyGuid": newPolicyGuid, "policy": policy, "oldPolicyGuid": oldPolicyGuid})
+		return nil, err
+	}
+	policyJson := string(newPolicyBytes)
 
 	tx, err := pdb.sqldb.Beginx()
 	if err != nil {
-		pdb.logger.Error("set-or-update-app-policies-begin-transaction", err, lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy, "oldPolicyGuid": oldPolicyGuid})
+		pdb.logger.Error("set-or-update-app-policies-begin-transaction", err, lager.Data{"newPolicyGuid": newPolicyGuid, "policyJson": policyJson, "oldPolicyGuid": oldPolicyGuid})
 		return nil, err
 	}
+
 	defer func() {
 		rollbackErr := tx.Rollback()
 		if rollbackErr == nil {
 			// a rollback was executed!
-			pdb.logger.Info("set-or-update-app-policies-transaction-rollback-executed", lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy, "oldPolicyGuid": oldPolicyGuid})
+			pdb.logger.Info("set-or-update-app-policies-transaction-rollback-executed", lager.Data{"newPolicyGuid": newPolicyGuid, "policyJson": policyJson, "oldPolicyGuid": oldPolicyGuid})
 		} else {
 			if errors.Is(err, sql.ErrTxDone) {
-				pdb.logger.Error("set-or-update-app-policies-transaction-rollback-error", err, lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy, "oldPolicyGuid": oldPolicyGuid})
+				pdb.logger.Error("set-or-update-app-policies-transaction-rollback-error", err, lager.Data{"newPolicyGuid": newPolicyGuid, "policyJson": policyJson, "oldPolicyGuid": oldPolicyGuid})
 			}
 		}
 	}()
@@ -222,9 +234,9 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundAp
 		// now replace the default policy
 		query = tx.Rebind("UPDATE policy_json SET guid = ?, policy_json = ? WHERE guid = ?")
 
-		_, err = tx.ExecContext(ctx, query, newPolicyGuid, newPolicy, oldPolicyGuid)
+		_, err = tx.ExecContext(ctx, query, newPolicyGuid, policyJson, oldPolicyGuid)
 		if err != nil {
-			pdb.logger.Error("rollback-set-or-update-app-policies", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			pdb.logger.Error("rollback-set-or-update-app-policies", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "policyJson": policyJson})
 			return nil, err
 		}
 	}
@@ -238,14 +250,14 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundAp
 		case "mysql":
 			query = tx.Rebind(queryPrefix + " ON DUPLICATE KEY UPDATE app_id = app_id")
 		}
-		res, err := tx.Exec(query, appId, newPolicy, newPolicyGuid)
+		res, err := tx.Exec(query, appId, policyJson, newPolicyGuid)
 		if err != nil {
-			pdb.logger.Error("set-default-app-policy", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			pdb.logger.Error("set-default-app-policy", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "policyJson": policyJson})
 			return nil, err
 		}
 		count, err := res.RowsAffected()
 		if err != nil {
-			pdb.logger.Error("set-default-app-policy-determine-rows-affected", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			pdb.logger.Error("set-default-app-policy-determine-rows-affected", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "policyJson": policyJson})
 			return nil, err
 		}
 		if count == 1 {
@@ -255,7 +267,7 @@ func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundAp
 
 	err = tx.Commit()
 	if err != nil {
-		pdb.logger.Error("update-app-policies-commit", err, lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+		pdb.logger.Error("update-app-policies-commit", err, lager.Data{"newPolicyGuid": newPolicyGuid, "policyJson": policyJson})
 		return nil, err
 	}
 	return modifiedApps, nil

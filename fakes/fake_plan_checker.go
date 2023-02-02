@@ -9,10 +9,10 @@ import (
 )
 
 type FakePlanChecker struct {
-	CheckPlanStub        func(models.ScalingPolicy, string) (bool, string, error)
+	CheckPlanStub        func(*models.ScalingPolicy, string) (bool, string, error)
 	checkPlanMutex       sync.RWMutex
 	checkPlanArgsForCall []struct {
-		arg1 models.ScalingPolicy
+		arg1 *models.ScalingPolicy
 		arg2 string
 	}
 	checkPlanReturns struct {
@@ -42,11 +42,11 @@ type FakePlanChecker struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePlanChecker) CheckPlan(arg1 models.ScalingPolicy, arg2 string) (bool, string, error) {
+func (fake *FakePlanChecker) CheckPlan(arg1 *models.ScalingPolicy, arg2 string) (bool, string, error) {
 	fake.checkPlanMutex.Lock()
 	ret, specificReturn := fake.checkPlanReturnsOnCall[len(fake.checkPlanArgsForCall)]
 	fake.checkPlanArgsForCall = append(fake.checkPlanArgsForCall, struct {
-		arg1 models.ScalingPolicy
+		arg1 *models.ScalingPolicy
 		arg2 string
 	}{arg1, arg2})
 	stub := fake.CheckPlanStub
@@ -68,13 +68,13 @@ func (fake *FakePlanChecker) CheckPlanCallCount() int {
 	return len(fake.checkPlanArgsForCall)
 }
 
-func (fake *FakePlanChecker) CheckPlanCalls(stub func(models.ScalingPolicy, string) (bool, string, error)) {
+func (fake *FakePlanChecker) CheckPlanCalls(stub func(*models.ScalingPolicy, string) (bool, string, error)) {
 	fake.checkPlanMutex.Lock()
 	defer fake.checkPlanMutex.Unlock()
 	fake.CheckPlanStub = stub
 }
 
-func (fake *FakePlanChecker) CheckPlanArgsForCall(i int) (models.ScalingPolicy, string) {
+func (fake *FakePlanChecker) CheckPlanArgsForCall(i int) (*models.ScalingPolicy, string) {
 	fake.checkPlanMutex.RLock()
 	defer fake.checkPlanMutex.RUnlock()
 	argsForCall := fake.checkPlanArgsForCall[i]

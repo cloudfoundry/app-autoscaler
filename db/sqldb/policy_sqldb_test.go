@@ -31,7 +31,6 @@ var _ = Describe("PolicySQLDB", func() {
 		appIds            map[string]bool
 		scalingPolicy     *models.ScalingPolicy
 		policyJson        []byte
-		policyJsonStr     string
 		policies          []*models.PolicyJson
 		testMetricName    = "TestMetricName"
 		username          string
@@ -256,6 +255,10 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("SavePolicy", func() {
+		var (
+			policyJsonStr string
+			policy        *models.ScalingPolicy
+		)
 		Context("when no policy is present for the app_id", func() {
 			JustBeforeEach(func() {
 				policyJsonStr = `{
@@ -271,7 +274,8 @@ var _ = Describe("PolicySQLDB", func() {
 						"adjustment":"+1"
 					}]
 				}`
-				err = pdb.SaveAppPolicy(context.Background(), appId, policyJsonStr, policyGuid)
+				Expect(json.Unmarshal([]byte(policyJsonStr), &policy)).ToNot(HaveOccurred())
+				err = pdb.SaveAppPolicy(context.Background(), appId, policy, policyGuid)
 			})
 			It("saves the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -307,8 +311,8 @@ var _ = Describe("PolicySQLDB", func() {
 						"adjustment":"+1"
 					}]
 				}`
-
-				err = pdb.SaveAppPolicy(context.Background(), appId, policyJsonStr, policyGuid)
+				Expect(json.Unmarshal([]byte(policyJsonStr), &policy)).ToNot(HaveOccurred())
+				err = pdb.SaveAppPolicy(context.Background(), appId, policy, policyGuid)
 			})
 			It("updates the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -399,9 +403,17 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("SetOrUpdateDefaultAppPolicy", func() {
-		newPolicy := `{"new": "policy"}`
-		var modifiedApps []string
+		const newPolicyStr = `{"new": "policy"}`
+		var (
+			modifiedApps []string
+			newPolicy    *models.ScalingPolicy
+		)
+		BeforeEach(func() {
+			newPolicy = nil
+			modifiedApps = nil
+		})
 		JustBeforeEach(func() {
+			Expect(json.Unmarshal([]byte(newPolicyStr), &newPolicy)).ToNot(HaveOccurred())
 			modifiedApps, err = pdb.SetOrUpdateDefaultAppPolicy(context.Background(), []string{appId, appId2, appId3}, policyGuid, newPolicy, policyGuid2)
 		})
 
@@ -424,6 +436,7 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 
 			It("sets the default app policy on apps without a scaling policy and apps with the old policy", func() {
+				Expect(err).NotTo(HaveOccurred())
 				Expect(modifiedApps).To(ConsistOf(appId, appId3))
 				Expect(getAppPolicy(appId)).To(MatchJSON(newPolicy))
 				Expect(getAppPolicy(appId2)).ToNot(MatchJSON(newPolicy))

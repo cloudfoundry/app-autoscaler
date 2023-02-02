@@ -45,6 +45,13 @@ type ScalingPolicy struct {
 	Schedules    *ScalingSchedules `json:"schedules,omitempty"`
 }
 
+func (s ScalingPolicy) String() string {
+	aJson, _ := json.Marshal(s)
+	return string(aJson)
+}
+
+var _ fmt.Stringer = &ScalingPolicy{}
+
 type ScalingRule struct {
 	MetricType            string `json:"metric_type"`
 	BreachDurationSeconds int    `json:"breach_duration_secs,omitempty"`
@@ -58,6 +65,19 @@ type ScalingSchedules struct {
 	Timezone              string                  `json:"timezone"`
 	RecurringSchedules    []*RecurringSchedule    `json:"recurring_schedule,omitempty"`
 	SpecificDateSchedules []*SpecificDateSchedule `json:"specific_date,omitempty"`
+}
+
+func (s *ScalingSchedules) IsEmpty() bool {
+	switch {
+	case s == nil:
+		return true
+	case len(s.SpecificDateSchedules) != 0:
+		return false
+	case len(s.RecurringSchedules) != 0:
+		return false
+	default:
+		return true
+	}
 }
 
 type RecurringSchedule struct {
