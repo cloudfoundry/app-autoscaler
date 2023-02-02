@@ -13,7 +13,6 @@ import (
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
 )
 
@@ -22,12 +21,12 @@ var _ = Describe("WsHelper", func() {
 		fakeMetricServer       *ghttp.Server
 		metricServerAddress    string
 		testHandshakeTimeout   = 5 * time.Millisecond
-		testMaxSetupRetryCount = 10
-		testMaxCloseRetryCount = 10
-		testRetryDelay         = 500 * time.Millisecond
+		testMaxSetupRetryCount = 3
+		testMaxCloseRetryCount = 3
+		testRetryDelay         = 1 * time.Millisecond
 		messageChan            chan []byte
 		pingPongChan           chan int
-		wsHelper               WSHelper
+		wsHelper               *WsHelper
 		logger                 *lagertest.TestLogger
 		wsh                    *testhelpers.WebsocketHandler
 		testAppId              = "test-app-id"
@@ -89,12 +88,36 @@ var _ = Describe("WsHelper", func() {
 		})
 		Context("when maximum number of setup retries reached", func() {
 			BeforeEach(func() {
-				fakeMetricServer.Close()
+				fakeMetricServer.RouteToHandler("GET", "/v1/envelopes",
+					testhelpers.RespondWithMultiple(
+						ghttp.RespondWith(500, ""),
+						ghttp.RespondWith(500, ""),
+						ghttp.RespondWith(500, ""),
+						ghttp.RespondWith(500, ""),
+					),
+				)
 			})
 			It("fails to setup websocket connection", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(logger.Buffer).Should(Say("failed-to-create-websocket-connection-to-metricserver"))
-				Eventually(logger.Buffer).Should(Say("maximum-number-of-setup-retries-reached"))
+				Expect(err).To(MatchError(MatchRegexp(fmt.Sprintf(".*failed after %d retries:.*", testMaxCloseRetryCount))))
+				Expect(err).To(MatchError(MatchRegexp(".*bad handshake.*")))
+				Expect(len(fakeMetricServer.ReceivedRequests())).To(Equal(4))
+			})
+		})
+		Context("when retries then connects correctly", func() {
+			BeforeEach(func() {
+				fakeMetricServer.RouteToHandler("GET", "/v1/envelopes",
+					testhelpers.RespondWithMultiple(
+						ghttp.RespondWith(500, ""),
+						ghttp.RespondWith(500, ""),
+						ghttp.RespondWith(500, ""),
+						wsh.ServeWebsocket,
+					),
+				)
+			})
+			It("successfully connects", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(fakeMetricServer.ReceivedRequests())).To(Equal(4))
 			})
 		})
 	})
@@ -110,9 +133,10 @@ var _ = Describe("WsHelper", func() {
 			Eventually(pingPongChan, 5*time.Second, 1*time.Second).Should(Receive(Equal(1)))
 		})
 		It("close the websocket connection", func() {
+			wsHelper.CloseWaitTime = 100 * time.Millisecond
 			err = wsHelper.CloseConn()
 			Expect(err).NotTo(HaveOccurred())
-			Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("successfully-close-ws-connection"))
+			Eventually(wsHelper.IsClosed, 200*time.Millisecond, 50*time.Millisecond).Should(BeTrue())
 		})
 		Context("when maximum number of close retries reached", func() {
 			BeforeEach(func() {
@@ -120,12 +144,14 @@ var _ = Describe("WsHelper", func() {
 				wsh.CloseWSConnection()
 			})
 			It("fails to close websocket connection", func() {
+				var err error
 				Eventually(func() error {
-					return wsHelper.CloseConn()
+					err = wsHelper.CloseConn()
+					return err
 				}).Should(HaveOccurred())
-				Eventually(logger.Buffer).Should(Say("failed-to-send-close-message-to-metricserver"))
-				Eventually(logger.Buffer).Should(Say("maximum-number-of-close-retries-reached"))
 
+				Expect(err).To(MatchError(MatchRegexp(fmt.Sprintf("failed to close correctly after %d retries:.*", testMaxCloseRetryCount))))
+				Expect(err).To(MatchError(MatchRegexp(".*close sent.*")))
 			})
 		})
 	})
@@ -140,7 +166,7 @@ var _ = Describe("WsHelper", func() {
 		It("send ping message to server", func() {
 			err = wsHelper.Ping()
 			Expect(err).ShouldNot(HaveOccurred())
-			Eventually(pingPongChan, 5*time.Second, 1*time.Second).Should(Receive(Equal(1)))
+			Eventually(pingPongChan, 5*time.Second, 100*time.Millisecond).Should(Receive(Equal(1)))
 		})
 		Context("when server is down", func() {
 			BeforeEach(func() {
@@ -149,8 +175,12 @@ var _ = Describe("WsHelper", func() {
 
 			})
 			It("fails to ping and reconnect", func() {
-				Eventually(func() error { return wsHelper.Ping() }, "2s").Should(HaveOccurred())
-				Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("maximum-number-of-close-retries-reached"))
+				var err error
+				Eventually(func() error {
+					err = wsHelper.Ping()
+					return err
+				}, "1s").Should(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp(fmt.Sprintf(".*failed after %d retries:.*", testMaxCloseRetryCount))))
 			})
 		})
 	})
@@ -176,9 +206,10 @@ var _ = Describe("WsHelper", func() {
 			})
 			It("fails to write envelops", func() {
 				Eventually(func() error {
-					return wsHelper.Write(&testEnvelope)
+					err = wsHelper.Write(&testEnvelope)
+					return err
 				}).Should(HaveOccurred())
-				Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("maximum-number-of-close-retries-reached"))
+				Expect(err).To(MatchError(MatchRegexp(fmt.Sprintf(".*failed after %d retries:.*", testMaxCloseRetryCount))))
 			})
 		})
 	})
