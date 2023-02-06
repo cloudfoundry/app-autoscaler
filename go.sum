@@ -440,8 +440,8 @@ github.com/mattn/go-sqlite3 v1.14.6 h1:dNPt6NO46WmLVt2DLNpwczCmdV5boIZ6g/tlDrlRU
 github.com/mattn/go-sqlite3 v1.14.6/go.mod h1:NyWgC/yNuGj7Q9rpYnZvas74GogHl5/Z4A/KQRfk6bU=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
-github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0 h1:rBhB9Rls+yb8kA4x5a/cWxOufWfXt24E+kq4YlbGj3g=
-github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0/go.mod h1:fJ0UAZc1fx3xZhU4eSHQDJ1ApFmTVhp5VTpV9tm2ogg=
+github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1 h1:9XE5ykDiC8eNSqIPkxx0EsV3kMX1oe4kQWRZjIgytUA=
+github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1/go.mod h1:qbKwBR+qQODzH2WD/s53mdgp/xVcXMlJb59GRFOp6Z4=
 github.com/mbilski/exhaustivestruct v1.2.0 h1:wCBmUnSYufAHO6J4AVWY6ff+oxWxsVFrwgOdMUQePUo=
 github.com/mbilski/exhaustivestruct v1.2.0/go.mod h1:OeTBVxQWoEmB2J2JCHmXWPJ0aksxSUOUy+nvtVEfzXc=
 github.com/mgechev/revive v1.2.5 h1:UF9AR8pOAuwNmhXj2odp4mxv9Nx2qUIwVz8ZsU+Mbec=

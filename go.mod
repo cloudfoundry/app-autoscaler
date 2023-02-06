@@ -21,7 +21,7 @@ require (
 	github.com/imdario/mergo v0.3.13
 	github.com/jackc/pgx/v5 v5.2.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
