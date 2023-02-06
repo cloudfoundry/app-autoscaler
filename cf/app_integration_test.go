@@ -49,7 +49,6 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	assert.Equal(t, 1, processes.GetInstances())
 }
 
-//nolint:unused
 func getEnv(key string) string {
 	envVar := os.Getenv(key)
 	if envVar == "" {
