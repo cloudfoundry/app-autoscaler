@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/cfhttp/v2 v2.0.1-0.20230113212937-05beac96f8c7
 	code.cloudfoundry.org/clock v1.0.0
 	code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65
-	code.cloudfoundry.org/go-loggregator/v9 v9.0.3
+	code.cloudfoundry.org/go-loggregator/v9 v9.0.4
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/cenkalti/backoff/v4 v4.2.0
