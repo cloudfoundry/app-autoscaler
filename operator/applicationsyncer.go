@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type Operator interface {

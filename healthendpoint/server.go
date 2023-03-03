@@ -11,7 +11,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

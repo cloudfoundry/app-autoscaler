@@ -7,7 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"

@@ -14,7 +14,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"

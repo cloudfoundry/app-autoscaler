@@ -10,7 +10,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"

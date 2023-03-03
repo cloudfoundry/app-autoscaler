@@ -6,7 +6,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"

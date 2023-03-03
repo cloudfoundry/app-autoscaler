@@ -7,7 +7,7 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v9"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"

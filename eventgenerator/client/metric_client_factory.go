@@ -7,7 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type GetMetricFunc func(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error)

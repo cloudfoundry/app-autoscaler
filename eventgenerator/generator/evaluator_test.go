@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp/v2"
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 	"github.com/cenkalti/backoff/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

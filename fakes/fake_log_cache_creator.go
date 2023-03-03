@@ -7,7 +7,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type FakeLogCacheClientCreator struct {

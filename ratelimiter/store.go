@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"golang.org/x/time/rate"
 )
 

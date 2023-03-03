@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 const (

@@ -3,7 +3,7 @@ package schedule
 import (
 	"sync"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"

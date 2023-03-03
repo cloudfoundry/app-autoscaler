@@ -17,10 +17,10 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
-	"github.com/pivotal-cf/brokerapi/v8"
-	"github.com/pivotal-cf/brokerapi/v8/domain"
+	"github.com/pivotal-cf/brokerapi/v9"
+	"github.com/pivotal-cf/brokerapi/v9/domain"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"

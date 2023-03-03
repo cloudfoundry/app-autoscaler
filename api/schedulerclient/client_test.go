@@ -12,7 +12,7 @@ import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerclient"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

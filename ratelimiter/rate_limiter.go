@@ -3,7 +3,7 @@ package ratelimiter
 import (
 	"time"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 const (

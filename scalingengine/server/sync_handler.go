@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type SyncHandler struct {

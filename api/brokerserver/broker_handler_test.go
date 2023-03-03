@@ -14,7 +14,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 
 	"github.com/gorilla/mux"
-	"github.com/pivotal-cf/brokerapi/v8/handlers"
+	"github.com/pivotal-cf/brokerapi/v9/handlers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -23,7 +23,7 @@ import (
 
 	"github.com/onsi/gomega/ghttp"
 
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

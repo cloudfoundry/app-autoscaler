@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	//TODO remove static check and use non deprecated version https://github.com/cloudfoundry/app-autoscaler-release/issues/978

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 

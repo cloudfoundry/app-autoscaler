@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	uuid "github.com/nu7hatch/gouuid"
 )
 

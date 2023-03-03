@@ -11,7 +11,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 

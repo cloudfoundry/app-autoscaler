@@ -5,7 +5,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 
 	"sync"
 	"time"

@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type ScalingEngine interface {

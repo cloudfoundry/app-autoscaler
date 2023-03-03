@@ -5,7 +5,7 @@ import (
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 
-	. "code.cloudfoundry.org/lager"
+	. "code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

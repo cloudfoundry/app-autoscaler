@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

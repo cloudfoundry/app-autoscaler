@@ -7,7 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type ScheduleSynchronizer struct {

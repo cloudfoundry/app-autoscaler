@@ -3,7 +3,7 @@ package healthendpoint_test
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/prometheus/client_golang/prometheus"
 
 	. "github.com/onsi/ginkgo/v2"

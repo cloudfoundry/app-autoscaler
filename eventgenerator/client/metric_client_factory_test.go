@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	logcache "code.cloudfoundry.org/go-log-cache"
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 )
 
 const testCertDir = "../../../../test-certs"

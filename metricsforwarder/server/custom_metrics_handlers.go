@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/patrickmn/go-cache"
 )
 

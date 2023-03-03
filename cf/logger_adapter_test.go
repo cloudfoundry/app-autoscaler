@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 )

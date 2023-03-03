@@ -10,8 +10,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	circuit "github.com/rubyist/circuitbreaker"

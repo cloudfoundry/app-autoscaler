@@ -12,7 +12,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"

@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type MetricPoller struct {

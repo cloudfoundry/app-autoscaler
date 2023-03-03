@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 func CreatePolicyDb(dbConf db.DatabaseConfig, logger lager.Logger) *PolicySQLDB {

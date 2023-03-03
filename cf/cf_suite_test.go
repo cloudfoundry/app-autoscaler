@@ -8,7 +8,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

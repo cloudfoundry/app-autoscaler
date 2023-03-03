@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 var handlersLogger = helpers.InitLoggerFromConfig(&helpers.LoggingConfig{Level: "error"}, "helpers.handlers")

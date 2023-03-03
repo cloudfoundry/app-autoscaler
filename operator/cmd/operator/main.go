@@ -16,7 +16,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/sync"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"

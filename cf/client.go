@@ -17,7 +17,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/v2"
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 const (
