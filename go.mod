@@ -33,9 +33,9 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/tedsuo/ifrit v0.0.0-20220120221754-dd274de71113
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.6.0
+	golang.org/x/crypto v0.7.0
 	golang.org/x/exp v0.0.0-20230304125523-9ff063c70017
-	golang.org/x/net v0.7.0
+	golang.org/x/net v0.8.0
 	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.53.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -220,9 +220,9 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20230203172020-98cc5a0785f9 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
