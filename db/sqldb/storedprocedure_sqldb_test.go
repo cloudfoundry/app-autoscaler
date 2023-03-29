@@ -151,6 +151,12 @@ as $$ SELECT $2 || ' from create', $1 || ' from create' $$`)
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function createCreds: %s", err.Error()))
 	}
+	if err := rows.Err(); err != nil {
+		Fail(fmt.Sprintf(
+			"error while createCreds: %s",
+			err.Error(),
+		))
+	}
 }
 
 func addDeleteFunction() {
@@ -172,6 +178,12 @@ $$`, instanceId, bindingId))
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function deleteCreds: %s", err.Error()))
 	}
+	if err := rows.Err(); err != nil {
+		Fail(fmt.Sprintf(
+			"error while deleteCreds: %s",
+			err.Error(),
+		))
+	}
 }
 
 func addDeleteAllFunction() {
@@ -190,6 +202,12 @@ $$`, instanceId))
 	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function deleteAll: %s", err.Error()))
+	}
+	if err := rows.Err(); err != nil {
+		Fail(fmt.Sprintf(
+			"error while deleteAll: %s",
+			err.Error(),
+		))
 	}
 }
 
@@ -210,6 +228,12 @@ $$`, instanceId, bindingId))
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function validate: %s", err.Error()))
 	}
+	if err := rows.Err(); err != nil {
+		Fail(fmt.Sprintf(
+			"error while validate function: %s",
+			err.Error(),
+		))
+	}
 }
 
 func deleteFunction(name string) {
@@ -218,5 +242,11 @@ func deleteFunction(name string) {
 	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not remove procedure %s: %s", name, err.Error()))
+	}
+	if err := rows.Err(); err != nil {
+		Fail(fmt.Sprintf(
+			"error while remove procedure: %s",
+			err.Error(),
+		))
 	}
 }
