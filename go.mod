@@ -31,7 +31,7 @@ require (
 	github.com/square/certstrap v1.3.0
 	github.com/steinfletcher/apitest v1.5.14
 	github.com/stretchr/testify v1.8.2
-	github.com/tedsuo/ifrit v0.0.0-20220120221754-dd274de71113
+	github.com/tedsuo/ifrit v0.0.0-20230330192023-5cba443a66c4
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
