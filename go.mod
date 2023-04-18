@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.4
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
-	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang/protobuf v1.5.3
 	github.com/golangci/golangci-lint v1.52.2
