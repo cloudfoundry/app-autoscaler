@@ -493,8 +493,8 @@ github.com/pelletier/go-toml/v2 v2.0.5 h1:ipoSadvV8oGUjnUbMub59IDPPwfxF694nG/jwb
 github.com/pelletier/go-toml/v2 v2.0.5/go.mod h1:OMHamSCAODeSsVrwwvcJOaoN0LIUIaFVNZzmWyNfXas=
 github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea h1:sKwxy1H95npauwu8vtF95vG/syrL0p8fSZo/XlDg5gk=
 github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea/go.mod h1:1VcHEd3ro4QMoHfiNl/j7Jkln9+KQuorp0PItHMJYNg=
-github.com/pivotal-cf/brokerapi/v9 v9.0.0 h1:KMJ0NcHtEntdI8T+woTtzg3MrcDDklhupDennc5KHME=
-github.com/pivotal-cf/brokerapi/v9 v9.0.0/go.mod h1:iLRDxJv+ctZOVi9DcnCDaBJydssX0RqQRsgZfKK7YYA=
+github.com/pivotal-cf/brokerapi/v9 v9.0.1 h1:RCFVI88hL7OoeAmpqH3a/oh+QWVSDV9vjXxT+cJQkFo=
+github.com/pivotal-cf/brokerapi/v9 v9.0.1/go.mod h1:8tU05vMehQWHfkmjiLdo9QoQ+K5FWinN07f8O3MZ7Vw=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
