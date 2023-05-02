@@ -4,7 +4,7 @@ MAKEFLAGS = -s
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
 PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
-CGO_ENABLED = 1
+CGO_ENABLED = 1 # This is set to enforce dynamic linking which is a requirement of dynatrace.
 BUILDTAGS :=
 BUILDFLAGS := -ldflags '-linkmode=external'
 
