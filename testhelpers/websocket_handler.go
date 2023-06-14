@@ -89,11 +89,11 @@ func (h *WebsocketHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCod
 	for {
 		select {
 		case <-clientWentAway:
-			return
+			return closeCode, closeMessage
 		case <-keepAliveExpired:
 			closeCode = websocket.ClosePolicyViolation
 			closeMessage = "Client did not respond to ping before keep-alive timeout expired."
-			return
+			return closeCode, closeMessage
 		}
 	}
 }
