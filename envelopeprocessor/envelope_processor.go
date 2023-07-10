@@ -12,7 +12,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 )
 
 type EnvelopeProcessorCreator interface {
