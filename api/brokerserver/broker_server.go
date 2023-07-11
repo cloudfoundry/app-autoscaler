@@ -17,22 +17,15 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
-	"github.com/pivotal-cf/brokerapi/v9"
-	"github.com/pivotal-cf/brokerapi/v9/domain"
+	"github.com/pivotal-cf/brokerapi/v10"
+	"github.com/pivotal-cf/brokerapi/v10/domain"
 
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
-
-func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	vh(w, r, vars)
-}
 
 type MiddleWareBrokerCredentials struct {
 	BrokerUsername     string
@@ -123,7 +116,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	autoscalerBroker := broker.New(logger.Session("broker"), conf, bindingdb, policydb, catalog.Services, credentials)
 
-	r := mux.NewRouter()
+	r := chi.NewRouter()
 
 	r.Use(basicAuthentication.Middleware)
 	r.Use(httpStatusCollectMiddleware.Collect)
