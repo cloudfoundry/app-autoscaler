@@ -18,7 +18,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.4
-	github.com/jackc/pgx/v5 v5.4.1
+	github.com/jackc/pgx/v5 v5.4.2
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
