@@ -604,8 +604,8 @@ code.cloudfoundry.org/go-diodes v0.0.0-20221212174934-b8cb650f2489 h1:bLiGonuL4K
 code.cloudfoundry.org/go-diodes v0.0.0-20221212174934-b8cb650f2489/go.mod h1:gbU0Jysh1Ep/3KfwjLLdzSJWbd9Ybh59UYCuTNBpm7U=
 code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65 h1:XtOanl6QBUYNDI2+km7qtlY/KOkhQRpVBPPTapd6glc=
 code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65/go.mod h1:80JBMn31Cl0fzUNSsT7m0Qy4lGeT8dtA7kOR0WWt+Os=
-code.cloudfoundry.org/go-loggregator/v9 v9.0.6 h1:L2zNzSMqo6kwLw4p5/c6PF7Wur4WCnvar9+MbOevYMs=
-code.cloudfoundry.org/go-loggregator/v9 v9.0.6/go.mod h1:yc3+eazjM8HC8NSTtaUIsSSalWf5rNOEbKTtvr61Z+8=
+code.cloudfoundry.org/go-loggregator/v9 v9.0.7 h1:vM351mliuq6Olxarar6BYFqVPYR8D5SmomD2SZA9fUY=
+code.cloudfoundry.org/go-loggregator/v9 v9.0.7/go.mod h1:THyXb1L629OSRLh73ER7SwaRV1OPmWgh0TFgmTsgJMk=
 code.cloudfoundry.org/lager/v3 v3.0.2 h1:H0dcQY+814G1Ea0e5K/AMaMpcr+Pe5Iv+AALJEwrP9U=
 code.cloudfoundry.org/lager/v3 v3.0.2/go.mod h1:zA6tOIWhr5uZUez+PGpdfBHDWQOfhOrr0cgKDagZPwk=
 code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921 h1:1PLAuQR56K2pw0lnlcXe+37uOaGg939W1Lqv8wxYpu4=
@@ -2119,8 +2119,9 @@ google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQ
 google.golang.org/protobuf v1.28.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.29.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
-google.golang.org/protobuf v1.30.0 h1:kPPoIgf3TsEvrm0PFe15JQ+570QVxYzEvvHqChK+cng=
 google.golang.org/protobuf v1.30.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
+google.golang.org/protobuf v1.31.0 h1:g0LDEJHgrBl9N9r17Ru3sqWhkIx2NB67okBHPwC7hs8=
+google.golang.org/protobuf v1.31.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
