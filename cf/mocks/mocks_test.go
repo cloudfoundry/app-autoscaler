@@ -1,8 +1,6 @@
 package mocks_test
 
 import (
-	"errors"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -290,9 +288,9 @@ var _ = Describe("Cf cloud controller", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return success", func() {
-				userAdmin, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
+				userSpaceDeveloper, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(userAdmin).To(BeTrue())
+				Expect(userSpaceDeveloper).To(BeTrue())
 			})
 		})
 		When("the mocks return 401", func() {
@@ -308,9 +306,9 @@ var _ = Describe("Cf cloud controller", func() {
 				DeferCleanup(mocks.Close)
 			})
 			It("will return unauthorised", func() {
-				_, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
-				Expect(err).To(HaveOccurred())
-				Expect(errors.Is(err, cf.ErrUnauthrorized)).To(BeTrue())
+				userSpaceDeveloper, err := cfc.IsUserSpaceDeveloper("bearer a-test-access-token", "test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(userSpaceDeveloper).To(BeFalse())
 			})
 		})
 	})

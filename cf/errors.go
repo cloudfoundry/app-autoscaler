@@ -8,6 +8,8 @@ import (
 )
 
 const cfResourceNotFound = 10010
+const cfNotAuthenticated = 10002
+const cfNotAuthorised = 10003
 
 type CFErrorResponse struct {
 	Description string `json:"description"`
@@ -17,6 +19,9 @@ type CFErrorResponse struct {
 
 var CfResourceNotFound = &CfError{Errors: []CfErrorItem{{Detail: "App usage event not found", Title: "CF-ResourceNotFound", Code: cfResourceNotFound}}}
 var CfInternalServerError = &CfError{Errors: []CfErrorItem{{Detail: "An unexpected, uncaught error occurred; the CC logs will contain more information", Title: "UnknownError", Code: 10001}}}
+var CfNotAuthenticated = &CfError{Errors: []CfErrorItem{{Detail: "No auth token was given, but authentication is required for this endpoint", Title: "CF-NotAuthenticated", Code: cfNotAuthenticated}}}
+var CfNotAuthorized = &CfError{Errors: []CfErrorItem{{Detail: "The authenticated user does not have permission to perform this operation", Title: "CF-NotAuthorized", Code: cfNotAuthorised}}}
+
 var _ error = &CfError{}
 var ErrInvalidJson = fmt.Errorf("invalid error json")
 
@@ -38,10 +43,20 @@ func NewCfError(url string, resourceId string, statusCode int, respBody []byte) 
 
 // CfError cf V3 Error type
 type CfError struct {
-	Errors     []CfErrorItem `json:"errors"`
+	Errors     ErrorItems `json:"errors"`
 	StatusCode int
 	ResourceId string
 	url        string
+}
+type ErrorItems []CfErrorItem
+
+func (e ErrorItems) hasError(errorCode int) bool {
+	for _, item := range e {
+		if item.Code == errorCode {
+			return true
+		}
+	}
+	return false
 }
 
 type CfErrorItem struct {
@@ -63,19 +78,26 @@ func (c *CfError) Error() string {
 	return fmt.Sprintf("cf api Error url='%s', resourceId='%s': %s", c.url, c.ResourceId, message)
 }
 
-func (c *CfError) IsNotFound() bool {
+func (c *CfError) IsValid() bool {
+	return c != nil && len(c.Errors) > 0
+}
+
+func (c *CfError) ContainsError(errorCode int) bool {
 	if c.IsValid() {
-		for _, item := range c.Errors {
-			if item.Code == cfResourceNotFound {
-				return true
-			}
-		}
+		return c.Errors.hasError(errorCode)
 	}
 	return false
 }
 
-func (c *CfError) IsValid() bool {
-	return c != nil && len(c.Errors) > 0
+func (c *CfError) IsNotFound() bool {
+	return c.ContainsError(cfResourceNotFound)
+}
+func (c *CfError) IsNotAuthorised() bool {
+	return c.ContainsError(cfNotAuthorised)
+}
+
+func (c *CfError) IsNotAuthenticated() bool {
+	return c.ContainsError(cfNotAuthenticated)
 }
 
 func truncateString(stringToTrunk string, length int) string {

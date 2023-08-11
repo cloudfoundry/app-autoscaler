@@ -59,6 +59,22 @@ var _ = Describe("Errors test", func() {
 			})
 
 		})
+		Context("resource not authorized", func() {
+			BeforeEach(func() {
+				errorResponse = `{"errors": [{"detail": "The authenticated user does not have permission to perform this operation","title": "CF-NotAuthorized","code": 10003}]}`
+			})
+			It("Should return true for IsNotAuthorised()", func() {
+				Expect(cfError.IsNotAuthorised()).To(BeTrue())
+			})
+		})
+		Context("resource not authenticated", func() {
+			BeforeEach(func() {
+				errorResponse = `{"errors": [{"detail": "No auth token was given, but authentication is required for this endpoint","title": "CF-NotAuthenticated","code": 10002}]}`
+			})
+			It("Should return true for IsNotAuthenticated()", func() {
+				Expect(cfError.IsNotAuthenticated()).To(BeTrue())
+			})
+		})
 		Context("There is one error", func() {
 			BeforeEach(func() { errorResponse = `{"errors": [{"code": 1,"title": "Title","detail": "Detail"}]}` })
 			It("Should have the right message", func() {

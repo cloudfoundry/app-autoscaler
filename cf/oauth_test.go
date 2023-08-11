@@ -44,7 +44,7 @@ var _ = Describe("Oauth", func() {
 		fakeTokenServer *mocks.Server
 
 		userInfoStatus   int
-		userInfoResponse userInfo
+		userInfoResponse interface{}
 
 		userScopeStatus   int
 		userScopeResponse userScope
@@ -110,32 +110,53 @@ var _ = Describe("Oauth", func() {
 			})
 		})
 
-		Context("user info endpoint returns 401 statusCode", func() {
-			BeforeEach(func() {
-				userInfoStatus = http.StatusUnauthorized
+		Context("user info endpoint", func() {
+			Context("returns 401 statusCode", func() {
+				BeforeEach(func() {
+					userInfoStatus = http.StatusUnauthorized
+				})
+				It("should false", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(isUserSpaceDeveloperFlag).To(BeFalse())
+				})
 			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp("Unauthorized")))
-			})
-		})
 
-		Context("user info endpoint returns non-200 and non-401 statusCode", func() {
-			BeforeEach(func() {
-				userInfoStatus = http.StatusBadRequest
+			Context("uua returns not found", func() {
+				BeforeEach(func() {
+					userInfoStatus = http.StatusNotFound
+				})
+				It("should return false", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(isUserSpaceDeveloperFlag).To(BeFalse())
+				})
 			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp("Failed to get user info, statuscode :400")))
+			Context("response code 404 but not from cc", func() {
+				BeforeEach(func() {
+					userInfoStatus = http.StatusNotFound
+				})
+				It("should return false", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(isUserSpaceDeveloperFlag).To(BeFalse())
+				})
 			})
-		})
 
-		Context("user info response is not in json format", func() {
-			BeforeEach(func() {
-				fakeTokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWith(http.StatusOK, "non-json-response"))
+			Context("returns non 200,401,404 statusCode", func() {
+				BeforeEach(func() {
+					userInfoStatus = http.StatusBadRequest
+				})
+				It("should error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(MatchRegexp("Failed to get user info, statuscode :400")))
+				})
 			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
+
+			Context("is not in json format", func() {
+				BeforeEach(func() {
+					fakeTokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWith(http.StatusOK, "non-json-response"))
+				})
+				It("should error", func() {
+					Expect(err).To(HaveOccurred())
+				})
 			})
 		})
 
@@ -149,43 +170,56 @@ var _ = Describe("Oauth", func() {
 			})
 		})
 
-		Context("apps endpoint returns 400 status code", func() {
-			BeforeEach(func() {
-				appStatus = http.StatusBadRequest
+		Context("apps endpoint", func() {
+			Context("returns 400 status code", func() {
+				BeforeEach(func() {
+					appStatus = http.StatusBadRequest
+				})
+				It("should error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(MatchRegexp("400")))
+				})
 			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp("400")))
+
+			Context("returns 401 status code", func() {
+				BeforeEach(func() {
+					appStatus = http.StatusUnauthorized
+				})
+				It("should error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(MatchRegexp(`CF-NotAuthenticated`)))
+				})
+			})
+
+			Context("returns 404 status code", func() {
+				BeforeEach(func() {
+					appStatus = http.StatusNotFound
+				})
+				It("should error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(MatchRegexp(`CF-ResourceNotFound`)))
+				})
 			})
 		})
+		Context("roles endpoint", func() {
+			Context("roles endpoint 400 status code", func() {
+				BeforeEach(func() {
+					rolesStatus = http.StatusBadRequest
+				})
+				It("should error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper userId\(test-user-id\), spaceId\(test-space-id\):.*page 1:.*cf.Response\[.*cf.Role\]:.*400`)))
+				})
+			})
 
-		Context("apps endpoint returns 401 status code", func() {
-			BeforeEach(func() {
-				appStatus = http.StatusUnauthorized
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp("401")))
-			})
-		})
-
-		Context("roles endpoint returns 200 and 400 status code", func() {
-			BeforeEach(func() {
-				rolesStatus = http.StatusBadRequest
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`failed IsUserSpaceDeveloper userId\(test-user-id\), spaceId\(test-space-id\):.*page 1:.*cf.Response\[.*cf.Role\]:.*400`)))
-			})
-		})
-
-		Context("roles endpoint returns 401 status code", func() {
-			BeforeEach(func() {
-				rolesStatus = http.StatusUnauthorized
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(MatchRegexp(`.*userId\(test-user-id\), spaceId\(test-space-id\):.*cf.Response\[.*cf.Role\]:.*invalid error json`)))
+			Context("roles endpoint returns 404 status code", func() {
+				BeforeEach(func() {
+					rolesStatus = http.StatusNotFound
+				})
+				It("should return false", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(isUserSpaceDeveloperFlag).To(BeFalse())
+				})
 			})
 		})
 

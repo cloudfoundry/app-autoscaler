@@ -65,23 +65,38 @@ func (a AddMock) GetApp(appState string, statusCode int, spaceGuid cf.SpaceId) A
 	Expect(err).NotTo(HaveOccurred())
 	updated, err := time.Parse(time.RFC3339, "2022-07-21T14:30:17Z")
 	Expect(err).NotTo(HaveOccurred())
-	a.server.RouteToHandler("GET",
-		regexp.MustCompile(`^/v3/apps/[^/]+$`),
-		ghttp.RespondWithJSONEncoded(statusCode, cf.App{
-			Guid:      "testing-guid-get-app",
-			Name:      "mock-get-app",
-			State:     appState,
-			CreatedAt: created,
-			UpdatedAt: updated,
-			Relationships: cf.Relationships{
-				Space: &cf.Space{
-					Data: cf.SpaceData{
-						Guid: spaceGuid,
-					},
+
+	response := definedResponsesOR(statusCode, cf.App{
+		Guid:      "testing-guid-get-app",
+		Name:      "mock-get-app",
+		State:     appState,
+		CreatedAt: created,
+		UpdatedAt: updated,
+		Relationships: cf.Relationships{
+			Space: &cf.Space{
+				Data: cf.SpaceData{
+					Guid: spaceGuid,
 				},
 			},
-		}))
+		},
+	})
+	a.server.RouteToHandler("GET",
+		regexp.MustCompile(`^/v3/apps/[^/]+$`),
+		ghttp.RespondWithJSONEncoded(statusCode, response))
 	return a
+}
+
+func definedResponsesOR(statusCode int, response interface{}) interface{} {
+	switch statusCode {
+	case 401:
+		response = cf.CfNotAuthenticated
+	case 403:
+		response = cf.CfNotAuthorized
+	case 404:
+		response = cf.CfResourceNotFound
+	default:
+	}
+	return response
 }
 
 func (a AddMock) GetAppProcesses(processes int) AddMock {
@@ -112,7 +127,7 @@ func (a AddMock) ScaleAppWebProcess() AddMock {
 
 func (a AddMock) Roles(statusCode int, roles ...cf.Role) AddMock {
 	a.server.RouteToHandler("GET", "/v3/roles",
-		ghttp.RespondWithJSONEncoded(statusCode, cf.Response[cf.Role]{Resources: roles}))
+		ghttp.RespondWithJSONEncoded(statusCode, definedResponsesOR(statusCode, cf.Response[cf.Role]{Resources: roles})))
 	return a
 }
 

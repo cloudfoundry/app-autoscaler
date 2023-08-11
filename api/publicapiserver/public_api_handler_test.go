@@ -281,11 +281,18 @@ var _ = Describe("PublicApiHandler", func() {
 	})
 
 	Describe("DetachScalingPolicy", func() {
+		BeforeEach(func() {
+			req, _ = http.NewRequest(http.MethodDelete, "", nil)
+			pathVariables["appId"] = TEST_APP_ID
+		})
 		JustBeforeEach(func() {
 			handler.DetachScalingPolicy(resp, req, pathVariables)
 		})
 
 		Context("When appId is not present", func() {
+			BeforeEach(func() {
+				delete(pathVariables, "appId")
+			})
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
@@ -294,8 +301,6 @@ var _ = Describe("PublicApiHandler", func() {
 
 		Context("When delete policy errors", func() {
 			BeforeEach(func() {
-				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodDelete, "", nil)
 				policydb.DeletePolicyReturns(fmt.Errorf("Failed to save policy"))
 			})
 			It("should fail with 500", func() {
@@ -306,8 +311,6 @@ var _ = Describe("PublicApiHandler", func() {
 
 		Context("When scheduler returns non 200 and non 204 status code", func() {
 			BeforeEach(func() {
-				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", nil)
 				schedulerStatus = 500
 			})
 			It("should fail with 500", func() {
@@ -318,8 +321,6 @@ var _ = Describe("PublicApiHandler", func() {
 
 		Context("When scheduler returns 200 status code", func() {
 			BeforeEach(func() {
-				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", nil)
 				schedulerStatus = 200
 			})
 			It("should succeed", func() {
@@ -380,8 +381,6 @@ var _ = Describe("PublicApiHandler", func() {
 
 		Context("When scheduler returns 204 status code", func() {
 			BeforeEach(func() {
-				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", nil)
 				schedulerStatus = 204
 			})
 			It("should succeed", func() {

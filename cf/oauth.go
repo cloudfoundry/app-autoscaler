@@ -3,6 +3,7 @@ package cf
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,7 +17,7 @@ const (
 )
 
 var (
-	ErrUnauthrorized      = fmt.Errorf(http.StatusText(http.StatusUnauthorized))
+	ErrUnauthorized       = fmt.Errorf(http.StatusText(http.StatusUnauthorized))
 	ErrInvalidTokenFormat = fmt.Errorf("Invalid token format")
 )
 
@@ -27,6 +28,10 @@ func (c *Client) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error
 func (c *CtxClient) IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error) {
 	userId, err := c.getUserId(ctx, userToken)
 	if err != nil {
+		if errors.Is(ErrUnauthorized, err) {
+			c.logger.Error("getUserId: token Not authorized", err)
+			return false, nil
+		}
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
@@ -37,6 +42,10 @@ func (c *CtxClient) IsUserSpaceDeveloper(ctx context.Context, userToken string, 
 
 	roles, err := c.GetSpaceDeveloperRoles(ctx, spaceId, userId)
 	if err != nil {
+		if IsNotFound(err) {
+			c.logger.Info("GetSpaceDeveloperRoles: Not not found", lager.Data{"userId": userId, "spaceid": spaceId})
+			return false, nil
+		}
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
 
@@ -123,24 +132,25 @@ func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, er
 		return "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode == http.StatusUnauthorized {
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		userInfo := struct {
+			UserId UserId `json:"user_id"`
+		}{}
+		err = json.NewDecoder(resp.Body).Decode(&userInfo)
+		if err != nil {
+			c.logger.Error("Failed to parse user info response body", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
+			return "", err
+		}
+		return userInfo.UserId, nil
+	case http.StatusNotFound, http.StatusUnauthorized:
 		c.logger.Error("Failed to get user info, token invalid", nil, lager.Data{"userInfoEndpoint": userInfoEndpoint, "statusCode": resp.StatusCode})
-		return "", ErrUnauthrorized
-	} else if resp.StatusCode != http.StatusOK {
+		return "", ErrUnauthorized
+	default:
 		c.logger.Error("Failed to get user info", nil, lager.Data{"userInfoEndpoint": userInfoEndpoint, "statusCode": resp.StatusCode})
 		return "", fmt.Errorf("Failed to get user info, statuscode :%v", resp.StatusCode)
 	}
-
-	userInfo := struct {
-		UserId UserId `json:"user_id"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&userInfo)
-	if err != nil {
-		c.logger.Error("Failed to parse user info response body", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
-		return "", err
-	}
-
-	return userInfo.UserId, nil
 }
 
 func (c *CtxClient) getSpaceId(ctx context.Context, appId Guid) (SpaceId, error) {

@@ -71,12 +71,18 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 		}
 		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(userToken, cf.Guid(appId))
 		if err != nil {
-			if errors.Is(err, cf.ErrUnauthrorized) {
+			switch {
+			case cf.IsNotFound(err):
+				handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
+					Code:    "App not found",
+					Message: "The app guid supplied does not exist"})
+				return
+			case errors.Is(err, cf.ErrUnauthorized):
 				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 					Code:    "Unauthorized",
 					Message: "You are not authorized to perform the requested action"})
 				return
-			} else {
+			default:
 				mw.logger.Error("failed to check space developer permissions", err, nil)
 				handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 					Code:    "Internal-Server-Error",
@@ -84,6 +90,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 				return
 			}
 		}
+
 		if isUserSpaceDeveloper {
 			next.ServeHTTP(w, r)
 			return
@@ -156,7 +163,7 @@ func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 		}
 		isTokenAuthorized, err := mw.cfClient.IsTokenAuthorized(clientToken, mw.clientId)
 		if err != nil {
-			if errors.Is(err, cf.ErrUnauthrorized) {
+			if errors.Is(err, cf.ErrUnauthorized) {
 				writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
 				return
 			} else {

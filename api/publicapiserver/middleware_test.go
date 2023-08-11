@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo/v2"
@@ -62,6 +64,7 @@ var _ = Describe("Middleware", func() {
 
 			})
 		})
+
 		Context("Invalid user token format", func() {
 			Context("when user token is not a bearer token", func() {
 				BeforeEach(func() {
@@ -101,6 +104,20 @@ var _ = Describe("Middleware", func() {
 				CheckResponse(resp, http.StatusBadRequest, models.ErrorResponse{
 					Code:    "Bad Request",
 					Message: "Malformed or missing appId",
+				})
+			})
+		})
+		Context("App does not exist", func() {
+			BeforeEach(func() {
+				fakeCFClient.IsUserAdminReturns(false, nil)
+				fakeCFClient.IsUserSpaceDeveloperReturns(false, cf.CfResourceNotFound)
+				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+				req.Header.Add("Authorization", TEST_USER_TOKEN)
+			})
+			It("should fail with 404", func() {
+				CheckResponse(resp, http.StatusNotFound, models.ErrorResponse{
+					Code:    "App not found",
+					Message: "The app guid supplied does not exist",
 				})
 			})
 		})
@@ -144,6 +161,21 @@ var _ = Describe("Middleware", func() {
 				CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
 					Code:    "Internal-Server-Error",
 					Message: "Failed to check space developer permission",
+				})
+			})
+		})
+		Context("isspacedeveloper check fails unauthorised", func() {
+			BeforeEach(func() {
+				fakeCFClient.IsUserAdminReturns(false, nil)
+				fakeCFClient.IsUserSpaceDeveloperReturns(false, fmt.Errorf("wrapped error %w", cf.ErrUnauthorized))
+
+				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+				req.Header.Add("Authorization", TEST_USER_TOKEN)
+			})
+			It("should fail with 401", func() {
+				CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
+					Code:    "Unauthorized",
+					Message: "You are not authorized to perform the requested action",
 				})
 			})
 		})
