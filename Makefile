@@ -18,6 +18,7 @@ export GO111MODULE=on
 #GINKGO_OPTS=-r --race --require-suite -p --randomize-all --cover
 
 GINKGO_OPTS=-r --race --require-suite --randomize-all --cover ${OPTS}
+GINKGO_VERSION=v$(shell cat ../../.tool-versions | grep ginkgo  | cut -d " " -f 2 )
 
 build-%:
 	@echo "# building $*"
@@ -42,24 +43,17 @@ build_test-%: generate
 
 check: fmt lint build test
 
-ginkgo_check:
-	@ current_version=$(shell ginkgo version | cut -d " " -f 3 | sed -E 's/([0-9]+\.[0-9]+)\..*/\1/');\
-	expected_version=$(shell grep "ginkgo"  "../../.tool-versions" | cut -d " " -f 2 | sed -E 's/([0-9]+\.[0-9]+)\..*/\1/');\
-	if [ "$${current_version}" != "$${expected_version}" ]; then \
-        echo "WARNING: Expected to have ginkgo version '$${expected_version}.x' but we have $(shell ginkgo version)";\
-    fi
-
-test: ginkgo_check
+test: generate
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true ginkgo -p ${GINKGO_OPTS} --skip-package=integration
+	@APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} -p ${GINKGO_OPTS} --skip-package=integration
 
-testsuite: ginkgo_check
-	APP_AUTOSCALER_TEST_RUN=true ginkgo -p ${GINKGO_OPTS} ${TEST}
+testsuite: generate
+	APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} -p ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration
-integration: ginkgo_check
+integration: generate
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} integration
+	APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} ${GINKGO_OPTS} integration
 
 .PHONY: generate
 generate:
