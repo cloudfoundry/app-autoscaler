@@ -28,7 +28,7 @@ build: $(addprefix build-,$(binaries))
 
 build_tests: $(addprefix build_test-,$(test_dirs))
 
-build_test-%:
+build_test-%: generate
 	@echo " - building '$*' tests"
 	@export build_folder=${PWD}/build/tests/$* &&\
 	 mkdir -p $${build_folder} &&\
@@ -61,8 +61,7 @@ integration: ginkgo_check
 	@echo "# Running integration tests"
 	APP_AUTOSCALER_TEST_RUN=true ginkgo ${GINKGO_OPTS} integration
 
-.PHONY: fakes generate
-fakes: generate
+.PHONY: generate
 generate:
 	@echo "# Generating counterfeits"
 	@COUNTERFEITER_NO_GENERATE_WARNING=true go generate ./...
@@ -83,3 +82,4 @@ clean:
 	@echo "# cleaning autoscaler"
 	@go clean -cache -testcache
 	@rm -rf build
+	@rm -rf fakes/fake_*.go
