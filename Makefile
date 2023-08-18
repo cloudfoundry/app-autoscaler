@@ -10,7 +10,7 @@ BUILDTAGS :=
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
-binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
+binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -v vendor)
 test_dirs=$(shell   find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
 export GO111MODULE=on
 
@@ -74,21 +74,6 @@ importfmt:
 fmt: importfmt
 	@FORMATTED=`go fmt $(PACKAGE_DIRS)`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
-
-buildtools-force:
-	@echo "# Installing build tools"
-	go mod download
-	go install github.com/square/certstrap
-	go install github.com/onsi/ginkgo/v2/ginkgo
-	go install github.com/maxbrunsfeld/counterfeiter/v6
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint
-
-.PHONY: buildtools
-buildtools:
-	@echo "# Installing build tools"
-	@which certstrap >/dev/null || go install github.com/square/certstrap
-	@which ginkgo >/dev/null  && [ "v$(shell ginkgo version | awk '{ print $$3}')" = "$(shell cat go.mod | grep ginkgo | awk '{ print $$2}')" ] ||  go install github.com/onsi/ginkgo/v2/ginkgo
-	@which counterfeiter >/dev/null || go install github.com/maxbrunsfeld/counterfeiter/v6
 
 lint:
 	@cd ../../; make lint_autoscaler OPTS=${OPTS}
