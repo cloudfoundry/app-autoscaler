@@ -1,11 +1,14 @@
 SHELL := /bin/bash
-.SHELLFLAGS = -euo pipefail -c
-MAKEFLAGS = -s
-GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
-PACKAGE_DIRS := $(shell go list ./... | grep -v /vendor/ | grep -v e2e)
+.SHELLFLAGS := -eu -o pipefail -c
+MAKEFLAGS := -s
 
-CGO_ENABLED = 1 # This is set to enforce dynamic linking which is a requirement of dynatrace.
+GO_VERSION = $(shell go version | sed --expression='s/^[^0-9.]*\([0-9.]*\).*/\1/')
+GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
+PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
+								 | grep --invert-match --regexp='e2e')
+
+# `CGO_ENABLED := 1` is required to enforce dynamic linking which is a requirement of dynatrace.
+CGO_ENABLED := 1
 BUILDTAGS :=
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
@@ -19,6 +22,25 @@ export GO111MODULE=on
 
 GINKGO_OPTS=-r --race --require-suite --randomize-all --cover ${OPTS}
 GINKGO_VERSION=v$(shell cat ../../.tool-versions | grep ginkgo  | cut -d " " -f 2 )
+
+
+app-fakes-dir := ./fakes
+app-fakes-files := $(wildcard ${app-fakes-dir}/*.go)
+
+.PHONY: generate-fakes
+generate-fakes: ${app-fakes-dir} ${app-fakes-files}
+${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./generate-fakes.go
+	@echo "# Generating counterfeits"
+	mkdir -p '${app-fakes-dir}'
+	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate ./...
+
+
+
+.PHONY: go-mod-tidy
+go-mod-tidy: ${app-fakes-dir} ${app-fakes-files}
+	go mod tidy
+
+
 
 build-%:
 	@echo "# building $*"
@@ -36,9 +58,9 @@ build_test-%: generate
 	 cd $* &&\
 	 for package in $$(  go list ./... | sed 's|.*/autoscaler/$*|.|' | awk '{ print length, $$0 }' | sort -n -r | cut -d" " -f2- );\
 	 do\
-	   export test_file=$${build_folder}/$${package}.test;\
-	   echo "   - compiling $${package} to $${test_file}";\
-	   go test -c -o $${test_file} $${package};\
+		 export test_file=$${build_folder}/$${package}.test;\
+		 echo "   - compiling $${package} to $${test_file}";\
+		 go test -c -o $${test_file} $${package};\
 	 done;
 
 check: fmt lint build test
@@ -75,5 +97,5 @@ lint:
 clean:
 	@echo "# cleaning autoscaler"
 	@go clean -cache -testcache
-	@rm -rf build
-	@rm -rf fakes/fake_*.go
+	@rm --force --recursive 'build'
+	@rm --force --recursive 'fakes'
