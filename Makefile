@@ -25,27 +25,39 @@ export GO111MODULE=on
 GINKGO_OPTS=-r --race --require-suite --randomize-all --cover ${OPTS}
 GINKGO_VERSION=v$(shell cat ../../.tool-versions | grep ginkgo  | cut -d " " -f 2 )
 
-
+# The presence of the subsequent directory indicates wheather the fakes still need to be generated
+# or not.
 app-fakes-dir := ./fakes
 app-fakes-files := $(wildcard ${app-fakes-dir}/*.go)
 
 .PHONY: generate-fakes
 generate-fakes: ${app-fakes-dir} ${app-fakes-files}
-${app-fakes-dir} ${app-fakes-files} &: ./generate-fakes.go
-	@echo -ne '${aes_terminal_font_yellow}'
-	@echo -e '⚠️ The client-fakes generated from the openapi-specification depend on\n' \
-					 'the files ./go.mod and ./go.sum. This has not been reflected in this\n' \
-					 'make-target to avoid cyclic dependencies because `go mod tidy`, which\n' \
-					 'modifies both files, depends itself on the client-fakes.'
-	@echo -ne '${aes_terminal_reset}'
+${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate ./...
 
 
 
+# The generated fakes are order-only dependencies for `go-mod-tidy`. The reason is, that for
+# `go-mod-tidy` the generated fakes need to be present but fortunately not necessarily
+# up-to-date. This is fortunate because the generation of the fake requires the files `go.mod` and
+# `go.sum` to be already tidied up, introducing a cyclic dependency otherwise. But that would make
+# any modification to `go.mod` or `go.sum` impossible. This definition now makes it possible to
+# update `go.mod` and `go.sum` as follows:
+#  1. `make generate-fakes`
+#  2. Update `go.mod` and/or `go.sum`
+#  3. `make go-mod-tidy`
+#  4. Optionally: `make generate-fakes` to update the fakes as well.
+#
+# For more information on order-only dependencies, see:
+# <https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html>
 .PHONY: go-mod-tidy
-go-mod-tidy: ${app-fakes-dir} ${app-fakes-files}
+go-mod-tidy: ./go.mod ./go.sum ${GO_DEPENDENCIES} | ${app-fakes-dir} ${app-fakes-files}
+	@echo -ne '${aes_terminal_font_yellow}'
+	@echo -e '⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
+					 'outdated. Please consider re-generating them, if this is relevant.'
+	@echo -ne '${aes_terminal_reset}'
 	go mod tidy
 
 
