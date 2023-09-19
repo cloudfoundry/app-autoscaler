@@ -23,7 +23,7 @@ export GO111MODULE=on
 #GINKGO_OPTS=-r --race --require-suite -p --randomize-all --cover
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
-GINKGO_VERSION = v$(shell cat ../../.tool-versions | grep ginkgo  | cut --delimiter=' ' --fields='2' )
+GINKGO_VERSION = v$(shell cat ../../.tool-versions | grep ginkgo  | cut --delimiter=' ' --fields='2')
 
 # The presence of the subsequent directory indicates wheather the fakes still need to be generated
 # or not.
@@ -85,7 +85,7 @@ build_test-%: generate-fakes
 	@export build_folder=${PWD}/build/tests/$* &&\
 	 mkdir -p $${build_folder} &&\
 	 cd $* &&\
-	 for package in $$(  go list ./... | sed 's|.*/autoscaler/$*|.|' | awk '{ print length, $$0 }' | sort -n -r | cut -d" " -f2- );\
+	 for package in $$(go list ./... | sed 's|.*/autoscaler/$*|.|' | awk '{ print length, $$0 }' | sort -n -r | cut -d" " -f2- );\
 	 do\
 		 export test_file=$${build_folder}/$${package}.test;\
 		 echo "   - compiling $${package} to $${test_file}";\
@@ -96,17 +96,15 @@ check: fmt lint build test
 
 test: generate-fakes
 	@echo "Running tests"
-	@APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} -p ${GINKGO_OPTS} --skip-package=integration
+	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} --skip-package='integration'
 
 testsuite: generate-fakes
-	APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} -p ${GINKGO_OPTS} ${TEST}
+	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration
 integration: generate-fakes
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} ${GINKGO_OPTS} integration
-
-
+	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' ${GINKGO_OPTS} integration
 
 importfmt:
 	@echo "# Formatting the imports"

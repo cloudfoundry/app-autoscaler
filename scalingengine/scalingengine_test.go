@@ -347,7 +347,7 @@ var _ = Describe("ScalingEngine", func() {
 				})
 			})
 
-			Context("when it exceeds min instances limit  in active schedule", func() {
+			Context("when it exceeds min instances limit in active schedule", func() {
 				BeforeEach(func() {
 					trigger.Adjustment = "-60%"
 					setAppAndProcesses(5, appState)
