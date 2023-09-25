@@ -60,6 +60,17 @@ go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
 
 
 
+go-vendoring-folder := ./vendor
+go-vendored-files = $(shell find '${go-vendoring-folder}' -type f -name '*.go' 2> '/dev/null')
+## This does not work: go-vendored-files = $(wildcard ${go-vendoring-folder}/**/*.go)
+
+.PHONY: go-mod-vendor
+go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
+${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
+	go mod vendor
+
+
+
 build-%:
 	@echo "# building $*"
 	@CGO_ENABLED=$(CGO_ENABLED) go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
@@ -69,7 +80,7 @@ build: $(addprefix build-,$(binaries))
 
 build_tests: $(addprefix build_test-,$(test_dirs))
 
-build_test-%: generate
+build_test-%: generate-fakes
 	@echo " - building '$*' tests"
 	@export build_folder=${PWD}/build/tests/$* &&\
 	 mkdir -p $${build_folder} &&\
@@ -83,22 +94,19 @@ build_test-%: generate
 
 check: fmt lint build test
 
-test: generate
+test: generate-fakes
 	@echo "Running tests"
 	@APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} -p ${GINKGO_OPTS} --skip-package=integration
 
-testsuite: generate
+testsuite: generate-fakes
 	APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} -p ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration
-integration: generate
+integration: generate-fakes
 	@echo "# Running integration tests"
 	APP_AUTOSCALER_TEST_RUN=true go run github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} ${GINKGO_OPTS} integration
 
-.PHONY: generate
-generate:
-	@echo "# Generating counterfeits"
-	@COUNTERFEITER_NO_GENERATE_WARNING=true go generate ./...
+
 
 importfmt:
 	@echo "# Formatting the imports"
@@ -117,3 +125,4 @@ clean:
 	@go clean -cache -testcache
 	@rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
+	@rm --force --recursive 'vendor'
