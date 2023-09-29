@@ -33,7 +33,7 @@ func NewCfError(url string, resourceId string, statusCode int, respBody []byte) 
 	}
 	cfError.ResourceId = resourceId
 	cfError.StatusCode = statusCode
-	cfError.url = url
+	cfError.Url = url
 
 	if !cfError.IsValid() {
 		return fmt.Errorf("invalid cfError: resource %s status:%d body:%s :%w", resourceId, statusCode, truncateString(string(respBody), 512), ErrInvalidJson)
@@ -46,7 +46,7 @@ type CfError struct {
 	Errors     ErrorItems `json:"errors"`
 	StatusCode int
 	ResourceId string
-	url        string
+	Url        string
 }
 type ErrorItems []CfErrorItem
 
@@ -75,7 +75,7 @@ func (c *CfError) Error() string {
 	if len(errs) > 0 {
 		message = strings.Join(errs, ", ")
 	}
-	return fmt.Sprintf("cf api Error url='%s', resourceId='%s': %s", c.url, c.ResourceId, message)
+	return fmt.Sprintf("cf api Error url='%s', resourceId='%s': %s", c.Url, c.ResourceId, message)
 }
 
 func (c *CfError) IsValid() bool {

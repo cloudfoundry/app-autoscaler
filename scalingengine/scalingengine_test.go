@@ -1,6 +1,9 @@
 package scalingengine_test
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -104,7 +107,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 			})
 		})
 
@@ -131,7 +133,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
-
 			})
 		})
 
@@ -192,7 +193,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
-
 			})
 		})
 
@@ -202,7 +202,6 @@ var _ = Describe("ScalingEngine", func() {
 				setAppAndProcesses(5, appState)
 				scalingEngineDB.CanScaleAppReturns(true, clock.Now().Add(0-30*time.Second).UnixNano(), nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
 			})
 
 			It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
@@ -231,7 +230,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 			})
 		})
 
@@ -241,7 +239,6 @@ var _ = Describe("ScalingEngine", func() {
 				setAppAndProcesses(6, appState)
 				scalingEngineDB.CanScaleAppReturns(true, clock.Now().Add(0-30*time.Second).UnixNano(), nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
 			})
 
 			It("updates the app instance with  max instances and stores the ignored scaling history", func() {
@@ -265,7 +262,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
-
 			})
 		})
 
@@ -300,7 +296,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(-1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 			})
 		})
 
@@ -343,7 +338,6 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 					Expect(scalingResult.Adjustment).To(Equal(1))
 					Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 				})
 			})
 
@@ -377,10 +371,50 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 					Expect(scalingResult.Adjustment).To(Equal(-2))
 					Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 				})
 			})
+		})
 
+		Context("when the internal cf-client returns with an non-400 http-status-code", func() {
+			BeforeEach(func() {
+				cfAPIError := cf.CfError{
+					Errors: cf.ErrorItems([]cf.CfErrorItem{cf.CfErrorItem{
+						Code: 404,
+						Title: "Some title",
+						Detail: "Something went wrong.",
+					}}),
+					StatusCode: 404, ResourceId: "unknown resource", Url: "https://some.url",
+				}
+				cfAPIErrorJson, err := json.Marshal(cfAPIError)
+				if err != nil {
+					Fail("Test implementation wrong: Object not json-serializable!")
+				}
+				requestError := cf.NewCfError(
+					"A URL for an cloud-controller", "resourceID", cfAPIError.StatusCode, cfAPIErrorJson)
+				clientError := fmt.Errorf("Error doing a request: %w", requestError)
+				cfc.GetAppAndProcessesReturns(nil, clientError)
+			})
+
+			It("returns the error-message and the http-status-code", func() {
+				Expect(err).To(HaveOccurred())
+				fmt.Print(err.Error()) // To do: Debug
+
+				cfAPIError := cf.CfError{
+					Errors: cf.ErrorItems([]cf.CfErrorItem{{
+						Code: 404,
+						Title: "Some title",
+						Detail: "Something went wrong.",
+					}}),
+					StatusCode: 404, ResourceId: "unknown resource", Url: "https://some.url",
+				}
+				cfAPIErrorJson, err2 := json.Marshal(cfAPIError)
+				if err2 != nil {
+					Fail("Test implementation wrong: Object not json-serializable!")
+				}
+				cfErrorTypeProxy := cf.NewCfError("", "", 0, cfAPIErrorJson) // values don't matter
+				Expect(err).To(MatchError(cfErrorTypeProxy))
+				Fail("🛠️ To do: Test still not implemented!")
+			})
 		})
 
 		Context("when getting app info from cloud foundry fails", func() {
