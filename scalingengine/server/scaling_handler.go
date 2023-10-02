@@ -1,6 +1,9 @@
 package server
 
 import (
+	"errors"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
@@ -49,9 +52,18 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 
 	if err != nil {
 		logger.Error("failed-to-scale", err, lager.Data{"trigger": trigger})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Internal-server-error",
-			Message: "Error taking scaling action"})
+
+		var cfApiClientErrTypeProxy *cf.CfError
+		if errors.As(err, &cfApiClientErrTypeProxy) {
+			handlers.WriteJSONResponse(w, cfApiClientErrTypeProxy.StatusCode, models.ErrorResponse{
+				Code:    "Error on request to the cloud-controller via a cf-client",
+				Message: "Error taking scaling action"})
+		} else {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Internal-server-error",
+				Message: "Error taking scaling action"})
+		}
+
 		return
 	}
 

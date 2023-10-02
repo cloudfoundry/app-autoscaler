@@ -146,14 +146,13 @@ var _ = Describe("ScalingHandler", func() {
 			It("returns the status code of the cloud api", func() {
 				Expect(resp.Code).To(Equal(http.StatusNotFound))
 
-				// errJson := &models.ErrorResponse{}
-				// err = json.Unmarshal(resp.Body.Bytes(), errJson)
-				// Expect(err).ToNot(HaveOccurred())
-				// Expect(errJson).To(Equal(&models.ErrorResponse{
-				// 	Code:    "Internal-server-error",
-				// 	Message: "Error taking scaling action",
-				// }))
-				Fail("🛠️ To do: Test still not implemented!")
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Error on request to the cloud-controller via a cf-client",
+					Message: "Error taking scaling action",
+				}))
 			})
 		})
 
