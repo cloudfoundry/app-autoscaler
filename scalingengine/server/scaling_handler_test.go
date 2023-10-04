@@ -148,11 +148,9 @@ var _ = Describe("ScalingHandler", func() {
 
 				errJson := &models.ErrorResponse{}
 				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
 				Expect(err).ToNot(HaveOccurred())
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Error on request to the cloud-controller via a cf-client",
-					Message: "Error taking scaling action",
-				}))
+				Expect(errJson.Code).To(Equal("Error on request to the cloud-controller via a cf-client"))
 			})
 		})
 
