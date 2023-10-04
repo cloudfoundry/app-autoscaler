@@ -112,9 +112,9 @@ var _ = Describe("ScalingHandler", func() {
 		Context("when an internal cf-call fails", func() {
 			BeforeEach(func() {
 				cfAPIError := cf.CfError{
-					Errors: cf.ErrorItems([]cf.CfErrorItem{cf.CfErrorItem{
-						Code: http.StatusNotFound,
-						Title: "Some title",
+					Errors: cf.ErrorItems([]cf.CfErrorItem{{
+						Code:   http.StatusNotFound,
+						Title:  "Some title",
 						Detail: "Something went wrong.",
 					}}),
 					StatusCode: http.StatusNotFound, ResourceId: "unknown resource", Url: "https://some.url",
