@@ -104,7 +104,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 			})
 		})
 
@@ -131,7 +130,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
-
 			})
 		})
 
@@ -192,7 +190,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
-
 			})
 		})
 
@@ -202,7 +199,6 @@ var _ = Describe("ScalingEngine", func() {
 				setAppAndProcesses(5, appState)
 				scalingEngineDB.CanScaleAppReturns(true, clock.Now().Add(0-30*time.Second).UnixNano(), nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
 			})
 
 			It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
@@ -231,7 +227,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 			})
 		})
 
@@ -241,7 +236,6 @@ var _ = Describe("ScalingEngine", func() {
 				setAppAndProcesses(6, appState)
 				scalingEngineDB.CanScaleAppReturns(true, clock.Now().Add(0-30*time.Second).UnixNano(), nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
 			})
 
 			It("updates the app instance with  max instances and stores the ignored scaling history", func() {
@@ -265,7 +259,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
-
 			})
 		})
 
@@ -300,7 +293,6 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(-1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 			})
 		})
 
@@ -343,11 +335,10 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 					Expect(scalingResult.Adjustment).To(Equal(1))
 					Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 				})
 			})
 
-			Context("when it exceeds min instances limit  in active schedule", func() {
+			Context("when it exceeds min instances limit in active schedule", func() {
 				BeforeEach(func() {
 					trigger.Adjustment = "-60%"
 					setAppAndProcesses(5, appState)
@@ -377,10 +368,8 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 					Expect(scalingResult.Adjustment).To(Equal(-2))
 					Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
-
 				})
 			})
-
 		})
 
 		Context("when getting app info from cloud foundry fails", func() {

@@ -1,6 +1,9 @@
 package server_test
 
 import (
+	"fmt"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -103,6 +106,51 @@ var _ = Describe("ScalingHandler", func() {
 					Code:    "Bad-Request",
 					Message: "Incorrect trigger in request body",
 				}))
+			})
+		})
+
+		Context("when an internal cf-call fails", func() {
+			BeforeEach(func() {
+				cfAPIError := cf.CfError{
+					Errors: cf.ErrorItems([]cf.CfErrorItem{{
+						Code:   http.StatusNotFound,
+						Title:  "Some title",
+						Detail: "Something went wrong.",
+					}}),
+					StatusCode: http.StatusNotFound, ResourceId: "unknown resource", Url: "https://some.url",
+				}
+				cfAPIErrorJson, err := json.Marshal(cfAPIError)
+				Expect(err).NotTo(HaveOccurred()) // Test implementation wrong: Object not json-serializable!"
+				requestError := cf.NewCfError(
+					"A URL for an cloud-controller", "resourceID", cfAPIError.StatusCode, cfAPIErrorJson)
+				clientError := fmt.Errorf("Error doing a request: %w", requestError)
+
+				scalingEngine.ScaleReturns(&models.AppScalingResult{
+					AppId:             "an-app-id",
+					Status:            models.ScalingStatusFailed,
+					Adjustment:        0,
+					CooldownExpiredAt: 0,
+				}, clientError)
+
+				trigger = &models.Trigger{
+					MetricType: testMetricName,
+					Adjustment: "+1",
+				}
+				body, err = json.Marshal(trigger)
+				Expect(err).NotTo(HaveOccurred())
+
+				req, err = http.NewRequest("POST", "", bytes.NewReader(body))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns the status code of the cloud api", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson.Code).To(Equal("Error on request to the cloud-controller via a cf-client"))
 			})
 		})
 
