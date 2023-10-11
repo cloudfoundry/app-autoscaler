@@ -14,7 +14,7 @@ import (
 	gogrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	logcache "code.cloudfoundry.org/go-log-cache"
+	logcache "code.cloudfoundry.org/go-log-cache/v2"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"

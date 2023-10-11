@@ -11,7 +11,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	logcache "code.cloudfoundry.org/go-log-cache"
+	logcache "code.cloudfoundry.org/go-log-cache/v2"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 )
 
