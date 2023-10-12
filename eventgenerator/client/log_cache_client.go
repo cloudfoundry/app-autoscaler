@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	logcache "code.cloudfoundry.org/go-log-cache"
-	rpc "code.cloudfoundry.org/go-log-cache/rpc/logcache_v1"
+	logcache "code.cloudfoundry.org/go-log-cache/v2"
+	rpc "code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
 )
