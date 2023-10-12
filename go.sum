@@ -947,8 +947,8 @@ github.com/phpdave11/gofpdf v1.4.2/go.mod h1:zpO6xFn9yxo3YLyMvW8HcKWVdbNqgIfOOp2
 github.com/phpdave11/gofpdi v1.0.12/go.mod h1:vBmVV0Do6hSBHC8uKUQ71JGW+ZGQq74llk/7bXwjDoI=
 github.com/phpdave11/gofpdi v1.0.13/go.mod h1:vBmVV0Do6hSBHC8uKUQ71JGW+ZGQq74llk/7bXwjDoI=
 github.com/pierrec/lz4/v4 v4.1.15/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
-github.com/pivotal-cf/brokerapi/v10 v10.0.0 h1:cC2zdIF1jh1twD196xWpHjiX2JEbU+RMLH2jpmLDRT8=
-github.com/pivotal-cf/brokerapi/v10 v10.0.0/go.mod h1:LVexXnzj0Zj7lxIJXnDqc794/XHwEzkOPzAZdEaKM5M=
+github.com/pivotal-cf/brokerapi/v10 v10.1.0 h1:1sMJ88XPIU1nKSF29SkxEglDdgLg4buY9/tryp96haU=
+github.com/pivotal-cf/brokerapi/v10 v10.1.0/go.mod h1:ctJc3q3zLhIt+OmQMi7LGNsWkP4xi2HRPKXwYe98Mnk=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
