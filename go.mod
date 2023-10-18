@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v2 v2.0.4
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.8
 	code.cloudfoundry.org/lager/v3 v3.0.2
-	code.cloudfoundry.org/tlsconfig v0.0.0-20230929201433-6cd2b78aba25
+	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 	dario.cat/mergo v1.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-chi/chi/v5 v5.0.10
