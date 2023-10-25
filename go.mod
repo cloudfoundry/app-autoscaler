@@ -5,7 +5,7 @@ go 1.20
 require (
 	code.cloudfoundry.org/cfhttp/v2 v2.0.1-0.20230113212937-05beac96f8c7
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/go-log-cache/v2 v2.0.4
+	code.cloudfoundry.org/go-log-cache/v2 v2.0.5
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.8
 	code.cloudfoundry.org/lager/v3 v3.0.2
 	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
