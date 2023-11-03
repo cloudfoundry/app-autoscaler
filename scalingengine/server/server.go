@@ -5,6 +5,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
@@ -14,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"fmt"
 	"net/http"
@@ -31,9 +33,16 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	syncHandler := NewSyncHandler(logger, synchronizer)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.ScalingEngineRoutes()
+	r.Use(otelmux.Middleware("scalingengine"))
+
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.ScaleRouteName).Handler(VarsFunc(handler.Scale))
-	r.Get(routes.GetScalingHistoriesRouteName).Handler(VarsFunc(handler.GetScalingHistories))
+
+	scalingHistoryHandler, err := newScalingHistoryHandler(logger, scalingEngineDB)
+	if err != nil {
+		return nil, err
+	}
+	r.Get(routes.GetScalingHistoriesRouteName).Handler(scalingHistoryHandler)
 
 	r.Get(routes.SetActiveScheduleRouteName).Handler(VarsFunc(handler.StartActiveSchedule))
 	r.Get(routes.DeleteActiveScheduleRouteName).Handler(VarsFunc(handler.RemoveActiveSchedule))
@@ -60,4 +69,16 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	}
 
 	return http_server.New(addr, r), nil
+}
+
+func newScalingHistoryHandler(logger lager.Logger, scalingEngineDB db.ScalingEngineDB) (http.Handler, error) {
+	scalingHistoryHandler, err := NewScalingHistoryHandler(logger, scalingEngineDB)
+	if err != nil {
+		return nil, fmt.Errorf("error creating scaling history handler: %w", err)
+	}
+	server, err := scalinghistory.NewServer(scalingHistoryHandler, scalingHistoryHandler)
+	if err != nil {
+		return nil, fmt.Errorf("error creating ogen scaling history server: %w", err)
+	}
+	return server, err
 }

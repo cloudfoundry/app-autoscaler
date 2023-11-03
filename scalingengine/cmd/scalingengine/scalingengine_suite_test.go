@@ -3,6 +3,8 @@ package main_test
 import (
 	"path/filepath"
 
+	uuid "github.com/nu7hatch/gouuid"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -19,7 +21,6 @@ import (
 	"github.com/onsi/gomega/gexec"
 	yaml "gopkg.in/yaml.v3"
 
-	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -54,7 +55,7 @@ var _ = SynchronizedBeforeSuite(
 		enginePath = string(pathBytes)
 
 		ccUAA = mocks.NewServer()
-		appId = fmt.Sprintf("app-id-%d", GinkgoParallelProcess())
+		appId = getUUID()
 		ccUAA.Add().
 			Info(ccUAA.URL()).
 			GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
@@ -172,6 +173,11 @@ func writeConfig(c *config.Config) *os.File {
 	Expect(err).NotTo(HaveOccurred())
 
 	return cfg
+}
+
+func getUUID() string {
+	v4, _ := uuid.NewV4()
+	return v4.String()
 }
 
 type ScalingEngineRunner struct {

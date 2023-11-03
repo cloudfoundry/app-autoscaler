@@ -169,7 +169,10 @@ var _ = Describe("Main", func() {
 
 		Context("when a request to retrieve scaling history comes", func() {
 			It("returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/scaling_histories", port, appId))
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/scaling_histories", port, appId), nil)
+				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("Authorization", "Bearer none")
+				rsp, err := httpClient.Do(req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				rsp.Body.Close()

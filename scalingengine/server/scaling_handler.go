@@ -2,20 +2,17 @@ package server
 
 import (
 	"errors"
+	"fmt"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/lager/v3"
 
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 type ScalingHandler struct {
@@ -73,126 +70,6 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 	}
 
 	handlers.WriteJSONResponse(w, http.StatusOK, result)
-}
-
-func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	appId := vars["appid"]
-	logger := h.logger.Session("get-scaling-histories", lager.Data{"appId": appId})
-
-	startParam := r.URL.Query()["start"]
-	endParam := r.URL.Query()["end"]
-	orderParam := r.URL.Query()["order"]
-	includeParam := r.URL.Query()["include"]
-	logger.Debug("handling", lager.Data{"start": startParam, "end": endParam})
-
-	var err error
-	start := int64(0)
-	end := int64(-1)
-	order := db.DESC
-	includeAll := false
-
-	if len(startParam) == 1 {
-		start, err = strconv.ParseInt(startParam[0], 10, 64)
-		if err != nil {
-			logger.Error("failed-to-parse-start-time", err, lager.Data{"start": startParam})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad-Request",
-				Message: "Error parsing start time"})
-			return
-		}
-	} else if len(startParam) > 1 {
-		logger.Error("failed-to-get-start-time", err, lager.Data{"start": startParam})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Incorrect start parameter in query string"})
-		return
-	}
-
-	if len(endParam) == 1 {
-		end, err = strconv.ParseInt(endParam[0], 10, 64)
-		if err != nil {
-			logger.Error("failed-to-parse-end-time", err, lager.Data{"end": endParam})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad-Request",
-				Message: "Error parsing end time"})
-			return
-		}
-	} else if len(endParam) > 1 {
-		logger.Error("failed-to-get-end-time", err, lager.Data{"end": endParam})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Incorrect end parameter in query string"})
-		return
-	}
-
-	if len(orderParam) == 1 {
-		orderStr := strings.ToUpper(orderParam[0])
-		if orderStr == db.DESCSTR {
-			order = db.DESC
-		} else if orderStr == db.ASCSTR {
-			order = db.ASC
-		} else {
-			logger.Error("failed-to-get-order", err, lager.Data{"order": orderParam})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad-Request",
-				Message: fmt.Sprintf("Incorrect order parameter in query string, the value can only be '%s' or '%s'", db.ASCSTR, db.DESCSTR),
-			})
-			return
-		}
-	} else if len(orderParam) > 1 {
-		logger.Error("failed-to-get-order", err, lager.Data{"order": orderParam})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Incorrect order parameter in query string"})
-		return
-	}
-
-	if len(includeParam) == 1 {
-		includeStr := strings.ToLower(includeParam[0])
-		if includeStr == "all" {
-			includeAll = true
-		} else {
-			logger.Error("failed-to-get-include-parameter", err, lager.Data{"include": includeParam})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad-Request",
-				Message: "Incorrect include parameter in query string, the value can only be 'all'",
-			})
-			return
-		}
-	} else if len(includeParam) > 1 {
-		logger.Error("failed-to-get-include-parameter", err, lager.Data{"include": includeParam})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Incorrect include parameter in query string"})
-		return
-	}
-
-	var histories []*models.AppScalingHistory
-
-	histories, err = h.scalingEngineDB.RetrieveScalingHistories(appId, start, end, order, includeAll)
-	if err != nil {
-		logger.Error("failed-to-retrieve-histories", err, lager.Data{"start": start, "end": end, "order": order, "includeAll": includeAll})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Internal-Server-Error",
-			Message: "Error getting scaling histories from database"})
-		return
-	}
-
-	var body []byte
-	body, err = json.Marshal(histories)
-	if err != nil {
-		logger.Error("failed-to-marshal", err, lager.Data{"histories": histories})
-
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Internal-Server-Error",
-			Message: "Error getting scaling histories from database"})
-		return
-	}
-
-	_, err = w.Write(body)
-	if err != nil {
-		logger.Error("failed-to-write-body", err)
-	}
 }
 
 func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {

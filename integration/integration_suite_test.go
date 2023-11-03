@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -509,14 +510,19 @@ func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.
 func getScalingHistories(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	By("getScalingHistories")
 	httpClientTmp := httpClientForPublicApi
-	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
+	getScalingHistoriesURL := fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/scaling_histories", apiServerPort, pathVariables[0])
 	if len(parameters) > 0 {
-		url += "?any=any"
+		parsedURL, err := url.Parse(getScalingHistoriesURL)
+		Expect(err).ToNot(HaveOccurred())
+
+		params := url.Values{}
 		for paramName, paramValue := range parameters {
-			url += "&" + paramName + "=" + paramValue
+			params.Add(paramName, paramValue)
 		}
+		parsedURL.RawQuery = params.Encode()
+		getScalingHistoriesURL = parsedURL.String()
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0]), strings.NewReader(""))
+	req, err := http.NewRequest("GET", getScalingHistoriesURL, strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "bearer fake-token")

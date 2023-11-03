@@ -6,7 +6,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
-
 	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -107,14 +106,17 @@ var _ = Describe("Server", func() {
 
 	Context("when getting scaling histories", func() {
 		BeforeEach(func() {
-			uPath, err := route.Get(routes.GetScalingHistoriesRouteName).URLPath("appid", "test-app-id")
+			uPath, err := route.Get(routes.GetScalingHistoriesRouteName).URLPath("guid", "8ea70e4e-e0bc-4e15-9d32-cd69daaf012a")
 			Expect(err).NotTo(HaveOccurred())
 			urlPath = uPath.Path
 		})
 
 		Context("when requesting correctly", func() {
 			JustBeforeEach(func() {
-				rsp, err = http.Get(serverUrl + urlPath)
+				req, err = http.NewRequest(http.MethodGet, serverUrl+urlPath, nil)
+				req.Header.Set("Authorization", "Bearer ignore")
+				Expect(err).NotTo(HaveOccurred())
+				rsp, err = (&http.Client{}).Do(req)
 			})
 
 			It("should return 200", func() {

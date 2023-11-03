@@ -251,7 +251,7 @@ var _ = Describe("Routes", func() {
 		Context("GetScalingHistoriesRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("appid", testAppId)
+					path, err := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("guid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/scaling_histories"))
 				})

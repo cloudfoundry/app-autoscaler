@@ -1,7 +1,9 @@
 package sqldb
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -74,26 +76,39 @@ func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHist
 	return nil
 }
 
-func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType, includeAll bool) ([]*models.AppScalingHistory, error) {
-	var orderStr string
-	if orderType == db.DESC {
-		orderStr = db.DESCSTR
-	} else {
-		orderStr = db.ASCSTR
+func (sdb *ScalingEngineSQLDB) CountScalingHistories(ctx context.Context, appId string, start int64, end int64, includeAll bool) (int, error) {
+	query := sdb.sqldb.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ? AND timestamp >= ? AND timestamp <= ?" + statusFilter(includeAll))
+
+	if end < 0 {
+		end = time.Now().UnixNano()
 	}
 
+	var count int
+	err := sdb.sqldb.GetContext(ctx, &count, query, appId, start, end)
+	if err != nil {
+		sdb.logger.Error("count-scaling-histories", err,
+			lager.Data{"query": query, "appid": appId, "start": start, "end": end})
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(ctx context.Context, appId string, start int64, end int64, orderType db.OrderType, includeAll bool, page int, resultsPerPage int) ([]*models.AppScalingHistory, error) {
 	query := sdb.sqldb.Rebind("SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
 		" appid = ? " +
 		" AND timestamp >= ?" +
 		" AND timestamp <= ?" +
-		" ORDER BY timestamp " + orderStr)
+		statusFilter(includeAll) +
+		" ORDER BY timestamp " + orderTypeToString(orderType) +
+		" LIMIT ? OFFSET ?")
 
 	if end < 0 {
 		end = time.Now().UnixNano()
 	}
 
 	histories := []*models.AppScalingHistory{}
-	rows, err := sdb.sqldb.Query(query, appId, start, end)
+	rows, err := sdb.sqldb.QueryContext(ctx, query, appId, start, end, resultsPerPage, (page-1)*resultsPerPage)
 	if err != nil {
 		sdb.logger.Error("retrieve-scaling-histories", err,
 			lager.Data{"query": query, "appid": appId, "start": start, "end": end, "orderType": orderType})
@@ -123,12 +138,25 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 			Message:      message,
 			Error:        errorMsg,
 		}
-
-		if includeAll || history.Status != models.ScalingStatusIgnored {
-			histories = append(histories, &history)
-		}
+		histories = append(histories, &history)
 	}
 	return histories, rows.Err()
+}
+
+func statusFilter(includeAll bool) string {
+	statusFilter := " AND status != " + strconv.Itoa(int(models.ScalingStatusIgnored))
+	if includeAll {
+		statusFilter = ""
+	}
+	return statusFilter
+}
+
+func orderTypeToString(orderType db.OrderType) string {
+	orderStr := db.ASCSTR
+	if orderType == db.DESC {
+		orderStr = db.DESCSTR
+	}
+	return orderStr
 }
 
 func (sdb *ScalingEngineSQLDB) PruneScalingHistories(before int64) error {

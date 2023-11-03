@@ -56,14 +56,15 @@ func compareAppAggregatedMetricResult(o1, o2 AppAggregatedMetricResult) {
 	Expect(o1).To(Equal(o2))
 }
 
-func compareUrlValues(o1 string, o2 string) {
-	prevUrl1, err1 := url.Parse(o1)
-	Expect(err1).NotTo(HaveOccurred())
-	prevUrl2, err2 := url.Parse(o2)
-	Expect(err2).NotTo(HaveOccurred())
-	queries1 := prevUrl1.Query()
-	queries2 := prevUrl2.Query()
-	Expect(queries1).To(Equal(queries2))
+func compareUrlValues(actual string, expected string) {
+	GinkgoHelper()
+	actualURL, err := url.Parse(actual)
+	Expect(err).NotTo(HaveOccurred())
+	expectedURL, err := url.Parse(expected)
+	Expect(err).NotTo(HaveOccurred())
+	actualQuery := actualURL.Query()
+	expectedQuery := expectedURL.Query()
+	Expect(actualQuery).To(Equal(expectedQuery))
 }
 
 func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
@@ -79,20 +80,22 @@ func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, para
 }
 
 func getScalingHistoriesUrl(appId string, parameteters map[string]string, pageNo int) string {
-	return fmt.Sprintf("/v1/apps/%s/scaling_histories?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
+	return fmt.Sprintf("/v1/apps/%s/scaling_histories?start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
 }
 
-func compareScalingHistoryResult(o1, o2 ScalingHistoryResult) {
-	compareUrlValues(o1.NextUrl, o2.NextUrl)
-	compareUrlValues(o1.PrevUrl, o2.PrevUrl)
-	o1.PrevUrl = ""
-	o2.PrevUrl = ""
-	o1.NextUrl = ""
-	o2.NextUrl = ""
-	Expect(o1).To(Equal(o2))
+func compareScalingHistoryResult(actual, expected ScalingHistoryResult) {
+	GinkgoHelper()
+	compareUrlValues(actual.NextUrl, expected.NextUrl)
+	compareUrlValues(actual.PrevUrl, expected.PrevUrl)
+	actual.PrevUrl = ""
+	expected.PrevUrl = ""
+	actual.NextUrl = ""
+	expected.NextUrl = ""
+	Expect(actual).To(Equal(expected))
 }
 
-func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
+func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parameters map[string]string, expected ScalingHistoryResult) {
+	GinkgoHelper()
 	var actual ScalingHistoryResult
 	resp, err := getScalingHistories(apiServerPort, pathVariables, parameters)
 	body := MustReadAll(resp.Body)
@@ -101,7 +104,7 @@ func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parame
 	Expect(resp.StatusCode).WithOffset(1).To(Equal(http.StatusOK), "status code")
 	err = json.Unmarshal([]byte(body), &actual)
 	Expect(err).WithOffset(1).NotTo(HaveOccurred(), "UnmarshalJson")
-	compareScalingHistoryResult(actual, result)
+	compareScalingHistoryResult(actual, expected)
 }
 
 func doAttachPolicy(appId string, policyStr []byte, statusCode int, apiServerPort int, httpClient *http.Client) {

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"testing"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
+
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,7 +32,7 @@ import (
 const (
 	CLIENT_ID                         = "client-id"
 	CLIENT_SECRET                     = "client-secret"
-	TEST_APP_ID                       = "test-app-id"
+	TEST_APP_ID                       = "deadbeef-dead-beef-dead-beef00000075"
 	TEST_USER_TOKEN                   = "bearer testusertoken"
 	INVALID_USER_TOKEN                = "bearer invalid_user_token invalid_user_token"
 	INVALID_USER_TOKEN_WITHOUT_BEARER = "not-bearer testusertoken"
@@ -60,7 +62,7 @@ var (
 	schedulerStatus        int
 	schedulerErrJson       string
 
-	scalingEngineResponse    []models.AppScalingHistory
+	scalingEngineResponse    scalinghistory.History
 	metricsCollectorResponse []models.AppInstanceMetric
 	eventGeneratorResponse   []models.AppMetric
 

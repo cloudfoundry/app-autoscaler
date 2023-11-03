@@ -16,7 +16,7 @@ const (
 	ScalePath      = "/v1/apps/{appid}/scale"
 	ScaleRouteName = "Scale"
 
-	ScalingHistoriesPath         = "/v1/apps/{appid}/scaling_histories"
+	ScalingHistoriesPath         = "/v1/apps/{guid}/scaling_histories"
 	GetScalingHistoriesRouteName = "GetScalingHistories"
 
 	ActiveSchedulePath            = "/v1/apps/{appid}/active_schedules/{scheduleid}"

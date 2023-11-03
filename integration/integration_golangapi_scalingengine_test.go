@@ -38,7 +38,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			true,
 			tmpDir)
 		startGolangApiServer()
-		appId = getRandomIdRef("appId")
+		appId = getUUID()
 		pathVariables = []string{appId}
 
 	})

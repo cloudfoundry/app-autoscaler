@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -40,19 +42,25 @@ var _ = Describe("PublicApiServer", func() {
 	)
 
 	BeforeEach(func() {
-
-		scalingEngineResponse = []models.AppScalingHistory{
+		scalingHistoryEntry := []scalinghistory.HistoryEntry{
 			{
-				AppId:        TEST_APP_ID,
-				Timestamp:    300,
-				ScalingType:  0,
-				Status:       0,
-				OldInstances: 2,
-				NewInstances: 4,
-				Reason:       "a reason",
-				Message:      "",
-				Error:        "",
+				Status:       scalinghistory.NewOptHistoryEntryStatus(scalinghistory.HistoryEntryStatus0),
+				AppID:        scalinghistory.NewOptGUID(TEST_APP_ID),
+				Timestamp:    scalinghistory.NewOptInt(300),
+				ScalingType:  scalinghistory.NewOptHistoryEntryScalingType(scalinghistory.HistoryEntryScalingType0),
+				OldInstances: scalinghistory.NewOptInt64(2),
+				NewInstances: scalinghistory.NewOptInt64(4),
+				Reason:       scalinghistory.NewOptString("a reason"),
 			},
+		}
+
+		scalingEngineResponse = scalinghistory.History{
+			TotalResults: scalinghistory.NewOptInt64(1),
+			TotalPages:   scalinghistory.NewOptInt64(1),
+			Page:         scalinghistory.NewOptInt64(1),
+			PrevURL:      scalinghistory.OptURI{},
+			NextURL:      scalinghistory.OptURI{},
+			Resources:    scalingHistoryEntry,
 		}
 
 		metricsCollectorResponse = []models.AppInstanceMetric{

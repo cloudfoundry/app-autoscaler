@@ -25,20 +25,34 @@ export GO111MODULE=on
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
 GINKGO_VERSION = v$(shell cat ../../.tool-versions | grep ginkgo  | cut --delimiter=' ' --fields='2')
 
-# The presence of the subsequent directory indicates wheather the fakes still need to be generated
+
+# ogen generated OpenAPI clients and servers
+openapi-generated-clients-and-servers-dir := ./helpers/apis/scalinghistory
+openapi-spec-path := ../../api
+openapi-specs-list = $(wildcard ${openapi-spec-path}/*.yaml)
+
+openapi-generated-clients-and-servers-files = $(wildcard ${openapi-generated-clients-and-servers-dir}/*.go)
+
+.PHONY: generate-openapi-generated-clients-and-servers
+generate-openapi-generated-clients-and-servers: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
+${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files} &: $(wildcard ./helpers/apis/generate.go) ${openapi-specs-list} ./go.mod ./go.sum
+	@echo "# Generating OpenAPI clients and servers"
+	go generate ./helpers/apis/generate.go
+
+# The presence of the subsequent directory indicates whether the fakes still need to be generated
 # or not.
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
-go_deps_without_fakes = $(shell find . -type f -name '*.go' \
-																| grep --invert-match --regexp='${app-fakes-dir}')
 .PHONY: generate-fakes
-generate-fakes: ${app-fakes-dir} ${app-fakes-files}
+generate-fakes: ${app-fakes-dir} ${app-fakes-files} ${openapi-generated-clients-and-servers-dir}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate './...'
 
 
+go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
+																| grep --invert-match --regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
 # this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
@@ -51,7 +65,7 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
 #  3. `make go-mod-tidy`
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
-go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
+go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources}
 	@echo -ne '${aes_terminal_font_yellow}'
 	@echo -e '⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 					 'outdated. Please consider re-generating them, if this is relevant.'
@@ -71,7 +85,7 @@ ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-file
 
 
 
-build-%:
+build-%: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
 	@echo "# building $*"
 	@CGO_ENABLED=$(CGO_ENABLED) go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
@@ -124,3 +138,4 @@ clean:
 	@rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'vendor'
+	@rm --force --recursive "${openapi-generated-clients-and-servers-dir}"
