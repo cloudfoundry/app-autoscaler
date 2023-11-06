@@ -16,7 +16,7 @@ require (
 	github.com/go-faster/jx v1.1.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/protobuf v1.5.3
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	github.com/jackc/pgx/v5 v5.4.3
