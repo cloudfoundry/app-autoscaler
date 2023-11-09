@@ -52,7 +52,8 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
 
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
-																| grep --invert-match --regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
+																| grep --invert-match --extended-regexp \
+																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
 # this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
