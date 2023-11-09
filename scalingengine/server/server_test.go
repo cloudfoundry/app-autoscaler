@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
@@ -32,7 +33,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(_ []byte) {
 	port := 2222 + GinkgoParallelProcess()
 	conf := &config.Config{
-		Server: config.ServerConfig{
+		Server: helpers.ServerConfig{
 			Port: port,
 		},
 	}

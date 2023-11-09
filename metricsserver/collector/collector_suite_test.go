@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -41,7 +42,9 @@ var _ = BeforeSuite(func() {
 
 	port := 1111 + GinkgoParallelProcess()
 	serverConf := &collector.ServerConfig{
-		Port:      port,
+		ServerConfig: helpers.ServerConfig{
+			Port: port,
+		},
 		NodeAddrs: []string{fmt.Sprintf("%s:%d", "localhost", port)},
 		NodeIndex: 0,
 	}

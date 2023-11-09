@@ -58,7 +58,7 @@ type Config struct {
 	AppManager        AppManagerConfig      `yaml:"app_manager"`
 	Emitter           EmitterConfig         `yaml:"emitter"`
 	Nozzle            NozzleConfig          `yaml:"nozzle"`
-	Health            models.HealthConfig   `yaml:"health"`
+	Health            helpers.HealthConfig  `yaml:"health"`
 }
 
 func LoadConfig(config []byte) (*Config, error) {

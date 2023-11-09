@@ -94,17 +94,21 @@ circuitBreaker:
 					Logging:           helpers.LoggingConfig{Level: "info"},
 					HttpClientTimeout: 10 * time.Second,
 					Server: ServerConfig{
-						Port: 9080,
-						TLS: models.TLSCerts{
-							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/server.key",
-							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/server.crt",
-							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/ca.crt",
+						ServerConfig: helpers.ServerConfig{
+							Port: 9080,
+							TLS: models.TLSCerts{
+								KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/server.key",
+								CertFile:   "/var/vcap/jobs/autoscaler/config/certs/server.crt",
+								CACertFile: "/var/vcap/jobs/autoscaler/config/certs/ca.crt",
+							},
 						},
 						NodeAddrs: []string{"address1", "address2"},
 						NodeIndex: 1,
 					},
-					Health: models.HealthConfig{
-						Port: 9999,
+					Health: helpers.HealthConfig{
+						ServerConfig: helpers.ServerConfig{
+							Port: 9999,
+						},
 					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
@@ -225,11 +229,15 @@ defaultBreachDurationSecs: 600
 					Logging:           helpers.LoggingConfig{Level: "info"},
 					HttpClientTimeout: 5 * time.Second,
 					Server: ServerConfig{
-						Port: 8080,
-						TLS:  models.TLSCerts{},
+						ServerConfig: helpers.ServerConfig{
+							Port: 8080,
+							TLS:  models.TLSCerts{},
+						},
 					},
-					Health: models.HealthConfig{
-						Port: 8081,
+					Health: helpers.HealthConfig{
+						ServerConfig: helpers.ServerConfig{
+							Port: 8081,
+						},
 					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{

@@ -1,4 +1,4 @@
-package models
+package helpers
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 )
 
 type HealthConfig struct {
-	Port                    int    `yaml:"port"`
+	ServerConfig            `yaml:",inline"`
 	HealthCheckUsername     string `yaml:"username"`
 	HealthCheckUsernameHash string `yaml:"username_hash"`
 	HealthCheckPassword     string `yaml:"password"`

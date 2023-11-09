@@ -1,6 +1,9 @@
 package integration_test
 
 import (
+	_ "embed"
+	"text/template"
+
 	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -43,6 +46,9 @@ var golangAPIInfoFilePath = "../api/exampleconfig/catalog-example.json"
 var golangSchemaValidationPath = "../api/schemas/catalog.schema.json"
 var golangApiServerPolicySchemaPath = "../api/policyvalidator/policy_json.schema.json"
 var golangServiceCatalogPath = "../servicebroker/config/catalog.json"
+
+//go:embed scheduler_application.template.yml
+var schedulerApplicationConfigTemplate string
 
 type Executables map[string]string
 type Ports map[string]int
@@ -213,7 +219,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		PublicApiServer: apiConfig.ServerConfig{
+		PublicApiServer: helpers.ServerConfig{
 			Port: publicApiPort,
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "api.key"),
@@ -221,7 +227,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		BrokerServer: apiConfig.ServerConfig{
+		BrokerServer: helpers.ServerConfig{
 			Port: brokerPort,
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
@@ -316,70 +322,36 @@ func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngine
 		jdbcDBUri = fmt.Sprintf("jdbc:%s://%s/%s", scheme, host, path)
 		driverClassName = "com.mysql.cj.jdbc.Driver"
 	}
-	settingStrTemplate := `
-#datasource for application and quartz
-spring.datasource.driverClassName=%s
-spring.datasource.url=%s
-spring.datasource.username=%s
-spring.datasource.password=%s
-#policy db
-spring.policy-db-datasource.driverClassName=%s
-spring.policy-db-datasource.url=%s
-spring.policy-db-datasource.username=%s
-spring.policy-db-datasource.password=%s
-#quartz job
-scalingenginejob.reschedule.interval.millisecond=10000
-scalingenginejob.reschedule.maxcount=3
-scalingengine.notification.reschedule.maxcount=3
-# scaling engine url
-autoscaler.scalingengine.url=%s
-#ssl
-server.ssl.key-store=%s/scheduler.p12
-server.ssl.key-alias=scheduler
-server.ssl.key-store-password=123456
-server.ssl.key-store-type=PKCS12
-server.ssl.trust-store=%s/autoscaler.truststore
-server.ssl.trust-store-password=123456
-client.ssl.key-store=%s/scheduler.p12
-client.ssl.key-store-password=123456
-client.ssl.key-store-type=PKCS12
-client.ssl.trust-store=%s/autoscaler.truststore
-client.ssl.trust-store-password=123456
-client.ssl.protocol=TLSv1.2
-server.ssl.enabled-protocols=TLSv1,TLSv1.1,TLSv1.2
-server.ssl.ciphers=TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_RC4_128_SHA,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA
 
-server.port=%d
-scheduler.healthserver.port=0
-client.httpClientTimeout=%d
-#Quartz
-org.quartz.scheduler.instanceName=app-autoscaler
-org.quartz.scheduler.instanceId=0
-spring.quartz.properties.org.quartz.scheduler.instanceName=app-autoscaler
-spring.quartz.properties.org.quartz.scheduler.instanceId=scheduler-12345
-#The the number of milliseconds the scheduler will ‘tolerate’ a trigger to pass its next-fire-time by,
-# before being considered “misfired”. The default value (if not specified in  configuration) is 60000 (60 seconds)
-spring.quartz.properties.org.quartz.jobStore.misfireThreshold=120000
-spring.quartz.properties.org.quartz.jobStore.driverDelegateClass=org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
-spring.quartz.properties.org.quartz.jobStore.isClustered=true
-spring.quartz.properties.org.quartz.threadPool.threadCount=10
-spring.application.name=scheduler
-spring.mvc.servlet.load-on-startup=1
-spring.aop.auto=false
-endpoints.enabled=false
-spring.data.jpa.repositories.enabled=false
-spring.main.allow-bean-definition-overriding=true
-`
-	settingJsonStr := fmt.Sprintf(settingStrTemplate,
-		driverClassName, jdbcDBUri, userName, password,
-		driverClassName, jdbcDBUri, userName, password,
-		scalingEngineUri,
-		testCertDir, testCertDir, testCertDir, testCertDir,
-		components.Ports[Scheduler],
-		int(httpClientTimeout/time.Second))
-	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
+	type TemplateParameters struct {
+		ScalingEngineUri  string
+		HttpClientTimeout int
+		TestCertDir       string
+		Port              int
+		DriverClassName   string
+		DBUser            string
+		DBPassword        string
+		JDBCURI           string
+	}
+
+	templateParameters := TemplateParameters{
+		ScalingEngineUri:  scalingEngineUri,
+		HttpClientTimeout: int(httpClientTimeout / time.Second),
+		TestCertDir:       testCertDir,
+		Port:              components.Ports[Scheduler],
+		DriverClassName:   driverClassName,
+		DBUser:            userName,
+		DBPassword:        password,
+		JDBCURI:           jdbcDBUri,
+	}
+
+	ut, err := template.New("application.yaml").Parse(schedulerApplicationConfigTemplate)
 	Expect(err).NotTo(HaveOccurred())
-	err = os.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0600)
+
+	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.yaml"))
+	Expect(err).NotTo(HaveOccurred())
+
+	err = ut.Execute(cfgFile, templateParameters)
 	Expect(err).NotTo(HaveOccurred())
 	cfgFile.Close()
 	return cfgFile.Name()
@@ -392,11 +364,13 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			Level: LOGLEVEL,
 		},
 		Server: egConfig.ServerConfig{
-			Port: port,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			ServerConfig: helpers.ServerConfig{
+				Port: port,
+				TLS: models.TLSCerts{
+					KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+					CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				},
 			},
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
@@ -453,7 +427,7 @@ func (components *Components) PrepareScalingEngineConfig(dbURI string, port int,
 			ClientID: "admin",
 			Secret:   "admin",
 		},
-		Server: seConfig.ServerConfig{
+		Server: helpers.ServerConfig{
 			Port: port,
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
@@ -632,7 +606,7 @@ func (components *Components) PrepareMetricsServerConfig(dbURI string, httpClien
 			EnvelopeChannelSize:    100,
 			MetricChannelSize:      100,
 		},
-		Server: msConfig.ServerConfig{
+		Server: helpers.ServerConfig{
 			Port: httpServerPort,
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "metricserver.key"),

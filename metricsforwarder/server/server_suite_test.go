@@ -60,7 +60,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 		MetronAddress: "invalid-host-name-blah:12345",
 	}
-	serverConfig := config.ServerConfig{
+	serverConfig := helpers.ServerConfig{
 		Port: 2222 + GinkgoParallelProcess(),
 	}
 

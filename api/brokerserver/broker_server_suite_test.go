@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"github.com/pivotal-cf/brokerapi/v10/domain"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
@@ -107,7 +108,7 @@ var _ = BeforeSuite(func() {
 	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
 
 	conf = &config.Config{
-		BrokerServer: config.ServerConfig{
+		BrokerServer: helpers.ServerConfig{
 			Port: port,
 		},
 		BrokerCredentials: brokerCreds,

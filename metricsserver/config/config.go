@@ -49,11 +49,6 @@ type CollectorConfig struct {
 	MetricChannelSize      int             `yaml:"metric_channel_size"`
 }
 
-type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
-}
-
 type Config struct {
 	Logging           helpers.LoggingConfig `yaml:"logging"`
 	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
@@ -61,8 +56,8 @@ type Config struct {
 	NodeIndex         int                   `yaml:"node_index"`
 	DB                DBConfig              `yaml:"db"`
 	Collector         CollectorConfig       `yaml:"collector"`
-	Server            ServerConfig          `yaml:"server"`
-	Health            models.HealthConfig   `yaml:"health"`
+	Server            helpers.ServerConfig  `yaml:"server"`
+	Health            helpers.HealthConfig  `yaml:"health"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -71,8 +66,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			Level: DefaultLoggingLevel,
 		},
 		HttpClientTimeout: DefaultHttpClientTimeout,
-		Health: models.HealthConfig{
-			Port: DefaultHealthPort,
+		Health: helpers.HealthConfig{
+			ServerConfig: helpers.ServerConfig{
+				Port: DefaultHealthPort,
+			},
 		},
 		Collector: CollectorConfig{
 			WSPort:                 DefaultWSPort,
@@ -86,7 +83,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			EnvelopeChannelSize:    DefaultEnvelopeChannelSize,
 			MetricChannelSize:      DefaultMetricChannelSize,
 		},
-		Server: ServerConfig{
+		Server: helpers.ServerConfig{
 			Port: DefaultHTTPServerPort,
 		},
 	}

@@ -3,9 +3,9 @@ package publicapiserver
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
@@ -20,7 +20,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/http_server"
 )
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
@@ -81,29 +80,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rcredential.Get(routes.PublicApiCreateCredentialRouteName).Handler(VarsFunc(pah.CreateCredential))
 	rcredential.Get(routes.PublicApiDeleteCredentialRouteName).Handler(VarsFunc(pah.DeleteCredential))
 
-	var addr string
-	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
-		addr = fmt.Sprintf("localhost:%d", conf.PublicApiServer.Port)
-	} else {
-		addr = fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
-	}
-
-	var runner ifrit.Runner
-	if (conf.PublicApiServer.TLS.KeyFile == "") || (conf.PublicApiServer.TLS.CertFile == "") {
-		logger.Info("creating-public-api-http-server")
-		runner = http_server.New(addr, r)
-	} else {
-		logger.Info("creating-public-api-https-server")
-		tlsConfig, err := conf.PublicApiServer.TLS.CreateServerConfig()
-		if err != nil {
-			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.PublicApiServer.TLS})
-			return nil, err
-		}
-		runner = http_server.NewTLSServer(addr, r, tlsConfig)
-	}
-
-	logger.Info("public-api-http-server-created", lager.Data{"serverConfig": conf.PublicApiServer})
-	return runner, nil
+	return helpers.NewHTTPServer(logger, conf.PublicApiServer, r)
 }
 
 func newScalingHistoryHandler(logger lager.Logger, conf *config.Config) (http.Handler, error) {

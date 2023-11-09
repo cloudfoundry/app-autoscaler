@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -116,7 +117,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	publicApiPort = 9000 + GinkgoParallelProcess()
 	healthport = 7000 + GinkgoParallelProcess()
 
-	cfg.BrokerServer = config.ServerConfig{
+	cfg.BrokerServer = helpers.ServerConfig{
 		Port: brokerPort,
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
@@ -124,7 +125,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
-	cfg.PublicApiServer = config.ServerConfig{
+	cfg.PublicApiServer = helpers.ServerConfig{
 		Port: publicApiPort,
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "api.key"),
@@ -198,8 +199,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CF.ClientID = "client-id"
 	cfg.CF.Secret = "client-secret"
 	cfg.CF.SkipSSLValidation = true
-	cfg.Health = models.HealthConfig{
-		Port:                healthport,
+	cfg.Health = helpers.HealthConfig{
+		ServerConfig: helpers.ServerConfig{
+			Port: healthport,
+		},
 		HealthCheckUsername: "healthcheckuser",
 		HealthCheckPassword: "healthcheckpassword",
 	}

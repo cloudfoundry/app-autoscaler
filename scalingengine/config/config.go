@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (
@@ -22,17 +21,14 @@ var defaultCFConfig = cf.Config{
 	ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
 }
 
-type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
-}
-
-var defaultServerConfig = ServerConfig{
+var defaultServerConfig = helpers.ServerConfig{
 	Port: 8080,
 }
 
-var defaultHealthConfig = models.HealthConfig{
-	Port: 8081,
+var defaultHealthConfig = helpers.HealthConfig{
+	ServerConfig: helpers.ServerConfig{
+		Port: 8081,
+	},
 }
 
 var defaultLoggingConfig = helpers.LoggingConfig{
@@ -52,8 +48,8 @@ type SynchronizerConfig struct {
 type Config struct {
 	CF                  cf.Config             `yaml:"cf"`
 	Logging             helpers.LoggingConfig `yaml:"logging"`
-	Server              ServerConfig          `yaml:"server"`
-	Health              models.HealthConfig   `yaml:"health"`
+	Server              helpers.ServerConfig  `yaml:"server"`
+	Health              helpers.HealthConfig  `yaml:"health"`
 	DB                  DBConfig              `yaml:"db"`
 	DefaultCoolDownSecs int                   `yaml:"defaultCoolDownSecs"`
 	LockSize            int                   `yaml:"lockSize"`

@@ -26,16 +26,11 @@ const (
 	DefaultCPUUpperThreshold = 100
 )
 
-type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
-}
-
-var defaultBrokerServerConfig = ServerConfig{
+var defaultBrokerServerConfig = helpers.ServerConfig{
 	Port: 8080,
 }
 
-var defaultPublicApiServerConfig = ServerConfig{
+var defaultPublicApiServerConfig = helpers.ServerConfig{
 	Port: 8081,
 }
 
@@ -86,8 +81,8 @@ type CPUConfig struct {
 
 type Config struct {
 	Logging               helpers.LoggingConfig         `yaml:"logging"`
-	BrokerServer          ServerConfig                  `yaml:"broker_server"`
-	PublicApiServer       ServerConfig                  `yaml:"public_api_server"`
+	BrokerServer          helpers.ServerConfig          `yaml:"broker_server"`
+	PublicApiServer       helpers.ServerConfig          `yaml:"public_api_server"`
 	DB                    map[string]db.DatabaseConfig  `yaml:"db"`
 	BrokerCredentials     []BrokerCredentialsConfig     `yaml:"broker_credentials"`
 	APIClientId           string                        `yaml:"api_client_id"`
@@ -103,7 +98,7 @@ type Config struct {
 	UseBuildInMode        bool                          `yaml:"use_buildin_mode"`
 	InfoFilePath          string                        `yaml:"info_file_path"`
 	MetricsForwarder      MetricsForwarderConfig        `yaml:"metrics_forwarder"`
-	Health                models.HealthConfig           `yaml:"health"`
+	Health                helpers.HealthConfig          `yaml:"health"`
 	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
 	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`

@@ -2,28 +2,24 @@ package brokerserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"github.com/pivotal-cf/brokerapi/v10"
 	"github.com/pivotal-cf/brokerapi/v10/domain"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/go-chi/chi/v5"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/http_server"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -124,27 +120,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 
 	r.HandleFunc(routes.BrokerHealthPath, GetHealth)
 
-	var addr string
-	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
-		addr = fmt.Sprintf("localhost:%d", conf.BrokerServer.Port)
-	} else {
-		addr = fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
-	}
-
-	var runner ifrit.Runner
-	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {
-		runner = http_server.New(addr, r)
-	} else {
-		tlsConfig, err := conf.BrokerServer.TLS.CreateServerConfig()
-		if err != nil {
-			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.BrokerServer.TLS})
-			return nil, fmt.Errorf("broker server tls error: %w", err)
-		}
-		runner = http_server.NewTLSServer(addr, r, tlsConfig)
-	}
-
-	logger.Info("broker-http-server-created", lager.Data{"serverConfig": conf.BrokerServer})
-	return runner, nil
+	return helpers.NewHTTPServer(logger, conf.BrokerServer, r)
 }
 
 func restrictToMaxBcryptLength(logger lager.Logger, brokerCredential config.BrokerCredentialsConfig) config.BrokerCredentialsConfig {

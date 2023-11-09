@@ -1,11 +1,10 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -14,7 +13,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/http_server"
 )
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
@@ -31,25 +29,10 @@ func NewServer(logger lager.Logger, conf *config.Config, queryAppMetric aggregat
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetAggregatedMetricHistoriesRouteName).Handler(VarsFunc(eh.GetAggregatedMetricHistories))
 
-	var addr string
-	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
-		addr = fmt.Sprintf("localhost:%d", conf.Server.Port)
-	} else {
-		addr = fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
+	httpServerConfig := helpers.ServerConfig{
+		Port: conf.Server.Port,
+		TLS:  conf.Server.TLS,
 	}
 
-	var runner ifrit.Runner
-	if (conf.Server.TLS.KeyFile == "") || (conf.Server.TLS.CertFile == "") {
-		runner = http_server.New(addr, r)
-	} else {
-		tlsConfig, err := conf.Server.TLS.CreateServerConfig()
-		if err != nil {
-			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.Server.TLS})
-			return nil, fmt.Errorf("eventGenerator tls config error: %w", err)
-		}
-		runner = http_server.NewTLSServer(addr, r, tlsConfig)
-	}
-
-	logger.Info("http-server-created", lager.Data{"serverConfig": conf.Server})
-	return runner, nil
+	return helpers.NewHTTPServer(logger, httpServerConfig, r)
 }

@@ -34,10 +34,9 @@ const (
 )
 
 type ServerConfig struct {
-	Port      int             `yaml:"port"`
-	TLS       models.TLSCerts `yaml:"tls"`
-	NodeAddrs []string        `yaml:"node_addrs"`
-	NodeIndex int             `yaml:"node_index"`
+	helpers.ServerConfig `yaml:",inline"`
+	NodeAddrs            []string `yaml:"node_addrs"`
+	NodeIndex            int      `yaml:"node_index"`
 }
 type DBConfig struct {
 	PolicyDB    db.DatabaseConfig `yaml:"policy_db"`
@@ -80,7 +79,7 @@ type CircuitBreakerConfig struct {
 type Config struct {
 	Logging                   helpers.LoggingConfig `yaml:"logging"`
 	Server                    ServerConfig          `yaml:"server"`
-	Health                    models.HealthConfig   `yaml:"health"`
+	Health                    helpers.HealthConfig  `yaml:"health"`
 	DB                        DBConfig              `yaml:"db"`
 	Aggregator                AggregatorConfig      `yaml:"aggregator"`
 	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
@@ -98,10 +97,14 @@ func LoadConfig(config []byte) (*Config, error) {
 			Level: DefaultLoggingLevel,
 		},
 		Server: ServerConfig{
-			Port: DefaultServerPort,
+			ServerConfig: helpers.ServerConfig{
+				Port: DefaultServerPort,
+			},
 		},
-		Health: models.HealthConfig{
-			Port: DefaultHealthServerPort,
+		Health: helpers.HealthConfig{
+			ServerConfig: helpers.ServerConfig{
+				Port: DefaultHealthServerPort,
+			},
 		},
 		Aggregator: AggregatorConfig{
 			AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,

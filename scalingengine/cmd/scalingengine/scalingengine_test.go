@@ -51,7 +51,7 @@ var _ = Describe("Main", func() {
 			})
 
 			It("health server starts directly", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.health-server.new-health-server"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.health-server.new-http-server"))
 			})
 		})
 

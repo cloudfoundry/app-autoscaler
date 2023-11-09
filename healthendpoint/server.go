@@ -1,14 +1,11 @@
 package healthendpoint
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
 
 	"code.cloudfoundry.org/lager/v3"
@@ -16,7 +13,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/http_server"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -41,23 +37,19 @@ func (bam *basicAuthenticationMiddleware) middleware(next http.Handler) http.Han
 
 // NewServerWithBasicAuth open the healthcheck port with basic authentication.
 // Make sure that username and password is not empty
-func NewServerWithBasicAuth(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (ifrit.Runner, error) {
+func NewServerWithBasicAuth(conf helpers.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (ifrit.Runner, error) {
 	healthRouter, err := NewHealthRouter(conf, healthCheckers, logger, gatherer, time)
 	if err != nil {
 		return nil, err
 	}
-	var addr string
-	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
-		addr = fmt.Sprintf("localhost:%d", conf.Port)
-	} else {
-		addr = fmt.Sprintf("0.0.0.0:%d", conf.Port)
+	httpServerConfig := helpers.ServerConfig{
+		Port: conf.Port,
+		TLS:  conf.TLS,
 	}
-
-	logger.Info("new-health-server-basic-auth", lager.Data{"addr": addr})
-	return http_server.New(addr, healthRouter), nil
+	return helpers.NewHTTPServer(logger, httpServerConfig, healthRouter)
 }
 
-func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
+func NewHealthRouter(conf helpers.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
 	var healthRouter *mux.Router
 	var err error
 	username := conf.HealthCheckUsername
@@ -80,7 +72,7 @@ func NewHealthRouter(conf models.HealthConfig, healthCheckers []Checker, logger 
 	return healthRouter, nil
 }
 
-func healthBasicAuthRouter(conf models.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
+func healthBasicAuthRouter(conf helpers.HealthConfig, healthCheckers []Checker, logger lager.Logger, gatherer prometheus.Gatherer, time func() time.Time) (*mux.Router, error) {
 	basicAuthentication, err := createBasicAuthMiddleware(logger, conf.HealthCheckUsernameHash, conf.HealthCheckUsername, conf.HealthCheckPasswordHash, conf.HealthCheckPassword)
 	if err != nil {
 		return nil, err

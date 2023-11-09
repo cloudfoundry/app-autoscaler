@@ -50,7 +50,7 @@ var _ = Describe("MetricForwarder", func() {
 				CACertFile: filepath.Join(testCertDir, "loggregator-ca.crt"),
 			},
 		}
-		serverConfig := config.ServerConfig{
+		serverConfig := helpers.ServerConfig{
 			Port: 10000 + GinkgoParallelProcess(),
 		}
 

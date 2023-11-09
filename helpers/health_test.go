@@ -1,11 +1,11 @@
-package models_test
+package helpers_test
 
 import (
 	"errors"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
@@ -13,13 +13,13 @@ import (
 
 var (
 	healthConfigBytes []byte
-	healthConfig      models.HealthConfig
+	healthConfig      helpers.HealthConfig
 )
 
 var _ = Describe("Health Config", func() {
 	BeforeEach(func() {
 		healthConfigBytes = []byte{}
-		healthConfig = models.HealthConfig{}
+		healthConfig = helpers.HealthConfig{}
 	})
 
 	When("Readiness is not supplied", func() {
@@ -37,8 +37,10 @@ readiness_enabled: false
 			err = healthConfig.Validate()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(healthConfig).To(Equal(models.HealthConfig{
-				Port:                  9999,
+			Expect(healthConfig).To(Equal(helpers.HealthConfig{
+				ServerConfig: helpers.ServerConfig{
+					Port: 9999,
+				},
 				HealthCheckUsername:   "test-username",
 				HealthCheckPassword:   "password",
 				ReadinessCheckEnabled: false,
@@ -60,8 +62,10 @@ readiness_enabled: true
 			err = healthConfig.Validate()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(healthConfig).To(Equal(models.HealthConfig{
-				Port:                  9999,
+			Expect(healthConfig).To(Equal(helpers.HealthConfig{
+				ServerConfig: helpers.ServerConfig{
+					Port: 9999,
+				},
 				HealthCheckUsername:   "test-username",
 				HealthCheckPassword:   "password",
 				ReadinessCheckEnabled: true,
@@ -83,7 +87,7 @@ password_hash: password_hash
 			FailOnError("unable to unmarshal to health config", err)
 			err = healthConfig.Validate()
 			Expect(err).To(HaveOccurred())
-			Expect(errors.Is(err, models.ErrConfiguration)).To(BeTrue())
+			Expect(errors.Is(err, helpers.ErrConfiguration)).To(BeTrue())
 			Expect(err.Error()).To(Equal("configuration error: both healthcheck password and healthcheck password_hash are provided, please provide only one of them"))
 		})
 	})

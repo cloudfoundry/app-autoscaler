@@ -122,8 +122,8 @@ var _ = Describe("Api", func() {
 				runner.Start()
 			})
 			It("should start both broker and public-api", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.broker_http_server.broker-http-server-created"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.public-api-http-server-created"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.broker_http_server.new-http-server"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.new-http-server"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.started"))
 			})
 		})
@@ -136,8 +136,8 @@ var _ = Describe("Api", func() {
 				runner.Start()
 			})
 			It("should start not start broker ", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(Say("api.broker_http_server.broker-http-server-created"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.public-api-http-server-created"))
+				Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(Say("api.broker_http_server.new-http-server"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.new-http-server"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.started"))
 			})
 		})

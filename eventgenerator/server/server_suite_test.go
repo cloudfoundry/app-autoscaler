@@ -5,6 +5,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"net/url"
@@ -32,7 +33,9 @@ var _ = BeforeSuite(func() {
 	port := 1111 + GinkgoParallelProcess()
 	conf := &config.Config{
 		Server: config.ServerConfig{
-			Port: port,
+			ServerConfig: helpers.ServerConfig{
+				Port: port,
+			},
 		},
 	}
 	queryAppMetrics := func(appID string, metricType string, start int64, end int64, orderType db.OrderType) ([]*models.AppMetric, error) {

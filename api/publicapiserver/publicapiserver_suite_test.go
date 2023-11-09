@@ -181,7 +181,7 @@ func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
 		Logging: helpers.LoggingConfig{
 			Level: "debug",
 		},
-		PublicApiServer: config.ServerConfig{
+		PublicApiServer: helpers.ServerConfig{
 			Port: apiServerPort,
 		},
 		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",

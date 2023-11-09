@@ -1,0 +1,87 @@
+autoscaler:
+    scalingengine:
+        url: {{ .ScalingEngineUri }}
+client:
+    httpClientTimeout: {{ .HttpClientTimeout }}
+    ssl:
+        key-store: {{ .TestCertDir }}/scheduler.p12
+        key-store-password: 123456
+        key-store-type: PKCS12
+        protocol: TLSv1.3
+        trust-store: {{ .TestCertDir }}/autoscaler.truststore
+        trust-store-password: 123456
+endpoints:
+    enabled: false
+org:
+    quartz:
+        scheduler:
+            instanceId: 0
+            instanceName: app-autoscaler
+scalingengine:
+    notification:
+        reschedule:
+            maxcount: 3
+scalingenginejob:
+    reschedule:
+        interval:
+            millisecond: 10000
+        maxcount: 3
+scheduler:
+    healthserver:
+        port: 0
+server:
+    port: {{ .Port }}
+    ssl:
+        ciphers: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256
+        enabled-protocols: TLSv1.3
+        bundle: "server"
+        client-auth: NEED
+spring:
+    aop:
+        auto: false
+    application:
+        name: scheduler
+    data:
+        jpa:
+            repositories:
+                enabled: false
+    datasource:
+        driverClassName: {{ .DriverClassName }}
+        password: {{ .DBPassword }}
+        url: {{ .JDBCURI }}
+        username: {{ .DBUser }}
+    main:
+        allow-bean-definition-overriding: true
+    mvc:
+        servlet:
+            load-on-startup: 1
+    policy-db-datasource:
+        driverClassName: {{ .DriverClassName }}
+        password: {{ .DBPassword }}
+        url: {{ .JDBCURI }}
+        username: {{ .DBUser }}
+    quartz:
+        properties:
+            org:
+                quartz:
+                    jobStore:
+                        driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+                        isClustered: true
+                        misfireThreshold: 120000
+                    scheduler:
+                        instanceId: scheduler-12345
+                        instanceName: app-autoscaler
+                    threadPool:
+                        threadCount: 10
+    ssl:
+        bundle:
+            jks:
+                server:
+                    key:
+                        alias: scheduler
+                    keystore:
+                        location: {{ .TestCertDir }}/scheduler.p12
+                        password: '123456'
+                    truststore:
+                        location: {{ .TestCertDir }}/autoscaler.truststore
+                        password: '123456'

@@ -842,8 +842,10 @@ health:
 						CACertFile: "autoscaler_ca.cert",
 					},
 				},
-				Health: models.HealthConfig{
-					Port: 8081,
+				Health: helpers.HealthConfig{
+					ServerConfig: helpers.ServerConfig{
+						Port: 8081,
+					},
 				},
 			}
 		})

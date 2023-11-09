@@ -176,8 +176,10 @@ func initConfig() {
 				CACertFile: caPath,
 			},
 		},
-		Health: models.HealthConfig{
-			Port:                healthport,
+		Health: helpers.HealthConfig{
+			ServerConfig: helpers.ServerConfig{
+				Port: healthport,
+			},
 			HealthCheckUsername: "metricsgatewayhealthcheckuser",
 			HealthCheckPassword: "metricsgatewayhealthcheckpassword",
 		},

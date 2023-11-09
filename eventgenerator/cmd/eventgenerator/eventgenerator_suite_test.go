@@ -182,11 +182,13 @@ func initConfig() {
 			Level: "debug",
 		},
 		Server: config.ServerConfig{
-			Port: egPort,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			ServerConfig: helpers.ServerConfig{
+				Port: egPort,
+				TLS: models.TLSCerts{
+					KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+					CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				},
 			},
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
@@ -243,8 +245,10 @@ func initConfig() {
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
 		HttpClientTimeout:         10 * time.Second,
-		Health: models.HealthConfig{
-			Port:                healthport,
+		Health: helpers.HealthConfig{
+			ServerConfig: helpers.ServerConfig{
+				Port: healthport,
+			},
 			HealthCheckUsername: "healthcheckuser",
 			HealthCheckPassword: "healthcheckpassword",
 		},

@@ -23,28 +23,26 @@ const (
 
 type Config struct {
 	Logging               helpers.LoggingConfig         `yaml:"logging"`
-	Server                ServerConfig                  `yaml:"server"`
+	Server                helpers.ServerConfig          `yaml:"server"`
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
 	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`
-	Health                models.HealthConfig           `yaml:"health"`
+	Health                helpers.HealthConfig          `yaml:"health"`
 	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
 	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
-type ServerConfig struct {
-	Port int `yaml:"port"`
-}
-
-var defaultServerConfig = ServerConfig{
+var defaultServerConfig = helpers.ServerConfig{
 	Port: 6110,
 }
 
-var defaultHealthConfig = models.HealthConfig{
-	Port: 8081,
+var defaultHealthConfig = helpers.HealthConfig{
+	ServerConfig: helpers.ServerConfig{
+		Port: 8081,
+	},
 }
 
 var defaultLoggingConfig = helpers.LoggingConfig{

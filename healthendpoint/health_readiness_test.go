@@ -8,8 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -40,7 +39,7 @@ var _ = Describe("Health Readiness", func() {
 		healthRoute *mux.Router
 		logger      lager.Logger
 		checkers    []healthendpoint.Checker
-		config      models.HealthConfig
+		config      helpers.HealthConfig
 		timesetter  *time.Time
 	)
 
