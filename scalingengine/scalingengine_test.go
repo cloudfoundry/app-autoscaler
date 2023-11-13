@@ -514,23 +514,25 @@ var _ = Describe("ScalingEngine", func() {
 				policyDB.GetAppPolicyReturns(nil, nil)
 			})
 
-			It("should error and store the failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(Equal(errors.New("app does not have policy set")))
+			It("does not update the app and stores the ignored scaling history", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfc.ScaleAppWebProcessCallCount()).To(BeZero())
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
+					Status:       models.ScalingStatusIgnored,
 					OldInstances: 2,
-					NewInstances: -1,
+					NewInstances: 2,
 					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
-					Error:        "app does not have policy set",
+					Message:      "app does not have policy set",
 				}))
 
-				Expect(scalingResult).To(BeNil())
-
+				Expect(scalingResult.AppId).To(Equal("an-app-id"))
+				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
+				Expect(scalingResult.Adjustment).To(Equal(0))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
 			})
 		})
 

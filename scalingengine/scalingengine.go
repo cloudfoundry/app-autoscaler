@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -149,11 +148,13 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 			return nil, err
 		}
 		if policy == nil {
-			logger.Error("failed-to-get-app-policy", err)
-			history.Status = models.ScalingStatusFailed
-			history.Error = "app does not have policy set"
-			err = errors.New("app does not have policy set")
-			return nil, err
+			logger.Info("check-get-app-policy", lager.Data{"message": "ignore scaling since app does not have scaling policy"})
+			history.Status = models.ScalingStatusIgnored
+			history.NewInstances = instances
+			history.Message = "app does not have policy set"
+			result.Status = history.Status
+			result.CooldownExpiredAt = 0
+			return result, nil
 		}
 		instanceMin = policy.InstanceMin
 		instanceMax = policy.InstanceMax
