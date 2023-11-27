@@ -119,7 +119,7 @@ func (h *ScalingHistoryHandler) V1AppsGUIDScalingHistoriesGet(ctx context.Contex
 			AppID:        scalinghistory.NewOptGUID(scalinghistory.GUID(item.AppId)),
 			Status:       scalinghistory.NewOptHistoryEntryStatus(scalinghistory.HistoryEntryStatus(item.Status)),
 			Timestamp:    scalinghistory.NewOptInt(int(item.Timestamp)),
-			ScalingType:  scalinghistory.OptHistoryEntryScalingType{},
+			ScalingType:  scalinghistory.NewOptHistoryEntryScalingType(scalinghistory.HistoryEntryScalingType(item.ScalingType)),
 			OldInstances: scalinghistory.NewOptInt64(int64(item.OldInstances)),
 			NewInstances: scalinghistory.NewOptInt64(int64(item.NewInstances)),
 			Reason:       scalinghistory.NewOptString(item.Reason),
