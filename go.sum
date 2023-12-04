@@ -918,8 +918,8 @@ github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
-github.com/ogen-go/ogen v0.78.0 h1:3OIlrvdmVQ4LfoayxbdyLa4cGbtrACW0XxpdRfYzQfs=
-github.com/ogen-go/ogen v0.78.0/go.mod h1:xc4jgbzGEEMvnVumt1uBMP9HQNV45UMs3SjAukxxo8I=
+github.com/ogen-go/ogen v0.79.1 h1:36BC2UOcd11kUmFpa+rRM6FA5PrNiTxS5j0bci2ynk0=
+github.com/ogen-go/ogen v0.79.1/go.mod h1:e5C5vCATb/9JqS1Q4qFWpsqUHKcIDh8D/ah0tqHOt7M=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.12.1/go.mod h1:zj2OWP4+oCPe1qIXoGWkgMRwljMUYCdkwsT2108oapk=
 github.com/onsi/ginkgo v1.16.4/go.mod h1:dX+/inL/fNMqNlz0e9LfyB9TswhZpCVdJM/Z6Vvnwo0=
