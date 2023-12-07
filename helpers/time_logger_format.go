@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -38,7 +39,8 @@ func (tlf TimeLogFormat) ToJSON() []byte {
 			content, err = json.Marshal(tlf)
 		}
 		if err != nil {
-			panic(err)
+			_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
+			content = []byte("{}")
 		}
 	}
 	return content

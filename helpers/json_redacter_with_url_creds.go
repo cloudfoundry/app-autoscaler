@@ -3,6 +3,8 @@ package helpers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"regexp"
 
 	"code.cloudfoundry.org/lager/v3"
@@ -32,6 +34,10 @@ func NewJSONRedacterWithURLCred(keyPatterns []string, valuePatterns []string) (*
 
 func (r JSONRedacterWithURLCred) Redact(data []byte) []byte {
 	var jsonBlob interface{}
+	if len(data) == 0 {
+		_, _ = fmt.Fprintf(os.Stderr, "%s", "unncessary to redact empty json object")
+		return data
+	}
 	err := json.Unmarshal(data, &jsonBlob)
 	if err != nil {
 		return handleError(err)
@@ -84,7 +90,8 @@ func handleError(err error) []byte {
 		content, err = json.Marshal(data)
 	}
 	if err != nil {
-		panic(err)
+		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
+		return content
 	}
 	return content
 }
