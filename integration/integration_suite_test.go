@@ -620,6 +620,20 @@ func createScalingHistory(appId string, timestamp int64) models.AppScalingHistor
 	}
 }
 
+func createScalingHistoryError(appId string, timestamp int64) models.AppScalingHistory {
+	return models.AppScalingHistory{
+		AppId:        appId,
+		OldInstances: -1,
+		NewInstances: -1,
+		Reason:       "a reason",
+		Message:      "a message",
+		ScalingType:  models.ScalingTypeDynamic,
+		Status:       models.ScalingStatusFailed,
+		Error:        "an error",
+		Timestamp:    timestamp,
+	}
+}
+
 func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
 	var count int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid=? AND oldinstances=? AND newinstances=?")

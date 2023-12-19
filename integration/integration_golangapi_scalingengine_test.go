@@ -126,7 +126,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 
 		Context("Get scaling histories", func() {
 			BeforeEach(func() {
-				history1 := createScalingHistory(appId, 666666)
+				history1 := createScalingHistoryError(appId, 666666)
 				insertScalingHistory(&history1)
 
 				history2 := createScalingHistory(appId, 222222)
@@ -158,12 +158,12 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							AppId:        appId,
 							Timestamp:    666666,
 							ScalingType:  models.ScalingTypeDynamic,
-							Status:       models.ScalingStatusSucceeded,
-							OldInstances: 2,
-							NewInstances: 4,
+							Status:       models.ScalingStatusFailed,
+							OldInstances: -1,
+							NewInstances: -1,
 							Reason:       "a reason",
 							Message:      "a message",
-							Error:        "",
+							Error:        "an error",
 						},
 						{
 							AppId:        appId,
@@ -261,12 +261,12 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							AppId:        appId,
 							Timestamp:    666666,
 							ScalingType:  models.ScalingTypeDynamic,
-							Status:       models.ScalingStatusSucceeded,
-							OldInstances: 2,
-							NewInstances: 4,
+							Status:       models.ScalingStatusFailed,
+							OldInstances: -1,
+							NewInstances: -1,
 							Reason:       "a reason",
 							Message:      "a message",
-							Error:        "",
+							Error:        "an error",
 						},
 						{
 							AppId:        appId,
