@@ -11,7 +11,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 	dario.cat/mergo v1.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-chi/chi/v5 v5.0.11
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.1.0
 	github.com/go-sql-driver/mysql v1.7.1
