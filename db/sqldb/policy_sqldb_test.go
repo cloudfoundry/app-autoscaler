@@ -129,7 +129,7 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			appIds, err = pdb.GetAppIds()
+			appIds, err = pdb.GetAppIds(context.TODO())
 		})
 
 		Context("when policy table is empty", func() {

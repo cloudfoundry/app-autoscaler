@@ -9,7 +9,7 @@ import (
 )
 
 type Operator interface {
-	Operate()
+	Operate(ctx context.Context)
 }
 
 var _ Operator = &ApplicationSynchronizer{}
@@ -28,9 +28,9 @@ func NewApplicationSynchronizer(cfClient cf.CFClient, policyDb db.PolicyDB, logg
 	}
 }
 
-func (as ApplicationSynchronizer) Operate() {
+func (as ApplicationSynchronizer) Operate(ctx context.Context) {
 	// Get all the application details from policyDB
-	appIds, err := as.policyDb.GetAppIds()
+	appIds, err := as.policyDb.GetAppIds(ctx)
 	if err != nil {
 		as.logger.Error("failed-to-get-apps", err)
 		return

@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"context"
 	"os"
 	"strings"
 	"sync"
@@ -645,7 +646,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = idb.PruneInstanceMetrics(before)
+			err = idb.PruneInstanceMetrics(context.TODO(), before)
 		})
 
 		Context("when pruning metrics before all the timestamps of metrics", func() {

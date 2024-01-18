@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"context"
 	"os"
 	"strings"
 	"sync"
@@ -404,7 +405,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = adb.PruneAppMetrics(before)
+			err = adb.PruneAppMetrics(context.TODO(), before)
 		})
 
 		Context("when pruning app metrics before all the timestamps of metrics", func() {

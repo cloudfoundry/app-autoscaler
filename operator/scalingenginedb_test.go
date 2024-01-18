@@ -1,6 +1,7 @@
 package operator_test
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -35,13 +36,14 @@ var _ = Describe("ScalingEngineDbPruner", func() {
 
 	Describe("Prune", func() {
 		JustBeforeEach(func() {
-			scalingEngineDbPruner.Operate()
+			scalingEngineDbPruner.Operate(context.Background())
 		})
 
 		Context("when pruning records from scalinghistory table", func() {
 			It("prunes as per given cutoff days", func() {
 				Eventually(scalingEngineDB.PruneScalingHistoriesCallCount).Should(Equal(1))
-				Expect(scalingEngineDB.PruneScalingHistoriesArgsForCall(0)).To(Equal(fclock.Now().Add(-cutoffDuration).UnixNano()))
+				_, cutoffTime := scalingEngineDB.PruneScalingHistoriesArgsForCall(0)
+				Expect(cutoffTime).To(Equal(fclock.Now().Add(-cutoffDuration).UnixNano()))
 			})
 		})
 

@@ -3,6 +3,7 @@ package metricsgateway
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"golang.org/x/exp/maps"
+	"golang.org/x/net/context"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
@@ -68,7 +69,7 @@ func (am *AppManager) startAppIDsRetrieve() {
 }
 
 func (am *AppManager) retrieveAppIDs() (map[string]bool, error) {
-	appIDMap, err := am.policyDB.GetAppIds()
+	appIDMap, err := am.policyDB.GetAppIds(context.Background())
 	if err != nil {
 		am.logger.Error("retrieve-app-ids", err)
 		return nil, err

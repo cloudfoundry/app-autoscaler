@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"context"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -25,11 +26,11 @@ func NewScalingEngineDbPruner(scalingEngineDb db.ScalingEngineDB, cutoffDuration
 	}
 }
 
-func (sdp ScalingEngineDbPruner) Operate() {
+func (sdp ScalingEngineDbPruner) Operate(ctx context.Context) {
 	sdp.logger.Debug("Pruning  scaling histories")
 
 	timestamp := sdp.clock.Now().Add(-sdp.cutoffDuration).UnixNano()
-	err := sdp.scalingEngineDb.PruneScalingHistories(timestamp)
+	err := sdp.scalingEngineDb.PruneScalingHistories(ctx, timestamp)
 	if err != nil {
 		sdp.logger.Error("failed-prune-scaling-histories", err)
 		return

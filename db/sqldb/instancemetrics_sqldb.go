@@ -9,6 +9,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/jmoiron/sqlx"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 )
 
 type InstanceMetricsSQLDB struct {
@@ -23,7 +25,7 @@ func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*
 		return nil, err
 	}
 
-	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("failed-open-instancemetrics-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -174,9 +176,9 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 	}
 	return mtrcs, rows.Err()
 }
-func (idb *InstanceMetricsSQLDB) PruneInstanceMetrics(before int64) error {
+func (idb *InstanceMetricsSQLDB) PruneInstanceMetrics(ctx context.Context, before int64) error {
 	query := idb.sqldb.Rebind("DELETE FROM appinstancemetrics WHERE timestamp <= ?")
-	_, err := idb.sqldb.Exec(query, before)
+	_, err := idb.sqldb.ExecContext(ctx, query, before)
 	if err != nil {
 		idb.logger.Error("failed-prune-instancemetric-from-appinstancemetrics-table", err, lager.Data{"query": query, "before": before})
 	}

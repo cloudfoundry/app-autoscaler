@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"context"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -25,12 +26,12 @@ func NewAppMetricsDbPruner(appMetricsDb db.AppMetricDB, cutoffDuration time.Dura
 	}
 }
 
-func (amdp AppMetricsDbPruner) Operate() {
+func (amdp AppMetricsDbPruner) Operate(ctx context.Context) {
 	amdp.logger.Debug("Pruning app metrics")
 
 	timestamp := amdp.clock.Now().Add(-amdp.cutoffDuration).UnixNano()
 
-	err := amdp.appMetricsDb.PruneAppMetrics(timestamp)
+	err := amdp.appMetricsDb.PruneAppMetrics(ctx, timestamp)
 	if err != nil {
 		amdp.logger.Error("failed-prune-appmetrics", err)
 		return

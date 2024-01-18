@@ -3,6 +3,7 @@ package fakes
 // Multiple go:generate directives instead of counterfeiter:generate due to https://github.com/maxbrunsfeld/counterfeiter/issues/254
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_wshelper.go ./metricsgateway/helpers WSHelper
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_cf_client.go ./cf CFClient
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_cf_context_client.go ./cf ContextClient
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_policy_db.go ./db PolicyDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_scalingengine_db.go ./db ScalingEngineDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_scheduler_db.go ./db SchedulerDB

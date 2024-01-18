@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -26,11 +27,11 @@ func NewScheduleSynchronizer(client *http.Client, url string, clock clock.Clock,
 	}
 }
 
-func (s ScheduleSynchronizer) Operate() {
+func (s ScheduleSynchronizer) Operate(ctx context.Context) {
 	syncURL := s.url + routes.SyncActiveSchedulesPath
 	s.logger.Debug(fmt.Sprintf("Sync schedules of %s", syncURL))
 
-	req, err := http.NewRequest("PUT", syncURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "PUT", syncURL, nil)
 	if err != nil {
 		s.logger.Error("failed-to-create-sync-scheduler-request", err)
 	}

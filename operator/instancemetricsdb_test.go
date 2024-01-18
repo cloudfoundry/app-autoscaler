@@ -1,6 +1,7 @@
 package operator_test
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -39,13 +40,14 @@ var _ = Describe("InstanceMetricsDB Prune", func() {
 
 	Describe("Prune", func() {
 		JustBeforeEach(func() {
-			instanceMetricsDbPruner.Operate()
+			instanceMetricsDbPruner.Operate(context.Background())
 		})
 
 		Context("when pruning metrics records from instancemetrics db", func() {
 			It("prunes as per given cutoff days", func() {
 				Eventually(instanceMetricsDb.PruneInstanceMetricsCallCount).Should(Equal(1))
-				Expect(instanceMetricsDb.PruneInstanceMetricsArgsForCall(0)).To(BeNumerically("==", fclock.Now().Add(-cutoffDuration).UnixNano()))
+				_, cutoffTime := instanceMetricsDb.PruneInstanceMetricsArgsForCall(0)
+				Expect(cutoffTime).To(BeNumerically("==", fclock.Now().Add(-cutoffDuration).UnixNano()))
 			})
 		})
 

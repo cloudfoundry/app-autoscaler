@@ -1,6 +1,7 @@
 package metricsgateway_test
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -41,7 +42,7 @@ var _ = Describe("AppManager", func() {
 		Context("when the AppManager is started", func() {
 			BeforeEach(func() {
 				i := 0
-				policyDB.GetAppIdsStub = func() (map[string]bool, error) {
+				policyDB.GetAppIdsStub = func(_ context.Context) (map[string]bool, error) {
 					if i == 0 {
 						i++
 						return map[string]bool{"testAppId-1": true, "testAppId-2": true}, nil
@@ -61,7 +62,7 @@ var _ = Describe("AppManager", func() {
 
 			Context("when retrieving policies from policyDB fails", func() {
 				BeforeEach(func() {
-					policyDB.GetAppIdsStub = func() (map[string]bool, error) {
+					policyDB.GetAppIdsStub = func(_ context.Context) (map[string]bool, error) {
 						return nil, errors.New("error when retrieve app ids from policyDB")
 					}
 				})

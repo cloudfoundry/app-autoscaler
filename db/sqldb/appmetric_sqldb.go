@@ -5,6 +5,8 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 
 	"database/sql"
 	"time"
@@ -26,7 +28,7 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 		return nil, err
 	}
 
-	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -138,9 +140,9 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 	return appMetricList, rows.Err()
 }
 
-func (adb *AppMetricSQLDB) PruneAppMetrics(before int64) error {
+func (adb *AppMetricSQLDB) PruneAppMetrics(ctx context.Context, before int64) error {
 	query := adb.sqldb.Rebind("DELETE FROM app_metric WHERE timestamp <= ?")
-	_, err := adb.sqldb.Exec(query, before)
+	_, err := adb.sqldb.ExecContext(ctx, query, before)
 	if err != nil {
 		adb.logger.Error("prune-metrics-from-app_metric-table", err, lager.Data{"query": query, "before": before})
 	}

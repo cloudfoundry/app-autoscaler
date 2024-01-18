@@ -2,6 +2,7 @@ package db_test
 
 import (
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,8 +28,9 @@ var _ = Describe("Helper", func() {
 			It("returns mysql database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName: "mysql",
-					DSN:        "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=preferred",
+					DriverName:    "mysql",
+					DSN:           "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=preferred",
+					OTELAttribute: semconv.DBSystemMySQL,
 				}))
 			})
 		})
@@ -40,8 +42,9 @@ var _ = Describe("Helper", func() {
 			It("returns mysql database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName: "mysql",
-					DSN:        "root@tcp(localhost:3306)/autoscaler?parseTime=true",
+					DriverName:    "mysql",
+					DSN:           "root@tcp(localhost:3306)/autoscaler?parseTime=true",
+					OTELAttribute: semconv.DBSystemMySQL,
 				}))
 			})
 
@@ -55,8 +58,9 @@ var _ = Describe("Helper", func() {
 			It("returns mysql database connection", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName: "mysql",
-					DSN:        "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
+					DriverName:    "mysql",
+					DSN:           "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
+					OTELAttribute: semconv.DBSystemMySQL,
 				}))
 			})
 		})
@@ -78,8 +82,9 @@ var _ = Describe("Helper", func() {
 			It("returns postgres database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName: "pgx",
-					DSN:        "postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable",
+					DriverName:    "pgx",
+					DSN:           "postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable",
+					OTELAttribute: semconv.DBSystemPostgreSQL,
 				}))
 			})
 		})

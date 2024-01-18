@@ -1,6 +1,7 @@
 package operator_test
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -35,7 +36,7 @@ var _ = Describe("ScheduleSynchronizer", func() {
 
 	Describe("Sync", func() {
 		JustBeforeEach(func() {
-			scheduleSynchronizer.Operate()
+			scheduleSynchronizer.Operate(context.Background())
 		})
 
 		Context("when sync server is available", func() {

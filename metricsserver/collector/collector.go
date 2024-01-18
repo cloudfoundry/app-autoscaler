@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"golang.org/x/exp/maps"
+	"golang.org/x/net/context"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/collection"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -96,7 +97,7 @@ func (c *metricCollector) startAppRefresh() {
 // Remove metrics from cache that it should not track anymore, when a policy changes or the node does
 // not take case or that app anymore
 func (c *metricCollector) refreshApps() {
-	apps, err := c.policyDb.GetAppIds()
+	apps, err := c.policyDb.GetAppIds(context.Background())
 	if err != nil {
 		c.logger.Error("refresh-apps", err)
 		return

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 
 	"code.cloudfoundry.org/lager/v3"
 	_ "github.com/go-sql-driver/mysql"
@@ -30,7 +32,7 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 		return nil, err
 	}
 
-	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("open-binding-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

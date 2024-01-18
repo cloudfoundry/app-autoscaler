@@ -1,6 +1,7 @@
 package collector_test
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -113,7 +114,7 @@ var _ = Describe("Collector", func() {
 
 			Context("when there are apps in policy db", func() {
 				BeforeEach(func() {
-					policyDb.GetAppIdsStub = func() (map[string]bool, error) {
+					policyDb.GetAppIdsStub = func(_ context.Context) (map[string]bool, error) {
 						switch policyDb.GetAppIdsCallCount() {
 						case 1:
 							return map[string]bool{"app-id-1": true, "app-id-3": true}, nil
@@ -147,7 +148,7 @@ var _ = Describe("Collector", func() {
 			Context("when running with 3 nodes", func() {
 				BeforeEach(func() {
 					nodeNum = 3
-					policyDb.GetAppIdsStub = func() (map[string]bool, error) {
+					policyDb.GetAppIdsStub = func(_ context.Context) (map[string]bool, error) {
 						switch policyDb.GetAppIdsCallCount() {
 						case 1:
 							return map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true, "app-id-4": true}, nil

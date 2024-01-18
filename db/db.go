@@ -48,14 +48,14 @@ type InstanceMetricsDB interface {
 	RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
 	SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error
-	PruneInstanceMetrics(before int64) error
+	PruneInstanceMetrics(ctx context.Context, before int64) error
 	io.Closer
 }
 
 type PolicyDB interface {
 	healthendpoint.DatabaseStatus
 	healthendpoint.Pinger
-	GetAppIds() (map[string]bool, error)
+	GetAppIds(ctx context.Context) (map[string]bool, error)
 	GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error
 	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.ScalingPolicy, newPolicyGuid string) ([]string, error)
@@ -92,7 +92,7 @@ type AppMetricDB interface {
 	SaveAppMetric(appMetric *models.AppMetric) error
 	SaveAppMetricsInBulk(metrics []*models.AppMetric) error
 	RetrieveAppMetrics(appId string, metricType string, start int64, end int64, orderType OrderType) ([]*models.AppMetric, error)
-	PruneAppMetrics(before int64) error
+	PruneAppMetrics(ctx context.Context, before int64) error
 	io.Closer
 }
 
@@ -102,7 +102,7 @@ type ScalingEngineDB interface {
 
 	CountScalingHistories(ctx context.Context, appId string, start int64, end int64, includeAll bool) (int, error)
 	RetrieveScalingHistories(ctx context.Context, appId string, start int64, end int64, orderType OrderType, includeAll bool, page int, resultsPerPAge int) ([]*models.AppScalingHistory, error)
-	PruneScalingHistories(before int64) error
+	PruneScalingHistories(ctx context.Context, before int64) error
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
 	CanScaleApp(appId string) (bool, int64, error)
 	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)

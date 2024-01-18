@@ -9,11 +9,14 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
 type Database struct {
-	DriverName string
-	DSN        string
+	DriverName    string
+	DSN           string
+	OTELAttribute attribute.KeyValue
 }
 
 type MySQLConfig struct {
@@ -54,8 +57,10 @@ func GetConnection(dbUrl string) (*Database, error) {
 			return nil, err
 		}
 		database.DSN = cfg.config.FormatDSN()
+		database.OTELAttribute = semconv.DBSystemMySQL
 	case PostgresDriverName:
 		database.DSN = dbUrl
+		database.OTELAttribute = semconv.DBSystemPostgreSQL
 	}
 	return database, nil
 }

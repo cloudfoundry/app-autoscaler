@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -31,7 +32,7 @@ func (opr *OperatorRunner) Run(signals <-chan os.Signal, ready chan<- struct{}) 
 	opr.logger.Info("started", lager.Data{"refresh_interval": opr.interval})
 
 	for {
-		go opr.operator.Operate()
+		go opr.operator.Operate(context.Background())
 		select {
 		case <-signals:
 			ticker.Stop()

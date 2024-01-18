@@ -9,6 +9,8 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 
 	"code.cloudfoundry.org/lager/v3"
 	_ "github.com/go-sql-driver/mysql"
@@ -34,7 +36,7 @@ func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQL
 		return nil, err
 	}
 
-	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("open-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -68,11 +70,11 @@ func (pdb *PolicySQLDB) Close() error {
 	return nil
 }
 
-func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
+func (pdb *PolicySQLDB) GetAppIds(ctx context.Context) (map[string]bool, error) {
 	appIds := make(map[string]bool)
 	query := "SELECT app_id FROM policy_json"
 
-	rows, err := pdb.sqldb.QueryContext(context.Background(), query)
+	rows, err := pdb.sqldb.QueryContext(ctx, query)
 	if err != nil {
 		pdb.logger.Error("get-appids-from-policy-table", err, lager.Data{"query": query})
 		return nil, err

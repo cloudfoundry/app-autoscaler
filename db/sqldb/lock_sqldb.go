@@ -10,6 +10,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
+	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -28,7 +30,7 @@ func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger)
 		return nil, err
 	}
 
-	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("open-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

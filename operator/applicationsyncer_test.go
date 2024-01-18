@@ -1,6 +1,8 @@
 package operator_test
 
 import (
+	"context"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
@@ -27,7 +29,7 @@ var _ = Describe("AppSynchronizer", func() {
 
 	Describe("Sync", func() {
 		JustBeforeEach(func() {
-			appSynchronizer.Operate()
+			appSynchronizer.Operate(context.Background())
 		})
 
 		BeforeEach(func() {

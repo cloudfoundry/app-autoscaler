@@ -1,7 +1,7 @@
 package sqldb_test
 
 import (
-	context2 "context"
+	"context"
 	"os"
 	"strings"
 	"time"
@@ -230,12 +230,12 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 
 		JustBeforeEach(func() {
-			histories, err = sdb.RetrieveScalingHistories(context2.TODO(), appId, start, end, orderType, includeAll, 1, 50)
+			histories, err = sdb.RetrieveScalingHistories(context.TODO(), appId, start, end, orderType, includeAll, 1, 50)
 		})
 
 		Context("When the app has no history", func() {
 			It("returns empty metrics", func() {
-				histories, err = sdb.RetrieveScalingHistories(context2.TODO(), "app-id-no-history", start, end, orderType, includeAll, 1, 50)
+				histories, err = sdb.RetrieveScalingHistories(context.TODO(), "app-id-no-history", start, end, orderType, includeAll, 1, 50)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(BeEmpty())
 			})
@@ -499,7 +499,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = sdb.PruneScalingHistories(before)
+			err = sdb.PruneScalingHistories(context.TODO(), before)
 		})
 
 		Context("when pruning histories before all the timestamps", func() {
