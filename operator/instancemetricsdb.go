@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 )
@@ -22,14 +21,17 @@ func NewInstanceMetricsDbPruner(instanceMetricsDb db.InstanceMetricsDB, cutoffDu
 		instanceMetricsDb: instanceMetricsDb,
 		cutoffDuration:    cutoffDuration,
 		clock:             clock,
-		logger:            logger,
+		logger:            logger.Session("instance_metrics_db_pruner"),
 	}
 }
 
 func (idp InstanceMetricsDbPruner) Operate(ctx context.Context) {
-	idp.logger.Debug("Pruning instance metrics")
-
 	timestamp := idp.clock.Now().Add(-idp.cutoffDuration).UnixNano()
+
+	logger := idp.logger.Session("pruning-instance-metrics", lager.Data{"cutoff-time": timestamp})
+	logger.Info("starting")
+	defer logger.Info("completed")
+
 	err := idp.instanceMetricsDb.PruneInstanceMetrics(ctx, timestamp)
 	if err != nil {
 		idp.logger.Error("failed-prune-metrics", err)

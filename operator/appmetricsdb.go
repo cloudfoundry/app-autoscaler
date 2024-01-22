@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 )
@@ -22,14 +21,16 @@ func NewAppMetricsDbPruner(appMetricsDb db.AppMetricDB, cutoffDuration time.Dura
 		appMetricsDb:   appMetricsDb,
 		cutoffDuration: cutoffDuration,
 		clock:          clock,
-		logger:         logger,
+		logger:         logger.Session("app_metrics_db_pruner"),
 	}
 }
 
 func (amdp AppMetricsDbPruner) Operate(ctx context.Context) {
-	amdp.logger.Debug("Pruning app metrics")
-
 	timestamp := amdp.clock.Now().Add(-amdp.cutoffDuration).UnixNano()
+
+	logger := amdp.logger.Session("pruning-app-metrics", lager.Data{"cutoff-time": timestamp})
+	logger.Info("starting")
+	defer logger.Info("completed")
 
 	err := amdp.appMetricsDb.PruneAppMetrics(ctx, timestamp)
 	if err != nil {

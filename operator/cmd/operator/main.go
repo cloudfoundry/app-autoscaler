@@ -124,7 +124,7 @@ func main() {
 	schedulerSyncRunner := operator.NewOperatorRunner(schedulerSync, conf.Scheduler.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "application-sync"
-	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDb, logger.Session(loggerSessionName))
+	applicationSync := operator.NewApplicationSynchronizer(cfClient.GetCtxClient(), policyDb, logger.Session(loggerSessionName))
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	members := grouper.Members{

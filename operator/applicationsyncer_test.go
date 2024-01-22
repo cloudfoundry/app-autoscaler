@@ -16,13 +16,13 @@ import (
 var _ = Describe("AppSynchronizer", func() {
 	var (
 		appSynchronizer *operator.ApplicationSynchronizer
-		cfc             *fakes.FakeCFClient
+		cfc             *fakes.FakeContextClient
 		policyDB        *fakes.FakePolicyDB
 	)
 
 	BeforeEach(func() {
 		logger := lagertest.NewTestLogger("application-synchoronizer-test")
-		cfc = &fakes.FakeCFClient{}
+		cfc = &fakes.FakeContextClient{}
 		policyDB = &fakes.FakePolicyDB{}
 		appSynchronizer = operator.NewApplicationSynchronizer(cfc, policyDB, logger)
 	})

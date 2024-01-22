@@ -2,7 +2,6 @@ package operator
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
@@ -23,13 +22,16 @@ func NewScheduleSynchronizer(client *http.Client, url string, clock clock.Clock,
 		client: client,
 		url:    url,
 		clock:  clock,
-		logger: logger,
+		logger: logger.Session("schedule_synchronizer"),
 	}
 }
 
 func (s ScheduleSynchronizer) Operate(ctx context.Context) {
 	syncURL := s.url + routes.SyncActiveSchedulesPath
-	s.logger.Debug(fmt.Sprintf("Sync schedules of %s", syncURL))
+
+	logger := s.logger.Session("syncing-schedules", lager.Data{"sync-url": syncURL})
+	logger.Info("starting")
+	defer logger.Info("completed")
 
 	req, err := http.NewRequestWithContext(ctx, "PUT", syncURL, nil)
 	if err != nil {

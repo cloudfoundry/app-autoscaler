@@ -15,20 +15,24 @@ type Operator interface {
 var _ Operator = &ApplicationSynchronizer{}
 
 type ApplicationSynchronizer struct {
-	cfClient cf.CFClient
+	cfClient cf.ContextClient
 	policyDb db.PolicyDB
 	logger   lager.Logger
 }
 
-func NewApplicationSynchronizer(cfClient cf.CFClient, policyDb db.PolicyDB, logger lager.Logger) *ApplicationSynchronizer {
+func NewApplicationSynchronizer(cfClient cf.ContextClient, policyDb db.PolicyDB, logger lager.Logger) *ApplicationSynchronizer {
 	return &ApplicationSynchronizer{
 		policyDb: policyDb,
 		cfClient: cfClient,
-		logger:   logger,
+		logger:   logger.Session("application-synchronizer"),
 	}
 }
 
 func (as ApplicationSynchronizer) Operate(ctx context.Context) {
+	logger := as.logger.Session("syncing-apps")
+	logger.Info("starting")
+	defer logger.Info("completed")
+
 	// Get all the application details from policyDB
 	appIds, err := as.policyDb.GetAppIds(ctx)
 	if err != nil {
@@ -37,18 +41,18 @@ func (as ApplicationSynchronizer) Operate(ctx context.Context) {
 	}
 	// For each app check if they really exist or not via CC api call
 	for appID := range appIds {
-		_, err = as.cfClient.GetApp(cf.Guid(appID))
+		_, err = as.cfClient.GetApp(ctx, cf.Guid(appID))
 		if err != nil {
 			as.logger.Error("failed-to-get-app-info", err)
 			if cf.IsNotFound(err) {
 				// Application does not exist, lets clean up app details from policyDB
-				err = as.policyDb.DeletePolicy(context.Background(), appID)
+				err = as.policyDb.DeletePolicy(ctx, appID)
 				if err != nil {
 					as.logger.Error("failed-to-prune-non-existent-application-details", err)
 					//TODO make this a continue and write a test.
 					return
 				}
-				as.logger.Info("successfully-pruned-non-existent-applcation", lager.Data{"appid": appID})
+				as.logger.Info("successfully-pruned-non-existent-application", lager.Data{"appid": appID})
 			}
 		}
 	}
