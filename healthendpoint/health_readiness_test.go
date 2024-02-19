@@ -103,6 +103,10 @@ var _ = Describe("Health Readiness", func() {
 		})
 	})
 
+	const contentTypeHeaderName = "Content-Type"
+	const prometheusContentType = "text/plain; version=0.0.4; charset=utf-8; escaping=values" // We should find a better way to detect if the prometheus endpoint answered the request
+	const jsonContentType = "application/json"
+
 	Context("without basic auth configured", func() {
 		BeforeEach(func() {
 			config.HealthCheckUsername = ""
@@ -115,7 +119,7 @@ var _ = Describe("Health Readiness", func() {
 					Get("/anything").
 					Expect(t).
 					Status(http.StatusOK).
-					Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
+					Header(contentTypeHeaderName, prometheusContentType).
 					End()
 			})
 		})
@@ -126,7 +130,7 @@ var _ = Describe("Health Readiness", func() {
 					Get("/health/readiness").
 					Expect(t).
 					Status(http.StatusOK).
-					Header("Content-Type", "application/json").
+					Header(contentTypeHeaderName, jsonContentType).
 					Body(`{"overall_status" : "UP", "checks" : [] }`).
 					End()
 			})
@@ -140,7 +144,7 @@ var _ = Describe("Health Readiness", func() {
 					Get("/health/readiness").
 					Expect(t).
 					Status(http.StatusOK).
-					Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8").
+					Header(contentTypeHeaderName, prometheusContentType).
 					End()
 			})
 		})
@@ -155,7 +159,7 @@ var _ = Describe("Health Readiness", func() {
 						Get("/health/readiness").
 						Expect(t).
 						Status(http.StatusOK).
-						Header("Content-Type", "application/json").
+						Header(contentTypeHeaderName, jsonContentType).
 						Body(`{"overall_status" : "UP", "checks" : [] }`).
 						End()
 				})
@@ -174,8 +178,8 @@ var _ = Describe("Health Readiness", func() {
 						Get("/health/readiness").
 						Expect(t).
 						Status(http.StatusOK).
-						Header("Content-Type", "application/json").
-						Body(`{ 
+						Header(contentTypeHeaderName, jsonContentType).
+						Body(`{
 	"overall_status" : "UP",
 	"checks" : [ {"name": "policy", "type": "database", "status": "UP" } ]
 }`).
@@ -252,10 +256,10 @@ var _ = Describe("Health Readiness", func() {
 						Get("/health/readiness").
 						Expect(t).
 						Status(http.StatusOK).
-						Header("Content-Type", "application/json").
-						Body(`{ 
+						Header(contentTypeHeaderName, jsonContentType).
+						Body(`{
 							"overall_status" : "DOWN",
-							"checks" : [ 
+							"checks" : [
 									{"name": "policy", "type": "database", "status": "UP" },
 									{"name": "instance-db", "type": "database", "status": "DOWN" },
 									{"name": "instance", "type": "server", "status": "DOWN" }
