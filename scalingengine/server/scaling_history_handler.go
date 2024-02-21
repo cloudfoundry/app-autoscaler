@@ -38,8 +38,8 @@ func NewScalingHistoryHandler(logger lager.Logger, scalingEngineDB db.ScalingEng
 	return newHandler, nil
 }
 
-func (h *ScalingHistoryHandler) NewError(_ context.Context, err error) *scalinghistory.ErrorResponseStatusCode {
-	result := &scalinghistory.ErrorResponseStatusCode{}
+func (h *ScalingHistoryHandler) NewError(_ context.Context, err error) *scalinghistory.ErrorStatusCode {
+	result := &scalinghistory.ErrorStatusCode{}
 
 	if errors.Is(err, ogenerrors.ErrSecurityRequirementIsNotSatisfied) {
 		result.SetStatusCode(http.StatusUnauthorized)

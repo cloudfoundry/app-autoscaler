@@ -44,8 +44,8 @@ func NewScalingHistoryHandler(logger lager.Logger, conf *config.Config) (*Scalin
 	return newHandler, nil
 }
 
-func (h *ScalingHistoryHandler) NewError(_ context.Context, _ error) *scalinghistory.ErrorResponseStatusCode {
-	result := &scalinghistory.ErrorResponseStatusCode{}
+func (h *ScalingHistoryHandler) NewError(_ context.Context, _ error) *scalinghistory.ErrorStatusCode {
+	result := &scalinghistory.ErrorStatusCode{}
 	result.SetStatusCode(http.StatusInternalServerError)
 	result.SetResponse(scalinghistory.ErrorResponse{
 		Code:    scalinghistory.NewOptString(http.StatusText(http.StatusInternalServerError)),
