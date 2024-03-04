@@ -32,7 +32,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.5.15
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.2.3
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.2.3
