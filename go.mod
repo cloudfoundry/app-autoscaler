@@ -15,7 +15,7 @@ require (
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.1.0
 	github.com/go-sql-driver/mysql v1.7.1
-	github.com/golang/protobuf v1.5.3
+	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/go-retryablehttp v0.7.5
@@ -98,6 +98,6 @@ require (
 	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240228224816-df926f6c8641 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240228224816-df926f6c8641 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
