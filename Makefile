@@ -37,7 +37,9 @@ openapi-generated-clients-and-servers-files = $(wildcard ${openapi-generated-cli
 generate-openapi-generated-clients-and-servers: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
 ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files} &: $(wildcard ./helpers/apis/generate.go) ${openapi-specs-list} ./go.mod ./go.sum
 	@echo "# Generating OpenAPI clients and servers"
-	go generate ./helpers/apis/generate.go
+	# $(wildcard ./helpers/apis/generate.go) causes the target to always being executed, no matter if file exists or not.
+	# so let's don't fail if file can't be found, e.g. the eventgenerator bosh package does not contain it.
+	go generate ./helpers/apis/generate.go || true
 
 # The presence of the subsequent directory indicates whether the fakes still need to be generated
 # or not.
