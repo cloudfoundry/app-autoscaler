@@ -34,7 +34,7 @@ require (
 	github.com/steinfletcher/apitest v1.5.15
 	github.com/stretchr/testify v1.9.0
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
-	github.com/uptrace/opentelemetry-go-extra/otelsql v0.2.3
+	github.com/uptrace/opentelemetry-go-extra/otelsql v0.2.4
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.2.3
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.49.0
