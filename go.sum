@@ -1031,8 +1031,8 @@ github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26 h1:mWCRvpoEMVlslxEvvp
 github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26/go.mod h1:0uD3VMXkZ7Bw0ojGCwDzebBBzPBXtzEZeXai+56BLX4=
 github.com/uptrace/opentelemetry-go-extra/otelsql v0.2.4 h1:x3omFAG2XkvWFg1hvXRinY2ExAL1Aacl7W9ZlYjo6gc=
 github.com/uptrace/opentelemetry-go-extra/otelsql v0.2.4/go.mod h1:qMKJr5fTnY0p7hqCQMNrAk62bCARWR5rAbTrGUFRuh4=
-github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.2.3 h1:KEX51LW1+n8bjRoTl4kP6klKjcptYDJXJ/TxzV8IRDk=
-github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.2.3/go.mod h1:0sguCDru7+Ik9OFJYIgAS8NpUFOoGOCsdU4r311ZrlY=
+github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.2.4 h1:Pt/+CUTRusJb471SBXwkRCz+9pbOjNr80M6LlwqV07w=
+github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.2.4/go.mod h1:kQgNoghy4K/wguxbOd/u0OJw/Y0maNPc7PF4JpEGeUc=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb h1:zGWFAtiMcyryUHoUjUJX0/lt1H2+i2Ka2n+D3DImSNo=
 github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
