@@ -10,7 +10,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.3
 	code.cloudfoundry.org/tlsconfig v0.0.0-20240322144156-e73504174425
 	dario.cat/mergo v1.0.0
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.1.0
