@@ -49,7 +49,7 @@ func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForward
 }
 
 func (mf *metricForwarder) EmitMetric(metric *models.CustomMetric) {
-	mf.logger.Debug("custom-metric-emit-request-received:", lager.Data{"metric": metric})
+	mf.logger.Debug("custom-metric-emit-request-received", lager.Data{"metric": metric})
 
 	options := []loggregator.EmitGaugeOption{
 		loggregator.WithGaugeAppInfo(metric.AppGUID, int(metric.InstanceIndex)),

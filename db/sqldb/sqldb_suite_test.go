@@ -39,7 +39,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	FailOnError("failed to parse database connection", err)
 
 	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
-	FailOnError("can not connect database: ", err)
+	FailOnError("can not connect database", err)
 
 	_, err = dbHelper.Exec("DELETE from binding")
 	FailOnError("can not clean table binding", err)
@@ -61,7 +61,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	lockTable = fmt.Sprintf("test_lock_%d", GinkgoParallelProcess())
 	dbUrl := GetDbUrl()
 	database, err := db.GetConnection(dbUrl)
-	FailOnError("failed to parse database connection: ", err)
+	FailOnError("failed to parse database connection", err)
 
 	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
@@ -69,7 +69,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 
 	err = createLockTable()
-	FailOnError("can not create test lock table: ", err)
+	FailOnError("can not create test lock table", err)
 
 })
 
@@ -89,16 +89,16 @@ var _ = SynchronizedAfterSuite(func() {
 
 func cleanInstanceMetricsTableForApp(appId string) {
 	_, e := dbHelper.Exec(dbHelper.Rebind("DELETE FROM appinstancemetrics where appid=?"), appId)
-	FailOnError("can not clean table appinstancemetrics:", e)
+	FailOnError("can not clean table appinstancemetrics", e)
 }
 
 func hasInstanceMetric(appId string, index int, name string, timestamp int64) bool {
 	query := dbHelper.Rebind("SELECT * FROM appinstancemetrics WHERE appid = ? AND instanceindex = ? AND name = ? AND timestamp = ?")
 	rows, e := dbHelper.Query(query, appId, index, name, timestamp)
-	FailOnError("can not query table appinstancemetrics: ", e)
+	FailOnError("can not query table appinstancemetrics", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table appinstancemetrics: ", rows.Err())
+	FailOnError("can not query table appinstancemetrics", rows.Err())
 	return item
 }
 
@@ -114,30 +114,30 @@ func getNumberOfInstanceMetricsForApp(appId string) int {
 func hasServiceInstance(serviceInstanceId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ?")
 	rows, e := dbHelper.Query(query, serviceInstanceId)
-	FailOnError("can not query table service_instance: ", e)
+	FailOnError("can not query table service_instance", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table appinstancemetrics: ", rows.Err())
+	FailOnError("can not query table appinstancemetrics", rows.Err())
 	return item
 }
 
 func hasServiceInstanceWithNullDefaultPolicy(serviceInstanceId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ? AND default_policy IS NULL AND default_policy_guid IS NULL")
 	rows, e := dbHelper.Query(query, serviceInstanceId)
-	FailOnError("can not query table service_instance: ", e)
+	FailOnError("can not query table service_instance", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table appinstancemetrics: ", rows.Err())
+	FailOnError("can not query table appinstancemetrics", rows.Err())
 	return item
 }
 
 func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? ")
 	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
-	FailOnError("can not query table binding: ", e)
+	FailOnError("can not query table binding", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table binding: ", rows.Err())
+	FailOnError("can not query table binding", rows.Err())
 	return item
 }
 
@@ -210,34 +210,34 @@ func getNumberOfMetricsForApp(appId string) int {
 	var num int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM app_metric where app_id = ?")
 	err := dbHelper.QueryRow(query, appId).Scan(&num)
-	FailOnError("can not count the number of records in table app_metric: ", err)
+	FailOnError("can not count the number of records in table app_metric", err)
 	return num
 }
 
 func removeScalingHistoryForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalinghistory where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	FailOnError("can not clean table scalinghistory: ", err)
+	FailOnError("can not clean table scalinghistory", err)
 }
 
 func removeCooldownForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalingcooldown where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	FailOnError("can not clean table scalingcooldown: ", err)
+	FailOnError("can not clean table scalingcooldown", err)
 }
 func removeActiveScheduleForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	FailOnError("can not clean table scalingcooldown: ", err)
+	FailOnError("can not clean table scalingcooldown", err)
 }
 
 func hasScalingHistory(appId string, timestamp int64) bool {
 	query := dbHelper.Rebind("SELECT * FROM scalinghistory WHERE appid = ? AND timestamp = ?")
 	rows, e := dbHelper.Query(query, appId, timestamp)
-	FailOnError("can not query table scalinghistory: ", e)
+	FailOnError("can not query table scalinghistory", e)
 	defer func() { _ = rows.Close() }()
 	next := rows.Next()
-	FailOnError("can not query table scalinghistory: ", rows.Err())
+	FailOnError("can not query table scalinghistory", rows.Err())
 	return next
 }
 
@@ -246,17 +246,17 @@ func getScalingHistoryForApp(appId string) int {
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid = ?")
 	row := dbHelper.QueryRow(query, appId)
 	err := row.Scan(&num)
-	FailOnError("can not count the number of records in table scalinghistory: ", err)
+	FailOnError("can not count the number of records in table scalinghistory", err)
 	return num
 }
 
 func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 	query := dbHelper.Rebind("SELECT * FROM scalingcooldown WHERE appid = ? AND expireat = ?")
 	rows, e := dbHelper.Query(query, appId, expireAt)
-	FailOnError("can not query table scalingcooldown: ", e)
+	FailOnError("can not query table scalingcooldown", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table scalingcooldown:", rows.Err())
+	FailOnError("can not query table scalingcooldown", rows.Err())
 	return item
 }
 
@@ -309,7 +309,7 @@ func getCredential(appId string) (string, string, error) {
 func hasCredential(appId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM credentials WHERE id=?")
 	rows, e := dbHelper.Query(query, appId)
-	FailOnError("can not query table credentials: ", e)
+	FailOnError("can not query table credentials", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
 	FailOnError("hasCredential failed", rows.Err())

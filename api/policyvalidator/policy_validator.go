@@ -19,7 +19,8 @@ const (
 
 type (
 	ScalingRulesConfig struct {
-		CPU CPUConfig
+		CPU     CPUConfig
+		CPUUtil CPUConfig
 	}
 
 	CPUConfig struct {
@@ -84,13 +85,17 @@ func newPolicyValidationError(context *gojsonschema.JsonContext, formatString st
 	return &err
 }
 
-func NewPolicyValidator(policySchemaPath string, lowerThreshold int, upperThreshold int) *PolicyValidator {
+func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPUThreshold int, lowerCPUUtilThreshold int, upperCPUUtilThreshold int) *PolicyValidator {
 	policyValidator := &PolicyValidator{
 		policySchemaPath: policySchemaPath,
 		scalingRules: ScalingRulesConfig{
 			CPU: CPUConfig{
-				LowerThreshold: lowerThreshold,
-				UpperThreshold: upperThreshold,
+				LowerThreshold: lowerCPUThreshold,
+				UpperThreshold: upperCPUThreshold,
+			},
+			CPUUtil: CPUConfig{
+				LowerThreshold: lowerCPUUtilThreshold,
+				UpperThreshold: upperCPUUtilThreshold,
 			},
 		},
 	}
@@ -159,6 +164,13 @@ func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, resu
 }
 
 func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPolicy, scalingRulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+	shouldBeGreaterThan := func(metric string, limit int) string {
+		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than %d", metric, limit)
+	}
+	shouldBeBetween := func(metric string, lower int, upper int) string {
+		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than %d and less than or equal to %d", metric, lower, upper)
+	}
+
 	for srIndex, scalingRule := range policy.ScalingRules {
 		currentContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", srIndex), scalingRulesContext)
 		errDetails := gojsonschema.ErrorDetails{
@@ -168,35 +180,44 @@ func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPo
 		switch scalingRule.MetricType {
 		case "memoryused":
 			if scalingRule.Threshold <= 0 {
-				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type memoryused should be greater than 0"
+				formatString := shouldBeGreaterThan("memoryused", 0)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "memoryutil":
 			if scalingRule.Threshold <= 0 || scalingRule.Threshold > 100 {
-				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type memoryutil should be greater than 0 and less than equal to 100"
+				formatString := shouldBeBetween("memoryutil", 0, 100)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "responsetime":
 			if scalingRule.Threshold <= 0 {
-				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type responsetime should be greater than 0"
+				formatString := shouldBeGreaterThan("responsetime", 0)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "throughput":
 			if scalingRule.Threshold <= 0 {
-				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type throughput should be greater than 0"
+				formatString := shouldBeGreaterThan("throughput", 0)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "cpu":
-			if scalingRule.Threshold < int64(pv.scalingRules.CPU.LowerThreshold) || scalingRule.Threshold >= int64(pv.scalingRules.CPU.UpperThreshold) {
-				formatString := fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type cpu should be greater than %d and less than or equal to %d", pv.scalingRules.CPU.LowerThreshold, pv.scalingRules.CPU.UpperThreshold)
+			lower := int64(pv.scalingRules.CPU.LowerThreshold)
+			upper := int64(pv.scalingRules.CPU.UpperThreshold)
+			if scalingRule.Threshold < lower || scalingRule.Threshold >= upper {
+				formatString := shouldBeBetween("cpu", 0, 100)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
-		default:
+		case "cpuutil":
+			lower := int64(pv.scalingRules.CPUUtil.LowerThreshold)
+			upper := int64(pv.scalingRules.CPUUtil.UpperThreshold)
+			if scalingRule.Threshold < lower || scalingRule.Threshold >= upper {
+				formatString := shouldBeBetween("cpuutil", 0, 100)
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
 		}
 	}
 }

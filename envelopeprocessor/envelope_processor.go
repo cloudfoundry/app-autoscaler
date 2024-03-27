@@ -41,12 +41,12 @@ func NewProcessor(logger lager.Logger, collectionInterval time.Duration) Process
 func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
 	p.logger.Debug("GetGaugeMetrics")
 	compactedEnvelopes := p.CompactEnvelopes(envelopes)
-	p.logger.Debug("Compacted envelopes:", lager.Data{"compactedEnvelopes": compactedEnvelopes})
+	p.logger.Debug("Compacted envelopes", lager.Data{"compactedEnvelopes": compactedEnvelopes})
 	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
 }
 func (p Processor) GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64) []models.AppInstanceMetric {
 	p.logger.Debug("GetTimerMetrics")
-	p.logger.Debug("Compacted envelopes:", lager.Data{"Envelopes": envelopes})
+	p.logger.Debug("Compacted envelopes", lager.Data{"Envelopes": envelopes})
 	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, p.collectionInterval)
 }
 
@@ -192,13 +192,12 @@ func calcNumReqs(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map
 }
 
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
-	// TODO: Check for all container metrics not only memory quota
 	keys := maps.Keys(e.GetGauge().GetMetrics())
 
 	var matchingKeys []string
 
 	for i := range keys {
-		if keys[i] == "memory_quota" || keys[i] == "memory" {
+		if keys[i] == "memory_quota" || keys[i] == "memory" || keys[i] == "cpu" || keys[i] == "cpu_entitlement" {
 			matchingKeys = append(matchingKeys, keys[i])
 		}
 	}
@@ -247,6 +246,15 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
+	if cpuEntitlement, exist := g.GetMetrics()["cpu_entitlement"]; exist {
+		appInstanceMetric := getCPUEntitlementInstanceMetric(cpuEntitlement.GetValue())
+		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
+		if err != nil {
+			return []models.AppInstanceMetric{}, err
+		}
+		metrics = append(metrics, appInstanceMetric)
+	}
+
 	return metrics, nil
 }
 
@@ -268,9 +276,17 @@ func getMemoryQuotaInstanceMetric(memoryValue float64, memoryQuotaValue float64)
 
 func getCPUInstanceMetric(cpuValue float64) models.AppInstanceMetric {
 	return models.AppInstanceMetric{
-		Name:  models.MetricNameCPUUtil,
+		Name:  models.MetricNameCPU,
 		Unit:  models.UnitPercentage,
 		Value: fmt.Sprintf("%d", int64(math.Ceil(cpuValue))),
+	}
+}
+
+func getCPUEntitlementInstanceMetric(cpuEntitlementValue float64) models.AppInstanceMetric {
+	return models.AppInstanceMetric{
+		Name:  models.MetricNameCPUUtil,
+		Unit:  models.UnitPercentage,
+		Value: fmt.Sprintf("%d", int64(math.Ceil(cpuEntitlementValue))),
 	}
 }
 

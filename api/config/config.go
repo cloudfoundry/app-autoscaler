@@ -19,11 +19,13 @@ import (
 )
 
 const (
-	DefaultLoggingLevel      = "info"
-	DefaultMaxAmount         = 10
-	DefaultValidDuration     = 1 * time.Second
-	DefaultCPULowerThreshold = 0
-	DefaultCPUUpperThreshold = 100
+	DefaultLoggingLevel          = "info"
+	DefaultMaxAmount             = 10
+	DefaultValidDuration         = 1 * time.Second
+	DefaultCPULowerThreshold     = 0
+	DefaultCPUUpperThreshold     = 100
+	DefaultCPUUtilLowerThreshold = 0
+	DefaultCPUUtilUpperThreshold = 100
 )
 
 var defaultBrokerServerConfig = helpers.ServerConfig{
@@ -71,7 +73,8 @@ type BrokerCredentialsConfig struct {
 }
 
 type ScalingRulesConfig struct {
-	CPU CPUConfig `yaml:"cpu"`
+	CPU     CPUConfig `yaml:"cpu"`
+	CPUUtil CPUConfig `yaml:"cpuutil"`
 }
 
 type CPUConfig struct {
@@ -126,6 +129,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			CPU: CPUConfig{
 				LowerThreshold: DefaultCPULowerThreshold,
 				UpperThreshold: DefaultCPUUpperThreshold,
+			},
+			CPUUtil: CPUConfig{
+				LowerThreshold: DefaultCPUUtilLowerThreshold,
+				UpperThreshold: DefaultCPUUtilUpperThreshold,
 			},
 		},
 	}

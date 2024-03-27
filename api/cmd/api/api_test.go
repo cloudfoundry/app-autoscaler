@@ -167,7 +167,7 @@ var _ = Describe("Api", func() {
 
 				bodyBytes, err := io.ReadAll(rsp.Body)
 
-				FailOnError("Read failed:", err)
+				FailOnError("Read failed", err)
 				if len(bodyBytes) == 0 {
 					Fail("body empty")
 				}

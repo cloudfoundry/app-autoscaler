@@ -52,7 +52,6 @@ event_generator:
 metrics_forwarder:
   metrics_forwarder_url: https://localhost:8088
   metrics_forwarder_mtls_url: https://mtlssdsdds:8084
-
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -63,3 +62,11 @@ cf:
   max_retries: 3
   max_retry_wait_ms: 27
 cred_helper_impl: default
+scaling_rules:
+  cpu:
+    lower_threshold: 0
+    upper_threshold: 15
+  cpuutil:
+    lower_threshold: 3
+    upper_threshold: 333
+

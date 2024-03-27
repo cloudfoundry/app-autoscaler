@@ -68,17 +68,19 @@ var _ = Describe("Envelopeprocessor", func() {
 
 		Context("processing container metrics", func() {
 			BeforeEach(func() {
-				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111))
-				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "0", 10.2, 50, 10*1024*1024, 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "1", 10.6, 51, 10.2*1024*1024, 20*1024*1024, 1111))
 				envelopes = append(envelopes, generateMemoryContainerMetrics("test-app-id", "2", 10.2*1024*1024, 1111))
 				envelopes = append(envelopes, generateMemoryQuotaContainerMetrics("test-app-id", "2", 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateCPUContainerMetrics("test-app-id", "3", 1, 1111))
+				envelopes = append(envelopes, generateCPUEntitlementContainerMetrics("test-app-id", "4", 1, 1111))
 			})
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
 				metrics, err := processor.GetGaugeMetrics(envelopes, timestamp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(metrics)).To(Equal(8))
+				Expect(len(metrics)).To(Equal(12))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
@@ -103,9 +105,18 @@ var _ = Describe("Envelopeprocessor", func() {
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   timestamp,
-					Name:          models.MetricNameCPUUtil,
+					Name:          models.MetricNameCPU,
 					Unit:          models.UnitPercentage,
 					Value:         "11",
+					Timestamp:     1111,
+				}))
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameCPUUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "50",
 					Timestamp:     1111,
 				}))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
@@ -132,9 +143,19 @@ var _ = Describe("Envelopeprocessor", func() {
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   timestamp,
-					Name:          models.MetricNameCPUUtil,
+					Name:          models.MetricNameCPU,
 					Unit:          models.UnitPercentage,
 					Value:         "11",
+					Timestamp:     1111,
+				}))
+
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 1,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameCPUUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "51",
 					Timestamp:     1111,
 				}))
 
@@ -145,6 +166,26 @@ var _ = Describe("Envelopeprocessor", func() {
 					Name:          models.MetricNameMemoryUtil,
 					Unit:          models.UnitPercentage,
 					Value:         "51",
+					Timestamp:     1111,
+				}))
+
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 3,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameCPU,
+					Unit:          models.UnitPercentage,
+					Value:         "1",
+					Timestamp:     1111,
+				}))
+
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 4,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameCPUUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "1",
 					Timestamp:     1111,
 				}))
 			})
@@ -284,103 +325,80 @@ func generateHttpStartStopEnvelope(sourceID, instance string, start, stop, times
 	return e
 }
 
-func generateContainerMetrics(sourceID, instance string, cpu, memory, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
-	e := &loggregator_v2.Envelope{
+func generateMetrics(sourceID string, instance string, metrics map[string]*loggregator_v2.GaugeValue, timestamp int64) *loggregator_v2.Envelope {
+	return &loggregator_v2.Envelope{
 		SourceId:   sourceID,
 		InstanceId: instance,
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"cpu": {
-						Unit:  "percentage",
-						Value: cpu,
-					},
-					"memory": {
-						Unit:  "bytes",
-						Value: memory,
-					},
-					"memory_quota": {
-						Unit:  "bytes",
-						Value: memoryQuota,
-					},
-				},
+				Metrics: metrics,
 			},
 		},
 		Timestamp: timestamp,
 	}
-	return e
 }
 
-func generateCustomMetrics(sourceID, instance, name, unit string, value float64, timestamp int64) *loggregator_v2.Envelope {
-	e := &loggregator_v2.Envelope{
-		SourceId:   sourceID,
-		InstanceId: instance,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					name: {
-						Unit:  unit,
-						Value: value,
-					},
-				},
-			},
+func generateContainerMetrics(sourceID, instance string, cpu, cpuEntitlement, memory, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"cpu": {
+			Unit:  "percentage",
+			Value: cpu,
 		},
-		Timestamp: timestamp,
-	}
-	return e
+		"cpu_entitlement": {
+			Unit:  "percentage",
+			Value: cpuEntitlement,
+		},
+		"memory": {
+			Unit:  "bytes",
+			Value: memory,
+		},
+		"memory_quota": {
+			Unit:  "bytes",
+			Value: memoryQuota,
+		},
+	}, timestamp)
 }
+
 func generateMemoryContainerMetrics(sourceID, instance string, memory float64, timestamp int64) *loggregator_v2.Envelope {
-	e := &loggregator_v2.Envelope{
-		SourceId:   sourceID,
-		InstanceId: instance,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"memory": {
-						Unit:  "bytes",
-						Value: memory,
-					},
-				},
-			},
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"memory": {
+			Unit:  "bytes",
+			Value: memory,
 		},
-		Timestamp: timestamp,
-	}
-	return e
+	}, timestamp)
 }
 
 func generateMemoryQuotaContainerMetrics(sourceID, instance string, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
-	e := &loggregator_v2.Envelope{
-		SourceId:   sourceID,
-		InstanceId: instance,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"memory_quota": {
-						Unit:  "bytes",
-						Value: memoryQuota,
-					},
-				},
-			},
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"memory_quota": {
+			Unit:  "bytes",
+			Value: memoryQuota,
 		},
-		Timestamp: timestamp,
-	}
-	return e
+	}, timestamp)
 }
 func generateCPUContainerMetrics(sourceID, instance string, cpu float64, timestamp int64) *loggregator_v2.Envelope {
-	e := &loggregator_v2.Envelope{
-		SourceId:   sourceID,
-		InstanceId: instance,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"cpu": {
-						Unit:  "percentage",
-						Value: cpu,
-					},
-				},
-			},
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"cpu": {
+			Unit:  "percentage",
+			Value: cpu,
 		},
-		Timestamp: timestamp,
-	}
-	return e
+	}, timestamp)
+}
+
+func generateCPUEntitlementContainerMetrics(sourceID, instance string, cpuEntitlement float64, timestamp int64) *loggregator_v2.Envelope {
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"cpu_entitlement": {
+			Unit:  "percentage",
+			Value: cpuEntitlement,
+		},
+	}, timestamp)
+}
+
+func generateCustomMetrics(sourceID, instance, name, unit string, value float64, timestamp int64) *loggregator_v2.Envelope {
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		name: {
+			Unit:  unit,
+			Value: value,
+		},
+	}, timestamp)
 }

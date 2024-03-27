@@ -113,6 +113,10 @@ var _ = Describe("Config", func() {
 					},
 				))
 				Expect(conf.CredHelperImpl).To(Equal("default"))
+				Expect(conf.ScalingRules.CPU.LowerThreshold).To(Equal(0))
+				Expect(conf.ScalingRules.CPU.UpperThreshold).To(Equal(15))
+				Expect(conf.ScalingRules.CPUUtil.LowerThreshold).To(Equal(3))
+				Expect(conf.ScalingRules.CPUUtil.UpperThreshold).To(Equal(333))
 			})
 		})
 
@@ -141,6 +145,10 @@ var _ = Describe("Config", func() {
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
 				Expect(conf.UseBuildInMode).To(BeFalse())
+				Expect(conf.ScalingRules.CPU.LowerThreshold).To(Equal(0))
+				Expect(conf.ScalingRules.CPU.UpperThreshold).To(Equal(100))
+				Expect(conf.ScalingRules.CPUUtil.LowerThreshold).To(Equal(0))
+				Expect(conf.ScalingRules.CPUUtil.UpperThreshold).To(Equal(100))
 			})
 		})
 

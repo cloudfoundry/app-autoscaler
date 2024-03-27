@@ -34,7 +34,7 @@ func (a *Auth) AuthenticateHandler(next http.Handler) func(w http.ResponseWriter
 	return func(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 		err := a.CheckAuth(r, vars["appid"])
 		if err != nil {
-			a.logger.Info("Authentication Failed:", lager.Data{"error": err.Error()})
+			a.logger.Info("Authentication Failed", lager.Data{"error": err.Error()})
 			if errors.Is(err, ErrorAppIDWrong) {
 				handlers.WriteJSONResponse(w, http.StatusForbidden, models.ErrorResponse{
 					Code:    http.StatusText(http.StatusForbidden),

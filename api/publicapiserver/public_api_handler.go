@@ -62,9 +62,15 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		bindingdb:            bindingdb,
 		scalingEngineClient:  seClient,
 		eventGeneratorClient: egClient,
-		policyValidator:      policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
-		schedulerUtil:        schedulerclient.New(conf, logger),
-		credentials:          credentials,
+		policyValidator: policyvalidator.NewPolicyValidator(
+			conf.PolicySchemaPath,
+			conf.ScalingRules.CPU.LowerThreshold,
+			conf.ScalingRules.CPU.UpperThreshold,
+			conf.ScalingRules.CPUUtil.LowerThreshold,
+			conf.ScalingRules.CPUUtil.UpperThreshold,
+		),
+		schedulerUtil: schedulerclient.New(conf, logger),
+		credentials:   credentials,
 	}
 }
 

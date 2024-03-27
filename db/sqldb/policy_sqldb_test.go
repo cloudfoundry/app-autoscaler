@@ -59,7 +59,7 @@ var _ = Describe("PolicySQLDB", func() {
 			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		pdb, err = NewPolicySQLDB(dbConfig, logger)
-		FailOnError("unable to connect policy-db: ", err)
+		FailOnError("unable to connect policy-db", err)
 		DeferCleanup(func() error {
 			if pdb != nil {
 				return pdb.Close()

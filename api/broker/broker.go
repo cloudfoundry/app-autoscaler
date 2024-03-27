@@ -63,15 +63,21 @@ var _ error = Errors{}
 
 func New(logger lager.Logger, conf *config.Config, bindingDb db.BindingDB, policyDb db.PolicyDB, catalog []domain.Service, credentials cred_helper.Credentials) *Broker {
 	broker := &Broker{
-		logger:          logger,
-		conf:            conf,
-		bindingdb:       bindingDb,
-		policydb:        policyDb,
-		catalog:         catalog,
-		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath, conf.ScalingRules.CPU.LowerThreshold, conf.ScalingRules.CPU.UpperThreshold),
-		schedulerUtil:   schedulerclient.New(conf, logger),
-		PlanChecker:     plancheck.NewPlanChecker(conf.PlanCheck, logger),
-		credentials:     credentials,
+		logger:    logger,
+		conf:      conf,
+		bindingdb: bindingDb,
+		policydb:  policyDb,
+		catalog:   catalog,
+		policyValidator: policyvalidator.NewPolicyValidator(
+			conf.PolicySchemaPath,
+			conf.ScalingRules.CPU.LowerThreshold,
+			conf.ScalingRules.CPU.UpperThreshold,
+			conf.ScalingRules.CPUUtil.LowerThreshold,
+			conf.ScalingRules.CPUUtil.UpperThreshold,
+		),
+		schedulerUtil: schedulerclient.New(conf, logger),
+		PlanChecker:   plancheck.NewPlanChecker(conf.PlanCheck, logger),
+		credentials:   credentials,
 	}
 	return broker
 }
@@ -641,7 +647,7 @@ func (b *Broker) Unbind(ctx context.Context, instanceID string, bindingID string
 	result := domain.UnbindSpec{}
 	err := b.deleteBinding(ctx, bindingID, instanceID)
 	if err != nil {
-		logger.Error("unbind failed:", err)
+		logger.Error("unbind failed", err)
 		if errors.Is(err, ErrBindingDoesNotExist) {
 			return result, apiresponses.ErrBindingDoesNotExist
 		}

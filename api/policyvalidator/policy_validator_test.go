@@ -15,18 +15,27 @@ import (
 
 var _ = Describe("PolicyValidator", func() {
 	var (
-		policyValidator   *PolicyValidator
-		errResult         []PolicyValidationErrors
-		policyString      string
-		policy            *models.ScalingPolicy
-		policyJson        string
-		lowerCPUThreshold int
-		upperCPUThreshold int
+		policyValidator       *PolicyValidator
+		errResult             []PolicyValidationErrors
+		policyString          string
+		policy                *models.ScalingPolicy
+		policyJson            string
+		lowerCPUThreshold     int
+		upperCPUThreshold     int
+		lowerCPUUtilThreshold int
+		upperCPUUtilThreshold int
 	)
 	BeforeEach(func() {
 		lowerCPUThreshold = 0
-		upperCPUThreshold = 333
-		policyValidator = NewPolicyValidator("./policy_json.schema.json", lowerCPUThreshold, upperCPUThreshold)
+		upperCPUThreshold = 15
+
+		lowerCPUThreshold = 0
+		upperCPUThreshold = 100
+
+		lowerCPUUtilThreshold = 0
+		upperCPUUtilThreshold = 100
+
+		policyValidator = NewPolicyValidator("./policy_json.schema.json", lowerCPUThreshold, upperCPUThreshold, lowerCPUUtilThreshold, upperCPUUtilThreshold)
 	})
 	JustBeforeEach(func() {
 		policy, errResult = policyValidator.ValidatePolicy(json.RawMessage(policyString))
@@ -421,7 +430,7 @@ var _ = Describe("PolicyValidator", func() {
 					Expect(errResult).To(Equal([]PolicyValidationErrors{
 						{
 							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than 0 and less than equal to 100",
+							Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than 0 and less than or equal to 100",
 						},
 					}))
 				})
@@ -447,7 +456,7 @@ var _ = Describe("PolicyValidator", func() {
 					Expect(errResult).To(Equal([]PolicyValidationErrors{
 						{
 							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than 0 and less than equal to 100",
+							Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than 0 and less than or equal to 100",
 						},
 					}))
 				})
@@ -595,6 +604,58 @@ var _ = Describe("PolicyValidator", func() {
 						{
 							Context:     "(root).scaling_rules.0",
 							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
+						},
+					}))
+				})
+			})
+
+			Context(fmt.Sprintf("when threshold for cpuutil is less than %d", lowerCPUUtilThreshold), func() {
+				BeforeEach(func() {
+					policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"cpuutil",
+						"breach_duration_secs":600,
+						"threshold": -1,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				})
+				It("should fail", func() {
+					Expect(errResult).To(Equal([]PolicyValidationErrors{
+						{
+							Context:     "(root).scaling_rules.0",
+							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpuutil should be greater than %d and less than or equal to %d", lowerCPUUtilThreshold, upperCPUUtilThreshold),
+						},
+					}))
+				})
+			})
+
+			Context(fmt.Sprintf("when threshold for cpuutil is greater than %d", upperCPUUtilThreshold), func() {
+				BeforeEach(func() {
+					policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"cpuutil",
+						"breach_duration_secs":600,
+						"threshold": 999,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				})
+				It("should fail", func() {
+					Expect(errResult).To(Equal([]PolicyValidationErrors{
+						{
+							Context:     "(root).scaling_rules.0",
+							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpuutil should be greater than %d and less than or equal to %d", lowerCPUUtilThreshold, upperCPUUtilThreshold),
 						},
 					}))
 				})

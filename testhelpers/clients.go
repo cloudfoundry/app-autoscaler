@@ -47,7 +47,7 @@ func CreateClient(certFileName, keyFileName, caCertFileName string) *http.Client
 		WithInternalServiceDefaults(),
 		WithIdentityFromFile(certFileName, keyFileName),
 	).Client(WithAuthorityFromFile(caCertFileName))
-	FailOnError("Failed to setup tls config:", err)
+	FailOnError("Failed to setup tls config", err)
 	return cfhttp.NewClient(cfhttp.WithTLSConfig(clientTls), cfhttp.WithRequestTimeout(10*time.Second))
 }
 

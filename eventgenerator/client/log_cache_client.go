@@ -94,7 +94,7 @@ func (c *LogCacheClient) GetMetrics(appId string, metricType string, startTime t
 	var err error
 
 	filters := logCacheFiltersFor(endTime, metricType)
-	c.logger.Debug("GetMetric", lager.Data{"filters": valuesFrom(filters)})
+	c.logger.Debug("GetMetrics", lager.Data{"filters": valuesFrom(filters)})
 	envelopes, err := c.Client.Read(context.Background(), appId, startTime, filters...)
 
 	if err != nil {
@@ -105,7 +105,7 @@ func (c *LogCacheClient) GetMetrics(appId string, metricType string, startTime t
 	if getEnvelopeType(metricType) == rpc.EnvelopeType_TIMER {
 		metrics = c.envelopeProcessor.GetTimerMetrics(envelopes, appId, collectedAt)
 	} else {
-		c.logger.Debug("envelopes received from log-cache: ", lager.Data{"envelopes": envelopes})
+		c.logger.Debug("envelopes received from log-cache", lager.Data{"envelopes": envelopes})
 		metrics, err = c.envelopeProcessor.GetGaugeMetrics(envelopes, collectedAt)
 	}
 	return filter(metrics, metricType), err
@@ -186,8 +186,10 @@ func logCacheFiltersFor(endTime time.Time, metricType string) (readOptions []log
 		readOptions = append(readOptions, logcache.WithNameFilter("memory|memory_quota"))
 	case models.MetricNameMemoryUsed:
 		readOptions = append(readOptions, logcache.WithNameFilter("memory"))
-	case models.MetricNameCPUUtil:
+	case models.MetricNameCPU:
 		readOptions = append(readOptions, logcache.WithNameFilter("cpu"))
+	case models.MetricNameCPUUtil:
+		readOptions = append(readOptions, logcache.WithNameFilter("cpu_entitlement"))
 	case models.MetricNameResponseTime, models.MetricNameThroughput:
 		readOptions = append(readOptions, logcache.WithNameFilter("http"))
 	default:

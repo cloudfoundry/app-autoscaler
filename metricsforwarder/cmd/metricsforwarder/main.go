@@ -124,7 +124,7 @@ func createHealthServer(policyDB *sqldb.PolicySQLDB, credDb cred_helper.Credenti
 	checkers := []healthendpoint.Checker{healthendpoint.DbChecker(db.PolicyDb, policyDB), healthendpoint.DbChecker(db.StoredProcedureDb, credDb)}
 	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, checkers, logger.Session("health-server"), promRegistry, time.Now)
 	if err != nil {
-		logger.Fatal("Failed to create health server:", err)
+		logger.Fatal("Failed to create health server", err)
 		os.Exit(1)
 	}
 	return healthServer

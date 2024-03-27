@@ -48,7 +48,7 @@ func (m *MetricPoller) startMetricRetrieve() {
 		case appMonitor := <-m.appMonitorsChan:
 			err := m.retrieveMetric(appMonitor)
 			if err != nil {
-				m.logger.Error("Error:", err)
+				m.logger.Error("Error", err)
 			}
 		}
 	}
@@ -63,7 +63,7 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 	startTime := endTime.Add(0 - statWindow)
 
 	metrics, err := m.metricClient.GetMetrics(appId, metricType, startTime, endTime)
-	m.logger.Debug("received metrics from metricClient:", lager.Data{"retrivedMetrics": metrics})
+	m.logger.Debug("received metrics from metricClient", lager.Data{"retrievedMetrics": metrics})
 	if err != nil {
 		return fmt.Errorf("retriveMetric Failed: %w", err)
 	}
