@@ -134,6 +134,7 @@ func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 }
 
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
-	_, exist := e.GetGauge().GetMetrics()["memory_quota"]
-	return exist
+	_, memoryQuotaExists := e.GetGauge().GetMetrics()["memory_quota"]
+	_, cpuEntitlementExists := e.GetGauge().GetMetrics()["cpu_entitlement"]
+	return memoryQuotaExists || cpuEntitlementExists
 }
