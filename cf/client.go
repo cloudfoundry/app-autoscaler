@@ -142,7 +142,7 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 		"client_secret": {conf.Secret},
 	}
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
-	// #nosec G402 - this is intentionally configurable
+	//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
 	c.Client = cfhttp.NewClient(
 		cfhttp.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}),
 		cfhttp.WithDialTimeout(10*time.Second),

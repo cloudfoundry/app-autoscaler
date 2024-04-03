@@ -35,7 +35,7 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	client := cf.NewCFClient(conf, logger, clock.NewClock())
 	err := client.Login()
 	assert.Nil(t, err)
-	// #nosec G402
+	//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	resp, err := http.Get("https://test_app." + systemDomain)
 	if err != nil {

@@ -65,7 +65,7 @@ func (ldb *LockSQLDB) Close() error {
 	return nil
 }
 
-/* #nosec G202 -- string comes from safe source and parametrized table names are not supported. */
+//nolint:gosec // #nosec G202 -- string comes from safe source and parametrized table names are not supported.
 func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 	ldb.logger.Debug("fetching-lock")
 	var (
