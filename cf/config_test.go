@@ -1,7 +1,7 @@
 package cf_test
 
 import (
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"gopkg.in/yaml.v3"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -11,7 +11,7 @@ import (
 var _ = Describe("Config", func() {
 
 	var (
-		conf *Config
+		conf *cf.Config
 		err  error
 	)
 	Describe("Deserialise", func() {
@@ -37,12 +37,12 @@ idle_connection_timeout_ms: 200
 			})
 			It("should deserialise correctly", func() {
 				Expect(err).To(Not(HaveOccurred()))
-				Expect(conf).To(Equal(&Config{
+				Expect(conf).To(Equal(&cf.Config{
 					API:      "https://api.example.com",
 					ClientID: "client-id",
 					Secret:   "client-secret",
 					PerPage:  3,
-					ClientConfig: ClientConfig{
+					ClientConfig: cf.ClientConfig{
 						SkipSSLValidation:       true,
 						MaxRetries:              3,
 						MaxRetryWaitMs:          27,
@@ -57,7 +57,7 @@ idle_connection_timeout_ms: 200
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
-			conf = &Config{}
+			conf = &cf.Config{}
 			conf.API = "http://api.example.com"
 			conf.ClientID = "admin"
 			conf.SkipSSLValidation = false

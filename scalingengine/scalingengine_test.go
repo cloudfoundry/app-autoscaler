@@ -133,6 +133,33 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("When app is labeled with app-autoscaler.cloudfoundry.org/disable-autoscaling", func() {
+			BeforeEach(func() {
+				labelContent := "for test purposes"
+				cfc.GetAppAndProcessesReturns(&cf.AppAndProcesses{Processes: cf.Processes{{Instances: 2}}, App: &cf.App{State: appState, Metadata: cf.Metadata{Labels: cf.Labels{DisableAutoscaling: &labelContent}}}}, nil)
+			})
+			It("ignore the scaling and store the ignored scaling history", func() {
+				Eventually(buffer).Should(gbytes.Say("check-app-label"))
+				Eventually(buffer).Should(gbytes.Say("ignore scaling since app has the label app-autoscaler.cloudfoundry.org/disable-autoscaling set"))
+
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusIgnored,
+					OldInstances: 2,
+					NewInstances: 2,
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					Message:      "The application was not scaled as the label \"app-autoscaler.cloudfoundry.org/disable-autoscaling\" was set on the app. The content of the label might give a hint on why the label was set: \"for test purposes\"",
+				}))
+
+				Expect(scalingResult.AppId).To(Equal("an-app-id"))
+				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
+				Expect(scalingResult.Adjustment).To(Equal(0))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
+			})
+		})
+
 		Context("when app is in cooldown period", func() {
 			BeforeEach(func() {
 				setAppAndProcesses(2, appState)

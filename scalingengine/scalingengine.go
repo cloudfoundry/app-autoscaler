@@ -101,6 +101,24 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		return result, nil
 	}
 
+	if disableAutoscaling := appAndProcesses.App.DisableAutoscaling; disableAutoscaling != nil {
+		logger.Info("check-app-label", lager.Data{"message": "ignore scaling since app has the label app-autoscaler.cloudfoundry.org/disable-autoscaling set", "label-value": *disableAutoscaling})
+		history.Status = models.ScalingStatusIgnored
+		history.NewInstances = instances
+		appNotScaledDueTolabel := "The application was not scaled as the label " +
+			"\"app-autoscaler.cloudfoundry.org/disable-autoscaling\" " +
+			"was set on the app."
+		if *disableAutoscaling == "" {
+			history.Message = appNotScaledDueTolabel
+		} else {
+			history.Message = fmt.Sprintf(appNotScaledDueTolabel+
+				" The content of the label might give a hint on why the label was set: \"%s\"",
+				*disableAutoscaling)
+		}
+		result.Status = history.Status
+		return result, nil
+	}
+
 	ok, expiredAt, err := s.scalingEngineDB.CanScaleApp(appId)
 	if err != nil {
 		logger.Error("failed-to-check-cooldown", err)

@@ -230,7 +230,7 @@ var _ = Describe("Health Readiness", func() {
 				})
 
 				It("should respond with 401 due fallthough to Prometheus health", func() {
-					apitest.New().Debug().
+					apitest.New().
 						Handler(healthRoute).
 						Get("/health/readiness").
 						Expect(t).

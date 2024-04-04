@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
@@ -31,8 +31,8 @@ const (
 var _ = Describe("Oauth", func() {
 
 	var (
-		conf      *Config
-		cfc       CFClient
+		conf      *cf.Config
+		cfc       cf.CFClient
 		err       error
 		userToken string
 		logger    *lagertest.TestLogger
@@ -52,7 +52,7 @@ var _ = Describe("Oauth", func() {
 		appStatus int
 
 		rolesStatus int
-		roles       Roles
+		roles       cf.Roles
 	)
 
 	BeforeEach(func() {
@@ -61,7 +61,7 @@ var _ = Describe("Oauth", func() {
 		userScopeStatus = http.StatusOK
 		userInfoStatus = http.StatusOK
 		rolesStatus = http.StatusOK
-		roles = Roles{{Type: RoleSpaceDeveloper}}
+		roles = cf.Roles{{Type: cf.RoleSpaceDeveloper}}
 		userInfoResponse = userInfo{
 			UserId: TestUserId,
 		}
@@ -70,15 +70,15 @@ var _ = Describe("Oauth", func() {
 		fakeTokenServer = mocks.NewServer()
 		fakeTokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWithJSONEncodedPtr(&userInfoStatus, &userInfoResponse))
 		fakeTokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWithJSONEncodedPtr(&userScopeStatus, &userScopeResponse))
-		fakeTokenServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+		fakeTokenServer.RouteToHandler("POST", cf.PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 			AccessToken: "test-access-token",
 			ExpiresIn:   12000,
 		}))
 		fakeCCServer.Add().Info(fakeTokenServer.URL())
-		conf = &Config{}
+		conf = &cf.Config{}
 		conf.API = fakeCCServer.URL()
 		logger = lagertest.NewTestLogger("oauth-test")
-		cfc = NewCFClient(conf, logger, clock.NewClock())
+		cfc = cf.NewCFClient(conf, logger, clock.NewClock())
 		err = cfc.Login()
 
 	})
@@ -225,7 +225,7 @@ var _ = Describe("Oauth", func() {
 
 		Context("user is not space developer", func() {
 			BeforeEach(func() {
-				roles = Roles{{Type: RoleOrganizationManager}}
+				roles = cf.Roles{{Type: cf.RoleOrganizationManager}}
 			})
 			It("should return false", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -296,7 +296,7 @@ var _ = Describe("Oauth", func() {
 			BeforeEach(func() {
 				userScopeStatus = http.StatusOK
 				userScopeResponse = userScope{
-					Scope: []string{CCAdminScope},
+					Scope: []string{cf.CCAdminScope},
 				}
 			})
 			It("should return true", func() {
