@@ -2,6 +2,7 @@ package brokerserver
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -14,8 +15,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-	"github.com/pivotal-cf/brokerapi/v10"
-	"github.com/pivotal-cf/brokerapi/v10/domain"
+	"github.com/pivotal-cf/brokerapi/v11"
+	"github.com/pivotal-cf/brokerapi/v11/domain"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/go-chi/chi/v5"
@@ -116,7 +117,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 
 	r.Use(basicAuthentication.Middleware)
 	r.Use(httpStatusCollectMiddleware.Collect)
-	brokerapi.AttachRoutes(r, autoscalerBroker, logger.Session("broker_handler"))
+	brokerapi.AttachRoutes(r, autoscalerBroker, slog.New(lager.NewHandler(logger.Session("broker_handler"))))
 
 	r.HandleFunc(routes.BrokerHealthPath, GetHealth)
 

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"github.com/pivotal-cf/brokerapi/v10/domain"
+	"github.com/pivotal-cf/brokerapi/v11/domain"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	. "github.com/onsi/ginkgo/v2"

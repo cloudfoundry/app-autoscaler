@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,7 +15,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"github.com/pivotal-cf/brokerapi/v10/handlers"
+	"github.com/go-logr/logr"
+	"github.com/pivotal-cf/brokerapi/v11/handlers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -51,7 +53,7 @@ var _ = Describe("BrokerHandler", func() {
 
 	JustBeforeEach(func() {
 		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf, bindingdb, policydb, services, fakeCredentials)
-		handler = handlers.NewApiHandler(autoscalerBroker, lagertest.NewTestLogger(("testhandler")))
+		handler = handlers.NewApiHandler(autoscalerBroker, slog.New(logr.ToSlogHandler(GinkgoLogr)))
 		if fakePlanChecker != nil {
 			autoscalerBroker.PlanChecker = fakePlanChecker
 		}
