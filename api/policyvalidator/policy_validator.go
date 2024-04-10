@@ -19,11 +19,13 @@ const (
 
 type (
 	ScalingRulesConfig struct {
-		CPU     CPUConfig
-		CPUUtil CPUConfig
+		CPU      LowerUpperThresholdConfig
+		CPUUtil  LowerUpperThresholdConfig
+		DiskUtil LowerUpperThresholdConfig
+		Disk     LowerUpperThresholdConfig
 	}
 
-	CPUConfig struct {
+	LowerUpperThresholdConfig struct {
 		LowerThreshold int
 		UpperThreshold int
 	}
@@ -85,17 +87,25 @@ func newPolicyValidationError(context *gojsonschema.JsonContext, formatString st
 	return &err
 }
 
-func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPUThreshold int, lowerCPUUtilThreshold int, upperCPUUtilThreshold int) *PolicyValidator {
+func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPUThreshold int, lowerCPUUtilThreshold int, upperCPUUtilThreshold int, lowerDiskUtilThreshold int, upperDiskUtilThreshold int, lowerDiskThreshold int, upperDiskThreshold int) *PolicyValidator {
 	policyValidator := &PolicyValidator{
 		policySchemaPath: policySchemaPath,
 		scalingRules: ScalingRulesConfig{
-			CPU: CPUConfig{
+			CPU: LowerUpperThresholdConfig{
 				LowerThreshold: lowerCPUThreshold,
 				UpperThreshold: upperCPUThreshold,
 			},
-			CPUUtil: CPUConfig{
+			CPUUtil: LowerUpperThresholdConfig{
 				LowerThreshold: lowerCPUUtilThreshold,
 				UpperThreshold: upperCPUUtilThreshold,
+			},
+			DiskUtil: LowerUpperThresholdConfig{
+				LowerThreshold: lowerDiskUtilThreshold,
+				UpperThreshold: upperDiskUtilThreshold,
+			},
+			Disk: LowerUpperThresholdConfig{
+				LowerThreshold: lowerDiskThreshold,
+				UpperThreshold: upperDiskThreshold,
 			},
 		},
 	}
@@ -164,11 +174,11 @@ func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, resu
 }
 
 func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPolicy, scalingRulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
-	shouldBeGreaterThan := func(metric string, limit int) string {
-		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than %d", metric, limit)
+	shouldBeGreaterThanOrEqual := func(metric string, lower int) string {
+		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than or equal %d", metric, lower)
 	}
 	shouldBeBetween := func(metric string, lower int, upper int) string {
-		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than %d and less than or equal to %d", metric, lower, upper)
+		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than or equal %d and less than or equal to %d", metric, lower, upper)
 	}
 
 	for srIndex, scalingRule := range policy.ScalingRules {
@@ -179,42 +189,58 @@ func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPo
 
 		switch scalingRule.MetricType {
 		case "memoryused":
-			if scalingRule.Threshold <= 0 {
-				formatString := shouldBeGreaterThan("memoryused", 0)
+			if scalingRule.Threshold < 0 {
+				formatString := shouldBeGreaterThanOrEqual("memoryused", 1)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "memoryutil":
-			if scalingRule.Threshold <= 0 || scalingRule.Threshold > 100 {
-				formatString := shouldBeBetween("memoryutil", 0, 100)
+			if scalingRule.Threshold < 1 || scalingRule.Threshold > 100 {
+				formatString := shouldBeBetween("memoryutil", 1, 100)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "responsetime":
-			if scalingRule.Threshold <= 0 {
-				formatString := shouldBeGreaterThan("responsetime", 0)
+			if scalingRule.Threshold < 0 {
+				formatString := shouldBeGreaterThanOrEqual("responsetime", 1)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "throughput":
-			if scalingRule.Threshold <= 0 {
-				formatString := shouldBeGreaterThan("throughput", 0)
+			if scalingRule.Threshold < 0 {
+				formatString := shouldBeGreaterThanOrEqual("throughput", 1)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "cpu":
-			lower := int64(pv.scalingRules.CPU.LowerThreshold)
-			upper := int64(pv.scalingRules.CPU.UpperThreshold)
-			if scalingRule.Threshold < lower || scalingRule.Threshold >= upper {
-				formatString := shouldBeBetween("cpu", 0, 100)
+			lower := pv.scalingRules.CPU.LowerThreshold
+			upper := pv.scalingRules.CPU.UpperThreshold
+			if scalingRule.Threshold < int64(lower) || scalingRule.Threshold > int64(upper) {
+				formatString := shouldBeBetween("cpu", lower, upper)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		case "cpuutil":
-			lower := int64(pv.scalingRules.CPUUtil.LowerThreshold)
-			upper := int64(pv.scalingRules.CPUUtil.UpperThreshold)
-			if scalingRule.Threshold < lower || scalingRule.Threshold >= upper {
-				formatString := shouldBeBetween("cpuutil", 0, 100)
+			lower := pv.scalingRules.CPUUtil.LowerThreshold
+			upper := pv.scalingRules.CPUUtil.UpperThreshold
+			if scalingRule.Threshold < int64(lower) || scalingRule.Threshold > int64(upper) {
+				formatString := shouldBeBetween("cpuutil", lower, upper)
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		case "diskutil":
+			lower := pv.scalingRules.DiskUtil.LowerThreshold
+			upper := pv.scalingRules.DiskUtil.UpperThreshold
+			if scalingRule.Threshold < int64(lower) || scalingRule.Threshold > int64(upper) {
+				formatString := shouldBeBetween("diskutil", lower, upper)
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		case "disk":
+			lower := pv.scalingRules.Disk.LowerThreshold
+			upper := pv.scalingRules.Disk.UpperThreshold
+			if scalingRule.Threshold < int64(lower) || scalingRule.Threshold > int64(upper) {
+				formatString := shouldBeBetween("disk", lower, upper)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}

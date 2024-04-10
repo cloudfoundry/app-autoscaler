@@ -64,9 +64,14 @@ cf:
 cred_helper_impl: default
 scaling_rules:
   cpu:
-    lower_threshold: 0
-    upper_threshold: 15
+    lower_threshold: 22
+    upper_threshold: 33
   cpuutil:
-    lower_threshold: 3
-    upper_threshold: 333
-
+    lower_threshold: 22
+    upper_threshold: 33
+  diskutil:
+    lower_threshold: 22
+    upper_threshold: 33
+  disk:
+    lower_threshold: 22
+    upper_threshold: 33

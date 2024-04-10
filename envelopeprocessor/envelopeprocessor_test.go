@@ -68,19 +68,28 @@ var _ = Describe("Envelopeprocessor", func() {
 
 		Context("processing container metrics", func() {
 			BeforeEach(func() {
-				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "0", 10.2, 50, 10*1024*1024, 20*1024*1024, 1111))
-				envelopes = append(envelopes, generateContainerMetrics("test-app-id", "1", 10.6, 51, 10.2*1024*1024, 20*1024*1024, 1111))
-				envelopes = append(envelopes, generateMemoryContainerMetrics("test-app-id", "2", 10.2*1024*1024, 1111))
-				envelopes = append(envelopes, generateMemoryQuotaContainerMetrics("test-app-id", "2", 20*1024*1024, 1111))
+				envelopes = append(envelopes, generateContainerMetricsEnvelope1("test-app-id", "0", 10.2, 5*MiB, 10*MiB, 10*MiB, 20*MiB, 1111))
+				envelopes = append(envelopes, generateContainerMetricsEnvelope2("test-app-id", "0", 50, 1, 1111))
+
+				envelopes = append(envelopes, generateContainerMetricsEnvelope1("test-app-id", "1", 10.6, 3*MiB, 33*MiB, 10.2*MiB, 20*MiB, 1111))
+				envelopes = append(envelopes, generateContainerMetricsEnvelope2("test-app-id", "1", 51, 1, 1111))
+
+				envelopes = append(envelopes, generateMemoryContainerMetrics("test-app-id", "2", 10.2*MiB, 1111))
+				envelopes = append(envelopes, generateMemoryQuotaContainerMetrics("test-app-id", "2", 20*MiB, 1111))
+
 				envelopes = append(envelopes, generateCPUContainerMetrics("test-app-id", "3", 1, 1111))
+
 				envelopes = append(envelopes, generateCPUEntitlementContainerMetrics("test-app-id", "4", 1, 1111))
+
+				envelopes = append(envelopes, generateDiskContainerMetrics("test-app-id", "5", 4*MiB, 1111))
+				envelopes = append(envelopes, generateDiskQuotaContainerMetrics("test-app-id", "5", 10*MiB, 1111))
 			})
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
 				metrics, err := processor.GetGaugeMetrics(envelopes, timestamp)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(metrics)).To(Equal(12))
+				Expect(len(metrics)).To(Equal(18))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
@@ -121,6 +130,24 @@ var _ = Describe("Envelopeprocessor", func() {
 				}))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameDiskUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "50",
+					Timestamp:     1111,
+				}))
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameDisk,
+					Unit:          models.UnitMegaBytes,
+					Value:         "5",
+					Timestamp:     1111,
+				}))
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   timestamp,
 					Name:          models.MetricNameMemoryUsed,
@@ -158,7 +185,24 @@ var _ = Describe("Envelopeprocessor", func() {
 					Value:         "51",
 					Timestamp:     1111,
 				}))
-
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 1,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameDiskUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "10",
+					Timestamp:     1111,
+				}))
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 1,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameDisk,
+					Unit:          models.UnitMegaBytes,
+					Value:         "3",
+					Timestamp:     1111,
+				}))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 2,
@@ -186,6 +230,25 @@ var _ = Describe("Envelopeprocessor", func() {
 					Name:          models.MetricNameCPUUtil,
 					Unit:          models.UnitPercentage,
 					Value:         "1",
+					Timestamp:     1111,
+				}))
+
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 5,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameDiskUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "40",
+					Timestamp:     1111,
+				}))
+				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 5,
+					CollectedAt:   timestamp,
+					Name:          models.MetricNameDisk,
+					Unit:          models.UnitMegaBytes,
+					Value:         "4",
 					Timestamp:     1111,
 				}))
 			})
@@ -338,15 +401,20 @@ func generateMetrics(sourceID string, instance string, metrics map[string]*loggr
 	}
 }
 
-func generateContainerMetrics(sourceID, instance string, cpu, cpuEntitlement, memory, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
+// generateContainerMetricsEnvelope1 generates an envelope according to https://github.com/cloudfoundry/docs-loggregator/blob/7a864253547a84bd60a3192e9f5b409013f38a37/container-metrics.html.md.erb#L122
+func generateContainerMetricsEnvelope1(sourceID, instance string, cpu, disk, diskQuota, memory, memoryQuota float64, timestamp int64) *loggregator_v2.Envelope {
 	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
 		"cpu": {
 			Unit:  "percentage",
 			Value: cpu,
 		},
-		"cpu_entitlement": {
-			Unit:  "percentage",
-			Value: cpuEntitlement,
+		"disk": {
+			Unit:  "bytes",
+			Value: disk,
+		},
+		"disk_quota": {
+			Unit:  "bytes",
+			Value: diskQuota,
 		},
 		"memory": {
 			Unit:  "bytes",
@@ -355,6 +423,20 @@ func generateContainerMetrics(sourceID, instance string, cpu, cpuEntitlement, me
 		"memory_quota": {
 			Unit:  "bytes",
 			Value: memoryQuota,
+		},
+	}, timestamp)
+}
+
+// generateContainerMetricsEnvelope2 generates an envelope according to https://github.com/cloudfoundry/docs-loggregator/blob/7a864253547a84bd60a3192e9f5b409013f38a37/container-metrics.html.md.erb#L123
+func generateContainerMetricsEnvelope2(sourceID, instance string, cpuEntitlement, containerAge float64, timestamp int64) *loggregator_v2.Envelope {
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"cpu_entitlement": {
+			Unit:  "percentage",
+			Value: cpuEntitlement,
+		},
+		"container_age": {
+			Unit:  "nanoseconds",
+			Value: containerAge,
 		},
 	}, timestamp)
 }
@@ -394,6 +476,24 @@ func generateCPUEntitlementContainerMetrics(sourceID, instance string, cpuEntitl
 	}, timestamp)
 }
 
+func generateDiskContainerMetrics(sourceID, instance string, disk float64, timestamp int64) *loggregator_v2.Envelope {
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"disk": {
+			Unit:  "bytes",
+			Value: disk,
+		},
+	}, timestamp)
+}
+
+func generateDiskQuotaContainerMetrics(sourceID, instance string, diskQuota float64, timestamp int64) *loggregator_v2.Envelope {
+	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
+		"disk_quota": {
+			Unit:  "bytes",
+			Value: diskQuota,
+		},
+	}, timestamp)
+}
+
 func generateCustomMetrics(sourceID, instance, name, unit string, value float64, timestamp int64) *loggregator_v2.Envelope {
 	return generateMetrics(sourceID, instance, map[string]*loggregator_v2.GaugeValue{
 		name: {
@@ -402,3 +502,5 @@ func generateCustomMetrics(sourceID, instance, name, unit string, value float64,
 		},
 	}, timestamp)
 }
+
+const MiB = 1024 * 1024

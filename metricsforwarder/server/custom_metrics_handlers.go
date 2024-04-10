@@ -129,6 +129,8 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 	standardMetricsTypes[models.MetricNameResponseTime] = struct{}{}
 	standardMetricsTypes[models.MetricNameCPU] = struct{}{}
 	standardMetricsTypes[models.MetricNameCPUUtil] = struct{}{}
+	standardMetricsTypes[models.MetricNameDisk] = struct{}{}
+	standardMetricsTypes[models.MetricNameDiskUtil] = struct{}{}
 
 	allowedMetricTypeSet := make(map[string]struct{})
 	res, found := mh.allowedMetricCache.Get(appGUID)

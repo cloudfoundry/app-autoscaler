@@ -3,16 +3,15 @@ package envelopeprocessor
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/lager/v3"
-
-	"golang.org/x/exp/maps"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
+	"code.cloudfoundry.org/lager/v3"
 	"dario.cat/mergo"
+	"golang.org/x/exp/maps"
 )
 
 type EnvelopeProcessorCreator interface {
@@ -192,16 +191,17 @@ func calcNumReqs(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map
 }
 
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
-	keys := maps.Keys(e.GetGauge().GetMetrics())
+	metrics := maps.Keys(e.GetGauge().GetMetrics())
 
-	var matchingKeys []string
+	// these metrics are required for the supported metric types
+	relevantContainerMetrics := []string{"memory_quota", "memory", "cpu", "cpu_entitlement", "disk", "disk_quota"}
 
-	for i := range keys {
-		if keys[i] == "memory_quota" || keys[i] == "memory" || keys[i] == "cpu" || keys[i] == "cpu_entitlement" {
-			matchingKeys = append(matchingKeys, keys[i])
+	for _, m := range metrics {
+		if slices.Contains(relevantContainerMetrics, m) {
+			return true
 		}
 	}
-	return len(matchingKeys) != 0
+	return false
 }
 
 func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
@@ -224,7 +224,6 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 		if err != nil {
 			return []models.AppInstanceMetric{}, err
 		}
-
 		metrics = append(metrics, appInstanceMetric)
 	}
 
@@ -255,6 +254,24 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
+	if diskQuota, exist := g.GetMetrics()["disk_quota"]; exist && diskQuota.GetValue() != 0 {
+		appInstanceMetric := getDiskQuotaInstanceMetric(g.GetMetrics()["disk"].GetValue(), diskQuota.GetValue())
+		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
+		if err != nil {
+			return []models.AppInstanceMetric{}, err
+		}
+		metrics = append(metrics, appInstanceMetric)
+	}
+
+	if memory, exist := g.GetMetrics()["disk"]; exist {
+		appInstanceMetric := getDiskInstanceMetric(memory.GetValue())
+		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
+		if err != nil {
+			return []models.AppInstanceMetric{}, err
+		}
+		metrics = append(metrics, appInstanceMetric)
+	}
+
 	return metrics, nil
 }
 
@@ -271,6 +288,22 @@ func getMemoryQuotaInstanceMetric(memoryValue float64, memoryQuotaValue float64)
 		Name:  models.MetricNameMemoryUtil,
 		Unit:  models.UnitPercentage,
 		Value: fmt.Sprintf("%d", int(math.Ceil(memoryValue/memoryQuotaValue*100))),
+	}
+}
+
+func getDiskInstanceMetric(diskValue float64) models.AppInstanceMetric {
+	return models.AppInstanceMetric{
+		Name:  models.MetricNameDisk,
+		Unit:  models.UnitMegaBytes,
+		Value: fmt.Sprintf("%d", int(math.Ceil(diskValue/(1024*1024)))),
+	}
+}
+
+func getDiskQuotaInstanceMetric(diskValue float64, diskQuotaValue float64) models.AppInstanceMetric {
+	return models.AppInstanceMetric{
+		Name:  models.MetricNameDiskUtil,
+		Unit:  models.UnitPercentage,
+		Value: fmt.Sprintf("%d", int(math.Ceil(diskValue/diskQuotaValue*100))),
 	}
 }
 

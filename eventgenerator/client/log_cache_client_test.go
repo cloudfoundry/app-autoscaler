@@ -269,8 +269,8 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualAppId).To(Equal(appId))
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 			},
-			Entry("When metric type is MetricNameThroughput", models.MetricNameThroughput, []string{"endtime", "envelope_type", "http"}),
-			Entry("When metric type is MetricNameResponseTime", models.MetricNameResponseTime, []string{"endtime", "envelope_type", "http"}),
+			Entry("When metric type is throughput", models.MetricNameThroughput, []string{"endtime", "envelope_type", "http"}),
+			Entry("When metric type is responsetime", models.MetricNameResponseTime, []string{"endtime", "envelope_type", "http"}),
 		)
 
 		DescribeTable("GetMetrics for Gauge Metrics",
@@ -307,9 +307,12 @@ var _ = Describe("LogCacheClient", func() {
 				Expect(actualEnvelopes).To(Equal(envelopes))
 				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
 			},
-			Entry("When metric type is MetricNameMemoryUtil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory|memory_quota"}),
-			Entry("When metric type is MetricNameMemoryUsed", models.MetricNameMemoryUsed, []string{"endtime", "envelope_type", "memory"}),
-			Entry("When metric type is MetricNameCPU", models.MetricNameCPU, []string{"endtime", "envelope_type", "cpu"}),
+			Entry("When metric type is memoryutil", models.MetricNameMemoryUtil, []string{"endtime", "envelope_type", "memory|memory_quota"}),
+			Entry("When metric type is memoryused", models.MetricNameMemoryUsed, []string{"endtime", "envelope_type", "memory"}),
+			Entry("When metric type is cpu", models.MetricNameCPU, []string{"endtime", "envelope_type", "cpu"}),
+			Entry("When metric type is cpuutil", models.MetricNameCPUUtil, []string{"endtime", "envelope_type", "cpu_entitlement"}),
+			Entry("When metric type is disk", models.MetricNameDisk, []string{"endtime", "envelope_type", "disk"}),
+			Entry("When metric type is diskutil", models.MetricNameDiskUtil, []string{"endtime", "envelope_type", "disk|disk_quota"}),
 			Entry("When metric type is CustomMetrics", "a-custom-metric", []string{"endtime", "envelope_type", "a-custom-metric"}),
 		)
 
