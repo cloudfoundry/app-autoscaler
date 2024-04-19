@@ -40,6 +40,9 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
+
+	helpers.SetupOpenTelemetry()
+
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "eventgenerator")
 	egClock := clock.NewClock()
 

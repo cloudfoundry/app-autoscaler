@@ -51,6 +51,9 @@ func main() {
 		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
+
+	helpers.SetupOpenTelemetry()
+
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 

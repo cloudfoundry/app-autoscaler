@@ -6,16 +6,12 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -59,6 +55,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	helpers.SetupOpenTelemetry()
+
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "api")
 
 	members := grouper.Members{}
@@ -75,9 +73,6 @@ func main() {
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "policyDB", policyDb),
 		httpStatusCollector,
 	}
-
-	otel.SetTracerProvider(sdktrace.NewTracerProvider())
-	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	paClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)

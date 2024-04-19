@@ -14,10 +14,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -54,6 +50,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	helpers.SetupOpenTelemetry()
+
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "scalingengine")
 
 	eClock := clock.NewClock()
@@ -89,9 +87,6 @@ func main() {
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "schedulerDB", schedulerDB),
 		httpStatusCollector,
 	}, true, logger.Session("scalingengine-prometheus"))
-
-	otel.SetTracerProvider(sdktrace.NewTracerProvider())
-	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDb, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB, scalingEngineDB, scalingEngine)

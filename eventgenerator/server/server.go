@@ -5,6 +5,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
@@ -26,6 +27,7 @@ func NewServer(logger lager.Logger, conf *config.Config, queryAppMetric aggregat
 	eh := NewEventGenHandler(logger, queryAppMetric)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.EventGeneratorRoutes()
+	r.Use(otelmux.Middleware("eventgenerator"))
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetAggregatedMetricHistoriesRouteName).Handler(VarsFunc(eh.GetAggregatedMetricHistories))
 

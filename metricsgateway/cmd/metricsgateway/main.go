@@ -41,6 +41,9 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
+
+	helpers.SetupOpenTelemetry()
+
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsgateway")
 	gatewayClock := clock.NewClock()
 	loggregatorClientTLSConfig, err := loggregator.NewEgressTLSConfig(conf.Nozzle.RLPClientTLS.CACertFile, conf.Nozzle.RLPClientTLS.CertFile, conf.Nozzle.RLPClientTLS.KeyFile)
