@@ -6,7 +6,7 @@ require (
 	code.cloudfoundry.org/cfhttp/v2 v2.0.1-0.20240327161157-4a95aa40b3cb
 	code.cloudfoundry.org/clock v1.1.0
 	code.cloudfoundry.org/go-log-cache/v2 v2.0.7
-	code.cloudfoundry.org/go-loggregator/v9 v9.2.0
+	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
 	code.cloudfoundry.org/tlsconfig v0.0.0-20240417163319-a2cf10de323a
 	dario.cat/mergo v1.0.0
