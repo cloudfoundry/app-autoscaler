@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
 	gogrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -63,14 +64,11 @@ var _ = Describe("LogCacheClient", func() {
 			{AppId: "some-id"},
 		}
 
-		logCacheClient = NewLogCacheClient(
-			logger, func() time.Time { return collectedAt },
-			fakeEnvelopeProcessor, "")
+		logCacheClient = NewLogCacheClient(logger, func() time.Time { return collectedAt }, 40*time.Second, fakeEnvelopeProcessor, "")
 	})
 
 	JustBeforeEach(func() {
 		fakeGoLogCacheReader.ReadReturns(envelopes, logCacheClientReadError)
-		fakeEnvelopeProcessor.GetTimerMetricsReturns(metrics)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(0, metrics, nil)
 		fakeEnvelopeProcessor.GetGaugeMetricsReturnsOnCall(1, nil, errors.New("some error"))
 
@@ -94,9 +92,7 @@ var _ = Describe("LogCacheClient", func() {
 
 		BeforeEach(func() {
 			expectedAddrs = "logcache:8080"
-			logCacheClient = NewLogCacheClient(
-				logger, func() time.Time { return collectedAt },
-				fakeEnvelopeProcessor, expectedAddrs)
+			logCacheClient = NewLogCacheClient(logger, func() time.Time { return collectedAt }, 40*time.Second, fakeEnvelopeProcessor, expectedAddrs)
 		})
 
 		Context("when consuming log cache via grpc/mtls", func() {
@@ -217,6 +213,13 @@ var _ = Describe("LogCacheClient", func() {
 		})
 	})
 
+	Describe("CollectionInterval", func() {
+		It("returns correct collection interval", func() {
+			logCacheClient = NewLogCacheClient(logger, func() time.Time { return time.Now() }, 40*time.Second, fakeEnvelopeProcessor, "url")
+			Expect(logCacheClient.CollectionInterval()).To(Equal(40 * time.Second))
+		})
+	})
+
 	Context("GetMetrics", func() {
 		JustBeforeEach(func() {
 			logCacheClient.Client = fakeGoLogCacheReader
@@ -233,45 +236,227 @@ var _ = Describe("LogCacheClient", func() {
 			})
 		})
 
-		DescribeTable("GetMetrics for startStop Metrics",
-			func(metricType string, requiredFilters []string) {
-				metrics = []models.AppInstanceMetric{
-					{
-						AppId: "some-id",
-						Name:  metricType,
-					},
-				}
-				fakeEnvelopeProcessor.GetTimerMetricsReturnsOnCall(0, metrics)
-				actualMetrics, err := logCacheClient.GetMetrics(appId, metricType, startTime, endTime)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actualMetrics).To(Equal(metrics))
+		When("errors occur reading via PromQL API", func() {
+			When("PromQL call fails", func() {
+				It("returns an error", func() {
+					fakeGoLogCacheReader.PromQLReturns(nil, errors.New("fail"))
+					_, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+					Expect(err).To(HaveOccurred())
+				})
+			})
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeGoLogCacheReader.ReadCallCount()).To(Equal(1))
+			When("PromQL result is not a vector", func() {
+				It("returns an error", func() {
+					fakeGoLogCacheReader.PromQLReturns(nil, nil)
+					_, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+					Expect(err).To(HaveOccurred())
+				})
+			})
 
-				By("Sends the right arguments to log-cache-client")
-				actualContext, actualAppId, actualStartTime, readOptions := fakeGoLogCacheReader.ReadArgsForCall(0)
+			When("sample does not contain instance_id", func() {
+				It("returns an error", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{
+								Samples: []*logcache_v1.PromQL_Sample{
+									{
+										Metric: map[string]string{
+											// "instance_id": "0", is missing here
+										},
+									},
+								},
+							},
+						},
+					}, nil)
+					_, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+					Expect(err).To(HaveOccurred())
+				})
+			})
 
-				Expect(actualContext).To(Equal(context.Background()))
-				Expect(actualAppId).To(Equal(appId))
-				Expect(actualStartTime).To(Equal(startTime))
-				values := url.Values{}
-				readOptions[0](nil, values)
-				Expect(valuesFrom(readOptions[0])["end_time"][0]).To(Equal(strconv.FormatInt(int64(endTime.UnixNano()), 10)))
-				Expect(valuesFrom(readOptions[1])["envelope_types"][0]).To(Equal("TIMER"))
-				Expect(len(readOptions)).To(Equal(3), "filters by envelope type and metric names based on the requested metric type sent to GetMetrics")
-				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
+			When("instance_id can not be parsed to uint", func() {
+				It("returns an error", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{
+								Samples: []*logcache_v1.PromQL_Sample{
+									{
+										Metric: map[string]string{
+											"instance_id": "iam-no-uint",
+										},
+									},
+								},
+							},
+						},
+					}, nil)
+					_, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+					Expect(err).To(HaveOccurred())
+				})
+			})
 
-				By("Sends the right arguments to the timer processor")
-				Expect(fakeEnvelopeProcessor.GetTimerMetricsCallCount()).To(Equal(1), "Should call GetHttpStartStopInstanceMetricsCallCount once")
-				actualEnvelopes, actualAppId, actualCurrentTimestamp := fakeEnvelopeProcessor.GetTimerMetricsArgsForCall(0)
-				Expect(actualEnvelopes).To(Equal(envelopes))
-				Expect(actualAppId).To(Equal(appId))
-				Expect(actualCurrentTimestamp).To(Equal(collectedAt.UnixNano()))
-			},
-			Entry("When metric type is throughput", models.MetricNameThroughput, []string{"endtime", "envelope_type", "http"}),
-			Entry("When metric type is responsetime", models.MetricNameResponseTime, []string{"endtime", "envelope_type", "http"}),
-		)
+			When("sample does not contain a point", func() {
+				It("returns an error", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{
+								Samples: []*logcache_v1.PromQL_Sample{
+									{
+										Metric: map[string]string{
+											"instance_id": "0",
+										},
+									},
+								},
+							},
+						},
+					}, nil)
+					_, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+
+		When("reading throughput metrics", func() {
+			When("PromQL API returns a vector with no samples", func() {
+				It("returns empty metrics", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{},
+						},
+					}, nil)
+
+					metrics, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+
+					Expect(err).To(Not(HaveOccurred()))
+					Expect(metrics).To(HaveLen(1))
+
+					Expect(metrics[0].AppId).To(Equal("app-id"))
+					Expect(metrics[0].InstanceIndex).To(Equal(uint32(0)))
+					Expect(metrics[0].Name).To(Equal("throughput"))
+					Expect(metrics[0].Unit).To(Equal("rps"))
+					Expect(metrics[0].Value).To(Equal("0"))
+				})
+			})
+
+			When("promql api returns a vector with samples", func() {
+				It("returns metrics", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{
+								Samples: []*logcache_v1.PromQL_Sample{
+									{
+										Metric: map[string]string{
+											"instance_id": "0",
+										},
+										Point: &logcache_v1.PromQL_Point{
+											Value: 123,
+										},
+									},
+									{
+										Metric: map[string]string{
+											"instance_id": "1",
+										},
+										Point: &logcache_v1.PromQL_Point{
+											Value: 321,
+										},
+									},
+								},
+							},
+						},
+					}, nil)
+
+					metrics, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
+
+					_, query, _ := fakeGoLogCacheReader.PromQLArgsForCall(0)
+					Expect(query).To(Equal("sum by (instance_id) (count_over_time(http{source_id='app-id'}[40s])) / 40"))
+
+					Expect(err).To(Not(HaveOccurred()))
+					Expect(metrics).To(HaveLen(2))
+
+					Expect(metrics[0].AppId).To(Equal("app-id"))
+					Expect(metrics[0].InstanceIndex).To(Equal(uint32(0)))
+					Expect(metrics[0].Name).To(Equal("throughput"))
+					Expect(metrics[0].Unit).To(Equal("rps"))
+					Expect(metrics[0].Value).To(Equal("123"))
+
+					Expect(metrics[1].AppId).To(Equal("app-id"))
+					Expect(metrics[1].InstanceIndex).To(Equal(uint32(1)))
+					Expect(metrics[1].Name).To(Equal("throughput"))
+					Expect(metrics[1].Unit).To(Equal("rps"))
+					Expect(metrics[1].Value).To(Equal("321"))
+				})
+			})
+		})
+
+		When("reading responsetime metrics", func() {
+			When("PromQL API returns a vector with no samples", func() {
+				It("returns empty metrics", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{},
+						},
+					}, nil)
+
+					metrics, err := logCacheClient.GetMetrics("app-id", "responsetime", startTime, endTime)
+
+					Expect(err).To(Not(HaveOccurred()))
+					Expect(metrics).To(HaveLen(1))
+
+					Expect(metrics[0].AppId).To(Equal("app-id"))
+					Expect(metrics[0].InstanceIndex).To(Equal(uint32(0)))
+					Expect(metrics[0].Name).To(Equal("responsetime"))
+					Expect(metrics[0].Unit).To(Equal("ms"))
+					Expect(metrics[0].Value).To(Equal("0"))
+				})
+			})
+
+			When("promql api returns a vector with samples", func() {
+				It("returns metrics", func() {
+					fakeGoLogCacheReader.PromQLReturns(&logcache_v1.PromQL_InstantQueryResult{
+						Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+							Vector: &logcache_v1.PromQL_Vector{
+								Samples: []*logcache_v1.PromQL_Sample{
+									{
+										Metric: map[string]string{
+											"instance_id": "0",
+										},
+										Point: &logcache_v1.PromQL_Point{
+											Value: 200,
+										},
+									},
+									{
+										Metric: map[string]string{
+											"instance_id": "1",
+										},
+										Point: &logcache_v1.PromQL_Point{
+											Value: 300,
+										},
+									},
+								},
+							},
+						},
+					}, nil)
+
+					metrics, err := logCacheClient.GetMetrics("app-id", "responsetime", startTime, endTime)
+
+					_, query, _ := fakeGoLogCacheReader.PromQLArgsForCall(0)
+					Expect(query).To(Equal("avg by (instance_id) (max_over_time(http{source_id='app-id'}[40s])) / (1000 * 1000)"))
+
+					Expect(err).To(Not(HaveOccurred()))
+					Expect(metrics).To(HaveLen(2))
+
+					Expect(metrics[0].AppId).To(Equal("app-id"))
+					Expect(metrics[0].InstanceIndex).To(Equal(uint32(0)))
+					Expect(metrics[0].Name).To(Equal("responsetime"))
+					Expect(metrics[0].Unit).To(Equal("ms"))
+					Expect(metrics[0].Value).To(Equal("200"))
+
+					Expect(metrics[1].AppId).To(Equal("app-id"))
+					Expect(metrics[1].InstanceIndex).To(Equal(uint32(1)))
+					Expect(metrics[1].Name).To(Equal("responsetime"))
+					Expect(metrics[1].Unit).To(Equal("ms"))
+					Expect(metrics[1].Value).To(Equal("300"))
+				})
+			})
+		})
 
 		DescribeTable("GetMetrics for Gauge Metrics",
 			func(autoscalerMetricType string, requiredFilters []string) {
@@ -299,8 +484,6 @@ var _ = Describe("LogCacheClient", func() {
 
 				// after starTime and envelopeType we filter the metric names
 				Expect(valuesFrom(readOptions[2])["name_filter"][0]).To(Equal(requiredFilters[2]))
-
-				Expect(fakeEnvelopeProcessor.GetTimerMetricsCallCount()).To(Equal(0))
 
 				By("Sends the right arguments to the gauge processor")
 				actualEnvelopes, actualCurrentTimestamp := fakeEnvelopeProcessor.GetGaugeMetricsArgsForCall(0)

@@ -34,7 +34,7 @@ func NewMetricServerClient(logger lager.Logger, url string, httpClient *http.Cli
 	}
 }
 func (c *MetricServerClient) GetMetrics(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
-	c.logger.Debug("GetMetric")
+	c.logger.Debug("GetMetrics")
 	var url string
 	path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
 	if err != nil {

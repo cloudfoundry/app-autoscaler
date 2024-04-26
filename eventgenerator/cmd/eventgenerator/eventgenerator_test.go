@@ -267,8 +267,8 @@ var _ = Describe("Eventgenerator", func() {
 			})
 
 			It("Should create a LogCacheClient", func() {
-				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.MetricServerClient.GetMetric"))
-				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.LogCacheClient.GetMetric"))
+				Eventually(runner.Session.Buffer()).ShouldNot(Say("eventgenerator.MetricServerClient.GetMetrics"))
+				Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.LogCacheClient.GetMetrics"))
 			})
 
 			It("Should initialized an envelopeProcessor", func() {

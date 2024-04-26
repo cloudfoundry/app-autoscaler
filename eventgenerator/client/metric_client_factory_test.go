@@ -131,9 +131,8 @@ var _ = Describe("MetricClientFactory", func() {
 				})
 			})
 
-			It("Should set AggregatorExecuteInterval as processor collectionInterval", func() {
-				_, actualCollectionInterval := fakeEnvelopeProcessorCreator.NewProcessorArgsForCall(0)
-				Expect(actualCollectionInterval).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
+			It("Should set AggregatorExecuteInterval as collectionInterval on LogCacheClient", func() {
+				Expect(metricClient.(*LogCacheClient).CollectionInterval()).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
 			})
 		})
 	})

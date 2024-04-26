@@ -29,7 +29,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 	JustBeforeEach(func() {
 		logger = lagertest.NewTestLogger("envelopeProcessor")
-		processor = envelopeprocessor.NewProcessor(logger, TestCollectInterval)
+		processor = envelopeprocessor.NewProcessor(logger)
 	})
 
 	Describe("#GetGaugeMetrics", func() {
@@ -284,109 +284,7 @@ var _ = Describe("Envelopeprocessor", func() {
 			}
 		})
 	})
-
-	Describe("#GetTimerMetrics", func() {
-		BeforeEach(func() {
-			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111))
-			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "1", 10*1000*1000, 30*1000*1000, 1111))
-			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "0", 20*1000*1000, 30*1000*1000, 1111))
-			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 50*1000*1000, 1111))
-			envelopes = append(envelopes, generateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 30*1000*1000, 1111))
-		})
-
-		It("sends throughput and responsetime metric to channel", func() {
-			timestamp := time.Now().UnixNano()
-			metrics := processor.GetTimerMetrics(envelopes, "test-app-id", timestamp)
-
-			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
-				AppId:         "test-app-id",
-				InstanceIndex: 0,
-				CollectedAt:   timestamp,
-				Name:          models.MetricNameThroughput,
-				Unit:          models.UnitRPS,
-				Value:         "2",
-				Timestamp:     timestamp,
-			}))
-
-			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
-				AppId:         "test-app-id",
-				InstanceIndex: 0,
-				CollectedAt:   timestamp,
-				Name:          models.MetricNameResponseTime,
-				Unit:          models.UnitMilliseconds,
-				Value:         "13",
-				Timestamp:     timestamp,
-			}))
-
-			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
-				AppId:         "test-app-id",
-				InstanceIndex: 1,
-				CollectedAt:   timestamp,
-				Name:          models.MetricNameThroughput,
-				Unit:          models.UnitRPS,
-				Value:         "3",
-				Timestamp:     timestamp,
-			}))
-
-			Expect(metrics).To(ContainElement(models.AppInstanceMetric{
-				AppId:         "test-app-id",
-				InstanceIndex: 1,
-				CollectedAt:   timestamp,
-				Name:          models.MetricNameResponseTime,
-				Unit:          models.UnitMilliseconds,
-				Value:         "20",
-				Timestamp:     timestamp,
-			}))
-		})
-
-		Context("when no available envelopes for app", func() {
-			BeforeEach(func() {
-				envelopes = []*loggregator_v2.Envelope{}
-			})
-
-			It("sends send 0 throughput and responsetime metric", func() {
-				timestamp := time.Now().UnixNano()
-				metrics := processor.GetTimerMetrics(envelopes, "another-test-app-id", timestamp)
-				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
-					AppId:         "another-test-app-id",
-					InstanceIndex: 0,
-					CollectedAt:   timestamp,
-					Name:          models.MetricNameThroughput,
-					Unit:          models.UnitRPS,
-					Value:         "0",
-					Timestamp:     timestamp,
-				}))
-				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
-					AppId:         "another-test-app-id",
-					InstanceIndex: 0,
-					CollectedAt:   timestamp,
-					Name:          models.MetricNameResponseTime,
-					Unit:          models.UnitMilliseconds,
-					Value:         "0",
-					Timestamp:     timestamp,
-				}))
-
-			})
-
-		})
-	})
 })
-
-func generateHttpStartStopEnvelope(sourceID, instance string, start, stop, timestamp int64) *loggregator_v2.Envelope {
-	e := &loggregator_v2.Envelope{
-		SourceId:   sourceID,
-		InstanceId: instance,
-		Message: &loggregator_v2.Envelope_Timer{
-			Timer: &loggregator_v2.Timer{
-				Name:  "http",
-				Start: start,
-				Stop:  stop,
-			},
-		},
-		Timestamp: timestamp,
-	}
-	return e
-}
 
 func generateMetrics(sourceID string, instance string, metrics map[string]*loggregator_v2.GaugeValue, timestamp int64) *loggregator_v2.Envelope {
 	return &loggregator_v2.Envelope{

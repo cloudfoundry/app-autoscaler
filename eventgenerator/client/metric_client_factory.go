@@ -34,8 +34,8 @@ func (mc *MetricClientFactory) GetMetricClient(logger lager.Logger, conf *config
 }
 
 func (mc *MetricClientFactory) createLogCacheMetricClient(logger lager.Logger, conf *config.Config) MetricClient {
-	envelopeProcessor := NewProcessor(logger, conf.Aggregator.AggregatorExecuteInterval)
-	c := NewLogCacheClient(logger, time.Now, envelopeProcessor, conf.MetricCollector.MetricCollectorURL)
+	envelopeProcessor := NewProcessor(logger)
+	c := NewLogCacheClient(logger, time.Now, conf.Aggregator.AggregatorExecuteInterval, envelopeProcessor, conf.MetricCollector.MetricCollectorURL)
 
 	if hasUAACreds(conf) {
 		uaaCreds := models.UAACreds{

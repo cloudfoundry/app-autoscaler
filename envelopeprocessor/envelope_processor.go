@@ -15,25 +15,22 @@ import (
 )
 
 type EnvelopeProcessorCreator interface {
-	NewProcessor(logger lager.Logger, collectionInterval time.Duration) Processor
+	NewProcessor(logger lager.Logger) Processor
 }
 
 type EnvelopeProcessor interface {
 	GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
-	GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64) []models.AppInstanceMetric
 }
 
 var _ EnvelopeProcessor = &Processor{}
 
 type Processor struct {
-	logger             lager.Logger
-	collectionInterval time.Duration
+	logger lager.Logger
 }
 
-func NewProcessor(logger lager.Logger, collectionInterval time.Duration) Processor {
+func NewProcessor(logger lager.Logger) Processor {
 	return Processor{
-		logger:             logger.Session("EnvelopeProcessor"),
-		collectionInterval: collectionInterval,
+		logger: logger.Session("EnvelopeProcessor"),
 	}
 }
 
@@ -42,11 +39,6 @@ func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, current
 	compactedEnvelopes := p.CompactEnvelopes(envelopes)
 	p.logger.Debug("Compacted envelopes", lager.Data{"compactedEnvelopes": compactedEnvelopes})
 	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
-}
-func (p Processor) GetTimerMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64) []models.AppInstanceMetric {
-	p.logger.Debug("GetTimerMetrics")
-	p.logger.Debug("Compacted envelopes", lager.Data{"Envelopes": envelopes})
-	return GetHttpStartStopInstanceMetrics(envelopes, appID, currentTimestamp, p.collectionInterval)
 }
 
 // Log cache returns instance metrics such as cpu and memory in serparate envelopes, this was not the case with
@@ -91,10 +83,10 @@ func GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID
 	var metrics []models.AppInstanceMetric
 
 	numRequestsPerAppIdx := calcNumReqs(envelopes)
-	sumReponseTimesPerAppIdx := calcSumResponseTimes(envelopes)
+	sumResponseTimesPerAppIdx := calcSumResponseTimes(envelopes)
 
 	throughputMetrics := getThroughputInstanceMetrics(envelopes, appID, numRequestsPerAppIdx, collectionInterval, currentTimestamp)
-	responseTimeMetric := getResponsetimeInstanceMetrics(envelopes, appID, numRequestsPerAppIdx, sumReponseTimesPerAppIdx, currentTimestamp)
+	responseTimeMetric := getResponsetimeInstanceMetrics(envelopes, appID, numRequestsPerAppIdx, sumResponseTimesPerAppIdx, currentTimestamp)
 
 	metrics = append(metrics, throughputMetrics...)
 	metrics = append(metrics, responseTimeMetric...)
