@@ -3,6 +3,7 @@ package sqldb_test
 import (
 	"context"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,10 +73,12 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		cleanupForApp(appId)
 		cleanupForApp(appId2)
 		cleanupForApp(appId3)
+		cleanUpCooldownTable()
 		DeferCleanup(func() {
 			cleanupForApp(appId)
 			cleanupForApp(appId2)
 			cleanupForApp(appId3)
+			cleanUpCooldownTable()
 		})
 	})
 
@@ -532,6 +535,67 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("removes histories before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(getScalingHistoryForApp(appId)).To(Equal(2))
+			})
+		})
+
+		Context("when db fails", func() {
+			BeforeEach(func() {
+				_ = sdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("sql: .*")))
+			})
+		})
+	})
+
+	Describe("PruneCooldowns", Serial, func() {
+		var appIds []string
+
+		BeforeEach(func() {
+
+			appIds = make([]string, 10)
+			for i := 0; i < 10; i++ {
+				appIds[i] = addProcessIdTo("an-app-id-" + strconv.Itoa(i))
+				err := sdb.UpdateScalingCooldownExpireTime(appIds[i], 111111*int64(i+1))
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+		})
+
+		JustBeforeEach(func() {
+			err = sdb.PruneCooldowns(context.TODO(), before)
+		})
+
+		Context("when pruning cooldowns before all the timestamps", func() {
+			BeforeEach(func() {
+				before = 111111
+			})
+
+			It("does not remove any cooldowns", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfCooldownEntries()).To(Equal(10))
+			})
+		})
+
+		Context("when pruning all the cooldowns", func() {
+			BeforeEach(func() {
+				before = time.Now().UnixNano()
+			})
+
+			It("empties the scalingcooldowns table", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfCooldownEntries()).To(Equal(0))
+			})
+		})
+
+		Context("when pruning part of the cooldowns", func() {
+			BeforeEach(func() {
+				before = 333333
+			})
+
+			It("removes cooldowns before the time specified", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfCooldownEntries()).To(Equal(8))
 			})
 		})
 
