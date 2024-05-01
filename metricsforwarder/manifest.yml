@@ -5,7 +5,7 @@ applications:
   disk_quota: 256M
   instances: 1
   buildpack: binary_buildpack
-  command: ls && ./metricsforwarder -c metricsforwarder.example.yml
+  command: ls && ./metricsforwarder -c metricsforwarder.yml
   env:
     DT_MONITOR: true
     DT_APPLICATIONID: metricsforwarder

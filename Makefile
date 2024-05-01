@@ -10,8 +10,7 @@ PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/'
 								 | grep --invert-match --regexp='e2e')
 
 # `CGO_ENABLED := 1` is required to enforce dynamic linking which is a requirement of dynatrace.
-CGO_ENABLED := 1
-BUILDTAGS :=
+CGO_ENABLED := 0
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
@@ -87,10 +86,10 @@ ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-file
 	go mod vendor
 
 
-
 build-%: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
 	@echo "# building $*"
-	@CGO_ENABLED=$(CGO_ENABLED) go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
+	set -x
+	@CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 go build -o build/$* $*/cmd/$*/main.go
 
 
 build: $(addprefix build-,$(binaries))
