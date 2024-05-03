@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
@@ -19,6 +20,10 @@ var _ = Describe("Integration_Operator_Others", func() {
 		testGuid          string
 		initInstanceCount = 2
 		policyStr         string
+		serviceInstanceId string
+		bindingId         string
+		orgId             string
+		spaceId           string
 	)
 
 	BeforeEach(func() {
@@ -26,6 +31,11 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 		testAppId = getUUID()
 		testGuid = getUUID()
+		serviceInstanceId = getRandomIdRef("serviceInstId")
+		orgId = getRandomIdRef("orgId")
+		spaceId = getRandomIdRef("spaceId")
+		bindingId = getRandomIdRef("bindingId")
+
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		golangApiServerConfPath = components.PrepareGolangApiServerConfig(
@@ -38,9 +48,10 @@ var _ = Describe("Integration_Operator_Others", func() {
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsServerHTTP]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 			"https://127.0.0.1:8888",
-			true,
 			tmpDir)
 		startGolangApiServer()
+		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
+		provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, testAppId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()

@@ -193,8 +193,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MetricsForwarderUrl: "http://localhost:8088",
 	}
 
-	cfg.UseBuildInMode = false
-
 	cfg.CF.API = ccServer.URL()
 	cfg.CF.ClientID = "client-id"
 	cfg.CF.Secret = "client-secret"

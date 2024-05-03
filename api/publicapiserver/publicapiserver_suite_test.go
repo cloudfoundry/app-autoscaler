@@ -88,7 +88,7 @@ var _ = BeforeSuite(func() {
 	eventGeneratorServer = ghttp.NewServer()
 	schedulerServer = ghttp.NewServer()
 
-	conf = CreateConfig(true, apiPort)
+	conf = CreateConfig(apiPort)
 
 	// verify MetricCollector certs
 	_, err := os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
@@ -176,7 +176,7 @@ func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse 
 	Expect(errResp).To(Equal(errResponse))
 }
 
-func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
+func CreateConfig(apiServerPort int) *config.Config {
 	return &config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "debug",
@@ -214,7 +214,6 @@ func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
 			Secret:       CLIENT_SECRET,
 			ClientConfig: cf.ClientConfig{SkipSSLValidation: true},
 		},
-		UseBuildInMode: useBuildInMode,
-		APIClientId:    "api-client-id",
+		APIClientId: "api-client-id",
 	}
 }

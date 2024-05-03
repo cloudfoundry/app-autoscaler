@@ -63,7 +63,6 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]),
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 				"https://127.0.0.1:8888",
-				false,
 				tmpDir)
 			startGolangApiServer()
 
@@ -483,114 +482,6 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			})
 
 		})
-	})
-
-	Describe("When offered as a built-in experience", func() {
-		BeforeEach(func() {
-			golangApiServerConfPath = components.PrepareGolangApiServerConfig(
-				dbUrl,
-				components.Ports[GolangAPIServer],
-				components.Ports[GolangServiceBroker],
-				fakeCCNOAAUAA.URL(),
-				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]),
-				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
-				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]),
-				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
-				"https://127.0.0.1:8888",
-				true,
-				tmpDir)
-			startGolangApiServer()
-
-			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)
-			Expect(err).NotTo(HaveOccurred())
-			defer func() { _ = resp.Body.Close() }()
-		})
-		AfterEach(func() {
-			stopGolangApiServer()
-		})
-
-		Describe("Create policy", func() {
-			Context("public api", func() {
-				Context("Policies with schedules", func() {
-					It("creates a policy and associated schedules", func() {
-						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
-
-						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
-					})
-
-					It("fails with an invalid policy", func() {
-						policyStr = readPolicyFromFile("fakeInvalidPolicy.json")
-
-						doAttachPolicy(appId, policyStr, http.StatusBadRequest, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkApiServerStatus(appId, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkSchedulerStatus(appId, http.StatusNotFound)
-					})
-
-				})
-
-				Context("Policies without schedules", func() {
-					It("creates only the policy", func() {
-						policyStr = readPolicyFromFile("fakePolicyWithoutSchedule.json")
-
-						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkSchedulerStatus(appId, http.StatusNotFound)
-
-					})
-				})
-			})
-
-		})
-
-		Describe("Update policy", func() {
-			Context("public api", func() {
-				Context("Update policies with schedules", func() {
-					BeforeEach(func() {
-						//attach a policy first with 4 recurring and 2 specific_date schedules
-						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
-						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-					})
-
-					It("updates the policy and schedules", func() {
-						//attach another policy with 3 recurring and 1 specific_date schedules
-						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
-
-						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
-					})
-				})
-			})
-
-		})
-
-		Describe("Delete Policies", func() {
-			Context("public api", func() {
-				Context("for a non-existing app", func() {
-					It("Should return OK", func() {
-						doDetachPolicy(appId, http.StatusOK, `{}`, components.Ports[GolangAPIServer], httpClientForPublicApi)
-					})
-				})
-
-				Context("with an existing app", func() {
-					BeforeEach(func() {
-						//attach a policy first with 4 recurring and 2 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-					})
-
-					It("deletes the policy and schedules", func() {
-						doDetachPolicy(appId, http.StatusOK, "", components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkApiServerStatus(appId, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkSchedulerStatus(appId, http.StatusNotFound)
-					})
-				})
-			})
-
-		})
-
 	})
 })
 

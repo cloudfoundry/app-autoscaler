@@ -104,7 +104,6 @@ type Config struct {
 	ScalingEngine         ScalingEngineConfig           `yaml:"scaling_engine"`
 	EventGenerator        EventGeneratorConfig          `yaml:"event_generator"`
 	CF                    cf.Config                     `yaml:"cf"`
-	UseBuildInMode        bool                          `yaml:"use_buildin_mode"`
 	InfoFilePath          string                        `yaml:"info_file_path"`
 	MetricsForwarder      MetricsForwarderConfig        `yaml:"metrics_forwarder"`
 	Health                helpers.HealthConfig          `yaml:"health"`
@@ -123,7 +122,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Logging:         defaultLoggingConfig,
 		BrokerServer:    defaultBrokerServerConfig,
 		PublicApiServer: defaultPublicApiServerConfig,
-		UseBuildInMode:  false,
 		CF: cf.Config{
 			ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
 		},
@@ -210,67 +208,66 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: ScalingRules.CPU.UpperThreshold is less than zero")
 	}
 
-	if !c.UseBuildInMode {
-		if c.DB[db.BindingDb].URL == "" {
-			return fmt.Errorf("Configuration error: BindingDB URL is empty")
+	if c.DB[db.BindingDb].URL == "" {
+		return fmt.Errorf("Configuration error: BindingDB URL is empty")
+	}
+
+	for _, brokerCredential := range c.BrokerCredentials {
+		if brokerCredential.BrokerUsername == "" && string(brokerCredential.BrokerUsernameHash) == "" {
+			return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")
 		}
-
-		for _, brokerCredential := range c.BrokerCredentials {
-			if brokerCredential.BrokerUsername == "" && string(brokerCredential.BrokerUsernameHash) == "" {
-				return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")
-			}
-			if brokerCredential.BrokerUsername != "" && string(brokerCredential.BrokerUsernameHash) != "" {
-				return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")
-			}
-			if string(brokerCredential.BrokerUsernameHash) != "" {
-				if _, err := bcrypt.Cost(brokerCredential.BrokerUsernameHash); err != nil {
-					return fmt.Errorf("Configuration error: broker_username_hash is not a valid bcrypt hash")
-				}
-			}
-			if brokerCredential.BrokerPassword == "" && string(brokerCredential.BrokerPasswordHash) == "" {
-				return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")
-			}
-
-			if brokerCredential.BrokerPassword != "" && string(brokerCredential.BrokerPasswordHash) != "" {
-				return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")
-			}
-
-			if string(brokerCredential.BrokerPasswordHash) != "" {
-				if _, err := bcrypt.Cost(brokerCredential.BrokerPasswordHash); err != nil {
-					return fmt.Errorf("Configuration error: broker_password_hash is not a valid bcrypt hash")
-				}
+		if brokerCredential.BrokerUsername != "" && string(brokerCredential.BrokerUsernameHash) != "" {
+			return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")
+		}
+		if string(brokerCredential.BrokerUsernameHash) != "" {
+			if _, err := bcrypt.Cost(brokerCredential.BrokerUsernameHash); err != nil {
+				return fmt.Errorf("Configuration error: broker_username_hash is not a valid bcrypt hash")
 			}
 		}
-
-		if c.CatalogSchemaPath == "" {
-			return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
-		}
-		if c.CatalogPath == "" {
-			return fmt.Errorf("Configuration error: CatalogPath is empty")
-		}
-		if c.CredHelperImpl == "" {
-			return fmt.Errorf("Configuration error: CredHelperImpl is empty")
+		if brokerCredential.BrokerPassword == "" && string(brokerCredential.BrokerPasswordHash) == "" {
+			return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")
 		}
 
-		catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
-		catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
-
-		result, err := gojsonschema.Validate(catalogSchemaLoader, catalogLoader)
-		if err != nil {
-			return err
+		if brokerCredential.BrokerPassword != "" && string(brokerCredential.BrokerPasswordHash) != "" {
+			return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")
 		}
-		if !result.Valid() {
-			errString := "{"
-			for index, desc := range result.Errors() {
-				if index == len(result.Errors())-1 {
-					errString += fmt.Sprintf("\"%s\"", desc.Description())
-				} else {
-					errString += fmt.Sprintf("\"%s\",", desc.Description())
-				}
+
+		if string(brokerCredential.BrokerPasswordHash) != "" {
+			if _, err := bcrypt.Cost(brokerCredential.BrokerPasswordHash); err != nil {
+				return fmt.Errorf("Configuration error: broker_password_hash is not a valid bcrypt hash")
 			}
-			errString += "}"
-			return fmt.Errorf(errString)
 		}
 	}
+
+	if c.CatalogSchemaPath == "" {
+		return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
+	}
+	if c.CatalogPath == "" {
+		return fmt.Errorf("Configuration error: CatalogPath is empty")
+	}
+	if c.CredHelperImpl == "" {
+		return fmt.Errorf("Configuration error: CredHelperImpl is empty")
+	}
+
+	catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
+	catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
+
+	result, err := gojsonschema.Validate(catalogSchemaLoader, catalogLoader)
+	if err != nil {
+		return err
+	}
+	if !result.Valid() {
+		errString := "{"
+		for index, desc := range result.Errors() {
+			if index == len(result.Errors())-1 {
+				errString += fmt.Sprintf("\"%s\"", desc.Description())
+			} else {
+				errString += fmt.Sprintf("\"%s\",", desc.Description())
+			}
+		}
+		errString += "}"
+		return fmt.Errorf(errString)
+	}
+
 	return nil
 }

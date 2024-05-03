@@ -42,7 +42,6 @@ scheduler:
 metrics_forwarder:
   metrics_forwarder_url: http://localhost:8088
   metrics_forwarder_mtls_url: http://localhost:8088
-use_buildin_mode: false
 cf:
   api: https://api.example.com
   client_id: client-id

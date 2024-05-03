@@ -52,10 +52,6 @@ const (
 	PublicApiAttachPolicyRouteName = "AttachPolicy"
 	PublicApiDetachPolicyRouteName = "DetachPolicy"
 
-	PublicApiCredentialPath            = "/v1/apps/{appId:.+}/credential" // #nosec G101
-	PublicApiCreateCredentialRouteName = "CreateCredential"               // #nosec G101
-	PublicApiDeleteCredentialRouteName = "DeleteCredential"               // #nosec G101
-
 	PublicApiInfoPath      = "/v1/info"
 	PublicApiInfoRouteName = "GetPublicApiInfo"
 
@@ -120,10 +116,6 @@ func newRouters() *AutoScalerRoute {
 	instance.apiPolicyRoutes.Path("").Methods(http.MethodGet).Name(PublicApiGetPolicyRouteName)
 	instance.apiPolicyRoutes.Path("").Methods(http.MethodPut).Name(PublicApiAttachPolicyRouteName)
 	instance.apiPolicyRoutes.Path("").Methods(http.MethodDelete).Name(PublicApiDetachPolicyRouteName)
-
-	instance.apiCredentialRoutes = instance.apiOpenRoutes.Path(PublicApiCredentialPath).Subrouter()
-	instance.apiCredentialRoutes.Path("").Methods(http.MethodPut).Name(PublicApiCreateCredentialRouteName)
-	instance.apiCredentialRoutes.Path("").Methods(http.MethodDelete).Name(PublicApiDeleteCredentialRouteName)
 
 	return instance
 }

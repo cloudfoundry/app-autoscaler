@@ -125,15 +125,6 @@ func (mw *Middleware) CheckServiceBinding(next http.Handler) http.Handler {
 	})
 }
 
-func (mw *Middleware) RejectCredentialOperationInServiceOffering(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handlers.WriteJSONResponse(w, http.StatusForbidden, models.ErrorResponse{
-			Code:    "Forbidden",
-			Message: "This command is only valid for build-in auto-scaling capacity. Please operate service credential with \"cf bind/unbind-service\" command.",
-		})
-	})
-}
-
 func (mw *Middleware) isValidUserToken(userToken string) bool {
 	lowerCaseToken := strings.ToLower(userToken)
 	if !strings.HasPrefix(lowerCaseToken, "bearer ") {

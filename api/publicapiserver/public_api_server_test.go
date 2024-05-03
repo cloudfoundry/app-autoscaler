@@ -132,22 +132,6 @@ var _ = Describe("PublicApiServer", func() {
 
 			})
 
-			Context("when calling create credential endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						nil, http.MethodPut, "", http.StatusTooManyRequests)
-				})
-
-			})
-
-			Context("when calling delete credential endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						nil, http.MethodDelete, "", http.StatusTooManyRequests)
-				})
-
-			})
-
 		})
 
 		Describe("Without AuthorizatioToken", func() {
@@ -182,22 +166,6 @@ var _ = Describe("PublicApiServer", func() {
 			Context("when calling detach policy endpoint", func() {
 				It("should fail with 401", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodDelete, "", http.StatusUnauthorized)
-				})
-
-			})
-
-			Context("when calling create credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						nil, http.MethodPut, "", http.StatusUnauthorized)
-				})
-
-			})
-
-			Context("when calling delete credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
 						nil, http.MethodDelete, "", http.StatusUnauthorized)
 				})
 
@@ -262,20 +230,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 
 			})
-			Context("when calling create credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
-				})
-
-			})
-			Context("when calling delete credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
-				})
-
-			})
 		})
 
 		Describe("With Invalid Client Token", func() {
@@ -336,20 +290,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 
 			})
-			Context("when calling create credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
-				})
-
-			})
-			Context("when calling delete credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
-				})
-
-			})
 		})
 
 		Describe("With Invalid Authorization Token", func() {
@@ -405,20 +345,6 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should fail with 401", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
-				})
-
-			})
-			Context("when calling create credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
-				})
-
-			})
-			Context("when calling delete credential endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
 						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
 				})
 
@@ -496,21 +422,6 @@ var _ = Describe("PublicApiServer", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
 						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
 				})
-			})
-
-			Context("when calling create credential endpoint", func() {
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, "", http.StatusOK)
-				})
-
-			})
-			Context("when calling delete credential endpoint", func() {
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodDelete, "", http.StatusOK)
-				})
-
 			})
 		})
 	})

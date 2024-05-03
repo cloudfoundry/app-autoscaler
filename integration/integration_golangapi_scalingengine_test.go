@@ -35,7 +35,6 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 			"https://127.0.0.1:8888",
-			true,
 			tmpDir)
 		startGolangApiServer()
 		appId = getUUID()

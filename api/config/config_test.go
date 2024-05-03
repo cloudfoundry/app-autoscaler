@@ -98,7 +98,6 @@ var _ = Describe("Config", func() {
 						MetricsForwarderMtlsUrl: "https://mtlssdsdds:8084",
 					},
 				))
-				Expect(conf.UseBuildInMode).To(BeFalse())
 				Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 				Expect(conf.CF).To(Equal(
 					cf.Config{
@@ -148,7 +147,6 @@ var _ = Describe("Config", func() {
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.UseBuildInMode).To(BeFalse())
 				Expect(conf.ScalingRules.CPU.LowerThreshold).To(Equal(1))
 				Expect(conf.ScalingRules.CPU.UpperThreshold).To(Equal(100))
 				Expect(conf.ScalingRules.CPUUtil.LowerThreshold).To(Equal(1))
@@ -267,7 +265,6 @@ rate_limit:
 			conf.CF.Secret = "secret"
 
 			conf.InfoFilePath = "../exampleconfig/info-file.json"
-			conf.UseBuildInMode = false
 
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
@@ -521,29 +518,5 @@ rate_limit:
 			})
 		})
 
-		Describe("Using BuildIn Mode", func() {
-			BeforeEach(func() {
-				conf.UseBuildInMode = true
-			})
-			Context("when broker related configs are not set", func() {
-				BeforeEach(func() {
-					conf.DB[db.BindingDb] = db.DatabaseConfig{URL: ""}
-					brokerCred1 := BrokerCredentialsConfig{
-						BrokerUsername:     "",
-						BrokerUsernameHash: nil,
-						BrokerPasswordHash: nil,
-						BrokerPassword:     "",
-					}
-					var brokerCreds []BrokerCredentialsConfig
-					brokerCreds = append(brokerCreds, brokerCred1)
-					conf.CatalogPath = ""
-					conf.CatalogSchemaPath = ""
-					conf.BrokerCredentials = brokerCreds
-				})
-				It("should not err", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-		})
 	})
 })

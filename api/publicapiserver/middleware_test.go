@@ -249,26 +249,4 @@ var _ = Describe("Middleware", func() {
 		})
 	})
 
-	Describe("RejectCredentialOperationInServiceOffering", func() {
-		BeforeEach(func() {
-
-			fakeCFClient = &fakes.FakeCFClient{}
-			logger = lagertest.NewTestLogger("oauth")
-			mw = NewMiddleware(logger, fakeCFClient, func(appId string) bool {
-				return true
-			}, "")
-
-			router = mux.NewRouter()
-			router.HandleFunc("/", GetTestHandler())
-			router.HandleFunc("/v1/apps/{appId}", GetTestHandler())
-			router.Use(mw.RejectCredentialOperationInServiceOffering)
-
-			resp = httptest.NewRecorder()
-		})
-
-		JustBeforeEach(func() {
-			router.ServeHTTP(resp, req)
-		})
-	})
-
 })

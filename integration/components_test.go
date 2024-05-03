@@ -199,7 +199,7 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 	})
 }
 
-func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, tmpDir string) string {
+func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, tmpDir string) string {
 	brokerCred1 := apiConfig.BrokerCredentialsConfig{
 		BrokerUsername: "broker_username",
 		//BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
@@ -277,8 +277,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 			ClientID: "admin",
 			Secret:   "admin",
 		},
-		UseBuildInMode: useBuildInMode,
-		InfoFilePath:   golangAPIInfoFilePath,
+		InfoFilePath: golangAPIInfoFilePath,
 		MetricsForwarder: apiConfig.MetricsForwarderConfig{
 			MetricsForwarderUrl: metricsForwarderUri,
 		},

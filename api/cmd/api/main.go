@@ -88,30 +88,23 @@ func main() {
 	}
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
-	var checkBindingFunc api.CheckBindingFunc
-	var bindingDB db.BindingDB
-
-	if !conf.UseBuildInMode {
-		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB[db.BindingDb], logger.Session("bindingdb-db"))
-		if err != nil {
-			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
-			os.Exit(1)
-		}
-		defer func() { _ = bindingDB.Close() }()
-		prometheusCollectors = append(prometheusCollectors, healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
-		checkBindingFunc = func(appId string) bool {
-			return bindingDB.CheckServiceBinding(appId)
-		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf,
-			bindingDB, policyDb, httpStatusCollector, cfClient, credentialProvider)
-		if err != nil {
-			logger.Error("failed to create broker http server", err)
-			os.Exit(1)
-		}
-		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
-	} else {
-		checkBindingFunc = func(appId string) bool { return true }
+	bindingDB, err := sqldb.NewBindingSQLDB(conf.DB[db.BindingDb], logger.Session("bindingdb-db"))
+	if err != nil {
+		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
+		os.Exit(1)
 	}
+	defer func() { _ = bindingDB.Close() }()
+	prometheusCollectors = append(prometheusCollectors, healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
+	checkBindingFunc := func(appId string) bool {
+		return bindingDB.CheckServiceBinding(appId)
+	}
+	brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf,
+		bindingDB, policyDb, httpStatusCollector, cfClient, credentialProvider)
+	if err != nil {
+		logger.Error("failed to create broker http server", err)
+		os.Exit(1)
+	}
+	members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
 
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
