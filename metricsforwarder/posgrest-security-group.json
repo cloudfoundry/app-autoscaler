@@ -1,0 +1,8 @@
+  [
+     {
+       "protocol": "tcp",
+       "destination": "10.0.1.0/24",
+       "ports": "5432",
+       "description": "Allow postgress traffic from"
+     }
+   ]
