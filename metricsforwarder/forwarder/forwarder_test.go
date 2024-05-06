@@ -14,10 +14,10 @@ import (
 )
 
 var _ = Describe("MetricForwarder", func() {
-
 	var (
 		metricForwarder   forwarder.Emitter
 		loggregatorConfig config.LoggregatorConfig
+		syslogConfig      config.SyslogConfig
 		err               error
 		conf              *config.Config
 	)
@@ -25,6 +25,7 @@ var _ = Describe("MetricForwarder", func() {
 	JustBeforeEach(func() {
 		conf = &config.Config{
 			LoggregatorConfig: loggregatorConfig,
+			SyslogConfig:      syslogConfig,
 		}
 
 		logger := lager.NewLogger("metricsforwarder-test")
@@ -33,18 +34,18 @@ var _ = Describe("MetricForwarder", func() {
 	})
 
 	Describe("NewMetricForwarder", func() {
-		Context("when loggregatorConfig is not present it creates a SyslogAgentForwarder", func() {
+		Context("when loggregatorConfig is not present it creates a SyslogEmitter", func() {
 
 			BeforeEach(func() {
 				loggregatorConfig.MetronAddress = ""
 			})
 
-			It("should create a SyslogAgentClient", func() {
-				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.SyslogAgentForwarder{}))
+			It("should create a SyslogClient", func() {
+				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.SyslogEmitter{}))
 			})
 		})
 
-		Context("when loggregatorConfig is present creates a metronAgentForwarder", func() {
+		Context("when loggregatorConfig is present creates a metronForwarder", func() {
 			BeforeEach(func() {
 				testCertDir := "../../../../test-certs"
 				loggregatorConfig = config.LoggregatorConfig{
@@ -57,14 +58,22 @@ var _ = Describe("MetricForwarder", func() {
 				}
 			})
 
-			It("should create a metronAgentClient", func() {
-				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.MetronAgentEmitter{}))
+			It("should create a metronClient", func() {
+				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.MetronEmitter{}))
+			})
+		})
+
+		Context("when sylogServerConfig is present creates a syslogEmitter", func() {
+			BeforeEach(func() {
+				syslogConfig = config.SyslogConfig{
+					ServerAddress: "syslog://some-server-address",
+				}
+			})
+
+			It("should create a metronEmitter", func() {
+				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.MetronEmitter{}))
 			})
 		})
 	})
 
-	Describe("EmitMetrics", func() {
-		It("Should call emmit metric", func() {
-		})
-	})
 })

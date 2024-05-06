@@ -25,6 +25,7 @@ type Config struct {
 	Logging               helpers.LoggingConfig         `yaml:"logging"`
 	Server                helpers.ServerConfig          `yaml:"server"`
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
+	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
@@ -56,6 +57,10 @@ type LoggingConfig struct {
 type LoggregatorConfig struct {
 	MetronAddress string          `yaml:"metron_address"`
 	TLS           models.TLSCerts `yaml:"tls"`
+}
+
+type SyslogConfig struct {
+	ServerAddress string `yaml:"server_address"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {

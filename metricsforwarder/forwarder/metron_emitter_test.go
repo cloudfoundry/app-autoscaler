@@ -36,6 +36,7 @@ var _ = Describe("MetricForwarder", func() {
 			filepath.Join(testCertDir, "metron.key"),
 			filepath.Join(testCertDir, "loggregator-ca.crt"),
 		)
+
 		Expect(err).ToNot(HaveOccurred())
 		err = grpcIngressTestServer.Start()
 		Expect(err).NotTo(HaveOccurred())
@@ -63,7 +64,7 @@ var _ = Describe("MetricForwarder", func() {
 			LoggregatorConfig: loggregatorConfig,
 		}
 		logger := lager.NewLogger("metricsforwarder-test")
-		emitter, err = forwarder.NewMetronAgentEmitter(logger, conf)
+		emitter, err = forwarder.NewMetronEmitter(logger, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 	})
