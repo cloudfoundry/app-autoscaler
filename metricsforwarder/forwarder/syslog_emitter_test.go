@@ -54,7 +54,7 @@ var _ = Describe("SyslogEmitter", func() {
 		actual, err := buf.ReadString('\n')
 		Expect(err).ToNot(HaveOccurred())
 
-		expected := fmt.Sprintf("Some syslog %s metric", metric.Name)
-		Expect(actual).To(Equal(expected))
+		expected := fmt.Sprintf(`128 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s [] - [gauge@47450 name="%s" value="%f" unit="%s"]`, metric.AppGUID, metric.Name, metric.Value, metric.Unit)
+		Expect(actual).To(MatchRegexp(expected))
 	})
 })
