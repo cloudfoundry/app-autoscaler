@@ -23,7 +23,9 @@ var _ = Describe("SyslogEmitter", func() {
 	)
 
 	BeforeEach(func() {
-		listener, err = net.Listen("tcp", "127.0.0.1:")
+		port := 10000 + GinkgoParallelProcess()
+		listener, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+
 		Expect(err).ToNot(HaveOccurred())
 
 		url, err := url.Parse(fmt.Sprintf("syslog://%s", listener.Addr()))
@@ -32,6 +34,7 @@ var _ = Describe("SyslogEmitter", func() {
 		conf = &config.Config{
 			SyslogConfig: config.SyslogConfig{
 				ServerAddress: url.Host,
+				Port:          port,
 			},
 		}
 
@@ -54,7 +57,7 @@ var _ = Describe("SyslogEmitter", func() {
 		actual, err := buf.ReadString('\n')
 		Expect(err).ToNot(HaveOccurred())
 
-		expected := fmt.Sprintf(`128 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s [] - [gauge@47450 name="%s" value="%f" unit="%s"]`, metric.AppGUID, metric.Name, metric.Value, metric.Unit)
+		expected := fmt.Sprintf(`128 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s [] - [gauge@47450 name="%s" value="%.2f" unit="%s"]`, metric.AppGUID, metric.Name, metric.Value, metric.Unit)
 		Expect(actual).To(MatchRegexp(expected))
 	})
 })
