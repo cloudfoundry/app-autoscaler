@@ -14,6 +14,7 @@ func NewMetronEmitter(logger lager.Logger, conf *config.Config) (Emitter, error)
 		conf.LoggregatorConfig.TLS.CertFile,
 		conf.LoggregatorConfig.TLS.KeyFile,
 	)
+
 	if err != nil {
 		logger.Error("could-not-create-TLS-config", err, lager.Data{"config": conf})
 		return &MetronEmitter{}, err

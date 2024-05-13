@@ -26,24 +26,46 @@ func (c *Counter) Set(delta float64) {
 }
 
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error) {
+	var writer egress.WriteCloser
+	var protocol string
+
+	tlsConfig, _ := conf.SyslogConfig.TLS.CreateClientConfig()
+
 	netConf := syslog.NetworkTimeoutConfig{
 		WriteTimeout: time.Second,
 		DialTimeout:  100 * time.Millisecond,
 	}
 
-	url, _ := url.Parse(fmt.Sprintf("syslog-tls://%s", conf.SyslogConfig.ServerAddress))
+	if conf.SyslogConfig.TLS.CACertFile != "" {
+		protocol = "syslog-tls"
+	} else {
+		protocol = "syslog"
+	}
+
+	url, _ := url.Parse(fmt.Sprintf("%s://%s", protocol, conf.SyslogConfig.ServerAddress))
 
 	binding := &syslog.URLBinding{
 		URL:      url,
 		Hostname: "test-hostname",
 	}
 
-	writer := syslog.NewTCPWriter(
-		binding,
-		netConf,
-		&Counter{},
-		syslog.NewConverter(),
-	)
+	switch binding.URL.Scheme {
+	case "syslog":
+		writer = syslog.NewTCPWriter(
+			binding,
+			netConf,
+			&Counter{},
+			syslog.NewConverter(),
+		)
+	case "syslog-tls":
+		writer = syslog.NewTLSWriter(
+			binding,
+			netConf,
+			tlsConfig,
+			&Counter{},
+			syslog.NewConverter(),
+		)
+	}
 
 	return &SyslogEmitter{
 		Writer: writer,

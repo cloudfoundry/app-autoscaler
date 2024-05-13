@@ -18,94 +18,92 @@ import (
 
 var _ = Describe("SyslogEmitter", func() {
 	var (
-		listener     net.Listener
-		err          error
-		conf         *config.Config
-		syslogConfig *config.SyslogConfig
-		emitter      forwarder.Emitter
+		listener net.Listener
+		err      error
+		port     int
+		conf     *config.Config
+		tlsCerts models.TLSCerts
+		emitter  forwarder.Emitter
 	)
 
 	BeforeEach(func() {
-		port := 10000 + GinkgoParallelProcess()
+		port = 10000 + GinkgoParallelProcess()
 		listener, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 		Expect(err).ToNot(HaveOccurred())
-
-		url, err := url.Parse(fmt.Sprintf("syslog://%s", listener.Addr()))
+		tlsCerts = models.TLSCerts{}
 		Expect(err).ToNot(HaveOccurred())
 
-		syslogConfig = &config.SyslogConfig{
-			ServerAddress: url.Host,
-			Port:          port,
-		}
 	})
 
 	JustBeforeEach(func() {
-		conf = &config.Config{SyslogConfig: *syslogConfig}
+		url, err := url.Parse(fmt.Sprintf("syslog://%s", listener.Addr()))
+		conf = &config.Config{
+			SyslogConfig: config.SyslogConfig{
+				ServerAddress: url.Host,
+				Port:          port,
+				TLS:           tlsCerts,
+			},
+		}
 
+		//TODO: set server with tls
+		//filepath.Join(testCertDir, "metron.crt"),
+		//filepath.Join(testCertDir, "metron.key"),
+		//filepath.Join(testCertDir, "loggregator-ca.crt"),
+		//
 		logger := lager.NewLogger("metricsforwarder-test")
 		emitter, err = forwarder.NewSyslogEmitter(logger, conf)
+		Expect(err).ToNot(HaveOccurred())
+
 	})
 
 	AfterEach(func() {
 		listener.Close()
 	})
 
-	Describe("EmitMetric", func() {
+	Describe("NewSyslogEmitter", func() {
 		Context("When tls config is provided", func() {
 			BeforeEach(func() {
 				testCertDir := "../../../../test-certs"
-				//on server
-				//filepath.Join(testCertDir, "metron.crt"),
-				//filepath.Join(testCertDir, "metron.key"),
-				//filepath.Join(testCertDir, "loggregator-ca.crt"),
-				//
-				conf.SyslogConfig.TLS = models.TLSCerts{
+				tlsCerts = models.TLSCerts{
 					KeyFile:    filepath.Join(testCertDir, "cf-app.key"),
 					CertFile:   filepath.Join(testCertDir, "cf-app.crt"),
 					CACertFile: filepath.Join(testCertDir, "log-cache-syslog-server-ca.crt"),
 				}
 			})
 
-			XIt("should send message to syslog server", func() {
-				emitter, err = forwarder.NewSyslogEmitter(lager.NewLogger("metricsforwarder-test"), conf)
-				Expect(err).ToNot(HaveOccurred())
-
+			It("Writer should be TLS", func() {
 				// cast emitter to syslogEmitter to access writer
-				Expect(emitter.(*forwarder.SyslogEmitter).Writer).To(BeAssignableToTypeOf(syslog.TLSWriter{}))
-
-				metric := &models.CustomMetric{Name: "queuelength", Value: 12, Unit: "bytes", InstanceIndex: 123, AppGUID: "dummy-guid"}
-				emitter.EmitMetric(metric)
-
-				conn, err := listener.Accept()
-				Expect(err).ToNot(HaveOccurred())
-				buf := bufio.NewReader(conn)
-
-				actual, err := buf.ReadString('\n')
-				Expect(err).ToNot(HaveOccurred())
-
-				expected := fmt.Sprintf(`130 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s \[%d\] - \[gauge@47450 name="%s" value="%.0f" unit="%s"\]`, metric.AppGUID, metric.InstanceIndex, metric.Name, metric.Value, metric.Unit)
-				Expect(actual).To(MatchRegexp(expected))
+				Expect(emitter.(*forwarder.SyslogEmitter).Writer).To(BeAssignableToTypeOf(&syslog.TLSWriter{}))
 			})
-
 		})
 
 		Context("When tls config is not provided", func() {
-			It("should send message to syslog server", func() {
-				metric := &models.CustomMetric{Name: "queuelength", Value: 12, Unit: "bytes", InstanceIndex: 123, AppGUID: "dummy-guid"}
-
-				Expect(emitter.(*forwarder.SyslogEmitter).Writer).To(BeAssignableToTypeOf(&syslog.TCPWriter{}))
-				emitter.EmitMetric(metric)
-
-				conn, err := listener.Accept()
-				Expect(err).ToNot(HaveOccurred())
-				buf := bufio.NewReader(conn)
-
-				actual, err := buf.ReadString('\n')
-				Expect(err).ToNot(HaveOccurred())
-
-				expected := fmt.Sprintf(`130 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s \[%d\] - \[gauge@47450 name="%s" value="%.0f" unit="%s"\]`, metric.AppGUID, metric.InstanceIndex, metric.Name, metric.Value, metric.Unit)
-				Expect(actual).To(MatchRegexp(expected))
+			JustBeforeEach(func() {
+				conf.SyslogConfig.TLS = models.TLSCerts{}
 			})
+
+			It("Writer should be TCP", func() {
+				Expect(emitter.(*forwarder.SyslogEmitter).Writer).To(BeAssignableToTypeOf(&syslog.TCPWriter{}))
+			})
+		})
+	})
+
+	Describe("EmitMetric", func() {
+
+		It("should send message to syslog server", func() {
+			metric := &models.CustomMetric{Name: "queuelength", Value: 12, Unit: "bytes", InstanceIndex: 123, AppGUID: "dummy-guid"}
+
+			emitter.EmitMetric(metric)
+
+			conn, err := listener.Accept()
+			Expect(err).ToNot(HaveOccurred())
+			buf := bufio.NewReader(conn)
+
+			actual, err := buf.ReadString('\n')
+			Expect(err).ToNot(HaveOccurred())
+
+			expected := fmt.Sprintf(`130 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s \[%d\] - \[gauge@47450 name="%s" value="%.0f" unit="%s"\]`, metric.AppGUID, metric.InstanceIndex, metric.Name, metric.Value, metric.Unit)
+			Expect(actual).To(MatchRegexp(expected))
 		})
 	})
 })
