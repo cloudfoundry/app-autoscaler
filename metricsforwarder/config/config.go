@@ -60,8 +60,9 @@ type LoggregatorConfig struct {
 }
 
 type SyslogConfig struct {
-	ServerAddress string `yaml:"server_address"`
-	Port          int    `yaml:"port"`
+	ServerAddress string          `yaml:"server_address"`
+	Port          int             `yaml:"port"`
+	TLS           models.TLSCerts `yaml:"tls"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {

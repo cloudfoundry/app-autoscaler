@@ -9,13 +9,13 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress"
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress/syslog"
 )
 
 type SyslogEmitter struct {
-	url      string
-	hostname string
-	netConf  syslog.NetworkTimeoutConfig
+	netConf syslog.NetworkTimeoutConfig
+	Writer  egress.WriteCloser
 }
 
 type Counter struct{}
@@ -31,31 +31,31 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error)
 		DialTimeout:  100 * time.Millisecond,
 	}
 
-	return &SyslogEmitter{
-		url:      conf.SyslogConfig.ServerAddress,
-		hostname: "test-hostname",
-		netConf:  netConf,
-	}, nil
-}
-
-func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
-	url, _ := url.Parse(fmt.Sprintf("syslog-tls://%s", mf.url))
+	url, _ := url.Parse(fmt.Sprintf("syslog-tls://%s", conf.SyslogConfig.ServerAddress))
 
 	binding := &syslog.URLBinding{
 		URL:      url,
-		Hostname: mf.hostname,
+		Hostname: "test-hostname",
 	}
 
-	w := syslog.NewTCPWriter(
+	writer := syslog.NewTCPWriter(
 		binding,
-		mf.netConf,
+		netConf,
 		&Counter{},
 		syslog.NewConverter(),
 	)
 
+	return &SyslogEmitter{
+		Writer: writer,
+	}, nil
+}
+
+func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
+
 	e := &loggregator_v2.Envelope{
-		Timestamp: time.Now().UnixNano(),
-		SourceId:  metric.AppGUID,
+		InstanceId: fmt.Sprintf("%d", metric.InstanceIndex),
+		Timestamp:  time.Now().UnixNano(),
+		SourceId:   metric.AppGUID,
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{
@@ -68,6 +68,6 @@ func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
 		},
 	}
 
-	w.Write(e)
+	mf.Writer.Write(e)
 
 }
