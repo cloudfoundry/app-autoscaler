@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 )
 
-type Emitter interface {
+type MetricForwarder interface {
 	EmitMetric(*models.CustomMetric)
 }
 
@@ -23,7 +23,7 @@ func hasLoggregatorConfig(conf *config.Config) bool {
 	return conf.LoggregatorConfig.MetronAddress != ""
 }
 
-func NewMetricForwarder(logger lager.Logger, conf *config.Config) (Emitter, error) {
+func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
 	if hasLoggregatorConfig(conf) {
 		return NewMetronEmitter(logger, conf)
 	} else {

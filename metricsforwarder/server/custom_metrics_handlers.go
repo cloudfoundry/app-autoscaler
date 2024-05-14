@@ -26,14 +26,14 @@ var (
 )
 
 type CustomMetricsHandler struct {
-	metricForwarder    forwarder.Emitter
+	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.Emitter, policyDB db.PolicyDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,

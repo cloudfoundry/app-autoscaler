@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("MetricForwarder", func() {
 	var (
-		metricForwarder   forwarder.Emitter
+		metricForwarder   forwarder.MetricForwarder
 		loggregatorConfig config.LoggregatorConfig
 		syslogConfig      config.SyslogConfig
 		err               error

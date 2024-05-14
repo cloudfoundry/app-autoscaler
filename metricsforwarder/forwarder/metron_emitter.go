@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 )
 
-func NewMetronEmitter(logger lager.Logger, conf *config.Config) (Emitter, error) {
+func NewMetronEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
 	tlsConfig, err := loggregator.NewIngressTLSConfig(
 		conf.LoggregatorConfig.TLS.CACertFile,
 		conf.LoggregatorConfig.TLS.CertFile,

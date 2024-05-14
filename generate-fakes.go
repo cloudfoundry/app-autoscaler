@@ -13,7 +13,7 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_instancemetrics_db.go ./db InstanceMetricsDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_credentials.go ./cred_helper Credentials
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_storedprocedure_db.go ./db StoredProcedureDB
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_metric_forwarder.go ./metricsforwarder/forwarder Emitter
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_metric_forwarder.go ./metricsforwarder/forwarder MetricForwarder
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_plan_checker.go ./api/plancheck PlanChecker
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_client.go ./eventgenerator/client LogCacheClientReader
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_envelope_processor.go ./envelopeprocessor EnvelopeProcessor

@@ -23,7 +23,7 @@ var _ = Describe("SyslogEmitter", func() {
 		port     int
 		conf     *config.Config
 		tlsCerts models.TLSCerts
-		emitter  forwarder.Emitter
+		emitter  forwarder.MetricForwarder
 	)
 
 	BeforeEach(func() {

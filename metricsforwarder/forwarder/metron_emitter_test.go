@@ -24,7 +24,7 @@ var _ = Describe("MetricForwarder", func() {
 		err                   error
 		serverConfig          helpers.ServerConfig
 		loggerConfig          helpers.LoggingConfig
-		emitter               forwarder.Emitter
+		emitter               forwarder.MetricForwarder
 		conf                  *config.Config
 	)
 

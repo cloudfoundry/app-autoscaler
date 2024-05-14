@@ -25,7 +25,7 @@ func (c *Counter) Add(delta float64) {
 func (c *Counter) Set(delta float64) {
 }
 
-func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error) {
+func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
 	var writer egress.WriteCloser
 	var protocol string
 
