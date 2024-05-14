@@ -108,6 +108,7 @@ func (c *LogCacheClient) emptyAppInstanceMetrics(appId string, name string, unit
 }
 
 func (c *LogCacheClient) getMetricsPromQLAPI(appId string, metricType string) ([]models.AppInstanceMetric, error) {
+	logger := c.logger.Session("getMetricsPromQLAPI", lager.Data{"appId": appId, "metricType": metricType})
 	collectionInterval := fmt.Sprintf("%.0f", c.CollectionInterval().Seconds())
 	now := time.Now()
 
@@ -123,12 +124,12 @@ func (c *LogCacheClient) getMetricsPromQLAPI(appId string, metricType string) ([
 		metricTypeUnit = models.UnitMilliseconds
 	}
 
-	c.logger.Info("query-promql-api", lager.Data{"query": query, "appId": appId, "metricType": metricType})
+	logger.Debug("query-promql-api", lager.Data{"query": query})
 	result, err := c.Client.PromQL(context.Background(), query, logcache.WithPromQLTime(now))
 	if err != nil {
 		return []models.AppInstanceMetric{}, fmt.Errorf("failed getting PromQL result (metricType: %s, appId: %s, collectionInterval: %s, query: %s, time: %s): %w", metricType, appId, collectionInterval, query, now.String(), err)
 	}
-	c.logger.Info("received-promql-api-result", lager.Data{"result": result})
+	logger.Info("received-promql-api-result", lager.Data{"result": result, "query": query})
 
 	// safeguard: the query ensures that we get a vector but let's double-check
 	vector := result.GetVector()
@@ -179,13 +180,14 @@ func (c *LogCacheClient) getMetricsPromQLAPI(appId string, metricType string) ([
 
 func (c *LogCacheClient) getMetricsRestAPI(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
 	filters := logCacheFiltersFor(endTime, metricType)
-	c.logger.Info("query-rest-api-with-filters", lager.Data{"filters": valuesFrom(filters)})
+	logger := c.logger.Session("getMetricsRestAPI", lager.Data{"appId": appId, "metricType": metricType, "startTime": startTime, "endTime": endTime, "filters": valuesFrom(filters)})
+	logger.Debug("query-rest-api-with-filters")
 
 	envelopes, err := c.Client.Read(context.Background(), appId, startTime, filters...)
 	if err != nil {
 		return []models.AppInstanceMetric{}, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", logcache_v1.EnvelopeType_GAUGE, appId, err)
 	}
-	c.logger.Info("received-rest-api-result", lager.Data{"envelopes": envelopes})
+	logger.Info("received-rest-api-result", lager.Data{"envelopes": envelopes})
 
 	collectedAt := c.now().UnixNano()
 	metrics, err := c.envelopeProcessor.GetGaugeMetrics(envelopes, collectedAt)
