@@ -366,7 +366,7 @@ var _ = Describe("LogCacheClient", func() {
 					metrics, err := logCacheClient.GetMetrics("app-id", "throughput", startTime, endTime)
 
 					_, query, _ := fakeGoLogCacheReader.PromQLArgsForCall(0)
-					Expect(query).To(Equal("sum by (instance_id) (count_over_time(http{source_id='app-id'}[40s])) / 40"))
+					Expect(query).To(Equal("sum by (instance_id) (count_over_time(http{source_id='app-id',peer_type='Client'}[40s])) / 40"))
 
 					Expect(err).To(Not(HaveOccurred()))
 					Expect(metrics).To(HaveLen(2))
@@ -438,7 +438,7 @@ var _ = Describe("LogCacheClient", func() {
 					metrics, err := logCacheClient.GetMetrics("app-id", "responsetime", startTime, endTime)
 
 					_, query, _ := fakeGoLogCacheReader.PromQLArgsForCall(0)
-					Expect(query).To(Equal("avg by (instance_id) (max_over_time(http{source_id='app-id'}[40s])) / (1000 * 1000)"))
+					Expect(query).To(Equal("avg by (instance_id) (max_over_time(http{source_id='app-id',peer_type='Client'}[40s])) / (1000 * 1000)"))
 
 					Expect(err).To(Not(HaveOccurred()))
 					Expect(metrics).To(HaveLen(2))

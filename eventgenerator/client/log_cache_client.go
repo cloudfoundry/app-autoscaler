@@ -115,12 +115,12 @@ func (c *LogCacheClient) getMetricsPromQLAPI(appId string, metricType string) ([
 	query := ""
 	metricTypeUnit := ""
 	if metricType == models.MetricNameThroughput {
-		query = fmt.Sprintf("sum by (instance_id) (count_over_time(http{source_id='%s'}[%ss])) / %s", appId, collectionInterval, collectionInterval)
+		query = fmt.Sprintf("sum by (instance_id) (count_over_time(http{source_id='%s',peer_type='Client'}[%ss])) / %s", appId, collectionInterval, collectionInterval)
 		metricTypeUnit = models.UnitRPS
 	}
 
 	if metricType == models.MetricNameResponseTime {
-		query = fmt.Sprintf("avg by (instance_id) (max_over_time(http{source_id='%s'}[%ss])) / (1000 * 1000)", appId, collectionInterval)
+		query = fmt.Sprintf("avg by (instance_id) (max_over_time(http{source_id='%s',peer_type='Client'}[%ss])) / (1000 * 1000)", appId, collectionInterval)
 		metricTypeUnit = models.UnitMilliseconds
 	}
 
