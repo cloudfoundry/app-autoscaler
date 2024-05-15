@@ -103,6 +103,7 @@ type ScalingEngineDB interface {
 	CountScalingHistories(ctx context.Context, appId string, start int64, end int64, includeAll bool) (int, error)
 	RetrieveScalingHistories(ctx context.Context, appId string, start int64, end int64, orderType OrderType, includeAll bool, page int, resultsPerPAge int) ([]*models.AppScalingHistory, error)
 	PruneScalingHistories(ctx context.Context, before int64) error
+	PruneCooldowns(ctx context.Context, before int64) error
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
 	CanScaleApp(appId string) (bool, int64, error)
 	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)

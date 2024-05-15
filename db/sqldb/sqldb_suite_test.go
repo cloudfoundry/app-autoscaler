@@ -220,15 +220,29 @@ func removeScalingHistoryForApp(appId string) {
 	FailOnError("can not clean table scalinghistory", err)
 }
 
+func getNumberOfCooldownEntries() int {
+	var num int
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalingcooldown")
+	err := dbHelper.QueryRow(query).Scan(&num)
+	FailOnError("can not count the number of records in table scalingcooldown", err)
+	return num
+}
+
 func removeCooldownForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from scalingcooldown where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
+	FailOnError("can not remove scalingcooldown for app", err)
+}
+
+func cleanUpCooldownTable() {
+	_, err := dbHelper.Exec("DELETE from scalingcooldown")
 	FailOnError("can not clean table scalingcooldown", err)
 }
+
 func removeActiveScheduleForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
-	FailOnError("can not clean table scalingcooldown", err)
+	FailOnError("can not remove actives schedules for app", err)
 }
 
 func hasScalingHistory(appId string, timestamp int64) bool {

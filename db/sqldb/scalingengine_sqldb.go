@@ -170,6 +170,15 @@ func (sdb *ScalingEngineSQLDB) PruneScalingHistories(ctx context.Context, before
 	return err
 }
 
+func (sdb *ScalingEngineSQLDB) PruneCooldowns(ctx context.Context, before int64) error {
+	query := sdb.sqldb.Rebind("DELETE FROM scalingcooldown WHERE expireat < ?")
+	_, err := sdb.sqldb.ExecContext(ctx, query, before)
+	if err != nil {
+		sdb.logger.Error("failed-prune-scaling-cooldowns-from-scalingcooldown-table", err, lager.Data{"query": query, "before": before})
+	}
+	return err
+}
+
 func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
 	query := sdb.sqldb.Rebind("SELECT expireat FROM scalingcooldown WHERE appid = ?")
 	rows, err := sdb.sqldb.Query(query, appId)

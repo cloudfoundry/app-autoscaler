@@ -10,31 +10,35 @@ import (
 )
 
 type ScalingEngineDbPruner struct {
-	scalingEngineDb db.ScalingEngineDB
-	cutoffDuration  time.Duration
-	clock           clock.Clock
-	logger          lager.Logger
+	scalingEngineDb                db.ScalingEngineDB
+	scalingHistoriesCutoffDuration time.Duration
+	clock                          clock.Clock
+	logger                         lager.Logger
 }
 
-func NewScalingEngineDbPruner(scalingEngineDb db.ScalingEngineDB, cutoffDuration time.Duration, clock clock.Clock, logger lager.Logger) *ScalingEngineDbPruner {
+func NewScalingEngineDbPruner(scalingEngineDb db.ScalingEngineDB, scalingHistoriesCutoffDuration time.Duration, clock clock.Clock, logger lager.Logger) *ScalingEngineDbPruner {
 	return &ScalingEngineDbPruner{
-		scalingEngineDb: scalingEngineDb,
-		cutoffDuration:  cutoffDuration,
-		clock:           clock,
-		logger:          logger.Session("scaling_engine_db_pruner"),
+		scalingEngineDb:                scalingEngineDb,
+		scalingHistoriesCutoffDuration: scalingHistoriesCutoffDuration,
+		clock:                          clock,
+		logger:                         logger.Session("scaling_engine_db_pruner"),
 	}
 }
 
 func (sdp ScalingEngineDbPruner) Operate(ctx context.Context) {
-	timestamp := sdp.clock.Now().Add(-sdp.cutoffDuration).UnixNano()
+	historyCutoffTimestamp := sdp.clock.Now().Add(-sdp.scalingHistoriesCutoffDuration).UnixNano()
 
-	logger := sdp.logger.Session("pruning-scaling-histories", lager.Data{"cutoff-time": timestamp})
+	logger := sdp.logger.Session("pruning-scaling-histories-and-cooldowns", lager.Data{"history-cutoff-time": historyCutoffTimestamp})
 	logger.Info("starting")
 	defer logger.Info("completed")
 
-	err := sdp.scalingEngineDb.PruneScalingHistories(ctx, timestamp)
+	err := sdp.scalingEngineDb.PruneScalingHistories(ctx, historyCutoffTimestamp)
 	if err != nil {
 		sdp.logger.Error("failed-prune-scaling-histories", err)
-		return
+	}
+
+	err = sdp.scalingEngineDb.PruneCooldowns(ctx, sdp.clock.Now().UnixNano())
+	if err != nil {
+		sdp.logger.Error("failed-prune-scaling-cooldowns", err)
 	}
 }

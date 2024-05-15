@@ -57,5 +57,25 @@ var _ = Describe("ScalingEngineDbPruner", func() {
 				Eventually(buffer).Should(gbytes.Say("test error"))
 			})
 		})
+
+		Context("when pruning records from scalingcooldown table", func() {
+			It("prunes expired cooldowns", func() {
+				Eventually(scalingEngineDB.PruneCooldownsCallCount).Should(Equal(1))
+				_, cutoffTime := scalingEngineDB.PruneCooldownsArgsForCall(0)
+				Expect(cutoffTime).To(Equal(fclock.Now().UnixNano()))
+			})
+		})
+
+		Context("when pruning records from scalingcooldown table fails", func() {
+			BeforeEach(func() {
+				scalingEngineDB.PruneCooldownsReturns(errors.New("test error"))
+			})
+
+			It("should error", func() {
+				Eventually(scalingEngineDB.PruneCooldownsCallCount).Should(Equal(1))
+				Eventually(buffer).Should(gbytes.Say("test error"))
+			})
+		})
+
 	})
 })
