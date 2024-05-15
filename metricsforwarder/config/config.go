@@ -93,19 +93,36 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 	return conf, nil
 }
 
+func (c *Config) UsingSyslog() bool {
+	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
+}
+
 func (c *Config) Validate() error {
 	if c.Db[db.PolicyDb].URL == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
-	if c.LoggregatorConfig.TLS.CACertFile == "" {
-		return fmt.Errorf("Configuration error: Loggregator CACert is empty")
+	if c.UsingSyslog() {
+		if c.SyslogConfig.TLS.CACertFile == "" {
+			return fmt.Errorf("Configuration error: SyslogServer Loggregator CACert is empty")
+		}
+		if c.SyslogConfig.TLS.CertFile == "" {
+			return fmt.Errorf("Configuration error: SyslogServer ClientCert is empty")
+		}
+		if c.SyslogConfig.TLS.KeyFile == "" {
+			return fmt.Errorf("Configuration error: SyslogServer ClientKey is empty")
+		}
+	} else {
+		if c.LoggregatorConfig.TLS.CACertFile == "" {
+			return fmt.Errorf("Configuration error: Loggregator CACert is empty")
+		}
+		if c.LoggregatorConfig.TLS.CertFile == "" {
+			return fmt.Errorf("Configuration error: Loggregator ClientCert is empty")
+		}
+		if c.LoggregatorConfig.TLS.KeyFile == "" {
+			return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
+		}
 	}
-	if c.LoggregatorConfig.TLS.CertFile == "" {
-		return fmt.Errorf("Configuration error: Loggregator ClientCert is empty")
-	}
-	if c.LoggregatorConfig.TLS.KeyFile == "" {
-		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
-	}
+
 	if c.RateLimit.MaxAmount <= 0 {
 		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
 	}

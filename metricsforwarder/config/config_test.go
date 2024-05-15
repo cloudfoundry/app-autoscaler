@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -307,6 +308,55 @@ rate_limit:
 
 		JustBeforeEach(func() {
 			err = conf.Validate()
+		})
+
+		Context("when syslog is available", func() {
+			BeforeEach(func() {
+				conf.SyslogConfig = SyslogConfig{
+					ServerAddress: "localhost",
+					Port:          514,
+					TLS: models.TLSCerts{
+						CACertFile: "../testcerts/ca.crt",
+						CertFile:   "../testcerts/client.crt",
+						KeyFile:    "../testcerts/client.crt",
+					},
+				}
+				conf.LoggregatorConfig = LoggregatorConfig{}
+			})
+
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			Context("when SyslogServer CACert is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.CACertFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer Loggregator CACert is empty")))
+				})
+			})
+
+			Context("when SyslogServer CertFile is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.KeyFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer ClientKey is empty")))
+				})
+			})
+
+			Context("when SyslogServer ClientCert is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.CertFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer ClientCert is empty")))
+				})
+			})
 		})
 
 		Context("when all the configs are valid", func() {
