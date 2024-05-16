@@ -34,10 +34,14 @@ var _ = Describe("MetricForwarder", func() {
 	})
 
 	Describe("NewMetricForwarder", func() {
-		Context("when loggregatorConfig is not present it creates a SyslogEmitter", func() {
+		Context("when Syslog it is present it creates a SyslogEmitter", func() {
 
 			BeforeEach(func() {
-				loggregatorConfig.MetronAddress = ""
+				// Loggregator config in spec has this default value
+				loggregatorConfig.MetronAddress = "127.0.0.1:3458"
+				syslogConfig = config.SyslogConfig{
+					ServerAddress: "syslog://some-server-address",
+				}
 			})
 
 			It("should create a SyslogClient", func() {
@@ -48,6 +52,7 @@ var _ = Describe("MetricForwarder", func() {
 		Context("when loggregatorConfig is present creates a metronForwarder", func() {
 			BeforeEach(func() {
 				testCertDir := "../../../../test-certs"
+				syslogConfig = config.SyslogConfig{}
 				loggregatorConfig = config.LoggregatorConfig{
 					MetronAddress: "some-address",
 					TLS: models.TLSCerts{
@@ -62,18 +67,5 @@ var _ = Describe("MetricForwarder", func() {
 				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.MetronEmitter{}))
 			})
 		})
-
-		Context("when sylogServerConfig is present creates a syslogEmitter", func() {
-			BeforeEach(func() {
-				syslogConfig = config.SyslogConfig{
-					ServerAddress: "syslog://some-server-address",
-				}
-			})
-
-			It("should create a metronEmitter", func() {
-				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.MetronEmitter{}))
-			})
-		})
 	})
-
 })

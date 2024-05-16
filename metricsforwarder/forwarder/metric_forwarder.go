@@ -19,16 +19,16 @@ type MetronEmitter struct {
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
 
-func hasLoggregatorConfig(conf *config.Config) bool {
-	return conf.LoggregatorConfig.MetronAddress != ""
+func hasSyslogConfig(conf *config.Config) bool {
+	return conf.SyslogConfig.ServerAddress != ""
 }
 
 func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
-	if hasLoggregatorConfig(conf) {
-		logger.Info("Using metron-emitter")
-		return NewMetronEmitter(logger, conf)
-	} else {
+	if hasSyslogConfig(conf) {
 		logger.Info("Using syslog-emitter")
 		return NewSyslogEmitter(logger, conf)
+	} else {
+		logger.Info("Using metron-emitter")
+		return NewMetronEmitter(logger, conf)
 	}
 }
