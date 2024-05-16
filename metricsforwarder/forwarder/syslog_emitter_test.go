@@ -89,7 +89,6 @@ var _ = Describe("SyslogEmitter", func() {
 	})
 
 	Describe("EmitMetric", func() {
-
 		It("should send message to syslog server", func() {
 			metric := &models.CustomMetric{Name: "queuelength", Value: 12, Unit: "bytes", InstanceIndex: 123, AppGUID: "dummy-guid"}
 

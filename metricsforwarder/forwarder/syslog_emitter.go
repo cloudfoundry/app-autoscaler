@@ -14,6 +14,7 @@ import (
 )
 
 type SyslogEmitter struct {
+	logger  lager.Logger
 	netConf syslog.NetworkTimeoutConfig
 	Writer  egress.WriteCloser
 }
@@ -69,6 +70,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 
 	return &SyslogEmitter{
 		Writer: writer,
+		logger: logger,
 	}, nil
 }
 
@@ -90,6 +92,9 @@ func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
 		},
 	}
 
-	mf.Writer.Write(e)
+	err := mf.Writer.Write(e)
+	if err != nil {
+		mf.logger.Error("failed-to-write-metric-to-syslog", err)
+	}
 
 }
