@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"net"
-	"net/url"
 	"path/filepath"
+	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
@@ -36,11 +36,17 @@ var _ = Describe("SyslogEmitter", func() {
 	})
 
 	JustBeforeEach(func() {
-		url, err := url.Parse(fmt.Sprintf("syslog://%s", listener.Addr()))
+		host, port, err := net.SplitHostPort(listener.Addr().String())
+		Expect(err).ToNot(HaveOccurred())
+		fmt.Println(host, port)
+
+		portNumber, err := strconv.Atoi(port)
+		Expect(err).ToNot(HaveOccurred())
+
 		conf = &config.Config{
 			SyslogConfig: config.SyslogConfig{
-				ServerAddress: url.Host,
-				Port:          port,
+				ServerAddress: host,
+				Port:          portNumber,
 				TLS:           tlsCerts,
 			},
 		}

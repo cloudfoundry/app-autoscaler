@@ -43,7 +43,9 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		protocol = "syslog"
 	}
 
-	url, _ := url.Parse(fmt.Sprintf("%s://%s", protocol, conf.SyslogConfig.ServerAddress))
+	url, _ := url.Parse(fmt.Sprintf("%s://%s:%d", protocol, conf.SyslogConfig.ServerAddress, conf.SyslogConfig.Port))
+
+	logger.Info("syslog-emitter-config", lager.Data{"url": url})
 
 	binding := &syslog.URLBinding{
 		URL:      url,
