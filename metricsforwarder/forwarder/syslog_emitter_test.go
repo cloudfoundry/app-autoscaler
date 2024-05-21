@@ -1,6 +1,7 @@
 package forwarder_test
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"net/url"
@@ -43,8 +44,17 @@ var _ = Describe("SyslogEmitter", func() {
 	})
 
 	It("should send message to syslog server", func() {
-		metrics := &models.CustomMetric{Name: "queuelength", Value: 12.5, Unit: "unit", InstanceIndex: 123, AppGUID: "dummy-guid"}
-		emitter.EmitMetric(metrics)
-		// TODO: Receive message in syslog server
+		metric := &models.CustomMetric{Name: "queuelength", Value: 12.5, Unit: "unit", InstanceIndex: 123, AppGUID: "dummy-guid"}
+		emitter.EmitMetric(metric)
+
+		conn, err := listener.Accept()
+		Expect(err).ToNot(HaveOccurred())
+		buf := bufio.NewReader(conn)
+
+		actual, err := buf.ReadString('\n')
+		Expect(err).ToNot(HaveOccurred())
+
+		expected := fmt.Sprintf("Some syslog %s metric", metric.Name)
+		Expect(actual).To(Equal(expected))
 	})
 })
