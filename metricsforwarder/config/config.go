@@ -104,7 +104,6 @@ func (c *Config) Validate() error {
 	if c.UsingSyslog() {
 		if c.SyslogConfig.TLS.CACertFile == "" {
 			return fmt.Errorf("Configuration error: SyslogServer Loggregator CACert is empty")
-
 		}
 		if c.SyslogConfig.TLS.CertFile == "" {
 			return fmt.Errorf("Configuration error: SyslogServer ClientCert is empty")
