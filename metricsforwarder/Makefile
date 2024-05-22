@@ -2,7 +2,18 @@ PR_NUMBER := $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
 VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq ".Tables | .[0] | .Rows | .[] | .instance" -r | grep metricsforwarder)
 
-fetch-metricsforwarder-config:
+
+
+
+
+set-security-group:
+	$(eval ORG := $(shell cf target |grep "org\:" |cut -d':' -f2 | xargs))
+	$(eval SPACE := $(shell cf target |grep "space\:" |cut -d':' -f2 | xargs))
+
+	cf create-security-group metricsforwarder security-group.json
+	cf bind-security-group metricsforwarder $(ORG)
+
+fetch-config:
 	# how to define variables in deployment name
 	mkdir -p assets/certs/policy_db assets/certs/storedprocedure_db assets/certs/syslog_client
 
