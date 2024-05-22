@@ -34,4 +34,5 @@ fetch-metricsforwarder-config:
 	sed -i ''  's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' metricsforwarder.yml
 	sed -i ''  's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' metricsforwarder.yml
 
-
+build-cf:
+	@cd ../; make build-cf-metricsforwarder
