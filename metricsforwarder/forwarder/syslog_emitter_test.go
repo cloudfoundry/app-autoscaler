@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"strconv"
 
@@ -98,16 +99,22 @@ var _ = Describe("SyslogEmitter", func() {
 		It("should send message to syslog server", func() {
 			metric := &models.CustomMetric{Name: "queuelength", Value: 12, Unit: "bytes", InstanceIndex: 123, AppGUID: "dummy-guid"}
 
+			expectedHostname, err := os.Hostname()
+			Expect(err).ToNot(HaveOccurred())
+
 			emitter.EmitMetric(metric)
 
 			conn, err := listener.Accept()
 			Expect(err).ToNot(HaveOccurred())
+
 			buf := bufio.NewReader(conn)
 
 			actual, err := buf.ReadString('\n')
 			Expect(err).ToNot(HaveOccurred())
 
-			expected := fmt.Sprintf(`130 <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} test-hostname %s \[%d\] - \[gauge@47450 name="%s" value="%.0f" unit="%s"\]`, metric.AppGUID, metric.InstanceIndex, metric.Name, metric.Value, metric.Unit)
+			priorityAndVersion := actual[:4]
+			expectedMsglen := len(actual) - len(priorityAndVersion) // 4 is the length of the syslog priority and version
+			expected := fmt.Sprintf(`%d <14>1 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+\d{2}:\d{2} %s %s \[%d\] - \[gauge@47450 name="%s" value="%.0f" unit="%s"\]`, expectedMsglen, expectedHostname, metric.AppGUID, metric.InstanceIndex, metric.Name, metric.Value, metric.Unit)
 			Expect(actual).To(MatchRegexp(expected))
 		})
 	})

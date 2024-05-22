@@ -3,6 +3,7 @@ package forwarder
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
@@ -46,9 +47,11 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 
 	logger.Info("syslog-emitter-config", lager.Data{"url": url})
 
+	hostname, _ := os.Hostname()
+
 	binding := &syslog.URLBinding{
 		URL:      url,
-		Hostname: "test-hostname",
+		Hostname: hostname,
 	}
 
 	switch binding.URL.Scheme {
