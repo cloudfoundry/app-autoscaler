@@ -13,14 +13,14 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 )
 
 var _ = Describe("Client", func() {
 
 	BeforeEach(func() { fakeCC.Add().Info(fakeLoginServer.URL()) })
 	Describe("Login", func() {
-		var tokens Tokens
+		var tokens cf.Tokens
 		JustBeforeEach(func() { err = cfc.Login() })
 
 		Context("when the token url is valid", func() {
@@ -29,14 +29,14 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
 							ghttp.VerifyBasicAuth(conf.ClientID, conf.Secret),
 							ghttp.VerifyForm(url.Values{
-								"grant_type":    {GrantTypeClientCredentials},
+								"grant_type":    {cf.GrantTypeClientCredentials},
 								"client_id":     {conf.ClientID},
 								"client_secret": {conf.Secret},
 							}),
-							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+							ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 								AccessToken: "test-access-token",
 								ExpiresIn:   12000,
 							}),
@@ -69,7 +69,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
 							ghttp.RespondWith(401, ""),
 						),
 					)
@@ -88,8 +88,8 @@ var _ = Describe("Client", func() {
 			//var tokens Tokens
 			BeforeEach(func() {
 				fakeCC.Add().Info(fakeLoginServer.URL())
-				fakeLoginServer.RouteToHandler(http.MethodPost, PathCFAuth,
-					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+				fakeLoginServer.RouteToHandler(http.MethodPost, cf.PathCFAuth,
+					ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 						AccessToken: "test-access-token",
 						ExpiresIn:   12000,
 					}),
@@ -113,21 +113,21 @@ var _ = Describe("Client", func() {
 				}
 				mu.Unlock()
 				wg.Wait()
-				Expect(fakeLoginServer.Count().Requests(PathCFAuth)).To(Equal(1))
+				Expect(fakeLoginServer.Count().Requests(cf.PathCFAuth)).To(Equal(1))
 			})
 
 		})
 	})
 
 	Describe("RefreshAuthToken", func() {
-		var authToken Tokens
+		var authToken cf.Tokens
 
 		JustBeforeEach(func() {
 			authToken, err = cfc.RefreshAuthToken()
 		})
 
 		Context("when not logged in", func() {
-			var tokens Tokens
+			var tokens cf.Tokens
 
 			BeforeEach(func() {
 				fakeCC.Add().Info(fakeLoginServer.URL())
@@ -137,8 +137,8 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
-							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
+							ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 								AccessToken: "test-access-token",
 								ExpiresIn:   12000,
 							}),
@@ -148,7 +148,7 @@ var _ = Describe("Client", func() {
 
 				It("returns valid token", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(authToken).To(Equal(Tokens{
+					Expect(authToken).To(Equal(cf.Tokens{
 						AccessToken: "test-access-token",
 						ExpiresIn:   12000,
 					}))
@@ -164,7 +164,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
 							ghttp.RespondWith(401, ""),
 						),
 					)
@@ -182,8 +182,8 @@ var _ = Describe("Client", func() {
 				fakeCC.Add().Info(fakeLoginServer.URL())
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", PathCFAuth),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+						ghttp.VerifyRequest("POST", cf.PathCFAuth),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 							AccessToken: "test-access-token",
 							ExpiresIn:   12000,
 						}),
@@ -197,9 +197,9 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
 							ghttp.VerifyForm(url.Values{
-								"grant_type":    {GrantTypeClientCredentials},
+								"grant_type":    {cf.GrantTypeClientCredentials},
 								"client_id":     {conf.ClientID},
 								"client_secret": {conf.Secret},
 							}),
@@ -218,13 +218,13 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
 							ghttp.VerifyForm(url.Values{
-								"grant_type":    {GrantTypeClientCredentials},
+								"grant_type":    {cf.GrantTypeClientCredentials},
 								"client_id":     {conf.ClientID},
 								"client_secret": {conf.Secret},
 							}),
-							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+							ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 								AccessToken: "test-access-token",
 								ExpiresIn:   12000,
 							}),
@@ -233,7 +233,7 @@ var _ = Describe("Client", func() {
 				})
 				It("returns valid tokens", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(authToken).To(Equal(Tokens{
+					Expect(authToken).To(Equal(cf.Tokens{
 						AccessToken: "test-access-token",
 						ExpiresIn:   12000,
 					}))
@@ -247,18 +247,18 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe("GetTokens", func() {
-		var tokens Tokens
+		var tokens cf.Tokens
 		JustBeforeEach(func() {
 			tokens, err = cfc.GetTokens()
 		})
 
 		BeforeEach(func() {
-			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
+			cfc = cf.NewCFClient(conf, lager.NewLogger("cf"), fclock)
 			fakeCC.Add().Info(fakeLoginServer.URL())
 			fakeLoginServer.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("POST", PathCFAuth),
-					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+					ghttp.VerifyRequest("POST", cf.PathCFAuth),
+					ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 						AccessToken: "test-access-token",
 						ExpiresIn:   12000,
 					}),
@@ -270,7 +270,7 @@ var _ = Describe("Client", func() {
 
 		Context("when the token is not going to be expired", func() {
 			BeforeEach(func() {
-				fclock.Increment(12000*time.Second - TimeToRefreshBeforeTokenExpire)
+				fclock.Increment(12000*time.Second - cf.TimeToRefreshBeforeTokenExpire)
 			})
 			It("does not refresh tokens", func() {
 				Expect(tokens.AccessToken).To(Equal("test-access-token"))
@@ -284,19 +284,19 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCFAuth),
+							ghttp.VerifyRequest("POST", cf.PathCFAuth),
 							ghttp.VerifyForm(url.Values{
-								"grant_type":    {GrantTypeClientCredentials},
+								"grant_type":    {cf.GrantTypeClientCredentials},
 								"client_id":     {conf.ClientID},
 								"client_secret": {conf.Secret},
 							}),
-							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+							ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 								AccessToken: "test-access-token-refreshed",
 								ExpiresIn:   24000,
 							}),
 						),
 					)
-					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
+					fclock.Increment(12001*time.Second - cf.TimeToRefreshBeforeTokenExpire)
 				})
 
 				It("refreshes tokens", func() {
@@ -310,7 +310,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeCC.Add().Info(fakeLoginServer.URL())
 					fakeLoginServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
-					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
+					fclock.Increment(12001*time.Second - cf.TimeToRefreshBeforeTokenExpire)
 				})
 
 				It("returns existing tokens", func() {
@@ -327,12 +327,12 @@ var _ = Describe("Client", func() {
 
 	Describe("IsTokenAuthorized", func() {
 		BeforeEach(func() {
-			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
+			cfc = cf.NewCFClient(conf, lager.NewLogger("cf"), fclock)
 			fakeCC.Add().Info(fakeLoginServer.URL())
 			fakeLoginServer.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("POST", PathCFAuth),
-					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+					ghttp.VerifyRequest("POST", cf.PathCFAuth),
+					ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 						AccessToken: "test-access-token",
 						ExpiresIn:   12000,
 					}),
@@ -356,8 +356,8 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", PathIntrospectToken),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, IntrospectionResponse{Active: false}),
+						ghttp.VerifyRequest("POST", cf.PathIntrospectToken),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, cf.IntrospectionResponse{Active: false}),
 					),
 				)
 			})
@@ -378,8 +378,8 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", PathIntrospectToken),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, IntrospectionResponse{Active: true, ClientId: wrongClientID, Email: validClientID}),
+						ghttp.VerifyRequest("POST", cf.PathIntrospectToken),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, cf.IntrospectionResponse{Active: true, ClientId: wrongClientID, Email: validClientID}),
 					),
 				)
 			})
@@ -401,8 +401,8 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", PathIntrospectToken),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, IntrospectionResponse{Active: true, ClientId: validClientID, Email: "john@doe"}),
+						ghttp.VerifyRequest("POST", cf.PathIntrospectToken),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, cf.IntrospectionResponse{Active: true, ClientId: validClientID, Email: "john@doe"}),
 					),
 				)
 			})

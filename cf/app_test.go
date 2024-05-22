@@ -22,6 +22,7 @@ var _ = Describe("Cf client App", func() {
 
 	appTestJson := LoadFile("testdata/app.json")
 
+	autoscalingDisabled := "true"
 	Describe("GetApp", func() {
 		When("get app succeeds", func() {
 			BeforeEach(func() {
@@ -48,6 +49,11 @@ var _ = Describe("Cf client App", func() {
 							Data: cf.SpaceData{
 								Guid: "3dfc4a10-6e70-44f8-989d-b3842f339e3b",
 							},
+						},
+					},
+					Metadata: cf.Metadata{
+						Labels: cf.Labels{
+							DisableAutoscaling: &autoscalingDisabled,
 						},
 					},
 				}))
@@ -108,6 +114,11 @@ var _ = Describe("Cf client App", func() {
 								Data: cf.SpaceData{
 									Guid: "3dfc4a10-6e70-44f8-989d-b3842f339e3b",
 								},
+							},
+						},
+						Metadata: cf.Metadata{
+							Labels: cf.Labels{
+								DisableAutoscaling: &autoscalingDisabled,
 							},
 						},
 					},
