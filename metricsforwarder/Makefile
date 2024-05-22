@@ -20,6 +20,9 @@ fetch-config:
 	$(eval POSTGRES_IP := $(shell bosh -d ${DEPLOYMENT_NAME} vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("postgres")) | .ips' ))
 	echo "Postgres IP: $(POSTGRES_IP)"
 
+	$(eval LOG_CACHE_IP := $(shell bosh -d cf vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("log-cache")) | .ips' ))
+	echo "LOG_CACHE IP: $(LOG_CACHE_IP)"
+
 
 	@echo "Pulling metricforwarder config from $(VM_NAME)..."
 	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/metricsforwarder.yml assets/metricsforwarder.yml
@@ -44,6 +47,7 @@ fetch-config:
 
 	sed -i ''  's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' metricsforwarder.yml
 	sed -i ''  's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' metricsforwarder.yml
+	sed -i ''  's|log-cache.service.cf.internal|$(LOG_CACHE_IP)|g' metricsforwarder.yml
 
 build-cf:
 	@cd ../; make build-cf-metricsforwarder
