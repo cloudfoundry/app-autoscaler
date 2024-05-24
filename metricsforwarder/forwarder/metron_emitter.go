@@ -35,8 +35,6 @@ func NewMetronEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		client: client,
 		logger: logger,
 	}, nil
-
-	return &MetronEmitter{}, nil
 }
 
 func (mf *MetronEmitter) EmitMetric(metric *models.CustomMetric) {
