@@ -310,7 +310,7 @@ rate_limit:
 			err = conf.Validate()
 		})
 
-		Context("when syslog is available", func() {
+		When("syslog is available", func() {
 			BeforeEach(func() {
 				conf.SyslogConfig = SyslogConfig{
 					ServerAddress: "localhost",
