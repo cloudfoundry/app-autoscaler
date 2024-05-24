@@ -63,7 +63,7 @@ var _ = Describe("SyslogEmitter", func() {
 	})
 
 	Describe("NewSyslogEmitter", func() {
-		Context("When tls config is provided", func() {
+		When("tls config is provided", func() {
 			BeforeEach(func() {
 				testCertDir := "../../../../test-certs"
 				tlsCerts = models.TLSCerts{
@@ -79,7 +79,7 @@ var _ = Describe("SyslogEmitter", func() {
 			})
 		})
 
-		Context("When tls config is not provided", func() {
+		When("tls config is not provided", func() {
 			JustBeforeEach(func() {
 				conf.SyslogConfig.TLS = models.TLSCerts{}
 			})

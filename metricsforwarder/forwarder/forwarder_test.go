@@ -34,7 +34,7 @@ var _ = Describe("MetricForwarder", func() {
 	})
 
 	Describe("NewMetricForwarder", func() {
-		Context("when Syslog it is present it creates a SyslogEmitter", func() {
+		When("syslog it is present it creates a SyslogEmitter", func() {
 
 			BeforeEach(func() {
 				// Loggregator config in spec has this default value
@@ -49,7 +49,7 @@ var _ = Describe("MetricForwarder", func() {
 			})
 		})
 
-		Context("when loggregatorConfig is present creates a metronForwarder", func() {
+		When("loggregatorConfig is present creates a metronForwarder", func() {
 			BeforeEach(func() {
 				testCertDir := "../../../../test-certs"
 				syslogConfig = config.SyslogConfig{}
