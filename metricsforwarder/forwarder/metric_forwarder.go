@@ -25,7 +25,7 @@ func hasSyslogConfig(conf *config.Config) bool {
 
 func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
 	if hasSyslogConfig(conf) {
-		logger.Info("Using syslog-emitter")
+		logger.Info("using-syslog-emitter")
 		return NewSyslogEmitter(logger, conf)
 	} else {
 		logger.Info("Using metron-emitter")
