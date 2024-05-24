@@ -52,11 +52,6 @@ var _ = Describe("SyslogEmitter", func() {
 			},
 		}
 
-		//TODO: set server with tls
-		//filepath.Join(testCertDir, "metron.crt"),
-		//filepath.Join(testCertDir, "metron.key"),
-		//filepath.Join(testCertDir, "loggregator-ca.crt"),
-		//
 		logger := lager.NewLogger("metricsforwarder-test")
 		emitter, err = forwarder.NewSyslogEmitter(logger, conf)
 		Expect(err).ToNot(HaveOccurred())
