@@ -14,6 +14,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/patrickmn/go-cache"
@@ -36,6 +37,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appid", rateLimiter, logger.Session("metricforwarder-ratelimiter-middleware"))
 
 	r := routes.MetricsForwarderRoutes()
+	r.Use(otelmux.Middleware("metricsforwarder"))
 	r.Use(rateLimiterMiddleware.CheckRateLimit)
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Use(authenticator.Authenticate)

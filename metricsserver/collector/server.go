@@ -6,6 +6,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
@@ -24,6 +25,7 @@ func NewServer(logger lager.Logger, serverConfig *ServerConfig, query MetricQuer
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 
 	r := routes.MetricsCollectorRoutes()
+	r.Use(otelmux.Middleware("metricsserver"))
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetMetricHistoriesRouteName).Handler(VarsFunc(mh.GetMetricHistories))
 

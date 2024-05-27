@@ -52,6 +52,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	helpers.SetupOpenTelemetry()
+
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsserver")
 	msClock := clock.NewClock()
 
