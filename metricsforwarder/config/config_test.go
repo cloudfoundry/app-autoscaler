@@ -328,7 +328,7 @@ rate_limit:
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			Context("when SyslogServer CACert is not set", func() {
+			When("SyslogServer CACert is not set", func() {
 				BeforeEach(func() {
 					conf.SyslogConfig.TLS.CACertFile = ""
 				})
