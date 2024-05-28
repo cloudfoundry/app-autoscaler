@@ -28,7 +28,7 @@ func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForward
 		logger.Info("using-syslog-emitter")
 		return NewSyslogEmitter(logger, conf)
 	} else {
-		logger.Info("Using metron-emitter")
+		logger.Info("using-metron-emitter")
 		return NewMetronEmitter(logger, conf)
 	}
 }
