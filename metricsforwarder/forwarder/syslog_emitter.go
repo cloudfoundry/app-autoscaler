@@ -17,7 +17,15 @@ import (
 
 type SyslogEmitter struct {
 	logger lager.Logger
-	Writer egress.WriteCloser
+	writer egress.WriteCloser
+}
+
+func (mf *SyslogEmitter) SetWriter(writer egress.WriteCloser) {
+	mf.writer = writer
+}
+
+func (mf *SyslogEmitter) GetWriter() egress.WriteCloser {
+	return mf.writer
 }
 
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
@@ -74,13 +82,13 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 	}
 
 	return &SyslogEmitter{
-		Writer: writer,
+		writer: writer,
 		logger: logger,
 	}, nil
 }
 
-func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
-	e := &loggregator_v2.Envelope{
+func EnvelopeForMetric(metric *models.CustomMetric) *loggregator_v2.Envelope {
+	return &loggregator_v2.Envelope{
 		InstanceId: fmt.Sprintf("%d", metric.InstanceIndex),
 		Timestamp:  time.Now().UnixNano(),
 		SourceId:   metric.AppGUID,
@@ -95,8 +103,10 @@ func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
 			},
 		},
 	}
+}
+func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
+	err := mf.writer.Write(EnvelopeForMetric(metric))
 
-	err := mf.Writer.Write(e)
 	if err != nil {
 		mf.logger.Error("failed-to-write-metric-to-syslog", err)
 	}
