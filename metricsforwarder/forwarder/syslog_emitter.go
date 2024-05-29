@@ -12,7 +12,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress"
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress/syslog"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type SyslogEmitter struct {
@@ -26,6 +25,13 @@ func (mf *SyslogEmitter) SetWriter(writer egress.WriteCloser) {
 
 func (mf *SyslogEmitter) GetWriter() egress.WriteCloser {
 	return mf.writer
+}
+
+type Counter struct{}
+
+func (c *Counter) Add(delta float64) {
+}
+func (c *Counter) Set(delta float64) {
 }
 
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
@@ -56,19 +62,12 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		Hostname: hostname,
 	}
 
-	syslogEgressCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "autoscaler",
-		Subsystem: "metricsforwarder",
-		Name:      "syslog_metrics_egress_counter",
-		Help:      "count of metrics sent to syslog",
-	})
-
 	switch binding.URL.Scheme {
 	case "syslog":
 		writer = syslog.NewTCPWriter(
 			binding,
 			netConf,
-			syslogEgressCounter,
+			&Counter{},
 			syslog.NewConverter(),
 		)
 	case "syslog-tls":
@@ -76,7 +75,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 			binding,
 			netConf,
 			tlsConfig,
-			syslogEgressCounter,
+			&Counter{},
 			syslog.NewConverter(),
 		)
 	}
