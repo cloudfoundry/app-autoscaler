@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -117,7 +118,7 @@ health:
 			})
 		})
 
-		Context("when it gives a non integer port", func() {
+		When("it gives a non integer port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 server:
@@ -131,7 +132,7 @@ server:
 			})
 		})
 
-		Context("when it gives a non integer health server port", func() {
+		When("it gives a non integer health server port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 health:
@@ -145,7 +146,7 @@ health:
 			})
 		})
 
-		Context("when it gives a non integer max_open_connections of policydb", func() {
+		When("it gives a non integer max_open_connections of policydb", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -171,7 +172,7 @@ health:
 			})
 		})
 
-		Context("when it gives a non integer max_idle_connections of policydb", func() {
+		When("it gives a non integer max_idle_connections of policydb", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -197,7 +198,7 @@ health:
 			})
 		})
 
-		Context("when connection_max_lifetime of policydb is not a time duration", func() {
+		When("connection_max_lifetime of policydb is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -223,7 +224,7 @@ health:
 			})
 		})
 
-		Context("when max_amount of rate_limit is not an interger", func() {
+		When("max_amount of rate_limit is not an interger", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -252,7 +253,7 @@ rate_limit:
 			})
 		})
 
-		Context("when valid_duration of rate_limit is not a time duration", func() {
+		When("valid_duration of rate_limit is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -309,13 +310,62 @@ rate_limit:
 			err = conf.Validate()
 		})
 
-		Context("when all the configs are valid", func() {
+		When("syslog is available", func() {
+			BeforeEach(func() {
+				conf.SyslogConfig = SyslogConfig{
+					ServerAddress: "localhost",
+					Port:          514,
+					TLS: models.TLSCerts{
+						CACertFile: "../testcerts/ca.crt",
+						CertFile:   "../testcerts/client.crt",
+						KeyFile:    "../testcerts/client.crt",
+					},
+				}
+				conf.LoggregatorConfig = LoggregatorConfig{}
+			})
+
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			When("SyslogServer CACert is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.CACertFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer Loggregator CACert is empty")))
+				})
+			})
+
+			When("SyslogServer CertFile is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.KeyFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer ClientKey is empty")))
+				})
+			})
+
+			When("SyslogServer ClientCert is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.CertFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer ClientCert is empty")))
+				})
+			})
+		})
+
+		When("all the configs are valid", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
-		Context("when policy db url is not set", func() {
+		When("policy db url is not set", func() {
 			BeforeEach(func() {
 				conf.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
 			})
@@ -325,7 +375,7 @@ rate_limit:
 			})
 		})
 
-		Context("when Loggregator CACert is not set", func() {
+		When("Loggregator CACert is not set", func() {
 			BeforeEach(func() {
 				conf.LoggregatorConfig.TLS.CACertFile = ""
 			})
@@ -335,7 +385,7 @@ rate_limit:
 			})
 		})
 
-		Context("when Loggregator ClientCert is not set", func() {
+		When("Loggregator ClientCert is not set", func() {
 			BeforeEach(func() {
 				conf.LoggregatorConfig.TLS.CertFile = ""
 			})
@@ -345,7 +395,7 @@ rate_limit:
 			})
 		})
 
-		Context("when Loggregator ClientKey is not set", func() {
+		When("Loggregator ClientKey is not set", func() {
 			BeforeEach(func() {
 				conf.LoggregatorConfig.TLS.KeyFile = ""
 			})
@@ -355,7 +405,7 @@ rate_limit:
 			})
 		})
 
-		Context("when rate_limit.max_amount is <= zero", func() {
+		When("rate_limit.max_amount is <= zero", func() {
 			BeforeEach(func() {
 				conf.RateLimit.MaxAmount = 0
 			})
@@ -364,7 +414,7 @@ rate_limit:
 			})
 		})
 
-		Context("when rate_limit.valid_duration is <= 0 ns", func() {
+		When("rate_limit.valid_duration is <= 0 ns", func() {
 			BeforeEach(func() {
 				conf.RateLimit.ValidDuration = 0 * time.Nanosecond
 			})

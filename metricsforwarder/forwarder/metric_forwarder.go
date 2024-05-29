@@ -1,10 +1,10 @@
 package forwarder
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v9"
+
 	"code.cloudfoundry.org/lager/v3"
 )
 
@@ -12,48 +12,23 @@ type MetricForwarder interface {
 	EmitMetric(*models.CustomMetric)
 }
 
-type metricForwarder struct {
+type MetronEmitter struct {
 	client *loggregator.IngressClient
 	logger lager.Logger
 }
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
 
-func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
-	tlsConfig, err := loggregator.NewIngressTLSConfig(
-		conf.LoggregatorConfig.TLS.CACertFile,
-		conf.LoggregatorConfig.TLS.CertFile,
-		conf.LoggregatorConfig.TLS.KeyFile,
-	)
-	if err != nil {
-		logger.Error("could-not-create-TLS-config", err, lager.Data{"config": conf})
-		return &metricForwarder{}, err
-	}
-
-	client, err := loggregator.NewIngressClient(
-		tlsConfig,
-		loggregator.WithAddr(conf.LoggregatorConfig.MetronAddress),
-		loggregator.WithTag("origin", METRICS_FORWARDER_ORIGIN),
-		loggregator.WithLogger(helpers.NewLoggregatorGRPCLogger(logger.Session("metric_forwarder"))),
-	)
-
-	if err != nil {
-		logger.Error("could-not-create-loggregator-client", err, lager.Data{"config": conf})
-		return &metricForwarder{}, err
-	}
-
-	return &metricForwarder{
-		client: client,
-		logger: logger,
-	}, nil
+func hasSyslogConfig(conf *config.Config) bool {
+	return conf.SyslogConfig.ServerAddress != ""
 }
 
-func (mf *metricForwarder) EmitMetric(metric *models.CustomMetric) {
-	mf.logger.Debug("custom-metric-emit-request-received", lager.Data{"metric": metric})
-
-	options := []loggregator.EmitGaugeOption{
-		loggregator.WithGaugeAppInfo(metric.AppGUID, int(metric.InstanceIndex)),
-		loggregator.WithGaugeValue(metric.Name, metric.Value, metric.Unit),
+func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
+	if hasSyslogConfig(conf) {
+		logger.Info("using-syslog-emitter")
+		return NewSyslogEmitter(logger, conf)
+	} else {
+		logger.Info("using-metron-emitter")
+		return NewMetronEmitter(logger, conf)
 	}
-	mf.client.EmitGauge(options...)
 }

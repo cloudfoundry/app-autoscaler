@@ -4,14 +4,11 @@ MAKEFLAGS := -s
 aes_terminal_font_yellow := \e[38;2;255;255;0m
 aes_terminal_reset := \e[0m
 
-GO_VERSION = $(shell go version | sed --expression='s/^[^0-9.]*\([0-9.]*\).*/\1/')
+GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 
-# `CGO_ENABLED := 1` is required to enforce dynamic linking which is a requirement of dynatrace.
-CGO_ENABLED := 1
-BUILDTAGS :=
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
@@ -86,11 +83,10 @@ go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
 ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
 	go mod vendor
 
-
-
+# CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
 build-%: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
 	@echo "# building $*"
-	@CGO_ENABLED=$(CGO_ENABLED) go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
+	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
 
 build: $(addprefix build-,$(binaries))
