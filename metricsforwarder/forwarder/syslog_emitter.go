@@ -27,11 +27,9 @@ func (mf *SyslogEmitter) GetWriter() egress.WriteCloser {
 	return mf.writer
 }
 
-type Counter struct{}
+type DummyCounter struct{}
 
-func (c *Counter) Add(delta float64) {
-}
-func (c *Counter) Set(delta float64) {
+func (c *DummyCounter) Add(delta float64) {
 }
 
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
@@ -67,7 +65,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		writer = syslog.NewTCPWriter(
 			binding,
 			netConf,
-			&Counter{},
+			&DummyCounter{},
 			syslog.NewConverter(),
 		)
 	case "syslog-tls":
@@ -75,7 +73,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 			binding,
 			netConf,
 			tlsConfig,
-			&Counter{},
+			&DummyCounter{},
 			syslog.NewConverter(),
 		)
 	}
