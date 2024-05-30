@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"bytes"
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -115,6 +116,33 @@ health:
 				Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
 				Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
 				Expect(conf.Health.Port).To(Equal(8081))
+			})
+
+			When("PORT env variable is set", func() {
+
+				AfterEach(func() {
+					os.Setenv("PORT", "")
+				})
+
+				When("PORT env is a number", func() {
+					BeforeEach(func() {
+						os.Setenv("PORT", "3333")
+					})
+					It("prioritize env variable over config file", func() {
+						Expect(conf.Server.Port).NotTo(Equal(6110))
+						Expect(conf.Server.Port).To(Equal(3333))
+					})
+				})
+
+				When("PORT env is not number", func() {
+					BeforeEach(func() {
+						os.Setenv("PORT", "NAN")
+					})
+
+					It("return invalid port error", func() {
+						Expect(err).To(MatchError(ErrInvalidPort))
+					})
+				})
 			})
 		})
 
