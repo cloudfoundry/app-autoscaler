@@ -2,18 +2,7 @@ PR_NUMBER := $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
 VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq ".Tables | .[0] | .Rows | .[] | .instance" -r | grep metricsforwarder)
 
-
-
-
-
-set-security-group:
-	$(eval ORG := $(shell cf target |grep "org\:" |cut -d':' -f2 | xargs))
-	$(eval SPACE := $(shell cf target |grep "space\:" |cut -d':' -f2 | xargs))
-
-	cf create-security-group metricsforwarder security-group.json
-	cf bind-security-group metricsforwarder $(ORG)
-
-fetch-config:
+fetch-config: cf-login
 	# how to define variables in deployment name
 	mkdir -p assets/certs/policy_db assets/certs/storedprocedure_db assets/certs/syslog_client
 
@@ -49,5 +38,18 @@ fetch-config:
 	sed -i ''  's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' metricsforwarder.yml
 	sed -i ''  's|log-cache.service.cf.internal|$(LOG_CACHE_IP)|g' metricsforwarder.yml
 
+set-security-group:
+	$(eval ORG := $(shell cf target |grep "org\:" |cut -d':' -f2 | xargs))
+	$(eval SPACE := $(shell cf target |grep "space\:" |cut -d':' -f2 | xargs))
+
+	cf create-security-group metricsforwarder security-group.json
+	cf bind-security-group metricsforwarder $(ORG)
+
 build-cf:
 	@cd ../; make build-cf-metricsforwarder
+
+
+
+cf-login:
+	@cd ../../../; make cf-login
+
