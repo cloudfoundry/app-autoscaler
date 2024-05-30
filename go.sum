@@ -608,8 +608,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240529070211-563f04117420 h1:yAhwG+MCi7WJNLhcRUVdgAtQD7yim2QV95laV7cSg6E=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240529070211-563f04117420/go.mod h1:5YWSzpaF0s4rYqzYJuWnTudX0jCcpgFeBmwcbsh2VBY=
-code.cloudfoundry.org/tlsconfig v0.0.0-20240522170710-79df114af82a h1:yWneME1ZPxsWkZT1R9e0n6CymukD5pU/ceEYo4ZVMak=
-code.cloudfoundry.org/tlsconfig v0.0.0-20240522170710-79df114af82a/go.mod h1:TI9y0bK+FJ9OKSLaJmBo5Z2tr+/VULZ2jiQwSg1+Z5c=
+code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6 h1:K5EpewdQg/ln6+GOV4Ef4783ZxJ1cho459mt9EsO58c=
+code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6/go.mod h1:Tc6/rvNklulglqxjDqqwapYFYpd4K2c92h98o9Lu5ss=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 dario.cat/mergo v1.0.0/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
@@ -1082,8 +1082,8 @@ go.opentelemetry.io/otel/trace v1.26.0/go.mod h1:4iDxvGDQuUkHve82hJJ8UqrwswHYsZu
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
 go.opentelemetry.io/proto/otlp v0.15.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.opentelemetry.io/proto/otlp v0.19.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
-go.step.sm/crypto v0.45.1 h1:Xb8XldsbqT6pDYsg46BVPP1euASNbeNAhzrlvUP3QWo=
-go.step.sm/crypto v0.45.1/go.mod h1:XtJBuMuZb11YeJpG8uP3fyBl2MerXWJ/pWQX/Au+Kt8=
+go.step.sm/crypto v0.46.0 h1:cuVZMpDbmEsUX+atC24+VineQr4gO+zO46MxbIVai4Y=
+go.step.sm/crypto v0.46.0/go.mod h1:hcr0oTS2vGRTGSZxoVYxE+RRcsd4xP3rpqt3wPwYGqc=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
