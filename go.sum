@@ -606,8 +606,8 @@ code.cloudfoundry.org/go-metric-registry v0.0.0-20240523160243-6c152ef80e25 h1:p
 code.cloudfoundry.org/go-metric-registry v0.0.0-20240523160243-6c152ef80e25/go.mod h1:C+P03mf5ZSJVpcigPZ3tH5Vb66HIfCTKxatA4llc298=
 code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGqiwzM=
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240531070121-45846c83d791 h1:yHi0SOEzBu92AIYWD6LiK5Mh5jtDAqKqAJyqQubYMyg=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240531070121-45846c83d791/go.mod h1:Ynx9d3+fKEc1XA6MVWuO99TWdmM1KUEYJHJjO2enHWs=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240603070048-a90160e28495 h1:zC5yRu1oyj4BQq3976INrLS3i4n8R0pUfGT3KsEpDLQ=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240603070048-a90160e28495/go.mod h1:eFxdYF6aPs1UET8nnyuHY5KneKxywWXPQrKHCXuXvPg=
 code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6 h1:K5EpewdQg/ln6+GOV4Ef4783ZxJ1cho459mt9EsO58c=
 code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6/go.mod h1:Tc6/rvNklulglqxjDqqwapYFYpd4K2c92h98o9Lu5ss=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
@@ -995,8 +995,8 @@ github.com/prometheus/client_model v0.6.1 h1:ZKSh/rekM+n3CeS952MLRAdFwIKqeY8b62p
 github.com/prometheus/client_model v0.6.1/go.mod h1:OrxVMOVHjw3lKMa8+x6HeMGkHMQyHDk9E3jmP2AmGiY=
 github.com/prometheus/common v0.53.0 h1:U2pL9w9nmJwJDa4qqLQ3ZaePJ6ZTwt7cMD3AG3+aLCE=
 github.com/prometheus/common v0.53.0/go.mod h1:BrxBKv3FWBIGXw89Mg1AeBq7FSyRzXWI3l3e7W3RN5U=
-github.com/prometheus/procfs v0.15.0 h1:A82kmvXJq2jTu5YUhSGNlYoxh85zLnKgPz4bMZgI5Ek=
-github.com/prometheus/procfs v0.15.0/go.mod h1:Y0RJ/Y5g5wJpkTisOtqwDSo4HwhGmLB4VQSw2sQJLHk=
+github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
+github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
