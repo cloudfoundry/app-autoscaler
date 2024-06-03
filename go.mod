@@ -3,7 +3,7 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 go 1.21.5
 
 require (
-	code.cloudfoundry.org/cfhttp/v2 v2.0.1
+	code.cloudfoundry.org/cfhttp/v2 v2.1.0
 	code.cloudfoundry.org/clock v1.1.0
 	code.cloudfoundry.org/go-log-cache/v2 v2.0.7
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
