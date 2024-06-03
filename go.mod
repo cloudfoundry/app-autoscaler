@@ -3,13 +3,13 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 go 1.21.5
 
 require (
-	code.cloudfoundry.org/cfhttp/v2 v2.0.1
+	code.cloudfoundry.org/cfhttp/v2 v2.1.0
 	code.cloudfoundry.org/clock v1.1.0
 	code.cloudfoundry.org/go-log-cache/v2 v2.0.7
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240529070211-563f04117420
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240522170710-79df114af82a
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240531070121-45846c83d791
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6
 	dario.cat/mergo v1.0.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/go-chi/chi/v5 v5.0.12
@@ -45,7 +45,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.26.0
 	go.opentelemetry.io/otel/trace v1.26.0
 	golang.org/x/crypto v0.23.0
-	golang.org/x/exp v0.0.0-20240529005216-23cca8864a10
+	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc
 	golang.org/x/net v0.25.0
 	golang.org/x/time v0.5.0
 	google.golang.org/grpc v1.64.0
