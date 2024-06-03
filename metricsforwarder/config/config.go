@@ -98,7 +98,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			return nil, ErrInvalidPort
 		}
 		conf.Server.Port = portNumber
-
 	}
 
 	if err != nil {
