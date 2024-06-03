@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// define an error when environment variable is not a number
+// ErrInvalidPort is returned when the PORT environment variable is not a valid port number
 var ErrInvalidPort = fmt.Errorf("Invalid port number in PORT environment variable")
 
 const (
