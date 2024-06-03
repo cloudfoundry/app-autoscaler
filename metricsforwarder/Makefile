@@ -1,8 +1,15 @@
-PR_NUMBER := $(shell gh pr view --json number --jq '.number')
+PR_NUMBER ?= $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
-VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq ".Tables | .[0] | .Rows | .[] | .instance" -r | grep metricsforwarder)
+VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
 
-fetch-config: cf-login
+.PHONY: cf-push
+cf-push: fetch-config build-cf
+	cf push metricsforwarder -b binary_buildpack -p . --no-start
+	# cf set-env metricsforwarder METRICSFORWARDER_CONFIG "$(shell cat metricsforwarder.yml)"
+	cf start metricsforwarder
+
+.PHONY: fetch-config
+fetch-config:
 	# how to define variables in deployment name
 	mkdir -p assets/certs/policy_db assets/certs/storedprocedure_db assets/certs/syslog_client
 
@@ -36,8 +43,9 @@ fetch-config: cf-login
 
 	sed -i ''  's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' metricsforwarder.yml
 	sed -i ''  's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' metricsforwarder.yml
-	sed -i ''  's|log-cache.service.cf.internal|$(LOG_CACHE_IP)|g' metricsforwarder.yml
 
+
+PHONY: set-security-group
 set-security-group:
 	$(eval ORG := $(shell cf target |grep "org\:" |cut -d':' -f2 | xargs))
 	$(eval SPACE := $(shell cf target |grep "space\:" |cut -d':' -f2 | xargs))
@@ -45,11 +53,13 @@ set-security-group:
 	cf create-security-group metricsforwarder security-group.json
 	cf bind-security-group metricsforwarder $(ORG)
 
+PHONY: build-cf
 build-cf:
 	@cd ../; make build-cf-metricsforwarder
 
+PHONY: stop-metricsforwarder-vm
+stop-metricsforwarder-vm:
+	$(eval VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance'))
+	bosh -d $(DEPLOYMENT_NAME) stop $(VM_NAME)
 
-
-cf-login:
-	@cd ../../../; make cf-login
 
