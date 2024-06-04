@@ -1,11 +1,11 @@
 PR_NUMBER ?= $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
 VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
+METRICSFORWARDER_HOST ?= "metricsforwarder.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 
 .PHONY: cf-push
 cf-push: fetch-config build-cf
-	cf push metricsforwarder -b binary_buildpack -p . --no-start
-	# cf set-env metricsforwarder METRICSFORWARDER_CONFIG "$(shell cat metricsforwarder.yml)"
+	cf push metricsforwarder -b binary_buildpack -p . --no-start --route ${METRICSFORWARDER_HOST}
 	cf start metricsforwarder
 
 .PHONY: fetch-config
