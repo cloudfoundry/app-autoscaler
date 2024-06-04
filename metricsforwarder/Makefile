@@ -1,12 +1,16 @@
 PR_NUMBER ?= $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
 VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
-METRICSFORWARDER_HOST ?= "metricsforwarder.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
+METRICSFORWARDER_APPNAME ?= "metricsforwarder"
+METRICSFORWARDER_HOSTNAME ?= $(METRICSFORWARDER_APPNAME)
+SYSTEM_DOMAIN ?= "autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 
 .PHONY: cf-push
 cf-push: fetch-config build-cf
-	cf push metricsforwarder -b binary_buildpack -p . --no-start --route ${METRICSFORWARDER_HOST}
-	cf start metricsforwarder
+	cf push $(METRICSFORWARDER_APPNAME) -b binary_buildpack -p . --no-start --no-route -c "./metricsforwarder -c metricsforwarder.yml"
+	cf create-route  "$(SYSTEM_DOMAIN)" --hostname "$(METRICSFORWARDER_HOSTNAME)"
+	cf start "$(METRICSFORWARDER_APPNAME)"
+	cf bind-route-service "$(SYSTEM_DOMAIN)" --hostname "$(METRICSFORWARDER_APPNAME)" "$(METRICSFORWARDER_HOSTNAME)"
 
 .PHONY: fetch-config
 fetch-config:
