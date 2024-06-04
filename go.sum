@@ -606,8 +606,8 @@ code.cloudfoundry.org/go-metric-registry v0.0.0-20240523160243-6c152ef80e25 h1:p
 code.cloudfoundry.org/go-metric-registry v0.0.0-20240523160243-6c152ef80e25/go.mod h1:C+P03mf5ZSJVpcigPZ3tH5Vb66HIfCTKxatA4llc298=
 code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGqiwzM=
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240603070048-a90160e28495 h1:zC5yRu1oyj4BQq3976INrLS3i4n8R0pUfGT3KsEpDLQ=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240603070048-a90160e28495/go.mod h1:eFxdYF6aPs1UET8nnyuHY5KneKxywWXPQrKHCXuXvPg=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240604070102-0f9cd5af6618 h1:68nHNzUgPNQXoTgnt3bjqWZ4zS94vA2PmykX5birQ7k=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240604070102-0f9cd5af6618/go.mod h1:3g7KeOBzN+XZBvuRVkX41LBMRTG+HNgtA6DKJjFdrC0=
 code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6 h1:K5EpewdQg/ln6+GOV4Ef4783ZxJ1cho459mt9EsO58c=
 code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6/go.mod h1:Tc6/rvNklulglqxjDqqwapYFYpd4K2c92h98o9Lu5ss=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
@@ -988,8 +988,8 @@ github.com/prometheus/client_model v0.2.0/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6T
 github.com/prometheus/client_model v0.3.0/go.mod h1:LDGWKZIo7rky3hgvBe+caln+Dr3dPggB5dvjtD7w9+w=
 github.com/prometheus/client_model v0.6.1 h1:ZKSh/rekM+n3CeS952MLRAdFwIKqeY8b62p8ais2e9E=
 github.com/prometheus/client_model v0.6.1/go.mod h1:OrxVMOVHjw3lKMa8+x6HeMGkHMQyHDk9E3jmP2AmGiY=
-github.com/prometheus/common v0.53.0 h1:U2pL9w9nmJwJDa4qqLQ3ZaePJ6ZTwt7cMD3AG3+aLCE=
-github.com/prometheus/common v0.53.0/go.mod h1:BrxBKv3FWBIGXw89Mg1AeBq7FSyRzXWI3l3e7W3RN5U=
+github.com/prometheus/common v0.54.0 h1:ZlZy0BgJhTwVZUn7dLOkwCZHUkrAqd3WYtcFCWnM1D8=
+github.com/prometheus/common v0.54.0/go.mod h1:/TQgMJP5CuVYveyT7n/0Ix8yLNNXy9yRSkhnLTHPDIQ=
 github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
