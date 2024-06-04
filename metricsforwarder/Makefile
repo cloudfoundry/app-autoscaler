@@ -41,8 +41,8 @@ fetch-config:
 	@echo "Build metricsforwarder config yaml"
 	cp assets/metricsforwarder.yml metricsforwarder.yml
 
-	sed -i ''  's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' metricsforwarder.yml
-	sed -i ''  's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' metricsforwarder.yml
+	sed -i 's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' metricsforwarder.yml
+	sed -i 's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' metricsforwarder.yml
 
 
 PHONY: set-security-group
