@@ -6,7 +6,7 @@ METRICSFORWARDER_HOSTNAME ?= $(METRICSFORWARDER_APPNAME)
 SYSTEM_DOMAIN ?= "autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 
 .PHONY: cf-push
-cf-push: fetch-config build-cf
+cf-push: fetch-config build-cf set-security-group
 	cf push $(METRICSFORWARDER_APPNAME) -b binary_buildpack -p . --no-start --no-route -c "./metricsforwarder -c metricsforwarder.yml"
 	cf create-route  "$(SYSTEM_DOMAIN)" --hostname "$(METRICSFORWARDER_HOSTNAME)"
 	cf start "$(METRICSFORWARDER_APPNAME)"
