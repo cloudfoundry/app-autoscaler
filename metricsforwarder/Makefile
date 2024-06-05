@@ -1,19 +1,19 @@
 PR_NUMBER ?= $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
-VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
+METIRCSFORWARDER_VM := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
 METRICSFORWARDER_APPNAME ?= "metricsforwarder"
 METRICSFORWARDER_HOSTNAME ?= $(METRICSFORWARDER_APPNAME)
 SYSTEM_DOMAIN ?= "autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 
 .PHONY: cf-push
-cf-push: fetch-config build-cf set-security-group
+cf-push: fetch-config  stop-metricsforwarder-vm build-cf set-security-group
 	cf push $(METRICSFORWARDER_APPNAME) -b binary_buildpack -p . --no-start --no-route -c "./metricsforwarder -c metricsforwarder.yml"
 	cf create-route  "$(SYSTEM_DOMAIN)" --hostname "$(METRICSFORWARDER_HOSTNAME)"
 	cf map-route "$(METRICSFORWARDER_APPNAME)" "$(SYSTEM_DOMAIN)" --hostname "$(METRICSFORWARDER_HOSTNAME)"
 	cf start "$(METRICSFORWARDER_APPNAME)"
 
 .PHONY: fetch-config
-fetch-config:
+fetch-config: start-metricsforwarder-vm
 	# how to define variables in deployment name
 	mkdir -p assets/certs/policy_db assets/certs/storedprocedure_db assets/certs/syslog_client
 
@@ -24,23 +24,23 @@ fetch-config:
 	echo "LOG_CACHE IP: $(LOG_CACHE_IP)"
 
 
-	@echo "Pulling metricforwarder config from $(VM_NAME)..."
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/metricsforwarder.yml assets/metricsforwarder.yml
+	@echo "Pulling metricforwarder config from $(METIRCSFORWARDER_VM)..."
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/metricsforwarder.yml assets/metricsforwarder.yml
 
-	@echo "Pulling policy db certs from $(VM_NAME)..."
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/policy_db/ca.crt assets/certs/policy_db/.
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/policy_db/crt    assets/certs/policy_db/.
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/policy_db/key    assets/certs/policy_db/.
+	@echo "Pulling policy db certs from $(METIRCSFORWARDER_VM)..."
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/policy_db/ca.crt assets/certs/policy_db/.
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/policy_db/crt    assets/certs/policy_db/.
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/policy_db/key    assets/certs/policy_db/.
 
-	@echo "Pulling storeprocedure db certs from $(VM_NAME)..."
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/storedprocedure_db/ca.crt assets/certs/storedprocedure_db/.
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/storedprocedure_db/crt	 assets/certs/storedprocedure_db/.
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/storedprocedure_db/key    assets/certs/storedprocedure_db/.
+	@echo "Pulling storeprocedure db certs from $(METIRCSFORWARDER_VM)..."
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/storedprocedure_db/ca.crt assets/certs/storedprocedure_db/.
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/storedprocedure_db/crt	 assets/certs/storedprocedure_db/.
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/storedprocedure_db/key    assets/certs/storedprocedure_db/.
 
-	@echo "Pulling syslog-client certs from $(VM_NAME)..."
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/ca.crt		assets/certs/syslog_client/.
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.crt assets/certs/syslog_client/.
-	bosh -d $(DEPLOYMENT_NAME) scp $(VM_NAME):/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.key assets/certs/syslog_client/.
+	@echo "Pulling syslog-client certs from $(METIRCSFORWARDER_VM)..."
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/ca.crt		assets/certs/syslog_client/.
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.crt assets/certs/syslog_client/.
+	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.key assets/certs/syslog_client/.
 
 	@echo "Build metricsforwarder config yaml"
 	cp assets/metricsforwarder.yml metricsforwarder.yml
@@ -61,9 +61,12 @@ PHONY: build-cf
 build-cf:
 	@cd ../; make build-cf-metricsforwarder
 
+PHONY: start-metricsforwarder-vm
+start-metricsforwarder-vm:
+	bosh -d $(DEPLOYMENT_NAME) -n start $(METIRCSFORWARDER_VM)
+
 PHONY: stop-metricsforwarder-vm
 stop-metricsforwarder-vm:
-	$(eval VM_NAME := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance'))
-	bosh -d $(DEPLOYMENT_NAME) stop $(VM_NAME)
+	bosh -d $(DEPLOYMENT_NAME) -n stop $(METIRCSFORWARDER_VM)
 
 
