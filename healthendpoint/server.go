@@ -1,6 +1,6 @@
 package healthendpoint
 
-// package healthendpoint runs the health endpoint server for diferent autoscaler components
+// package healthendpoint runs the health endpoint server for different autoscaler components
 //
 // The health endpoint server is used to expose the health
 // and readiness check endpoints for the autoscaler components.
