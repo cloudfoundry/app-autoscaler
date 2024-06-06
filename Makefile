@@ -9,6 +9,9 @@ GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 
+DB_HOST ?= localhost
+DBURL ?= "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"
+
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
@@ -116,6 +119,7 @@ test: generate-fakes
 	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} --skip-package='integration'
 
 testsuite: generate-fakes
+	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} ${TEST}
 
 .PHONY: integration

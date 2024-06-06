@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -22,7 +23,7 @@ var _ = Describe("CustomMetrics Server", func() {
 		scalingPolicy *models.ScalingPolicy
 	)
 
-	Context("when a request to forward custom metrics comes", func() {
+	Context("POST /v1/apps/some-app-id/metrics", func() {
 		BeforeEach(func() {
 
 			scalingPolicy = &models.ScalingPolicy{
@@ -61,7 +62,7 @@ var _ = Describe("CustomMetrics Server", func() {
 		})
 	})
 
-	Context("when a request to forward custom metrics comes without Authorization header", func() {
+	When("A request to forward custom metrics comes without Authorization header", func() {
 		BeforeEach(func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
@@ -82,7 +83,7 @@ var _ = Describe("CustomMetrics Server", func() {
 		})
 	})
 
-	Context("when a request to forward custom metrics comes without 'Basic'", func() {
+	When("a request to forward custom metrics comes without 'Basic'", func() {
 		BeforeEach(func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
@@ -149,7 +150,7 @@ var _ = Describe("CustomMetrics Server", func() {
 		})
 	})
 
-	Context("when multiple requests to forward custom metrics comes beyond ratelimit", func() {
+	When("multiple requests to forward custom metrics comes beyond ratelimit", func() {
 		BeforeEach(func() {
 			rateLimiter.ExceedsLimitReturns(true)
 			scalingPolicy = &models.ScalingPolicy{
@@ -180,6 +181,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
 		})
+
 		AfterEach(func() {
 			rateLimiter.ExceedsLimitReturns(false)
 		})
@@ -191,4 +193,62 @@ var _ = Describe("CustomMetrics Server", func() {
 		})
 	})
 
+	When("when Health server is ready to serve RESTful API with basic Auth", func() {
+
+		Context("when username and password are incorrect for basic authentication during health check", func() {
+			It("should return 401", func() {
+				client := &http.Client{}
+				req, err = http.NewRequest("GET", serverUrl+"/health", nil)
+				Expect(err).NotTo(HaveOccurred())
+				req.SetBasicAuth("wrongusername", "wrongpassword")
+				rsp, err := client.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("when username and password are correct for basic authentication during health check", func() {
+
+			Context("when a request to query health comes", func() {
+				It("returns with a 200", func() {
+					client := &http.Client{}
+					req, err = http.NewRequest("GET", serverUrl, nil)
+					req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
+					rsp, err := client.Do(req)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					raw, _ := io.ReadAll(rsp.Body)
+					healthData := string(raw)
+					Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_concurrent_http_request"))
+					Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_policyDB"))
+					Expect(healthData).To(ContainSubstring("go_goroutines"))
+					Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
+					rsp.Body.Close()
+
+				})
+			})
+
+			It("should return 200 for /health", func() {
+				client := &http.Client{}
+				req, err = http.NewRequest("GET", serverUrl+"/health", nil)
+				Expect(err).NotTo(HaveOccurred())
+				req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
+				rsp, err := client.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			})
+
+			It("should return 200 for /health/readiness", func() {
+				client := &http.Client{}
+				req, err = http.NewRequest("GET", serverUrl+"/health/readiness", nil)
+				Expect(err).NotTo(HaveOccurred())
+				rsp, err := client.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				body, err := io.ReadAll(rsp.Body)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(body).To(MatchJSON(`{"overall_status": "UP","checks": [ { "name":"policy_db", "type":"database", "status":"UP"}, { "name":"storedprocedure_db", "type":"database", "status":"UP"}]}`))
+			})
+		})
+	})
 })

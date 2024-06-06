@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
@@ -19,7 +18,6 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/patrickmn/go-cache"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -71,12 +69,10 @@ func main() {
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	customMetricsServer := createCustomMetricsServer(conf, logger, policyDb, credentialProvider, allowedMetricCache, httpStatusCollector)
 	cacheUpdater := cacheUpdater(logger, mfClock, conf, policyDb, allowedMetricCache)
-	healthServer := createHealthServer(policyDb, credentialProvider, logger, conf, createPrometheusRegistry(policyDb, httpStatusCollector, logger))
 
 	members := grouper.Members{
 		{"cacheUpdater", cacheUpdater},
 		{"custom_metrics_server", customMetricsServer},
-		{"health_server", healthServer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -89,15 +85,6 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("exited")
-}
-
-func createPrometheusRegistry(policyDB *sqldb.PolicySQLDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsforwarder", "policyDB", policyDB),
-		httpStatusCollector,
-	}, true, logger.Session("metricsforwarder-prometheus"))
-	return promRegistry
 }
 
 func cacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config, policyDB *sqldb.PolicySQLDB, allowedMetricCache *cache.Cache) ifrit.RunFunc {
@@ -120,14 +107,4 @@ func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyD
 		os.Exit(1)
 	}
 	return httpServer
-}
-
-func createHealthServer(policyDB *sqldb.PolicySQLDB, credDb cred_helper.Credentials, logger lager.Logger, conf *config.Config, promRegistry *prometheus.Registry) ifrit.Runner {
-	checkers := []healthendpoint.Checker{healthendpoint.DbChecker(db.PolicyDb, policyDB), healthendpoint.DbChecker(db.StoredProcedureDb, credDb)}
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, checkers, logger.Session("health-server"), promRegistry, time.Now)
-	if err != nil {
-		logger.Fatal("Failed to create health server", err)
-		os.Exit(1)
-	}
-	return healthServer
 }

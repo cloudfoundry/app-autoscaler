@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
@@ -23,6 +24,7 @@ import (
 )
 
 var (
+	conf            *config.Config
 	serverProcess   ifrit.Process
 	serverUrl       string
 	policyDB        *fakes.FakePolicyDB
@@ -68,14 +70,21 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Level: "debug",
 	}
 
-	conf := &config.Config{
+	healthConfig := helpers.HealthConfig{
+		ReadinessCheckEnabled: true,
+		HealthCheckUsername:   "metricsforwarderhealthcheckuser",
+		HealthCheckPassword:   "metricsforwarderhealthcheckpassword",
+	}
+	conf = &config.Config{
 		Server:            serverConfig,
 		Logging:           loggerConfig,
 		LoggregatorConfig: loggregatorConfig,
+		Health:            healthConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
-	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
+
 	rateLimiter = &fakes.FakeLimiter{}
 	fakeCredentials = &fakes.FakeCredentials{}
 
