@@ -73,7 +73,7 @@ var _ = Describe("Operator", Serial, func() {
 		Context("with missing/invalid configuration", func() {
 			BeforeEach(func() {
 
-				cfg.InstanceMetricsDB.CutoffDuration = -1
+				cfg.AppMetricsDB.CutoffDuration = -1
 
 				cfg := writeConfig(&cfg)
 				runner.configPath = cfg.Name()
@@ -236,16 +236,6 @@ var _ = Describe("Operator", Serial, func() {
 				runner.Start()
 			})
 
-			It("should start instancemetrics dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.instancemetrics-dbpruner.started"))
-				Consistently(runner.Session).ShouldNot(Exit())
-			})
-
-			It("should start appmetrics dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.appmetrics-dbpruner.started"))
-				Consistently(runner.Session).ShouldNot(Exit())
-			})
-
 			It("should start scalingengine dbpruner", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
@@ -259,25 +249,6 @@ var _ = Describe("Operator", Serial, func() {
 			It("should have operator started", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
-			})
-
-		})
-
-		Context("when connection to instancemetrics db fails", func() {
-			BeforeEach(func() {
-				cfg.InstanceMetricsDB.DB.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
-				cfg := writeConfig(&cfg)
-				runner.configPath = cfg.Name()
-				runner.Start()
-			})
-
-			AfterEach(func() {
-				os.Remove(runner.configPath)
-			})
-
-			It("should error", func() {
-				Eventually(runner.Session).Should(Exit(1))
-				Expect(runner.Session.Buffer()).To(Say("failed to connect instancemetrics db"))
 			})
 
 		})
@@ -363,8 +334,6 @@ var _ = Describe("Operator", Serial, func() {
 				raw, _ := io.ReadAll(rsp.Body)
 				healthData := string(raw)
 				Expect(healthData).To(ContainSubstring("autoscaler_operator_policyDB"))
-				Expect(healthData).To(ContainSubstring("autoscaler_operator_instanceMetricsDB"))
-				Expect(healthData).To(ContainSubstring("autoscaler_operator_appMetricsDB"))
 				Expect(healthData).To(ContainSubstring("autoscaler_operator_scalingEngineDB"))
 				Expect(healthData).To(ContainSubstring("go_goroutines"))
 				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))

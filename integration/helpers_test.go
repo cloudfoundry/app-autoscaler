@@ -15,15 +15,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type AppInstanceMetricResult struct {
-	TotalResults int                        `json:"total_results"`
-	TotalPages   int                        `json:"total_pages"`
-	Page         int                        `json:"page"`
-	PrevUrl      string                     `json:"prev_url"`
-	NextUrl      string                     `json:"next_url"`
-	Resources    []models.AppInstanceMetric `json:"resources"`
-}
-
 type AppAggregatedMetricResult struct {
 	TotalResults int                `json:"total_results"`
 	TotalPages   int                `json:"total_pages"`

@@ -57,13 +57,6 @@ func main() {
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 
-	instanceMetricsDB, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDB.DB, logger.Session("instancemetrics-db"))
-	if err != nil {
-		logger.Error("failed to connect instancemetrics db", err, lager.Data{"dbConfig": conf.InstanceMetricsDB.DB})
-		os.Exit(1)
-	}
-	defer instanceMetricsDB.Close()
-
 	appMetricsDB, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDB.DB, logger.Session("appmetrics-db"))
 	if err != nil {
 		logger.Error("failed to connect appmetrics db", err, lager.Data{"dbConfig": conf.AppMetricsDB.DB})
@@ -91,7 +84,7 @@ func main() {
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDb),
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "instanceMetricsDB", instanceMetricsDB),
+
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "appMetricsDB", appMetricsDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "scalingEngineDB", scalingEngineDB),
 	}, true, logger.Session("operator-prometheus"))
@@ -107,11 +100,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	loggerSessionName := "instancemetrics-dbpruner"
-	instanceMetricDBPruner := operator.NewInstanceMetricsDbPruner(instanceMetricsDB, conf.InstanceMetricsDB.CutoffDuration, prClock, logger.Session(loggerSessionName))
-	instanceMetricsDBOperatorRunner := operator.NewOperatorRunner(instanceMetricDBPruner, conf.InstanceMetricsDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
-
-	loggerSessionName = "appmetrics-dbpruner"
+	loggerSessionName := "appmetrics-dbpruner"
 	appMetricsDBPruner := operator.NewAppMetricsDbPruner(appMetricsDB, conf.AppMetricsDB.CutoffDuration, prClock, logger.Session(loggerSessionName))
 	appMetricsDBOperatorRunner := operator.NewOperatorRunner(appMetricsDBPruner, conf.AppMetricsDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 
@@ -131,7 +120,6 @@ func main() {
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	members := grouper.Members{
-		{"instancemetrics-dbpruner", instanceMetricsDBOperatorRunner},
 		{"appmetrics-dbpruner", appMetricsDBOperatorRunner},
 		{"scalingEngine-dbpruner", scalingEngineDBOperatorRunner},
 		{"scalingEngine-sync", scalingEngineSyncRunner},

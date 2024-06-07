@@ -1,7 +1,6 @@
 package fakes
 
 // Multiple go:generate directives instead of counterfeiter:generate due to https://github.com/maxbrunsfeld/counterfeiter/issues/254
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_wshelper.go ./metricsgateway/helpers WSHelper
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_cf_client.go ./cf CFClient
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_cf_context_client.go ./cf ContextClient
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_policy_db.go ./db PolicyDB
@@ -26,6 +25,5 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_ratelimiter.go ./ratelimiter Limiter
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_httpstatus_collector.go ./healthendpoint HTTPStatusCollector
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_database_status.go ./healthendpoint DatabaseStatus
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_emitter.go ./metricsgateway Emitter
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_operator.go ./operator Operator
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_sychronizer.go ./scalingengine/schedule ActiveScheduleSychronizer

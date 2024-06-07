@@ -2,14 +2,6 @@ logging:
   level: "debug"
 health:
   port: 8081
-instance_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 12h
-  cutoff_duration: 24h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"

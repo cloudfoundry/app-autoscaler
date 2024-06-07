@@ -159,3 +159,13 @@ databaseChangeLog:
                   type: bigint
             indexName: idx_instance_metrics
             tableName: appinstancemetrics
+  - changeSet:
+      id: 5
+      author: jgeiger
+      logicalFilePath: /var/vcap/packages/metricsserver/metricscollector.db.changelog.yml
+      preConditions:
+        - onFail: MARK_RAN
+          tableExists:
+            tableName: appinstancemetrics
+      dropTable:
+        tableName: appinstancemetrics

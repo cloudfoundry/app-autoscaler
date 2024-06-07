@@ -45,7 +45,6 @@ var _ = Describe("Integration_Operator_Others", func() {
 			fakeCCNOAAUAA.URL(),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
-			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsServerHTTP]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 			"https://127.0.0.1:8888",
 			tmpDir)
@@ -219,16 +218,6 @@ var _ = Describe("Integration_Operator_Others", func() {
 	Describe("Pruner", func() {
 
 		BeforeEach(func() {
-			metric := &models.AppInstanceMetric{
-				AppId:       testAppId,
-				CollectedAt: time.Now().Add(-24 * time.Hour).UnixNano(),
-				Name:        models.MetricNameMemoryUsed,
-				Unit:        models.UnitMegaBytes,
-				Value:       "123456",
-			}
-			insertAppInstanceMetric(metric)
-			Expect(getAppInstanceMetricTotalCount(testAppId)).To(Equal(1))
-
 			appmetric := &models.AppMetric{
 				AppId:      testAppId,
 				MetricType: models.MetricNameMemoryUsed,
@@ -255,12 +244,10 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 		})
 
-		It("opeator should remove the staled records ", func() {
+		It("operator should remove the stale records ", func() {
 			Eventually(func() bool {
-				return getAppInstanceMetricTotalCount(testAppId) == 0 &&
-					getScalingHistoryTotalCount(testAppId) == 0 && getScalingHistoryTotalCount(testAppId) == 0
+				return getScalingHistoryTotalCount(testAppId) == 0
 			}, 2*time.Minute, 5*time.Second).Should(BeTrue())
-
 		})
 	})
 })

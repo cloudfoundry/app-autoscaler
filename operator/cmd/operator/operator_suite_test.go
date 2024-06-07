@@ -78,15 +78,6 @@ func initConfig() {
 	cfg.Logging.Level = "debug"
 	dbUrl := testhelpers.GetDbUrl()
 
-	cfg.InstanceMetricsDB.DB = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-	cfg.InstanceMetricsDB.RefreshInterval = 12 * time.Hour
-	cfg.InstanceMetricsDB.CutoffDuration = 20 * 24 * time.Hour
-
 	cfg.AppMetricsDB.DB = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,

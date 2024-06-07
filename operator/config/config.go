@@ -68,7 +68,6 @@ type Config struct {
 	CF                cf.Config             `yaml:"cf"`
 	Health            helpers.HealthConfig  `yaml:"health"`
 	Logging           helpers.LoggingConfig `yaml:"logging"`
-	InstanceMetricsDB DbPrunerConfig        `yaml:"instance_metrics_db"`
 	AppMetricsDB      DbPrunerConfig        `yaml:"app_metrics_db"`
 	ScalingEngineDB   DbPrunerConfig        `yaml:"scaling_engine_db"`
 	ScalingEngine     ScalingEngineConfig   `yaml:"scaling_engine"`
@@ -84,10 +83,6 @@ var defaultConfig = Config{
 	},
 	Health:  defaultHealthConfig,
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
-	InstanceMetricsDB: DbPrunerConfig{
-		RefreshInterval: DefaultRefreshInterval,
-		CutoffDuration:  DefaultCutoffDuration,
-	},
 	AppMetricsDB: DbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDuration:  DefaultCutoffDuration,
@@ -126,18 +121,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.InstanceMetricsDB.DB.URL == "" {
-		return fmt.Errorf("Configuration error: instance_metrics_db.db.url is empty")
-	}
-
-	if c.InstanceMetricsDB.RefreshInterval <= 0 {
-		return fmt.Errorf("Configuration error: instance_metrics_db.refresh_interval is less than or equal to 0")
-	}
-
-	if c.InstanceMetricsDB.CutoffDuration <= 0 {
-		return fmt.Errorf("Configuration error: instance_metrics_db.cutoff_duration is less than or equal to 0")
-	}
-
 	if c.AppMetricsDB.DB.URL == "" {
 		return fmt.Errorf("Configuration error: app_metrics_db.db.url is empty")
 	}

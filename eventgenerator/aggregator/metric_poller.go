@@ -63,10 +63,10 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 	startTime := endTime.Add(0 - statWindow)
 
 	metrics, err := m.metricClient.GetMetrics(appId, metricType, startTime, endTime)
-	m.logger.Debug("received metrics from metricClient", lager.Data{"retrievedMetrics": metrics})
 	if err != nil {
 		return fmt.Errorf("retrieveMetric Failed: %w", err)
 	}
+	m.logger.Debug("received metrics from metricClient", lager.Data{"retrievedMetrics": metrics})
 	avgMetric := m.aggregate(appId, metricType, metrics)
 	m.logger.Debug("save-aggregated-appmetric", lager.Data{"appMetric": avgMetric})
 	m.appMetricChan <- avgMetric
