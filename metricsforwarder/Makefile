@@ -1,6 +1,8 @@
 PR_NUMBER ?= $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
 METIRCSFORWARDER_VM := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
+POSTGRES_IP := $(shell bosh -d ${DEPLOYMENT_NAME} vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("postgres")) | .ips' )
+LOG_CACHE_IP := $(shell bosh -d cf vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("log-cache")) | .ips' )
 METRICSFORWARDER_APPNAME ?= "metricsforwarder"
 METRICSFORWARDER_HOSTNAME ?= $(METRICSFORWARDER_APPNAME)
 SYSTEM_DOMAIN ?= "autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
@@ -18,12 +20,8 @@ fetch-config: start-metricsforwarder-vm
 	# how to define variables in deployment name
 	mkdir -p assets/certs/policy_db assets/certs/storedprocedure_db assets/certs/syslog_client
 
-	$(eval POSTGRES_IP := $(shell bosh -d ${DEPLOYMENT_NAME} vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("postgres")) | .ips' ))
-	echo "Postgres IP: $(POSTGRES_IP)"
-
-	$(eval LOG_CACHE_IP := $(shell bosh -d cf vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("log-cache")) | .ips' ))
+	echo "POSTGRES IP: $(POSTGRES_IP)"
 	echo "LOG_CACHE IP: $(LOG_CACHE_IP)"
-
 
 	@echo "Pulling metricforwarder config from $(METIRCSFORWARDER_VM)..."
 	bosh -d $(DEPLOYMENT_NAME) scp $(METIRCSFORWARDER_VM):/var/vcap/jobs/metricsforwarder/config/metricsforwarder.yml assets/metricsforwarder.yml
