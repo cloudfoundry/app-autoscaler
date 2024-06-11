@@ -1,4 +1,4 @@
-package mock
+package testhelpers
 
 import (
 	"crypto/tls"
@@ -18,13 +18,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-type LogCache struct {
+type MockLogCache struct {
 	mutex sync.Mutex
 
 	lis net.Listener
 
-	readResponses map[string]*rpc.ReadResponse
-	readErrors    map[string]error
+	readRequestsCount int
+	readResponses     map[string]*rpc.ReadResponse
+	readErrors        map[string]error
 
 	instantQueryResults map[string]*rpc.PromQL_InstantQueryResult
 	instantQueryErrors  map[string]error
@@ -36,8 +37,8 @@ type LogCache struct {
 	rpc.UnimplementedPromQLQuerierServer
 }
 
-func NewLogCache(tlsConfig *tls.Config) *LogCache {
-	return &LogCache{
+func NewMockLogCache(tlsConfig *tls.Config) *MockLogCache {
+	return &MockLogCache{
 		tlsConfig: tlsConfig,
 
 		readResponses: map[string]*rpc.ReadResponse{},
@@ -48,80 +49,89 @@ func NewLogCache(tlsConfig *tls.Config) *LogCache {
 	}
 }
 
-func (s *LogCache) Start(port int) string {
+func (m *MockLogCache) Start(port int) string {
 	var err error
-	s.lis, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	m.lis, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	var srv *grpc.Server
-	if s.tlsConfig == nil {
+	if m.tlsConfig == nil {
 		srv = grpc.NewServer()
 	} else {
-		srv = grpc.NewServer(grpc.Creds(credentials.NewTLS(s.tlsConfig)))
+		srv = grpc.NewServer(grpc.Creds(credentials.NewTLS(m.tlsConfig)))
 	}
-	rpc.RegisterIngressServer(srv, s)
-	rpc.RegisterEgressServer(srv, s)
-	rpc.RegisterPromQLQuerierServer(srv, s)
+	rpc.RegisterIngressServer(srv, m)
+	rpc.RegisterEgressServer(srv, m)
+	rpc.RegisterPromQLQuerierServer(srv, m)
 
 	//nolint:errcheck
-	go srv.Serve(s.lis)
+	go srv.Serve(m.lis)
 
-	return s.lis.Addr().String()
+	return m.lis.Addr().String()
 }
 
-func (s *LogCache) Stop() {
-	s.lis.Close()
+func (m *MockLogCache) Stop() {
+	m.lis.Close()
 }
 
-func (s *LogCache) Read(ctx context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (m *MockLogCache) Read(ctx context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.readRequestsCount++
 
 	response := &rpc.ReadResponse{Envelopes: &loggregator_v2.EnvelopeBatch{Batch: []*loggregator_v2.Envelope{}}}
-	if storedResponse, ok := s.readResponses[r.SourceId]; ok {
+	if storedResponse, ok := m.readResponses[r.SourceId]; ok {
 		response = storedResponse
 	}
 
 	err := errors.New("default-error")
-	if storedError, ok := s.readErrors[r.SourceId]; ok {
+	if storedError, ok := m.readErrors[r.SourceId]; ok {
 		err = storedError
 	}
 
 	return response, err
 }
 
-func (s *LogCache) ReadReturns(sourceId string, response *rpc.ReadResponse, err error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (m *MockLogCache) ReadRequestsCount() int {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
-	s.readResponses[sourceId] = response
-	s.readErrors[sourceId] = err
+	return m.readRequestsCount
 }
 
-func (s *LogCache) InstantQuery(ctx context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (m *MockLogCache) ReadReturns(sourceId string, response *rpc.ReadResponse, err error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.readResponses[sourceId] = response
+	m.readErrors[sourceId] = err
+}
+
+func (m *MockLogCache) InstantQuery(ctx context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	// every query carries the source_id, example "http{source_id='foo'}"
 	// find stored mock-result or mock-error by checking if any of the stored source ids is contained in the query
 	query := r.Query
-	for sourceId := range s.instantQueryResults {
+	for sourceId := range m.instantQueryResults {
 		if strings.Contains(query, sourceId) {
-			return s.instantQueryResults[sourceId], s.instantQueryErrors[sourceId]
+			return m.instantQueryResults[sourceId], m.instantQueryErrors[sourceId]
 		}
 	}
 
 	return nil, fmt.Errorf("default-error(query: %s)", query)
 }
 
-func (s *LogCache) InstantQueryReturns(sourceId string, result *rpc.PromQL_InstantQueryResult, err error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+func (m *MockLogCache) InstantQueryReturns(sourceId string, result *rpc.PromQL_InstantQueryResult, err error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
-	s.instantQueryResults[sourceId] = result
-	s.instantQueryErrors[sourceId] = err
+	m.instantQueryResults[sourceId] = result
+	m.instantQueryErrors[sourceId] = err
 }
 
 func NewTLSConfig(caPath, certPath, keyPath, cn string) (*tls.Config, error) {

@@ -2,6 +2,8 @@ package main_test
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	rpc "code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -33,55 +35,17 @@ var (
 	metricType = "a-metric-type"
 	metricUnit = "a-metric-unit"
 
-	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
-	configFile         *os.File
-	conf               config.Config
-	egPort             int
-	healthport         int
-	httpClient         *http.Client
-	healthHttpClient   *http.Client
-	metricCollector    *ghttp.Server
-	scalingEngine      *ghttp.Server
-	breachDurationSecs = 10
-	metrics            = []*models.AppInstanceMetric{
-		{
-			AppId:         testAppId,
-			InstanceIndex: 0,
-			CollectedAt:   111111,
-			Name:          metricType,
-			Unit:          metricUnit,
-			Value:         "500",
-			Timestamp:     111100,
-		},
-		{
-			AppId:         testAppId,
-			InstanceIndex: 1,
-			CollectedAt:   111111,
-			Name:          metricType,
-			Unit:          metricUnit,
-			Value:         "600",
-			Timestamp:     110000,
-		},
-
-		{
-			AppId:         testAppId,
-			InstanceIndex: 0,
-			CollectedAt:   222222,
-			Name:          metricType,
-			Unit:          metricUnit,
-			Value:         "700",
-			Timestamp:     222200,
-		},
-		{
-			AppId:         testAppId,
-			InstanceIndex: 1,
-			CollectedAt:   222222,
-			Name:          metricType,
-			Unit:          metricUnit,
-			Value:         "800",
-			Timestamp:     220000,
-		},
-	}
+	regPath              = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+	configFile           *os.File
+	conf                 config.Config
+	egPort               int
+	healthport           int
+	httpClient           *http.Client
+	healthHttpClient     *http.Client
+	mockLogCache         *testhelpers.MockLogCache
+	mockLogCacheEndpoint string
+	mockScalingEngine    *ghttp.Server
+	breachDurationSecs   = 10
 
 	scalingResult = &models.AppScalingResult{
 		AppId:             testAppId,
@@ -158,17 +122,116 @@ func initDB() {
 }
 
 func initHttpEndPoints() {
-	metricCollector = ghttp.NewUnstartedServer()
-	metricCollector.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("metricscollector")
-	metricCollector.HTTPTestServer.StartTLS()
+	testCertDir := testhelpers.TestCertFolder()
+	tlsConfig, err := testhelpers.NewTLSConfig(
+		filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		filepath.Join(testCertDir, "log-cache.crt"),
+		filepath.Join(testCertDir, "log-cache.key"),
+		"log-cache",
+	)
+	Expect(err).ToNot(HaveOccurred())
+	mockLogCache = testhelpers.NewMockLogCache(tlsConfig)
+	mockLogCache.ReadReturns(testAppId, &rpc.ReadResponse{
+		Envelopes: &loggregator_v2.EnvelopeBatch{
+			Batch: []*loggregator_v2.Envelope{
+				{
+					SourceId:   testAppId,
+					InstanceId: "0",
+					Timestamp:  111100,
+					DeprecatedTags: map[string]*loggregator_v2.Value{
+						"origin": {
+							Data: &loggregator_v2.Value_Text{
+								Text: "autoscaler_metrics_forwarder",
+							},
+						},
+					},
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: map[string]*loggregator_v2.GaugeValue{
+								metricType: {
+									Unit:  metricUnit,
+									Value: 500,
+								},
+							},
+						},
+					},
+				},
+				{
+					SourceId:   testAppId,
+					InstanceId: "1",
+					Timestamp:  110000,
+					DeprecatedTags: map[string]*loggregator_v2.Value{
+						"origin": {
+							Data: &loggregator_v2.Value_Text{
+								Text: "autoscaler_metrics_forwarder",
+							},
+						},
+					},
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: map[string]*loggregator_v2.GaugeValue{
+								metricType: {
+									Unit:  metricUnit,
+									Value: 600,
+								},
+							},
+						},
+					},
+				},
+				{
+					SourceId:   testAppId,
+					InstanceId: "0",
+					Timestamp:  222200,
+					DeprecatedTags: map[string]*loggregator_v2.Value{
+						"origin": {
+							Data: &loggregator_v2.Value_Text{
+								Text: "autoscaler_metrics_forwarder",
+							},
+						},
+					},
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: map[string]*loggregator_v2.GaugeValue{
+								metricType: {
+									Unit:  metricUnit,
+									Value: 700,
+								},
+							},
+						},
+					},
+				},
+				{
+					SourceId:   testAppId,
+					InstanceId: "1",
+					Timestamp:  220000,
+					DeprecatedTags: map[string]*loggregator_v2.Value{
+						"origin": {
+							Data: &loggregator_v2.Value_Text{
+								Text: "autoscaler_metrics_forwarder",
+							},
+						},
+					},
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: map[string]*loggregator_v2.GaugeValue{
+								metricType: {
+									Unit:  metricUnit,
+									Value: 800,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}, nil)
+	mockLogCacheEndpoint = mockLogCache.Start(10000 + GinkgoParallelProcess())
 
-	scalingEngine = ghttp.NewUnstartedServer()
-	scalingEngine.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("scalingengine")
-	scalingEngine.HTTPTestServer.StartTLS()
+	mockScalingEngine = ghttp.NewUnstartedServer()
+	mockScalingEngine.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("scalingengine")
+	mockScalingEngine.HTTPTestServer.StartTLS()
 
-	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metric_histories/"+metricType, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		&metrics))
-	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK, &scalingResult))
+	mockScalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK, &scalingResult))
 }
 
 func initConfig() {
@@ -222,7 +285,7 @@ func initConfig() {
 			},
 		},
 		ScalingEngine: config.ScalingEngineConfig{
-			ScalingEngineURL: scalingEngine.URL(),
+			ScalingEngineURL: mockScalingEngine.URL(),
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -230,7 +293,7 @@ func initConfig() {
 			},
 		},
 		MetricCollector: config.MetricCollectorConfig{
-			MetricCollectorURL: metricCollector.URL(),
+			MetricCollectorURL: mockLogCacheEndpoint,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),

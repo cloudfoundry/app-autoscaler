@@ -368,7 +368,6 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			},
 		},
 		MetricCollector: egConfig.MetricCollectorConfig{
-			UseLogCache:        true,
 			MetricCollectorURL: metricsCollectorURL,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),

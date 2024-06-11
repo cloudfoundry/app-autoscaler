@@ -17,7 +17,6 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_client.go ./eventgenerator/client LogCacheClientReader
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_envelope_processor.go ./envelopeprocessor EnvelopeProcessor
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_creator.go ./eventgenerator/client LogCacheClientCreator
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_metric_server_creator_creator.go ./eventgenerator/client MetricServerClientCreator
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_go_log_cache_client.go ./eventgenerator/client GoLogCacheClient
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_grpc.go ./eventgenerator/client GRPCOptions
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_envelope_processor_creator.go ./envelopeprocessor EnvelopeProcessorCreator

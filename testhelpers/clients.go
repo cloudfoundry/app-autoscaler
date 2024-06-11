@@ -20,10 +20,6 @@ func NewPublicApiClient() *http.Client {
 	return CreateClientFor("api_public")
 }
 
-func NewMetricServerClient() *http.Client {
-	return CreateClientFor("metricserver")
-}
-
 func NewEventGeneratorClient() *http.Client {
 	return CreateClientFor("eventgenerator")
 }

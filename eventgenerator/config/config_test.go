@@ -54,7 +54,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   save_interval: 30s
@@ -73,8 +73,7 @@ scalingEngine:
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metricCollector:
-  use_log_cache: false
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
@@ -146,7 +145,7 @@ circuitBreaker:
 						},
 					},
 					MetricCollector: MetricCollectorConfig{
-						MetricCollectorURL: "http://localhost:8083",
+						MetricCollectorURL: "log-cache:1234",
 						TLSClientCerts: models.TLSCerts{
 							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/mc.key",
 							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/mc.crt",
@@ -179,7 +178,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   save_interval: 30s
@@ -193,7 +192,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -214,7 +213,7 @@ db:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -268,10 +267,11 @@ defaultBreachDurationSecs: 600
 						TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
 					},
 					ScalingEngine: ScalingEngineConfig{
-						ScalingEngineURL: "http://localhost:8082"},
+						ScalingEngineURL: "http://localhost:8082",
+					},
 					MetricCollector: MetricCollectorConfig{
-						UseLogCache:        false,
-						MetricCollectorURL: "http://localhost:8083"},
+						MetricCollectorURL: "log-cache:1234",
+					},
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
 					CircuitBreaker: CircuitBreakerConfig{
@@ -299,7 +299,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -311,7 +311,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -339,7 +339,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -351,7 +351,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -379,7 +379,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -391,7 +391,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -419,7 +419,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -431,7 +431,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -459,7 +459,7 @@ db:
     max_open_connections: NOT-INTEGER-VALUE
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -471,7 +471,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -499,7 +499,7 @@ db:
     max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -511,7 +511,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -539,7 +539,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 6k
-aggregator: 
+aggregator:
   aggregator_execute_interval: 60s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -551,7 +551,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -579,7 +579,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 5k
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -591,7 +591,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -619,7 +619,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 7u
   metric_poller_count: 10
@@ -631,7 +631,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -659,7 +659,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   save_interval: 7u
@@ -672,7 +672,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -700,7 +700,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: NOT-INTEGER-VALUE
@@ -712,7 +712,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -740,7 +740,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -752,7 +752,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -772,7 +772,7 @@ logging:
 db:
   policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -785,7 +785,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -805,7 +805,7 @@ logging:
 db:
   policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -819,7 +819,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -846,7 +846,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -858,7 +858,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -886,7 +886,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -898,7 +898,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -925,7 +925,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -937,7 +937,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -965,7 +965,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -977,7 +977,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: NOT-INTEGER-VALUE
 defaultBreachDurationSecs: 600
 `)
@@ -1004,7 +1004,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -1016,7 +1016,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: NOT-INTEGER-VALUE
 `)
@@ -1044,7 +1044,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
@@ -1056,7 +1056,7 @@ evaluator:
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: http://localhost:8083
+  metric_collector_url: log-cache:1234
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 300
 health:
@@ -1110,7 +1110,7 @@ health:
 				ScalingEngine: ScalingEngineConfig{
 					ScalingEngineURL: "http://localhost:8082"},
 				MetricCollector: MetricCollectorConfig{
-					MetricCollectorURL: "http://localhost:8083",
+					MetricCollectorURL: "log-cache:1234",
 				},
 				DefaultBreachDurationSecs: 600,
 				DefaultStatWindowSecs:     300,

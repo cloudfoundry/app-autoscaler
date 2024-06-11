@@ -31,7 +31,6 @@ var _ = Describe("MetricClientFactory", func() {
 		expectedMetricCollectorURL   string
 		tlsCerts                     models.TLSCerts
 		uaaCreds                     models.UAACreds
-		useLogCache                  bool
 		caCertFilePath               string
 		certFilePath                 string
 		keyFilePath                  string
@@ -55,19 +54,18 @@ var _ = Describe("MetricClientFactory", func() {
 				AggregatorExecuteInterval: 51 * time.Second,
 			},
 			MetricCollector: config.MetricCollectorConfig{
-				UseLogCache:        useLogCache,
 				MetricCollectorURL: expectedMetricCollectorURL,
 				TLSClientCerts:     tlsCerts,
 				UAACreds:           uaaCreds,
 			},
 		}
 
-		logger = lagertest.NewTestLogger("MetricServer")
+		logger = lagertest.NewTestLogger("LogCache")
 		metricClient = metricClientFactory.GetMetricClient(logger, &conf)
 	})
 	Describe("GetMetricClient", func() {
 		BeforeEach(func() {
-			expectedMetricCollectorURL = "some-metric-server-url"
+			expectedMetricCollectorURL = "some-log-cache-url:8080"
 			tlsCerts = models.TLSCerts{
 				KeyFile:    keyFilePath,
 				CertFile:   certFilePath,
@@ -75,65 +73,43 @@ var _ = Describe("MetricClientFactory", func() {
 			}
 		})
 
-		Describe("when logCacheEnabled is false", func() {
+		It("Should create a LogCacheClient", func() {
+			Expect(metricClient).To(BeAssignableToTypeOf(&LogCacheClient{}))
+			actualURL := metricClient.(*LogCacheClient).GetUrl()
+			Expect(actualURL).To(Equal(expectedMetricCollectorURL))
+		})
+
+		Describe("when uaa client and secret are not provided", func() {
 			BeforeEach(func() {
-				useLogCache = false
+				uaaCreds = models.UAACreds{}
 			})
 
-			It("should create a MetricServerClient by default", func() {
-				Expect(metricClient).To(BeAssignableToTypeOf(&MetricServerClient{}))
-				Expect(metricClient).NotTo(BeAssignableToTypeOf(&LogCacheClient{}))
-
-				actualURL := metricClient.(*MetricServerClient).GetUrl()
-				Expect(actualURL).To(Equal("some-metric-server-url"))
+			It("Should set TLSConfig from config opts", func() {
+				expectedTlSCreds := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
+				expectedTLSConfig, err := expectedTlSCreds.CreateClientConfig()
+				Expect(err).NotTo(HaveOccurred())
+				actualTLSConfig := metricClient.(*LogCacheClient).GetTlsConfig()
+				Expect(actualTLSConfig.Certificates).To(Equal(expectedTLSConfig.Certificates))
 			})
 		})
 
-		Describe("when logCacheEnabled is true", func() {
+		Describe("when uaa client and secret are provided", func() {
 			BeforeEach(func() {
-				expectedMetricCollectorURL = "some-log-cache-url:8080"
-				useLogCache = true
+				uaaCreds = models.UAACreds{
+					URL:          "log-cache.some-url.com",
+					ClientID:     "some-id",
+					ClientSecret: "some-secret",
+				}
 			})
 
-			It("Should create a LogCacheClient and not a metricserver client", func() {
-				Expect(metricClient).To(BeAssignableToTypeOf(&LogCacheClient{}))
-				Expect(metricClient).NotTo(BeAssignableToTypeOf(&MetricServerClient{}))
-				actualURL := metricClient.(*LogCacheClient).GetUrl()
-				Expect(actualURL).To(Equal(expectedMetricCollectorURL))
+			It("should set uaa creds from config", func() {
+				actualUAACreds := metricClient.(*LogCacheClient).GetUAACreds()
+				Expect(actualUAACreds).To(Equal(uaaCreds))
 			})
+		})
 
-			Describe("when uaa client and secret are not provided", func() {
-				BeforeEach(func() {
-					uaaCreds = models.UAACreds{}
-				})
-
-				It("Should set TLSConfig from config opts", func() {
-					expectedTlSCreds := &models.TLSCerts{KeyFile: keyFilePath, CertFile: certFilePath, CACertFile: caCertFilePath}
-					expectedTLSConfig, err := expectedTlSCreds.CreateClientConfig()
-					Expect(err).NotTo(HaveOccurred())
-					actualTLSConfig := metricClient.(*LogCacheClient).GetTlsConfig()
-					Expect(actualTLSConfig.Certificates).To(Equal(expectedTLSConfig.Certificates))
-				})
-			})
-
-			Describe("when uaa client and secret are provided", func() {
-				BeforeEach(func() {
-					uaaCreds = models.UAACreds{
-						URL:          "log-cache.some-url.com",
-						ClientID:     "some-id",
-						ClientSecret: "some-secret",
-					}
-				})
-
-				It("should set uaa creds from config", func() {
-					actualUAACreds := metricClient.(*LogCacheClient).GetUAACreds()
-					Expect(actualUAACreds).To(Equal(uaaCreds))
-				})
-			})
-
-			It("Should set AggregatorExecuteInterval as collectionInterval on LogCacheClient", func() {
-				Expect(metricClient.(*LogCacheClient).CollectionInterval()).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
-			})
+		It("Should set AggregatorExecuteInterval as collectionInterval on LogCacheClient", func() {
+			Expect(metricClient.(*LogCacheClient).CollectionInterval()).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
 		})
 	})
 })

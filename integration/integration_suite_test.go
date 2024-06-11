@@ -17,7 +17,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/integration/mock"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -55,7 +54,7 @@ var (
 	fakeCCNOAAUAA           *mocks.Server
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 	processMap              = map[string]ifrit.Process{}
-	mockLogCache            = &mock.LogCache{}
+	mockLogCache            = &MockLogCache{}
 	mockLogCachePort        = 20000 + GinkgoParallelProcess()
 
 	defaultHttpClientTimeout = 10 * time.Second
@@ -194,7 +193,7 @@ func startOperator() {
 }
 
 func startMockLogCache() {
-	tlsConfig, err := mock.NewTLSConfig(
+	tlsConfig, err := NewTLSConfig(
 		filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		filepath.Join(testCertDir, "log-cache.crt"),
 		filepath.Join(testCertDir, "log-cache.key"),
@@ -202,7 +201,7 @@ func startMockLogCache() {
 	)
 	Expect(err).ToNot(HaveOccurred())
 
-	mockLogCache = mock.NewLogCache(tlsConfig)
+	mockLogCache = NewMockLogCache(tlsConfig)
 	mockLogCache.Start(mockLogCachePort)
 }
 
