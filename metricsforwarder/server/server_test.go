@@ -21,6 +21,29 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
+// Helper function to create a new request
+func newRequest(method, url string, body []byte) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	return req, nil
+}
+
+// Helper function to set up a new client and request
+func setupRequest(method, url, authHeader string, body []byte) (*http.Client, *http.Request, error) {
+	client := &http.Client{}
+	req, err := newRequest(method, url, body)
+	if err != nil {
+		return nil, nil, err
+	}
+	if authHeader != "" {
+		req.Header.Add("Authorization", authHeader)
+	}
+	return client, req, nil
+}
+
 var _ = Describe("CustomMetrics Server", func() {
 	var (
 		resp          *http.Response
@@ -31,29 +54,6 @@ var _ = Describe("CustomMetrics Server", func() {
 		client        *http.Client
 		authHeader    string
 	)
-
-	// Helper function to create a new request
-	newRequest := func(method, url string, body []byte) (*http.Request, error) {
-		req, err := http.NewRequest(method, url, bytes.NewReader(body))
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Add("Content-Type", "application/json")
-		return req, nil
-	}
-
-	// Helper function to set up a new client and request
-	setupRequest := func(method, url, authHeader string, body []byte) (*http.Client, *http.Request, error) {
-		client := &http.Client{}
-		req, err := newRequest(method, url, body)
-		if err != nil {
-			return nil, nil, err
-		}
-		if authHeader != "" {
-			req.Header.Add("Authorization", authHeader)
-		}
-		return client, req, nil
-	}
 
 	BeforeEach(func() {
 		client = &http.Client{}
