@@ -90,6 +90,9 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 	dec := yaml.NewDecoder(reader)
 	dec.KnownFields(true)
 	err := dec.Decode(conf)
+	if err != nil {
+		return nil, err
+	}
 
 	if os.Getenv("PORT") != "" {
 		port := os.Getenv("PORT")
@@ -98,10 +101,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			return nil, ErrInvalidPort
 		}
 		conf.Server.Port = portNumber
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	return conf, nil
