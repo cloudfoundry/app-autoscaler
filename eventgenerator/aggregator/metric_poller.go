@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/metric"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
@@ -15,16 +15,16 @@ import (
 type MetricPoller struct {
 	logger          lager.Logger
 	doneChan        chan bool
-	metricClient    client.MetricClient
+	metricClient    metric.Fetcher
 	appMonitorsChan chan *models.AppMonitor
 	appMetricChan   chan *models.AppMetric
 }
 
-func NewMetricPoller(logger lager.Logger, metricClient client.MetricClient, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricFetcher metric.Fetcher, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) *MetricPoller {
 	return &MetricPoller{
 		logger:          logger.Session("MetricPoller"),
 		appMonitorsChan: appMonitorsChan,
-		metricClient:    metricClient,
+		metricClient:    metricFetcher,
 		doneChan:        make(chan bool),
 		appMetricChan:   appMetricChan,
 	}
@@ -62,7 +62,7 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 	endTime := time.Now()
 	startTime := endTime.Add(0 - statWindow)
 
-	metrics, err := m.metricClient.GetMetrics(appId, metricType, startTime, endTime)
+	metrics, err := m.metricClient.FetchMetrics(appId, metricType, startTime, endTime)
 	if err != nil {
 		return fmt.Errorf("retrieveMetric Failed: %w", err)
 	}

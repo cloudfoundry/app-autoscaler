@@ -13,11 +13,7 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_storedprocedure_db.go ./db StoredProcedureDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_metric_forwarder.go ./metricsforwarder/forwarder MetricForwarder
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_plan_checker.go ./api/plancheck PlanChecker
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_client.go ./eventgenerator/client LogCacheClientReader
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_envelope_processor.go ./envelopeprocessor EnvelopeProcessor
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_creator.go ./eventgenerator/client LogCacheClientCreator
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_go_log_cache_client.go ./eventgenerator/client GoLogCacheClient
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_grpc.go ./eventgenerator/client GRPCOptions
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_envelope_processor_creator.go ./envelopeprocessor EnvelopeProcessorCreator
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_plan_checker.go ./api/plancheck PlanChecker
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_ratelimiter.go ./ratelimiter Limiter
@@ -25,3 +21,6 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_database_status.go ./healthendpoint DatabaseStatus
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_operator.go ./operator Operator
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_sychronizer.go ./scalingengine/schedule ActiveScheduleSychronizer
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_fetcher_creator.go ./eventgenerator/metric LogCacheFetcherCreator
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_fetcher.go ./eventgenerator/metric Fetcher
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_client.go ./eventgenerator/metric LogCacheClient

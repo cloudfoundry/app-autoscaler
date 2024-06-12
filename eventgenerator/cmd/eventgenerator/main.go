@@ -6,9 +6,9 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/generator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/metric"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -82,8 +82,15 @@ func main() {
 
 	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 	appMetricChan := make(chan *models.AppMetric, conf.Aggregator.AppMetricChannelSize)
-	metricClient := client.NewMetricClientFactory().GetMetricClient(logger, conf)
-	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan, metricClient)
+
+	fetcherFactory := metric.NewLogCacheFetcherFactory(metric.StandardLogCacheFetcherCreator)
+	metricFetcher, err := fetcherFactory.CreateFetcher(logger, *conf)
+	if err != nil {
+		logger.Error("failed to create metric fetcher", err)
+		os.Exit(1)
+	}
+
+	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan, metricFetcher)
 	if err != nil {
 		logger.Error("failed to create MetricPoller", err)
 		os.Exit(1)
@@ -190,7 +197,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	return evaluators, nil
 }
 
-func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric, metricClient client.MetricClient) ([]*aggregator.MetricPoller, error) {
+func createMetricPollers(logger lager.Logger, conf *config.Config, appMonitorsChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric, metricClient metric.Fetcher) ([]*aggregator.MetricPoller, error) {
 	pollers := make([]*aggregator.MetricPoller, conf.Aggregator.MetricPollerCount)
 	for i := 0; i < len(pollers); i++ {
 		pollers[i] = aggregator.NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
