@@ -49,6 +49,7 @@ var _ = Describe("Metricsforwarder", func() {
 				badfile, err := os.CreateTemp("", "bad-mf-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
+				// #nosec G306
 				err = os.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 				runner.Start()
