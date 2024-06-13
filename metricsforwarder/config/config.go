@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"io"
+	"os"
+	"strconv"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -11,6 +13,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+// ErrInvalidPort is returned when the PORT environment variable is not a valid port number
+var ErrInvalidPort = fmt.Errorf("Invalid port number in PORT environment variable")
 
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
@@ -85,9 +90,17 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 	dec := yaml.NewDecoder(reader)
 	dec.KnownFields(true)
 	err := dec.Decode(conf)
-
 	if err != nil {
 		return nil, err
+	}
+
+	if os.Getenv("PORT") != "" {
+		port := os.Getenv("PORT")
+		portNumber, err := strconv.Atoi(port)
+		if err != nil {
+			return nil, ErrInvalidPort
+		}
+		conf.Server.Port = portNumber
 	}
 
 	return conf, nil
