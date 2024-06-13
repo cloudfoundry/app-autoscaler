@@ -47,6 +47,7 @@ var _ = Describe("MetricsServer", func() {
 				badfile, err := os.CreateTemp("", "bad-ms-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
+				// #nosec G306
 				err = os.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 				runner.Start()
