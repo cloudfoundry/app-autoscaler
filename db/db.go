@@ -43,15 +43,6 @@ type DatabaseConfig struct {
 	ConnectionMaxIdleTime time.Duration `yaml:"connection_max_idletime"`
 }
 
-type InstanceMetricsDB interface {
-	healthendpoint.DatabaseStatus
-	RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
-	SaveMetric(metric *models.AppInstanceMetric) error
-	SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error
-	PruneInstanceMetrics(ctx context.Context, before int64) error
-	io.Closer
-}
-
 type PolicyDB interface {
 	healthendpoint.DatabaseStatus
 	healthendpoint.Pinger
