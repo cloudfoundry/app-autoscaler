@@ -1,5 +1,29 @@
 package healthendpoint
 
+// package healthendpoint runs the health endpoint server for different autoscaler components
+//
+// The health endpoint server is used to expose the health
+// and readiness check endpoints for the autoscaler components.
+//
+// It provides the following functionalities:
+// - Expose the health and readiness check endpoints
+// - Expose the prometheus metrics
+// - Expose the pprof endpoints
+// - Basic authentication for health and readiness check endpoints
+// - Basic authentication for pprof endpoints
+// - Basic authentication for prometheus metrics
+//
+// The healthendpoint package provide the following checkers:
+// - NewHTTPChecker
+// - NewTCPChecker
+// - NewDatabaseChecker
+//
+// The health endpoint server is used by the following autoscaler components:
+// - metricsforwarder
+// - scalingengine
+// - eventgenerator
+// - scheduler
+
 import (
 	"net/http"
 	"net/http/pprof"
