@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -49,11 +48,11 @@ func NewMockLogCache(tlsConfig *tls.Config) *MockLogCache {
 	}
 }
 
-func (m *MockLogCache) Start(port int) string {
+func (m *MockLogCache) Start(port int) error {
 	var err error
 	m.lis, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return err
 	}
 
 	var srv *grpc.Server
@@ -69,6 +68,10 @@ func (m *MockLogCache) Start(port int) string {
 	//nolint:errcheck
 	go srv.Serve(m.lis)
 
+	return nil
+}
+
+func (m *MockLogCache) URL() string {
 	return m.lis.Addr().String()
 }
 

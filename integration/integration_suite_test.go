@@ -55,7 +55,6 @@ var (
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 	processMap              = map[string]ifrit.Process{}
 	mockLogCache            = &MockLogCache{}
-	mockLogCachePort        = 20000 + GinkgoParallelProcess()
 
 	defaultHttpClientTimeout = 10 * time.Second
 
@@ -202,7 +201,8 @@ func startMockLogCache() {
 	Expect(err).ToNot(HaveOccurred())
 
 	mockLogCache = NewMockLogCache(tlsConfig)
-	mockLogCache.Start(mockLogCachePort)
+	err = mockLogCache.Start(20000 + GinkgoParallelProcess())
+	Expect(err).ToNot(HaveOccurred())
 }
 
 func stopGolangApiServer() {

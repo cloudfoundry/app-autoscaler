@@ -35,17 +35,16 @@ var (
 	metricType = "a-metric-type"
 	metricUnit = "a-metric-unit"
 
-	regPath              = regexp.MustCompile(`^/v1/apps/.*/scale$`)
-	configFile           *os.File
-	conf                 config.Config
-	egPort               int
-	healthport           int
-	httpClient           *http.Client
-	healthHttpClient     *http.Client
-	mockLogCache         *testhelpers.MockLogCache
-	mockLogCacheEndpoint string
-	mockScalingEngine    *ghttp.Server
-	breachDurationSecs   = 10
+	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+	configFile         *os.File
+	conf               config.Config
+	egPort             int
+	healthport         int
+	httpClient         *http.Client
+	healthHttpClient   *http.Client
+	mockLogCache       *testhelpers.MockLogCache
+	mockScalingEngine  *ghttp.Server
+	breachDurationSecs = 10
 
 	scalingResult = &models.AppScalingResult{
 		AppId:             testAppId,
@@ -225,7 +224,8 @@ func initHttpEndPoints() {
 			},
 		},
 	}, nil)
-	mockLogCacheEndpoint = mockLogCache.Start(10000 + GinkgoParallelProcess())
+	err = mockLogCache.Start(10000 + GinkgoParallelProcess())
+	Expect(err).ToNot(HaveOccurred())
 
 	mockScalingEngine = ghttp.NewUnstartedServer()
 	mockScalingEngine.HTTPTestServer.TLS = testhelpers.ServerTlsConfig("scalingengine")
@@ -293,7 +293,7 @@ func initConfig() {
 			},
 		},
 		MetricCollector: config.MetricCollectorConfig{
-			MetricCollectorURL: mockLogCacheEndpoint,
+			MetricCollectorURL: mockLogCache.URL(),
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),

@@ -185,11 +185,12 @@ var _ = Describe("MetricPoller", func() {
 					},
 				},
 			}, nil)
-			mockLogCacheEndpoint := mockLogCache.Start(3000 + GinkgoParallelProcess())
+			err = mockLogCache.Start(3000 + GinkgoParallelProcess())
+			Expect(err).ToNot(HaveOccurred())
 
 			metricClient = NewMetricClientFactory().GetMetricClient(logger, &config.Config{
 				MetricCollector: config.MetricCollectorConfig{
-					MetricCollectorURL: mockLogCacheEndpoint,
+					MetricCollectorURL: mockLogCache.URL(),
 					TLSClientCerts: models.TLSCerts{
 						KeyFile:    filepath.Join(testCertDir, "log-cache.key"),
 						CertFile:   filepath.Join(testCertDir, "log-cache.crt"),
