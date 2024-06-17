@@ -7,8 +7,8 @@ import (
 	"time"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/metric"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	rpc "code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
@@ -29,7 +29,7 @@ var _ = Describe("MetricPoller", func() {
 		appMonitorsChan chan *models.AppMonitor
 		appMetricChan   chan *models.AppMetric
 		metricPoller    *MetricPoller
-		metricClient    MetricClient
+		metricFetcher   metric.Fetcher
 		mockLogCache    *testhelpers.MockLogCache
 		appMonitor      *models.AppMonitor
 	)
@@ -51,13 +51,14 @@ var _ = Describe("MetricPoller", func() {
 	Context("When metric-collector is not running", func() {
 
 		BeforeEach(func() {
-			metricClient = NewMetricClientFactory().GetMetricClient(logger, &config.Config{
+			metricFetcher, err := metric.NewLogCacheFetcherFactory(metric.StandardLogCacheFetcherCreator).CreateFetcher(logger, config.Config{
 				MetricCollector: config.MetricCollectorConfig{
 					MetricCollectorURL: "this.endpoint.does.not.exist:1234",
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
-			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
+			metricPoller = NewMetricPoller(logger, metricFetcher, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 
 			Expect(appMonitorsChan).Should(BeSent(appMonitor))
@@ -188,7 +189,7 @@ var _ = Describe("MetricPoller", func() {
 			err = mockLogCache.Start(3000 + GinkgoParallelProcess())
 			Expect(err).ToNot(HaveOccurred())
 
-			metricClient = NewMetricClientFactory().GetMetricClient(logger, &config.Config{
+			metricFetcher, err = metric.NewLogCacheFetcherFactory(metric.StandardLogCacheFetcherCreator).CreateFetcher(logger, config.Config{
 				MetricCollector: config.MetricCollectorConfig{
 					MetricCollectorURL: mockLogCache.URL(),
 					TLSClientCerts: models.TLSCerts{
@@ -198,10 +199,11 @@ var _ = Describe("MetricPoller", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
-			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
+			metricPoller = NewMetricPoller(logger, metricFetcher, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 
 			Expect(appMonitorsChan).Should(BeSent(appMonitor))
@@ -265,7 +267,7 @@ var _ = Describe("MetricPoller", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
+			metricPoller = NewMetricPoller(logger, metricFetcher, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 			metricPoller.Stop()
 			Eventually(logger.Buffer).Should(Say("stopped"))

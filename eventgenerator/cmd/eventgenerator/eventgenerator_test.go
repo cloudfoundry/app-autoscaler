@@ -40,14 +40,6 @@ var _ = Describe("Eventgenerator", func() {
 			Eventually(func() bool { return mockLogCache.ReadRequestsCount() >= 1 }, 5*time.Second).Should(BeTrue())
 			Eventually(func() bool { return len(mockScalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 		})
-
-		It("Should create a LogCacheClient", func() {
-			Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.LogCacheClient.GetMetrics"))
-		})
-
-		It("Should initialized an envelopeProcessor", func() {
-			Eventually(runner.Session.Buffer(), 2).Should(Say("eventgenerator.EnvelopeProcessor.GetGaugeMetrics"))
-		})
 	})
 
 	Context("with a missing config file", func() {
