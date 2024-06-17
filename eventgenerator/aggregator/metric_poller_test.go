@@ -1,20 +1,22 @@
 package aggregator_test
 
 import (
+	"errors"
+	"path/filepath"
+
+	"time"
+
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/client"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	rpc "code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
+	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/ghttp"
-
-	"net/http"
-	"time"
 )
 
 var _ = Describe("MetricPoller", func() {
@@ -28,48 +30,8 @@ var _ = Describe("MetricPoller", func() {
 		appMetricChan   chan *models.AppMetric
 		metricPoller    *MetricPoller
 		metricClient    MetricClient
-		metricServer    *ghttp.Server
-		metrics         = []*models.AppInstanceMetric{
-			{
-				AppId:         testAppId,
-				InstanceIndex: 0,
-				CollectedAt:   111111,
-				Name:          testMetricType,
-				Unit:          testMetricUnit,
-				Value:         "100",
-				Timestamp:     111100,
-			},
-			{
-				AppId:         testAppId,
-				InstanceIndex: 1,
-				CollectedAt:   111111,
-				Name:          testMetricType,
-				Unit:          testMetricUnit,
-				Value:         "200",
-				Timestamp:     110000,
-			},
-
-			{
-				AppId:         testAppId,
-				InstanceIndex: 0,
-				CollectedAt:   222222,
-				Name:          testMetricType,
-				Unit:          testMetricUnit,
-				Value:         "300",
-				Timestamp:     222200,
-			},
-			{
-				AppId:         testAppId,
-				InstanceIndex: 1,
-				CollectedAt:   222222,
-				Name:          testMetricType,
-				Unit:          testMetricUnit,
-				Value:         "401",
-				Timestamp:     220000,
-			},
-		}
-		urlPath    string
-		appMonitor *models.AppMonitor
+		mockLogCache    *testhelpers.MockLogCache
+		appMonitor      *models.AppMonitor
 	)
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
@@ -77,11 +39,7 @@ var _ = Describe("MetricPoller", func() {
 
 		appMonitorsChan = make(chan *models.AppMonitor, 1)
 		appMetricChan = make(chan *models.AppMetric, 1)
-		metricServer = nil
 
-		path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", testAppId, "metrictype", testMetricType)
-		Expect(err).NotTo(HaveOccurred())
-		urlPath = path.Path
 		appMonitor = &models.AppMonitor{
 			AppId:      testAppId,
 			MetricType: testMetricType,
@@ -93,11 +51,12 @@ var _ = Describe("MetricPoller", func() {
 	Context("When metric-collector is not running", func() {
 
 		BeforeEach(func() {
-			metricServer = ghttp.NewUnstartedServer()
+			metricClient = NewMetricClientFactory().GetMetricClient(logger, &config.Config{
+				MetricCollector: config.MetricCollectorConfig{
+					MetricCollectorURL: "this.endpoint.does.not.exist:1234",
+				},
+			})
 
-			httpClient, err := helpers.CreateHTTPClient(nil, helpers.DefaultClientConfig(), lager.NewLogger("metrics_server"))
-			Expect(err).ToNot(HaveOccurred())
-			metricClient = NewMetricServerClient(logger, metricServer.URL(), httpClient)
 			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 
@@ -106,12 +65,11 @@ var _ = Describe("MetricPoller", func() {
 
 		AfterEach(func() {
 			metricPoller.Stop()
-			metricServer.Close()
 		})
 
 		It("logs an error", func() {
 			//TODO this should be a prometheus counter not a log statement check
-			Eventually(logger.Buffer).Should(Say("Failed to retrieve metric"))
+			Eventually(logger.Buffer).Should(Say("retrieveMetric Failed"))
 		})
 
 		It("does not save any metrics", func() {
@@ -123,14 +81,123 @@ var _ = Describe("MetricPoller", func() {
 		var appMetric *models.AppMetric
 
 		BeforeEach(func() {
-
-			metricServer = ghttp.NewServer()
-			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-				&metrics))
-
-			httpClient, err := helpers.CreateHTTPClient(nil, helpers.DefaultClientConfig(), lager.NewLogger("metric_server"))
+			testCertDir := testhelpers.TestCertFolder()
+			tlsConfig, err := testhelpers.NewTLSConfig(
+				filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				filepath.Join(testCertDir, "log-cache.crt"),
+				filepath.Join(testCertDir, "log-cache.key"),
+				"log-cache",
+			)
 			Expect(err).ToNot(HaveOccurred())
-			metricClient = NewMetricServerClient(logger, metricServer.URL(), httpClient)
+
+			mockLogCache = testhelpers.NewMockLogCache(tlsConfig)
+			mockLogCache.ReadReturns(testAppId, &rpc.ReadResponse{
+				Envelopes: &loggregator_v2.EnvelopeBatch{
+					Batch: []*loggregator_v2.Envelope{
+						{
+							SourceId:   testAppId,
+							InstanceId: "0",
+							Timestamp:  111100,
+							DeprecatedTags: map[string]*loggregator_v2.Value{
+								"origin": {
+									Data: &loggregator_v2.Value_Text{
+										Text: "autoscaler_metrics_forwarder",
+									},
+								},
+							},
+							Message: &loggregator_v2.Envelope_Gauge{
+								Gauge: &loggregator_v2.Gauge{
+									Metrics: map[string]*loggregator_v2.GaugeValue{
+										testMetricType: {
+											Unit:  testMetricUnit,
+											Value: 100,
+										},
+									},
+								},
+							},
+						},
+						{
+							SourceId:   testAppId,
+							InstanceId: "1",
+							Timestamp:  110000,
+							DeprecatedTags: map[string]*loggregator_v2.Value{
+								"origin": {
+									Data: &loggregator_v2.Value_Text{
+										Text: "autoscaler_metrics_forwarder",
+									},
+								},
+							},
+							Message: &loggregator_v2.Envelope_Gauge{
+								Gauge: &loggregator_v2.Gauge{
+									Metrics: map[string]*loggregator_v2.GaugeValue{
+										testMetricType: {
+											Unit:  testMetricUnit,
+											Value: 200,
+										},
+									},
+								},
+							},
+						},
+						{
+							SourceId:   testAppId,
+							InstanceId: "0",
+							Timestamp:  222200,
+							DeprecatedTags: map[string]*loggregator_v2.Value{
+								"origin": {
+									Data: &loggregator_v2.Value_Text{
+										Text: "autoscaler_metrics_forwarder",
+									},
+								},
+							},
+							Message: &loggregator_v2.Envelope_Gauge{
+								Gauge: &loggregator_v2.Gauge{
+									Metrics: map[string]*loggregator_v2.GaugeValue{
+										testMetricType: {
+											Unit:  testMetricUnit,
+											Value: 300,
+										},
+									},
+								},
+							},
+						},
+						{
+							SourceId:   testAppId,
+							InstanceId: "1",
+							Timestamp:  220000,
+							DeprecatedTags: map[string]*loggregator_v2.Value{
+								"origin": {
+									Data: &loggregator_v2.Value_Text{
+										Text: "autoscaler_metrics_forwarder",
+									},
+								},
+							},
+							Message: &loggregator_v2.Envelope_Gauge{
+								Gauge: &loggregator_v2.Gauge{
+									Metrics: map[string]*loggregator_v2.GaugeValue{
+										testMetricType: {
+											Unit:  testMetricUnit,
+											Value: 401,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}, nil)
+			err = mockLogCache.Start(3000 + GinkgoParallelProcess())
+			Expect(err).ToNot(HaveOccurred())
+
+			metricClient = NewMetricClientFactory().GetMetricClient(logger, &config.Config{
+				MetricCollector: config.MetricCollectorConfig{
+					MetricCollectorURL: mockLogCache.URL(),
+					TLSClientCerts: models.TLSCerts{
+						KeyFile:    filepath.Join(testCertDir, "log-cache.key"),
+						CertFile:   filepath.Join(testCertDir, "log-cache.crt"),
+						CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+					},
+				},
+			})
 		})
 
 		JustBeforeEach(func() {
@@ -142,7 +209,7 @@ var _ = Describe("MetricPoller", func() {
 
 		AfterEach(func() {
 			metricPoller.Stop()
-			metricServer.Close()
+			mockLogCache.Stop()
 		})
 
 		Context("when metrics are successfully retrieved", func() {
@@ -159,14 +226,13 @@ var _ = Describe("MetricPoller", func() {
 			})
 		})
 
-		Context("when the metrics are not valid JSON", func() {
+		Context("when an error occurs during metric retrieval", func() {
 			BeforeEach(func() {
-				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWith(http.StatusOK,
-					"{[}"))
+				mockLogCache.ReadReturns(testAppId, &rpc.ReadResponse{}, errors.New("error"))
 			})
 
 			It("logs an error", func() {
-				Eventually(logger.Buffer).Should(Say("Failed to parse response"))
+				Eventually(logger.Buffer).Should(Say("retrieveMetric Failed"))
 			})
 
 			It("should not send any metrics to appmetric channel", func() {
@@ -176,8 +242,11 @@ var _ = Describe("MetricPoller", func() {
 
 		Context("when empty metrics are retrieved", func() {
 			BeforeEach(func() {
-				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-					&[]*models.AppInstanceMetric{}))
+				mockLogCache.ReadReturns(testAppId, &rpc.ReadResponse{
+					Envelopes: &loggregator_v2.EnvelopeBatch{
+						Batch: []*loggregator_v2.Envelope{},
+					},
+				}, nil)
 			})
 
 			It("send the average metrics with no value to appmetric channel", func() {
@@ -192,28 +261,10 @@ var _ = Describe("MetricPoller", func() {
 					Timestamp:  timestamp}))
 			})
 		})
-
-		Context("when an error ocurrs retrieving metrics", func() {
-			BeforeEach(func() {
-				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
-					models.ErrorResponse{
-						Code:    "Internal-Server-Error",
-						Message: "Error"}))
-			})
-
-			It("should not send any metrics to appmetric channel", func() {
-				Consistently(appMetricChan).ShouldNot(Receive())
-			})
-		})
-
 	})
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			metricServer = ghttp.NewServer()
-			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-				&metrics))
-
 			metricPoller = NewMetricPoller(logger, metricClient, appMonitorsChan, appMetricChan)
 			metricPoller.Start()
 			metricPoller.Stop()

@@ -6,52 +6,40 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	as_testhelpers "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-
+	rpc "code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scalingengine", func() {
+var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 	var (
-		testAppId           string
-		timeout             = 2 * time.Duration(breachDurationSecs) * time.Second
-		initInstanceCount   = 2
-		fakeRLPServer       *as_testhelpers.FakeEventProducer
-		envelopes           []*loggregator_v2.Envelope
-		fakeRLPEmitInterval = 500 * time.Millisecond
+		testAppId         string
+		timeout           = 2 * time.Duration(breachDurationSecs) * time.Second
+		initInstanceCount = 2
 	)
 	BeforeEach(func() {
 		testAppId = getRandomIdRef("testAppId")
 		startFakeCCNOAAUAA(initInstanceCount)
+		startMockLogCache()
 	})
 
 	JustBeforeEach(func() {
-		fakeRLPServer = startFakeRLPServer(testAppId, envelopes, fakeRLPEmitInterval)
-		metricsServerConfPath = components.PrepareMetricsServerConfig(dbUrl, defaultHttpClientTimeout, components.Ports[MetricsServerHTTP], components.Ports[MetricsServerWS], tmpDir)
-		metricsGatewayConfPath = components.PrepareMetricsGatewayConfig(dbUrl, []string{fmt.Sprintf("wss://127.0.0.1:%d", components.Ports[MetricsServerWS])}, fakeRLPServer.GetAddr(), tmpDir)
-		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsServerHTTP]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, saveInterval, evaluationManagerInterval, defaultHttpClientTimeout, tmpDir)
+		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], mockLogCache.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, saveInterval, evaluationManagerInterval, defaultHttpClientTimeout, tmpDir)
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 
-		startMetricsServer()
-		startMetricsGateway()
 		startEventGenerator()
 		startScalingEngine()
-
 	})
 
 	AfterEach(func() {
-		stopFakeRLPServer(fakeRLPServer)
-		stopMetricsGateway()
-		stopMetricsServer()
 		stopEventGenerator()
 		stopScalingEngine()
+		stopMockLogCache()
 	})
 	Context("MemoryUtil", func() {
 		BeforeEach(func() {
-			envelopes = createContainerEnvelope(testAppId, 1, 4.0, float64(50), float64(2048000000), float64(100))
-
+			mockLogCacheReturnsReadEnvelopes(testAppId, createContainerEnvelope(testAppId, 1, 4.0, float64(50), float64(2048000000), float64(100)))
 		})
 		Context("Scale out", func() {
 			Context("application's responsetime break the scaling out rule for more than breach duration", func() {
@@ -172,8 +160,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 
 	Context("MemoryUsed", func() {
 		BeforeEach(func() {
-			envelopes = createContainerEnvelope(testAppId, 1, 4.0, float64(50*1024*1024), float64(2048000000), float64(100*1024*1024))
-
+			mockLogCacheReturnsReadEnvelopes(testAppId, createContainerEnvelope(testAppId, 1, 4.0, float64(50*1024*1024), float64(2048000000), float64(100*1024*1024)))
 		})
 		Context("Scale out", func() {
 			Context("application's memory break the scaling out rule for more than breach duration", func() {
@@ -294,8 +281,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 
 	Context("ResponseTime", func() {
 		BeforeEach(func() {
-			envelopes = createHTTPTimerEnvelope(testAppId, 1542325492000000000, 1542325492050000000)
-
+			mockLogCacheReturnsQueryResult(testAppId, 40)
 		})
 		Context("Scale out", func() {
 			Context("application's responsetime break the scaling out rule for more than breach duration", func() {
@@ -416,9 +402,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 
 	Context("Throughput", func() {
 		BeforeEach(func() {
-			envelopes = createHTTPTimerEnvelope(testAppId, 1542325492000000000, 1542325492050000000)
-			fakeRLPEmitInterval = 100 * time.Millisecond
-
+			mockLogCacheReturnsQueryResult(testAppId, 40)
 		})
 		Context("Scale out", func() {
 			Context("application's throughput break the scaling out rule for more than breach duration", func() {
@@ -539,8 +523,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 
 	Context("CustomMetric", func() {
 		BeforeEach(func() {
-			envelopes = createCustomEnvelope(testAppId, "queuelength", "number", 50)
-
+			mockLogCacheReturnsReadEnvelopes(testAppId, createCustomEnvelope(testAppId, "queuelength", "number", 50))
 		})
 		Context("Scale out", func() {
 			Context("application's queuelength break the scaling out rule for more than breach duration", func() {
@@ -660,3 +643,85 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 	})
 
 })
+
+func mockLogCacheReturnsReadEnvelopes(sourceId string, envelopes []*loggregator_v2.Envelope) {
+	mockLogCache.ReadReturns(sourceId, &rpc.ReadResponse{
+		Envelopes: &loggregator_v2.EnvelopeBatch{
+			Batch: envelopes,
+		},
+	}, nil)
+}
+
+func mockLogCacheReturnsQueryResult(sourceId string, value float64) {
+	mockLogCache.InstantQueryReturns(sourceId, &rpc.PromQL_InstantQueryResult{
+		Result: &rpc.PromQL_InstantQueryResult_Vector{
+			Vector: &rpc.PromQL_Vector{
+				Samples: []*rpc.PromQL_Sample{
+					{
+						Metric: map[string]string{
+							"instance_id": "0",
+						},
+						Point: &rpc.PromQL_Point{
+							Value: value,
+						},
+					},
+				},
+			},
+		},
+	}, nil)
+}
+
+func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64) []*loggregator_v2.Envelope {
+	return []*loggregator_v2.Envelope{
+		{
+			SourceId: appId,
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						"cpu": {
+							Unit:  "percentage",
+							Value: cpuPercentage,
+						},
+						"disk": {
+							Unit:  "bytes",
+							Value: diskByte,
+						},
+						"memory": {
+							Unit:  "bytes",
+							Value: memoryBytes,
+						},
+						"memory_quota": {
+							Unit:  "bytes",
+							Value: memQuota,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func createCustomEnvelope(appId string, name string, unit string, value float64) []*loggregator_v2.Envelope {
+	return []*loggregator_v2.Envelope{
+		{
+			SourceId: appId,
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"origin": {
+					Data: &loggregator_v2.Value_Text{
+						Text: "autoscaler_metrics_forwarder",
+					},
+				},
+			},
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						name: {
+							Unit:  unit,
+							Value: value,
+						},
+					},
+				},
+			},
+		},
+	}
+}

@@ -1,7 +1,3 @@
-
-instance_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"

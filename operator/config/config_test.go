@@ -53,15 +53,6 @@ var _ = Describe("Config", func() {
 				Expect(conf.Health.Port).To(Equal(9999))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.InstanceMetricsDB.DB).To(Equal(db.DatabaseConfig{
-					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
-					MaxOpenConnections:    10,
-					MaxIdleConnections:    5,
-					ConnectionMaxLifetime: 60 * time.Second,
-				}))
-				Expect(conf.InstanceMetricsDB.RefreshInterval).To(Equal(12 * time.Hour))
-				Expect(conf.InstanceMetricsDB.CutoffDuration).To(Equal(20 * time.Hour))
-
 				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    10,
@@ -105,14 +96,6 @@ var _ = Describe("Config", func() {
 
 				Expect(conf.Logging.Level).To(Equal(config.DefaultLoggingLevel))
 				Expect(conf.Health.Port).To(Equal(8081))
-				Expect(conf.InstanceMetricsDB.DB).To(Equal(db.DatabaseConfig{
-					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
-					MaxOpenConnections:    0,
-					MaxIdleConnections:    0,
-					ConnectionMaxLifetime: 0 * time.Second,
-				}))
-				Expect(conf.InstanceMetricsDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.InstanceMetricsDB.CutoffDuration).To(Equal(config.DefaultCutoffDuration))
 				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
@@ -146,31 +129,6 @@ var _ = Describe("Config", func() {
 
 				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 
-			})
-		})
-		Context("when cutoff_duration of instance_metrics_db is not a time.Duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-instance_metrics_db:
-  cutoff_duration: 7k
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-			})
-		})
-
-		Context("when refresh_interval of instance_metrics_db is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-instance_metrics_db:
-  refresh_interval: 12k
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 			})
 		})
 
@@ -219,10 +177,6 @@ scheduler:
 		BeforeEach(func() {
 			conf = &config.Config{}
 
-			conf.InstanceMetricsDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.InstanceMetricsDB.RefreshInterval = 12 * time.Hour
-			conf.InstanceMetricsDB.CutoffDuration = 30 * time.Hour
-
 			conf.AppMetricsDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.AppMetricsDB.RefreshInterval = 10 * time.Hour
 			conf.AppMetricsDB.CutoffDuration = 15 * time.Hour
@@ -252,17 +206,6 @@ scheduler:
 		Context("when all the configs are valid", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
-			})
-		})
-
-		Context("when InstanceMetrics db url is not set", func() {
-
-			BeforeEach(func() {
-				conf.InstanceMetricsDB.DB.URL = ""
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: instance_metrics_db.db.url is empty"))
 			})
 		})
 
@@ -310,17 +253,6 @@ scheduler:
 			})
 		})
 
-		Context("when InstanceMetrics db refresh interval in hours is set to a negative value", func() {
-
-			BeforeEach(func() {
-				conf.InstanceMetricsDB.RefreshInterval = -1
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: instance_metrics_db.refresh_interval is less than or equal to 0"))
-			})
-		})
-
 		Context("when AppMetrics db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
@@ -340,17 +272,6 @@ scheduler:
 
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: scaling_engine_db.refresh_interval is less than or equal to 0"))
-			})
-		})
-
-		Context("when InstanceMetrics db cutoff duration is set to a negative value", func() {
-
-			BeforeEach(func() {
-				conf.InstanceMetricsDB.CutoffDuration = -1
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: instance_metrics_db.cutoff_duration is less than or equal to 0"))
 			})
 		})
 

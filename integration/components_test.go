@@ -4,17 +4,6 @@ import (
 	_ "embed"
 	"text/template"
 
-	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	egConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	mgConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
-	msConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsserver/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	opConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
-	seConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
-
 	"fmt"
 	"net/url"
 	"os"
@@ -22,6 +11,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	egConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	opConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
+	seConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/gomega"
@@ -37,9 +35,6 @@ const (
 	EventGenerator      = "eventGenerator"
 	ScalingEngine       = "scalingEngine"
 	Operator            = "operator"
-	MetricsGateway      = "metricsGateway"
-	MetricsServerHTTP   = "metricsServerHTTP"
-	MetricsServerWS     = "metricsServerWS"
 )
 
 var golangAPIInfoFilePath = "../api/exampleconfig/catalog-example.json"
@@ -119,22 +114,6 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 	})
 }
 
-func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
-		Name:              MetricsServerHTTP,
-		AnsiColorCode:     "33m",
-		StartCheck:        `"metricsserver.started"`,
-		StartCheckTimeout: 20 * time.Second,
-		// #nosec G204
-		Command: exec.Command(
-			components.Executables[MetricsServerHTTP],
-			append([]string{
-				"-c", confPath,
-			}, argv...)...,
-		),
-	})
-}
-
 func (components *Components) EventGenerator(confPath string, argv ...string) *ginkgomon_v2.Runner {
 	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              EventGenerator,
@@ -183,23 +162,7 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 	})
 }
 
-func (components *Components) MetricsGateway(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
-		Name:              MetricsGateway,
-		AnsiColorCode:     "32m",
-		StartCheck:        `"metricsgateway.started"`,
-		StartCheckTimeout: 20 * time.Second,
-		// #nosec G204
-		Command: exec.Command(
-			components.Executables[MetricsGateway],
-			append([]string{
-				"-c", confPath,
-			}, argv...)...,
-		),
-	})
-}
-
-func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, tmpDir string) string {
+func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, schedulerUri string, scalingEngineUri string, eventGeneratorUri string, metricsForwarderUri string, tmpDir string) string {
 	brokerCred1 := apiConfig.BrokerCredentialsConfig{
 		BrokerUsername: "broker_username",
 		//BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
@@ -466,13 +429,6 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 			ClientID: "admin",
 			Secret:   "admin",
 		},
-		InstanceMetricsDB: opConfig.DbPrunerConfig{
-			RefreshInterval: 2 * time.Minute,
-			CutoffDuration:  cutoffDuration,
-			DB: db.DatabaseConfig{
-				URL: dbURI,
-			},
-		},
 		AppMetricsDB: opConfig.DbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDuration:  cutoffDuration,
@@ -521,100 +477,6 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 		HttpClientTimeout: httpClientTimeout,
 	}
 	return writeYmlConfig(tmpDir, Operator, &conf)
-}
-
-func (components *Components) PrepareMetricsGatewayConfig(dbURI string, metricServerAddresses []string, rlpAddr string, tmpDir string) string {
-	cfg := mgConfig.Config{
-		Logging: helpers.LoggingConfig{
-			Level: LOGLEVEL,
-		},
-		EnvelopChanSize:   500,
-		NozzleCount:       1,
-		MetricServerAddrs: metricServerAddresses,
-		AppManager: mgConfig.AppManagerConfig{
-			AppRefreshInterval: 10 * time.Second,
-			PolicyDB: db.DatabaseConfig{
-				URL:                   dbURI,
-				MaxOpenConnections:    10,
-				MaxIdleConnections:    5,
-				ConnectionMaxLifetime: 60 * time.Second,
-			},
-		},
-		Emitter: mgConfig.EmitterConfig{
-			BufferSize:         500,
-			KeepAliveInterval:  1 * time.Second,
-			HandshakeTimeout:   1 * time.Second,
-			MaxSetupRetryCount: 3,
-			MaxCloseRetryCount: 3,
-			RetryDelay:         500 * time.Millisecond,
-			MetricsServerClientTLS: &models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricserver_client.key"),
-				CertFile:   filepath.Join(testCertDir, "metricserver_client.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		Nozzle: mgConfig.NozzleConfig{
-			RLPAddr: rlpAddr,
-			ShardID: "autoscaler",
-			RLPClientTLS: &models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "reverselogproxy_client.key"),
-				CertFile:   filepath.Join(testCertDir, "reverselogproxy_client.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-	}
-	return writeYmlConfig(tmpDir, MetricsGateway, &cfg)
-}
-
-func (components *Components) PrepareMetricsServerConfig(dbURI string, httpClientTimeout time.Duration, httpServerPort int, wsServerPort int, tmpDir string) string {
-	cfg := msConfig.Config{
-		Logging: helpers.LoggingConfig{
-			Level: LOGLEVEL,
-		},
-		HttpClientTimeout: httpClientTimeout,
-		NodeAddrs:         []string{"localhost"},
-		NodeIndex:         0,
-		DB: msConfig.DBConfig{
-			PolicyDB: db.DatabaseConfig{
-				URL:                   dbURI,
-				MaxOpenConnections:    10,
-				MaxIdleConnections:    5,
-				ConnectionMaxLifetime: 60 * time.Second,
-			},
-			InstanceMetricsDB: db.DatabaseConfig{
-				URL:                   dbURI,
-				MaxOpenConnections:    10,
-				MaxIdleConnections:    5,
-				ConnectionMaxLifetime: 60 * time.Second,
-			},
-		},
-		Collector: msConfig.CollectorConfig{
-			WSPort:          wsServerPort,
-			WSKeepAliveTime: 5 * time.Second,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricserver.key"),
-				CertFile:   filepath.Join(testCertDir, "metricserver.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-			RefreshInterval:        5 * time.Second,
-			CollectInterval:        1 * time.Second,
-			SaveInterval:           2 * time.Second,
-			MetricCacheSizePerApp:  100,
-			PersistMetrics:         true,
-			EnvelopeProcessorCount: 2,
-			EnvelopeChannelSize:    100,
-			MetricChannelSize:      100,
-		},
-		Server: helpers.ServerConfig{
-			Port: httpServerPort,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricserver.key"),
-				CertFile:   filepath.Join(testCertDir, "metricserver.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-	}
-	return writeYmlConfig(tmpDir, MetricsServerHTTP, &cfg)
 }
 
 func writeYmlConfig(dir string, componentName string, c interface{}) string {

@@ -64,7 +64,6 @@ type AutoScalerRoute struct {
 	metricsCollectorRoutes *mux.Router
 	eventGeneratorRoutes   *mux.Router
 	scalingEngineRoutes    *mux.Router
-	metricServerRoutes     *mux.Router
 	metricsForwarderRoutes *mux.Router
 	apiOpenRoutes          *mux.Router
 	apiRoutes              *mux.Router
@@ -80,7 +79,6 @@ func newRouters() *AutoScalerRoute {
 		metricsCollectorRoutes: mux.NewRouter(),
 		eventGeneratorRoutes:   mux.NewRouter(),
 		scalingEngineRoutes:    mux.NewRouter(),
-		metricServerRoutes:     mux.NewRouter(),
 		metricsForwarderRoutes: mux.NewRouter(),
 		apiOpenRoutes:          mux.NewRouter(),
 		apiRoutes:              mux.NewRouter(),
@@ -100,8 +98,6 @@ func newRouters() *AutoScalerRoute {
 	instance.scalingEngineRoutes.Path(SyncActiveSchedulesPath).Methods(http.MethodPut).Name(SyncActiveSchedulesRouteName)
 
 	instance.metricsForwarderRoutes.Path(CustomMetricsPath).Methods(http.MethodPost).Name(PostCustomMetricsRouteName)
-
-	instance.metricServerRoutes.Path(EnvelopePath).Name(EnvelopeReportRouteName)
 
 	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodPut).Name(UpdateScheduleRouteName)
 	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodDelete).Name(DeleteScheduleRouteName)
@@ -130,10 +126,6 @@ func EventGeneratorRoutes() *mux.Router {
 
 func ScalingEngineRoutes() *mux.Router {
 	return autoScalerRouteInstance.scalingEngineRoutes
-}
-
-func MetricServerRoutes() *mux.Router {
-	return autoScalerRouteInstance.metricServerRoutes
 }
 
 func MetricsForwarderRoutes() *mux.Router {

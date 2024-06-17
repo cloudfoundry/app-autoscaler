@@ -14,14 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -49,8 +47,6 @@ var (
 	eventGeneratorConfPath  string
 	scalingEngineConfPath   string
 	operatorConfPath        string
-	metricsGatewayConfPath  string
-	metricsServerConfPath   string
 	brokerAuth              string
 	dbUrl                   string
 	LOGLEVEL                string
@@ -58,6 +54,7 @@ var (
 	fakeCCNOAAUAA           *mocks.Server
 	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 	processMap              = map[string]ifrit.Process{}
+	mockLogCache            = &MockLogCache{}
 
 	defaultHttpClientTimeout = 10 * time.Second
 
@@ -148,8 +145,6 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler", "build", "eventgenerator")
 	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler", "build", "scalingengine")
 	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler", "build", "operator")
-	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler", "build", "metricsgateway")
-	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler", "build", "metricsserver")
 	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler", "build", "api")
 
 	return builtExecutables
@@ -161,8 +156,6 @@ func PreparePorts() Ports {
 		GolangServiceBroker: 23000 + GinkgoParallelProcess(),
 		Scheduler:           15000 + GinkgoParallelProcess(),
 		MetricsCollector:    16000 + GinkgoParallelProcess(),
-		MetricsServerHTTP:   20000 + GinkgoParallelProcess(),
-		MetricsServerWS:     21000 + GinkgoParallelProcess(),
 		EventGenerator:      17000 + GinkgoParallelProcess(),
 		ScalingEngine:       18000 + GinkgoParallelProcess(),
 	}
@@ -198,16 +191,18 @@ func startOperator() {
 	}))
 }
 
-func startMetricsGateway() {
-	processMap[MetricsGateway] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{MetricsGateway, components.MetricsGateway(metricsGatewayConfPath)},
-	}))
-}
+func startMockLogCache() {
+	tlsConfig, err := NewTLSConfig(
+		filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		filepath.Join(testCertDir, "log-cache.crt"),
+		filepath.Join(testCertDir, "log-cache.key"),
+		"log-cache",
+	)
+	Expect(err).ToNot(HaveOccurred())
 
-func startMetricsServer() {
-	processMap[MetricsServerHTTP] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{MetricsServerHTTP, components.MetricsServer(metricsServerConfPath)},
-	}))
+	mockLogCache = NewMockLogCache(tlsConfig)
+	err = mockLogCache.Start(20000 + GinkgoParallelProcess())
+	Expect(err).ToNot(HaveOccurred())
 }
 
 func stopGolangApiServer() {
@@ -225,11 +220,9 @@ func stopEventGenerator() {
 func stopOperator() {
 	ginkgomon_v2.Kill(processMap[Operator], 5*time.Second)
 }
-func stopMetricsGateway() {
-	ginkgomon_v2.Kill(processMap[MetricsGateway], 5*time.Second)
-}
-func stopMetricsServer() {
-	ginkgomon_v2.Kill(processMap[MetricsServerHTTP], 5*time.Second)
+
+func stopMockLogCache() {
+	mockLogCache.Stop()
 }
 
 func getRandomIdRef(ref string) string {
@@ -579,9 +572,6 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM app_metric")
 	Expect(err).NotTo(HaveOccurred())
-
-	_, err = dbHelper.Exec("DELETE FROM appinstancemetrics")
-	Expect(err).NotTo(HaveOccurred())
 }
 
 func insertPolicy(appId string, policyStr string, guid string) {
@@ -650,28 +640,12 @@ func getScalingHistoryTotalCount(appId string) int {
 	return count
 }
 
-func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
-	query := dbHelper.Rebind("INSERT INTO appinstancemetrics" +
-		"(appid, instanceindex, collectedat, name, unit, value, timestamp) " +
-		"VALUES(?, ?, ?, ?, ?, ?, ?)")
-	_, err := dbHelper.Exec(query, appInstanceMetric.AppId, appInstanceMetric.InstanceIndex, appInstanceMetric.CollectedAt, appInstanceMetric.Name, appInstanceMetric.Unit, appInstanceMetric.Value, appInstanceMetric.Timestamp)
-	Expect(err).NotTo(HaveOccurred())
-}
-
 func insertAppMetric(appMetrics *models.AppMetric) {
 	query := dbHelper.Rebind("INSERT INTO app_metric" +
 		"(app_id, metric_type, unit, value, timestamp) " +
 		"VALUES(?, ?, ?, ?, ?)")
 	_, err := dbHelper.Exec(query, appMetrics.AppId, appMetrics.MetricType, appMetrics.Unit, appMetrics.Value, appMetrics.Timestamp)
 	Expect(err).NotTo(HaveOccurred())
-}
-
-func getAppInstanceMetricTotalCount(appId string) int {
-	var count int
-	query := dbHelper.Rebind("SELECT COUNT(*) FROM appinstancemetrics WHERE appid=?")
-	err := dbHelper.QueryRow(query, appId).Scan(&count)
-	Expect(err).NotTo(HaveOccurred())
-	return count
 }
 
 func getAppMetricTotalCount(appId string) int {
@@ -760,90 +734,4 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		OauthToken(testUserToken).
 		CheckToken(testUserScope).
 		UserInfo(http.StatusOK, testUserId)
-}
-
-func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *FakeEventProducer {
-	fakeRLPServer, err := NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
-	Expect(err).NotTo(HaveOccurred())
-	fakeRLPServer.SetEnvelops(envelopes)
-	fakeRLPServer.Start()
-	return fakeRLPServer
-}
-
-func stopFakeRLPServer(fakeRLPServer *FakeEventProducer) {
-	stopped := fakeRLPServer.Stop()
-	Expect(stopped).To(Equal(true))
-}
-
-func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64) []*loggregator_v2.Envelope {
-	return []*loggregator_v2.Envelope{
-		{
-			SourceId: appId,
-			Message: &loggregator_v2.Envelope_Gauge{
-				Gauge: &loggregator_v2.Gauge{
-					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": {
-							Unit:  "percentage",
-							Value: cpuPercentage,
-						},
-						"disk": {
-							Unit:  "bytes",
-							Value: diskByte,
-						},
-						"memory": {
-							Unit:  "bytes",
-							Value: memoryBytes,
-						},
-						"memory_quota": {
-							Unit:  "bytes",
-							Value: memQuota,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregator_v2.Envelope {
-	return []*loggregator_v2.Envelope{
-		{
-			SourceId: appId,
-			Message: &loggregator_v2.Envelope_Timer{
-				Timer: &loggregator_v2.Timer{
-					Name:  "http",
-					Start: start,
-					Stop:  end,
-				},
-			},
-			DeprecatedTags: map[string]*loggregator_v2.Value{
-				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Client"}},
-			},
-		},
-	}
-}
-
-func createCustomEnvelope(appId string, name string, unit string, value float64) []*loggregator_v2.Envelope {
-	return []*loggregator_v2.Envelope{
-		{
-			SourceId: appId,
-			DeprecatedTags: map[string]*loggregator_v2.Value{
-				"origin": {
-					Data: &loggregator_v2.Value_Text{
-						Text: "autoscaler_metrics_forwarder",
-					},
-				},
-			},
-			Message: &loggregator_v2.Envelope_Gauge{
-				Gauge: &loggregator_v2.Gauge{
-					Metrics: map[string]*loggregator_v2.GaugeValue{
-						name: {
-							Unit:  unit,
-							Value: value,
-						},
-					},
-				},
-			},
-		},
-	}
 }

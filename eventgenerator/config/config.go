@@ -65,7 +65,6 @@ type ScalingEngineConfig struct {
 }
 
 type MetricCollectorConfig struct {
-	UseLogCache        bool            `yaml:"use_log_cache"`
 	MetricCollectorURL string          `yaml:"metric_collector_url"`
 	TLSClientCerts     models.TLSCerts `yaml:"tls"`
 	UAACreds           models.UAACreds `yaml:"uaa"`

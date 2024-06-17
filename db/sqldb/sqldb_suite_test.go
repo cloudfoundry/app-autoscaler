@@ -87,37 +87,13 @@ var _ = SynchronizedAfterSuite(func() {
 	}
 })
 
-func cleanInstanceMetricsTableForApp(appId string) {
-	_, e := dbHelper.Exec(dbHelper.Rebind("DELETE FROM appinstancemetrics where appid=?"), appId)
-	FailOnError("can not clean table appinstancemetrics", e)
-}
-
-func hasInstanceMetric(appId string, index int, name string, timestamp int64) bool {
-	query := dbHelper.Rebind("SELECT * FROM appinstancemetrics WHERE appid = ? AND instanceindex = ? AND name = ? AND timestamp = ?")
-	rows, e := dbHelper.Query(query, appId, index, name, timestamp)
-	FailOnError("can not query table appinstancemetrics", e)
-	defer func() { _ = rows.Close() }()
-	item := rows.Next()
-	FailOnError("can not query table appinstancemetrics", rows.Err())
-	return item
-}
-
-func getNumberOfInstanceMetricsForApp(appId string) int {
-	var num int
-	e := dbHelper.QueryRow(dbHelper.Rebind("SELECT COUNT(*) FROM appinstancemetrics where appid = ?"), appId).Scan(&num)
-	if e != nil {
-		Fail("can not count the number of records in table appinstancemetrics: " + e.Error())
-	}
-	return num
-}
-
 func hasServiceInstance(serviceInstanceId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ?")
 	rows, e := dbHelper.Query(query, serviceInstanceId)
 	FailOnError("can not query table service_instance", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table appinstancemetrics", rows.Err())
+	FailOnError("can not query table service_instance", rows.Err())
 	return item
 }
 
@@ -127,7 +103,7 @@ func hasServiceInstanceWithNullDefaultPolicy(serviceInstanceId string) bool {
 	FailOnError("can not query table service_instance", e)
 	defer func() { _ = rows.Close() }()
 	item := rows.Next()
-	FailOnError("can not query table appinstancemetrics", rows.Err())
+	FailOnError("can not query table service_instance", rows.Err())
 	return item
 }
 
