@@ -781,10 +781,11 @@ var _ = Describe("BrokerHandler", func() {
 
 	Describe("BindServiceInstance", func() {
 		var (
-			err                error
-			bindingRequestBody *models.BindingRequestBody
-			bindingPolicy      string
-			body               []byte
+			err                   error
+			bindingRequestBody    *models.BindingRequestBody
+			schedulerExpectedJSON string
+			bindingPolicy         string
+			body                  []byte
 		)
 		BeforeEach(func() {
 			bindingPolicy = `{
@@ -927,7 +928,273 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
 			})
 		})
+		// test for credential-type
+		Context("credential-type is provided while binding", func() {
+			BeforeEach(func() {
+				schedulerExpectedJSON = `{
+							"instance_max_count":3,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":99,
+								"operator":"<",
+								"adjustment":"-1"
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							}
+						}`
+			})
+			Context("credential-type is set with invalid value", func() {
+				const testBindingPolicy = `{
+							"credential_type": "invalid-binding-secret",
+							"instance_max_count":3,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":99,
+								"operator":"<",
+								"adjustment":"-1"
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							}
+						}`
+				BeforeEach(func() {
+					bindingRequestBody = &models.BindingRequestBody{
+						AppID: testAppId,
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "autoscaler-guid",
+							PlanID:    "autoscaler-free-plan-id",
+						},
+						Policy: json.RawMessage(testBindingPolicy),
+					}
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
 
+					verifyScheduleIsUpdatedInScheduler(testAppId, testBindingPolicy)
+				})
+				It("fails with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(MatchJSON(`{"error": "validate-credential-type","description": "error: invalid-credential-type is not supported. Allowed values are [binding-secret, X509]"}`))
+				})
+			})
+			Context("credential-type is set to binding-secret", func() {
+				const testBindingPolicy = `{
+							"credential_type": "binding-secret",
+							"instance_max_count":3,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":99,
+								"operator":"<",
+								"adjustment":"-1"
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							}
+						}`
+				BeforeEach(func() {
+					bindingRequestBody = &models.BindingRequestBody{
+						AppID: testAppId,
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "autoscaler-guid",
+							PlanID:    "autoscaler-free-plan-id",
+						},
+						Policy: json.RawMessage(testBindingPolicy),
+					}
+
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+					verifyScheduleIsUpdatedInScheduler(testAppId, schedulerExpectedJSON)
+
+					fakeCredentials.CreateReturns(&models.Credential{
+						CredentialType: &models.CredentialType{
+							CredentialType: "binding-secret",
+						},
+						Username: "test-username",
+						Password: "test-password",
+					}, nil)
+				})
+				It("should return 201 response code", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+				})
+				It("should create the correct credentials and return them in response", func() {
+					creds := &models.CredentialResponse{}
+					responseString := resp.Body.String()
+					err := json.Unmarshal([]byte(responseString), creds)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(creds.Credentials.CustomMetrics.Username).To(Equal("test-username"))
+					Expect(creds.Credentials.CustomMetrics.Password).To(Equal("test-password"))
+					Expect(creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+					Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+				})
+			})
+			Context("credential-type is set as X509", func() {
+				const testBindingPolicy = `{
+							"instance_max_count":3,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":99,
+								"operator":"<",
+								"adjustment":"-1"
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							},
+							"credential_type": "X509"
+						}`
+				BeforeEach(func() {
+					bindingRequestBody = &models.BindingRequestBody{
+						AppID: testAppId,
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "autoscaler-guid",
+							PlanID:    "autoscaler-free-plan-id",
+						},
+						Policy: json.RawMessage(testBindingPolicy),
+					}
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+					verifyScheduleIsUpdatedInScheduler(testAppId, schedulerExpectedJSON)
+				})
+				It("should return 201 response code", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					Expect(policydb.SaveAppPolicyCallCount()).To(Equal(1))
+					ctx, appID, policy, _ := policydb.SaveAppPolicyArgsForCall(0)
+					Expect(ctx).To(Not(BeNil()))
+					Expect(appID).To(Equal(testAppId))
+					Expect(policy).NotTo(MatchJSON(testBindingPolicy))
+				})
+				It("should not contains username/password but contains mtls_url in the bind response", func() {
+					creds := &models.CredentialResponse{}
+					responseString := resp.Body.String()
+					err := json.Unmarshal([]byte(responseString), creds)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(creds.Credentials.CustomMetrics.Credential).To(BeNil())
+					Expect(creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+					Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+				})
+			})
+		})
+		Context("credential-type is not provided as part of request parameters", func() {
+			const testBindingPolicy = `{
+							"instance_max_count":3,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":99,
+								"operator":"<",
+								"adjustment":"-1"
+							}],
+							"schedules": {
+								"timezone": "Asia/Shanghai",
+								"recurring_schedule": [{
+									  "start_time": "10:00",
+									  "end_time": "18:00",
+									  "days_of_week": [
+										1,
+										2,
+										3
+									  ],
+									  "instance_min_count": 1,
+									  "instance_max_count": 10,
+									  "initial_min_instance_count": 5
+									}]
+							}
+						}`
+			BeforeEach(func() {
+				bindingRequestBody = &models.BindingRequestBody{
+					AppID: testAppId,
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "autoscaler-guid",
+						PlanID:    "autoscaler-free-plan-id",
+					},
+					Policy: json.RawMessage(testBindingPolicy),
+				}
+				body, err = json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+
+				fakeCredentials.CreateReturns(&models.Credential{
+					CredentialType: &models.CredentialType{
+						CredentialType: "binding-secret",
+					},
+					Username: "test-username",
+					Password: "test-password",
+				}, nil)
+
+				verifyScheduleIsUpdatedInScheduler(testAppId, testBindingPolicy)
+			})
+			It("should consider binding-secret as default credential_type and create credentials", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+				creds := &models.CredentialResponse{}
+				responseString := resp.Body.String()
+				err := json.Unmarshal([]byte(responseString), creds)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(creds.Credentials.CustomMetrics.Username).To(Equal("test-username"))
+				Expect(creds.Credentials.CustomMetrics.Password).To(Equal("test-password"))
+				Expect(creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+			})
+		})
+
+		//
 		Context("When a default policy was provided when creating the service instance", func() {
 			BeforeEach(func() {
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{testInstanceId, testOrgId, testSpaceId, testDefaultPolicy, testDefaultGuid}, nil)
