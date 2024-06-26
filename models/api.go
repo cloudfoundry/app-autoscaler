@@ -75,3 +75,7 @@ type AppScalingHistoryResponse struct {
 	PublicApiResponseBase
 	Resources []AppScalingHistory `json:"resources"`
 }
+
+type CustomMetricsBindingAuthScheme struct {
+	CredentialType string `json:"credential_type"`
+}

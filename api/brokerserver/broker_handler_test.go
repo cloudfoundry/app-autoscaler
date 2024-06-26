@@ -1002,7 +1002,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(MatchJSON(`{"error": "validate-credential-type","description": "error: invalid-credential-type is not supported. Allowed values are [binding-secret, X509]"}`))
+					Expect(resp.Body.String()).To(MatchJSON(`{"error": "validate-credential-type","description": "error: invalid-credential-type provided. Allowed values are [binding-secret, x509]"}`))
 				})
 			})
 			Context("credential-type is set to binding-secret", func() {
@@ -1048,9 +1048,6 @@ var _ = Describe("BrokerHandler", func() {
 					verifyScheduleIsUpdatedInScheduler(testAppId, schedulerExpectedJSON)
 
 					fakeCredentials.CreateReturns(&models.Credential{
-						CredentialType: &models.CredentialType{
-							CredentialType: "binding-secret",
-						},
 						Username: "test-username",
 						Password: "test-password",
 					}, nil)
@@ -1072,7 +1069,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
 				})
 			})
-			Context("credential-type is set as X509", func() {
+			Context("credential-type is set as x509", func() {
 				const testBindingPolicy = `{
 							"instance_max_count":3,
 							"instance_min_count":1,
@@ -1098,7 +1095,7 @@ var _ = Describe("BrokerHandler", func() {
 									  "initial_min_instance_count": 5
 									}]
 							},
-							"credential_type": "X509"
+							"credential_type": "x509"
 						}`
 				BeforeEach(func() {
 					bindingRequestBody = &models.BindingRequestBody{
@@ -1121,18 +1118,18 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(appID).To(Equal(testAppId))
 					Expect(policy).NotTo(MatchJSON(testBindingPolicy))
 				})
-				It("should not contains username/password but contains mtls_url in the bind response", func() {
+				It("should not contains username/password/url but contains mtls_url in the bind response", func() {
 					creds := &models.CredentialResponse{}
 					responseString := resp.Body.String()
 					err := json.Unmarshal([]byte(responseString), creds)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(creds.Credentials.CustomMetrics.Credential).To(BeNil())
-					Expect(creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+					Expect(creds.Credentials.CustomMetrics.URL).To(BeEmpty())
 					Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
 				})
 			})
 		})
-		Context("credential-type is not provided as part of request parameters", func() {
+		Context("credential-type is not provided as part of binding request parameters", func() {
 			const testBindingPolicy = `{
 							"instance_max_count":3,
 							"instance_min_count":1,
@@ -1172,9 +1169,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				fakeCredentials.CreateReturns(&models.Credential{
-					CredentialType: &models.CredentialType{
-						CredentialType: "binding-secret",
-					},
 					Username: "test-username",
 					Password: "test-password",
 				}, nil)

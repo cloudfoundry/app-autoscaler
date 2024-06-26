@@ -14,7 +14,6 @@ type MetricsConsumer struct {
 }
 
 type Credential struct {
-	*CredentialType
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -45,8 +44,4 @@ type CredentialResponse struct {
 type CredentialsOptions struct {
 	InstanceId string `json:"instanceId"`
 	BindingId  string `json:"bindingId"`
-}
-
-type CredentialType struct {
-	CredentialType string `json:"credential_type"`
 }
