@@ -3,13 +3,13 @@ package config
 import (
 	"fmt"
 	"io"
-	"os"
-	"strconv"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+
+	"github.com/kelseyhightower/envconfig"
 
 	"gopkg.in/yaml.v3"
 )
@@ -71,7 +71,9 @@ type SyslogConfig struct {
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
-	conf := &Config{
+	var yamlConf, envConf Config
+
+	yamlConf = Config{
 		Server:  defaultServerConfig,
 		Logging: defaultLoggingConfig,
 		LoggregatorConfig: LoggregatorConfig{
@@ -89,21 +91,21 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 	dec := yaml.NewDecoder(reader)
 	dec.KnownFields(true)
-	err := dec.Decode(conf)
+	err := dec.Decode(&yamlConf)
 	if err != nil {
 		return nil, err
 	}
 
-	if os.Getenv("PORT") != "" {
-		port := os.Getenv("PORT")
-		portNumber, err := strconv.Atoi(port)
-		if err != nil {
-			return nil, ErrInvalidPort
-		}
-		conf.Server.Port = portNumber
+	err = envconfig.Process("", &envConf)
+	if err != nil {
+		return nil, err
 	}
 
-	return conf, nil
+	if envConf.Server.Port != 0 {
+		yamlConf.Server.Port = envConf.Server.Port
+	}
+
+	return &yamlConf, nil
 }
 
 func (c *Config) UsingSyslog() bool {

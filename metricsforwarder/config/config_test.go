@@ -87,6 +87,32 @@ cred_helper_impl: default
 					}))
 				Expect(conf.CredHelperImpl).To(Equal("default"))
 			})
+
+			When("PORT env variable is set", func() {
+
+				When("PORT env is a number", func() {
+					BeforeEach(func() {
+						os.Setenv("PORT", "3333")
+					})
+					It("prioritize env variable over config file", func() {
+						Expect(conf.Server.Port).To(Equal(3333))
+					})
+				})
+
+				When("PORT env is not number", func() {
+					BeforeEach(func() {
+						os.Setenv("PORT", "NAN")
+					})
+
+					It("return invalid port error", func() {
+						Expect(err).To(MatchError(MatchRegexp("strconv.ParseInt: parsing \"NAN\"")))
+					})
+				})
+			})
+
+			AfterEach(func() {
+				os.Unsetenv("PORT")
+			})
 		})
 
 		Context("with partial config", func() {
@@ -118,32 +144,6 @@ health:
 				Expect(conf.Health.Port).To(Equal(8081))
 			})
 
-			When("PORT env variable is set", func() {
-
-				AfterEach(func() {
-					os.Setenv("PORT", "")
-				})
-
-				When("PORT env is a number", func() {
-					BeforeEach(func() {
-						os.Setenv("PORT", "3333")
-					})
-					It("prioritize env variable over config file", func() {
-						Expect(conf.Server.Port).NotTo(Equal(6110))
-						Expect(conf.Server.Port).To(Equal(3333))
-					})
-				})
-
-				When("PORT env is not number", func() {
-					BeforeEach(func() {
-						os.Setenv("PORT", "NAN")
-					})
-
-					It("return invalid port error", func() {
-						Expect(err).To(MatchError(ErrInvalidPort))
-					})
-				})
-			})
 		})
 
 		When("it gives a non integer port", func() {
