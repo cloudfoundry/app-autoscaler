@@ -71,9 +71,9 @@ type SyslogConfig struct {
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
-	var yamlConf, envConf Config
+	var conf Config
 
-	yamlConf = Config{
+	conf = Config{
 		Server:  defaultServerConfig,
 		Logging: defaultLoggingConfig,
 		LoggregatorConfig: LoggregatorConfig{
@@ -91,21 +91,17 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 	dec := yaml.NewDecoder(reader)
 	dec.KnownFields(true)
-	err := dec.Decode(&yamlConf)
+	err := dec.Decode(&conf)
 	if err != nil {
 		return nil, err
 	}
 
-	err = envconfig.Process("", &envConf)
+	err = envconfig.Process("", &conf)
 	if err != nil {
 		return nil, err
 	}
 
-	if envConf.Server.Port != 0 {
-		yamlConf.Server.Port = envConf.Server.Port
-	}
-
-	return &yamlConf, nil
+	return &conf, nil
 }
 
 func (c *Config) UsingSyslog() bool {
