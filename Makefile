@@ -146,3 +146,14 @@ clean:
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'vendor'
 	@rm --force --recursive "${openapi-generated-clients-and-servers-dir}"
+
+.PHONY: mta-deploy
+mta-deploy: mta-build build
+	@echo "Deploying mta"
+	@echo " CF_TRACE=true cf deploy MTA mta_archives/*.mtar -e config.mtaext"
+	CF_TRACE=true cf deploy mta_archives/com.github.cloudfoundry.app-autoscaler-release_0.0.1.mtar -e config.mtaext
+
+
+.PHONY: mta-build
+mta-build:
+	mbt build

@@ -14,9 +14,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ErrInvalidPort is returned when the PORT environment variable is not a valid port number
-var ErrInvalidPort = fmt.Errorf("Invalid port number in PORT environment variable")
-
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
 	DefaultCacheTTL             = 15 * time.Minute
@@ -32,6 +29,7 @@ type Config struct {
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
 	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
+	PolicyDB              db.DatabaseConfig             `yaml:"policy_db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
 	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`

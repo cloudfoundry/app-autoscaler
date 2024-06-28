@@ -1,2 +1,6 @@
 build/
 fakes/
+config.mtaext
+node_modules
+mta-op-*
+mta_archives/
