@@ -27,7 +27,7 @@ modules:
       health-check-type: http
       health-check-http-endpoint: "/health"
       stack: cflinuxfs4
-      command: ls -1
+      command: ./app
 
 # ID: sap.tools.github.autoscaler.application-autoscaler-dashboard
 # _schema-version: 3.3.0

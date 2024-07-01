@@ -1,18 +1,25 @@
 package config_test
 
 import (
-	"bytes"
 	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v3"
 )
+
+func bytesToFile(b []byte) string {
+	file, err := os.CreateTemp("", "")
+	Expect(err).NotTo(HaveOccurred())
+	_, err = file.Write(b)
+	Expect(err).NotTo(HaveOccurred())
+	return file.Name()
+}
 
 var _ = Describe("Config", func() {
 
@@ -20,12 +27,19 @@ var _ = Describe("Config", func() {
 		conf        *Config
 		err         error
 		configBytes []byte
+		configFile  string
 	)
 
 	Describe("LoadConfig", func() {
 
 		JustBeforeEach(func() {
-			conf, err = LoadConfig(bytes.NewReader(configBytes))
+			configFile = bytesToFile(configBytes)
+			conf, err = LoadConfig(configFile)
+		})
+
+		AfterEach(func() {
+			//clean up config file
+			Expect(os.Remove(configFile)).To(Succeed())
 		})
 
 		Context("with invalid yaml", func() {
@@ -105,13 +119,51 @@ cred_helper_impl: default
 					})
 
 					It("return invalid port error", func() {
-						Expect(err).To(MatchError(MatchRegexp("strconv.ParseInt: parsing \"NAN\"")))
+						Expect(err).To(MatchError(config.ReadEnvironmentError))
+						Expect(err).To(MatchError(MatchRegexp("converting 'NAN' to type int")))
+					})
+
+					AfterEach(func() {
+						os.Unsetenv("PORT")
 					})
 				})
 			})
 
-			AfterEach(func() {
-				os.Unsetenv("PORT")
+			When("VCAP_SERVICES is set", func() {
+				BeforeEach(func() {
+					// vcap services has a postgres service provisioned by
+					// a service broker binding
+					vcapServices := `{
+					  "autoscaler": [
+						  {
+							"credentials": {
+								"uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
+							},
+							"label": "postgres",
+							"name": "policy_db",
+							"syslog_drain_url": "",
+							"tags": ["postgres","postgresql","relational"]
+						  }
+						]
+					}`
+
+					os.Setenv("VCAP_APPLICATION", "{}")
+					os.Setenv("VCAP_SERVICES", vcapServices)
+				})
+
+				It("loads the db config from VCAP_SERVICES", func() {
+					expectedDbConfig := db.DatabaseConfig{
+						URL: "postgres://foo:bar@postgres.example.com:5432/policy_db",
+					}
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Db[db.PolicyDb]).To(Equal(expectedDbConfig))
+				})
+
+				AfterEach(func() {
+					os.Unsetenv("VCAP_SERVICES")
+					os.Unsetenv("VCAP_APPLICATION")
+				})
 			})
 		})
 
@@ -143,7 +195,6 @@ health:
 				Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
 				Expect(conf.Health.Port).To(Equal(8081))
 			})
-
 		})
 
 		When("it gives a non integer port", func() {
@@ -155,7 +206,7 @@ server:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -169,7 +220,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -195,7 +246,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -221,7 +272,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -247,7 +298,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -276,7 +327,7 @@ rate_limit:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
@@ -305,7 +356,7 @@ rate_limit:
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(config.ReadYamlError))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})

@@ -27,25 +27,17 @@ import (
 
 func main() {
 	var path string
+	var err error
+	var conf *config.Config
+
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
-	if path == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
-		os.Exit(1)
-	}
-	configFile, err := os.Open(path)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
-		os.Exit(1)
-	}
 
-	var conf *config.Config
-	conf, err = config.LoadConfig(configFile)
+	conf, err = config.LoadConfig(path)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to load config : %s\n", err.Error())
 		os.Exit(1)
 	}
-	_ = configFile.Close()
 
 	err = conf.Validate()
 	if err != nil {

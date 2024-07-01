@@ -1,9 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"io"
+	"os"
 	"time"
+
+	"github.com/cloudfoundry-community/go-cfenv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -13,6 +16,16 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+// There are 3 type of errors that this package can return:
+// - ReadYamlError
+// - ReadFileError
+// - ReadEnvironmentError
+
+var ReadYamlError = errors.New("failed to read config file")
+var ReadFileError = errors.New("failed to open config file")
+var ReadEnvironmentError = errors.New("failed to read environment variables")
+var ReadVCAPEnvironmentError = errors.New("failed to read VCAP environment variables")
 
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
@@ -68,8 +81,9 @@ type SyslogConfig struct {
 	TLS           models.TLSCerts `yaml:"tls"`
 }
 
-func LoadConfig(reader io.Reader) (*Config, error) {
+func LoadConfig(filepath string) (*Config, error) {
 	var conf Config
+	var err error
 
 	conf = Config{
 		Server:  defaultServerConfig,
@@ -87,16 +101,35 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		},
 	}
 
-	dec := yaml.NewDecoder(reader)
-	dec.KnownFields(true)
-	err := dec.Decode(&conf)
-	if err != nil {
-		return nil, err
+	if filepath == "" {
+		fmt.Fprintln(os.Stdout, "missing config file, using environment variables")
+	} else {
+		r, err := os.Open(filepath)
+
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", filepath, err.Error())
+			return nil, err
+		}
+
+		dec := yaml.NewDecoder(r)
+		dec.KnownFields(true)
+		err = dec.Decode(&conf)
+
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", ReadYamlError, err)
+		}
+
+		defer r.Close()
 	}
 
 	err = envconfig.Process("", &conf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ReadEnvironmentError, err)
+	}
+
+	err = loadVCAPEnvs(&conf)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ReadVCAPEnvironmentError, err)
 	}
 
 	return &conf, nil
@@ -145,6 +178,67 @@ func (c *Config) Validate() error {
 	if err := c.Health.Validate(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func loadVCAPEnvs(c *Config) error {
+	if os.Getenv("VCAP_APPLICATION") == "" || os.Getenv("VCAP_SERVICES") == "" {
+		return nil
+	}
+
+	// panic here
+	appEnv, err := cfenv.Current()
+	if err != nil {
+		return err
+	}
+
+	dbServices, err := appEnv.Services.WithTag("relational")
+	if err != nil {
+		return fmt.Errorf("failed to get db service with relational tag")
+	}
+
+	//	if len(dbServices) != 1 {
+	//		return nil,
+	//	}
+
+	dbService := dbServices[0]
+
+	dbURI, ok := dbService.CredentialString("uri")
+	if !ok {
+		return fmt.Errorf("failed to get uri from db service")
+	}
+
+	c.Db[db.PolicyDb] = db.DatabaseConfig{
+		URL: dbURI,
+	}
+
+	//dbURL, err := url.Parse(dbURI)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//parameters, err := url.ParseQuery(dbURL.RawQuery)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//err = materializeConnectionParameter(dbService, parameters, "client_cert", "sslcert")
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//err = materializeConnectionParameter(dbService, parameters, "client_key", "sslkey")
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//err = materializeConnectionParameter(dbService, parameters, "server_ca", "sslrootcert")
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//dbURL.RawQuery = parameters.Encode()
 
 	return nil
 }
