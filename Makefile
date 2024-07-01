@@ -86,15 +86,16 @@ go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
 ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
 	go mod vendor
 
-build-cf-%:
+cf-build-%:
 	@echo "# building for cf $*"
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $*/$* $*/cmd/$*/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/$* $*/cmd/$*/main.go
+
+cf-build: $(addprefix cf-build-,$(binaries))
 
 # CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
 build-%: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
 	@echo "# building $*"
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
-
 
 build: $(addprefix build-,$(binaries))
 
@@ -148,7 +149,7 @@ clean:
 	@rm --force --recursive "${openapi-generated-clients-and-servers-dir}"
 
 .PHONY: mta-deploy
-mta-deploy: mta-build build
+mta-deploy: mta-build cf-build
 	@echo "Deploying mta"
 	@echo " CF_TRACE=true cf deploy MTA mta_archives/*.mtar -e config.mtaext"
 	CF_TRACE=true cf deploy mta_archives/com.github.cloudfoundry.app-autoscaler-release_0.0.1.mtar -e config.mtaext

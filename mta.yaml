@@ -8,7 +8,7 @@ version: 0.0.1
 modules:
   - name: metricsforwarder
     type: binary
-    path: build/metricsforwarder
+    path: build
     properties:
       POLICY_DB_MAX_OPEN_CONNECTIONS: 20
       POLICY_DB_MAX_IDLE_CONNECTIONS: 20
@@ -27,7 +27,7 @@ modules:
       health-check-type: http
       health-check-http-endpoint: "/health"
       stack: cflinuxfs4
-      command: ./metricsforwarder
+      command: ls -1
 
 # ID: sap.tools.github.autoscaler.application-autoscaler-dashboard
 # _schema-version: 3.3.0
