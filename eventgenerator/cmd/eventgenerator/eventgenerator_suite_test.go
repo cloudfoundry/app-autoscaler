@@ -2,8 +2,8 @@ package main_test
 
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-	rpc "code.cloudfoundry.org/go-log-cache/v2/rpc/logcache_v1"
-	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
+	rpc "code.cloudfoundry.org/go-log-cache/v3/rpc/logcache_v1"
+	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 

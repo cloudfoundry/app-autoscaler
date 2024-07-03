@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-	logcache "code.cloudfoundry.org/go-log-cache/v2"
+	logcache "code.cloudfoundry.org/go-log-cache/v3"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

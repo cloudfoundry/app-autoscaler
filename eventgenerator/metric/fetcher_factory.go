@@ -7,7 +7,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/envelopeprocessor"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
-	logcache "code.cloudfoundry.org/go-log-cache/v2"
+	logcache "code.cloudfoundry.org/go-log-cache/v3"
 	"code.cloudfoundry.org/lager/v3"
 	gogrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
