@@ -122,5 +122,5 @@ type StoredProcedureDB interface {
 	CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error)
 	DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error
 	DeleteAllInstanceCredentials(ctx context.Context, instanceId string) error
-	ValidateCredentials(ctx context.Context, creds models.Credential) (*models.CredentialsOptions, error)
+	ValidateCredentials(ctx context.Context, creds models.Credential, bindingID string) (*models.CredentialsOptions, error)
 }

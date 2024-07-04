@@ -3,6 +3,7 @@ package sqldb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -16,10 +17,11 @@ import (
 var _ db.StoredProcedureDB = &StoredProcedureSQLDb{}
 
 type StoredProcedureSQLDb struct {
-	config   models.StoredProcedureConfig
-	dbConfig db.DatabaseConfig
-	logger   lager.Logger
-	sqldb    *pgxpool.Pool
+	config		models.StoredProcedureConfig
+	bindingDb	db.BindingDB
+	dbConfig	db.DatabaseConfig
+	logger		lager.Logger
+	sqldb		*pgxpool.Pool
 }
 
 func (sdb *StoredProcedureSQLDb) Ping() error {
@@ -109,17 +111,25 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(ctx context.Contex
 	return nil
 }
 
-func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential) (*models.CredentialsOptions, error) {
+func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential, bindingID string) (*models.CredentialsOptions, error) {
 	credOptions := &models.CredentialsOptions{}
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.ValidateBindingCredentialProcedureName}
-	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
-	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password).Scan(&credOptions.InstanceId, &credOptions.BindingId)
+	query := fmt.Sprintf("SELECT * from %s($1,$2) WHERE binding_id = $3", procedureIdentifier.Sanitize())
+	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, bindingID).
+		Scan(&credOptions.InstanceId, &credOptions.BindingId)
+
 	if err == sql.ErrNoRows {
-		return nil, nil
+		sdb.logger.Error(
+			"user found but does not own the app behind the binding",
+			err, lager.Data{"query": query, "creds": creds, "binding": bindingID})
+		return nil, errors.New("user found but does not own the app")
 	}
 	if err != nil {
-		sdb.logger.Error("validate-stored-procedure-credentials", err, lager.Data{"query": query, "creds": creds})
+		sdb.logger.Error(
+			"validate-stored-procedure-credentials",
+			err, lager.Data{"query": query, "creds": creds})
 		return nil, err
 	}
+
 	return credOptions, nil
 }

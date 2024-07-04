@@ -292,6 +292,7 @@ func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
 	return bdb.sqldb.Stats()
 }
+
 func (bdb *BindingSQLDB) GetAppIdByBindingId(ctx context.Context, bindingId string) (string, error) {
 	var appId string
 	query := bdb.sqldb.Rebind("SELECT app_id FROM binding WHERE binding_id=?")
@@ -347,14 +348,28 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instance
 	}
 	defer func() { _ = rows.Close() }()
 
-	var appId string
+	var bindingId string
 	for rows.Next() {
-		if err = rows.Scan(&appId); err != nil {
-			bdb.logger.Error("scan-appids-from-binding-table", err)
+		if err = rows.Scan(&bindingId); err != nil {
+			bdb.logger.Error("scan-bindingids-from-binding-table", err)
 			return nil, err
 		}
-		bindingIds = append(bindingIds, appId)
+		bindingIds = append(bindingIds, bindingId)
 	}
 
 	return bindingIds, rows.Err()
+}
+
+
+
+func (bdb *BindingSQLDB) GetBindingIdByAppId(ctx context.Context, appId string) (string, error) {
+	var bindingId string
+	query := bdb.sqldb.Rebind("SELECT binding_id FROM binding WHERE app_id=?")
+	err := bdb.sqldb.QueryRowContext(ctx, query, appId).Scan(&bindingId)
+	if err != nil {
+		bdb.logger.Error("get-bindingids-from-binding-table", err, lager.Data{"query": query, "appId": appId})
+		return bindingId, err
+	}
+
+	return bindingId, nil
 }

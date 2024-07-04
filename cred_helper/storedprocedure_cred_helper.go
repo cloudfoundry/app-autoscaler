@@ -1,6 +1,7 @@
 package cred_helper
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"context"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -11,6 +12,7 @@ import (
 
 type storedProcedureCredentials struct {
 	storedProcedureDb db.StoredProcedureDB
+	bindingSQLDB	  sqldb.BindingSQLDB
 	maxRetry          int
 	logger            lager.Logger
 }
@@ -75,7 +77,11 @@ func (c *storedProcedureCredentials) Delete(ctx context.Context, appId string) e
 }
 
 func (c *storedProcedureCredentials) Validate(ctx context.Context, appId string, credential models.Credential) (bool, error) {
-	_, err := c.storedProcedureDb.ValidateCredentials(ctx, credential)
+	bindingId, err := c.bindingSQLDB.GetBindingIdByAppId(ctx, appId)
+	if err != nil {
+		return false, err
+	}
+	_, err = c.storedProcedureDb.ValidateCredentials(ctx, credential, bindingId)
 	if err != nil {
 		return false, err
 	}
