@@ -554,16 +554,9 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		}
 		return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, actionCreateServiceBinding)
 	}
-	/* FIXME Remove this comment block- Pseudo:
-	 Read credential-type from the RawParameters
-	1. if credential-type == "binding-secret" => create credentials
-	2. if credential-type != "binding-secret" => do not create credentials
-	3. if credential-type == "" or not set => "binding-secret" is the default value
-	*/
 	customMetricsCredentials := &models.CustomMetricsCredentials{
 		MtlsUrl: b.conf.MetricsForwarder.MetricsForwarderMtlsUrl,
 	}
-
 	if !isValidCredentialType(credentialType.CredentialType) {
 		actionValidateCredentialType := "validate-credential-type" // #nosec G101
 		logger.Error("invalid credential_type provided", err, lager.Data{"credential_type": credentialType.CredentialType})
@@ -586,7 +579,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 			}
 			return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, "revert-binding-creation-due-to-credentials-creation-failure")
 		}
-		customMetricsCredentials.URL = b.conf.MetricsForwarder.MetricsForwarderUrl
+		customMetricsCredentials.URL = &b.conf.MetricsForwarder.MetricsForwarderUrl
 		customMetricsCredentials.Credential = cred
 	}
 
