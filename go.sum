@@ -608,8 +608,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240705010458-5a5d28e1e1a3 h1:qYG0D1Wsv+AwkbZeTqdsM07jnsDlNFdbKwUa3mSC/1o=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240705010458-5a5d28e1e1a3/go.mod h1:Iot5r11f564Ucf3EagQgf+LMQhvC0uZ97PEew7uDim8=
-code.cloudfoundry.org/tlsconfig v0.0.0-20240704175129-ec907c2cc365 h1:gIRitzM5rTDooO4afOtL8/7XwZFXta9IHeszu4d/oWo=
-code.cloudfoundry.org/tlsconfig v0.0.0-20240704175129-ec907c2cc365/go.mod h1:fX0bjW9NQy1PZG6ztQUgiznjLqQ6NEfGt4pYEQWfIwA=
+code.cloudfoundry.org/tlsconfig v0.0.0-20240705175211-7a5a6eee6ef2 h1:NshqakKzYrzWzyS4/s8dOnApz3K+JQaH08PLJFCNCvc=
+code.cloudfoundry.org/tlsconfig v0.0.0-20240705175211-7a5a6eee6ef2/go.mod h1:iEDSnf9426uabZKMY+OdX3nnkJiwBgx1FK6IVfdiZxo=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 dario.cat/mergo v1.0.0/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
@@ -1088,8 +1088,8 @@ golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b/go.mod h1:T9bdIzuCu7OtxOm
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.1.0/go.mod h1:RecgLatLF4+eUMCP1PoPZQb+cVrJcOPbHkTkbkB9sbw=
-golang.org/x/crypto v0.24.0 h1:mnl8DM0o513X8fdIkmyFE/5hTYxbwYOjDS/+rK6qpRI=
-golang.org/x/crypto v0.24.0/go.mod h1:Z1PMYSOR5nyMcyAVAIQSKCDwalqy85Aqn1x3Ws4L5DM=
+golang.org/x/crypto v0.25.0 h1:ypSNr+bnYL2YhwoMt2zPxHFmbAN1KZs/njMG3hxUp30=
+golang.org/x/crypto v0.25.0/go.mod h1:T+wALwcMOSE0kXgUAnPAHqTLW+XHgcELELW8VaDgm/M=
 golang.org/x/exp v0.0.0-20180321215751-8460e604b9de/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20180807140117-3d87b88a115f/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
