@@ -47,7 +47,7 @@ var (
 	ErrDeletePolicyForUnbinding    = errors.New("failed to delete policy for unbinding")
 	ErrDeleteServiceBinding        = errors.New("error deleting service binding")
 	ErrCredentialNotDeleted        = errors.New("failed to delete custom metrics credential for unbinding")
-	ErrInvalidCredentialType       = errors.New("error: invalid-credential-type provided. Allowed values are [binding-secret, x509]")
+	ErrInvalidCredentialType       = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]")
 )
 
 type Errors []error
@@ -508,13 +508,12 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
-		logger.Error("get-default-policy: no user defined policy was provided", err)
+		logger.Error("get-default-policy", err)
 		return result, err
 	}
-	customMetricsCredentialType := b.conf.CustomMetricsCredentialType
-	credentialType, err := getOrDefaultCredentialType(policyJson, customMetricsCredentialType, logger)
+	defaultCustomMetricsCredentialType := b.conf.DefaultCustomMetricsCredentialType
+	credentialType, err := getOrDefaultCredentialType(policyJson, defaultCustomMetricsCredentialType , logger)
 	if err != nil {
-		logger.Error("getOrDefaultCredentialType %w", err)
 		return result, err
 	}
 	policyGuid, err := uuid.NewV4()
