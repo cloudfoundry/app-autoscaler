@@ -248,8 +248,8 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 			MaxAmount:     10,
 			ValidDuration: 1 * time.Second,
 		},
-		CredHelperImpl:              "default",
-		CustomMetricsCredentialType: "binding-secret",
+		CredHelperImpl:                     "default",
+		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
 
 	return writeYmlConfig(tmpDir, GolangAPIServer, &cfg)

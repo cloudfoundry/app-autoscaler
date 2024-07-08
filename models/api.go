@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 )
 
+const (
+	BindingSecret   = "binding-secret"
+	X509Certificate = "x509"
+)
+
 type BrokerContext struct {
 	OrgGUID   string `json:"organization_guid"`
 	SpaceGUID string `json:"space_guid"`

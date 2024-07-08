@@ -138,7 +138,7 @@ var _ = BeforeSuite(func() {
 			MetricsForwarderUrl:     "someURL",
 			MetricsForwarderMtlsUrl: "Mtls-someURL",
 		},
-		CustomMetricsCredentialType: "binding-secret",
+		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}

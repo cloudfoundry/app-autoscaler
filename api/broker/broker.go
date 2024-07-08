@@ -512,7 +512,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		return result, err
 	}
 	defaultCustomMetricsCredentialType := b.conf.DefaultCustomMetricsCredentialType
-	credentialType, err := getOrDefaultCredentialType(policyJson, defaultCustomMetricsCredentialType , logger)
+	customMetricsBindingAuthScheme, err := getOrDefaultCredentialType(policyJson, defaultCustomMetricsCredentialType, logger)
 	if err != nil {
 		return result, err
 	}
@@ -556,16 +556,16 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	customMetricsCredentials := &models.CustomMetricsCredentials{
 		MtlsUrl: b.conf.MetricsForwarder.MetricsForwarderMtlsUrl,
 	}
-	if !isValidCredentialType(credentialType.CredentialType) {
+	if !isValidCredentialType(customMetricsBindingAuthScheme.CredentialType) {
 		actionValidateCredentialType := "validate-credential-type" // #nosec G101
-		logger.Error("invalid credential_type provided", err, lager.Data{"credential_type": credentialType.CredentialType})
+		logger.Error("invalid credential_type provided", err, lager.Data{"credential_type": customMetricsBindingAuthScheme.CredentialType})
 		return result, apiresponses.NewFailureResponseBuilder(
 			ErrInvalidCredentialType, http.StatusBadRequest, actionValidateCredentialType).
 			WithErrorKey(actionValidateCredentialType).
 			Build()
 	}
 
-	if credentialType.CredentialType == "binding-secret" {
+	if customMetricsBindingAuthScheme.CredentialType == models.BindingSecret {
 		// create credentials
 		cred, err := b.credentials.Create(ctx, appGUID, nil)
 		if err != nil {
@@ -854,13 +854,7 @@ func (b *Broker) deleteBinding(ctx context.Context, bindingId string, serviceIns
 	}
 	return nil
 }
-
-// Valid credential types
-var validCredentialTypes = map[string]bool{
-	"binding-secret": true,
-	"x509":           true,
-}
-
 func isValidCredentialType(credentialType string) bool {
-	return validCredentialTypes[credentialType]
+	return credentialType == models.BindingSecret || credentialType == models.X509Certificate
+
 }

@@ -1002,7 +1002,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(MatchJSON(`{"error": "validate-credential-type","description": "error: invalid-credential-type provided. Allowed values are [binding-secret, x509]"}`))
+					Expect(resp.Body.String()).To(MatchJSON(`{"error": "validate-credential-type","description": "invalid credential type provided: allowed values are [binding-secret, x509]"}`))
 				})
 			})
 			Context("credential-type is set to binding-secret", func() {
