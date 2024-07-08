@@ -960,7 +960,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			Context("credential-type is set with invalid value", func() {
 				const testBindingPolicy = `{
-							"credential_type": "invalid-binding-secret",
+							"credential-type": "invalid-binding-secret",
 							"instance_max_count":3,
 							"instance_min_count":1,
 							"scaling_rules":[
@@ -1007,7 +1007,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			Context("credential-type is set to binding-secret", func() {
 				const testBindingPolicy = `{
-							"credential_type": "binding-secret",
+							"credential-type": "binding-secret",
 							"instance_max_count":3,
 							"instance_min_count":1,
 							"scaling_rules":[
@@ -1095,7 +1095,7 @@ var _ = Describe("BrokerHandler", func() {
 									  "initial_min_instance_count": 5
 									}]
 							},
-							"credential_type": "x509"
+							"credential-type": "x509"
 						}`
 				BeforeEach(func() {
 					bindingRequestBody = &models.BindingRequestBody{
@@ -1175,7 +1175,7 @@ var _ = Describe("BrokerHandler", func() {
 
 				verifyScheduleIsUpdatedInScheduler(testAppId, testBindingPolicy)
 			})
-			It("should consider binding-secret as default credential_type and create credentials", func() {
+			It("should consider binding-secret as default credential-type and create credentials", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
 				creds := &models.CredentialResponse{}
 				responseString := resp.Body.String()

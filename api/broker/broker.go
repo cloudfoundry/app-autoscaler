@@ -558,7 +558,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	}
 	if !isValidCredentialType(customMetricsBindingAuthScheme.CredentialType) {
 		actionValidateCredentialType := "validate-credential-type" // #nosec G101
-		logger.Error("invalid credential_type provided", err, lager.Data{"credential_type": customMetricsBindingAuthScheme.CredentialType})
+		logger.Error("invalid credential-type provided", err, lager.Data{"credential-type": customMetricsBindingAuthScheme.CredentialType})
 		return result, apiresponses.NewFailureResponseBuilder(
 			ErrInvalidCredentialType, http.StatusBadRequest, actionValidateCredentialType).
 			WithErrorKey(actionValidateCredentialType).
@@ -602,7 +602,7 @@ func getOrDefaultCredentialType(policyJson json.RawMessage, credentialTypeConfig
 			return nil, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, "error-unmarshal-credential-type")
 		}
 	}
-	logger.Debug("getOrDefaultCredentialType", lager.Data{"credential-Type": credentialType})
+	logger.Debug("getOrDefaultCredentialType", lager.Data{"credential-type": credentialType})
 	return credentialType, nil
 }
 
@@ -856,5 +856,4 @@ func (b *Broker) deleteBinding(ctx context.Context, bindingId string, serviceIns
 }
 func isValidCredentialType(credentialType string) bool {
 	return credentialType == models.BindingSecret || credentialType == models.X509Certificate
-
 }

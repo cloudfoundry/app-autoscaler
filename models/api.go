@@ -82,5 +82,5 @@ type AppScalingHistoryResponse struct {
 }
 
 type CustomMetricsBindingAuthScheme struct {
-	CredentialType string `json:"credential_type"`
+	CredentialType string `json:"credential-type"`
 }
