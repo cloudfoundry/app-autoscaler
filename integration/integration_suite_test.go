@@ -19,12 +19,12 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"github.com/google/uuid"
 
 	"code.cloudfoundry.org/lager/v3"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	uuid "github.com/nu7hatch/gouuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -242,14 +242,8 @@ func getRandomIdRef(ref string) string {
 	return id
 }
 
-func getUUID() string {
-	v4, _ := uuid.NewV4()
-	return v4.String()
-}
-
 func randomBits() string {
-	randomBits := getUUID()
-	return strings.ReplaceAll(randomBits, "-", "")
+	return strings.ReplaceAll(uuid.NewString(), "-", "")
 }
 
 func testFileFragment(filename string) string {

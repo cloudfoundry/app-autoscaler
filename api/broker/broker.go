@@ -18,7 +18,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
-	uuid "github.com/nu7hatch/gouuid"
+	"github.com/google/uuid"
 	"github.com/pivotal-cf/brokerapi/v11/domain"
 	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
 	"golang.org/x/exp/slices"
@@ -125,12 +125,7 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 	}
 
 	if policy != nil {
-		policyGuid, err := uuid.NewV4()
-		if err != nil {
-			b.logger.Error("get-default-policy-create-guid", err, lager.Data{"instanceID": instanceID})
-			return result, apiresponses.NewFailureResponse(errors.New("error generating policy guid"), http.StatusInternalServerError, "get-default-policy-create-guid")
-		}
-		policyGuidStr = policyGuid.String()
+		policyGuidStr = uuid.NewString()
 		policyBytes, err := json.Marshal(policy)
 		if err != nil {
 			b.logger.Error("marshal policy failed", err, lager.Data{"instanceID": instanceID})
@@ -460,13 +455,9 @@ func (b *Broker) determineDefaultPolicy(parameters *models.InstanceParameters, s
 		if err != nil {
 			return nil, "", false, err
 		}
-		policyGuid, err := uuid.NewV4()
-		if err != nil {
-			b.logger.Error("determine-default-policy-create-guid", err, lager.Data{"instanceID": serviceInstance.ServiceInstanceId})
-			return newPolicy, "", false, apiresponses.NewFailureResponse(errors.New("failed to create policy guid"), http.StatusInternalServerError, "determine-default-policy-create-guidz")
-		}
+		policyGuid := uuid.NewString()
 		defaultPolicy = newPolicy
-		defaultPolicyGuid = policyGuid.String()
+		defaultPolicyGuid = policyGuid
 		defaultPolicyIsNew = true
 	}
 
@@ -516,12 +507,8 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	if err != nil {
 		return result, err
 	}
-	policyGuid, err := uuid.NewV4()
-	if err != nil {
-		b.logger.Error("get-default-policy-create-guid", err, lager.Data{"instanceID": instanceID})
-		return result, apiresponses.NewFailureResponse(errors.New("error generating policy guid"), http.StatusInternalServerError, "get-default-policy-create-guid")
-	}
-	policyGuidStr := policyGuid.String()
+
+	policyGuidStr := uuid.NewString()
 
 	// fallback to default policy if no policy was provided
 	if policy == nil {

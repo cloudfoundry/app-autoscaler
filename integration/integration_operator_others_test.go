@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"github.com/google/uuid"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -29,8 +30,8 @@ var _ = Describe("Integration_Operator_Others", func() {
 	BeforeEach(func() {
 		httpClient = testhelpers.NewApiClient()
 
-		testAppId = getUUID()
-		testGuid = getUUID()
+		testAppId = uuid.NewString()
+		testGuid = uuid.NewString()
 		serviceInstanceId = getRandomIdRef("serviceInstId")
 		orgId = getRandomIdRef("orgId")
 		spaceId = getRandomIdRef("spaceId")
