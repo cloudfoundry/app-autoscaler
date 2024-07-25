@@ -10,7 +10,6 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.3
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240723222507-f3307e073100
 	code.cloudfoundry.org/tlsconfig v0.0.0-20240712175922-ffce9516cec8
-	dario.cat/mergo v1.0.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-faster/errors v0.7.1

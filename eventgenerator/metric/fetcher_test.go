@@ -264,7 +264,7 @@ var _ = Describe("logCacheFetcher", func() {
 							Name:  metricType,
 						},
 					}
-					mockEnvelopeProcess.GetGaugeMetricsReturns(expectedMetrics, nil)
+					mockEnvelopeProcess.GetGaugeMetricsReturns(expectedMetrics)
 					mockLogCacheClient.ReadReturns([]*loggregator_v2.Envelope{
 						{
 							SourceId: "app-id",
