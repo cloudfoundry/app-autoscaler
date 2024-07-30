@@ -1,6 +1,7 @@
 package healthendpoint_test
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	"github.com/pkg/errors"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/lager/v3"
@@ -243,7 +243,7 @@ var _ = Describe("Health Readiness", func() {
 				BeforeEach(func() {
 
 					dbUpFunc := healthendpoint.DbChecker("policy", &testPinger{error: nil})
-					dbDownFunc := healthendpoint.DbChecker("instance-db", &testPinger{error: errors.Errorf("DB is DOWN")})
+					dbDownFunc := healthendpoint.DbChecker("instance-db", &testPinger{error: errors.New("DB is DOWN")})
 
 					serverDownFunc := func() healthendpoint.ReadinessCheck {
 						return healthendpoint.ReadinessCheck{Name: "instance", Type: "server", Status: "DOWN"}
