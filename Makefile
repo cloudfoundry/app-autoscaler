@@ -116,7 +116,7 @@ check: fmt lint build test
 
 test: generate-fakes
 	@echo "Running tests"
-	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} --skip-package='integration'
+	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} ${TEST} --skip-package='integration'
 
 testsuite: generate-fakes
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
