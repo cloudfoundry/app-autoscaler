@@ -78,7 +78,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	policy := `
 		{
- 			"instance_min_count": 1,
+			"instance_min_count": 1,
 			"instance_max_count": 5,
 			"scaling_rules":[
 				{
@@ -153,6 +153,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
+	cfg.Db[db.BindingDb] = cfg.Db[db.PolicyDb]
 
 	cfg.CredHelperImpl = "default"
 
@@ -209,7 +210,8 @@ func (mf *MetricsForwarderRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if mf.startCheck != "" {
-		Eventually(mfSession.Buffer, 2).Should(gbytes.Say(mf.startCheck))
+		timeout := 2 * time.Second
+		Eventually(mfSession.Buffer, timeout).Should(gbytes.Say(mf.startCheck))
 	}
 
 	mf.Session = mfSession

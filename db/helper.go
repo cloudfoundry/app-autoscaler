@@ -15,7 +15,7 @@ import (
 
 type Database struct {
 	DriverName    string
-	DSN           string
+	DSN           string // 🚧 To-do: Rename to “DataSourceName”!
 	OTELAttribute attribute.KeyValue
 }
 
