@@ -144,7 +144,7 @@ cred_helper_impl: default
 							"tags": ["postgres","postgresql","relational"]
 						  }
 						]
-					}`
+					}` // #nosec G101
 
 					os.Setenv("VCAP_APPLICATION", "{}")
 					os.Setenv("VCAP_SERVICES", vcapServices)
