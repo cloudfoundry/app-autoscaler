@@ -115,7 +115,9 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	// 🚸 Due to a programming-error – see definition of function `Create` in
 	// “cred_helper/storedprocedure_cred_helper.go” – we store in each column just the corresponding
 	// app_id. To “mark that”, we use here the `as app_id`-renaming.
-	query := fmt.Sprintf("SELECT instance_id as app_id from %s($1,$2) WHERE binding_id = $3", procedureIdentifier.Sanitize())
+	query := fmt.Sprintf(
+		"SELECT instance_id as app_id, binding_id from %s($1,$2) WHERE binding_id = $3",
+		procedureIdentifier.Sanitize())
 	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, appId).
 		Scan(&credOptions.InstanceId, &credOptions.BindingId)
 
@@ -128,7 +130,7 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	} else if err != nil {
 		sdb.logger.Error(
 			"validate-stored-procedure-credentials",
-			err, lager.Data{"query": query, "creds": creds})
+			err, lager.Data{"query": query, "creds": creds, "appId": appId})
 
 		return nil, err
 	}
