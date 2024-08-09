@@ -78,7 +78,6 @@ type BindingDB interface {
 	CountServiceInstancesInOrg(orgId string) (int, error)
 	GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error)
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
-	GetBindingIdByAppId(ctx context.Context, appId string) (string, error)
 }
 
 type AppMetricDB interface {
@@ -125,5 +124,5 @@ type StoredProcedureDB interface {
 	CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error)
 	DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error
 	DeleteAllInstanceCredentials(ctx context.Context, instanceId string) error
-	ValidateCredentials(ctx context.Context, creds models.Credential, bindingID string) (*models.CredentialsOptions, error)
+	ValidateCredentials(ctx context.Context, creds models.Credential, appId string) (*models.CredentialsOptions, error)
 }

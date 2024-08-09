@@ -16,19 +16,17 @@ import (
 var _ = Describe("StoredProcedureCredHelper", func() {
 	var (
 		storedProcedureDb *fakes.FakeStoredProcedureDB
-		bindingDB         *fakes.FakeBindingDB
 		appId             = "testAppId"
 		credResult        *models.Credential
 		credentials       cred_helper.Credentials
 	)
 	BeforeEach(func() {
 		storedProcedureDb = &fakes.FakeStoredProcedureDB{}
-		bindingDB = &fakes.FakeBindingDB{}
 
 		logger := lager.NewLogger("stored_procedure_helper_test")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 
-		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, bindingDB, cred_helper.MaxRetry, logger)
+		credentials = cred_helper.NewStoredProcedureCredHelper(storedProcedureDb, cred_helper.MaxRetry, logger)
 
 	})
 	Context("CreateCredential", func() {

@@ -348,8 +348,8 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instance
 	}
 	defer func() { _ = rows.Close() }()
 
-	var bindingId string
 	for rows.Next() {
+		var bindingId string
 		if err = rows.Scan(&bindingId); err != nil {
 			bdb.logger.Error("scan-bindingids-from-binding-table", err)
 			return nil, err
@@ -358,18 +358,4 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instance
 	}
 
 	return bindingIds, rows.Err()
-}
-
-
-
-func (bdb *BindingSQLDB) GetBindingIdByAppId(ctx context.Context, appId string) (string, error) {
-	var bindingId string
-	query := bdb.sqldb.Rebind("SELECT binding_id FROM binding WHERE app_id=?")
-	err := bdb.sqldb.QueryRowContext(ctx, query, appId).Scan(&bindingId)
-	if err != nil {
-		bdb.logger.Error("get-bindingids-from-binding-table", err, lager.Data{"query": query, "appId": appId})
-		return bindingId, err
-	}
-
-	return bindingId, nil
 }

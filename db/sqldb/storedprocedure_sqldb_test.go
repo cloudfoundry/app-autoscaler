@@ -226,7 +226,7 @@ begin
 	end if;
 	return query SELECT username || ' from validate', password || ' from validate';
 end;
-$$`, instanceId, bindingId)) // ⚠️ To fix: password || ' from validate' will never match password. But the caller of the function would filter for that.
+$$`, instanceId, bindingId))
 	defer func() { _ = rows.Close() }()
 	if err != nil {
 		Fail(fmt.Sprintf("could not create function validate: %s", err.Error()))

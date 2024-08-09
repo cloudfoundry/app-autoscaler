@@ -65,16 +65,7 @@ func main() {
 	defer func() { _ = policyDb.Close() }()
 	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
 
-	bindingDB, err := sqldb.NewBindingSQLDB(conf.DB[db.BindingDb], logger.Session("bindingdb-db"))
-	if err != nil {
-		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
-		os.Exit(1)
-	}
-	defer func() { _ = bindingDB.Close() }()
-
-	credentialProvider := cred_helper.CredentialsProvider(
-		conf.CredHelperImpl, conf.StoredProcedureConfig, conf.DB, bindingDB,
-		10*time.Second, 10*time.Minute, logger, policyDb)
+	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.DB, 10*time.Second, 10*time.Minute, logger, policyDb)
 	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
@@ -92,6 +83,12 @@ func main() {
 	}
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
+	bindingDB, err := sqldb.NewBindingSQLDB(conf.DB[db.BindingDb], logger.Session("bindingdb-db"))
+	if err != nil {
+		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
+		os.Exit(1)
+	}
+	defer func() { _ = bindingDB.Close() }()
 	prometheusCollectors = append(prometheusCollectors, healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
 	checkBindingFunc := func(appId string) bool {
 		return bindingDB.CheckServiceBinding(appId)

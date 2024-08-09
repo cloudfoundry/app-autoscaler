@@ -36,10 +36,7 @@ func (c *customMetricsCredentials) Close() error {
 	return c.policyDB.Close()
 }
 
-func CredentialsProvider(credHelperImpl string, storedProcedureConfig *models.StoredProcedureConfig,
-	dbConf map[string]db.DatabaseConfig, bindingDB *sqldb.BindingSQLDB, cacheTTL time.Duration,
-	cacheCleanupInterval time.Duration, logger lager.Logger, policyDB db.PolicyDB) Credentials {
-
+func CredentialsProvider(credHelperImpl string, storedProcedureConfig *models.StoredProcedureConfig, dbConf map[string]db.DatabaseConfig, cacheTTL time.Duration, cacheCleanupInterval time.Duration, logger lager.Logger, policyDB db.PolicyDB) Credentials {
 	var credentials Credentials
 	switch credHelperImpl {
 	case "stored_procedure":
@@ -52,7 +49,7 @@ func CredentialsProvider(credHelperImpl string, storedProcedureConfig *models.St
 			logger.Fatal("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": dbConf[db.StoredProcedureDb]})
 			os.Exit(1)
 		}
-		credentials = NewStoredProcedureCredHelper(storedProcedureDb, bindingDB, MaxRetry, logger.Session("storedprocedure-cred-helper"))
+		credentials = NewStoredProcedureCredHelper(storedProcedureDb, MaxRetry, logger.Session("storedprocedure-cred-helper"))
 	default:
 		credentialCache := cache.New(cacheTTL, cacheCleanupInterval)
 		credentials = NewCustomMetricsCredHelperWithCache(policyDB, MaxRetry, *credentialCache, cacheTTL, logger)

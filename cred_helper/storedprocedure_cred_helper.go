@@ -11,7 +11,6 @@ import (
 
 type storedProcedureCredentials struct {
 	storedProcedureDb db.StoredProcedureDB
-	bindingDB		  db.BindingDB
 	maxRetry          int
 	logger            lager.Logger
 }
@@ -26,10 +25,9 @@ func (c *storedProcedureCredentials) Close() error {
 
 var _ Credentials = &storedProcedureCredentials{}
 
-func NewStoredProcedureCredHelper(storedProcedureDb db.StoredProcedureDB, bindingDB db.BindingDB, maxRetry int, logger lager.Logger) Credentials {
+func NewStoredProcedureCredHelper(storedProcedureDb db.StoredProcedureDB, maxRetry int, logger lager.Logger) Credentials {
 	return &storedProcedureCredentials{
 		storedProcedureDb: storedProcedureDb,
-		bindingDB:         bindingDB,
 		maxRetry:          maxRetry,
 		logger:            logger,
 	}
@@ -85,11 +83,7 @@ func (c *storedProcedureCredentials) Delete(ctx context.Context, appId string) e
 }
 
 func (c *storedProcedureCredentials) Validate(ctx context.Context, appId string, credential models.Credential) (bool, error) {
-	bindingId, err := c.bindingDB.GetBindingIdByAppId(ctx, appId)
-	if err != nil {
-		return false, err
-	}
-	_, err = c.storedProcedureDb.ValidateCredentials(ctx, credential, bindingId)
+	_, err := c.storedProcedureDb.ValidateCredentials(ctx, credential, appId)
 	if err != nil {
 		return false, err
 	}

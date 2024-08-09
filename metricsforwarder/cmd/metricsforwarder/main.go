@@ -61,16 +61,7 @@ func main() {
 	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
 	defer func() { _ = policyDb.Close() }()
 
-	bindingDB, err := sqldb.NewBindingSQLDB(conf.Db[db.BindingDb], logger.Session("bindingdb-db"))
-	if err != nil {
-		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.Db[db.BindingDb]})
-		os.Exit(1)
-	}
-	defer func() { _ = bindingDB.Close() }()
-
-	credentialProvider := cred_helper.CredentialsProvider(
-		conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, bindingDB,
-		conf.CacheTTL, conf.CacheCleanupInterval, logger, policyDb)
+	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, conf.CacheTTL, conf.CacheCleanupInterval, logger, policyDb)
 	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")

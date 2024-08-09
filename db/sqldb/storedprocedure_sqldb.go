@@ -2,7 +2,6 @@ package sqldb
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -17,11 +16,10 @@ import (
 var _ db.StoredProcedureDB = &StoredProcedureSQLDb{}
 
 type StoredProcedureSQLDb struct {
-	config		models.StoredProcedureConfig
-	bindingDb	db.BindingDB
-	dbConfig	db.DatabaseConfig
-	logger		lager.Logger
-	sqldb		*pgxpool.Pool
+	config   models.StoredProcedureConfig
+	dbConfig db.DatabaseConfig
+	logger   lager.Logger
+	sqldb    *pgxpool.Pool
 }
 
 func (sdb *StoredProcedureSQLDb) Ping() error {
@@ -111,23 +109,27 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(ctx context.Contex
 	return nil
 }
 
-func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential, bindingID string) (*models.CredentialsOptions, error) {
+func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential, appId string) (*models.CredentialsOptions, error) {
 	credOptions := &models.CredentialsOptions{}
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.ValidateBindingCredentialProcedureName}
-	query := fmt.Sprintf("SELECT * from %s($1,$2) WHERE binding_id = $3", procedureIdentifier.Sanitize())
-	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, bindingID).
+	// 🚸 Due to a programming-error – see definition of function `Create` in
+	// “cred_helper/storedprocedure_cred_helper.go” – we store in each column just the corresponding
+	// app_id. To “mark that”, we use here the `as app_id`-renaming.
+	query := fmt.Sprintf("SELECT instance_id as app_id from %s($1,$2) WHERE binding_id = $3", procedureIdentifier.Sanitize())
+	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, appId).
 		Scan(&credOptions.InstanceId, &credOptions.BindingId)
 
 	if err == pgx.ErrNoRows {
 		sdb.logger.Error(
 			"user found but does not own the app behind the binding",
-			err, lager.Data{"query": query, "creds": creds, "binding": bindingID})
+			err, lager.Data{"query": query, "creds": creds, "appId": appId})
+
 		return nil, errors.New("user found but does not own the app")
-	}
-	if err != nil {
+	} else if err != nil {
 		sdb.logger.Error(
 			"validate-stored-procedure-credentials",
 			err, lager.Data{"query": query, "creds": creds})
+
 		return nil, err
 	}
 
