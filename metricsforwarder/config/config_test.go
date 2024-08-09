@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -119,7 +118,7 @@ cred_helper_impl: default
 					})
 
 					It("return invalid port error", func() {
-						Expect(err).To(MatchError(config.ReadEnvironmentError))
+						Expect(err).To(MatchError(ErrReadEnvironment))
 						Expect(err).To(MatchError(MatchRegexp("converting 'NAN' to type int")))
 					})
 
@@ -206,7 +205,7 @@ server:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -220,7 +219,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -246,7 +245,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -272,7 +271,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -298,7 +297,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -327,7 +326,7 @@ rate_limit:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
@@ -356,7 +355,7 @@ rate_limit:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(config.ReadYamlError))
+				Expect(err).To(MatchError(ErrReadYaml))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})

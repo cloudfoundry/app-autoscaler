@@ -18,14 +18,13 @@ import (
 )
 
 // There are 3 type of errors that this package can return:
-// - ReadYamlError
-// - ReadFileError
-// - ReadEnvironmentError
+// - ErrReadYaml
+// - ErrReadEnvironment
+// - ErrReadVCAPEnvironment
 
-var ReadYamlError = errors.New("failed to read config file")
-var ReadFileError = errors.New("failed to open config file")
-var ReadEnvironmentError = errors.New("failed to read environment variables")
-var ReadVCAPEnvironmentError = errors.New("failed to read VCAP environment variables")
+var ErrReadYaml = errors.New("failed to read config file")
+var ErrReadEnvironment = errors.New("failed to read environment variables")
+var ErrReadVCAPEnvironment = errors.New("failed to read VCAP environment variables")
 
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
@@ -116,7 +115,7 @@ func LoadConfig(filepath string) (*Config, error) {
 		err = dec.Decode(&conf)
 
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ReadYamlError, err)
+			return nil, fmt.Errorf("%w: %w", ErrReadYaml, err)
 		}
 
 		defer r.Close()
@@ -124,12 +123,12 @@ func LoadConfig(filepath string) (*Config, error) {
 
 	err = envconfig.Process("", &conf)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ReadEnvironmentError, err)
+		return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
 	}
 
 	err = loadVCAPEnvs(&conf)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ReadVCAPEnvironmentError, err)
+		return nil, fmt.Errorf("%w: %w", ErrReadVCAPEnvironment, err)
 	}
 
 	return &conf, nil
