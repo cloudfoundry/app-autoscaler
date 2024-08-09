@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
+	"github.com/google/uuid"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
-	uuid "github.com/nu7hatch/gouuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -120,16 +120,8 @@ var _ Credentials = &customMetricsCredentials{}
 func _createCredential(ctx context.Context, appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
 	var credUsername, credPassword string
 	if userProvidedCredential == nil {
-		credUsernameUUID, err := uuid.NewV4()
-		if err != nil {
-			return nil, err
-		}
-		credPasswordUUID, err := uuid.NewV4()
-		if err != nil {
-			return nil, err
-		}
-		credUsername = credUsernameUUID.String()
-		credPassword = credPasswordUUID.String()
+		credUsername = uuid.NewString()
+		credPassword = uuid.NewString()
 	} else {
 		credUsername = userProvidedCredential.Username
 		credPassword = userProvidedCredential.Password

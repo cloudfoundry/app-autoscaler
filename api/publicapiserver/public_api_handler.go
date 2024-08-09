@@ -18,10 +18,10 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"github.com/google/uuid"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/lager/v3"
-	uuid "github.com/nu7hatch/gouuid"
 )
 
 type PublicApiHandler struct {
@@ -135,21 +135,15 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	policyGuid, err := uuid.NewV4()
-	if err != nil {
-		logger.Error("Failed to generate policy guid", err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Error generating policy guid")
-		return
-	}
-
-	err = h.policydb.SaveAppPolicy(r.Context(), appId, policy, policyGuid.String())
+	policyGuid := uuid.NewString()
+	err = h.policydb.SaveAppPolicy(r.Context(), appId, policy, policyGuid)
 	if err != nil {
 		logger.Error("Failed to save policy", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
 		return
 	}
 	h.logger.Info("creating/updating schedules", lager.Data{"policy": policy})
-	err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid.String())
+	err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid)
 	if err != nil {
 		logger.Error("Failed to create/update schedule", err)
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())

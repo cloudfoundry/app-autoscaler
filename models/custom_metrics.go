@@ -31,8 +31,8 @@ type Credential struct {
 
 type CustomMetricsCredentials struct {
 	*Credential
-	URL     string `json:"url"`
-	MtlsUrl string `json:"mtls_url"`
+	URL     *string `json:"url,omitempty"`
+	MtlsUrl string  `json:"mtls_url"`
 }
 type Credentials struct {
 	CustomMetrics CustomMetricsCredentials `json:"custom_metrics"`

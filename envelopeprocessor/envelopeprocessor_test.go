@@ -41,8 +41,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
-				metrics, err := envelopeprocessor.GetGaugeInstanceMetrics(envelopes, timestamp)
-				Expect(err).NotTo(HaveOccurred())
+				metrics := envelopeprocessor.GetGaugeInstanceMetrics(envelopes, timestamp)
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
@@ -87,8 +86,7 @@ var _ = Describe("Envelopeprocessor", func() {
 
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
-				metrics, err := processor.GetGaugeMetrics(envelopes, timestamp)
-				Expect(err).NotTo(HaveOccurred())
+				metrics := processor.GetGaugeMetrics(envelopes, timestamp)
 				Expect(len(metrics)).To(Equal(18))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",

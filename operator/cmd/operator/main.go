@@ -14,6 +14,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/sync"
+	"github.com/google/uuid"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
@@ -127,10 +128,7 @@ func main() {
 		{"application-sync", applicationSyncRunner},
 	}
 
-	guid, err := helpers.GenerateGUID(logger)
-	if err != nil {
-		logger.Error("failed-to-generate-guid", err)
-	}
+	guid := uuid.NewString()
 	const lockTableName = "operator_lock"
 	var lockDB db.LockDB
 	lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.DB, lockTableName, logger.Session("lock-db"))

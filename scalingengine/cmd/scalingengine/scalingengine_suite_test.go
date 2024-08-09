@@ -3,9 +3,8 @@ package main_test
 import (
 	"path/filepath"
 
-	uuid "github.com/nu7hatch/gouuid"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
+	"github.com/google/uuid"
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -55,7 +54,7 @@ var _ = SynchronizedBeforeSuite(
 		enginePath = string(pathBytes)
 
 		ccUAA = mocks.NewServer()
-		appId = getUUID()
+		appId = uuid.NewString()
 		ccUAA.Add().
 			Info(ccUAA.URL()).
 			GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
@@ -173,11 +172,6 @@ func writeConfig(c *config.Config) *os.File {
 	Expect(err).NotTo(HaveOccurred())
 
 	return cfg
-}
-
-func getUUID() string {
-	v4, _ := uuid.NewV4()
-	return v4.String()
 }
 
 type ScalingEngineRunner struct {

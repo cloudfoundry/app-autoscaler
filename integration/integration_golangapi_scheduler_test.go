@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -40,9 +41,9 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		bindingId = getRandomIdRef("bindingId")
 		binding2Id = getRandomIdRef("binding2Id")
 		binding3Id = getRandomIdRef("binding3Id")
-		appId = getUUID()
-		app2Id = getUUID()
-		app3Id = getUUID()
+		appId = uuid.NewString()
+		app2Id = uuid.NewString()
+		app3Id = uuid.NewString()
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 	})
 

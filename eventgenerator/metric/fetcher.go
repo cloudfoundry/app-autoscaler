@@ -156,9 +156,9 @@ func (l *logCacheFetcher) getMetricsRestAPI(appId string, metricType string, sta
 	}
 	l.logger.Info("received-rest-api-result", lager.Data{"envelopes": envelopes})
 
-	metrics, err := l.envelopeProcessor.GetGaugeMetrics(envelopes, time.Now().UnixNano())
+	metrics := l.envelopeProcessor.GetGaugeMetrics(envelopes, time.Now().UnixNano())
 
-	return l.filter(metrics, metricType), err
+	return l.filter(metrics, metricType), nil
 }
 
 func (l *logCacheFetcher) readOptions(endTime time.Time, metricType string) (readOptions []logcache.ReadOption) {

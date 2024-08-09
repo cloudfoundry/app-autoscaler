@@ -89,28 +89,29 @@ type LowerUpperThresholdConfig struct {
 }
 
 type Config struct {
-	Logging               helpers.LoggingConfig         `yaml:"logging"`
-	BrokerServer          helpers.ServerConfig          `yaml:"broker_server"`
-	PublicApiServer       helpers.ServerConfig          `yaml:"public_api_server"`
-	DB                    map[string]db.DatabaseConfig  `yaml:"db"`
-	BrokerCredentials     []BrokerCredentialsConfig     `yaml:"broker_credentials"`
-	APIClientId           string                        `yaml:"api_client_id"`
-	PlanCheck             *PlanCheckConfig              `yaml:"plan_check"`
-	CatalogPath           string                        `yaml:"catalog_path"`
-	CatalogSchemaPath     string                        `yaml:"catalog_schema_path"`
-	DashboardRedirectURI  string                        `yaml:"dashboard_redirect_uri"`
-	PolicySchemaPath      string                        `yaml:"policy_schema_path"`
-	Scheduler             SchedulerConfig               `yaml:"scheduler"`
-	ScalingEngine         ScalingEngineConfig           `yaml:"scaling_engine"`
-	EventGenerator        EventGeneratorConfig          `yaml:"event_generator"`
-	CF                    cf.Config                     `yaml:"cf"`
-	InfoFilePath          string                        `yaml:"info_file_path"`
-	MetricsForwarder      MetricsForwarderConfig        `yaml:"metrics_forwarder"`
-	Health                helpers.HealthConfig          `yaml:"health"`
-	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
-	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
-	ScalingRules          ScalingRulesConfig            `yaml:"scaling_rules"`
+	Logging                            helpers.LoggingConfig         `yaml:"logging"`
+	BrokerServer                       helpers.ServerConfig          `yaml:"broker_server"`
+	PublicApiServer                    helpers.ServerConfig          `yaml:"public_api_server"`
+	DB                                 map[string]db.DatabaseConfig  `yaml:"db"`
+	BrokerCredentials                  []BrokerCredentialsConfig     `yaml:"broker_credentials"`
+	APIClientId                        string                        `yaml:"api_client_id"`
+	PlanCheck                          *PlanCheckConfig              `yaml:"plan_check"`
+	CatalogPath                        string                        `yaml:"catalog_path"`
+	CatalogSchemaPath                  string                        `yaml:"catalog_schema_path"`
+	DashboardRedirectURI               string                        `yaml:"dashboard_redirect_uri"`
+	PolicySchemaPath                   string                        `yaml:"policy_schema_path"`
+	Scheduler                          SchedulerConfig               `yaml:"scheduler"`
+	ScalingEngine                      ScalingEngineConfig           `yaml:"scaling_engine"`
+	EventGenerator                     EventGeneratorConfig          `yaml:"event_generator"`
+	CF                                 cf.Config                     `yaml:"cf"`
+	InfoFilePath                       string                        `yaml:"info_file_path"`
+	MetricsForwarder                   MetricsForwarderConfig        `yaml:"metrics_forwarder"`
+	Health                             helpers.HealthConfig          `yaml:"health"`
+	RateLimit                          models.RateLimitConfig        `yaml:"rate_limit"`
+	CredHelperImpl                     string                        `yaml:"cred_helper_impl"`
+	StoredProcedureConfig              *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
+	ScalingRules                       ScalingRulesConfig            `yaml:"scaling_rules"`
+	DefaultCustomMetricsCredentialType string                        `yaml:"default_credential_type"`
 }
 
 type PlanCheckConfig struct {

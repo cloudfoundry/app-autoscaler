@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
-	"dario.cat/mergo"
 	"golang.org/x/exp/maps"
 )
 
@@ -19,7 +18,7 @@ type EnvelopeProcessorCreator interface {
 }
 
 type EnvelopeProcessor interface {
-	GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error)
+	GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) []models.AppInstanceMetric
 }
 
 var _ EnvelopeProcessor = &Processor{}
@@ -34,7 +33,7 @@ func NewProcessor(logger lager.Logger) Processor {
 	}
 }
 
-func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) []models.AppInstanceMetric {
 	p.logger.Debug("GetGaugeMetrics")
 	compactedEnvelopes := p.CompactEnvelopes(envelopes)
 	p.logger.Debug("Compacted envelopes", lager.Data{"compactedEnvelopes": compactedEnvelopes})
@@ -61,21 +60,19 @@ func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*log
 	return maps.Values(result)
 }
 
-func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeStamp int64) []models.AppInstanceMetric {
 	var metrics = []models.AppInstanceMetric{}
 
 	for _, envelope := range envelopes {
 		if isContainerMetricEnvelope(envelope) {
-			//TODO: please see https://github.com/cloudfoundry/app-autoscaler-release/issues/717
-			containerMetrics, _ := processContainerMetrics(envelope, currentTimeStamp)
+			containerMetrics := processContainerMetrics(envelope, currentTimeStamp)
 			metrics = append(metrics, containerMetrics...)
 		} else {
-			//TODO: please see https://github.com/cloudfoundry/app-autoscaler-release/issues/717
-			containerMetrics, _ := processCustomMetrics(envelope, currentTimeStamp)
-			metrics = append(metrics, containerMetrics...)
+			customMetrics := processCustomMetrics(envelope, currentTimeStamp)
+			metrics = append(metrics, customMetrics...)
 		}
 	}
-	return metrics, nil
+	return metrics
 }
 
 func GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64,
@@ -196,7 +193,7 @@ func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
 	return false
 }
 
-func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) ([]models.AppInstanceMetric, error) {
+func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) []models.AppInstanceMetric {
 	var metrics []models.AppInstanceMetric
 	appID := e.SourceId
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
@@ -212,59 +209,41 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 
 	if memory, exist := g.GetMetrics()["memory"]; exist {
 		appInstanceMetric := getMemoryInstanceMetric(memory.GetValue())
-		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
-		if err != nil {
-			return []models.AppInstanceMetric{}, err
-		}
+		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
 	if memoryQuota, exist := g.GetMetrics()["memory_quota"]; exist && memoryQuota.GetValue() != 0 {
 		appInstanceMetric := getMemoryQuotaInstanceMetric(g.GetMetrics()["memory"].GetValue(), memoryQuota.GetValue())
-		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
-		if err != nil {
-			return []models.AppInstanceMetric{}, err
-		}
+		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
 	if cpu, exist := g.GetMetrics()["cpu"]; exist {
 		appInstanceMetric := getCPUInstanceMetric(cpu.GetValue())
-		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
-		if err != nil {
-			return []models.AppInstanceMetric{}, err
-		}
+		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
 	if cpuEntitlement, exist := g.GetMetrics()["cpu_entitlement"]; exist {
 		appInstanceMetric := getCPUEntitlementInstanceMetric(cpuEntitlement.GetValue())
-		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
-		if err != nil {
-			return []models.AppInstanceMetric{}, err
-		}
+		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
 	if diskQuota, exist := g.GetMetrics()["disk_quota"]; exist && diskQuota.GetValue() != 0 {
 		appInstanceMetric := getDiskQuotaInstanceMetric(g.GetMetrics()["disk"].GetValue(), diskQuota.GetValue())
-		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
-		if err != nil {
-			return []models.AppInstanceMetric{}, err
-		}
+		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
 	if memory, exist := g.GetMetrics()["disk"]; exist {
 		appInstanceMetric := getDiskInstanceMetric(memory.GetValue())
-		err := mergo.Merge(&appInstanceMetric, baseAppInstanceMetric)
-		if err != nil {
-			return []models.AppInstanceMetric{}, err
-		}
+		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
-	return metrics, nil
+	return metrics
 }
 
 func getMemoryInstanceMetric(memoryValue float64) models.AppInstanceMetric {
@@ -315,7 +294,7 @@ func getCPUEntitlementInstanceMetric(cpuEntitlementValue float64) models.AppInst
 	}
 }
 
-func processCustomMetrics(e *loggregator_v2.Envelope, currentTimestamp int64) ([]models.AppInstanceMetric, error) {
+func processCustomMetrics(e *loggregator_v2.Envelope, currentTimestamp int64) []models.AppInstanceMetric {
 	var metrics []models.AppInstanceMetric
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
 
@@ -330,5 +309,12 @@ func processCustomMetrics(e *loggregator_v2.Envelope, currentTimestamp int64) ([
 			Timestamp:     e.Timestamp,
 		})
 	}
-	return metrics, nil
+	return metrics
+}
+
+func copyBaseAttributes(dst *models.AppInstanceMetric, src *models.AppInstanceMetric) {
+	dst.AppId = src.AppId
+	dst.InstanceIndex = src.InstanceIndex
+	dst.CollectedAt = src.CollectedAt
+	dst.Timestamp = src.Timestamp
 }
