@@ -71,7 +71,7 @@ func (sdb *StoredProcedureSQLDb) CreateCredentials(ctx context.Context, credOpti
 	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
 	sdb.logger.Info(query)
 	err := sdb.sqldb.QueryRow(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
@@ -86,7 +86,7 @@ func (sdb *StoredProcedureSQLDb) DeleteCredentials(ctx context.Context, credOpti
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.DropBindingCredentialProcedureName}
 	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
 	err := sdb.sqldb.QueryRow(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	if err != nil {
@@ -101,7 +101,7 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(ctx context.Contex
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.DropAllBindingCredentialProcedureName}
 	query := fmt.Sprintf("SELECT * from %s($1)", procedureIdentifier.Sanitize())
 	err := sdb.sqldb.QueryRow(ctx, query, instanceId).Scan(&count)
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	if err != nil {
@@ -118,7 +118,7 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, bindingID).
 		Scan(&credOptions.InstanceId, &credOptions.BindingId)
 
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		sdb.logger.Error(
 			"user found but does not own the app behind the binding",
 			err, lager.Data{"query": query, "creds": creds, "binding": bindingID})

@@ -40,7 +40,15 @@ func (c *storedProcedureCredentials) Create(ctx context.Context, appId string, u
 	var err error
 	var count int
 	var cred *models.Credential
+
+	// ⛔ Be aware that the subesquent line is a fatal programming error. We have never written into
+	// that table the correct binding-id and instance-id. So this table has been filled since the
+	// going-live of commit “a50665290878eaf9c21c0ae368f9d0100c185fdc” with lines where each colum
+	// actually contains the app-id.
+	//
+	// THIS MUST NOT BE FIXED for backward-compatibility-reasons.
 	options := models.CredentialsOptions{BindingId: appId, InstanceId: appId}
+
 	for {
 		if count == c.maxRetry {
 			return nil, err
