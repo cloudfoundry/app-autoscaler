@@ -28,9 +28,9 @@ var _ = Describe("Helper", func() {
 			It("returns mysql database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName:    "mysql",
-					DSN:           "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=preferred",
-					OTELAttribute: semconv.DBSystemMySQL,
+					DriverName:     "mysql",
+					DataSourceName: "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=preferred",
+					OTELAttribute:  semconv.DBSystemMySQL,
 				}))
 			})
 		})
@@ -42,8 +42,8 @@ var _ = Describe("Helper", func() {
 			It("returns mysql database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName:    "mysql",
-					DSN:           "root@tcp(localhost:3306)/autoscaler?parseTime=true",
+					DriverName:     "mysql",
+					DataSourceName: "root@tcp(localhost:3306)/autoscaler?parseTime=true",
 					OTELAttribute: semconv.DBSystemMySQL,
 				}))
 			})
@@ -58,9 +58,9 @@ var _ = Describe("Helper", func() {
 			It("returns mysql database connection", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName:    "mysql",
-					DSN:           "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
-					OTELAttribute: semconv.DBSystemMySQL,
+					DriverName:     "mysql",
+					DataSourceName: "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
+					OTELAttribute:  semconv.DBSystemMySQL,
 				}))
 			})
 		})
@@ -82,9 +82,9 @@ var _ = Describe("Helper", func() {
 			It("returns postgres database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-					DriverName:    "pgx",
-					DSN:           "postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable",
-					OTELAttribute: semconv.DBSystemPostgreSQL,
+					DriverName:     "pgx",
+					DataSourceName: "postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable",
+					OTELAttribute:  semconv.DBSystemPostgreSQL,
 				}))
 			})
 		})

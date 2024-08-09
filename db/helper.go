@@ -14,9 +14,9 @@ import (
 )
 
 type Database struct {
-	DriverName    string
-	DSN           string // 🚧 To-do: Rename to “DataSourceName”!
-	OTELAttribute attribute.KeyValue
+	DriverName     string
+	DataSourceName string
+	OTELAttribute  attribute.KeyValue
 }
 
 type MySQLConfig struct {
@@ -56,10 +56,10 @@ func GetConnection(dbUrl string) (*Database, error) {
 		if err != nil {
 			return nil, err
 		}
-		database.DSN = cfg.config.FormatDSN()
+		database.DataSourceName = cfg.config.FormatDSN()
 		database.OTELAttribute = semconv.DBSystemMySQL
 	case PostgresDriverName:
-		database.DSN = dbUrl
+		database.DataSourceName = dbUrl
 		database.OTELAttribute = semconv.DBSystemPostgreSQL
 	}
 	return database, nil

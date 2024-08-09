@@ -64,7 +64,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		AbortSuite(fmt.Sprintf("DBURL not found: %s", err.Error()))
 	}
 
-	policyDB, err := sqlx.Open(database.DriverName, database.DSN)
+	policyDB, err := sqlx.Open(database.DriverName, database.DataSourceName)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = policyDB.Exec("DELETE from policy_json")
@@ -78,7 +78,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	policy := `
 		{
- 			"instance_min_count": 1,
+			"instance_min_count": 1,
 			"instance_max_count": 5,
 			"scaling_rules":[
 				{

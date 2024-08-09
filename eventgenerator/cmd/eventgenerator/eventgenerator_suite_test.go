@@ -84,7 +84,7 @@ func initDB() {
 
 	Expect(err).NotTo(HaveOccurred())
 
-	egDB, err := sqlx.Open(database.DriverName, database.DSN)
+	egDB, err := sqlx.Open(database.DriverName, database.DataSourceName)
 	defer func() { _ = egDB.Close() }()
 	Expect(err).NotTo(HaveOccurred())
 
@@ -103,14 +103,14 @@ func initDB() {
 		   "instance_min_count":1,
 		   "instance_max_count":5,
 		   "scaling_rules":[
-		      {
-		         "metric_type":"a-metric-type",
-		         "breach_duration_secs":%d,
-		         "threshold":300,
-		         "operator":">",
-		         "cool_down_secs":300,
-		         "adjustment":"+1"
-		      }
+			  {
+				 "metric_type":"a-metric-type",
+				 "breach_duration_secs":%d,
+				 "threshold":300,
+				 "operator":">",
+				 "cool_down_secs":300,
+				 "adjustment":"+1"
+			  }
 		   ]
 		}`, breachDurationSecs)
 	query := egDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
