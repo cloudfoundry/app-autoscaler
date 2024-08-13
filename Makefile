@@ -13,7 +13,6 @@ DB_HOST ?= localhost
 DBURL ?= "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"
 
 METRICSFORWARDER_APPNAME ?= "metricsforwarder"
-METRICSFORWARDER_HOSTNAME ?= $(METRICSFORWARDER_APPNAME)
 EXTENSION_FILE := $(shell mktemp)
 
 export GOWORK=off
@@ -162,7 +161,6 @@ mta-deploy: mta-build build-extension-file
 build-extension-file:
 	cp example.mtaext $(EXTENSION_FILE);
 	sed -i "s/APP_NAME/$(METRICSFORWARDER_APPNAME)/g" $(EXTENSION_FILE);
-	sed -i "s/HOSTNAME/$(METRICSFORWARDER_HOSTNAME)/g" $(EXTENSION_FILE);
 	echo "EXTENSION_FILE: $(EXTENSION_FILE)"
 
 mta-logs:
