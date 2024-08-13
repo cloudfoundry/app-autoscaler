@@ -1,0 +1,19 @@
+ID: com.github.cloudfoundry.app-autoscaler-release
+description: Application Autoscaler Release for Cloud Foundry
+_schema-version: "3.3.0"
+provider: SAP
+copyright: Apache License 2.0
+version: 0.0.1
+
+modules:
+  - name: metricsforwarder
+    type: binary
+    path: build
+    parameters:
+      memory: 1G
+      disk-quota: 1G
+      instances: 1
+      stack: cflinuxfs4
+      command: ./metricsforwarder -c metricsforwarder.yml
+      routes:
+
