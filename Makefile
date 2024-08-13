@@ -12,6 +12,10 @@ PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/'
 DB_HOST ?= localhost
 DBURL ?= "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"
 
+METRICSFORWARDER_APPNAME ?= "metricsforwarder"
+METRICSFORWARDER_HOSTNAME ?= $(METRICSFORWARDER_APPNAME)
+EXTENSION_FILE := $(shell mktemp)
+
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
