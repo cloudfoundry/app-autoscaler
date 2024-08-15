@@ -1,18 +1,17 @@
 PR_NUMBER ?= $(shell gh pr view --json number --jq '.number')
 DEPLOYMENT_NAME ?= autoscaler-$(PR_NUMBER)
+SYSTEM_DOMAIN ?=autoscaler.app-runtime-interfaces.ci.cloudfoundry.org
 METIRCSFORWARDER_VM := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tables | .[] | .Rows | .[] | select(.instance|test("metricsforwarder")) | .instance')
-POSTGRES_IP := $(shell bosh -d ${DEPLOYMENT_NAME} vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("postgres")) | .ips' )
+POSTGRES_ADDRESS := $(DEPLOYMENT_NAME)-postgres.tcp.$(SYSTEM_DOMAIN)
 LOG_CACHE_IP := $(shell bosh -d cf vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("log-cache")) | .ips' )
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
-
-
 
 .PHONY: fetch-config
 fetch-config: start-metricsforwarder-vm
 	# how to define variables in deployment name
 	mkdir -p build/assets/certs/policy_db build/assets/certs/storedprocedure_db build/assets/certs/syslog_client
 
-	echo "POSTGRES IP: $(POSTGRES_IP)"
+	echo "POSTGRES ADDRESS: $(POSTGRES_ADDRESS)"
 	echo "LOG_CACHE IP: $(LOG_CACHE_IP)"
 
 	@echo "Pulling metricforwarder config from $(METIRCSFORWARDER_VM)..."
@@ -37,7 +36,8 @@ fetch-config: start-metricsforwarder-vm
 	cp build/assets/metricsforwarder.yml build/metricsforwarder.yml
 
 	sed -i'' -e 's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' build/metricsforwarder.yml
-	sed -i'' -e 's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_IP)|g' build/metricsforwarder.yml
+	sed -i'' -e 's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_ADDRESS)|g' build/metricsforwarder.yml
+
 
 
 PHONY: set-security-group
