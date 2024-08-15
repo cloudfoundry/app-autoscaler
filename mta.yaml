@@ -1,7 +1,7 @@
 ID: com.github.cloudfoundry.app-autoscaler-release
 description: Application Autoscaler Release for Cloud Foundry
 _schema-version: "3.3.0"
-provider: SAP
+provider: Cloud Foundry Foundation
 copyright: Apache License 2.0
 version: 0.0.1
 

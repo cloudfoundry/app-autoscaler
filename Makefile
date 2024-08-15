@@ -156,7 +156,7 @@ mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	$(MAKE) -f metricsforwarder/Makefile stop-metricsforwarder-vm
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@CF_TRACE=true cf deploy mta_archives/*.mtar -f -e $(EXTENSION_FILE)
+	@cf deploy mta_archives/*.mtar -f -e $(EXTENSION_FILE)
 
 build-extension-file:
 	cp example.mtaext $(EXTENSION_FILE);
