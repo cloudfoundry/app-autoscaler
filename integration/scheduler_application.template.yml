@@ -4,12 +4,7 @@ autoscaler:
 client:
     httpClientTimeout: {{ .HttpClientTimeout }}
     ssl:
-        key-store: {{ .TestCertDir }}/scheduler.p12
-        key-store-password: 123456
-        key-store-type: PKCS12
         protocol: TLSv1.3
-        trust-store: {{ .TestCertDir }}/autoscaler.truststore
-        trust-store-password: 123456
 endpoints:
     enabled: false
 org:
@@ -75,13 +70,16 @@ spring:
                         threadCount: 10
     ssl:
         bundle:
-            jks:
-                server:
-                    key:
-                        alias: scheduler
-                    keystore:
-                        location: {{ .TestCertDir }}/scheduler.p12
-                        password: '123456'
-                    truststore:
-                        location: {{ .TestCertDir }}/autoscaler.truststore
-                        password: '123456'
+            pem:
+              server:
+                keystore:
+                  certificate: {{ .TestCertDir }}/scheduler.crt
+                  private-key: {{ .TestCertDir }}/scheduler.key
+                truststore:
+                  certificate: {{ .TestCertDir }}/autoscaler-ca.crt
+              scalingengine:
+                  keystore:
+                    certificate: {{ .TestCertDir }}/scalingengine.crt
+                    private-key: {{ .TestCertDir }}/scalingengine.key
+                  truststore:
+                    certificate: {{ .TestCertDir }}/autoscaler-ca.crt

@@ -1,0 +1,10 @@
+_schema-version: 3.3.0
+ID: development
+extends: com.github.cloudfoundry.app-autoscaler-release
+version: 1.0.0
+
+modules:
+  - name: metricsforwarder
+    parameters:
+      routes:
+      - route: APP_NAME.${default-domain}
