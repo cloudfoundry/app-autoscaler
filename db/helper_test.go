@@ -44,7 +44,7 @@ var _ = Describe("Helper", func() {
 				Expect(database).To(Equal(&Database{
 					DriverName:     "mysql",
 					DataSourceName: "root@tcp(localhost:3306)/autoscaler?parseTime=true",
-					OTELAttribute: semconv.DBSystemMySQL,
+					OTELAttribute:  semconv.DBSystemMySQL,
 				}))
 			})
 

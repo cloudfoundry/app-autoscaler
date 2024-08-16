@@ -115,7 +115,7 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	// “cred_helper/storedprocedure_cred_helper.go” – we store in each column just the corresponding
 	// app_id. To “mark that”, we use here the `as app_id`-renaming.
 	query := fmt.Sprintf(
-		"SELECT instance_id as app_id, binding_id from %s($1,$2) WHERE app_id = $3",
+		"SELECT instance_id as app_id, binding_id from %s($1,$2) WHERE binding_id = $3",
 		procedureIdentifier.Sanitize())
 	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, appId).
 		Scan(&credOptions.InstanceId, &credOptions.BindingId)
