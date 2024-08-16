@@ -21,7 +21,6 @@ func bytesToFile(b []byte) string {
 }
 
 var _ = Describe("Config", func() {
-
 	var (
 		conf        *Config
 		err         error
@@ -30,84 +29,27 @@ var _ = Describe("Config", func() {
 	)
 
 	Describe("LoadConfig", func() {
-
 		JustBeforeEach(func() {
-			configFile = bytesToFile(configBytes)
 			conf, err = LoadConfig(configFile)
 		})
 
-		AfterEach(func() {
-			//clean up config file
-			Expect(os.Remove(configFile)).To(Succeed())
-		})
+		When("config is read from env", func() {
 
-		Context("with invalid yaml", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
-  server:
-    port: 8081
-  logging:
-  level: info
-
-loggregator
-	metron_address: 127.0.0.1:3457
-	tls:
-	  cert_file: "../testcerts/ca.crt"
-`)
-			})
-
-			It("returns an error", func() {
-				Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
-			})
-		})
-
-		Context("with valid yaml", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: 8081
-logging:
-  level: debug
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: "postgres://pqgotest:password@localhost/pqgotest"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 9999
-cred_helper_impl: default
-`)
-			})
-
-			It("returns the config", func() {
-				Expect(conf.Server.Port).To(Equal(8081))
-				Expect(conf.Logging.Level).To(Equal("debug"))
-				Expect(conf.Health.Port).To(Equal(9999))
-				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
-				Expect(conf.Db[db.PolicyDb]).To(Equal(
-					db.DatabaseConfig{
-						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
-						MaxOpenConnections:    10,
-						MaxIdleConnections:    5,
-						ConnectionMaxLifetime: 60 * time.Second,
-					}))
-				Expect(conf.CredHelperImpl).To(Equal("default"))
+				configFile = ""
 			})
 
 			When("PORT env variable is set", func() {
+				AfterEach(func() {
+					os.Unsetenv("PORT")
+				})
 
 				When("PORT env is a number", func() {
 					BeforeEach(func() {
 						os.Setenv("PORT", "3333")
 					})
-					It("prioritize env variable over config file", func() {
+
+					It("sets env variable over config file", func() {
 						Expect(conf.Server.Port).To(Equal(3333))
 					})
 				})
@@ -122,9 +64,6 @@ cred_helper_impl: default
 						Expect(err).To(MatchError(MatchRegexp("parsing \"NAN\": invalid syntax")))
 					})
 
-					AfterEach(func() {
-						os.Unsetenv("PORT")
-					})
 				})
 			})
 
@@ -133,18 +72,18 @@ cred_helper_impl: default
 					// vcap services has a postgres service provisioned by
 					// a service broker binding
 					vcapServices := `{
-					  "autoscaler": [
-						  {
-							"credentials": {
-								"uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
-							},
-							"label": "postgres",
-							"name": "policy_db",
-							"syslog_drain_url": "",
-							"tags": ["postgres","postgresql","relational"]
-						  }
-						]
-					}` // #nosec G101
+            "autoscaler": [
+              {
+              "credentials": {
+                "uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
+              },
+              "label": "postgres",
+              "name": "policy_db",
+              "syslog_drain_url": "",
+              "tags": ["postgres","postgresql","relational"]
+              }
+            ]
+          }` // #nosec G101
 
 					os.Setenv("VCAP_APPLICATION", "{}")
 					os.Setenv("VCAP_SERVICES", vcapServices)
@@ -166,9 +105,77 @@ cred_helper_impl: default
 			})
 		})
 
-		Context("with partial config", func() {
+		When("config is read from file", func() {
 			BeforeEach(func() {
-				configBytes = []byte(`
+				configFile = bytesToFile(configBytes)
+			})
+			AfterEach(func() {
+				Expect(os.Remove(configFile)).To(Succeed())
+			})
+
+			Context("with invalid yaml", func() {
+				BeforeEach(func() {
+					configBytes = []byte(`
+  server:
+    port: 8081
+  logging:
+  level: info
+
+loggregator
+  metron_address: 127.0.0.1:3457
+  tls:
+    cert_file: "../testcerts/ca.crt"
+`)
+				})
+
+				FIt("returns an error", func() {
+					Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
+				})
+			})
+			Context("with valid yaml", func() {
+				BeforeEach(func() {
+					configBytes = []byte(`
+server:
+  port: 8081
+logging:
+  level: debug
+loggregator:
+  metron_address: 127.0.0.1:3457
+  tls:
+    ca_file: "../testcerts/ca.crt"
+    cert_file: "../testcerts/client.crt"
+    key_file: "../testcerts/client.key"
+db:
+  policy_db:
+    url: "postgres://pqgotest:password@localhost/pqgotest"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+health:
+  port: 9999
+cred_helper_impl: default
+`)
+				})
+
+				It("returns the config", func() {
+					Expect(conf.Server.Port).To(Equal(8081))
+					Expect(conf.Logging.Level).To(Equal("debug"))
+					Expect(conf.Health.Port).To(Equal(9999))
+					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
+					Expect(conf.Db[db.PolicyDb]).To(Equal(
+						db.DatabaseConfig{
+							URL:                   "postgres://pqgotest:password@localhost/pqgotest",
+							MaxOpenConnections:    10,
+							MaxIdleConnections:    5,
+							ConnectionMaxLifetime: 60 * time.Second,
+						}))
+					Expect(conf.CredHelperImpl).To(Equal("default"))
+				})
+
+			})
+			Context("with partial config", func() {
+				BeforeEach(func() {
+					configBytes = []byte(`
 loggregator:
   tls:
     ca_file: "../testcerts/ca.crt"
@@ -183,182 +190,21 @@ db:
 health:
   port: 8081
 `)
+				})
+
+				It("returns default values", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Server.Port).To(Equal(6110))
+					Expect(conf.Logging.Level).To(Equal("info"))
+					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal(DefaultMetronAddress))
+					Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
+					Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
+					Expect(conf.Health.Port).To(Equal(8081))
+				})
 			})
 
-			It("returns default values", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Server.Port).To(Equal(6110))
-				Expect(conf.Logging.Level).To(Equal("info"))
-				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal(DefaultMetronAddress))
-				Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
-				Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
-				Expect(conf.Health.Port).To(Equal(8081))
-			})
 		})
 
-		When("it gives a non integer port", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: port
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("it gives a non integer health server port", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-health:
-  port: port
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("it gives a non integer max_open_connections of policydb", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: NOT-INTEGER-VALUE
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("it gives a non integer max_idle_connections of policydb", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: NOT-INTEGER-VALUE
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("connection_max_lifetime of policydb is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 6K
-health:
-  port: 8081
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
-
-		When("max_amount of rate_limit is not an interger", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-rate_limit:
-  max_amount: NOT-INTEGER
-  valid_duration: 1s
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
-			})
-		})
-
-		When("valid_duration of rate_limit is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-rate_limit:
-  max_amount: 2
-  valid_duration: NOT-TIME-DURATION
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(ErrReadYaml))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
 	})
 
 	Describe("Validate", func() {

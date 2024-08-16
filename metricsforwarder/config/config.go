@@ -200,9 +200,9 @@ func loadVCAPEnvs(c *Config) error {
 		return fmt.Errorf("failed to get db service with relational tag")
 	}
 
-	//	if len(dbServices) != 1 {
-	//		return nil,
-	//	}
+	//  if len(dbServices) != 1 {
+	//    return nil,
+	//  }
 
 	dbService := dbServices[0]
 
@@ -211,33 +211,37 @@ func loadVCAPEnvs(c *Config) error {
 		return fmt.Errorf("failed to get uri from db service")
 	}
 
+	if c.Db == nil {
+		c.Db = make(map[string]db.DatabaseConfig)
+	}
+
 	c.Db[db.PolicyDb] = db.DatabaseConfig{
 		URL: dbURI,
 	}
 
 	//dbURL, err := url.Parse(dbURI)
 	//if err != nil {
-	//	return nil, err
+	//  return nil, err
 	//}
 
 	//parameters, err := url.ParseQuery(dbURL.RawQuery)
 	//if err != nil {
-	//	return nil, err
+	//  return nil, err
 	//}
 
 	//err = materializeConnectionParameter(dbService, parameters, "client_cert", "sslcert")
 	//if err != nil {
-	//	return nil, err
+	//  return nil, err
 	//}
 
 	//err = materializeConnectionParameter(dbService, parameters, "client_key", "sslkey")
 	//if err != nil {
-	//	return nil, err
+	//  return nil, err
 	//}
 
 	//err = materializeConnectionParameter(dbService, parameters, "server_ca", "sslrootcert")
 	//if err != nil {
-	//	return nil, err
+	//  return nil, err
 	//}
 
 	//dbURL.RawQuery = parameters.Encode()
