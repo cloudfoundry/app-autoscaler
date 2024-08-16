@@ -113,7 +113,7 @@ var _ = SynchronizedBeforeSuite(
 		database, err := db.GetConnection(dbUrl)
 		Expect(err).NotTo(HaveOccurred())
 
-		testDB, err := sqlx.Open(database.DriverName, database.DSN)
+		testDB, err := sqlx.Open(database.DriverName, database.DataSourceName)
 		FailOnError("open db failed", err)
 		defer func() { _ = testDB.Close() }()
 
@@ -131,8 +131,8 @@ var _ = SynchronizedBeforeSuite(
 
 		policy := `
 		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
+			"instance_min_count": 1,
+			"instance_max_count": 5
 		}`
 		_, err = testDB.Exec(testDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)"), appId, policy, "1234")
 		FailOnError("insert failed", err)

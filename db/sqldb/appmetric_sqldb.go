@@ -28,7 +28,7 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 		return nil, err
 	}
 
-	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DataSourceName, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

@@ -97,12 +97,15 @@ var _ = Describe("Stored Procedure test", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
-		When("DeleteAllInstanceCredentials is called", func() {
+		When("ValidateCredentials", func() {
 			It("is successful", func() {
+				// The binding_id as returned from the stored-procedure is – for testing-purposes –
+				// slightly modified.
+				bindingIdFromStoredProd := fmt.Sprintf("%s from validate", bindingId)
 				credOpts, err := storedProcedure.ValidateCredentials(context.Background(), models.Credential{
 					Username: instanceId,
 					Password: bindingId,
-				})
+				}, bindingIdFromStoredProd)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(credOpts.InstanceId).To(Equal("InstanceId1 from validate"))
 				Expect(credOpts.BindingId).To(Equal("BindingId1 from validate"))
@@ -168,10 +171,10 @@ create or replace function "deleteCreds"(
 language plpgsql
 as $$
 begin
-    if username != '%s' or password != '%s' then
-        RAISE unique_violation USING MESSAGE = 'invalid password and username combination';
-    end if;
-    return 1;
+	if username != '%s' or password != '%s' then
+		RAISE unique_violation USING MESSAGE = 'invalid password and username combination';
+	end if;
+	return 1;
 end;
 $$`, instanceId, bindingId))
 	defer func() { _ = rows.Close() }()
@@ -188,15 +191,15 @@ $$`, instanceId, bindingId))
 
 func addDeleteAllFunction() {
 	rows, err := dbHelper.Query(fmt.Sprintf(`
-create or replace function "deleteAll"( instanceId varchar) 
+create or replace function "deleteAll"( instanceId varchar)
 returns integer
 language plpgsql
 as $$
 begin
-    if instanceId != '%s' then
-         RAISE EXCEPTION 'invalid instanceId %%',instanceId ;
-    end if;
-    return 1;
+	if instanceId != '%s' then
+		 RAISE EXCEPTION 'invalid instanceId %%',instanceId ;
+	end if;
+	return 1;
 end;
 $$`, instanceId))
 	defer func() { _ = rows.Close() }()
@@ -213,15 +216,15 @@ $$`, instanceId))
 
 func addValidateFunction() {
 	rows, err := dbHelper.Query(fmt.Sprintf(`
-create or replace function "validate"( username text, password text) 
-returns TABLE( instanceId text, bindingId text)
+create or replace function "validate"( username text, password text)
+returns TABLE(instance_id text, binding_id text)
 language plpgsql
 as $$
 begin
-    if username != '%s' or password != '%s' then
-         RAISE EXCEPTION 'invalid username and password' ;
-    end if;
-    return query SELECT username || ' from validate' , password || ' from validate'  ;
+	if username != '%s' or password != '%s' then
+		 RAISE EXCEPTION 'invalid username and password' ;
+	end if;
+	return query SELECT username || ' from validate', password || ' from validate';
 end;
 $$`, instanceId, bindingId))
 	defer func() { _ = rows.Close() }()

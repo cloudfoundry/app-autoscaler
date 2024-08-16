@@ -46,13 +46,14 @@ type DatabaseConfig struct {
 type PolicyDB interface {
 	healthendpoint.DatabaseStatus
 	healthendpoint.Pinger
+	io.Closer
+
 	GetAppIds(ctx context.Context) (map[string]bool, error)
 	GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error
 	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.ScalingPolicy, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
-	io.Closer
 	DeletePolicy(ctx context.Context, appId string) error
 	SaveCredential(ctx context.Context, appId string, cred models.Credential) error
 	DeleteCredential(ctx context.Context, appId string) error
@@ -61,6 +62,8 @@ type PolicyDB interface {
 
 type BindingDB interface {
 	healthendpoint.DatabaseStatus
+	io.Closer
+
 	CreateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error
 	GetServiceInstance(ctx context.Context, serviceInstanceId string) (*models.ServiceInstance, error)
 	GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error)
@@ -75,7 +78,6 @@ type BindingDB interface {
 	CountServiceInstancesInOrg(orgId string) (int, error)
 	GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error)
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
-	io.Closer
 }
 
 type AppMetricDB interface {
@@ -122,5 +124,5 @@ type StoredProcedureDB interface {
 	CreateCredentials(ctx context.Context, credOptions models.CredentialsOptions) (*models.Credential, error)
 	DeleteCredentials(ctx context.Context, credOptions models.CredentialsOptions) error
 	DeleteAllInstanceCredentials(ctx context.Context, instanceId string) error
-	ValidateCredentials(ctx context.Context, creds models.Credential) (*models.CredentialsOptions, error)
+	ValidateCredentials(ctx context.Context, creds models.Credential, appId string) (*models.CredentialsOptions, error)
 }

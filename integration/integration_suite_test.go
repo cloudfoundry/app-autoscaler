@@ -92,7 +92,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
-	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, err = sqlx.Open(database.DriverName, database.DataSourceName)
 	Expect(err).NotTo(HaveOccurred())
 
 	clearDatabase()
@@ -110,7 +110,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
-	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, err = sqlx.Open(database.DriverName, database.DataSourceName)
 	Expect(err).NotTo(HaveOccurred())
 
 	LOGLEVEL = os.Getenv("LOGLEVEL")
