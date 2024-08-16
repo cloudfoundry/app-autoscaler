@@ -24,7 +24,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/ogen-go/ogen v1.3.0
 	github.com/onsi/ginkgo/v2 v2.20.0
-	github.com/onsi/gomega v1.33.1
+	github.com/onsi/gomega v1.34.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pivotal-cf/brokerapi/v11 v11.0.4
 	github.com/prometheus/client_golang v1.19.1
@@ -68,7 +68,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240721033354-7089f98c1d14 // indirect
+	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
