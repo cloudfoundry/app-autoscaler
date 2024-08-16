@@ -8,6 +8,8 @@ version: 0.0.1
 modules:
   - name: metricsforwarder
     type: binary
+    path: build
+    parameters:
       memory: 1G
       disk-quota: 1G
       instances: 1
