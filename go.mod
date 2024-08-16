@@ -23,7 +23,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/ogen-go/ogen v1.3.0
-	github.com/onsi/ginkgo/v2 v2.19.0
+	github.com/onsi/ginkgo/v2 v2.20.0
 	github.com/onsi/gomega v1.33.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pivotal-cf/brokerapi/v11 v11.0.4
