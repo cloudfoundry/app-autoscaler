@@ -5,6 +5,8 @@ METIRCSFORWARDER_VM := $(shell bosh -d $(DEPLOYMENT_NAME) vms --json | jq '.Tabl
 POSTGRES_ADDRESS := $(DEPLOYMENT_NAME)-postgres.tcp.$(SYSTEM_DOMAIN)
 LOG_CACHE_IP := $(shell bosh -d cf vms --json | jq -r '.Tables | .[] | .Rows  | .[] | select(.instance|test("log-cache")) | .ips' )
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+POSTGRES_EXTERNAL_PORT := $(or $(PR_NUMBER),5432)
+
 
 .PHONY: fetch-config
 fetch-config: start-metricsforwarder-vm
@@ -36,7 +38,7 @@ fetch-config: start-metricsforwarder-vm
 	cp build/assets/metricsforwarder.yml build/metricsforwarder.yml
 
 	sed -i'' -e 's|\/var\/vcap\/jobs\/metricsforwarder\/config|\/home\/vcap\/app/assets|g' build/metricsforwarder.yml
-	sed -i'' -e 's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal|$(POSTGRES_ADDRESS)|g' build/metricsforwarder.yml
+	sed -i'' -e 's|$(DEPLOYMENT_NAME).autoscalerpostgres.service.cf.internal:5432|$(POSTGRES_ADDRESS):$(POSTGRES_EXTERNAL_PORT)|g' build/metricsforwarder.yml
 
 
 
