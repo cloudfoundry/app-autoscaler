@@ -2,7 +2,6 @@ package sqldb
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
