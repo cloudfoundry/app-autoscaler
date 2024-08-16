@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/cloudfoundry-community/go-cfenv"
@@ -11,8 +12,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
-	"github.com/kelseyhightower/envconfig"
 
 	"gopkg.in/yaml.v3"
 )
@@ -121,9 +120,13 @@ func LoadConfig(filepath string) (*Config, error) {
 		defer r.Close()
 	}
 
-	err = envconfig.Process("", &conf)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
+	if os.Getenv("PORT") != "" {
+		port := os.Getenv("PORT")
+		portNumber, err := strconv.Atoi(port)
+		if err != nil {
+			return nil, fmt.Errorf("%w:%w", ErrReadEnvironment, err)
+		}
+		conf.Server.Port = portNumber
 	}
 
 	err = loadVCAPEnvs(&conf)

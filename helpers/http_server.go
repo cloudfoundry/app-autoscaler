@@ -12,7 +12,7 @@ import (
 )
 
 type ServerConfig struct {
-	Port int             `yaml:"port" envconfig:"PORT"`
+	Port int             `yaml:"port"`
 	TLS  models.TLSCerts `yaml:"tls"`
 }
 

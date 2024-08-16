@@ -119,7 +119,7 @@ cred_helper_impl: default
 
 					It("return invalid port error", func() {
 						Expect(err).To(MatchError(ErrReadEnvironment))
-						Expect(err).To(MatchError(MatchRegexp("converting 'NAN' to type int")))
+						Expect(err).To(MatchError(MatchRegexp("parsing \"NAN\": invalid syntax")))
 					})
 
 					AfterEach(func() {
