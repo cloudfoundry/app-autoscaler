@@ -121,13 +121,7 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, appId).
 		Scan(&credOptions.InstanceId, &credOptions.BindingId)
 
-	if err == pgx.ErrNoRows {
-		sdb.logger.Info(
-			"user found but does not own the app behind the binding",
-			err, lager.Data{"query": query, "creds": creds, "appId": appId})
-
-		return nil, errors.New("user found but does not own the app")
-	} else if err != nil {
+	if err != nil {
 		sdb.logger.Error(
 			"credential-validation-with-stored-function-errored",
 			err, lager.Data{"query": query, "creds": creds, "appId": appId})
