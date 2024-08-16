@@ -12,6 +12,9 @@ PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/'
 DB_HOST ?= localhost
 DBURL ?= "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"
 
+METRICSFORWARDER_APPNAME ?= "metricsforwarder"
+EXTENSION_FILE := $(shell mktemp)
+
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
@@ -86,7 +89,7 @@ go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
 ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
 	go mod vendor
 
-cf-build-%:
+cf-build-%: generate-fakes
 	@echo "# building for cf $*"
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/$* $*/cmd/$*/main.go
 
@@ -117,7 +120,7 @@ check: fmt lint build test
 
 test: generate-fakes
 	@echo "Running tests"
-	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} --skip-package='integration'
+	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} ${TEST} --skip-package='integration'
 
 testsuite: generate-fakes
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
@@ -149,10 +152,16 @@ clean:
 	@rm --force --recursive "${openapi-generated-clients-and-servers-dir}"
 
 .PHONY: mta-deploy
-mta-deploy: mta-build
-	@echo "Deploying mta"
-	@echo " CF_TRACE=true cf deploy MTA mta_archives/*.mtar -e config.mtaext"
-	CF_TRACE=true cf deploy mta_archives/com.github.cloudfoundry.app-autoscaler-release_0.0.1.mtar
+mta-deploy: mta-build build-extension-file
+	$(MAKE) -f metricsforwarder/Makefile set-security-group
+	$(MAKE) -f metricsforwarder/Makefile stop-metricsforwarder-vm
+	@echo "Deploying with extension file: $(EXTENSION_FILE)"
+	@cf deploy mta_archives/*.mtar -f -e $(EXTENSION_FILE)
+
+build-extension-file:
+	cp example.mtaext $(EXTENSION_FILE);
+	sed -i "s/APP_NAME/$(METRICSFORWARDER_APPNAME)/g" $(EXTENSION_FILE);
+	echo "EXTENSION_FILE: $(EXTENSION_FILE)"
 
 mta-logs:
 	rm -rf mta-*
@@ -161,6 +170,7 @@ mta-logs:
 
 .PHONY: mta-build
 mta-build: mta-build-clean cf-build
+	$(MAKE) -f metricsforwarder/Makefile fetch-config
 	mbt build
 
 mta-build-clean:

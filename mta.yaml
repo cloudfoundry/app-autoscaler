@@ -1,92 +1,16 @@
 ID: com.github.cloudfoundry.app-autoscaler-release
 description: Application Autoscaler Release for Cloud Foundry
 _schema-version: "3.3.0"
-provider: SAP
+provider: Cloud Foundry Foundation
 copyright: Apache License 2.0
 version: 0.0.1
 
 modules:
   - name: metricsforwarder
     type: binary
-    path: build
-    properties:
-      POLICY_DB_MAX_OPEN_CONNECTIONS: 20
-      POLICY_DB_MAX_IDLE_CONNECTIONS: 20
-      POLICY_DB_CONNECTION_MAX_LIFETIME: 60s
-      LOGGING_LEVEL: info
-      POLICY_DB_URL:
-    properties-metadata:
-      POLICY_DB_URL:
-        optional: false
-
-    parameters:
-      app-name: metricsforwarder
       memory: 1G
       disk-quota: 1G
       instances: 1
-      health-check-type: http
-      health-check-http-endpoint: "/health"
       stack: cflinuxfs4
-      command: ./app
-
-# ID: sap.tools.github.autoscaler.application-autoscaler-dashboard
-# _schema-version: 3.3.0
-# version: 1.0.19
-#
-# modules:
-#   - name: application-autoscaler-dashboard
-#     type: nodejs
-#     path: app
-#     properties:
-#       CF_API: ${controller-url}
-#       CF_AUTH_ENDPOINT: ${authorization-url}
-#       PUBLIC_API: null
-#       CF_CLIENT_ID: null
-#       CF_CLIENT_SECRET: null
-#       DB_SERVICE_INSTANCE_NAME: autoscaler-hyperscaler-db
-#       DT_TAGS: Service-Inventory=SERVICE-177 BCP-Component=BC-CP-CF-AUTOSCALE Service-Name=ApplicationAutoscaler
-#       DT_RELEASE_PRODUCT: product-cf/${mta-id}
-#       DT_RELEASE_BUILD_VERSION: ${mta-version}
-#       DT_RELEASE_STAGE: null
-#       DT_RELEASE_VERSION: null
-#     properties-metadata:
-#       CF_API:
-#         optional: false
-#       CF_AUTH_ENDPOINT:
-#         optional: false
-#       PUBLIC_API:
-#         optional: false
-#       CF_CLIENT_ID:
-#         optional: false
-#       CF_CLIENT_SECRET:
-#         optional: false
-#         sensitive: true
-#     parameters:
-#       app-name: application-autoscaler-dashboard
-#       memory: 1G
-#       disk-quota: 1G
-#       instances: 3
-#       routes:
-#         - route: null
-#       health-check-type: http
-#       health-check-http-endpoint: "/health"
-#       stack: cflinuxfs4
-#       command: node index.js --harmony
-#     requires:
-#       - name: autoscaler-hyperscaler-db
-#       - name: application-autoscaler-dashboard-application-logs
-#       - name: autoscaler-dynatrace
-# resources:
-# - name: application-autoscaler-dashboard-application-logs
-#   type: application-logs
-#   parameters:
-#     service-broker: null
-#     service-plan: standard
-#   parameters-metadata:
-#     service-broker:
-#       optional: false
-# - name: autoscaler-hyperscaler-db
-#   type: org.cloudfoundry.existing-service
-# - name: autoscaler-dynatrace
-#   type: org.cloudfoundry.existing-service
-#   optional: true
+      command: ./metricsforwarder -c metricsforwarder.yml
+      routes:
