@@ -13,6 +13,10 @@ import (
 )
 
 func bytesToFile(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+
 	file, err := os.CreateTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
 	_, err = file.Write(b)
@@ -29,64 +33,80 @@ var _ = Describe("Config", func() {
 	)
 
 	Describe("LoadConfig", func() {
-		JustBeforeEach(func() {
-			conf, err = LoadConfig(configFile)
-		})
-
 		When("config is read from env", func() {
+			var vcapServicesJson string
+			var port string
 
-			BeforeEach(func() {
-				configFile = ""
+			AfterEach(func() {
+				os.Unsetenv("VCAP_SERVICES")
+				os.Unsetenv("PORT")
+				os.Unsetenv("VCAP_APPLICATION")
+				port = ""
 			})
 
-			When("PORT env variable is set", func() {
-				AfterEach(func() {
-					os.Unsetenv("PORT")
-				})
-
-				When("PORT env is a number", func() {
-					BeforeEach(func() {
-						os.Setenv("PORT", "3333")
-					})
-
-					It("sets env variable over config file", func() {
-						Expect(conf.Server.Port).To(Equal(3333))
-					})
-				})
-
-				When("PORT env is not number", func() {
-					BeforeEach(func() {
-						os.Setenv("PORT", "NAN")
-					})
-
-					It("return invalid port error", func() {
-						Expect(err).To(MatchError(ErrReadEnvironment))
-						Expect(err).To(MatchError(MatchRegexp("parsing \"NAN\": invalid syntax")))
-					})
-
-				})
+			JustBeforeEach(func() {
+				os.Setenv("PORT", port)
+				os.Setenv("VCAP_APPLICATION", "{}")
+				os.Setenv("VCAP_SERVICES", vcapServicesJson)
+				conf, err = LoadConfig(configFile)
 			})
 
-			When("VCAP_SERVICES is set", func() {
+			When("PORT env variable is set to a number ", func() {
 				BeforeEach(func() {
-					// vcap services has a postgres service provisioned by
-					// a service broker binding
-					vcapServices := `{
-            "autoscaler": [
-              {
-              "credentials": {
-                "uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
-              },
-              "label": "postgres",
-              "name": "policy_db",
-              "syslog_drain_url": "",
-              "tags": ["postgres","postgresql","relational"]
-              }
-            ]
-          }` // #nosec G101
+					port = "3333"
+				})
 
-					os.Setenv("VCAP_APPLICATION", "{}")
-					os.Setenv("VCAP_SERVICES", vcapServices)
+				It("sets env variable over config file", func() {
+					Expect(conf.Server.Port).To(Equal(3333))
+				})
+			})
+
+			When("PORT env variable is not a number ", func() {
+				BeforeEach(func() {
+					port = "NAN"
+				})
+
+				It("return invalid port error", func() {
+					Expect(err).To(MatchError(ErrReadEnvironment))
+					Expect(err).To(MatchError(MatchRegexp("parsing \"NAN\": invalid syntax")))
+				})
+			})
+
+			When("VCAP_SERVICES has service config", func() {
+				BeforeEach(func() {
+
+					vcapServicesJson = `{
+							"config": {
+								  "logging": {
+									"level": "debug"
+								  },
+								  "loggregator": {
+									"metron_address": "127.0.0.1:3457",
+									"tls": {
+									  "ca_file": "../testcerts/ca.crt",
+									  "cert_file": "../testcerts/client.crt",
+									  "key_file": "../testcerts/client.key"
+									}
+								  },
+								  "cred_helper_impl": "default"
+								},
+							"autoscaler": [
+							  {
+							  "credentials": {
+								"uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
+							  },
+							  "label": "postgres",
+							  "name": "policy_db",
+							  "syslog_drain_url": "",
+							  "tags": ["postgres","postgresql","relational"]
+							  }
+							]
+						  }` // #nosec G101
+				})
+
+				FIt("loads the config from VCAP_SERVICES", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Logging.Level).To(Equal("debug"))
 				})
 
 				It("loads the db config from VCAP_SERVICES", func() {
@@ -97,18 +117,15 @@ var _ = Describe("Config", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(conf.Db[db.PolicyDb]).To(Equal(expectedDbConfig))
 				})
-
-				AfterEach(func() {
-					os.Unsetenv("VCAP_SERVICES")
-					os.Unsetenv("VCAP_APPLICATION")
-				})
 			})
 		})
 
 		When("config is read from file", func() {
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				configFile = bytesToFile(configBytes)
+				conf, err = LoadConfig(configFile)
 			})
+
 			AfterEach(func() {
 				Expect(os.Remove(configFile)).To(Succeed())
 			})
@@ -128,7 +145,7 @@ loggregator
 `)
 				})
 
-				FIt("returns an error", func() {
+				It("returns an error", func() {
 					Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
 				})
 			})
@@ -333,8 +350,10 @@ health:
 			BeforeEach(func() {
 				conf.RateLimit.MaxAmount = 0
 			})
+
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
+
 			})
 		})
 
@@ -342,6 +361,7 @@ health:
 			BeforeEach(func() {
 				conf.RateLimit.ValidDuration = 0 * time.Nanosecond
 			})
+
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
 			})

@@ -79,6 +79,26 @@ type SyslogConfig struct {
 	TLS           models.TLSCerts `yaml:"tls"`
 }
 
+func DecodeYamlFile(filepath string, c *Config) error {
+	r, err := os.Open(filepath)
+
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", filepath, err.Error())
+		return err
+	}
+
+	dec := yaml.NewDecoder(r)
+	dec.KnownFields(true)
+	err = dec.Decode(c)
+
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrReadYaml, err)
+	}
+
+	defer r.Close()
+	return nil
+}
+
 func LoadConfig(filepath string) (*Config, error) {
 	var conf Config
 	var err error
@@ -99,25 +119,11 @@ func LoadConfig(filepath string) (*Config, error) {
 		},
 	}
 
-	if filepath == "" {
-		fmt.Fprintln(os.Stdout, "missing config file, using environment variables")
-	} else {
-		r, err := os.Open(filepath)
-
+	if filepath != "" {
+		err = DecodeYamlFile(filepath, &conf)
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", filepath, err.Error())
 			return nil, err
 		}
-
-		dec := yaml.NewDecoder(r)
-		dec.KnownFields(true)
-		err = dec.Decode(&conf)
-
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrReadYaml, err)
-		}
-
-		defer r.Close()
 	}
 
 	if os.Getenv("PORT") != "" {
@@ -183,26 +189,15 @@ func (c *Config) Validate() error {
 
 	return nil
 }
-
-func loadVCAPEnvs(c *Config) error {
-	if os.Getenv("VCAP_APPLICATION") == "" || os.Getenv("VCAP_SERVICES") == "" {
-		return nil
-	}
-
-	// panic here
-	appEnv, err := cfenv.Current()
-	if err != nil {
-		return err
-	}
-
+func readDbFromVCAP(appEnv *cfenv.App, c *Config) error {
 	dbServices, err := appEnv.Services.WithTag("relational")
 	if err != nil {
 		return fmt.Errorf("failed to get db service with relational tag")
 	}
 
-	//  if len(dbServices) != 1 {
-	//    return nil,
-	//  }
+	if len(dbServices) != 1 {
+		return fmt.Errorf("failed to get db service with relational tag")
+	}
 
 	dbService := dbServices[0]
 
@@ -245,6 +240,35 @@ func loadVCAPEnvs(c *Config) error {
 	//}
 
 	//dbURL.RawQuery = parameters.Encode()
+
+	return nil
+}
+
+func readConfigFromVCAP(appEnv *cfenv.App, c *Config) error {
+	fmt.Println(appEnv.Services)
+	return nil
+}
+
+func loadVCAPEnvs(c *Config) error {
+	if os.Getenv("VCAP_APPLICATION") == "" || os.Getenv("VCAP_SERVICES") == "" {
+		return nil
+	}
+
+	// panic here
+	appEnv, err := cfenv.Current()
+	if err != nil {
+		return err
+	}
+
+	err = readDbFromVCAP(appEnv, c)
+	if err != nil {
+		return err
+	}
+
+	err = readConfigFromVCAP(appEnv, c)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
