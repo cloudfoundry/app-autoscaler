@@ -190,6 +190,10 @@ func (c *Config) Validate() error {
 	return nil
 }
 func readDbFromVCAP(appEnv *cfenv.App, c *Config) error {
+	if c.Db != nil {
+		return nil
+	}
+
 	dbServices, err := appEnv.Services.WithTag("relational")
 	if err != nil {
 		return fmt.Errorf("failed to get db service with relational tag")
