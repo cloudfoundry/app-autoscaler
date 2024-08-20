@@ -92,7 +92,7 @@ var _ = Describe("PolicyManager", func() {
 			policyManager.Stop()
 		})
 
-		Context("when allowedMetricCache has already filled with metricstype details of the same appilication", func() {
+		When("allowedMetricCache has already filled with metricstype details of the same appilication", func() {
 
 			BeforeEach(func() {
 				scalingPolicy = &models.ScalingPolicy{
@@ -114,22 +114,41 @@ var _ = Describe("PolicyManager", func() {
 				Expect(found).To(BeTrue())
 				Expect(maps).Should(HaveKey("queuelength"))
 
-				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-					return []*models.PolicyJson{{AppId: testAppId, PolicyStr: policyStr}}, nil
-				}
-
 			})
-			It("should be able refresh allowed metrics cache", func() {
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
-				clock.Increment(1 * testPolicyPollerInterval)
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
 
-				res, found := allowedMetricCache.Get(testAppId)
-				maps := res.(map[string]struct{})
+			When("the policy is updated", func() {
+				BeforeEach(func() {
+					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+						return []*models.PolicyJson{{AppId: testAppId, PolicyStr: policyStr}}, nil
+					}
+				})
+				It("should refresh the allowed metrics cache", func() {
+					Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
+					clock.Increment(1 * testPolicyPollerInterval)
+					Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
 
-				Expect(found).To(BeTrue())
-				Expect(maps).Should(HaveKey("test-metric-name"))
-				Expect(maps).ShouldNot(HaveKey("queuelength"))
+					res, found := allowedMetricCache.Get(testAppId)
+					maps := res.(map[string]struct{})
+
+					Expect(found).To(BeTrue())
+					Expect(maps).Should(HaveKey("test-metric-name"))
+					Expect(maps).ShouldNot(HaveKey("queuelength"))
+				})
+			})
+			When("the policy is deleted", func() {
+				BeforeEach(func() {
+					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+						return []*models.PolicyJson{}, nil
+					}
+				})
+				It("should refresh the allowed metrics cache", func() {
+					Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
+					clock.Increment(1 * testPolicyPollerInterval)
+					Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
+
+					_, found := allowedMetricCache.Get(testAppId)
+					Expect(found).To(BeFalse())
+				})
 			})
 		})
 	})

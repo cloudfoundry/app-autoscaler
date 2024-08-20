@@ -118,6 +118,9 @@ func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.A
 				pm.logger.Error("Error updating allowedMetricCache", err)
 				return err
 			}
+		} else {
+			//If the policy is not present in the cache, remove the entry from the cache
+			pm.allowedMetricCache.Delete(applicationId)
 		}
 	}
 	return nil
