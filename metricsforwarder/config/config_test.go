@@ -53,6 +53,7 @@ var _ = Describe("Config", func() {
 
 			When("PORT env variable is set to a number ", func() {
 				BeforeEach(func() {
+					vcapServicesJson = "{}"
 					port = "3333"
 				})
 
@@ -61,42 +62,61 @@ var _ = Describe("Config", func() {
 				})
 			})
 
-			When("PORT env variable is not a number ", func() {
-				BeforeEach(func() {
-					port = "NAN"
-				})
-
-				It("return invalid port error", func() {
-					Expect(err).To(MatchError(ErrReadEnvironment))
-					Expect(err).To(MatchError(MatchRegexp("parsing \"NAN\": invalid syntax")))
-				})
-			})
-
 			When("VCAP_SERVICES has service config", func() {
 				BeforeEach(func() {
-
+					// VCAP_SERVICES={"user-provided":[
+					//{"label":"user-provided",
+					//	"name":"config",
+					//  "tags":[],
+					//  "instance_guid":"444c838e-17d9-429d-a1ea-660904db9841",
+					//  "instance_name":"config",
+					//  "binding_guid":"2cb523a1-773a-4fa4-ba05-3a76cc488ff7",
+					//  "binding_name":null,
+					//  "credentials":{
+					//    "db":null,
+					//    "logging":{"level":"info"},
+					//    "policy_poller_interval":"60s",
+					//    "rate_limit":{"max_amount":10,"valid_duration":"1s"},
+					//    "syslog":{
+					//      "port":6067,
+					//      "server_address":"log-cache.service.cf.internal",
+					//      "tls":{"ca_file":"/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/ca.crt","cert_file":"/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.crt","key_file":"/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.key"}
+					//     },
+					//  }
+					//},
+					//  "syslog_drain_url":null,
+					//  "volume_mounts":[]}]}
+					//
 					vcapServicesJson = `{
-							"config": {
-								  "logging": {
+						"user-provided": [ {
+							"label":"user-provided",
+							"name": "config",
+							"credentials": {
+							  "metricsforwarder": {
+								"cache_cleanup_interval":"10h",
+								"cache_ttl":"90s",
+								"cred_helper_impl": "default",
+								"health":{"password":"health-password","username":"health-user"},
+								"logging": {
 									"level": "debug"
-								  },
-								  "loggregator": {
-									"metron_address": "127.0.0.1:3457",
-									"tls": {
-									  "ca_file": "../testcerts/ca.crt",
-									  "cert_file": "../testcerts/client.crt",
-									  "key_file": "../testcerts/client.key"
-									}
-								  },
-								  "cred_helper_impl": "default"
 								},
-							"autoscaler": [
-							  {
+								"loggregator": {
+									"metron_address": "metron-vcap-addrs:3457",
+									"tls": {
+										"ca_file": "../testcerts/ca.crt",
+										"cert_file": "../testcerts/client.crt",
+										"key_file": "../testcerts/client.key"
+									}
+								}
+							}
+							}
+						}],
+						"autoscaler": [ {
+							  "name": "policy_db",
+							  "label": "postgres",
 							  "credentials": {
 								"uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
 							  },
-							  "label": "postgres",
-							  "name": "policy_db",
 							  "syslog_drain_url": "",
 							  "tags": ["postgres","postgresql","relational"]
 							  }
@@ -104,9 +124,11 @@ var _ = Describe("Config", func() {
 						  }` // #nosec G101
 				})
 
-				FIt("loads the config from VCAP_SERVICES", func() {
+				It("loads the config from VCAP_SERVICES", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(conf.Logging.Level).To(Equal("debug"))
+					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("metron-vcap-addrs:3457"))
+					Expect(conf.CacheTTL).To(Equal(90 * time.Second))
 				})
 
 				It("loads the db config from VCAP_SERVICES", func() {

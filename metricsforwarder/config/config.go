@@ -1,10 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/cloudfoundry-community/go-cfenv"
@@ -22,6 +22,7 @@ import (
 // - ErrReadVCAPEnvironment
 
 var ErrReadYaml = errors.New("failed to read config file")
+var ErrReadJson = errors.New("failed to read vcap_services json")
 var ErrReadEnvironment = errors.New("failed to read environment variables")
 var ErrReadVCAPEnvironment = errors.New("failed to read VCAP environment variables")
 
@@ -79,7 +80,7 @@ type SyslogConfig struct {
 	TLS           models.TLSCerts `yaml:"tls"`
 }
 
-func DecodeYamlFile(filepath string, c *Config) error {
+func decodeYamlFile(filepath string, c *Config) error {
 	r, err := os.Open(filepath)
 
 	if err != nil {
@@ -96,6 +97,23 @@ func DecodeYamlFile(filepath string, c *Config) error {
 	}
 
 	defer r.Close()
+	return nil
+}
+
+func readConfigFromVCAP(appEnv *cfenv.App, c *Config) error {
+	configVcapService, err := appEnv.Services.WithName("config")
+	data := configVcapService.Credentials["metricsforwarder"]
+
+	rawJSON, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrReadJson, err)
+	}
+
+	err = yaml.Unmarshal(rawJSON, c)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrReadJson, err)
+	}
+
 	return nil
 }
 
@@ -120,24 +138,29 @@ func LoadConfig(filepath string) (*Config, error) {
 	}
 
 	if filepath != "" {
-		err = DecodeYamlFile(filepath, &conf)
+		err = decodeYamlFile(filepath, &conf)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if os.Getenv("PORT") != "" {
-		port := os.Getenv("PORT")
-		portNumber, err := strconv.Atoi(port)
+	if cfenv.IsRunningOnCF() {
+		appEnv, err := cfenv.Current()
 		if err != nil {
-			return nil, fmt.Errorf("%w:%w", ErrReadEnvironment, err)
+			return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
 		}
-		conf.Server.Port = portNumber
-	}
 
-	err = loadVCAPEnvs(&conf)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrReadVCAPEnvironment, err)
+		conf.Server.Port = appEnv.Port
+
+		err = readDbFromVCAP(appEnv, &conf)
+		if err != nil {
+			return &conf, err
+		}
+
+		err = readConfigFromVCAP(appEnv, &conf)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &conf, nil
@@ -244,35 +267,6 @@ func readDbFromVCAP(appEnv *cfenv.App, c *Config) error {
 	//}
 
 	//dbURL.RawQuery = parameters.Encode()
-
-	return nil
-}
-
-func readConfigFromVCAP(appEnv *cfenv.App, c *Config) error {
-	fmt.Println(appEnv.Services)
-	return nil
-}
-
-func loadVCAPEnvs(c *Config) error {
-	if os.Getenv("VCAP_APPLICATION") == "" || os.Getenv("VCAP_SERVICES") == "" {
-		return nil
-	}
-
-	// panic here
-	appEnv, err := cfenv.Current()
-	if err != nil {
-		return err
-	}
-
-	err = readDbFromVCAP(appEnv, c)
-	if err != nil {
-		return err
-	}
-
-	err = readConfigFromVCAP(appEnv, c)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
