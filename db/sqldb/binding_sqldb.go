@@ -32,7 +32,7 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 		return nil, err
 	}
 
-	sqldb, err := otelsqlx.Open(database.DriverName, database.DSN, otelsql.WithAttributes(database.OTELAttribute))
+	sqldb, err := otelsqlx.Open(database.DriverName, database.DataSourceName, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
 		logger.Error("open-binding-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -292,6 +292,7 @@ func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
 	return bdb.sqldb.Stats()
 }
+
 func (bdb *BindingSQLDB) GetAppIdByBindingId(ctx context.Context, bindingId string) (string, error) {
 	var appId string
 	query := bdb.sqldb.Rebind("SELECT app_id FROM binding WHERE binding_id=?")
@@ -347,13 +348,13 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instance
 	}
 	defer func() { _ = rows.Close() }()
 
-	var appId string
 	for rows.Next() {
-		if err = rows.Scan(&appId); err != nil {
-			bdb.logger.Error("scan-appids-from-binding-table", err)
+		var bindingId string
+		if err = rows.Scan(&bindingId); err != nil {
+			bdb.logger.Error("scan-bindingids-from-binding-table", err)
 			return nil, err
 		}
-		bindingIds = append(bindingIds, appId)
+		bindingIds = append(bindingIds, bindingId)
 	}
 
 	return bindingIds, rows.Err()

@@ -23,7 +23,7 @@ func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Schedu
 	if err != nil {
 		return nil, err
 	}
-	sqldb, err := sql.Open(database.DriverName, database.DSN)
+	sqldb, err := sql.Open(database.DriverName, database.DataSourceName)
 	if err != nil {
 		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

@@ -38,7 +38,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	database, err := db.GetConnection(dbUrl)
 	FailOnError("failed to parse database connection", err)
 
-	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, err = sqlx.Open(database.DriverName, database.DataSourceName)
 	FailOnError("can not connect database", err)
 
 	_, err = dbHelper.Exec("DELETE from binding")
@@ -63,7 +63,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	database, err := db.GetConnection(dbUrl)
 	FailOnError("failed to parse database connection", err)
 
-	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, e = sqlx.Open(database.DriverName, database.DataSourceName)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}

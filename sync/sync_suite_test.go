@@ -33,7 +33,7 @@ var _ = BeforeSuite(func() {
 		Fail("failed to get database URL and drivername: " + e.Error())
 	}
 
-	dbHelper, e = sql.Open(database.DriverName, database.DSN)
+	dbHelper, e = sql.Open(database.DriverName, database.DataSourceName)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}

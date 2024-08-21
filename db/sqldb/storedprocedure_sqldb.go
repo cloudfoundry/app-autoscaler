@@ -2,7 +2,6 @@ package sqldb
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -69,7 +68,7 @@ func (sdb *StoredProcedureSQLDb) CreateCredentials(ctx context.Context, credOpti
 	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
 	sdb.logger.Info(query)
 	err := sdb.sqldb.QueryRow(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&credentials.Username, &credentials.Password)
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
@@ -84,7 +83,7 @@ func (sdb *StoredProcedureSQLDb) DeleteCredentials(ctx context.Context, credOpti
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.DropBindingCredentialProcedureName}
 	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
 	err := sdb.sqldb.QueryRow(ctx, query, credOptions.InstanceId, credOptions.BindingId).Scan(&count)
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	if err != nil {
@@ -99,7 +98,7 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(ctx context.Contex
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.DropAllBindingCredentialProcedureName}
 	query := fmt.Sprintf("SELECT * from %s($1)", procedureIdentifier.Sanitize())
 	err := sdb.sqldb.QueryRow(ctx, query, instanceId).Scan(&count)
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	if err != nil {
@@ -109,17 +108,25 @@ func (sdb *StoredProcedureSQLDb) DeleteAllInstanceCredentials(ctx context.Contex
 	return nil
 }
 
-func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential) (*models.CredentialsOptions, error) {
+func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds models.Credential, appId string) (*models.CredentialsOptions, error) {
 	credOptions := &models.CredentialsOptions{}
 	procedureIdentifier := pgx.Identifier{sdb.config.SchemaName, sdb.config.ValidateBindingCredentialProcedureName}
-	query := fmt.Sprintf("SELECT * from %s($1,$2)", procedureIdentifier.Sanitize())
-	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password).Scan(&credOptions.InstanceId, &credOptions.BindingId)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
+	// 🚸 Due to a programming-error – see definition of function `Create` in
+	// “cred_helper/storedprocedure_cred_helper.go” – we store in each column just the corresponding
+	// app_id. To “mark that”, we use here the `as app_id`-renaming.
+	query := fmt.Sprintf(
+		"SELECT instance_id as app_id, binding_id from %s($1,$2) WHERE binding_id = $3",
+		procedureIdentifier.Sanitize())
+	err := sdb.sqldb.QueryRow(ctx, query, creds.Username, creds.Password, appId).
+		Scan(&credOptions.InstanceId, &credOptions.BindingId)
+
 	if err != nil {
-		sdb.logger.Error("validate-stored-procedure-credentials", err, lager.Data{"query": query, "creds": creds})
+		sdb.logger.Error(
+			"credential-validation-with-stored-function-errored",
+			err, lager.Data{"query": query, "creds": creds, "appId": appId})
+
 		return nil, err
 	}
+
 	return credOptions, nil
 }

@@ -190,7 +190,7 @@ func (pr *OperatorRunner) ClearLockDatabase() {
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
-	lockDB, err := sql.Open(database.DriverName, database.DSN)
+	lockDB, err := sql.Open(database.DriverName, database.DataSourceName)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = lockDB.Exec("DELETE FROM operator_lock")
