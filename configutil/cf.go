@@ -10,8 +10,11 @@ import (
 	"github.com/cloudfoundry-community/go-cfenv"
 )
 
-var ErrReadEnvironment = errors.New("failed to read environment variables")
-var ErrDbServiceNotFound = errors.New("failed to get service by name")
+var (
+	ErrReadEnvironment  = errors.New("failed to read environment variables")
+	ErrDbServiceNotFound = errors.New("failed to get service by name")
+	ErrMissingCredential = errors.New("failed to get required credential from service")
+)
 
 type VCAPConfigurationReader interface {
 	MaterializeDBFromService(dbName string) (string, error)
@@ -19,133 +22,149 @@ type VCAPConfigurationReader interface {
 }
 
 type VCAPConfiguration struct {
-	VCAPConfigurationReader
 	appEnv *cfenv.App
 }
 
 func NewVCAPConfigurationReader() (*VCAPConfiguration, error) {
-	vcapConfiguration := &VCAPConfiguration{}
 	appEnv, err := cfenv.Current()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
 	}
-
-	vcapConfiguration.appEnv = appEnv
-	return vcapConfiguration, nil
+	return &VCAPConfiguration{appEnv: appEnv}, nil
 }
 
 func (vc *VCAPConfiguration) MaterializeTLSConfigFromService(serviceName string) (models.TLSCerts, error) {
-	tlsCerts := models.TLSCerts{}
-	services, err := vc.appEnv.Services.WithTag(serviceName)
+	service, err := vc.getServiceByName(serviceName)
 	if err != nil {
-		return tlsCerts, fmt.Errorf("%w: %w", ErrDbServiceNotFound, err)
+		return models.TLSCerts{}, err
 	}
 
-	service := services[0]
-
-	if clientCertContent, ok := service.CredentialString("client_cert"); ok {
-		fileName := fmt.Sprintf("%s.%s", "client_cert", "sslcert")
-		createdClientCert, err := materializeServiceProperty(serviceName, fileName, clientCertContent)
-		if err != nil {
-			return models.TLSCerts{}, err
-		}
-		tlsCerts.CertFile = createdClientCert
-	} else {
-		return models.TLSCerts{}, fmt.Errorf(fmt.Sprintf("failed to get %s from db service", "client_cert"))
-	}
-
-	if clientKeyContent, ok := service.CredentialString("client_key"); ok {
-		fileName := fmt.Sprintf("%s.%s", "client_key", "sslkey")
-		createdClientKey, err := materializeServiceProperty(serviceName, fileName, clientKeyContent)
-		if err != nil {
-			return models.TLSCerts{}, err
-		}
-		tlsCerts.KeyFile = createdClientKey
-	} else {
-		return models.TLSCerts{}, fmt.Errorf(fmt.Sprintf("failed to get %s from db service", "client_key"))
-	}
-
-	if serverCAContent, ok := service.CredentialString("server_ca"); ok {
-		fileName := fmt.Sprintf("%s.%s", "server_ca", "sslrootcert")
-		createServerCA, err := materializeServiceProperty(serviceName, fileName, serverCAContent)
-		if err != nil {
-			return models.TLSCerts{}, err
-		}
-		tlsCerts.CACertFile = createServerCA
-	} else {
-		return models.TLSCerts{}, fmt.Errorf(fmt.Sprintf("failed to get %s from db service", "server_ca"))
+	tlsCerts, err := vc.buildTLSCerts(service, serviceName)
+	if err != nil {
+		return models.TLSCerts{}, err
 	}
 
 	return tlsCerts, nil
 }
 
 func (vc *VCAPConfiguration) MaterializeDBFromService(dbName string) (string, error) {
-	var dbURL *url.URL
-	var err error
-
-	service, err := vc.appEnv.Services.WithTag(dbName)
-	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrDbServiceNotFound, err)
-	}
-
-	dbService := service[0]
-
-	dbURI, ok := dbService.CredentialString("uri")
-	if !ok {
-		return "", fmt.Errorf("failed to get uri from db service")
-	}
-
-	dbURL, err = url.Parse(dbURI)
+	service, err := vc.getServiceByName(dbName)
 	if err != nil {
 		return "", err
 	}
 
-	parameters, err := url.ParseQuery(dbURL.RawQuery)
+	dbURL, err := vc.buildDatabaseURL(service, dbName)
 	if err != nil {
 		return "", err
 	}
-
-	err = materializeConnectionParameter(dbName, dbService, &parameters, "client_cert", "sslcert")
-	if err != nil {
-		return "", err
-	}
-
-	err = materializeConnectionParameter(dbName, dbService, &parameters, "client_key", "sslkey")
-	if err != nil {
-		return "", err
-	}
-
-	err = materializeConnectionParameter(dbName, dbService, &parameters, "server_ca", "sslrootcert")
-	if err != nil {
-		return "", err
-	}
-
-	dbURL.RawQuery = parameters.Encode()
 
 	return dbURL.String(), nil
 }
 
-func materializeConnectionParameter(dbName string, dbService cfenv.Service, parameters *url.Values, bindingProperty string, connectionParameter string) error {
-	if content, hasProperty := dbService.CredentialString(bindingProperty); hasProperty {
-		fileName := fmt.Sprintf("%s.%s", bindingProperty, connectionParameter)
-		createdFile, err := materializeServiceProperty(dbName, fileName, content)
-		if err != nil {
+func (vc *VCAPConfiguration) getServiceByName(serviceName string) (*cfenv.Service, error) {
+	services, err := vc.appEnv.Services.WithTag(serviceName)
+	if err != nil || len(services) == 0 {
+		return nil, fmt.Errorf("%w: %s", ErrDbServiceNotFound, serviceName)
+	}
+	return &services[0], nil
+}
+
+func (vc *VCAPConfiguration) buildTLSCerts(service *cfenv.Service, serviceName string) (models.TLSCerts, error) {
+	certs := models.TLSCerts{}
+
+	if err := vc.createCertFile(service, "client_cert", "sslcert", serviceName, &certs.CertFile); err != nil {
+		return models.TLSCerts{}, err
+	}
+
+	if err := vc.createCertFile(service, "client_key", "sslkey", serviceName, &certs.KeyFile); err != nil {
+		return models.TLSCerts{}, err
+	}
+
+	if err := vc.createCertFile(service, "server_ca", "sslrootcert", serviceName, &certs.CACertFile); err != nil {
+		return models.TLSCerts{}, err
+	}
+
+	return certs, nil
+}
+
+func (vc *VCAPConfiguration) createCertFile(service *cfenv.Service, credentialKey, fileSuffix, serviceName string, certFile *string) error {
+	content, ok := service.CredentialString(credentialKey)
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrMissingCredential, credentialKey)
+	}
+	fileName := fmt.Sprintf("%s.%s", credentialKey, fileSuffix)
+	createdFile, err := materializeServiceProperty(serviceName, fileName, content)
+	if err != nil {
+		return err
+	}
+	*certFile = createdFile
+	return nil
+}
+
+func (vc *VCAPConfiguration) buildDatabaseURL(service *cfenv.Service, dbName string) (*url.URL, error) {
+	dbURI, ok := service.CredentialString("uri")
+	if !ok {
+		return nil, fmt.Errorf("%w: uri", ErrMissingCredential)
+	}
+
+	dbURL, err := url.Parse(dbURI)
+	if err != nil {
+		return nil, err
+	}
+
+	parameters, err := url.ParseQuery(dbURL.RawQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := vc.addConnectionParams(service, dbName, parameters); err != nil {
+		return nil, err
+	}
+
+	dbURL.RawQuery = parameters.Encode()
+	return dbURL, nil
+}
+
+func (vc *VCAPConfiguration) addConnectionParams(service *cfenv.Service, dbName string, parameters url.Values) error {
+	keys := []struct {
+		binding, connection string
+	}{
+		{"client_cert", "sslcert"},
+		{"client_key", "sslkey"},
+		{"server_ca", "sslrootcert"},
+	}
+
+	for _, key := range keys {
+		if err := vc.addConnectionParam(service, dbName, key.binding, key.connection, parameters); err != nil {
 			return err
 		}
-		parameters.Set(connectionParameter, createdFile)
 	}
 	return nil
 }
 
-func materializeServiceProperty(serviceName, fileName, content string) (createdFile string, err error) {
-	err = os.MkdirAll(fmt.Sprintf("/tmp/%s", serviceName), 0700)
-	if err != nil {
+func (vc *VCAPConfiguration) addConnectionParam(service *cfenv.Service, dbName, bindingKey, connectionParam string, parameters url.Values) error {
+	content, ok := service.CredentialString(bindingKey)
+	if ok {
+		fileName := fmt.Sprintf("%s.%s", bindingKey, connectionParam)
+		createdFile, err := materializeServiceProperty(dbName, fileName, content)
+		if err != nil {
+			return err
+		}
+		parameters.Set(connectionParam, createdFile)
+	}
+	return nil
+}
+
+func materializeServiceProperty(serviceName, fileName, content string) (string, error) {
+	dirPath := fmt.Sprintf("/tmp/%s", serviceName)
+	if err := os.MkdirAll(dirPath, 0700); err != nil {
 		return "", err
 	}
-	createdFile = fmt.Sprintf("/tmp/%s/%s", serviceName, fileName)
-	err = os.WriteFile(createdFile, []byte(content), 0600)
-	if err != nil {
+
+	filePath := fmt.Sprintf("%s/%s", dirPath, fileName)
+	if err := os.WriteFile(filePath, []byte(content), 0600); err != nil {
 		return "", err
 	}
-	return
+
+	return filePath, nil
 }
