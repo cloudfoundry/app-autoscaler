@@ -25,6 +25,8 @@ resources:
 - name: config
   type: org.cloudfoundry.user-provided-service
   parameters:
+    service-tags:
+    - config
     path: metricsforwarder/default_config.json
 - name: policydb
   type: org.cloudfoundry.user-provided-service

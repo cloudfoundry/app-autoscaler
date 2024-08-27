@@ -38,31 +38,20 @@ var _ = Describe("Config", func() {
 	Describe("LoadConfig", func() {
 
 		When("config is read from env", func() {
-			var vcapServicesJson string
 			var expectedDbUrl string
 
 			BeforeEach(func() {
 				mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
 			})
 
-			AfterEach(func() {
-				os.Unsetenv("VCAP_SERVICES")
-				os.Unsetenv("PORT")
-				os.Unsetenv("VCAP_APPLICATION")
-			})
-
 			JustBeforeEach(func() {
-				os.Setenv("VCAP_APPLICATION", "{}")
-				os.Setenv("VCAP_SERVICES", vcapServicesJson)
-
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
 				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
 				conf, err = LoadConfig(configFile, mockVCAPConfigurationReader)
 			})
 
-			When("PORT env variable is set to a number ", func() {
+			When("vcap PORT is set to a number ", func() {
 				BeforeEach(func() {
-					vcapServicesJson = `{ "user-provided": [ { "name": "config" } ] }`
 					mockVCAPConfigurationReader.GetPortReturns(3333)
 				})
 
@@ -72,10 +61,9 @@ var _ = Describe("Config", func() {
 				})
 			})
 
-			When("VCAP_SERVICES is empty", func() {
+			When("service is empty", func() {
 				var expectedErr error
 				BeforeEach(func() {
-					vcapServicesJson = "{}"
 					expectedErr = fmt.Errorf("Configuration error: metricsforwarder config service not found")
 					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(""), expectedErr)
 				})
@@ -89,8 +77,6 @@ var _ = Describe("Config", func() {
 				var expectedTLSConfig models.TLSCerts
 
 				BeforeEach(func() {
-					vcapServicesJson = `{ "user-provided": [ { "name": "config", "credentials": { "metricsforwarder": { } } }] }`
-
 					expectedTLSConfig = models.TLSCerts{
 						CertFile:   "/tmp/client_cert.sslcert",
 						KeyFile:    "/tmp/client_key.sslkey",
