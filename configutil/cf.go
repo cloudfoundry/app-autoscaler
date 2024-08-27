@@ -1,6 +1,7 @@
 package configutil
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -48,12 +49,13 @@ func (vc *VCAPConfiguration) GetServiceCredentialContent(serviceName, credential
 		return []byte(""), err
 	}
 
-	content, ok := service.CredentialString(credentialKey)
+	content, ok := service.Credentials[credentialKey]
 	if !ok {
 		return []byte(""), fmt.Errorf("%w: %s", ErrMissingCredential, credentialKey)
 	}
 
-	return []byte(content), nil
+	rawJSON, err := json.Marshal(content)
+	return rawJSON, nil
 }
 
 func (vc *VCAPConfiguration) MaterializeTLSConfigFromService(serviceName string) (models.TLSCerts, error) {
