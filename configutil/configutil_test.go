@@ -17,19 +17,38 @@ var _ = Describe("Configutil", func() {
 	Describe("VCAPConfiguration", func() {
 		var vcapConfiguration *VCAPConfiguration
 
+		var vcapApplicationJson string
 		var vcapServicesJson string
 		var err error
 
 		JustBeforeEach(func() {
-			os.Setenv("VCAP_APPLICATION", "{}")
+			os.Setenv("VCAP_APPLICATION", vcapApplicationJson)
 			os.Setenv("VCAP_SERVICES", vcapServicesJson)
 			vcapConfiguration, err = NewVCAPConfigurationReader()
+			Expect(err).NotTo(HaveOccurred())
 		})
+
 		AfterEach(func() {
 			os.Unsetenv("VCAP_SERVICES")
 			os.Unsetenv("VCAP_APPLICATION")
 		})
+
+		Describe("IsRunningOnCF", func() {
+			When("VCAP_APPLICATION is not set", func() {
+				BeforeEach(func() {
+					vcapApplicationJson = ""
+				})
+
+				It("returns false when vcap", func() {
+					Expect(vcapConfiguration.IsRunningOnCF()).To(BeFalse())
+				})
+			})
+		})
+
 		Describe("MaterializeTLSConfigFromService", func() {
+			BeforeEach(func() {
+				vcapApplicationJson = `{}`
+			})
 
 			When("service has tls ca, cert and key credentials", func() {
 				var expectedClientCertContent = "client-cert-content"

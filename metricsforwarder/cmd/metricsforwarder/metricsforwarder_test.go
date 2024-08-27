@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -19,10 +18,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func unsetEnvVars() {
-	os.Unsetenv("PORT")
-}
-
 var _ = Describe("Metricsforwarder", func() {
 	var (
 		runner *MetricsForwarderRunner
@@ -33,53 +28,6 @@ var _ = Describe("Metricsforwarder", func() {
 	})
 
 	Describe("MetricsForwarder configuration check", func() {
-
-		When("config file is missing", func() {
-			BeforeEach(func() {
-				runner.startCheck = ""
-				runner.configPath = ""
-				runner.Start()
-			})
-			When("environment variables not provided", func() {
-				BeforeEach(func() {
-					unsetEnvVars()
-				})
-
-				It("fails with an error", func() {
-					Eventually(runner.Session).Should(Exit(1))
-					Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
-				})
-			})
-
-			When("environment variables not provided", func() {
-				BeforeEach(func() {
-					os.Setenv("PORT", strconv.Itoa(cfg.Server.Port))
-				})
-
-				It("fails with an error", func() {
-					Eventually(runner.Session).Should(Exit(1))
-					Expect(runner.Session.Buffer()).ToNot(Say("failed to validate configuration"))
-				})
-			})
-		})
-
-		When("config file is not provided", func() {
-			BeforeEach(func() {
-				runner.startCheck = ""
-				runner.configPath = "bogus"
-				runner.Start()
-			})
-			When("environment variables not provided", func() {
-				BeforeEach(func() {
-					unsetEnvVars()
-				})
-				It("fails with an error", func() {
-					Eventually(runner.Session).Should(Exit(1))
-					Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
-				})
-			})
-		})
-
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""

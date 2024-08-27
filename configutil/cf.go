@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	ErrReadEnvironment   = errors.New("failed to read environment variables")
 	ErrDbServiceNotFound = errors.New("failed to get service by name")
 	ErrMissingCredential = errors.New("failed to get required credential from service")
 )
@@ -31,7 +30,7 @@ type VCAPConfiguration struct {
 func NewVCAPConfigurationReader() (*VCAPConfiguration, error) {
 	appEnv, err := cfenv.Current()
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
+		fmt.Println("failed to read VCAP_APPLICATION environment variable")
 	}
 	return &VCAPConfiguration{appEnv: appEnv}, nil
 }
