@@ -1,13 +1,10 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/cloudfoundry-community/go-cfenv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -22,11 +19,11 @@ import (
 // - ErrReadEnvironment
 // - ErrReadVCAPEnvironment
 
-var ErrReadYaml = errors.New("failed to read config file")
-var ErrReadJson = errors.New("failed to read vcap_services json")
-var ErrReadEnvironment = errors.New("failed to read environment variables")
-var ErrReadVCAPEnvironment = errors.New("failed to read VCAP environment variables")
-var ErrMetricsforwarderConfigNotFound = errors.New("Configuration error: metricsforwarder config service not found")
+var (
+	ErrReadYaml                       = errors.New("failed to read config file")
+	ErrReadJson                       = errors.New("failed to read vcap_services json")
+	ErrMetricsforwarderConfigNotFound = errors.New("Configuration error: metricsforwarder config service not found")
+)
 
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
@@ -101,27 +98,6 @@ func decodeYamlFile(filepath string, c *Config) error {
 	return nil
 }
 
-func readConfigFromVCAP(appEnv *cfenv.App, c *Config) error {
-	configVcapService, err := appEnv.Services.WithName("config")
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrMetricsforwarderConfigNotFound, err)
-	}
-
-	data := configVcapService.Credentials["metricsforwarder"]
-
-	rawJSON, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrReadJson, err)
-	}
-
-	err = yaml.Unmarshal(rawJSON, c)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrReadJson, err)
-	}
-
-	return nil
-}
-
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
 	var conf Config
 	var err error
@@ -149,17 +125,17 @@ func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) 
 		}
 	}
 
-	if cfenv.IsRunningOnCF() {
-		appEnv, err := cfenv.Current()
+	if vcapReader.IsRunningOnCF() {
+		conf.Server.Port = vcapReader.GetPort()
+
+		data, err := vcapReader.GetServiceCredentialContent("config", "metricsforwarder")
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
+			return &conf, fmt.Errorf("%w: %w", ErrMetricsforwarderConfigNotFound, err)
 		}
 
-		conf.Server.Port = appEnv.Port
-
-		err = readConfigFromVCAP(appEnv, &conf)
+		err = yaml.Unmarshal(data, &conf)
 		if err != nil {
-			return nil, err
+			return &conf, fmt.Errorf("%w: %w", ErrReadJson, err)
 		}
 
 		if conf.Db == nil {

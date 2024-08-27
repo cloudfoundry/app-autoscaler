@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrReadEnvironment  = errors.New("failed to read environment variables")
+	ErrReadEnvironment   = errors.New("failed to read environment variables")
 	ErrDbServiceNotFound = errors.New("failed to get service by name")
 	ErrMissingCredential = errors.New("failed to get required credential from service")
 )
@@ -19,6 +19,9 @@ var (
 type VCAPConfigurationReader interface {
 	MaterializeDBFromService(dbName string) (string, error)
 	MaterializeTLSConfigFromService(serviceName string) (models.TLSCerts, error)
+	GetServiceCredentialContent(serviceName string, credentialKey string) ([]byte, error)
+	GetPort() int
+	IsRunningOnCF() bool
 }
 
 type VCAPConfiguration struct {
@@ -31,6 +34,27 @@ func NewVCAPConfigurationReader() (*VCAPConfiguration, error) {
 		return nil, fmt.Errorf("%w: %w", ErrReadEnvironment, err)
 	}
 	return &VCAPConfiguration{appEnv: appEnv}, nil
+}
+
+func (vc *VCAPConfiguration) GetPort() int {
+	return vc.appEnv.Port
+}
+func (vc *VCAPConfiguration) IsRunningOnCF() bool {
+	return cfenv.IsRunningOnCF()
+}
+
+func (vc *VCAPConfiguration) GetServiceCredentialContent(serviceName, credentialKey string) ([]byte, error) {
+	service, err := vc.getServiceByName(serviceName)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	content, ok := service.CredentialString(credentialKey)
+	if !ok {
+		return []byte(""), fmt.Errorf("%w: %s", ErrMissingCredential, credentialKey)
+	}
+
+	return []byte(content), nil
 }
 
 func (vc *VCAPConfiguration) MaterializeTLSConfigFromService(serviceName string) (models.TLSCerts, error) {
