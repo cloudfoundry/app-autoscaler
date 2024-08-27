@@ -95,7 +95,7 @@ var _ = Describe("Config", func() {
 			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
 				BeforeEach(func() {
 					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("default"), nil)
-					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert"
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 				})
 
 				It("loads the db config from VCAP_SERVICES successfully", func() {

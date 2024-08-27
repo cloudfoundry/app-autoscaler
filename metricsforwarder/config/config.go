@@ -145,7 +145,6 @@ func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) 
 		currentPolicyDb, ok := conf.Db[db.PolicyDb]
 		if !ok {
 			conf.Db[db.PolicyDb] = db.DatabaseConfig{}
-
 		}
 
 		currentPolicyDb.URL, err = vcapReader.MaterializeDBFromService(db.PolicyDb)
