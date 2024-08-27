@@ -127,7 +127,7 @@ var _ = Describe("Config", func() {
 			When("storedProcedure_db service is provided and cred_helper_impl is default", func() {
 				BeforeEach(func() {
 					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("default"), nil)
-					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert"
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 				})
 
 				It("ignores the service gracefully", func() {
