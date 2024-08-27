@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -26,16 +27,23 @@ func bytesToFile(b []byte) string {
 
 var _ = Describe("Config", func() {
 	var (
-		conf        *Config
-		err         error
-		configBytes []byte
-		configFile  string
+		conf                        *Config
+		err                         error
+		configBytes                 []byte
+		configFile                  string
+		mockVCAPConfigurationReader *fakes.FakeVCAPConfigurationReader
 	)
 
 	Describe("LoadConfig", func() {
+
 		When("config is read from env", func() {
 			var vcapServicesJson string
+			var expectedDbUrl string
 			var port string
+
+			BeforeEach(func() {
+				mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
+			})
 
 			AfterEach(func() {
 				os.Unsetenv("VCAP_SERVICES")
@@ -48,80 +56,126 @@ var _ = Describe("Config", func() {
 				os.Setenv("PORT", port)
 				os.Setenv("VCAP_APPLICATION", "{}")
 				os.Setenv("VCAP_SERVICES", vcapServicesJson)
-				conf, err = LoadConfig(configFile)
+
+				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
+				conf, err = LoadConfig(configFile, mockVCAPConfigurationReader)
 			})
 
 			When("PORT env variable is set to a number ", func() {
 				BeforeEach(func() {
-					vcapServicesJson = "{}"
+					vcapServicesJson = `{ "user-provided": [ { "name": "config" } ] }`
 					port = "3333"
 				})
 
 				It("sets env variable over config file", func() {
+					Expect(err).NotTo(HaveOccurred())
 					Expect(conf.Server.Port).To(Equal(3333))
 				})
 			})
 
-			When("VCAP_SERVICES has service config", func() {
+			When("VCAP_SERVICES is empty", func() {
 				BeforeEach(func() {
-					// VCAP_SERVICES={"user-provided":[
-					//{"label":"user-provided",
-					//	"name":"config",
-					//  "tags":[],
-					//  "instance_guid":"444c838e-17d9-429d-a1ea-660904db9841",
-					//  "instance_name":"config",
-					//  "binding_guid":"2cb523a1-773a-4fa4-ba05-3a76cc488ff7",
-					//  "binding_name":null,
-					//  "credentials":{
-					//    "db":null,
-					//    "logging":{"level":"info"},
-					//    "policy_poller_interval":"60s",
-					//    "rate_limit":{"max_amount":10,"valid_duration":"1s"},
-					//    "syslog":{
-					//      "port":6067,
-					//      "server_address":"log-cache.service.cf.internal",
-					//      "tls":{"ca_file":"/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/ca.crt","cert_file":"/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.crt","key_file":"/var/vcap/jobs/metricsforwarder/config/certs/syslog_client/client.key"}
-					//     },
-					//  }
-					//},
-					//  "syslog_drain_url":null,
-					//  "volume_mounts":[]}]}
-					//
+					vcapServicesJson = "{}"
+				})
+
+				It("should error with config service not found", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: metricsforwarder config service not found")))
+				})
+			})
+
+			When("VCAP_SERVICES has credentials for syslog client", func() {
+				var expectedTLSConfig models.TLSCerts
+
+				BeforeEach(func() {
+					vcapServicesJson = `{ "user-provided": [ { "name": "config", "credentials": { "metricsforwarder": { } } }] }`
+
+					expectedTLSConfig = models.TLSCerts{
+						CertFile:   "/tmp/client_cert.sslcert",
+						KeyFile:    "/tmp/client_key.sslkey",
+						CACertFile: "/tmp/server_ca.sslrootcert",
+					}
+
+					mockVCAPConfigurationReader.MaterializeTLSConfigFromServiceReturns(expectedTLSConfig, nil)
+				})
+
+				It("loads the syslog config from VCAP_SERVICES", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.SyslogConfig.TLS).To(Equal(expectedTLSConfig))
+				})
+			})
+
+			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
+				BeforeEach(func() {
+					vcapServicesJson = getVcapConfigWithCredImplementation("default")
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert"
+				})
+
+				It("loads the db config from VCAP_SERVICES successfully", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Db[db.PolicyDb].URL).To(Equal(expectedDbUrl))
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(1))
+					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(0)
+					Expect(actualDbName).To(Equal(db.PolicyDb))
+				})
+			})
+
+			When("storedProcedure_db service is provided and cred_helper_impl is stored_procedure", func() {
+				BeforeEach(func() {
+					vcapServicesJson = getVcapConfigWithCredImplementation("stored_procedure")
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert"
+				})
+
+				It("reads the store procedure service from vcap", func() {
+					Expect(err).NotTo(HaveOccurred())
+					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+					Expect(storeProcedureFound).To(BeTrue())
+					Expect(conf.Db[db.StoredProcedureDb].URL).To(Equal(expectedDbUrl))
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
+					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(1)
+					Expect(actualDbName).To(Equal(db.StoredProcedureDb))
+				})
+			})
+
+			When("storedProcedure_db service is provided and cred_helper_impl is default", func() {
+				BeforeEach(func() {
+					vcapServicesJson = getVcapConfigWithCredImplementation("default")
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert"
+				})
+
+				It("ignores the service gracefully", func() {
+					Expect(err).NotTo(HaveOccurred())
+					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+					Expect(storeProcedureFound).To(BeFalse())
+				})
+			})
+
+			When("VCAP_SERVICES has metricsforwarder config", func() {
+				BeforeEach(func() {
 					vcapServicesJson = `{
 						"user-provided": [ {
 							"label":"user-provided",
 							"name": "config",
 							"credentials": {
-							  "metricsforwarder": {
-								"cache_cleanup_interval":"10h",
-								"cache_ttl":"90s",
-								"cred_helper_impl": "default",
-								"health":{"password":"health-password","username":"health-user"},
-								"logging": {
-									"level": "debug"
-								},
-								"loggregator": {
-									"metron_address": "metron-vcap-addrs:3457",
-									"tls": {
-										"ca_file": "../testcerts/ca.crt",
-										"cert_file": "../testcerts/client.crt",
-										"key_file": "../testcerts/client.key"
+								"metricsforwarder": {
+									"cache_cleanup_interval":"10h",
+									"cache_ttl":"90s",
+									"cred_helper_impl": "default",
+									"health":{"password":"health-password","username":"health-user"},
+									"logging": {
+										"level": "debug"
+									},
+									"loggregator": {
+										"metron_address": "metron-vcap-addrs:3457",
+										"tls": {
+											"ca_file": "../testcerts/ca.crt",
+											"cert_file": "../testcerts/client.crt",
+											"key_file": "../testcerts/client.key"
+										}
 									}
 								}
 							}
-							}
-						}],
-						"autoscaler": [ {
-							  "name": "policy_db",
-							  "label": "postgres",
-							  "credentials": {
-								"uri":"postgres://foo:bar@postgres.example.com:5432/policy_db"
-							  },
-							  "syslog_drain_url": "",
-							  "tags": ["postgres","postgresql","relational"]
-							  }
-							]
-						  }` // #nosec G101
+						}
+					]}` // #nosec G101
 				})
 
 				It("loads the config from VCAP_SERVICES", func() {
@@ -130,22 +184,13 @@ var _ = Describe("Config", func() {
 					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("metron-vcap-addrs:3457"))
 					Expect(conf.CacheTTL).To(Equal(90 * time.Second))
 				})
-
-				It("loads the db config from VCAP_SERVICES", func() {
-					expectedDbConfig := db.DatabaseConfig{
-						URL: "postgres://foo:bar@postgres.example.com:5432/policy_db",
-					}
-
-					Expect(err).NotTo(HaveOccurred())
-					Expect(conf.Db[db.PolicyDb]).To(Equal(expectedDbConfig))
-				})
 			})
 		})
 
 		When("config is read from file", func() {
 			JustBeforeEach(func() {
 				configFile = bytesToFile(configBytes)
-				conf, err = LoadConfig(configFile)
+				conf, err = LoadConfig(configFile, mockVCAPConfigurationReader)
 			})
 
 			AfterEach(func() {
@@ -390,3 +435,16 @@ health:
 		})
 	})
 })
+
+func getVcapConfigWithCredImplementation(credHelperImplementation string) string {
+	return `{
+		"user-provided": [ {
+			"name": "config",
+			"credentials": {
+				"metricsforwarder": {
+					"cred_helper_impl": "` + credHelperImplementation + `"
+				}
+			}
+		}]
+	}` // #nosec G101
+}

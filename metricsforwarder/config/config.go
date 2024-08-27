@@ -9,6 +9,7 @@ import (
 
 	"github.com/cloudfoundry-community/go-cfenv"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -25,6 +26,7 @@ var ErrReadYaml = errors.New("failed to read config file")
 var ErrReadJson = errors.New("failed to read vcap_services json")
 var ErrReadEnvironment = errors.New("failed to read environment variables")
 var ErrReadVCAPEnvironment = errors.New("failed to read VCAP environment variables")
+var ErrMetricsforwarderConfigNotFound = errors.New("Configuration error: metricsforwarder config service not found")
 
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
@@ -41,7 +43,6 @@ type Config struct {
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
 	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
-	PolicyDB              db.DatabaseConfig             `yaml:"policy_db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
 	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`
@@ -102,6 +103,10 @@ func decodeYamlFile(filepath string, c *Config) error {
 
 func readConfigFromVCAP(appEnv *cfenv.App, c *Config) error {
 	configVcapService, err := appEnv.Services.WithName("config")
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrMetricsforwarderConfigNotFound, err)
+	}
+
 	data := configVcapService.Credentials["metricsforwarder"]
 
 	rawJSON, err := json.Marshal(data)
@@ -117,7 +122,7 @@ func readConfigFromVCAP(appEnv *cfenv.App, c *Config) error {
 	return nil
 }
 
-func LoadConfig(filepath string) (*Config, error) {
+func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
 	var conf Config
 	var err error
 
@@ -152,14 +157,42 @@ func LoadConfig(filepath string) (*Config, error) {
 
 		conf.Server.Port = appEnv.Port
 
-		err = readDbFromVCAP(appEnv, &conf)
-		if err != nil {
-			return &conf, err
-		}
-
 		err = readConfigFromVCAP(appEnv, &conf)
 		if err != nil {
 			return nil, err
+		}
+
+		if conf.Db == nil {
+			conf.Db = make(map[string]db.DatabaseConfig)
+		}
+
+		currentPolicyDb, ok := conf.Db[db.PolicyDb]
+		if !ok {
+			conf.Db[db.PolicyDb] = db.DatabaseConfig{}
+
+		}
+
+		currentPolicyDb.URL, err = vcapReader.MaterializeDBFromService(db.PolicyDb)
+		if err != nil {
+			return &conf, err
+		}
+		conf.Db[db.PolicyDb] = currentPolicyDb
+
+		if conf.CredHelperImpl == "stored_procedure" {
+			currentStoredProcedureDb, ok := conf.Db[db.StoredProcedureDb]
+			if !ok {
+				conf.Db[db.StoredProcedureDb] = db.DatabaseConfig{}
+			}
+			currentStoredProcedureDb.URL, err = vcapReader.MaterializeDBFromService(db.StoredProcedureDb)
+			if err != nil {
+				return &conf, err
+			}
+			conf.Db[db.StoredProcedureDb] = currentStoredProcedureDb
+		}
+
+		conf.SyslogConfig.TLS, err = vcapReader.MaterializeTLSConfigFromService("syslog-client")
+		if err != nil {
+			return &conf, err
 		}
 	}
 
@@ -209,64 +242,6 @@ func (c *Config) Validate() error {
 	if err := c.Health.Validate(); err != nil {
 		return err
 	}
-
-	return nil
-}
-func readDbFromVCAP(appEnv *cfenv.App, c *Config) error {
-	if c.Db != nil {
-		return nil
-	}
-
-	dbServices, err := appEnv.Services.WithTag("relational")
-	if err != nil {
-		return fmt.Errorf("failed to get db service with relational tag")
-	}
-
-	if len(dbServices) != 1 {
-		return fmt.Errorf("failed to get db service with relational tag")
-	}
-
-	dbService := dbServices[0]
-
-	dbURI, ok := dbService.CredentialString("uri")
-	if !ok {
-		return fmt.Errorf("failed to get uri from db service")
-	}
-
-	if c.Db == nil {
-		c.Db = make(map[string]db.DatabaseConfig)
-	}
-
-	c.Db[db.PolicyDb] = db.DatabaseConfig{
-		URL: dbURI,
-	}
-
-	//dbURL, err := url.Parse(dbURI)
-	//if err != nil {
-	//  return nil, err
-	//}
-
-	//parameters, err := url.ParseQuery(dbURL.RawQuery)
-	//if err != nil {
-	//  return nil, err
-	//}
-
-	//err = materializeConnectionParameter(dbService, parameters, "client_cert", "sslcert")
-	//if err != nil {
-	//  return nil, err
-	//}
-
-	//err = materializeConnectionParameter(dbService, parameters, "client_key", "sslkey")
-	//if err != nil {
-	//  return nil, err
-	//}
-
-	//err = materializeConnectionParameter(dbService, parameters, "server_ca", "sslrootcert")
-	//if err != nil {
-	//  return nil, err
-	//}
-
-	//dbURL.RawQuery = parameters.Encode()
 
 	return nil
 }

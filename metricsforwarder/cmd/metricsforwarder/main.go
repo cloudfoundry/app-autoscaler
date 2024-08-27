@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -33,7 +34,8 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 
-	conf, err = config.LoadConfig(path)
+	vcapConfiguration, err := configutil.NewVCAPConfigurationReader()
+	conf, err = config.LoadConfig(path, vcapConfiguration)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stdout, "failed to load config : %s\n", err.Error())
 		os.Exit(1)
