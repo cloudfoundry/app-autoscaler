@@ -73,12 +73,10 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		cleanupForApp(appId)
 		cleanupForApp(appId2)
 		cleanupForApp(appId3)
-		cleanUpCooldownTable()
 		DeferCleanup(func() {
 			cleanupForApp(appId)
 			cleanupForApp(appId2)
 			cleanupForApp(appId3)
-			cleanUpCooldownTable()
 		})
 	})
 

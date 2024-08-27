@@ -210,11 +210,6 @@ func removeCooldownForApp(appId string) {
 	FailOnError("can not remove scalingcooldown for app", err)
 }
 
-func cleanUpCooldownTable() {
-	_, err := dbHelper.Exec("DELETE from scalingcooldown")
-	FailOnError("can not clean table scalingcooldown", err)
-}
-
 func removeActiveScheduleForApp(appId string) {
 	query := dbHelper.Rebind("DELETE from activeschedule where appId = ?")
 	_, err := dbHelper.Exec(query, appId)
