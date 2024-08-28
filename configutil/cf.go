@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"github.com/cloudfoundry-community/go-cfenv"
+	"github.com/cloud-gov/go-cfenv"
 )
 
 var (
