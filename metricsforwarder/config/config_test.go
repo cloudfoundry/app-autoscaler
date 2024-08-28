@@ -35,14 +35,13 @@ var _ = Describe("Config", func() {
 		mockVCAPConfigurationReader *fakes.FakeVCAPConfigurationReader
 	)
 
+	BeforeEach(func() {
+		mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
+	})
 	Describe("LoadConfig", func() {
 
 		When("config is read from env", func() {
 			var expectedDbUrl string
-
-			BeforeEach(func() {
-				mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
-			})
 
 			JustBeforeEach(func() {
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
