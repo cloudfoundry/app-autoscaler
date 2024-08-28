@@ -7,8 +7,10 @@ version: 0.0.1
 
 modules:
   - name: metricsforwarder
-    type: binary
-    path: build
+    type: go
+    path: .
+    properties:
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
     requires:
     - name: config
     - name: policydb
@@ -18,8 +20,11 @@ modules:
       disk-quota: 1G
       instances: 2
       stack: cflinuxfs4
-      command: ./metricsforwarder
       routes:
+    build-parameters:
+      builder: custom
+      commands:
+      - make vendor
 
 resources:
 - name: config

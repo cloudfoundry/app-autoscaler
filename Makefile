@@ -89,12 +89,6 @@ go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
 ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
 	go mod vendor
 
-cf-build-%: generate-fakes
-	@echo "# building for cf $*"
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/$* $*/cmd/$*/main.go
-
-cf-build: $(addprefix cf-build-,$(binaries))
-
 # CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
 build-%: ${openapi-generated-clients-and-servers-dir} ${openapi-generated-clients-and-servers-files}
 	@echo "# building $*"
@@ -167,7 +161,7 @@ mta-logs:
 	vim mta-*
 
 .PHONY: mta-build
-mta-build: mta-build-clean cf-build
+mta-build: mta-build-clean
 	mbt build
 
 mta-build-clean:
