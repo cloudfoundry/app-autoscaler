@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
-go 1.22.1
+go 1.22.2
 
 require (
 	code.cloudfoundry.org/cfhttp/v2 v2.1.0
@@ -42,7 +42,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.28.0
 	go.opentelemetry.io/otel/trace v1.28.0
 	golang.org/x/crypto v0.26.0
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	golang.org/x/net v0.28.0
 	golang.org/x/time v0.5.0
 	google.golang.org/grpc v1.65.0
