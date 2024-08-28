@@ -18,8 +18,8 @@ var (
 
 type VCAPConfigurationReader interface {
 	MaterializeDBFromService(dbName string) (string, error)
-	MaterializeTLSConfigFromService(serviceName string) (models.TLSCerts, error)
-	GetServiceCredentialContent(serviceName string, credentialKey string) ([]byte, error)
+	MaterializeTLSConfigFromService(serviceTag string) (models.TLSCerts, error)
+	GetServiceCredentialContent(serviceTag string, credentialKey string) ([]byte, error)
 	GetPort() int
 	IsRunningOnCF() bool
 }
@@ -43,8 +43,8 @@ func (vc *VCAPConfiguration) IsRunningOnCF() bool {
 	return cfenv.IsRunningOnCF()
 }
 
-func (vc *VCAPConfiguration) GetServiceCredentialContent(serviceName, credentialKey string) ([]byte, error) {
-	service, err := vc.getServiceByName(serviceName)
+func (vc *VCAPConfiguration) GetServiceCredentialContent(serviceTag, credentialKey string) ([]byte, error) {
+	service, err := vc.getServiceByTag(serviceTag)
 	if err != nil {
 		return []byte(""), err
 	}
@@ -58,13 +58,13 @@ func (vc *VCAPConfiguration) GetServiceCredentialContent(serviceName, credential
 	return rawJSON, nil
 }
 
-func (vc *VCAPConfiguration) MaterializeTLSConfigFromService(serviceName string) (models.TLSCerts, error) {
-	service, err := vc.getServiceByName(serviceName)
+func (vc *VCAPConfiguration) MaterializeTLSConfigFromService(serviceTag string) (models.TLSCerts, error) {
+	service, err := vc.getServiceByTag(serviceTag)
 	if err != nil {
 		return models.TLSCerts{}, err
 	}
 
-	tlsCerts, err := vc.buildTLSCerts(service, serviceName)
+	tlsCerts, err := vc.buildTLSCerts(service, serviceTag)
 	if err != nil {
 		return models.TLSCerts{}, err
 	}
@@ -73,7 +73,7 @@ func (vc *VCAPConfiguration) MaterializeTLSConfigFromService(serviceName string)
 }
 
 func (vc *VCAPConfiguration) MaterializeDBFromService(dbName string) (string, error) {
-	service, err := vc.getServiceByName(dbName)
+	service, err := vc.getServiceByTag(dbName)
 	if err != nil {
 		return "", err
 	}
@@ -86,39 +86,39 @@ func (vc *VCAPConfiguration) MaterializeDBFromService(dbName string) (string, er
 	return dbURL.String(), nil
 }
 
-func (vc *VCAPConfiguration) getServiceByName(serviceName string) (*cfenv.Service, error) {
-	services, err := vc.appEnv.Services.WithTag(serviceName)
+func (vc *VCAPConfiguration) getServiceByTag(serviceTag string) (*cfenv.Service, error) {
+	services, err := vc.appEnv.Services.WithTag(serviceTag)
 	if err != nil || len(services) == 0 {
-		return nil, fmt.Errorf("%w: %s", ErrDbServiceNotFound, serviceName)
+		return nil, fmt.Errorf("%w: %s", ErrDbServiceNotFound, serviceTag)
 	}
 	return &services[0], nil
 }
 
-func (vc *VCAPConfiguration) buildTLSCerts(service *cfenv.Service, serviceName string) (models.TLSCerts, error) {
+func (vc *VCAPConfiguration) buildTLSCerts(service *cfenv.Service, serviceTag string) (models.TLSCerts, error) {
 	certs := models.TLSCerts{}
 
-	if err := vc.createCertFile(service, "client_cert", "sslcert", serviceName, &certs.CertFile); err != nil {
+	if err := vc.createCertFile(service, "client_cert", "sslcert", serviceTag, &certs.CertFile); err != nil {
 		return models.TLSCerts{}, err
 	}
 
-	if err := vc.createCertFile(service, "client_key", "sslkey", serviceName, &certs.KeyFile); err != nil {
+	if err := vc.createCertFile(service, "client_key", "sslkey", serviceTag, &certs.KeyFile); err != nil {
 		return models.TLSCerts{}, err
 	}
 
-	if err := vc.createCertFile(service, "server_ca", "sslrootcert", serviceName, &certs.CACertFile); err != nil {
+	if err := vc.createCertFile(service, "server_ca", "sslrootcert", serviceTag, &certs.CACertFile); err != nil {
 		return models.TLSCerts{}, err
 	}
 
 	return certs, nil
 }
 
-func (vc *VCAPConfiguration) createCertFile(service *cfenv.Service, credentialKey, fileSuffix, serviceName string, certFile *string) error {
+func (vc *VCAPConfiguration) createCertFile(service *cfenv.Service, credentialKey, fileSuffix, serviceTag string, certFile *string) error {
 	content, ok := service.CredentialString(credentialKey)
 	if !ok {
 		return fmt.Errorf("%w: %s", ErrMissingCredential, credentialKey)
 	}
 	fileName := fmt.Sprintf("%s.%s", credentialKey, fileSuffix)
-	createdFile, err := materializeServiceProperty(serviceName, fileName, content)
+	createdFile, err := materializeServiceProperty(serviceTag, fileName, content)
 	if err != nil {
 		return err
 	}
@@ -180,8 +180,8 @@ func (vc *VCAPConfiguration) addConnectionParam(service *cfenv.Service, dbName, 
 	return nil
 }
 
-func materializeServiceProperty(serviceName, fileName, content string) (string, error) {
-	dirPath := fmt.Sprintf("/tmp/%s", serviceName)
+func materializeServiceProperty(serviceTag, fileName, content string) (string, error) {
+	dirPath := fmt.Sprintf("/tmp/%s", serviceTag)
 	if err := os.MkdirAll(dirPath, 0700); err != nil {
 		return "", err
 	}
