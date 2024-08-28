@@ -16,7 +16,6 @@ import (
 var _ = Describe("Configutil", func() {
 	Describe("VCAPConfiguration", func() {
 		var vcapConfiguration *VCAPConfiguration
-
 		var vcapApplicationJson string
 		var vcapServicesJson string
 		var err error
@@ -84,6 +83,10 @@ var _ = Describe("Configutil", func() {
 		})
 
 		Describe("MaterializeDBFromService", func() {
+			BeforeEach(func() {
+				vcapApplicationJson = ""
+				vcapApplicationJson = `{}`
+			})
 
 			When("VCAP_SERVICES has relational db service bind to app", func() {
 				When("when uri is wrong", func() {
