@@ -55,6 +55,10 @@ func (vc *VCAPConfiguration) GetServiceCredentialContent(serviceTag, credentialK
 	}
 
 	rawJSON, err := json.Marshal(content)
+	if err != nil {
+		return []byte(""), err
+	}
+
 	return rawJSON, nil
 }
 
