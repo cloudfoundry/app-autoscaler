@@ -46,7 +46,7 @@ var _ = Describe("Config", func() {
 			JustBeforeEach(func() {
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
 				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
-				conf, err = LoadConfig(configFile, mockVCAPConfigurationReader)
+				conf, err = LoadConfig("", mockVCAPConfigurationReader)
 			})
 
 			When("vcap PORT is set to a number ", func() {
