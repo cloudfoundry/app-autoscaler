@@ -28,20 +28,6 @@ var _ = Describe("Metricsforwarder", func() {
 	})
 
 	Describe("MetricsForwarder configuration check", func() {
-
-		Context("with a missing config file", func() {
-			BeforeEach(func() {
-				runner.startCheck = ""
-				runner.configPath = "bogus"
-				runner.Start()
-			})
-
-			It("fails with an error", func() {
-				Eventually(runner.Session).Should(Exit(1))
-				Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
-			})
-		})
-
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""

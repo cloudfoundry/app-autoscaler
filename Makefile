@@ -12,7 +12,7 @@ PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/'
 DB_HOST ?= localhost
 DBURL ?= "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"
 
-METRICSFORWARDER_APPNAME ?= "metricsforwarder"
+MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 EXTENSION_FILE := $(shell mktemp)
 
 export GOWORK=off
@@ -154,14 +154,12 @@ clean:
 .PHONY: mta-deploy
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
-	$(MAKE) -f metricsforwarder/Makefile stop-metricsforwarder-vm
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy mta_archives/*.mtar -f -e $(EXTENSION_FILE)
+	@cf deploy mta_archives/*.mtar -f --delete-services -e $(EXTENSION_FILE)
 
 build-extension-file:
-	cp example.mtaext $(EXTENSION_FILE);
-	sed -i "s/APP_NAME/$(METRICSFORWARDER_APPNAME)/g" $(EXTENSION_FILE);
-	echo "EXTENSION_FILE: $(EXTENSION_FILE)"
+	echo "extension file at: $(EXTENSION_FILE)"
+	$(MAKEFILE_DIR)/build-extension-file.sh $(EXTENSION_FILE);
 
 mta-logs:
 	rm -rf mta-*
@@ -170,7 +168,6 @@ mta-logs:
 
 .PHONY: mta-build
 mta-build: mta-build-clean cf-build
-	$(MAKE) -f metricsforwarder/Makefile fetch-config
 	mbt build
 
 mta-build-clean:

@@ -1,56 +1,203 @@
 package config_test
 
 import (
-	"bytes"
+	"fmt"
 	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v3"
 )
 
-var _ = Describe("Config", func() {
+func bytesToFile(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
 
+	file, err := os.CreateTemp("", "")
+	Expect(err).NotTo(HaveOccurred())
+	_, err = file.Write(b)
+	Expect(err).NotTo(HaveOccurred())
+	return file.Name()
+}
+
+var _ = Describe("Config", func() {
 	var (
-		conf        *Config
-		err         error
-		configBytes []byte
+		conf                        *Config
+		err                         error
+		configBytes                 []byte
+		configFile                  string
+		mockVCAPConfigurationReader *fakes.FakeVCAPConfigurationReader
 	)
 
+	BeforeEach(func() {
+		mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
+	})
 	Describe("LoadConfig", func() {
 
-		JustBeforeEach(func() {
-			conf, err = LoadConfig(bytes.NewReader(configBytes))
+		When("config is read from env", func() {
+			var expectedDbUrl string
+
+			JustBeforeEach(func() {
+				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
+				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
+				conf, err = LoadConfig("", mockVCAPConfigurationReader)
+			})
+
+			When("vcap PORT is set to a number ", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetPortReturns(3333)
+				})
+
+				It("sets env variable over config file", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Server.Port).To(Equal(3333))
+				})
+			})
+
+			When("service is empty", func() {
+				var expectedErr error
+				BeforeEach(func() {
+					expectedErr = fmt.Errorf("Configuration error: metricsforwarder config service not found")
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(""), expectedErr)
+				})
+
+				It("should error with config service not found", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: metricsforwarder config service not found")))
+				})
+			})
+
+			When("VCAP_SERVICES has credentials for syslog client", func() {
+				var expectedTLSConfig models.TLSCerts
+
+				BeforeEach(func() {
+					expectedTLSConfig = models.TLSCerts{
+						CertFile:   "/tmp/client_cert.sslcert",
+						KeyFile:    "/tmp/client_key.sslkey",
+						CACertFile: "/tmp/server_ca.sslrootcert",
+					}
+
+					mockVCAPConfigurationReader.MaterializeTLSConfigFromServiceReturns(expectedTLSConfig, nil)
+				})
+
+				It("loads the syslog config from VCAP_SERVICES", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.SyslogConfig.TLS).To(Equal(expectedTLSConfig))
+				})
+			})
+
+			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("default"), nil)
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
+				})
+
+				It("loads the db config from VCAP_SERVICES successfully", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Db[db.PolicyDb].URL).To(Equal(expectedDbUrl))
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(1))
+					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(0)
+					Expect(actualDbName).To(Equal(db.PolicyDb))
+				})
+			})
+
+			When("storedProcedure_db service is provided and cred_helper_impl is stored_procedure", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("stored_procedure"), nil)
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
+				})
+
+				It("reads the store procedure service from vcap", func() {
+					Expect(err).NotTo(HaveOccurred())
+					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+					Expect(storeProcedureFound).To(BeTrue())
+					Expect(conf.Db[db.StoredProcedureDb].URL).To(Equal(expectedDbUrl))
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
+					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(1)
+					Expect(actualDbName).To(Equal(db.StoredProcedureDb))
+				})
+			})
+
+			When("storedProcedure_db service is provided and cred_helper_impl is default", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("default"), nil)
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
+				})
+
+				It("ignores the service gracefully", func() {
+					Expect(err).NotTo(HaveOccurred())
+					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+					Expect(storeProcedureFound).To(BeFalse())
+				})
+			})
+
+			When("VCAP_SERVICES has metricsforwarder config", func() {
+				BeforeEach(func() {
+
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(` {
+									"cache_cleanup_interval":"10h",
+									"cache_ttl":"90s",
+									"cred_helper_impl": "default",
+									"health":{"password":"health-password","username":"health-user"},
+									"logging": {
+										"level": "debug"
+									},
+									"loggregator": {
+										"metron_address": "metron-vcap-addrs:3457",
+									}
+								}`), nil) // #nosec G101
+				})
+
+				It("loads the config from VCAP_SERVICES", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Logging.Level).To(Equal("debug"))
+					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("metron-vcap-addrs:3457"))
+					Expect(conf.CacheTTL).To(Equal(90 * time.Second))
+				})
+			})
 		})
 
-		Context("with invalid yaml", func() {
+		When("config is read from file", func() {
+			JustBeforeEach(func() {
+				configFile = bytesToFile(configBytes)
+				conf, err = LoadConfig(configFile, mockVCAPConfigurationReader)
+			})
+
+			AfterEach(func() {
+				Expect(os.Remove(configFile)).To(Succeed())
+			})
+
 			BeforeEach(func() {
-				configBytes = []byte(`
+				mockVCAPConfigurationReader.IsRunningOnCFReturns(false)
+			})
+
+			Context("with invalid yaml", func() {
+				BeforeEach(func() {
+					configBytes = []byte(`
   server:
     port: 8081
   logging:
   level: info
 
 loggregator
-	metron_address: 127.0.0.1:3457
-	tls:
-	  cert_file: "../testcerts/ca.crt"
+  metron_address: 127.0.0.1:3457
+  tls:
+    cert_file: "../testcerts/ca.crt"
 `)
-			})
+				})
 
-			It("returns an error", func() {
-				Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
+				It("returns an error", func() {
+					Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
+				})
 			})
-		})
-
-		Context("with valid yaml", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
+			Context("with valid yaml", func() {
+				BeforeEach(func() {
+					configBytes = []byte(`
 server:
   port: 8081
 logging:
@@ -71,27 +218,27 @@ health:
   port: 9999
 cred_helper_impl: default
 `)
-			})
+				})
 
-			It("returns the config", func() {
-				Expect(conf.Server.Port).To(Equal(8081))
-				Expect(conf.Logging.Level).To(Equal("debug"))
-				Expect(conf.Health.Port).To(Equal(9999))
-				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
-				Expect(conf.Db[db.PolicyDb]).To(Equal(
-					db.DatabaseConfig{
-						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
-						MaxOpenConnections:    10,
-						MaxIdleConnections:    5,
-						ConnectionMaxLifetime: 60 * time.Second,
-					}))
-				Expect(conf.CredHelperImpl).To(Equal("default"))
-			})
-		})
+				It("returns the config", func() {
+					Expect(conf.Server.Port).To(Equal(8081))
+					Expect(conf.Logging.Level).To(Equal("debug"))
+					Expect(conf.Health.Port).To(Equal(9999))
+					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
+					Expect(conf.Db[db.PolicyDb]).To(Equal(
+						db.DatabaseConfig{
+							URL:                   "postgres://pqgotest:password@localhost/pqgotest",
+							MaxOpenConnections:    10,
+							MaxIdleConnections:    5,
+							ConnectionMaxLifetime: 60 * time.Second,
+						}))
+					Expect(conf.CredHelperImpl).To(Equal("default"))
+				})
 
-		Context("with partial config", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
+			})
+			Context("with partial config", func() {
+				BeforeEach(func() {
+					configBytes = []byte(`
 loggregator:
   tls:
     ca_file: "../testcerts/ca.crt"
@@ -106,209 +253,21 @@ db:
 health:
   port: 8081
 `)
-			})
-
-			It("returns default values", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Server.Port).To(Equal(6110))
-				Expect(conf.Logging.Level).To(Equal("info"))
-				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal(DefaultMetronAddress))
-				Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
-				Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
-				Expect(conf.Health.Port).To(Equal(8081))
-			})
-
-			When("PORT env variable is set", func() {
-
-				AfterEach(func() {
-					os.Setenv("PORT", "")
 				})
 
-				When("PORT env is a number", func() {
-					BeforeEach(func() {
-						os.Setenv("PORT", "3333")
-					})
-					It("prioritize env variable over config file", func() {
-						Expect(conf.Server.Port).NotTo(Equal(6110))
-						Expect(conf.Server.Port).To(Equal(3333))
-					})
-				})
-
-				When("PORT env is not number", func() {
-					BeforeEach(func() {
-						os.Setenv("PORT", "NAN")
-					})
-
-					It("return invalid port error", func() {
-						Expect(err).To(MatchError(ErrInvalidPort))
-					})
+				It("returns default values", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Server.Port).To(Equal(6110))
+					Expect(conf.Logging.Level).To(Equal("info"))
+					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal(DefaultMetronAddress))
+					Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
+					Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
+					Expect(conf.Health.Port).To(Equal(8081))
 				})
 			})
+
 		})
 
-		When("it gives a non integer port", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: port
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("it gives a non integer health server port", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-health:
-  port: port
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("it gives a non integer max_open_connections of policydb", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: NOT-INTEGER-VALUE
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("it gives a non integer max_idle_connections of policydb", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: NOT-INTEGER-VALUE
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		When("connection_max_lifetime of policydb is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 6K
-health:
-  port: 8081
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
-
-		When("max_amount of rate_limit is not an interger", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-rate_limit:
-  max_amount: NOT-INTEGER
-  valid_duration: 1s
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
-			})
-		})
-
-		When("valid_duration of rate_limit is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-rate_limit:
-  max_amount: 2
-  valid_duration: NOT-TIME-DURATION
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
 	})
 
 	Describe("Validate", func() {
@@ -437,8 +396,10 @@ rate_limit:
 			BeforeEach(func() {
 				conf.RateLimit.MaxAmount = 0
 			})
+
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
+
 			})
 		})
 
@@ -446,9 +407,14 @@ rate_limit:
 			BeforeEach(func() {
 				conf.RateLimit.ValidDuration = 0 * time.Nanosecond
 			})
+
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
 			})
 		})
 	})
 })
+
+func getVcapConfigWithCredImplementation(credHelperImplementation string) []byte {
+	return []byte(`{ "cred_helper_impl": "` + credHelperImplementation + `" }`) // #nosec G101
+}

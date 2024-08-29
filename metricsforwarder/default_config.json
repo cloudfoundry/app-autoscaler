@@ -1,0 +1,34 @@
+{
+  "metricsforwarder": {
+    "cache_cleanup_interval": "6h",
+    "cache_ttl": "900s",
+    "cred_helper_impl": "default",
+    "health": {
+      "username": "metricsforwarder"
+    },
+    "logging": {
+      "level": "debug"
+    },
+    "syslog": {
+      "server_address": "log-cache.service.cf.internal",
+      "port": 6067
+    },
+    "db": {
+      "policy_db": {
+        "max_open_connections": 100,
+        "max_idle_connections": 10,
+        "connection_max_lifetime": "60s"
+      },
+      "storedprocedure_db": {
+        "max_open_connections": 20,
+        "max_idle_connections": 10,
+        "connection_max_lifetime": "60s"
+      }
+    },
+    "policy_poller_interval": "60s",
+    "rate_limit": {
+      "valid_duration": "1s",
+      "max_amount": 10
+    }
+  }
+}

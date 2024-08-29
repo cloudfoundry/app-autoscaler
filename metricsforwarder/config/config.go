@@ -1,12 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"io"
 	"os"
-	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -14,8 +14,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ErrInvalidPort is returned when the PORT environment variable is not a valid port number
-var ErrInvalidPort = fmt.Errorf("Invalid port number in PORT environment variable")
+// There are 3 type of errors that this package can return:
+// - ErrReadYaml
+// - ErrReadEnvironment
+// - ErrReadVCAPEnvironment
+
+var (
+	ErrReadYaml                       = errors.New("failed to read config file")
+	ErrReadJson                       = errors.New("failed to read vcap_services json")
+	ErrMetricsforwarderConfigNotFound = errors.New("Configuration error: metricsforwarder config service not found")
+)
 
 const (
 	DefaultMetronAddress        = "127.0.0.1:3458"
@@ -70,8 +78,31 @@ type SyslogConfig struct {
 	TLS           models.TLSCerts `yaml:"tls"`
 }
 
-func LoadConfig(reader io.Reader) (*Config, error) {
-	conf := &Config{
+func decodeYamlFile(filepath string, c *Config) error {
+	r, err := os.Open(filepath)
+
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", filepath, err.Error())
+		return err
+	}
+
+	dec := yaml.NewDecoder(r)
+	dec.KnownFields(true)
+	err = dec.Decode(c)
+
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrReadYaml, err)
+	}
+
+	defer r.Close()
+	return nil
+}
+
+func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
+	var conf Config
+	var err error
+
+	conf = Config{
 		Server:  defaultServerConfig,
 		Logging: defaultLoggingConfig,
 		LoggregatorConfig: LoggregatorConfig{
@@ -87,23 +118,60 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		},
 	}
 
-	dec := yaml.NewDecoder(reader)
-	dec.KnownFields(true)
-	err := dec.Decode(conf)
-	if err != nil {
-		return nil, err
-	}
-
-	if os.Getenv("PORT") != "" {
-		port := os.Getenv("PORT")
-		portNumber, err := strconv.Atoi(port)
+	if filepath != "" {
+		err = decodeYamlFile(filepath, &conf)
 		if err != nil {
-			return nil, ErrInvalidPort
+			return nil, err
 		}
-		conf.Server.Port = portNumber
 	}
 
-	return conf, nil
+	if vcapReader.IsRunningOnCF() {
+		conf.Server.Port = vcapReader.GetPort()
+
+		data, err := vcapReader.GetServiceCredentialContent("config", "metricsforwarder")
+		if err != nil {
+			return &conf, fmt.Errorf("%w: %w", ErrMetricsforwarderConfigNotFound, err)
+		}
+
+		err = yaml.Unmarshal(data, &conf)
+		if err != nil {
+			return &conf, fmt.Errorf("%w: %w", ErrReadJson, err)
+		}
+
+		if conf.Db == nil {
+			conf.Db = make(map[string]db.DatabaseConfig)
+		}
+
+		currentPolicyDb, ok := conf.Db[db.PolicyDb]
+		if !ok {
+			conf.Db[db.PolicyDb] = db.DatabaseConfig{}
+		}
+
+		currentPolicyDb.URL, err = vcapReader.MaterializeDBFromService(db.PolicyDb)
+		if err != nil {
+			return &conf, err
+		}
+		conf.Db[db.PolicyDb] = currentPolicyDb
+
+		if conf.CredHelperImpl == "stored_procedure" {
+			currentStoredProcedureDb, ok := conf.Db[db.StoredProcedureDb]
+			if !ok {
+				conf.Db[db.StoredProcedureDb] = db.DatabaseConfig{}
+			}
+			currentStoredProcedureDb.URL, err = vcapReader.MaterializeDBFromService(db.StoredProcedureDb)
+			if err != nil {
+				return &conf, err
+			}
+			conf.Db[db.StoredProcedureDb] = currentStoredProcedureDb
+		}
+
+		conf.SyslogConfig.TLS, err = vcapReader.MaterializeTLSConfigFromService("syslog-client")
+		if err != nil {
+			return &conf, err
+		}
+	}
+
+	return &conf, nil
 }
 
 func (c *Config) UsingSyslog() bool {

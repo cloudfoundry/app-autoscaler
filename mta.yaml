@@ -9,11 +9,34 @@ modules:
   - name: metricsforwarder
     type: binary
     path: build
+    requires:
+    - name: config
+    - name: policydb
+    - name: syslog-client
     parameters:
       memory: 1G
       disk-quota: 1G
-      instances: 1
+      instances: 2
       stack: cflinuxfs4
-      command: ./metricsforwarder -c metricsforwarder.yml
+      command: ./metricsforwarder
       routes:
+
+resources:
+- name: config
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - config
+    path: metricsforwarder/default_config.json
+- name: policydb
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - policy_db
+    - relational
+- name: syslog-client
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - syslog-client
 

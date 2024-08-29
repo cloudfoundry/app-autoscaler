@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -27,25 +28,22 @@ import (
 
 func main() {
 	var path string
+	var err error
+	var conf *config.Config
+
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
-	if path == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
-		os.Exit(1)
-	}
-	configFile, err := os.Open(path)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
-		os.Exit(1)
-	}
 
-	var conf *config.Config
-	conf, err = config.LoadConfig(configFile)
+	vcapConfiguration, err := configutil.NewVCAPConfigurationReader()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read vcap configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
-	_ = configFile.Close()
+	conf, err = config.LoadConfig(path, vcapConfiguration)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stdout, "failed to load config : %s\n", err.Error())
+		os.Exit(1)
+	}
 
 	err = conf.Validate()
 	if err != nil {
