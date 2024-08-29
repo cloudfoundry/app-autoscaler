@@ -15,11 +15,6 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
   exit 1
 fi
 
-if [ -z "${PR_NUMBER}" ]; then
-  echo "PR_NUMBER is not set"
-  exit 1
-fi
-
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export POSTGRES_ADDRESS="${DEPLOYMENT_NAME}-postgres.tcp.${SYSTEM_DOMAIN}"
 export POSTGRES_EXTERNAL_PORT="${PR_NUMBER:-5432}"
