@@ -112,7 +112,7 @@ func getResponsetimeInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID 
 
 			responseTimeMetric := models.AppInstanceMetric{
 				AppId:         appID,
-				InstanceIndex: uint32(instanceIndex),
+				InstanceIndex: instanceIndex,
 				Name:          models.MetricNameResponseTime,
 				Unit:          models.UnitMilliseconds,
 				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(sumResponseTime)/float64(numReq*1000*1000)))),
@@ -145,7 +145,7 @@ func getThroughputInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID st
 
 			throughputMetric := models.AppInstanceMetric{
 				AppId:         appID,
-				InstanceIndex: uint32(instanceIndex),
+				InstanceIndex: instanceIndex,
 				Name:          models.MetricNameThroughput,
 				Unit:          models.UnitRPS,
 				Value:         fmt.Sprintf("%d", int(math.Ceil(float64(numReq)/collectionInterval.Seconds()))),
@@ -196,13 +196,13 @@ func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
 func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64) []models.AppInstanceMetric {
 	var metrics []models.AppInstanceMetric
 	appID := e.SourceId
-	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
+	instanceIndex, _ := strconv.ParseUint(e.InstanceId, 10, 64)
 	g := e.GetGauge()
 	timestamp := e.Timestamp
 
 	baseAppInstanceMetric := models.AppInstanceMetric{
 		AppId:         appID,
-		InstanceIndex: uint32(instanceIndex),
+		InstanceIndex: instanceIndex,
 		CollectedAt:   currentTimeStamp,
 		Timestamp:     timestamp,
 	}
@@ -296,12 +296,12 @@ func getCPUEntitlementInstanceMetric(cpuEntitlementValue float64) models.AppInst
 
 func processCustomMetrics(e *loggregator_v2.Envelope, currentTimestamp int64) []models.AppInstanceMetric {
 	var metrics []models.AppInstanceMetric
-	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
+	instanceIndex, _ := strconv.ParseUint(e.InstanceId, 10, 64)
 
 	for n, v := range e.GetGauge().GetMetrics() {
 		metrics = append(metrics, models.AppInstanceMetric{
 			AppId:         e.SourceId,
-			InstanceIndex: uint32(instanceIndex),
+			InstanceIndex: instanceIndex,
 			CollectedAt:   currentTimestamp,
 			Name:          n,
 			Unit:          v.Unit,

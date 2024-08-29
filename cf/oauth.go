@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	ErrUnauthorized       = fmt.Errorf(http.StatusText(http.StatusUnauthorized))
-	ErrInvalidTokenFormat = fmt.Errorf("Invalid token format")
+	ErrUnauthorized       = errors.New(http.StatusText(http.StatusUnauthorized))
+	ErrInvalidTokenFormat = errors.New("invalid token format")
 )
 
 func (c *Client) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error) {

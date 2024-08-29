@@ -737,7 +737,7 @@ func (b *Broker) planDefinitionExceeded(policy *models.ScalingPolicy, planID str
 		return apiresponses.NewFailureResponse(errors.New("error validating policy"), http.StatusInternalServerError, "failed to check policy for plan adherence")
 	}
 	if !ok {
-		b.logger.Error("policy did not adhere to plan", fmt.Errorf(checkResult), lager.Data{"instanceID": instanceID, "policy": policy})
+		b.logger.Error("policy did not adhere to plan", errors.New(checkResult), lager.Data{"instanceID": instanceID, "policy": policy})
 		return apiresponses.NewFailureResponse(fmt.Errorf("error: policy did not adhere to plan: %s", checkResult), http.StatusBadRequest, "policy did not adhere to plan")
 	}
 	return nil

@@ -129,5 +129,6 @@ var _ = Describe("logCacheFetcherFactory", func() {
 
 func getUnexportedField(name string, client metric.LogCacheClient) interface{} {
 	field := reflect.ValueOf(client).Elem().FieldByName(name)
+	// #nosec G115 -- test code
 	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
 }

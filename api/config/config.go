@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xeipuuv/gojsonschema"
+	"gopkg.in/errgo.v2/fmt/errors"
 	"gopkg.in/yaml.v3"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -267,7 +268,7 @@ func (c *Config) Validate() error {
 			}
 		}
 		errString += "}"
-		return fmt.Errorf(errString)
+		return errors.New(errString)
 	}
 
 	return nil

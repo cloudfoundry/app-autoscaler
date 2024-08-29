@@ -30,5 +30,5 @@ func (sl *StripedLock) GetLock(key string) *sync.Mutex {
 	if err != nil {
 		return nil
 	}
-	return sl.locks[h.Sum32()%uint32(len(sl.locks))]
+	return sl.locks[int(h.Sum32())%len(sl.locks)]
 }

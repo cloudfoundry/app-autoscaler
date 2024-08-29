@@ -116,7 +116,7 @@ func (l *logCacheFetcher) getMetricsPromQLAPI(appId string, metricType string, c
 			return []models.AppInstanceMetric{}, fmt.Errorf("sample does not contain a point")
 		}
 
-		instanceId := uint32(instanceIdUInt)
+		instanceId := instanceIdUInt
 		valueWithoutDecimalsRoundedToCeiling := fmt.Sprintf("%.0f", math.Ceil(point.GetValue()))
 
 		metrics = append(metrics, models.AppInstanceMetric{

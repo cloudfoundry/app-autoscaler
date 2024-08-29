@@ -103,6 +103,7 @@ func (am *AppManager) retrievePolicies() ([]*models.PolicyJson, error) {
 }
 
 func (am *AppManager) isEventgeneratorRespForApp(appID string) bool {
+	// #nosec G115 -- nodes will be in the range of a dozen max - no need to worry about integer overflow
 	return helpers.FNVHash(appID)%uint32(am.nodeNum) == uint32(am.nodeIndex)
 }
 

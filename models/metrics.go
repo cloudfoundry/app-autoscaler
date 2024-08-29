@@ -27,7 +27,7 @@ const (
 
 type AppInstanceMetric struct {
 	AppId         string `json:"app_id" db:"app_id"`
-	InstanceIndex uint32 `json:"instance_index" db:"instance_index"`
+	InstanceIndex uint64 `json:"instance_index" db:"instance_index"`
 	CollectedAt   int64  `json:"collected_at" db:"collected_at"`
 	Name          string `json:"name" db:"name"`
 	Unit          string `json:"unit" db:"unit"`

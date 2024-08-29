@@ -415,7 +415,7 @@ func (pv *PolicyValidator) validateOverlappingInRecurringSchedules(policy *model
 	recScheds := policy.Schedules.RecurringSchedules
 	for scheduleIndexB := 0; scheduleIndexB < length-1; scheduleIndexB++ {
 		for scheduleIndexA := scheduleIndexB + 1; scheduleIndexA < length; scheduleIndexA++ {
-			if (recScheds[scheduleIndexA].DaysOfWeek != nil && len(recScheds[scheduleIndexA].DaysOfWeek) > 0) && (recScheds[scheduleIndexB].DaysOfWeek != nil && len(recScheds[scheduleIndexB].DaysOfWeek) > 0) {
+			if (len(recScheds[scheduleIndexA].DaysOfWeek) > 0) && (len(recScheds[scheduleIndexB].DaysOfWeek) > 0) {
 				if hasIntersection(recScheds[scheduleIndexA].DaysOfWeek, recScheds[scheduleIndexB].DaysOfWeek) {
 					if compareTimesGTEQ(recScheds[scheduleIndexB].EndTime, recScheds[scheduleIndexA].StartTime) && compareTimesGTEQ(recScheds[scheduleIndexA].EndTime, recScheds[scheduleIndexB].StartTime) &&
 						compareDatesGTEQ(recScheds[scheduleIndexB].EndDate, recScheds[scheduleIndexA].StartDate) && compareDatesGTEQ(recScheds[scheduleIndexA].EndDate, recScheds[scheduleIndexB].StartDate) {
@@ -432,7 +432,7 @@ func (pv *PolicyValidator) validateOverlappingInRecurringSchedules(policy *model
 				}
 			}
 
-			if (recScheds[scheduleIndexA].DaysOfMonth != nil && len(recScheds[scheduleIndexA].DaysOfMonth) > 0) && (recScheds[scheduleIndexB].DaysOfMonth != nil && len(recScheds[scheduleIndexB].DaysOfMonth) > 0) {
+			if (len(recScheds[scheduleIndexA].DaysOfMonth) > 0) && (len(recScheds[scheduleIndexB].DaysOfMonth) > 0) {
 				if hasIntersection(recScheds[scheduleIndexA].DaysOfMonth, recScheds[scheduleIndexB].DaysOfMonth) {
 					if compareTimesGTEQ(recScheds[scheduleIndexB].EndTime, recScheds[scheduleIndexA].StartTime) && compareTimesGTEQ(recScheds[scheduleIndexA].EndTime, recScheds[scheduleIndexB].StartTime) &&
 						compareDatesGTEQ(recScheds[scheduleIndexB].EndDate, recScheds[scheduleIndexA].StartDate) && compareDatesGTEQ(recScheds[scheduleIndexA].EndDate, recScheds[scheduleIndexB].StartDate) {
