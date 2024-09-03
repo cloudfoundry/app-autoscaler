@@ -14,6 +14,8 @@ import (
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress/syslog"
 )
 
+const maxRetries int = 22
+
 type SyslogEmitter struct {
 	logger lager.Logger
 	writer egress.WriteCloser
@@ -78,8 +80,19 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		)
 	}
 
+	retryWriter, err := syslog.NewRetryWriter(
+		binding,
+		syslog.ExponentialDuration,
+		maxRetries,
+		writer,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &SyslogEmitter{
-		writer: writer,
+		writer: retryWriter,
 		logger: logger,
 	}, nil
 }
