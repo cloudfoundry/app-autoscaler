@@ -45,10 +45,13 @@ require (
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	golang.org/x/net v0.28.0
 	golang.org/x/time v0.6.0
+	google.golang.org/genproto v0.0.0-20240827150818-7e3bb234dfed
 	google.golang.org/grpc v1.66.0
 	gopkg.in/errgo.v2 v2.1.0
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240827150818-7e3bb234dfed
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240813203737-5032edb05ceb // indirect
