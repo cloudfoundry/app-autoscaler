@@ -1,6 +1,7 @@
 package forwarder
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -13,6 +14,8 @@ import (
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress"
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress/syslog"
 )
+
+const maxRetries int = 22
 
 type SyslogEmitter struct {
 	logger lager.Logger
@@ -58,6 +61,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 	binding := &syslog.URLBinding{
 		URL:      syslogUrl,
 		Hostname: hostname,
+		Context:  context.Background(),
 	}
 
 	switch binding.URL.Scheme {
@@ -78,8 +82,19 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		)
 	}
 
+	retryWriter, err := syslog.NewRetryWriter(
+		binding,
+		syslog.ExponentialDuration,
+		maxRetries,
+		writer,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &SyslogEmitter{
-		writer: writer,
+		writer: retryWriter,
 		logger: logger,
 	}, nil
 }

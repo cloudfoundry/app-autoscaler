@@ -50,6 +50,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240827150818-7e3bb234dfed
+
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240813203737-5032edb05ceb // indirect
 	code.cloudfoundry.org/go-metric-registry v0.0.0-20240828184116-9710cd731bb8 // indirect
