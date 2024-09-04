@@ -1,6 +1,7 @@
 package forwarder
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -60,6 +61,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 	binding := &syslog.URLBinding{
 		URL:      syslogUrl,
 		Hostname: hostname,
+		Context:  context.Background(),
 	}
 
 	switch binding.URL.Scheme {
