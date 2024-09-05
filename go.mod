@@ -8,8 +8,8 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.1
 	code.cloudfoundry.org/lager/v3 v3.3.0
-	code.cloudfoundry.org/loggregator-agent-release/src 96d9f8d605dd
-	code.cloudfoundry.org/tlsconfig v0.2.0
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240905083138-96d9f8d605dd
+	code.cloudfoundry.org/tlsconfig v0.3.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/go-chi/chi/v5 v5.1.0
@@ -98,8 +98,8 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.24.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
