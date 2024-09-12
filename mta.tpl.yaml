@@ -15,6 +15,7 @@ modules:
     - name: config
     - name: policydb
     - name: syslog-client
+    - name: app-autoscaler-application-logs
     parameters:
       memory: 1G
       disk-quota: 1G
@@ -44,4 +45,12 @@ resources:
   parameters:
     service-tags:
     - syslog-client
-
+- name: app-autoscaler-application-logs
+  active: false
+  type: application-logs
+  parameters:
+    service-broker: null
+    service-plan: standard
+  parameters-metadata:
+    service-broker:
+      optional: false
