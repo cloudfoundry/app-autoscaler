@@ -131,19 +131,27 @@ func (bdb *BindingSQLDB) GetServiceInstance(ctx context.Context, serviceInstance
 }
 
 func (bdb *BindingSQLDB) GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error) {
+	serviceInstanceId, err := bdb.GetServiceInstanceIdByAppId(appId)
+	if err != nil {
+		bdb.logger.Error("get-service-instance-for-app-id", err, lager.Data{"appId": appId})
+		return nil, err
+	}
+	return bdb.GetServiceInstance(context.Background(), serviceInstanceId)
+}
+
+func (bdb *BindingSQLDB) GetServiceInstanceIdByAppId(appId string) (string, error) {
 	query := bdb.sqldb.Rebind("SELECT service_instance_id FROM binding WHERE app_id = ?")
 
 	serviceInstanceId := ""
 	err := bdb.sqldb.Get(&serviceInstanceId, query, appId)
 	if err != nil {
-		bdb.logger.Error("get-service-binding-for-app-id", err, lager.Data{"query": query, "appId": appId})
+		bdb.logger.Error("get-service-instance-for-app-id", err, lager.Data{"query": query, "appId": appId})
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, db.ErrDoesNotExist
+			return serviceInstanceId, db.ErrDoesNotExist
 		}
-		return nil, err
+		return serviceInstanceId, err
 	}
-
-	return bdb.GetServiceInstance(context.Background(), serviceInstanceId)
+	return serviceInstanceId, nil
 }
 
 func (bdb *BindingSQLDB) UpdateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error {
@@ -280,6 +288,18 @@ func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(ctx context.Context, appId 
 	}
 	return nil
 }
+
+func (bdb *BindingSQLDB) GetAppBindingByAppId(ctx context.Context, appId string) (string, error) {
+	var bindingId string
+	query := bdb.sqldb.Rebind("SELECT binding_id FROM binding WHERE app_id =?")
+	err := bdb.sqldb.QueryRowContext(ctx, query, appId).Scan(&bindingId)
+
+	if err != nil {
+		bdb.logger.Error("get-service-binding-by-appid", err, lager.Data{"query": query, "appId": appId})
+		return "", err
+	}
+	return bindingId, nil
+}
 func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 	var count int
 	query := bdb.sqldb.Rebind("SELECT COUNT(*) FROM binding WHERE app_id=?")
@@ -358,4 +378,40 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instance
 	}
 
 	return bindingIds, rows.Err()
+}
+
+/*
+get all bounded apps to the same autoscaler instance - How to check this? check from the database binding_db database
+-> app_id->binding_id->service_instance_id-> all bound apps
+*/
+
+func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricSubmitterAppId string, appToScaleId string) (bool, error) {
+
+	serviceInstanceId, err := bdb.GetServiceInstanceIdByAppId(metricSubmitterAppId)
+	if err != nil {
+		bdb.logger.Error("get-service-instance-by-appId", err, lager.Data{"appId": metricSubmitterAppId})
+		return false, err
+	}
+	if serviceInstanceId == "" {
+		bdb.logger.Error("no-service-instance-found-by-appId", err, lager.Data{"appId": metricSubmitterAppId, "serviceInstanceId": serviceInstanceId})
+		return false, nil
+	}
+	// find all apps which are bound to the same service instance
+	appIds, err := bdb.GetAppIdsByInstanceId(ctx, serviceInstanceId)
+	if err != nil {
+		bdb.logger.Error("get-apps-by-service-instance-id", err, lager.Data{"serviceInstanceId": serviceInstanceId})
+		return false, err
+	}
+
+	if len(appIds) == 0 {
+		bdb.logger.Error("no-apps-found-by-serviceInstanceId", err, lager.Data{"serviceInstanceId": serviceInstanceId})
+		return false, nil
+	}
+	// check if the app to scale is in the list of apps bound to the same service instance and return true .otherwise return false
+	for _, app := range appIds {
+		if app == appToScaleId {
+			return true, nil
+		}
+	}
+	return false, nil
 }

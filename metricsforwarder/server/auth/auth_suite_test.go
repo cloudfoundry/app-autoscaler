@@ -26,6 +26,7 @@ var (
 	serverProcess   ifrit.Process
 	serverUrl       string
 	policyDB        *fakes.FakePolicyDB
+	fakeBindingDB   *fakes.FakeBindingDB
 	rateLimiter     *fakes.FakeLimiter
 	fakeCredentials *fakes.FakeCredentials
 
@@ -75,13 +76,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		LoggregatorConfig: loggregatorConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
+	fakeBindingDB = &fakes.FakeBindingDB{}
 	credentialCache = *cache.New(10*time.Minute, -1)
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	rateLimiter = &fakes.FakeLimiter{}
 	fakeCredentials = &fakes.FakeCredentials{}
 
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB,
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, fakeBindingDB,
 		fakeCredentials, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)

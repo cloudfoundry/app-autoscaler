@@ -15,3 +15,12 @@ func CreatePolicyDb(dbConf db.DatabaseConfig, logger lager.Logger) *PolicySQLDB 
 	}
 	return policyDB
 }
+
+func CreateBindingDB(dbConf db.DatabaseConfig, logger lager.Logger) *BindingSQLDB {
+	bindingDB, err := NewBindingSQLDB(dbConf, logger.Session("binding-db"))
+	if err != nil {
+		logger.Fatal("Failed To connect to bindingDB", err, lager.Data{"dbConfig": dbConf})
+		os.Exit(1)
+	}
+	return bindingDB
+}

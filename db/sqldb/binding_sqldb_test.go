@@ -625,6 +625,44 @@ var _ = Describe("BindingSqldb", func() {
 			})
 		})
 	})
+
+	Describe("isAppBoundToSameAutoscaler", func() {
+		var isTestApp1Bounded bool
+		JustBeforeEach(func() {
+			isTestApp1Bounded, _ = bdb.IsAppBoundToSameAutoscaler(context.Background(), testAppId, testAppId2)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("when binding for bindingId exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId)
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, testAppId2)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should return true", func() {
+				Expect(isTestApp1Bounded).To(BeTrue())
+			})
+		})
+		Context("when neighbouring app is bounded to different autoscaler instance", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId2, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId)
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId2, testAppId2)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should return false", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isTestApp1Bounded).To(BeFalse())
+			})
+		})
+
+	})
 })
 
 func addProcessIdTo(id string) string {

@@ -59,13 +59,16 @@ func main() {
 	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
 	defer func() { _ = policyDb.Close() }()
 
+	bindingDB := sqldb.CreateBindingDB(conf.Db[db.BindingDb], logger)
+	defer func() { _ = bindingDB.Close() }()
+
 	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, conf.CacheTTL, conf.CacheCleanupInterval, logger, policyDb)
 	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
-	customMetricsServer := createCustomMetricsServer(conf, logger, policyDb, credentialProvider, allowedMetricCache, httpStatusCollector)
+	customMetricsServer := createCustomMetricsServer(conf, logger, policyDb, bindingDB, credentialProvider, allowedMetricCache, httpStatusCollector)
 	cacheUpdater := cacheUpdater(logger, mfClock, conf, policyDb, allowedMetricCache)
 
 	members := grouper.Members{
@@ -97,9 +100,9 @@ func cacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config,
 	return cacheUpdater
 }
 
-func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyDB *sqldb.PolicySQLDB, credentialProvider cred_helper.Credentials, allowedMetricCache *cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) ifrit.Runner {
+func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyDB *sqldb.PolicySQLDB, bindingDB *sqldb.BindingSQLDB, credentialProvider cred_helper.Credentials, allowedMetricCache *cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) ifrit.Runner {
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, credentialProvider, *allowedMetricCache, httpStatusCollector, rateLimiter)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, bindingDB, credentialProvider, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {
 		logger.Fatal("Failed to create client to custom metrics server", err)
 		os.Exit(1)
