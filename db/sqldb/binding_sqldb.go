@@ -201,10 +201,28 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(ctx context.Context, serviceInsta
 }
 
 func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error {
+	defaultCustomMetricStrategy := 0 //
+	err := bdb.isBindingExists(ctx, bindingId, serviceInstanceId, appId)
+	if err != nil {
+		return err
+	}
+
+	query := bdb.sqldb.Rebind("INSERT INTO binding" +
+		"(binding_id, service_instance_id, app_id, created_at, custom_metrics_strategy) " +
+		"VALUES(?, ?, ?, ?,?)")
+	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now(), defaultCustomMetricStrategy)
+
+	if err != nil {
+		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "bindingid": bindingId, "appid": appId})
+	}
+	return err
+}
+
+func (bdb *BindingSQLDB) isBindingExists(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error {
 	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE app_id =?")
 	rows, err := bdb.sqldb.QueryContext(ctx, query, appId)
 	if err != nil {
-		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
+		bdb.logger.Error("is-binding-already-exists", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
 		return err
 	}
 
@@ -216,19 +234,10 @@ func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId str
 
 	err = rows.Err()
 	if err != nil {
-		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
+		bdb.logger.Error("is-binding-already-exists", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
 		return err
 	}
-
-	query = bdb.sqldb.Rebind("INSERT INTO binding" +
-		"(binding_id, service_instance_id, app_id, created_at) " +
-		"VALUES(?, ?, ?, ?)")
-	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now())
-
-	if err != nil {
-		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "bindingid": bindingId, "appid": appId})
-	}
-	return err
+	return nil
 }
 
 func (bdb *BindingSQLDB) GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error) {
@@ -380,11 +389,6 @@ func (bdb *BindingSQLDB) GetBindingIdsByInstanceId(ctx context.Context, instance
 	return bindingIds, rows.Err()
 }
 
-/*
-get all bounded apps to the same autoscaler instance - How to check this? check from the database binding_db database
--> app_id->binding_id->service_instance_id-> all bound apps
-*/
-
 func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricSubmitterAppId string, appToScaleId string) (bool, error) {
 
 	serviceInstanceId, err := bdb.GetServiceInstanceIdByAppId(metricSubmitterAppId)
@@ -404,7 +408,7 @@ func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricS
 	}
 
 	if len(appIds) == 0 {
-		bdb.logger.Error("no-apps-found-by-serviceInstanceId", err, lager.Data{"serviceInstanceId": serviceInstanceId})
+		bdb.logger.Error("no-apps-bounded-with-serviceInstance", err, lager.Data{"serviceInstanceId": serviceInstanceId})
 		return false, nil
 	}
 	// check if the app to scale is in the list of apps bound to the same service instance and return true .otherwise return false
@@ -414,4 +418,20 @@ func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricS
 		}
 	}
 	return false, nil
+}
+
+func (bdb *BindingSQLDB) CreateServiceBindingWithConfigs(ctx context.Context, bindingId string, serviceInstanceId string, appId string, strategy int) error {
+	err := bdb.isBindingExists(ctx, bindingId, serviceInstanceId, appId)
+	if err != nil {
+		return err
+	}
+	query := bdb.sqldb.Rebind("INSERT INTO binding" +
+		"(binding_id, service_instance_id, app_id, created_at, custom_metrics_strategy) " +
+		"VALUES(?, ?, ?, ?,?)")
+	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now(), strategy)
+
+	if err != nil {
+		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "bindingid": bindingId, "appid": appId, "strategy": strategy})
+	}
+	return err
 }

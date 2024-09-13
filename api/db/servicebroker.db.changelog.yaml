@@ -75,6 +75,11 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
+              - column:
+                  name: custom_metrics_strategy
+                  type: int
+                  constraints:
+                    nullable: false
   - changeSet:
       id: 3
       author: qy

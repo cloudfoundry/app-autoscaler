@@ -632,7 +632,7 @@ var _ = Describe("BindingSqldb", func() {
 			isTestApp1Bounded, _ = bdb.IsAppBoundToSameAutoscaler(context.Background(), testAppId, testAppId2)
 			Expect(err).NotTo(HaveOccurred())
 		})
-		Context("when binding for bindingId exists", func() {
+		When("apps are bounded to same autoscaler instance", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
@@ -659,6 +659,34 @@ var _ = Describe("BindingSqldb", func() {
 			It("should return false", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isTestApp1Bounded).To(BeFalse())
+			})
+		})
+
+	})
+
+	Describe("CreateServiceBindingWithConfigs", func() {
+		BeforeEach(func() {
+			err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("When configuration bounded_app is provided", func() {
+			JustBeforeEach(func() {
+				err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, 1)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should save the binding in the database", func() {
+				Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId)).To(BeTrue())
+
+			})
+		})
+		Context("When default configuration is provided", func() {
+			JustBeforeEach(func() {
+				err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, 0)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should save the binding in the database", func() {
+				Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId)).To(BeFalse())
+
 			})
 		})
 

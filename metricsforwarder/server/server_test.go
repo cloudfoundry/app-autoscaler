@@ -44,7 +44,7 @@ func setupRequest(method, url, authHeader string, body []byte) (*http.Client, *h
 	return client, req, nil
 }
 
-var _ = Describe("CustomMetrics Server", func() {
+var _ = Describe("CustomMetricsConfig Server", func() {
 	var (
 		resp          *http.Response
 		req           *http.Request

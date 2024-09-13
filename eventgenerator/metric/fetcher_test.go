@@ -300,7 +300,7 @@ var _ = Describe("logCacheFetcher", func() {
 				Entry("metric type cpuutil", models.MetricNameCPUUtil, "cpu_entitlement"),
 				Entry("metric type disk", models.MetricNameDisk, "disk"),
 				Entry("metric type diskutil", models.MetricNameDiskUtil, "disk|disk_quota"),
-				Entry("metric type CustomMetrics", "a-custom-metric", "a-custom-metric"),
+				Entry("metric type CustomMetricsConfig", "a-custom-metric", "a-custom-metric"),
 			)
 		})
 	})

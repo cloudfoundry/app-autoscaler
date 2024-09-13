@@ -11,10 +11,11 @@ import (
 	"strings"
 )
 
+const customMetricsStrategyType = "bound_app"
+
 var ErrXFCCHeaderNotFound = errors.New("mTLS authentication method not found")
 var ErrorNoAppIDFound = errors.New("certificate does not contain an app id")
 var ErrorAppIDWrong = errors.New("app is not allowed to send metrics due to invalid app id in certificate")
-
 var ErrorAppNotBound = errors.New("application is not bound to the same service instance")
 
 func (a *Auth) XFCCAuth(r *http.Request, bindingDB db.BindingDB, appID string) error {
@@ -45,20 +46,20 @@ func (a *Auth) XFCCAuth(r *http.Request, bindingDB db.BindingDB, appID string) e
 	// Case 2 : custom metrics can be published by any app bound to the same autoscaler instance
 	// In short, if the requester is not same as the scaling app
 	if appID != submitterAppCert {
+		var metricSubmissionStrategy MetricsSubmissionStrategy
+		customMetricSubmissionStrategy := r.Header.Get("custom-metrics-submission-strategy")
 
-		// check for case 2 here
-		/*
-			TODO
-			Read the parameter new boolean parameter from the http request body named as "allow_from": "bound_app or same_app"
-			If it is set to true, then
-			- check if the app is bound to the same autoscaler instance - How to check this? check from the database binding_db table -> app_id->binding_id->service_instance_id-> all bound apps
-			- if it is bound, then allow the request i.e custom metrics to be published
-			- if it is not bound, then return an error saying "app is not allowed to send custom metrics on as it not bound to the autoscaler service instance"
-			If the parameter is not set, then follow the existing logic and allow the request to be published
-
-
-		*/
-		a.logger.Info("Checking custom metrics submission strategy")
+		if customMetricSubmissionStrategy == customMetricsStrategyType {
+			metricSubmissionStrategy = &BoundedMetricsSubmissionStrategy{}
+		} else {
+			metricSubmissionStrategy = &DefaultMetricsSubmissionStrategy{}
+		}
+		err := metricSubmissionStrategy.validate(appID, submitterAppCert, a.logger, bindingDB, r)
+		if err != nil {
+			return err
+		}
+		////////
+		/*a.logger.Info("Checking custom metrics submission strategy")
 		validSubmitter, err := verifyMetricSubmissionStrategy(r, a.logger, bindingDB, submitterAppCert, appID)
 		if err != nil {
 			a.logger.Error("error-verifying-custom-metrics-submitter-app", err, lager.Data{"metric-submitter-app-id": submitterAppCert})
@@ -69,12 +70,12 @@ func (a *Auth) XFCCAuth(r *http.Request, bindingDB db.BindingDB, appID string) e
 			a.logger.Info("custom-metrics-submission-strategy", lager.Data{"strategy": customMetricSubmissionStrategy})
 			return ErrorAppIDWrong
 		} */
-		if validSubmitter == true {
+		/*if validSubmitter == true {
 			return nil
 		} else {
-			return ErrorAppIDWrong
-		}
+			return ErrorAppIDWrong */
 	}
+
 	return nil
 }
 

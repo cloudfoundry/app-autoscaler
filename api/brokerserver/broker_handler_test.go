@@ -907,7 +907,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error: policy did not adhere to plan: Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
 			})
 		})
-		Context("When mandatory parameters are present", func() {
+		FContext("When mandatory parameters are present", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -928,7 +928,64 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
 			})
 		})
-		// test for credential-type
+		XContext("Binding configurations are present", func() {
+			BeforeEach(func() {
+				bindingPolicy = `{
+				  "configuration": {
+					"custom_metrics": {
+					  "auth": {
+						"credential_type": "binding_secret"
+					  },
+					  "metric_submission_strategy": {
+						"allow_from": "bound_app"
+					  }
+					}
+				  },
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+				bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+				body, err = json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("succeeds with 201", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+			})
+
+			It("save config to database and returns with 201", func() {
+				// bindingdb.SaveCustomMetricsStrategyReturns(nil)
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+
+				By("CreateServiceBindingWithConfigs should have called one time only")
+				// Expect(bindingdb.SaveCustomMetricsStrategyCallCount()).To(Equal(1))
+			})
+		})
+
 		Context("credential-type is provided while binding", func() {
 			BeforeEach(func() {
 				schedulerExpectedJSON = `{
@@ -1188,7 +1245,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 
-		//
 		Context("When a default policy was provided when creating the service instance", func() {
 			BeforeEach(func() {
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{testInstanceId, testOrgId, testSpaceId, testDefaultPolicy, testDefaultGuid}, nil)

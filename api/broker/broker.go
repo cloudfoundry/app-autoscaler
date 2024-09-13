@@ -48,6 +48,8 @@ var (
 	ErrDeleteServiceBinding        = errors.New("error deleting service binding")
 	ErrCredentialNotDeleted        = errors.New("failed to delete custom metrics credential for unbinding")
 	ErrInvalidCredentialType       = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]")
+
+	ErrInvalidConfigurations = errors.New("invalid binding configurations provided")
 )
 
 type Errors []error
@@ -497,6 +499,20 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		policyJson = details.RawParameters
 	}
 
+	// extract custom metrics configs to determine metric submission strategy
+	var bindingConfiguration *models.BindingConfig
+	if policyJson != nil {
+		bindingConfiguration := &models.BindingConfig{}
+		err := json.Unmarshal(policyJson, &bindingConfiguration)
+		if err != nil {
+			actionReadBindingConfiguration := "read-binding-configurations"
+			logger.Error("unmarshal-binding-configuration", err)
+			return result, apiresponses.NewFailureResponseBuilder(
+				ErrInvalidConfigurations, http.StatusBadRequest, actionReadBindingConfiguration).
+				WithErrorKey(actionReadBindingConfiguration).
+				Build()
+		}
+	}
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		logger.Error("get-default-policy", err)
@@ -529,9 +545,9 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	if err := b.handleExistingBindingsResiliently(ctx, instanceID, appGUID, logger); err != nil {
 		return result, err
 	}
+	// save custom metrics strategy check - bindingConfiguration.CustomMetricsConfig.MetricSubmissionStrategy ! == ""
+	err = createServiceBinding(ctx, b.bindingdb, bindingID, instanceID, appGUID, bindingConfiguration.GetCustomMetricsStrategy())
 
-	// create binding in DB
-	err = b.bindingdb.CreateServiceBinding(ctx, bindingID, instanceID, appGUID)
 	if err != nil {
 		actionCreateServiceBinding := "create-service-binding"
 		logger.Error(actionCreateServiceBinding, err)
@@ -843,4 +859,11 @@ func (b *Broker) deleteBinding(ctx context.Context, bindingId string, serviceIns
 }
 func isValidCredentialType(credentialType string) bool {
 	return credentialType == models.BindingSecret || credentialType == models.X509Certificate
+}
+
+func createServiceBinding(ctx context.Context, bindingDB db.BindingDB, bindingID, instanceID, appGUID string, customMetricsStrategy int) error {
+	if customMetricsStrategy == 1 {
+		return bindingDB.CreateServiceBindingWithConfigs(ctx, bindingID, instanceID, appGUID, customMetricsStrategy)
+	}
+	return bindingDB.CreateServiceBinding(ctx, bindingID, instanceID, appGUID)
 }

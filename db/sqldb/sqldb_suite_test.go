@@ -117,6 +117,16 @@ func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
 	return item
 }
 
+func hasServiceBindingWithCustomMetricStrategy(bindingId string, serviceInstanceId string) bool {
+	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? AND custom_metrics_strategy = 1")
+	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
+	FailOnError("can not query table binding", e)
+	defer func() { _ = rows.Close() }()
+	item := rows.Next()
+	FailOnError("can not query table binding", rows.Err())
+	return item
+}
+
 func cleanPolicyTable() {
 	_, e := dbHelper.Exec("DELETE from policy_json")
 	if e != nil {

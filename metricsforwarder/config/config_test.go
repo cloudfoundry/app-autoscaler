@@ -314,6 +314,12 @@ health:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
+			conf.Db[db.BindingDb] = db.DatabaseConfig{
+				URL:                   "postgres://pqgotest:password@localhost/pqgotest",
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 60 * time.Second,
+			}
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
 
@@ -386,6 +392,16 @@ health:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Policy DB url is empty")))
+			})
+		})
+
+		When("binding db url is not set", func() {
+			BeforeEach(func() {
+				conf.Db[db.BindingDb] = db.DatabaseConfig{URL: ""}
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Binding DB url is empty")))
 			})
 		})
 
