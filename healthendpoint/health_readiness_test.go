@@ -104,7 +104,7 @@ var _ = Describe("Health Readiness", func() {
 	})
 
 	const contentTypeHeaderName = "Content-Type"
-	const prometheusContentType = "text/plain; version=0.0.4; charset=utf-8; escaping=values" // We should find a better way to detect if the prometheus endpoint answered the request
+	const prometheusContentType = "text/plain; version=0.0.4; charset=utf-8; escaping=underscores" // We should find a better way to detect if the prometheus endpoint answered the request
 	const jsonContentType = "application/json"
 
 	Context("without basic auth configured", func() {

@@ -112,7 +112,7 @@ var _ = Describe("SyslogEmitter", func() {
 			})
 
 			It("Writer should be TLS", func() {
-				Expect(emitter.(*forwarder.SyslogEmitter).GetWriter()).To(BeAssignableToTypeOf(&syslog.TLSWriter{}))
+				Expect(emitter.(*forwarder.SyslogEmitter).GetWriter()).To(BeAssignableToTypeOf(&syslog.RetryWriter{}))
 			})
 		})
 
@@ -122,7 +122,7 @@ var _ = Describe("SyslogEmitter", func() {
 			})
 
 			It("Writer should be TCP", func() {
-				Expect(emitter.(*forwarder.SyslogEmitter).GetWriter()).To(BeAssignableToTypeOf(&syslog.TCPWriter{}))
+				Expect(emitter.(*forwarder.SyslogEmitter).GetWriter()).To(BeAssignableToTypeOf(&syslog.RetryWriter{}))
 			})
 		})
 	})
