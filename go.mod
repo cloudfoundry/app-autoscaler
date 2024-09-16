@@ -3,11 +3,11 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 go 1.22.3
 
 require (
-	code.cloudfoundry.org/cfhttp/v2 v2.7.0
-	code.cloudfoundry.org/clock v1.8.0
+	code.cloudfoundry.org/cfhttp/v2 v2.12.0
+	code.cloudfoundry.org/clock v1.13.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.1
-	code.cloudfoundry.org/lager/v3 v3.5.0
+	code.cloudfoundry.org/lager/v3 v3.6.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240912083220-67f948271078
 	code.cloudfoundry.org/tlsconfig v0.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -22,12 +22,12 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.9.0
 	github.com/ogen-go/ogen v1.4.1
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pivotal-cf/brokerapi/v11 v11.0.8
+	github.com/pivotal-cf/brokerapi/v11 v11.0.9
 	github.com/prometheus/client_golang v1.20.3
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.5.17
@@ -36,11 +36,11 @@ require (
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.1
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.1
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.54.0
-	go.opentelemetry.io/otel v1.29.0
-	go.opentelemetry.io/otel/metric v1.29.0
-	go.opentelemetry.io/otel/sdk v1.29.0
-	go.opentelemetry.io/otel/trace v1.29.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.55.0
+	go.opentelemetry.io/otel v1.30.0
+	go.opentelemetry.io/otel/metric v1.30.0
+	go.opentelemetry.io/otel/sdk v1.30.0
+	go.opentelemetry.io/otel/trace v1.30.0
 	golang.org/x/crypto v0.27.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.29.0
