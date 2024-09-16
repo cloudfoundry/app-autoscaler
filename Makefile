@@ -152,7 +152,8 @@ clean:
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy mta_archives/*.mtar -f --delete-services -e $(EXTENSION_FILE)
+	@cf deploy $(MAKEFILE_DIR)/mta_archives/*.mtar -f --delete-services -e $(EXTENSION_FILE)
+
 
 build-extension-file:
 	echo "extension file at: $(EXTENSION_FILE)"
