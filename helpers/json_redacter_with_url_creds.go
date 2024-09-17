@@ -40,13 +40,13 @@ func (r JSONRedacterWithURLCred) Redact(data []byte) []byte {
 	}
 	err := json.Unmarshal(data, &jsonBlob)
 	if err != nil {
-		return handleError(err)
+		return errorToBytes(err)
 	}
 	r.redactValue(&jsonBlob)
 
 	data, err = json.Marshal(jsonBlob)
 	if err != nil {
-		return handleError(err)
+		return errorToBytes(err)
 	}
 
 	return r.jsonRedacter.Redact(data)
@@ -82,7 +82,7 @@ func (r JSONRedacterWithURLCred) redactObject(data *map[string]interface{}) {
 	}
 }
 
-func handleError(err error) []byte {
+func errorToBytes(err error) []byte {
 	var content []byte
 	var errType *json.UnsupportedTypeError
 	if errors.As(err, &errType) {
