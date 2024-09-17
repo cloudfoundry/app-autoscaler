@@ -166,6 +166,7 @@ mta-logs:
 
 .PHONY: mta-build
 mta-build: mta-build-clean
+	@echo "bulding mtar file for version: $(VERSION)"
 	cp mta.tpl.yaml mta.yaml
 	sed -i 's/VERSION/$(VERSION)/g' mta.yaml
 	mkdir -p $(DEST)
