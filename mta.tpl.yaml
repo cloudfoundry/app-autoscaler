@@ -14,7 +14,6 @@ modules:
     requires:
     - name: config
     - name: policydb
-    - name: storeproceduredb
     - name: syslog-client
     - name: app-autoscaler-application-logs
     parameters:
@@ -40,13 +39,6 @@ resources:
   parameters:
     service-tags:
     - policy_db
-    - relational
-- name: storeproceduredb
-  type: org.cloudfoundry.user-provided-service
-  active: false
-  parameters:
-    service-tags:
-    - storedprocedure_db
     - relational
 - name: syslog-client
   type: org.cloudfoundry.user-provided-service
