@@ -41,7 +41,7 @@ resources:
     service-tags:
     - policy_db
     - relational
-- name: storeprceduredb
+- name: storeproceduredb
   type: org.cloudfoundry.user-provided-service
   active: false
   parameters:
