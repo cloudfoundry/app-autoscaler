@@ -3,7 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
@@ -158,17 +160,36 @@ func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) 
 			if !ok {
 				conf.Db[db.StoredProcedureDb] = db.DatabaseConfig{}
 			}
+
 			currentStoredProcedureDb.URL, err = vcapReader.MaterializeDBFromService(db.StoredProcedureDb)
 			if err != nil {
 				return &conf, err
 			}
+
+			dbURL, err := url.Parse(currentStoredProcedureDb.URL)
+			if err != nil {
+				return &conf, err
+			}
+
+			if conf.StoredProcedureConfig != nil {
+				if conf.StoredProcedureConfig.Username != "" {
+					currentStoredProcedureDb.URL = strings.Replace(currentStoredProcedureDb.URL, dbURL.User.Username(), conf.StoredProcedureConfig.Username, 1)
+				}
+
+				if conf.StoredProcedureConfig.Password != "" {
+					bindingPassword, _ := dbURL.User.Password()
+					currentStoredProcedureDb.URL = strings.Replace(currentStoredProcedureDb.URL, bindingPassword, conf.StoredProcedureConfig.Password, 1)
+				}
+			}
+
 			conf.Db[db.StoredProcedureDb] = currentStoredProcedureDb
 		}
 
-		conf.SyslogConfig.TLS, err = vcapReader.MaterializeTLSConfigFromService("syslog-client")
-		if err != nil {
-			return &conf, err
-		}
+	}
+
+	conf.SyslogConfig.TLS, err = vcapReader.MaterializeTLSConfigFromService("syslog-client")
+	if err != nil {
+		return &conf, err
 	}
 
 	return &conf, nil
