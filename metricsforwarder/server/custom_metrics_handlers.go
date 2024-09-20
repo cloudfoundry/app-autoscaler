@@ -28,15 +28,17 @@ var (
 type CustomMetricsHandler struct {
 	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
+	bindingDB          db.BindingDB
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, bindingDB db.BindingDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
+		bindingDB:          bindingDB,
 		allowedMetricCache: allowedMetricCache,
 		logger:             logger,
 	}
@@ -138,7 +140,17 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		// AllowedMetrics found in cache
 		allowedMetricTypeSet = res.(map[string]struct{})
 	} else {
-		//  AllowedMetrics not found in cache, find AllowedMetrics from Database
+		// allow app with strategy as bound_app to submit metrics without policy
+		isAppWithBoundStrategy, err := mh.isAppWithBoundStrategy(appGUID)
+		if err != nil {
+			mh.logger.Error("error-finding-app-submission-strategy", err, lager.Data{"appId": appGUID})
+			return err
+		}
+		if isAppWithBoundStrategy {
+			mh.logger.Info("app-with-bound-strategy-found", lager.Data{"appId": appGUID})
+			return nil
+		}
+
 		scalingPolicy, err := mh.policyDB.GetAppPolicy(context.TODO(), appGUID)
 		if err != nil {
 			mh.logger.Error("error-getting-policy", err, lager.Data{"appId": appGUID})
@@ -170,6 +182,20 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		}
 	}
 	return nil
+}
+
+func (mh *CustomMetricsHandler) isAppWithBoundStrategy(appGUID string) (bool, error) {
+	// allow app with submission_strategy as bound_app to submit custom metrics even without policy
+	submissionStrategy, err := mh.bindingDB.GetCustomMetricStrategyByAppId(context.TODO(), appGUID)
+	if err != nil {
+		mh.logger.Error("error-getting-custom-metrics-strategy", err, lager.Data{"appId": appGUID})
+		return false, err
+	}
+	if submissionStrategy == "bound_app" {
+		mh.logger.Info("bounded-metrics-submission-strategy", lager.Data{"appId": appGUID, "submission_strategy": submissionStrategy})
+		return true, nil
+	}
+	return false, nil
 }
 
 func (mh *CustomMetricsHandler) getMetrics(appID string, metricsConsumer *models.MetricsConsumer) []*models.CustomMetric {

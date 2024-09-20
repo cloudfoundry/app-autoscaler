@@ -55,6 +55,7 @@ func (a *Auth) AuthenticateHandler(next http.Handler) func(w http.ResponseWriter
 
 func (a *Auth) CheckAuth(r *http.Request, appID string) error {
 	var errAuth error
+	a.logger.Info("checking authentication for app", lager.Data{"app_id": appID})
 	errAuth = a.XFCCAuth(r, a.bindingDB, appID)
 	if errAuth != nil {
 		if errors.Is(errAuth, ErrXFCCHeaderNotFound) {

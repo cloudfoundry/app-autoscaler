@@ -29,7 +29,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDb db.PolicyDB, b
 		return nil, fmt.Errorf("failed to create metric forwarder: %w", err)
 	}
 
-	mh := NewCustomMetricsHandler(logger, *metricForwarder, policyDb, allowedMetricCache)
+	mh := NewCustomMetricsHandler(logger, *metricForwarder, policyDb, bindingDB, allowedMetricCache)
 	authenticator, err := auth.New(logger, credentials, bindingDB)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth middleware: %w", err)

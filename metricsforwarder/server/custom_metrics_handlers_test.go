@@ -29,6 +29,7 @@ var _ = Describe("MetricHandler", func() {
 		allowedMetricTypeSet map[string]struct{}
 
 		policyDB         *fakes.FakePolicyDB
+		fakeBindingDB    *fakes.FakeBindingDB
 		metricsforwarder *fakes.FakeMetricForwarder
 
 		resp *httptest.ResponseRecorder
@@ -46,12 +47,13 @@ var _ = Describe("MetricHandler", func() {
 	BeforeEach(func() {
 		logger := lager.NewLogger("metrichandler-test")
 		policyDB = &fakes.FakePolicyDB{}
+		fakeBindingDB = &fakes.FakeBindingDB{}
 		metricsforwarder = &fakes.FakeMetricForwarder{}
 		allowedMetricCache = *cache.New(10*time.Minute, -1)
 		allowedMetricTypeSet = make(map[string]struct{})
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()
-		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, allowedMetricCache)
+		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, fakeBindingDB, allowedMetricCache)
 		allowedMetricCache.Flush()
 	})
 
@@ -292,6 +294,24 @@ var _ = Describe("MetricHandler", func() {
 				It("should returns status code 200 and policy exists", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
+
+				})
+			})
+			When("neighbour app is bound to same autoscaler instance without policy", func() {
+				BeforeEach(func() {
+					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
+					customMetrics := []*models.CustomMetric{
+						{
+							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
+						},
+					}
+					body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should returns status code 200", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+					Expect(fakeBindingDB.GetCustomMetricStrategyByAppIdCallCount()).To(Equal(1))
 
 				})
 			})

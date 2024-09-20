@@ -77,9 +77,8 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: custom_metrics_strategy
-                  type: int
-                  constraints:
-                    nullable: false
+                  type: varchar(40)
+
   - changeSet:
       id: 3
       author: qy

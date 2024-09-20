@@ -499,10 +499,10 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		policyJson = details.RawParameters
 	}
 
-	// extract custom metrics configs to determine metric submission strategy
-	var bindingConfiguration *models.BindingConfig
+	// extract custom metrics configs to determine metric submission strategy and set to default if not provided
+
+	bindingConfiguration := &models.BindingConfig{}
 	if policyJson != nil {
-		bindingConfiguration := &models.BindingConfig{}
 		err := json.Unmarshal(policyJson, &bindingConfiguration)
 		if err != nil {
 			actionReadBindingConfiguration := "read-binding-configurations"
@@ -511,6 +511,10 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 				ErrInvalidConfigurations, http.StatusBadRequest, actionReadBindingConfiguration).
 				WithErrorKey(actionReadBindingConfiguration).
 				Build()
+		}
+		logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
+		if bindingConfiguration.GetCustomMetricsStrategy() == "" {
+			bindingConfiguration.SetDefaultCustomMetricsStrategy("same_app")
 		}
 	}
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
@@ -861,8 +865,10 @@ func isValidCredentialType(credentialType string) bool {
 	return credentialType == models.BindingSecret || credentialType == models.X509Certificate
 }
 
-func createServiceBinding(ctx context.Context, bindingDB db.BindingDB, bindingID, instanceID, appGUID string, customMetricsStrategy int) error {
-	if customMetricsStrategy == 1 {
+func createServiceBinding(ctx context.Context, bindingDB db.BindingDB, bindingID, instanceID, appGUID string, customMetricsStrategy string) error {
+	//TODO call bindingDB.CreateServiceBindingWithConfigs method. No need to call CreateServiceBinding method
+	// Caution: CHECK the below code may break the existing functionality ??
+	if customMetricsStrategy == "bound_app" || customMetricsStrategy == "same_app" {
 		return bindingDB.CreateServiceBindingWithConfigs(ctx, bindingID, instanceID, appGUID, customMetricsStrategy)
 	}
 	return bindingDB.CreateServiceBinding(ctx, bindingID, instanceID, appGUID)

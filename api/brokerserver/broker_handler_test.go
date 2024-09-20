@@ -907,7 +907,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error: policy did not adhere to plan: Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
 			})
 		})
-		FContext("When mandatory parameters are present", func() {
+		Context("When mandatory parameters are present", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())

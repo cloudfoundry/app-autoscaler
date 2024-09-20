@@ -671,7 +671,7 @@ var _ = Describe("BindingSqldb", func() {
 		})
 		Context("When configuration bounded_app is provided", func() {
 			JustBeforeEach(func() {
-				err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, 1)
+				err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, "bound_app")
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should save the binding in the database", func() {
@@ -681,12 +681,30 @@ var _ = Describe("BindingSqldb", func() {
 		})
 		Context("When default configuration is provided", func() {
 			JustBeforeEach(func() {
-				err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, 0)
+				err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should save the binding in the database", func() {
 				Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId)).To(BeFalse())
+				//TODO check if the default was set
 
+			})
+		})
+
+	})
+
+	FDescribe("GetCustomMetricStrategyByAppId", func() {
+		BeforeEach(func() {
+			err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+			Expect(err).NotTo(HaveOccurred())
+			err = bdb.CreateServiceBindingWithConfigs(context.Background(), testBindingId, testInstanceId, testAppId, "bound_app")
+			Expect(err).NotTo(HaveOccurred())
+
+		})
+		Context("When service instance and binding exists", func() {
+			It("should get the custom metrics strategy from the database", func() {
+				customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
+				Expect(customMetricStrategy).To(Equal("bound_app"))
 			})
 		})
 

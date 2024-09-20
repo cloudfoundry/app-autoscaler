@@ -201,16 +201,16 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(ctx context.Context, serviceInsta
 }
 
 func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error {
-	defaultCustomMetricStrategy := 0 //
+
 	err := bdb.isBindingExists(ctx, bindingId, serviceInstanceId, appId)
 	if err != nil {
 		return err
 	}
 
 	query := bdb.sqldb.Rebind("INSERT INTO binding" +
-		"(binding_id, service_instance_id, app_id, created_at, custom_metrics_strategy) " +
-		"VALUES(?, ?, ?, ?,?)")
-	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now(), defaultCustomMetricStrategy)
+		"(binding_id, service_instance_id, app_id, created_at) " +
+		"VALUES(?, ?, ?, ?)")
+	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now())
 
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "bindingid": bindingId, "appid": appId})
@@ -420,7 +420,7 @@ func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricS
 	return false, nil
 }
 
-func (bdb *BindingSQLDB) CreateServiceBindingWithConfigs(ctx context.Context, bindingId string, serviceInstanceId string, appId string, strategy int) error {
+func (bdb *BindingSQLDB) CreateServiceBindingWithConfigs(ctx context.Context, bindingId string, serviceInstanceId string, appId string, strategy string) error {
 	err := bdb.isBindingExists(ctx, bindingId, serviceInstanceId, appId)
 	if err != nil {
 		return err
@@ -434,4 +434,34 @@ func (bdb *BindingSQLDB) CreateServiceBindingWithConfigs(ctx context.Context, bi
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "bindingid": bindingId, "appid": appId, "strategy": strategy})
 	}
 	return err
+}
+
+func (bdb *BindingSQLDB) GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error) {
+	customMetricsStrategy, err := bdb.fetchCustomMetricStrategyByAppId(ctx, appId)
+	if err != nil {
+		return "", err
+	}
+	return customMetricsStrategy, nil
+}
+
+func (bdb *BindingSQLDB) fetchCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error) {
+	var customMetricsStrategy sql.NullString
+	query := bdb.sqldb.Rebind("SELECT custom_metrics_strategy FROM binding WHERE app_id =?")
+	rows, err := bdb.sqldb.QueryContext(ctx, query, appId)
+
+	if err != nil {
+		bdb.logger.Error("get-custom-metrics-strategy-by-appid", err, lager.Data{"query": query, "appId": appId})
+		return "", err
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		if err = rows.Scan(&customMetricsStrategy); err != nil {
+			bdb.logger.Error("scan-customMetricsStrategy-from-binding-table", err)
+			return "", err
+		}
+		return customMetricsStrategy.String, nil
+
+	}
+	return customMetricsStrategy.String, rows.Err()
 }

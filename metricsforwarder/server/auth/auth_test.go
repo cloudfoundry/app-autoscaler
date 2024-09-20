@@ -24,6 +24,7 @@ var _ = Describe("Authentication", func() {
 	var (
 		authTest        *auth.Auth
 		fakeCredentials *fakes.FakeCredentials
+		fakeBindingDB   *fakes.FakeBindingDB
 		resp            *httptest.ResponseRecorder
 		req             *http.Request
 		body            []byte
@@ -33,6 +34,7 @@ var _ = Describe("Authentication", func() {
 
 	BeforeEach(func() {
 		fakeCredentials = &fakes.FakeCredentials{}
+		fakeBindingDB = &fakes.FakeBindingDB{}
 		vars = make(map[string]string)
 		testAppId = "an-app-id"
 		resp = httptest.NewRecorder()
@@ -181,15 +183,15 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		When("Request from neighbour (different) app arrives", func() {
+		Context("Request from neighbour (different) app arrives for app B", func() {
 			const validClientCert2 = "../../../../../test-certs/validmtls_client-2.crt"
-			Context("custom-metrics-submission-strategy is not set in the scaling policy", func() {
+			When("custom-metrics-submission-strategy is not set in the scaling policy", func() {
 				It("It should not call next handler and return with status code 403", func() {
 					testAppId = "app-to-scale-id"
 					req = CreateRequest(body, testAppId)
 					vars["appid"] = testAppId
 					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
-					req.Header.Add("custom-metrics-submission-strategy", "")
+					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("same_app", nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						nextCalled = nextCalled + 1
@@ -210,7 +212,7 @@ var _ = Describe("Authentication", func() {
 					vars["appid"] = testAppId
 					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
 					// ToDO: this should be read via configurations aka scaling policy binding parameters
-					req.Header.Add("custom-metrics-submission-strategy", "bound_app")
+					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						nextCalled = nextCalled + 1

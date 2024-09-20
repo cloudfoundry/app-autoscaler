@@ -47,14 +47,14 @@ func (a *Auth) XFCCAuth(r *http.Request, bindingDB db.BindingDB, appID string) e
 	// In short, if the requester is not same as the scaling app
 	if appID != submitterAppCert {
 		var metricSubmissionStrategy MetricsSubmissionStrategy
-		customMetricSubmissionStrategy := r.Header.Get("custom-metrics-submission-strategy")
-
+		customMetricSubmissionStrategy, err := bindingDB.GetCustomMetricStrategyByAppId(r.Context(), submitterAppCert)
+		a.logger.Info("custom-metrics-submission-strategy", lager.Data{"submitterAppCert": submitterAppCert, "strategy": customMetricSubmissionStrategy})
 		if customMetricSubmissionStrategy == customMetricsStrategyType {
 			metricSubmissionStrategy = &BoundedMetricsSubmissionStrategy{}
 		} else {
 			metricSubmissionStrategy = &DefaultMetricsSubmissionStrategy{}
 		}
-		err := metricSubmissionStrategy.validate(appID, submitterAppCert, a.logger, bindingDB, r)
+		err = metricSubmissionStrategy.validate(appID, submitterAppCert, a.logger, bindingDB, r)
 		if err != nil {
 			return err
 		}

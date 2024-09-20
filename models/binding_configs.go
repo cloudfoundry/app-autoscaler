@@ -33,12 +33,10 @@ type MetricsSubmissionStrategy struct {
 	AllowFrom string `json:"allow_from"`
 }
 
-func (b *BindingConfig) GetCustomMetricsStrategy() int {
+func (b *BindingConfig) GetCustomMetricsStrategy() string {
+	return b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom
+}
 
-	if b != nil && b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom == "bound_app" {
-		return 1
-	} else {
-		return 0
-	}
-
+func (b *BindingConfig) SetDefaultCustomMetricsStrategy(allowFrom string) {
+	b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
 }

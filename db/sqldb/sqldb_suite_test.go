@@ -118,7 +118,7 @@ func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
 }
 
 func hasServiceBindingWithCustomMetricStrategy(bindingId string, serviceInstanceId string) bool {
-	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? AND custom_metrics_strategy = 1")
+	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? AND custom_metrics_strategy = 'bound_app'")
 	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
 	FailOnError("can not query table binding", e)
 	defer func() { _ = rows.Close() }()
