@@ -278,8 +278,8 @@ cloud.google.com/go/vpcaccess v1.8.1/go.mod h1:cWlLCpLOuMH8oaNmobaymgmLesasLd9w1
 cloud.google.com/go/webrisk v1.10.1/go.mod h1:VzmUIag5P6V71nVAuzc7Hu0VkIDKjDa543K7HOulH/k=
 cloud.google.com/go/websecurityscanner v1.7.1/go.mod h1:vAZ6hyqECDhgF+gyVRGzfXMrURQN5NH75Y9yW/7sSHU=
 cloud.google.com/go/workflows v1.13.1/go.mod h1:xNdYtD6Sjoug+khNCAtBMK/rdh8qkjyL6aBas2XlkNc=
-code.cloudfoundry.org/cfhttp/v2 v2.12.0 h1:2ZkUQ7JdQ/du4G1g4rnQluLQ5Ve6CIxHyceau86VPFg=
-code.cloudfoundry.org/cfhttp/v2 v2.12.0/go.mod h1:NNabxG/Nt1A4OBPBWN5GJPS2e7TPmPfqCSTEAYy6QIg=
+code.cloudfoundry.org/cfhttp/v2 v2.13.0 h1:rAgC0l23R4si4TAhb7i3VucAJJdIiAbXqD5VlSW28fo=
+code.cloudfoundry.org/cfhttp/v2 v2.13.0/go.mod h1:NNabxG/Nt1A4OBPBWN5GJPS2e7TPmPfqCSTEAYy6QIg=
 code.cloudfoundry.org/clock v1.13.0 h1:cXtygQ9nD+uVtzjamX9puLvdkvgJsBpCgxlRPqP5Wh4=
 code.cloudfoundry.org/clock v1.13.0/go.mod h1:vRE++3mqcB+fAoY4Dd9ru2Tp+6tmGqdGrp6qP92QKwE=
 code.cloudfoundry.org/go-diodes v0.0.0-20240911205836-e7f77fdf9650 h1:jtBjQDBcE2vSI7hTiPQ/7sOSQ+qwKaVOe08zJqsWL94=
