@@ -68,7 +68,6 @@ type AutoScalerRoute struct {
 	apiOpenRoutes          *mux.Router
 	apiRoutes              *mux.Router
 	apiPolicyRoutes        *mux.Router
-	apiCredentialRoutes    *mux.Router
 }
 
 var autoScalerRouteInstance = newRouters()
@@ -83,7 +82,6 @@ func newRouters() *AutoScalerRoute {
 		apiOpenRoutes:          mux.NewRouter(),
 		apiRoutes:              mux.NewRouter(),
 		apiPolicyRoutes:        mux.NewRouter(),
-		apiCredentialRoutes:    mux.NewRouter(),
 	}
 
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
@@ -145,7 +143,4 @@ func ApiRoutes() *mux.Router {
 }
 func ApiPolicyRoutes() *mux.Router {
 	return autoScalerRouteInstance.apiPolicyRoutes
-}
-func ApiCredentialRoutes() *mux.Router {
-	return autoScalerRouteInstance.apiCredentialRoutes
 }
