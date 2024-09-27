@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xeipuuv/gojsonschema"
-	"gopkg.in/errgo.v2/fmt/errors"
 	"gopkg.in/yaml.v3"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"

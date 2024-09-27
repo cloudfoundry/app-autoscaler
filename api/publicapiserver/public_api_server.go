@@ -52,6 +52,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rp.Use(rateLimiterMiddleware.CheckRateLimit)
 	rp.Use(mw.HasClientToken)
 	rp.Use(mw.Oauth)
+	rp.Use(mw.CheckServiceBinding)
 	rp.Use(httpStatusCollectMiddleware.Collect)
 
 	rp.Get(routes.PublicApiScalingHistoryRouteName).Handler(scalingHistoryHandler)
@@ -67,13 +68,6 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rpolicy.Get(routes.PublicApiGetPolicyRouteName).Handler(VarsFunc(pah.GetScalingPolicy))
 	rpolicy.Get(routes.PublicApiAttachPolicyRouteName).Handler(VarsFunc(pah.AttachScalingPolicy))
 	rpolicy.Get(routes.PublicApiDetachPolicyRouteName).Handler(VarsFunc(pah.DetachScalingPolicy))
-
-	rcredential := routes.ApiCredentialRoutes()
-	rcredential.Use(rateLimiterMiddleware.CheckRateLimit)
-
-	rcredential.Use(httpStatusCollectMiddleware.Collect)
-	rcredential.Use(mw.HasClientToken)
-	rcredential.Use(mw.Oauth)
 
 	return helpers.NewHTTPServer(logger, conf.PublicApiServer, r)
 }

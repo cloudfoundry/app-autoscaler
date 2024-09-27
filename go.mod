@@ -1,14 +1,14 @@
 module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
-go 1.22.3
+go 1.22.4
 
 require (
-	code.cloudfoundry.org/cfhttp/v2 v2.12.0
+	code.cloudfoundry.org/cfhttp/v2 v2.13.0
 	code.cloudfoundry.org/clock v1.13.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.1
 	code.cloudfoundry.org/lager/v3 v3.6.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240912083220-67f948271078
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240923083236-43d741a3be1f
 	code.cloudfoundry.org/tlsconfig v0.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -28,13 +28,13 @@ require (
 	github.com/onsi/gomega v1.34.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pivotal-cf/brokerapi/v11 v11.0.9
-	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/client_golang v1.20.4
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.5.17
 	github.com/stretchr/testify v1.9.0
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
-	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.1
-	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.1
+	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
+	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.55.0
 	go.opentelemetry.io/otel v1.30.0
@@ -45,12 +45,11 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.29.0
 	golang.org/x/time v0.6.0
-	google.golang.org/grpc v1.66.2
-	gopkg.in/errgo.v2 v2.1.0
+	google.golang.org/grpc v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240924160255-9d4c2d233b61
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240911205836-e7f77fdf9650 // indirect
