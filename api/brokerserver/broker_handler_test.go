@@ -920,15 +920,10 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 			It("returns the correct binding parameters", func() {
-				creds := &models.CredentialResponse{}
-				responseString := resp.Body.String()
-				err := json.Unmarshal([]byte(responseString), creds)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(*creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
-				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+				verifyCredentialsGenerated(resp)
 			})
 		})
-		XContext("Binding configurations are present", func() {
+		When("Binding configurations are present", func() {
 			BeforeEach(func() {
 				bindingPolicy = `{
 				  "configuration": {
@@ -969,20 +964,40 @@ var _ = Describe("BrokerHandler", func() {
 				bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
+				bindingPolicy = `{
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+				verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 			})
 			It("succeeds with 201", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
-
 				By("updating the scheduler")
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
-			})
-
-			It("save config to database and returns with 201", func() {
-				// bindingdb.SaveCustomMetricsStrategyReturns(nil)
-				Expect(resp.Code).To(Equal(http.StatusCreated))
-
-				By("CreateServiceBindingWithConfigs should have called one time only")
-				// Expect(bindingdb.SaveCustomMetricsStrategyCallCount()).To(Equal(1))
+				Expect(bindingdb.CreateServiceBindingCallCount()).To(Equal(1))
+				verifyCredentialsGenerated(resp)
 			})
 		})
 
@@ -1486,6 +1501,15 @@ var _ = Describe("BrokerHandler", func() {
 		})
 	})
 })
+
+func verifyCredentialsGenerated(resp *httptest.ResponseRecorder) {
+	creds := &models.CredentialResponse{}
+	responseString := resp.Body.String()
+	err := json.Unmarshal([]byte(responseString), creds)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(*creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+	Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+}
 
 func createInstanceCreationRequestBody(defaultPolicy string) []byte {
 	m := json.RawMessage(defaultPolicy)

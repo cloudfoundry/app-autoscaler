@@ -391,7 +391,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Policy DB url is empty")))
+				Expect(err).To(MatchError(MatchRegexp("configuration error: Policy DB url is empty")))
 			})
 		})
 
@@ -401,7 +401,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Binding DB url is empty")))
+				Expect(err).To(MatchError(MatchRegexp("configuration error: Binding DB url is empty")))
 			})
 		})
 

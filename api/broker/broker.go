@@ -39,17 +39,17 @@ type Broker struct {
 }
 
 var (
-	emptyJSONObject                = regexp.MustCompile(`^\s*{\s*}\s*$`)
-	ErrCreatingServiceBinding      = errors.New("error creating service binding")
-	ErrUpdatingServiceInstance     = errors.New("error updating service instance")
-	ErrDeleteSchedulesForUnbinding = errors.New("failed to delete schedules for unbinding")
-	ErrBindingDoesNotExist         = errors.New("service binding does not exist")
-	ErrDeletePolicyForUnbinding    = errors.New("failed to delete policy for unbinding")
-	ErrDeleteServiceBinding        = errors.New("error deleting service binding")
-	ErrCredentialNotDeleted        = errors.New("failed to delete custom metrics credential for unbinding")
-	ErrInvalidCredentialType       = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]")
-
-	ErrInvalidConfigurations = errors.New("invalid binding configurations provided")
+	emptyJSONObject                 = regexp.MustCompile(`^\s*{\s*}\s*$`)
+	ErrCreatingServiceBinding       = errors.New("error creating service binding")
+	ErrUpdatingServiceInstance      = errors.New("error updating service instance")
+	ErrDeleteSchedulesForUnbinding  = errors.New("failed to delete schedules for unbinding")
+	ErrBindingDoesNotExist          = errors.New("service binding does not exist")
+	ErrDeletePolicyForUnbinding     = errors.New("failed to delete policy for unbinding")
+	ErrDeleteServiceBinding         = errors.New("error deleting service binding")
+	ErrCredentialNotDeleted         = errors.New("failed to delete custom metrics credential for unbinding")
+	ErrInvalidCredentialType        = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]")
+	ErrInvalidConfigurations        = errors.New("invalid binding configurations provided")
+	ErrInvalidCustomMetricsStrategy = errors.New("error: custom metrics strategy not supported")
 )
 
 type Errors []error
@@ -512,11 +512,13 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 				WithErrorKey(actionReadBindingConfiguration).
 				Build()
 		}
-		logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
-		if bindingConfiguration.GetCustomMetricsStrategy() == "" {
-			bindingConfiguration.SetDefaultCustomMetricsStrategy("same_app")
-		}
 	}
+	// set the default custom metrics strategy if not provided
+	if bindingConfiguration.GetCustomMetricsStrategy() == "" {
+		bindingConfiguration.SetDefaultCustomMetricsStrategy(models.CustomMetricsSameApp)
+	}
+	logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
+
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		logger.Error("get-default-policy", err)
@@ -557,6 +559,9 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		logger.Error(actionCreateServiceBinding, err)
 		if errors.Is(err, db.ErrAlreadyExists) {
 			return result, apiresponses.NewFailureResponse(errors.New("error: an autoscaler service instance is already bound to the application and multiple bindings are not supported"), http.StatusConflict, actionCreateServiceBinding)
+		}
+		if errors.Is(err, ErrInvalidCustomMetricsStrategy) {
+			return result, apiresponses.NewFailureResponse(err, http.StatusBadRequest, actionCreateServiceBinding)
 		}
 		return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, actionCreateServiceBinding)
 	}
@@ -866,10 +871,8 @@ func isValidCredentialType(credentialType string) bool {
 }
 
 func createServiceBinding(ctx context.Context, bindingDB db.BindingDB, bindingID, instanceID, appGUID string, customMetricsStrategy string) error {
-	//TODO call bindingDB.CreateServiceBindingWithConfigs method. No need to call CreateServiceBinding method
-	// Caution: CHECK the below code may break the existing functionality ??
-	if customMetricsStrategy == "bound_app" || customMetricsStrategy == "same_app" {
-		return bindingDB.CreateServiceBindingWithConfigs(ctx, bindingID, instanceID, appGUID, customMetricsStrategy)
+	if customMetricsStrategy == models.CustomMetricsBoundApp || customMetricsStrategy == models.CustomMetricsSameApp {
+		return bindingDB.CreateServiceBinding(ctx, bindingID, instanceID, appGUID, customMetricsStrategy)
 	}
-	return bindingDB.CreateServiceBinding(ctx, bindingID, instanceID, appGUID)
+	return ErrInvalidCustomMetricsStrategy
 }

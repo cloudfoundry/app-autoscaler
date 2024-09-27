@@ -69,7 +69,7 @@ type BindingDB interface {
 	GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error)
 	UpdateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error
 	DeleteServiceInstance(ctx context.Context, serviceInstanceId string) error
-	CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error
+	CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string, customMetricsStrategy string) error
 	DeleteServiceBinding(ctx context.Context, bindingId string) error
 	DeleteServiceBindingByAppId(ctx context.Context, appId string) error
 	CheckServiceBinding(appId string) bool
@@ -80,7 +80,6 @@ type BindingDB interface {
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	GetAppBindingByAppId(ctx context.Context, appId string) (string, error)
 	IsAppBoundToSameAutoscaler(ctx context.Context, appId string, appToScaleId string) (bool, error)
-	CreateServiceBindingWithConfigs(ctx context.Context, bindingId string, serviceInstanceId string, appId string, strategy string) error
 	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error)
 }
 

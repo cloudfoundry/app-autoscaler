@@ -229,7 +229,12 @@ func (c *Config) validateDbConfig() error {
 	}
 	return c.validateLoggregatorConfig()
 }
-
+func (c *Config) validateSyslogOrLoggregator() error {
+	if c.UsingSyslog() {
+		return c.validateSyslogConfig()
+	}
+	return c.validateLoggregatorConfig()
+}
 func (c *Config) validateSyslogConfig() error {
 	if c.SyslogConfig.TLS.CACertFile == "" {
 		return errors.New("SyslogServer Loggregator CACert is empty")

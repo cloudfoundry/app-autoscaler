@@ -78,9 +78,42 @@ databaseChangeLog:
               - column:
                   name: custom_metrics_strategy
                   type: varchar(40)
-
+                  constraints:
+                    nullable: false
   - changeSet:
       id: 3
+      author: Arsalan
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: metrics_submission
+      changes:
+        - createTable:
+            tableName: metrics_submission
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - insert:
+            tableName: metrics_submission
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  value: 'bound_app'
+        - insert:
+            tableName: metrics_submission
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  value: 'same_app'
+
+  - changeSet:
+      id: 4
       author: qy
       logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
       preConditions:
@@ -88,6 +121,8 @@ databaseChangeLog:
           not:
             - foreignKeyConstraintExists:
                 foreignKeyName: fk_binding_service_instance_id
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_binding_custom_metrics_strategy
       changes:
         - addForeignKeyConstraint:
             baseColumnNames: service_instance_id
@@ -99,8 +134,19 @@ databaseChangeLog:
             onUpdate: RESTRICT
             referencedColumnNames: service_instance_id
             referencedTableName: service_instance
+
+        - addForeignKeyConstraint:
+            baseColumnNames: custom_metrics_strategy
+            baseTableName: binding
+            constraintName: fk_binding_custom_metrics_strategy
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+            referencedColumnNames: custom_metrics_strategy
+            referencedTableName: metrics_submission
   - changeSet:
-      id: 4
+      id: 5
       author: silvestre
       logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
       preConditions:

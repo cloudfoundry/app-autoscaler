@@ -14,6 +14,12 @@ package models
     }
   }
 */
+
+const (
+	CustomMetricsBoundApp = "bound_app"
+	CustomMetricsSameApp  = "same_app"
+)
+
 type BindingConfig struct {
 	Configuration Configuration `json:"configuration"`
 }

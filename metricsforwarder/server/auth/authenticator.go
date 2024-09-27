@@ -1,9 +1,10 @@
 package auth
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"errors"
 	"net/http"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
@@ -55,11 +56,10 @@ func (a *Auth) AuthenticateHandler(next http.Handler) func(w http.ResponseWriter
 
 func (a *Auth) CheckAuth(r *http.Request, appID string) error {
 	var errAuth error
-	a.logger.Info("checking authentication for app", lager.Data{"app_id": appID})
 	errAuth = a.XFCCAuth(r, a.bindingDB, appID)
 	if errAuth != nil {
 		if errors.Is(errAuth, ErrXFCCHeaderNotFound) {
-			a.logger.Info("Trying basic auth")
+			a.logger.Info("Trying basic auth", lager.Data{"app_id": appID})
 			errAuth = a.BasicAuth(r, appID)
 		}
 	}
