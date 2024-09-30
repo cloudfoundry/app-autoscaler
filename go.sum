@@ -292,8 +292,8 @@ code.cloudfoundry.org/go-metric-registry v0.0.0-20240924162441-23e55bf8b6be h1:4
 code.cloudfoundry.org/go-metric-registry v0.0.0-20240924162441-23e55bf8b6be/go.mod h1:1HZDVeO8ym+CdBjc5hEa0+ybcSPd3Y+EnU9YLqFJZfw=
 code.cloudfoundry.org/lager/v3 v3.6.0 h1:7SRXrt8N/QzR36yU45wd+oD1dAGhkNE3CrO+9wb6OJs=
 code.cloudfoundry.org/lager/v3 v3.6.0/go.mod h1:gVXmBdSINVyV5bzwY8YOUO7ELszPIHzqCrUA3PcMy2Y=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240923083236-43d741a3be1f h1:t8jEMJxL0m8oLGtjlKNP3aZOgHlRZIBHUXKB2EhuuOo=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240923083236-43d741a3be1f/go.mod h1:1QDpHnxHuYc/XZRAvRScPBlTPVvtiX/zcQi8wCCK0O0=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240930083239-4de1c6aa0f7c h1:OoPVA+9qSd7pErlrkEa+iFul2p9OhuTMKS5nW3KOnao=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20240930083239-4de1c6aa0f7c/go.mod h1:HBiGG6xEyDit7pGbBEqSC2lKX1V50saGFdZ10rnYQB4=
 code.cloudfoundry.org/tlsconfig v0.5.0 h1:wkdwdVPMPUowUyR4jzl7EttWD6j3Y8uQKcc2VxBh+Nk=
 code.cloudfoundry.org/tlsconfig v0.5.0/go.mod h1:hwoQOMSbbpu1doDFFDK8h5EpM/cWREyWMXEo0H1MFeA=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
@@ -913,8 +913,8 @@ go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqe
 go.opentelemetry.io/proto/otlp v0.15.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.opentelemetry.io/proto/otlp v0.19.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.opentelemetry.io/proto/otlp v1.0.0/go.mod h1:Sy6pihPLfYHkr3NkUbEhGHFhINUSI/v80hjKIs5JXpM=
-go.step.sm/crypto v0.52.0 h1:3blUzFm0S4tPrijcvcP47tvd7VmEEGJnvzblE+sg5LI=
-go.step.sm/crypto v0.52.0/go.mod h1:GcT4hMILsNiiN3dIXH/Df5fLVs/KIwGZva85faw7lYw=
+go.step.sm/crypto v0.53.0 h1:+1as1ogzuCzx15/468M4mEC5juogI5a0Fzbsyh1CuYY=
+go.step.sm/crypto v0.53.0/go.mod h1:AqLU78RqNUHepLzyOWZuNN/2++Lu7dZENdO9UzWOGSk=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
