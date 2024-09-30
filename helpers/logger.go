@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/lager/v3"
 )
 
@@ -20,11 +21,15 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 
 	logger := lager.NewLogger(name)
 
-	redactedSink := createRedactedSink(logLevel)
-	logger.RegisterSink(redactedSink)
+	vcapConfig, _ := configutil.NewVCAPConfigurationReader()
 
-	plaintextFormatSink := createPlaintextSink()
-	logger.RegisterSink(plaintextFormatSink)
+	if vcapConfig.IsRunningOnCF() {
+		plaintextFormatSink := createPlaintextSink()
+		logger.RegisterSink(plaintextFormatSink)
+	} else {
+		redactedSink := createRedactedSink(logLevel)
+		logger.RegisterSink(redactedSink)
+	}
 
 	return logger
 }

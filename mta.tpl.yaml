@@ -47,10 +47,7 @@ resources:
     - syslog-client
 - name: app-autoscaler-application-logs
   active: false
-  type: application-logs
+  type: org.cloudfoundry.managed-service
   parameters:
-    service-broker: null
+    service: application-logs
     service-plan: standard
-  parameters-metadata:
-    service-broker:
-      optional: false
