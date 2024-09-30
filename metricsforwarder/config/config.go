@@ -169,6 +169,9 @@ func configureStoredProcedureDb(conf *Config, vcapReader configutil.VCAPConfigur
 	}
 
 	dbURL, err := vcapReader.MaterializeDBFromService(db.StoredProcedureDb)
+	if err != nil {
+		return err
+	}
 
 	currentStoredProcedureDb.URL = dbURL
 	parsedUrl, err := url.Parse(currentStoredProcedureDb.URL)
