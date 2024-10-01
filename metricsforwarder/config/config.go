@@ -147,7 +147,6 @@ func loadMetricsforwarderConfig(conf *Config, vcapReader configutil.VCAPConfigur
 }
 
 func configurePolicyDb(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-
 	currentPolicyDb, ok := conf.Db[db.PolicyDb]
 	if !ok {
 		conf.Db[db.PolicyDb] = db.DatabaseConfig{}
