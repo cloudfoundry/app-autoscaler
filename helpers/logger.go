@@ -2,8 +2,10 @@ package helpers
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/lager/v3"
 )
 
@@ -12,26 +14,27 @@ type LoggingConfig struct {
 }
 
 func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
-	logLevel, err := getLogLevel(conf.Level)
+	logLevel, err := parseLogLevel(conf.Level)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
+		handleError("failed to initialize logger", err)
 	}
+
 	logger := lager.NewLogger(name)
 
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
+	vcapConfig, _ := configutil.NewVCAPConfigurationReader()
 
-	redactedSink, err := NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s\n", err.Error())
-		os.Exit(1)
+	if vcapConfig.IsRunningOnCF() {
+		plaintextFormatSink := createPlaintextSink()
+		logger.RegisterSink(plaintextFormatSink)
+	} else {
+		redactedSink := createRedactedSink(logLevel)
+		logger.RegisterSink(redactedSink)
 	}
-	logger.RegisterSink(redactedSink)
 
 	return logger
 }
 
-func getLogLevel(level string) (lager.LogLevel, error) {
+func parseLogLevel(level string) (lager.LogLevel, error) {
 	switch level {
 	case "debug":
 		return lager.DEBUG, nil
@@ -42,6 +45,25 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 	case "fatal":
 		return lager.FATAL, nil
 	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
+		return -1, fmt.Errorf("unsupported log level: %s", level)
 	}
+}
+
+func createPlaintextSink() lager.Sink {
+	slogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	return lager.NewSlogSink(slogger)
+}
+
+func createRedactedSink(logLevel lager.LogLevel) lager.Sink {
+	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
+	redactedSink, err := NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
+	if err != nil {
+		handleError("failed to create redacted sink", err)
+	}
+	return redactedSink
+}
+
+func handleError(message string, err error) {
+	fmt.Fprintf(os.Stderr, "%s: %s\n", message, err.Error())
+	os.Exit(1)
 }

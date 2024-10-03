@@ -3,6 +3,8 @@ SHELL := /bin/bash
 MAKEFLAGS := -s
 aes_terminal_font_yellow := \e[38;2;255;255;0m
 aes_terminal_reset := \e[0m
+VERSION ?= 0.0.0-rc.1
+DEST ?= build
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
@@ -27,6 +29,7 @@ export GO111MODULE=on
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
 GINKGO_VERSION = v$(shell cat ../../.tool-versions | grep ginkgo  | cut --delimiter=' ' --fields='2')
+
 
 
 # ogen generated OpenAPI clients and servers
@@ -149,7 +152,8 @@ clean:
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy mta_archives/*.mtar -f --delete-services -e $(EXTENSION_FILE)
+	@cf deploy $(MAKEFILE_DIR)/$(DEST)/*.mtar -f --delete-services -e $(EXTENSION_FILE)
+
 
 build-extension-file:
 	echo "extension file at: $(EXTENSION_FILE)"
@@ -162,7 +166,12 @@ mta-logs:
 
 .PHONY: mta-build
 mta-build: mta-build-clean
+	@echo "bulding mtar file for version: $(VERSION)"
+	cp mta.tpl.yaml mta.yaml
+	sed -i 's/VERSION/$(VERSION)/g' mta.yaml
+	mkdir -p $(DEST)
 	mbt build
+	@mv mta_archives/com.github.cloudfoundry.app-autoscaler-release_$(VERSION).mtar $(DEST)/app-autoscaler-release-v$(VERSION).mtar
 
 mta-build-clean:
 	rm -rf mta_archives

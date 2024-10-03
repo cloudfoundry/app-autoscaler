@@ -63,12 +63,12 @@ var _ = Describe("Config", func() {
 			When("service is empty", func() {
 				var expectedErr error
 				BeforeEach(func() {
-					expectedErr = fmt.Errorf("Configuration error: metricsforwarder config service not found")
+					expectedErr = fmt.Errorf("metricsforwarder config service not found")
 					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(""), expectedErr)
 				})
 
 				It("should error with config service not found", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: metricsforwarder config service not found")))
+					Expect(err).To(MatchError(MatchRegexp("metricsforwarder config service not found")))
 				})
 			})
 
@@ -93,7 +93,7 @@ var _ = Describe("Config", func() {
 
 			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
 				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("default"), nil)
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "default" }`), nil)                                                                           // #nosec G101
 					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 				})
 
@@ -108,7 +108,7 @@ var _ = Describe("Config", func() {
 
 			When("storedProcedure_db service is provided and cred_helper_impl is stored_procedure", func() {
 				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("stored_procedure"), nil)
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "stored_procedure" }`), nil)                                                                  // #nosec G101
 					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 				})
 
@@ -121,11 +121,39 @@ var _ = Describe("Config", func() {
 					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(1)
 					Expect(actualDbName).To(Equal(db.StoredProcedureDb))
 				})
+
+				When("storedProcedure_db config has username and password", func() {
+					var storedProcedureUsername, storedProcedurePassword string
+
+					BeforeEach(func() {
+						storedProcedureUsername = "storedProcedureUsername"
+						storedProcedurePassword = "storedProcedurePassword"
+
+						mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(
+							`{ "cred_helper_impl": "stored_procedure",
+							   "stored_procedure_binding_credential_config": {
+								  "username": "`+storedProcedureUsername+`",
+								  "password": "`+storedProcedurePassword+`"
+								},
+							}`),
+							nil,
+						) // #nosec G101
+					})
+
+					It("should prioritize the username and password from the config", func() {
+						// url should include the username and password from the config
+						Expect(err).NotTo(HaveOccurred())
+						_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+						Expect(storeProcedureFound).To(BeTrue())
+						Expect(conf.Db[db.StoredProcedureDb].URL).To(ContainSubstring(fmt.Sprintf("%s:%s", storedProcedureUsername, storedProcedurePassword)))
+					})
+				})
 			})
 
 			When("storedProcedure_db service is provided and cred_helper_impl is default", func() {
 				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns(getVcapConfigWithCredImplementation("default"), nil)
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(
+						`{ "cred_helper_impl": "default" }`), nil) // #nosec G101
 					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 				})
 
@@ -138,7 +166,6 @@ var _ = Describe("Config", func() {
 
 			When("VCAP_SERVICES has metricsforwarder config", func() {
 				BeforeEach(func() {
-
 					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(` {
 									"cache_cleanup_interval":"10h",
 									"cache_ttl":"90s",
@@ -321,7 +348,7 @@ health:
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer Loggregator CACert is empty")))
+					Expect(err).To(MatchError(MatchRegexp("SyslogServer Loggregator CACert is empty")))
 				})
 			})
 
@@ -331,7 +358,7 @@ health:
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer ClientKey is empty")))
+					Expect(err).To(MatchError(MatchRegexp("SyslogServer ClientKey is empty")))
 				})
 			})
 
@@ -341,7 +368,7 @@ health:
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: SyslogServer ClientCert is empty")))
+					Expect(err).To(MatchError(MatchRegexp("SyslogServer ClientCert is empty")))
 				})
 			})
 		})
@@ -358,7 +385,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Policy DB url is empty")))
 			})
 		})
 
@@ -368,7 +395,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator CACert is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Loggregator CACert is empty")))
 			})
 		})
 
@@ -378,7 +405,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator ClientCert is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Loggregator ClientCert is empty")))
 			})
 		})
 
@@ -388,7 +415,7 @@ health:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator ClientKey is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Loggregator ClientKey is empty")))
 			})
 		})
 
@@ -398,8 +425,7 @@ health:
 			})
 
 			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
-
+				Expect(err).To(MatchError(MatchRegexp("RateLimit.MaxAmount is less than or equal to zero")))
 			})
 		})
 
@@ -409,12 +435,8 @@ health:
 			})
 
 			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
+				Expect(err).To(MatchError(MatchRegexp("RateLimit.ValidDuration is less than or equal to zero")))
 			})
 		})
 	})
 })
-
-func getVcapConfigWithCredImplementation(credHelperImplementation string) []byte {
-	return []byte(`{ "cred_helper_impl": "` + credHelperImplementation + `" }`) // #nosec G101
-}

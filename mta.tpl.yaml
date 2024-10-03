@@ -3,7 +3,7 @@ description: Application Autoscaler Release for Cloud Foundry
 _schema-version: "3.3.0"
 provider: Cloud Foundry Foundation
 copyright: Apache License 2.0
-version: 0.0.1
+version: VERSION
 
 modules:
   - name: metricsforwarder
@@ -15,6 +15,7 @@ modules:
     - name: config
     - name: policydb
     - name: syslog-client
+    - name: app-autoscaler-application-logs
     parameters:
       memory: 1G
       disk-quota: 1G
@@ -44,4 +45,9 @@ resources:
   parameters:
     service-tags:
     - syslog-client
-
+- name: app-autoscaler-application-logs
+  active: false
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: application-logs
+    service-plan: standard
