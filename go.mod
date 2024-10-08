@@ -7,8 +7,8 @@ require (
 	code.cloudfoundry.org/clock v1.14.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.1
-	code.cloudfoundry.org/lager/v3 v3.8.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20241003184855-852799305adb
+	code.cloudfoundry.org/lager/v3 v3.7.0
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20241007083342-800aa497df58
 	code.cloudfoundry.org/tlsconfig v0.6.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -44,12 +44,12 @@ require (
 	golang.org/x/crypto v0.28.0
 	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6
 	golang.org/x/net v0.30.0
-	golang.org/x/time v0.7.0
+	golang.org/x/time v0.6.0
 	google.golang.org/grpc v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240930140551-af27646dc61f
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20241007155032-5fefd90f89a9
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240911205836-e7f77fdf9650 // indirect
@@ -102,6 +102,6 @@ require (
 	golang.org/x/tools v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240930140551-af27646dc61f // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240930140551-af27646dc61f // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
