@@ -11,11 +11,13 @@ modules:
     path: .
     properties:
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
     requires:
     - name: config
     - name: policydb
     - name: syslog-client
     - name: app-autoscaler-application-logs
+    - name: app-autoscaler-dynatrace
     parameters:
       memory: 1G
       disk-quota: 1G
@@ -51,3 +53,7 @@ resources:
   parameters:
     service: application-logs
     service-plan: standard
+- name: app-autoscaler-dynatrace
+  type: org.cloudfoundry.existing-service
+  active: false
+  optional: true
