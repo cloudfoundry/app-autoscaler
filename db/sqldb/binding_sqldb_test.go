@@ -355,6 +355,7 @@ var _ = Describe("BindingSqldb", func() {
 	Describe("CreateServiceBinding", func() {
 
 		JustBeforeEach(func() {
+
 			err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, customMetricsStrategy)
 		})
 		Context("When service instance doesn't exist", func() {
@@ -368,6 +369,7 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
+				customMetricsStrategy = "same_app"
 			})
 
 			Context("When service binding is being created first time", func() {

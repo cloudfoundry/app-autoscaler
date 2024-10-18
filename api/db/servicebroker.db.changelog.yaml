@@ -75,13 +75,67 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 3
+      author: qy
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_binding_service_instance_id
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: service_instance_id
+            baseTableName: binding
+            constraintName: fk_binding_service_instance_id
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+            referencedColumnNames: service_instance_id
+            referencedTableName: service_instance
+  - changeSet:
+      id: 4
+      author: silvestre
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: service_instance
+                columnName: default_policy
+      changes:
+        - addColumn:
+            tableName: service_instance
+            columns:
+              - column:
+                  name: default_policy
+                  type: ${policy_json.type}
+              - column:
+                  name: default_policy_guid
+                  type: varchar(50)
+  - changeSet:
+      id: 5
+      author: Arsalan
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: binding
+                columnName: custom_metrics_strategy
+      changes:
+        - addColumn:
+            tableName: binding
+            columns:
               - column:
                   name: custom_metrics_strategy
                   type: varchar(40)
                   constraints:
                     nullable: false
   - changeSet:
-      id: 3
+      id: 6
       author: Arsalan
       logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
       preConditions:
@@ -113,28 +167,15 @@ databaseChangeLog:
                   value: 'same_app'
 
   - changeSet:
-      id: 4
-      author: qy
+      id: 7
+      author: Arsalan
       logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
       preConditions:
         - onFail: MARK_RAN
           not:
             - foreignKeyConstraintExists:
-                foreignKeyName: fk_binding_service_instance_id
-            - foreignKeyConstraintExists:
                 foreignKeyName: fk_binding_custom_metrics_strategy
       changes:
-        - addForeignKeyConstraint:
-            baseColumnNames: service_instance_id
-            baseTableName: binding
-            constraintName: fk_binding_service_instance_id
-            deferrable: false
-            initiallyDeferred: false
-            onDelete: RESTRICT
-            onUpdate: RESTRICT
-            referencedColumnNames: service_instance_id
-            referencedTableName: service_instance
-
         - addForeignKeyConstraint:
             baseColumnNames: custom_metrics_strategy
             baseTableName: binding
@@ -145,23 +186,5 @@ databaseChangeLog:
             onUpdate: RESTRICT
             referencedColumnNames: custom_metrics_strategy
             referencedTableName: metrics_submission
-  - changeSet:
-      id: 5
-      author: silvestre
-      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
-      preConditions:
-        - onFail: MARK_RAN
-          not:
-            - columnExists:
-                tableName: service_instance
-                columnName: default_policy
-      changes:
-        - addColumn:
-            tableName: service_instance
-            columns:
-              - column:
-                  name: default_policy
-                  type: ${policy_json.type}
-              - column:
-                  name: default_policy_guid
-                  type: varchar(50)
+
+
