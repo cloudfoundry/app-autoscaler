@@ -439,9 +439,10 @@ var _ = Describe("BindingSqldb", func() {
 			It("should return what was created", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(retrievedServiceBinding).To(Equal(&models.ServiceBinding{
-					ServiceBindingID:  testBindingId,
-					ServiceInstanceID: testInstanceId,
-					AppID:             testAppId,
+					ServiceBindingID:      testBindingId,
+					ServiceInstanceID:     testInstanceId,
+					AppID:                 testAppId,
+					CustomMetricsStrategy: "same_app",
 				}))
 			})
 		})

@@ -165,7 +165,6 @@ databaseChangeLog:
               - column:
                   name: custom_metrics_strategy
                   value: 'same_app'
-
   - changeSet:
       id: 7
       author: Arsalan

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -498,9 +499,6 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	if details.RawParameters != nil {
 		policyJson = details.RawParameters
 	}
-
-	// extract custom metrics configs to determine metric submission strategy and set to default if not provided
-
 	bindingConfiguration := &models.BindingConfig{}
 	if policyJson != nil {
 		err := json.Unmarshal(policyJson, &bindingConfiguration)
@@ -713,6 +711,8 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 	if err != nil {
 		return result, err
 	}
+	bindingConfig := &models.BindingConfig{}
+	bindingConfig.SetDefaultCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
 
 	policy, err := b.policydb.GetAppPolicy(ctx, serviceBinding.AppID)
 	if err != nil {
@@ -720,11 +720,27 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
 
+	var combinedConfig *models.BindingConfigWithScaling
+	if bindingConfig.GetCustomMetricsStrategy() != "" {
+		combinedConfig = &models.BindingConfigWithScaling{BindingConfig: *bindingConfig}
+	}
 	if policy != nil {
-		result.Parameters = policy
+		areConfigAndPolicyPresent := combinedConfig != nil && policy.InstanceMin > 0
+		if areConfigAndPolicyPresent {
+			combinedConfig.ScalingPolicy = *policy
+			result.Parameters = combinedConfig
+		} else {
+			result.Parameters = policy
+		}
+	} else if !b.isEmpty(bindingConfig) {
+		result.Parameters = bindingConfig
 	}
 
 	return result, nil
+}
+
+func (b *Broker) isEmpty(bindingConfig *models.BindingConfig) bool {
+	return reflect.DeepEqual(bindingConfig, &models.BindingConfig{})
 }
 
 func (b *Broker) getServiceBinding(ctx context.Context, bindingID string) (*models.ServiceBinding, error) {

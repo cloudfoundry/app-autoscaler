@@ -244,7 +244,7 @@ func (bdb *BindingSQLDB) GetServiceBinding(ctx context.Context, serviceBindingId
 
 	serviceBinding := &models.ServiceBinding{}
 
-	query := bdb.sqldb.Rebind("SELECT binding_id, service_instance_id, app_id FROM binding WHERE binding_id =?")
+	query := bdb.sqldb.Rebind("SELECT binding_id, service_instance_id, app_id, custom_metrics_strategy FROM binding WHERE binding_id =?")
 
 	err := bdb.sqldb.GetContext(ctx, serviceBinding, query, serviceBindingId)
 	if err != nil {

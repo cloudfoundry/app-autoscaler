@@ -1500,6 +1500,47 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
+
+	Describe("GetBinding", func() {
+		var (
+			err           error
+			bindingPolicy string
+		)
+
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodGet, "", nil)
+			Expect(err).NotTo(HaveOccurred())
+			handler.GetBinding(resp, req)
+		})
+
+		Context("Binding configurations are exist", func() {
+			BeforeEach(func() {
+				bindingPolicy = `{
+				  "configuration": {
+					"custom_metrics": {
+					  "metric_submission_strategy": {
+						"allow_from": "bound_app"
+					  }
+					}
+				  },
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				   "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+				Expect(bindingPolicy).NotTo(BeEmpty())
+
+			})
+			It("succeeds with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusPreconditionFailed))
+			})
+		})
+	})
 })
 
 func verifyCredentialsGenerated(resp *httptest.ResponseRecorder) {

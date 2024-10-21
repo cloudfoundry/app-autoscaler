@@ -49,9 +49,15 @@ type ServiceInstance struct {
 }
 
 type ServiceBinding struct {
-	ServiceBindingID  string `db:"binding_id"`
-	ServiceInstanceID string `db:"service_instance_id"`
-	AppID             string `db:"app_id"`
+	ServiceBindingID      string `db:"binding_id"`
+	ServiceInstanceID     string `db:"service_instance_id"`
+	AppID                 string `db:"app_id"`
+	CustomMetricsStrategy string `db:"custom_metrics_strategy"`
+}
+
+type BindingConfigWithScaling struct {
+	BindingConfig
+	ScalingPolicy
 }
 
 type BindingRequestBody struct {
