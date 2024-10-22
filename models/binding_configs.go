@@ -28,13 +28,9 @@ type Configuration struct {
 }
 
 type CustomMetricsConfig struct {
-	Auth                     Auth                      `json:"auth,omitempty"`
 	MetricSubmissionStrategy MetricsSubmissionStrategy `json:"metric_submission_strategy"`
 }
 
-type Auth struct {
-	CredentialType string `json:"credential_type"`
-}
 type MetricsSubmissionStrategy struct {
 	AllowFrom string `json:"allow_from"`
 }
@@ -43,6 +39,6 @@ func (b *BindingConfig) GetCustomMetricsStrategy() string {
 	return b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom
 }
 
-func (b *BindingConfig) SetDefaultCustomMetricsStrategy(allowFrom string) {
+func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
 	b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
 }

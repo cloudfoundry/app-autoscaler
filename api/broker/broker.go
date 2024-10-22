@@ -513,7 +513,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	}
 	// set the default custom metrics strategy if not provided
 	if bindingConfiguration.GetCustomMetricsStrategy() == "" {
-		bindingConfiguration.SetDefaultCustomMetricsStrategy(models.CustomMetricsSameApp)
+		bindingConfiguration.SetCustomMetricsStrategy(models.CustomMetricsSameApp)
 	}
 	logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
 
@@ -712,7 +712,7 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		return result, err
 	}
 	bindingConfig := &models.BindingConfig{}
-	bindingConfig.SetDefaultCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
+	bindingConfig.SetCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
 
 	policy, err := b.policydb.GetAppPolicy(ctx, serviceBinding.AppID)
 	if err != nil {

@@ -189,7 +189,6 @@ var _ = Describe("Broker", func() {
 			Context("with configuration and policy", func() {
 				BeforeEach(func() {
 					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
-						Auth:                     models.Auth{},
 						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
 					},
 					}}
@@ -210,7 +209,6 @@ var _ = Describe("Broker", func() {
 			Context("with configuration only", func() {
 				BeforeEach(func() {
 					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
-						Auth:                     models.Auth{},
 						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
 					},
 					}}
