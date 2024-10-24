@@ -6,4 +6,5 @@ set-security-group:
 	$(eval SPACE := $(shell cf target |grep "space\:" |cut -d':' -f2 | xargs))
 
 	cf create-security-group metricsforwarder $(MAKEFILE_DIR)/security-group.json
+	cf update-security-group metricsforwarder $(MAKEFILE_DIR)/security-group.json
 	cf bind-security-group metricsforwarder $(ORG)

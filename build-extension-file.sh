@@ -19,17 +19,30 @@ export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export POSTGRES_ADDRESS="${DEPLOYMENT_NAME}-postgres.tcp.${SYSTEM_DOMAIN}"
 export POSTGRES_EXTERNAL_PORT="${PR_NUMBER:-5432}"
 
-export METRICSFORWARDER_HEALTH_PASSWORD="$(credhub get -n /bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password --quiet)"
+cat << EOF > /tmp/extension-file-secrets.yml.tpl
+metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
+policy_db_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/database_password))
+policy_db_server_ca: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.ca))
+policy_db_client_cert: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.certificate))
+policy_db_client_key: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.private_key))
+syslog_client_ca: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.ca))
+syslog_client_cert: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.certificate))
+syslog_client_key: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.private_key))
+EOF
+
+credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
+
 export METRICSFORWARDER_APPNAME="${METRICSFORWARDER_APPNAME:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
+export METRICSFORWARDER_HEALTH_PASSWORD="$(yq ".metricsforwarder_health_password" /tmp/mtar-secrets.yml)"
 
-export POLICY_DB_PASSWORD="$(credhub get -n /bosh-autoscaler/${DEPLOYMENT_NAME}/database_password --quiet)"
-export POLICY_DB_SERVER_CA="$(credhub get -n /bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server --key ca --quiet )"
-export POLICY_DB_CLIENT_CERT="$(credhub get -n /bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server --key certificate --quiet)"
-export POLICY_DB_CLIENT_KEY="$(credhub get -n /bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server --key private_key --quiet)"
+export POLICY_DB_PASSWORD="$(yq ".policy_db_password" /tmp/mtar-secrets.yml)"
+export POLICY_DB_SERVER_CA="$(yq ".policy_db_server_ca" /tmp/mtar-secrets.yml)"
+export POLICY_DB_CLIENT_CERT="$(yq ".policy_db_client_cert" /tmp/mtar-secrets.yml)"
+export POLICY_DB_CLIENT_KEY="$(yq ".policy_db_client_key" /tmp/mtar-secrets.yml)"
 
-export SYSLOG_CLIENT_CA="$(credhub get -n /bosh-autoscaler/cf/syslog_agent_log_cache_tls --key ca --quiet)"
-export SYSLOG_CLIENT_CERT="$(credhub get -n /bosh-autoscaler/cf/syslog_agent_log_cache_tls --key certificate --quiet)"
-export SYSLOG_CLIENT_KEY="$(credhub get -n /bosh-autoscaler/cf/syslog_agent_log_cache_tls --key private_key --quiet)"
+export SYSLOG_CLIENT_CA="$(yq ".syslog_client_ca" /tmp/mtar-secrets.yml)"
+export SYSLOG_CLIENT_CERT="$(yq ".syslog_client_cert" /tmp/mtar-secrets.yml)"
+export SYSLOG_CLIENT_KEY="$(yq ".syslog_client_key" /tmp/mtar-secrets.yml)"
 
 cat <<EOF > "${extension_file_path}"
 ID: development
