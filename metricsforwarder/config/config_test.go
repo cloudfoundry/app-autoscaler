@@ -100,9 +100,24 @@ var _ = Describe("Config", func() {
 				It("loads the db config from VCAP_SERVICES successfully", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(conf.Db[db.PolicyDb].URL).To(Equal(expectedDbUrl))
-					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(1))
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
 					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(0)
 					Expect(actualDbName).To(Equal(db.PolicyDb))
+				})
+			})
+
+			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "default" }`), nil)                                                                           // #nosec G101
+					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
+				})
+
+				It("loads the db config from VCAP_SERVICES successfully", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Db[db.BindingDb].URL).To(Equal(expectedDbUrl))
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
+					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(1)
+					Expect(actualDbName).To(Equal(db.BindingDb))
 				})
 			})
 
@@ -117,8 +132,8 @@ var _ = Describe("Config", func() {
 					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
 					Expect(storeProcedureFound).To(BeTrue())
 					Expect(conf.Db[db.StoredProcedureDb].URL).To(Equal(expectedDbUrl))
-					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
-					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(1)
+					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(3))
+					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(2)
 					Expect(actualDbName).To(Equal(db.StoredProcedureDb))
 				})
 
