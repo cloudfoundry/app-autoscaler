@@ -132,8 +132,6 @@ databaseChangeLog:
               - column:
                   name: custom_metrics_strategy
                   type: varchar(40)
-                  constraints:
-                    nullable: false
   - changeSet:
       id: 6
       author: Arsalan
