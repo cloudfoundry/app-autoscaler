@@ -41,6 +41,7 @@ resources:
   parameters:
     service-tags:
     - policy_db
+    - binding_db
     - relational
 - name: syslog-client
   type: org.cloudfoundry.user-provided-service

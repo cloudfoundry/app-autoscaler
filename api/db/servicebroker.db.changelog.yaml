@@ -115,3 +115,75 @@ databaseChangeLog:
               - column:
                   name: default_policy_guid
                   type: varchar(50)
+  - changeSet:
+      id: 5
+      author: Arsalan
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.yaml
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - columnExists:
+                tableName: binding
+                columnName: custom_metrics_strategy
+      changes:
+        - addColumn:
+            tableName: binding
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 6
+      author: Arsalan
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - tableExists:
+                tableName: metrics_submission
+      changes:
+        - createTable:
+            tableName: metrics_submission
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - insert:
+            tableName: metrics_submission
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  value: 'bound_app'
+        - insert:
+            tableName: metrics_submission
+            columns:
+              - column:
+                  name: custom_metrics_strategy
+                  value: 'same_app'
+  - changeSet:
+      id: 7
+      author: Arsalan
+      logicalFilePath: /var/vcap/packages/golangapiserver/servicebroker.db.changelog.json
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_binding_custom_metrics_strategy
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: custom_metrics_strategy
+            baseTableName: binding
+            constraintName: fk_binding_custom_metrics_strategy
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+            referencedColumnNames: custom_metrics_strategy
+            referencedTableName: metrics_submission
+
+

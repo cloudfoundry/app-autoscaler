@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -17,12 +19,14 @@ var ErrorAuthNotFound = errors.New("authentication method not found")
 type Auth struct {
 	logger      lager.Logger
 	credentials cred_helper.Credentials
+	bindingDB   db.BindingDB
 }
 
-func New(logger lager.Logger, credentials cred_helper.Credentials) (*Auth, error) {
+func New(logger lager.Logger, credentials cred_helper.Credentials, bindingDB db.BindingDB) (*Auth, error) {
 	return &Auth{
 		logger:      logger,
 		credentials: credentials,
+		bindingDB:   bindingDB,
 	}, nil
 }
 
@@ -52,10 +56,10 @@ func (a *Auth) AuthenticateHandler(next http.Handler) func(w http.ResponseWriter
 
 func (a *Auth) CheckAuth(r *http.Request, appID string) error {
 	var errAuth error
-	errAuth = a.XFCCAuth(r, appID)
+	errAuth = a.XFCCAuth(r, a.bindingDB, appID)
 	if errAuth != nil {
 		if errors.Is(errAuth, ErrXFCCHeaderNotFound) {
-			a.logger.Info("Trying basic auth")
+			a.logger.Info("Trying basic auth", lager.Data{"app_id": appID})
 			errAuth = a.BasicAuth(r, appID)
 		}
 	}

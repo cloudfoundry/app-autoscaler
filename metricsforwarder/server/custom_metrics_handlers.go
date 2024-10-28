@@ -20,23 +20,25 @@ import (
 )
 
 var (
-	ErrorReadingBody      = errors.New("error reading custom metrics request body")
-	ErrorUnmarshalingBody = errors.New("error unmarshaling custom metrics request body")
-	ErrorParsingBody      = errors.New("error parsing request body")
+	ErrorReadingBody       = errors.New("error reading custom metrics request body")
+	ErrorUnmarshallingBody = errors.New("error unmarshalling custom metrics request body")
+	ErrorParsingBody       = errors.New("error parsing request body")
 )
 
 type CustomMetricsHandler struct {
 	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
+	bindingDB          db.BindingDB
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, bindingDB db.BindingDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
+		bindingDB:          bindingDB,
 		allowedMetricCache: allowedMetricCache,
 		logger:             logger,
 	}
@@ -51,7 +53,7 @@ func (mh *CustomMetricsHandler) VerifyCredentialsAndPublishMetrics(w http.Respon
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 				Code:    "Internal-Server-Error",
 				Message: "error reading custom metrics request body"})
-		} else if errors.Is(err, ErrorUnmarshalingBody) {
+		} else if errors.Is(err, ErrorUnmarshallingBody) {
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error unmarshaling custom metrics request body"})
@@ -97,12 +99,12 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	var metricsConsumer *models.MetricsConsumer
 	err = json.Unmarshal(body, &metricsConsumer)
 	if err != nil {
-		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
-		return ErrorUnmarshalingBody
+		mh.logger.Error("error-unmarshalling-metrics", err, lager.Data{"body": r.Body})
+		return ErrorUnmarshallingBody
 	}
 	err = mh.validateCustomMetricTypes(appID, metricsConsumer)
 	if err != nil {
-		mh.logger.Error("failed-validating-metrictypes", err, lager.Data{"metrics": metricsConsumer})
+		mh.logger.Error("failed-validating-metric-types", err, lager.Data{"metrics": metricsConsumer})
 		return fmt.Errorf("metric validation Failed %w", err)
 	}
 
@@ -138,7 +140,17 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		// AllowedMetrics found in cache
 		allowedMetricTypeSet = res.(map[string]struct{})
 	} else {
-		//  AllowedMetrics not found in cache, find AllowedMetrics from Database
+		// allow app with strategy as bound_app to submit metrics without policy
+		isAppWithBoundStrategy, err := mh.isAppWithBoundStrategy(appGUID)
+		if err != nil {
+			mh.logger.Error("error-finding-app-submission-strategy", err, lager.Data{"appId": appGUID})
+			return err
+		}
+		if isAppWithBoundStrategy {
+			mh.logger.Info("app-with-bound-strategy-found", lager.Data{"appId": appGUID})
+			return nil
+		}
+
 		scalingPolicy, err := mh.policyDB.GetAppPolicy(context.TODO(), appGUID)
 		if err != nil {
 			mh.logger.Error("error-getting-policy", err, lager.Data{"appId": appGUID})
@@ -170,6 +182,20 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		}
 	}
 	return nil
+}
+
+func (mh *CustomMetricsHandler) isAppWithBoundStrategy(appGUID string) (bool, error) {
+	// allow app with submission_strategy as bound_app to submit custom metrics even without policy
+	submissionStrategy, err := mh.bindingDB.GetCustomMetricStrategyByAppId(context.TODO(), appGUID)
+	if err != nil {
+		mh.logger.Error("error-getting-custom-metrics-strategy", err, lager.Data{"appId": appGUID})
+		return false, err
+	}
+	if submissionStrategy == "bound_app" {
+		mh.logger.Info("bounded-metrics-submission-strategy", lager.Data{"appId": appGUID, "submission_strategy": submissionStrategy})
+		return true, nil
+	}
+	return false, nil
 }
 
 func (mh *CustomMetricsHandler) getMetrics(appID string, metricsConsumer *models.MetricsConsumer) []*models.CustomMetric {

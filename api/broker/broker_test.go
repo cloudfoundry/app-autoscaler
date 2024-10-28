@@ -2,6 +2,7 @@ package broker_test
 
 import (
 	"encoding/json"
+	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -19,12 +20,14 @@ import (
 
 var _ = Describe("Broker", func() {
 	var (
-		aBroker         *broker.Broker
-		err             error
-		fakeBindingDB   *fakes.FakeBindingDB
-		fakePolicyDB    *fakes.FakePolicyDB
-		fakeCredentials *fakes.FakeCredentials
-		testLogger      = lagertest.NewTestLogger("test")
+		aBroker                  *broker.Broker
+		err                      error
+		fakeBindingDB            *fakes.FakeBindingDB
+		fakePolicyDB             *fakes.FakePolicyDB
+		fakeCredentials          *fakes.FakeCredentials
+		testLogger               = lagertest.NewTestLogger("test")
+		bindingConfigWithScaling *models.BindingConfigWithScaling
+		bindingConfig            *models.BindingConfig
 	)
 
 	BeforeEach(func() {
@@ -153,11 +156,10 @@ var _ = Describe("Broker", func() {
 			})
 		})
 		Context("when the binding exists", func() {
-			BeforeEach(func() {
-				fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId, ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
-			})
 			Context("without policy", func() {
 				BeforeEach(func() {
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
 					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})
 				It("returns the empty binding without parameters", func() {
@@ -175,11 +177,53 @@ var _ = Describe("Broker", func() {
 			})
 			Context("with policy", func() {
 				BeforeEach(func() {
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
 					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
 				})
 				It("returns the Binding with parameters", func() {
 					Expect(err).To(BeNil())
 					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: scalingPolicy}))
+				})
+			})
+			Context("with configuration and policy", func() {
+				BeforeEach(func() {
+					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
+						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
+					},
+					}}
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
+					bindingBytes, err := os.ReadFile("testdata/policy-with-configs.json")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					err = json.Unmarshal(bindingBytes, &bindingConfigWithScaling)
+					Expect(err).ShouldNot(HaveOccurred())
+					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
+				})
+				It("returns the Binding with configs and policy in parameters", func() {
+					Expect(err).To(BeNil())
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: bindingConfigWithScaling}))
+				})
+			})
+			Context("with configuration only", func() {
+				BeforeEach(func() {
+					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
+						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
+					},
+					}}
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
+					bindingBytes, err := os.ReadFile("testdata/with-configs.json")
+					Expect(err).ShouldNot(HaveOccurred())
+
+					err = json.Unmarshal(bindingBytes, &bindingConfigWithScaling)
+					Expect(err).ShouldNot(HaveOccurred())
+					fakePolicyDB.GetAppPolicyReturns(nil, nil)
+				})
+				It("returns the bindings with configs in parameters", func() {
+					Expect(err).To(BeNil())
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: bindingConfig}))
 				})
 			})
 		})

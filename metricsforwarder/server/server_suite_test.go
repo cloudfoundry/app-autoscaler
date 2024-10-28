@@ -24,10 +24,13 @@ import (
 )
 
 var (
-	conf            *config.Config
-	serverProcess   ifrit.Process
-	serverUrl       string
-	policyDB        *fakes.FakePolicyDB
+	conf          *config.Config
+	serverProcess ifrit.Process
+	serverUrl     string
+	policyDB      *fakes.FakePolicyDB
+
+	fakeBindingDB *fakes.FakeBindingDB
+
 	rateLimiter     *fakes.FakeLimiter
 	fakeCredentials *fakes.FakeCredentials
 
@@ -82,6 +85,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Health:            healthConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
+	fakeBindingDB = &fakes.FakeBindingDB{}
+
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 
@@ -91,7 +96,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	logger := lager.NewLogger("server_suite_test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 
-	httpServer, err := NewServer(logger, conf, policyDB,
+	httpServer, err := NewServer(logger, conf, policyDB, fakeBindingDB,
 		fakeCredentials, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)

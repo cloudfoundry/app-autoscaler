@@ -1,0 +1,9 @@
+{
+  "configuration": {
+    "custom_metrics": {
+      "metric_submission_strategy": {
+        "allow_from": "bound_app"
+      }
+    }
+  }
+}

@@ -63,7 +63,67 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if err != nil {
 		AbortSuite(fmt.Sprintf("DBURL not found: %s", err.Error()))
 	}
+	preparePolicyDb(database)
+	prepareBindingDb(database)
 
+	return []byte(mf)
+}, func(pathsByte []byte) {
+	mfPath = string(pathsByte)
+
+	testCertDir := "../../../../../test-certs"
+
+	grpcIngressTestServer, err = testhelpers.NewTestIngressServer(
+		filepath.Join(testCertDir, "metron.crt"),
+		filepath.Join(testCertDir, "metron.key"),
+		filepath.Join(testCertDir, "loggregator-ca.crt"),
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = grpcIngressTestServer.Start()
+	Expect(err).NotTo(HaveOccurred())
+
+	cfg.LoggregatorConfig.TLS.CACertFile = filepath.Join(testCertDir, "loggregator-ca.crt")
+	cfg.LoggregatorConfig.TLS.CertFile = filepath.Join(testCertDir, "metron.crt")
+	cfg.LoggregatorConfig.TLS.KeyFile = filepath.Join(testCertDir, "metron.key")
+	cfg.LoggregatorConfig.MetronAddress = grpcIngressTestServer.GetAddr()
+
+	cfg.RateLimit.MaxAmount = 10
+	cfg.RateLimit.ValidDuration = 1 * time.Second
+	cfg.Logging.Level = "debug"
+
+	cfg.Health.HealthCheckUsername = "metricsforwarderhealthcheckuser"
+	cfg.Health.HealthCheckPassword = "metricsforwarderhealthcheckpassword"
+	cfg.Health.ReadinessCheckEnabled = true
+
+	cfg.Server.Port = 10000 + GinkgoParallelProcess()
+	healthport = 8000 + GinkgoParallelProcess()
+	cfg.Health.Port = healthport
+	cfg.CacheCleanupInterval = 10 * time.Minute
+	cfg.PolicyPollerInterval = 40 * time.Second
+	cfg.Db = make(map[string]db.DatabaseConfig)
+	dbUrl := testhelpers2.GetDbUrl()
+	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
+		URL:                   dbUrl,
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
+	cfg.Db[db.BindingDb] = db.DatabaseConfig{
+		URL:                   dbUrl,
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
+
+	cfg.CredHelperImpl = "default"
+
+	configFile = writeConfig(&cfg)
+
+	httpClient = &http.Client{}
+	healthHttpClient = &http.Client{}
+})
+
+func preparePolicyDb(database *db.Database) {
 	policyDB, err := sqlx.Open(database.DriverName, database.DataSourceName)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -110,57 +170,21 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if err != nil {
 		AbortSuite(fmt.Sprintf("Failed to close connection: %s", err.Error()))
 	}
+}
 
-	return []byte(mf)
-}, func(pathsByte []byte) {
-	mfPath = string(pathsByte)
-
-	testCertDir := "../../../../../test-certs"
-
-	grpcIngressTestServer, err = testhelpers.NewTestIngressServer(
-		filepath.Join(testCertDir, "metron.crt"),
-		filepath.Join(testCertDir, "metron.key"),
-		filepath.Join(testCertDir, "loggregator-ca.crt"),
-	)
+func prepareBindingDb(database *db.Database) {
+	bindingDB, err := sqlx.Open(database.DriverName, database.DataSourceName)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = grpcIngressTestServer.Start()
-	Expect(err).NotTo(HaveOccurred())
-
-	cfg.LoggregatorConfig.TLS.CACertFile = filepath.Join(testCertDir, "loggregator-ca.crt")
-	cfg.LoggregatorConfig.TLS.CertFile = filepath.Join(testCertDir, "metron.crt")
-	cfg.LoggregatorConfig.TLS.KeyFile = filepath.Join(testCertDir, "metron.key")
-	cfg.LoggregatorConfig.MetronAddress = grpcIngressTestServer.GetAddr()
-
-	cfg.RateLimit.MaxAmount = 10
-	cfg.RateLimit.ValidDuration = 1 * time.Second
-	cfg.Logging.Level = "debug"
-
-	cfg.Health.HealthCheckUsername = "metricsforwarderhealthcheckuser"
-	cfg.Health.HealthCheckPassword = "metricsforwarderhealthcheckpassword"
-	cfg.Health.ReadinessCheckEnabled = true
-
-	cfg.Server.Port = 10000 + GinkgoParallelProcess()
-	healthport = 8000 + GinkgoParallelProcess()
-	cfg.Health.Port = healthport
-	cfg.CacheCleanupInterval = 10 * time.Minute
-	cfg.PolicyPollerInterval = 40 * time.Second
-	cfg.Db = make(map[string]db.DatabaseConfig)
-	dbUrl := testhelpers2.GetDbUrl()
-	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
+	_, err = bindingDB.Exec("DELETE from binding")
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed clean policy_json %s", err.Error()))
 	}
-
-	cfg.CredHelperImpl = "default"
-
-	configFile = writeConfig(&cfg)
-
-	httpClient = &http.Client{}
-	healthHttpClient = &http.Client{}
-})
+	err = bindingDB.Close()
+	if err != nil {
+		AbortSuite(fmt.Sprintf("Failed to close connection: %s", err.Error()))
+	}
+}
 
 var _ = SynchronizedAfterSuite(func() {
 	grpcIngressTestServer.Stop()

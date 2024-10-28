@@ -920,15 +920,87 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 			It("returns the correct binding parameters", func() {
-				creds := &models.CredentialResponse{}
-				responseString := resp.Body.String()
-				err := json.Unmarshal([]byte(responseString), creds)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(*creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
-				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+				verifyCredentialsGenerated(resp)
 			})
 		})
-		// test for credential-type
+		When("Binding configurations are present", func() {
+			BeforeEach(func() {
+				bindingPolicy = `{
+				  "configuration": {
+					"custom_metrics": {
+					  "auth": {
+						"credential_type": "binding_secret"
+					  },
+					  "metric_submission_strategy": {
+						"allow_from": "bound_app"
+					  }
+					}
+				  },
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+				bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+				body, err = json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingPolicy = `{
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+				verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
+			})
+			It("succeeds with 201", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+				Expect(bindingdb.CreateServiceBindingCallCount()).To(Equal(1))
+				verifyCredentialsGenerated(resp)
+			})
+		})
+
 		Context("credential-type is provided while binding", func() {
 			BeforeEach(func() {
 				schedulerExpectedJSON = `{
@@ -1188,7 +1260,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 
-		//
 		Context("When a default policy was provided when creating the service instance", func() {
 			BeforeEach(func() {
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{testInstanceId, testOrgId, testSpaceId, testDefaultPolicy, testDefaultGuid}, nil)
@@ -1429,7 +1500,57 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
+
+	Describe("GetBinding", func() {
+		var (
+			err           error
+			bindingPolicy string
+		)
+
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodGet, "", nil)
+			Expect(err).NotTo(HaveOccurred())
+			handler.GetBinding(resp, req)
+		})
+
+		Context("Binding configurations are exist", func() {
+			BeforeEach(func() {
+				bindingPolicy = `{
+				  "configuration": {
+					"custom_metrics": {
+					  "metric_submission_strategy": {
+						"allow_from": "bound_app"
+					  }
+					}
+				  },
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				   "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+				Expect(bindingPolicy).NotTo(BeEmpty())
+
+			})
+			It("succeeds with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusPreconditionFailed))
+			})
+		})
+	})
 })
+
+func verifyCredentialsGenerated(resp *httptest.ResponseRecorder) {
+	creds := &models.CredentialResponse{}
+	responseString := resp.Body.String()
+	err := json.Unmarshal([]byte(responseString), creds)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(*creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
+	Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+}
 
 func createInstanceCreationRequestBody(defaultPolicy string) []byte {
 	m := json.RawMessage(defaultPolicy)
