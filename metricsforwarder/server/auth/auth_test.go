@@ -211,7 +211,6 @@ var _ = Describe("Authentication", func() {
 					testAppId = "app-to-scale-id"
 					vars["appid"] = testAppId
 					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
-					// ToDO: this should be read via configurations aka scaling policy binding parameters
 					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
