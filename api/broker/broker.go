@@ -711,32 +711,36 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 	if err != nil {
 		return result, err
 	}
-	bindingConfig := &models.BindingConfig{}
-	bindingConfig.SetCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
 
 	policy, err := b.policydb.GetAppPolicy(ctx, serviceBinding.AppID)
 	if err != nil {
 		b.logger.Error("get-binding", err, lager.Data{"instanceID": instanceID, "bindingID": bindingID, "fetchBindingDetails": details})
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
-
-	var combinedConfig *models.BindingConfigWithScaling
-	if bindingConfig.GetCustomMetricsStrategy() != "" {
-		combinedConfig = &models.BindingConfigWithScaling{BindingConfig: *bindingConfig}
-	}
-	if policy != nil {
-		areConfigAndPolicyPresent := combinedConfig != nil && policy.InstanceMin > 0
-		if areConfigAndPolicyPresent {
-			combinedConfig.ScalingPolicy = *policy
-			result.Parameters = combinedConfig
-		} else {
-			result.Parameters = policy
-		}
-	} else if !b.isEmpty(bindingConfig) {
+	combinedConfig, bindingConfig := b.buildConfigurationIfPresent(serviceBinding.CustomMetricsStrategy)
+	if policy != nil && combinedConfig != nil { //both are present
+		combinedConfig.ScalingPolicy = *policy
+		combinedConfig.BindingConfig = *bindingConfig
+		result.Parameters = combinedConfig
+	} else if policy != nil { // only policy was given
+		result.Parameters = policy
+	} else if combinedConfig != nil { // only configuration was given
 		result.Parameters = bindingConfig
 	}
-
 	return result, nil
+}
+
+func (b *Broker) buildConfigurationIfPresent(customMetricsStrategy string) (*models.BindingConfigWithScaling, *models.BindingConfig) {
+	var combinedConfig *models.BindingConfigWithScaling
+	var bindingConfig *models.BindingConfig
+
+	if customMetricsStrategy != "" && customMetricsStrategy != models.CustomMetricsSameApp { //if custom metric was not given in the binding process
+		combinedConfig = &models.BindingConfigWithScaling{}
+		bindingConfig = &models.BindingConfig{}
+		bindingConfig.SetCustomMetricsStrategy(customMetricsStrategy)
+		combinedConfig.BindingConfig = *bindingConfig
+	}
+	return combinedConfig, bindingConfig
 }
 
 func (b *Broker) isEmpty(bindingConfig *models.BindingConfig) bool {
