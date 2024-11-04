@@ -26,7 +26,7 @@ var _ = Describe("Broker", func() {
 		fakePolicyDB             *fakes.FakePolicyDB
 		fakeCredentials          *fakes.FakeCredentials
 		testLogger               = lagertest.NewTestLogger("test")
-		bindingConfigWithScaling *models.BindingConfigWithScaling
+		bindingConfigWithScaling *models.BindingConfigWithPolicy
 		bindingConfig            *models.BindingConfig
 	)
 

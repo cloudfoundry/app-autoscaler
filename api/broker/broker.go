@@ -752,12 +752,12 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 	return result, nil
 }
 
-func (b *Broker) buildConfigurationIfPresent(customMetricsStrategy string) (*models.BindingConfigWithScaling, *models.BindingConfig) {
-	var combinedConfig *models.BindingConfigWithScaling
+func (b *Broker) buildConfigurationIfPresent(customMetricsStrategy string) (*models.BindingConfigWithPolicy, *models.BindingConfig) {
+	var combinedConfig *models.BindingConfigWithPolicy
 	var bindingConfig *models.BindingConfig
 
 	if customMetricsStrategy != "" && customMetricsStrategy != models.CustomMetricsSameApp { //if custom metric was given in the binding process
-		combinedConfig = &models.BindingConfigWithScaling{}
+		combinedConfig = &models.BindingConfigWithPolicy{}
 		bindingConfig = &models.BindingConfig{}
 		bindingConfig.SetCustomMetricsStrategy(customMetricsStrategy)
 		combinedConfig.BindingConfig = *bindingConfig

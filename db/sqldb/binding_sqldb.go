@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -313,7 +314,10 @@ func (bdb *BindingSQLDB) GetAppBindingByAppId(ctx context.Context, appId string)
 	err := bdb.sqldb.QueryRowContext(ctx, query, appId).Scan(&bindingId)
 
 	if err != nil {
-		bdb.logger.Error("get-service-binding-by-appid", err, lager.Data{"query": query, "appId": appId})
+		bdb.logger.Debug("get-service-binding-by-appid", lager.Data{"query": query, "appId": appId, "error": err})
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", db.ErrDoesNotExist
+		}
 		return "", err
 	}
 	return bindingId, nil
@@ -434,6 +438,27 @@ func (bdb *BindingSQLDB) GetCustomMetricStrategyByAppId(ctx context.Context, app
 		return "", err
 	}
 	return customMetricsStrategy, nil
+}
+
+func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error {
+
+	appBinding, err := bdb.GetAppBindingByAppId(ctx, appId)
+	if err != nil {
+		return err
+	}
+	query := bdb.sqldb.Rebind("UPDATE binding SET custom_metrics_strategy = ? WHERE binding_id = ?")
+	result, err := bdb.sqldb.ExecContext(ctx, query, nullableString(customMetricsStrategy), appBinding)
+	if err != nil {
+		bdb.logger.Error(fmt.Sprintf("failed to %s custom metric submission strategy", actionName), err,
+			lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
+		return err
+	}
+	if rowsAffected, err := result.RowsAffected(); err != nil || rowsAffected == 0 {
+		bdb.logger.Error(fmt.Sprintf("failed to %s custom metric submission strategy", actionName), err,
+			lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
+		return errors.New("no rows affected")
+	}
+	return nil
 }
 
 func (bdb *BindingSQLDB) fetchCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error) {

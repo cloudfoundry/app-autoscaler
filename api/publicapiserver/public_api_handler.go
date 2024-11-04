@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
 	"io"
 	"net/http"
 	"net/url"
@@ -39,6 +40,11 @@ const (
 	ActionWriteBody             = "write-body"
 	ActionCheckAppId            = "check-for-id-appid"
 	ErrorMessageAppidIsRequired = "AppId is required"
+)
+
+var (
+	ErrInvalidConfigurations        = errors.New("invalid binding configurations provided")
+	ErrInvalidCustomMetricsStrategy = errors.New("error: custom metrics strategy not supported")
 )
 
 func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB, credentials cred_helper.Credentials) *PublicApiHandler {
@@ -119,7 +125,20 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
 		return
 	}
-
+	bindingConfiguration, err := h.getBindingConfigurationFromRequest(policyBytes, logger)
+	if err != nil {
+		errMessage := "Failed to read binding configuration request body"
+		logger.Error(errMessage, err)
+		writeErrorResponse(w, http.StatusInternalServerError, errMessage)
+		return
+	}
+	// FIXME Move this validation code in a central place within api. This is a duplicate in broker.bind
+	bindingConfiguration, err = h.validateOrGetDefaultCustomMetricsStrategy(bindingConfiguration, logger)
+	if err != nil {
+		logger.Error(ErrInvalidConfigurations.Error(), err)
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	policy, errResults := h.policyValidator.ValidatePolicy(policyBytes)
 	if errResults != nil {
 		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults})
@@ -134,6 +153,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
 		return
 	}
+
 	h.logger.Info("creating/updating schedules", lager.Data{"policy": policy})
 	err = h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid)
 	if err != nil {
@@ -141,11 +161,18 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	response, err := json.Marshal(policy)
+	strategy := bindingConfiguration.GetCustomMetricsStrategy()
+	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, strategy, "update")
+	if err != nil {
+		actionName := "failed to save custom metric submission strategy in the database"
+		logger.Error(actionName, err)
+		writeErrorResponse(w, http.StatusInternalServerError, actionName)
+		return
+	}
+	response, err := h.buildResponse(strategy, bindingConfiguration, policy)
 	if err != nil {
 		logger.Error("Failed to marshal policy", err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Error marshaling policy")
+		writeErrorResponse(w, http.StatusInternalServerError, "Error building response")
 		return
 	}
 	_, err = w.Write(response)
@@ -186,7 +213,7 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 			writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving service instance")
 			return
 		}
-		if serviceInstance.DefaultPolicy != "" {
+		if serviceInstance != nil && serviceInstance.DefaultPolicy != "" {
 			policyStr := serviceInstance.DefaultPolicy
 			policyGuidStr := serviceInstance.DefaultPolicyGuid
 			logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
@@ -215,6 +242,14 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 			}
 		}
 	}
+	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, "", "delete")
+	if err != nil {
+		actionName := "failed to delete custom metric submission strategy in the database"
+		logger.Error(actionName, err)
+		writeErrorResponse(w, http.StatusInternalServerError, actionName)
+		return
+	}
+
 	// find via the app id the binding -> service instance
 	// default policy? then apply that
 
@@ -300,4 +335,47 @@ func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, _ *http.Request, _ m
 	if err != nil {
 		h.logger.Error(ActionWriteBody, err)
 	}
+}
+
+func (h *PublicApiHandler) validateOrGetDefaultCustomMetricsStrategy(bindingConfiguration *models.BindingConfig, logger lager.Logger) (*models.BindingConfig, error) {
+	strategy := bindingConfiguration.GetCustomMetricsStrategy()
+	if strategy == "" {
+		bindingConfiguration.SetCustomMetricsStrategy(models.CustomMetricsSameApp)
+	} else if strategy != models.CustomMetricsBoundApp {
+		actionName := "verify-custom-metrics-strategy"
+		return bindingConfiguration, apiresponses.NewFailureResponseBuilder(
+			ErrInvalidCustomMetricsStrategy, http.StatusBadRequest, actionName).
+			WithErrorKey(actionName).
+			Build()
+	}
+	logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
+	return bindingConfiguration, nil
+}
+
+func (h *PublicApiHandler) getBindingConfigurationFromRequest(policyJson json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {
+	bindingConfiguration := &models.BindingConfig{}
+	var err error
+	if policyJson != nil {
+		err = json.Unmarshal(policyJson, &bindingConfiguration)
+		if err != nil {
+			actionReadBindingConfiguration := "read-binding-configurations"
+			logger.Error("unmarshal-binding-configuration", err)
+			return bindingConfiguration, apiresponses.NewFailureResponseBuilder(
+				ErrInvalidConfigurations, http.StatusBadRequest, actionReadBindingConfiguration).
+				WithErrorKey(actionReadBindingConfiguration).
+				Build()
+		}
+	}
+	return bindingConfiguration, err
+}
+
+func (h *PublicApiHandler) buildResponse(strategy string, bindingConfiguration *models.BindingConfig, policy *models.ScalingPolicy) ([]byte, error) {
+	if strategy != "" && strategy != models.CustomMetricsSameApp {
+		bindingConfigWithPolicy := &models.BindingConfigWithPolicy{
+			BindingConfig: *bindingConfiguration,
+			ScalingPolicy: *policy,
+		}
+		return json.Marshal(bindingConfigWithPolicy)
+	}
+	return json.Marshal(policy)
 }

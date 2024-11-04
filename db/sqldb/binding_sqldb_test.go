@@ -749,6 +749,91 @@ var _ = Describe("BindingSqldb", func() {
 		})
 
 	})
+
+	Describe("SetOrUpdateCustomMetricStrategy", func() {
+		BeforeEach(func() {
+			err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("Update Custom Metrics Strategy", func() {
+			Context("With binding does not exist'", func() {
+				JustBeforeEach(func() {
+					err = bdb.SetOrUpdateCustomMetricStrategy(context.Background(), testAppId, "bound_app", "update")
+				})
+				It("should not save the custom metrics strategy and fails ", func() {
+					Expect(err).To(HaveOccurred())
+				})
+			})
+			Context("With binding exists'", func() {
+				JustBeforeEach(func() {
+					err = bdb.SetOrUpdateCustomMetricStrategy(context.Background(), testAppId, customMetricsStrategy, "update")
+				})
+				When("custom metrics strategy is not present (already null)", func() {
+					BeforeEach(func() {
+						customMetricsStrategy = "bound_app"
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "")
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should save the custom metrics strategy", func() {
+						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
+						Expect(customMetricStrategy).To(Equal("bound_app"))
+					})
+				})
+				When("custom metrics strategy is not present (already null)", func() {
+					BeforeEach(func() {
+						customMetricsStrategy = "same_app"
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "")
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should save the custom metrics strategy", func() {
+						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
+						Expect(customMetricStrategy).To(Equal("same_app"))
+					})
+				})
+				When("custom metrics strategy is already present", func() {
+					BeforeEach(func() {
+						customMetricsStrategy = "bound_app"
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should update the custom metrics strategy", func() {
+						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
+						Expect(customMetricStrategy).To(Equal("bound_app"))
+					})
+				})
+				When("custom metrics strategy unknown value", func() {
+					BeforeEach(func() {
+						customMetricsStrategy = "invalid_value"
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should throw an error", func() {
+						Expect(err.Error()).To(ContainSubstring("foreign key constraint"))
+					})
+				})
+			})
+		})
+		Context("Delete Custom Metrics Strategy", func() {
+			Context("With binding exists'", func() {
+				JustBeforeEach(func() {
+					err = bdb.SetOrUpdateCustomMetricStrategy(context.Background(), testAppId, customMetricsStrategy, "delete")
+					Expect(err).NotTo(HaveOccurred())
+				})
+				When("custom metrics strategy is already present", func() {
+					BeforeEach(func() {
+						customMetricsStrategy = ""
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "bound_app")
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should update the custom metrics strategy with empty values", func() {
+						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
+						Expect(customMetricStrategy).To(Equal(""))
+					})
+				})
+			})
+		})
+	})
+
 })
 
 func addProcessIdTo(id string) string {

@@ -81,6 +81,7 @@ type BindingDB interface {
 	GetAppBindingByAppId(ctx context.Context, appId string) (string, error)
 	IsAppBoundToSameAutoscaler(ctx context.Context, appId string, appToScaleId string) (bool, error)
 	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error)
+	SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error
 }
 
 type AppMetricDB interface {
