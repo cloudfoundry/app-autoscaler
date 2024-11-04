@@ -17,7 +17,8 @@ package models
 
 const (
 	CustomMetricsBoundApp = "bound_app"
-	CustomMetricsSameApp  = "same_app"
+	// CustomMetricsSameApp default value if not specified
+	CustomMetricsSameApp = "same_app"
 )
 
 type BindingConfig struct {
