@@ -406,11 +406,19 @@ var _ = Describe("BindingSqldb", func() {
 
 			When("service binding is created with invalid custom metrics strategy", func() {
 				BeforeEach(func() {
-					customMetricsStrategy = ""
+					customMetricsStrategy = "invalid"
 				})
 				It("should throw an error with foreign key violation", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("foreign key constraint"))
+				})
+			})
+			When("service binding is created with empty/nil custom metrics strategy", func() {
+				BeforeEach(func() {
+					customMetricsStrategy = ""
+				})
+				It("should return custom metrics strategy as null", func() {
+					Expect(hasServiceBindingWithCustomMetricStrategyIsNull(testBindingId, testInstanceId)).To(BeTrue())
 				})
 			})
 		})
@@ -444,6 +452,24 @@ var _ = Describe("BindingSqldb", func() {
 					AppID:                 testAppId,
 					CustomMetricsStrategy: "same_app",
 				}))
+			})
+		})
+		Context("with existing custom metrics strategy is null and binding already exists", func() {
+			BeforeEach(func() {
+				customMetricsStrategy = ""
+				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "")
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should get the custom metrics strategy as empty", func() {
+				Expect(retrievedServiceBinding).To(Equal(&models.ServiceBinding{
+					ServiceBindingID:      testBindingId,
+					ServiceInstanceID:     testInstanceId,
+					AppID:                 testAppId,
+					CustomMetricsStrategy: "",
+				}))
+				Expect(hasServiceBindingWithCustomMetricStrategyIsNull(testBindingId, testInstanceId)).To(BeTrue())
 			})
 		})
 	})
