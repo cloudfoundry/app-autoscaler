@@ -923,9 +923,129 @@ var _ = Describe("BrokerHandler", func() {
 				verifyCredentialsGenerated(resp)
 			})
 		})
-		When("Binding configurations are present", func() {
-			BeforeEach(func() {
-				bindingPolicy = `{
+		Context("Binding configurations", func() {
+			When("invalid custom strategy provided in the binding parameters", func() {
+				BeforeEach(func() {
+					bindingPolicy = `{
+				  "configuration": {
+					"custom_metrics": {
+					  "metric_submission_strategy": {
+						"allow_from": "same_app"
+					  }
+					}
+				  },
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+					bindingPolicy = `{
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+					verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(MatchJSON(`{"error": "verify-custom-metrics-strategy", "description": "error: custom metrics strategy not supported"}`))
+
+				})
+			})
+			When("are empty", func() {
+				BeforeEach(func() {
+					bindingPolicy = `{
+				  "instance_max_count":4,
+				  "instance_min_count":1,
+				  "schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+					  "start_time": "10:00",
+					  "end_time": "18:00",
+					  "days_of_week": [
+						1,
+						2,
+						3
+					  ],
+					  "instance_min_count": 1,
+					  "instance_max_count": 10,
+					  "initial_min_instance_count": 5
+					}]
+				  },
+				  "scaling_rules":[
+					{
+					  "metric_type":"memoryused",
+					  "threshold":30,
+					  "operator":"<",
+					  "adjustment":"-1"
+					}]
+				}`
+					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+
+					verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
+				})
+				It("set the default custom metrics strategy", func() {
+					_, _, _, _, customMetricsStrategy := bindingdb.CreateServiceBindingArgsForCall(0)
+					Expect(customMetricsStrategy).To(Equal(models.CustomMetricsSameApp))
+
+				})
+				It("succeeds with 201", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+					Expect(bindingdb.CreateServiceBindingCallCount()).To(Equal(1))
+					verifyCredentialsGenerated(resp)
+				})
+			})
+			When("policy and binding configuration are present", func() {
+				BeforeEach(func() {
+					bindingPolicy = `{
 				  "configuration": {
 					"custom_metrics": {
 					  "auth": {
@@ -961,10 +1081,10 @@ var _ = Describe("BrokerHandler", func() {
 					  "adjustment":"-1"
 					}]
 				}`
-				bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
-				body, err = json.Marshal(bindingRequestBody)
-				Expect(err).NotTo(HaveOccurred())
-				bindingPolicy = `{
+					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+					body, err = json.Marshal(bindingRequestBody)
+					Expect(err).NotTo(HaveOccurred())
+					bindingPolicy = `{
 				  "instance_max_count":4,
 				  "instance_min_count":1,
 				  "schedules": {
@@ -990,14 +1110,15 @@ var _ = Describe("BrokerHandler", func() {
 					  "adjustment":"-1"
 					}]
 				}`
-				verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
-			})
-			It("succeeds with 201", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated))
-				By("updating the scheduler")
-				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
-				Expect(bindingdb.CreateServiceBindingCallCount()).To(Equal(1))
-				verifyCredentialsGenerated(resp)
+					verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
+				})
+				It("succeeds with 201", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+					Expect(bindingdb.CreateServiceBindingCallCount()).To(Equal(1))
+					verifyCredentialsGenerated(resp)
+				})
 			})
 		})
 
