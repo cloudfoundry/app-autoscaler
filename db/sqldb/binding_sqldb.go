@@ -208,7 +208,7 @@ func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId str
 	query := bdb.sqldb.Rebind("INSERT INTO binding" +
 		"(binding_id, service_instance_id, app_id, created_at, custom_metrics_strategy) " +
 		"VALUES(?, ?, ?, ?,?)")
-	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now(), customMetricsStrategy)
+	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now(), nullableString(customMetricsStrategy))
 
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId, "bindingId": bindingId, "appId": appId, "customMetricsStrategy": customMetricsStrategy})
@@ -239,14 +239,20 @@ func (bdb *BindingSQLDB) isBindingExists(ctx context.Context, bindingId string, 
 	return nil
 }
 
+type dbServiceBinding struct {
+	ServiceBindingID      string         `db:"binding_id"`
+	ServiceInstanceID     string         `db:"service_instance_id"`
+	AppID                 string         `db:"app_id"`
+	CustomMetricsStrategy sql.NullString `db:"custom_metrics_strategy"`
+}
+
 func (bdb *BindingSQLDB) GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error) {
 	logger := bdb.logger.Session("get-service-binding", lager.Data{"serviceBindingId": serviceBindingId})
 
-	serviceBinding := &models.ServiceBinding{}
-
+	dbServiceBinding := &dbServiceBinding{}
 	query := bdb.sqldb.Rebind("SELECT binding_id, service_instance_id, app_id, custom_metrics_strategy FROM binding WHERE binding_id =?")
 
-	err := bdb.sqldb.GetContext(ctx, serviceBinding, query, serviceBindingId)
+	err := bdb.sqldb.GetContext(ctx, dbServiceBinding, query, serviceBindingId)
 	if err != nil {
 		logger.Error("query", err, lager.Data{"query": query})
 		if errors.Is(err, sql.ErrNoRows) {
@@ -254,8 +260,12 @@ func (bdb *BindingSQLDB) GetServiceBinding(ctx context.Context, serviceBindingId
 		}
 		return nil, err
 	}
-
-	return serviceBinding, nil
+	return &models.ServiceBinding{
+		ServiceBindingID:      dbServiceBinding.ServiceBindingID,
+		ServiceInstanceID:     dbServiceBinding.ServiceInstanceID,
+		AppID:                 dbServiceBinding.AppID,
+		CustomMetricsStrategy: dbServiceBinding.CustomMetricsStrategy.String,
+	}, nil
 }
 
 func (bdb *BindingSQLDB) DeleteServiceBinding(ctx context.Context, bindingId string) error {
