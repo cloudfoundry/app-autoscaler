@@ -5,7 +5,8 @@ cf:
   secret: client-secret
   skip_ssl_validation: false
 health:
-  port: 9999
+  server_config:
+    port: 9999
 logging:
   level: "debug"
 app_metrics_db:

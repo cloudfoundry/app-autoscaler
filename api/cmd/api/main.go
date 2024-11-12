@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
@@ -20,7 +20,6 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -28,26 +27,23 @@ import (
 
 func main() {
 	var path string
+	var err error
+	var conf *config.Config
+
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
-	if path == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "missing config file")
-		os.Exit(1)
-	}
 
-	configFile, err := os.Open(path)
+	vcapConfiguration, err := configutil.NewVCAPConfigurationReader()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read vcap configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	var conf *config.Config
-	conf, err = config.LoadConfig(configFile)
+	conf, err = config.LoadConfig(path, vcapConfiguration)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	_ = configFile.Close()
 
 	err = conf.Validate()
 	if err != nil {
@@ -61,18 +57,14 @@ func main() {
 
 	members := grouper.Members{}
 
-	policyDb := sqldb.CreatePolicyDb(conf.DB[db.PolicyDb], logger)
+	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
 	defer func() { _ = policyDb.Close() }()
-	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.DB[db.PolicyDb]})
+	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
 
-	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.DB, 10*time.Second, 10*time.Minute, logger, policyDb)
+	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, 10*time.Second, 10*time.Minute, logger, policyDb)
 	defer func() { _ = credentialProvider.Close() }()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
-	prometheusCollectors := []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "policyDB", policyDb),
-		httpStatusCollector,
-	}
 
 	paClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
@@ -83,38 +75,60 @@ func main() {
 	}
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
-	bindingDB, err := sqldb.NewBindingSQLDB(conf.DB[db.BindingDb], logger.Session("bindingdb-db"))
+	bindingDb, err := sqldb.NewBindingSQLDB(conf.Db[db.BindingDb], logger.Session("bindingdb-db"))
 	if err != nil {
-		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB[db.BindingDb]})
+		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.Db[db.BindingDb]})
 		os.Exit(1)
 	}
-	defer func() { _ = bindingDB.Close() }()
-	prometheusCollectors = append(prometheusCollectors, healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
+	defer func() { _ = bindingDb.Close() }()
 	checkBindingFunc := func(appId string) bool {
-		return bindingDB.CheckServiceBinding(appId)
+		return bindingDb.CheckServiceBinding(appId)
 	}
-	brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf,
-		bindingDB, policyDb, httpStatusCollector, cfClient, credentialProvider)
+	brokerServer := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf,
+		bindingDb, policyDb, httpStatusCollector, cfClient, credentialProvider)
+
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
+
+	publicApiServer := publicapiserver.NewPublicApiServer(
+		logger.Session("public_api_http_server"), conf, policyDb, bindingDb,
+		credentialProvider, checkBindingFunc, cfClient, httpStatusCollector,
+		rateLimiter, brokerServer)
+
+	err = publicApiServer.Setup()
+	if err != nil {
+		logger.Error("failed to setup public api server", err)
+		os.Exit(1)
+	}
+
+	mtlsServer, err := publicApiServer.GetMtlsServer()
+	if err != nil {
+		logger.Error("failed to create public api http server", err)
+		os.Exit(1)
+	}
+
+	healthServer, err := publicApiServer.GetHealthServer()
+	if err != nil {
+		logger.Error("failed to create health http server", err)
+		os.Exit(1)
+	}
+
+	brokerHttpServer, err := brokerServer.GetServer()
 	if err != nil {
 		logger.Error("failed to create broker http server", err)
 		os.Exit(1)
 	}
-	members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
 
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
-
-	publicApiHttpServer := createApiServer(conf, logger, policyDb, credentialProvider, checkBindingFunc, cfClient, httpStatusCollector, bindingDB)
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
+	unifiedServer, err := publicApiServer.GetUnifiedServer()
 	if err != nil {
-		logger.Fatal("Failed to create health server", err)
+		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
-	logger.Debug("Successfully created health server")
 
 	members = append(members,
-		grouper.Member{"public_api_http_server", publicApiHttpServer},
+		grouper.Member{"public_api_http_server", mtlsServer},
+		grouper.Member{"broker", brokerHttpServer},
 		grouper.Member{"health_server", healthServer},
+		grouper.Member{"unified_server", unifiedServer},
 	)
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -129,14 +143,4 @@ func main() {
 	}
 
 	logger.Info("exited")
-}
-
-func createApiServer(conf *config.Config, logger lager.Logger, policyDb *sqldb.PolicySQLDB, credentialProvider cred_helper.Credentials, checkBindingFunc api.CheckBindingFunc, cfClient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector, bindingDB db.BindingDB) ifrit.Runner {
-	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, credentialProvider, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
-	if err != nil {
-		logger.Error("failed to create public api http server", err)
-		os.Exit(1)
-	}
-	return publicApiHttpServer
 }

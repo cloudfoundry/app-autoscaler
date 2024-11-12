@@ -29,7 +29,6 @@ type PublicApiHandler struct {
 	conf                 *config.Config
 	policydb             db.PolicyDB
 	bindingdb            db.BindingDB
-	scalingEngineClient  *http.Client
 	eventGeneratorClient *http.Client
 	policyValidator      *policyvalidator.PolicyValidator
 	schedulerUtil        *schedulerclient.Client
@@ -43,13 +42,7 @@ const (
 )
 
 func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB, credentials cred_helper.Credentials) *PublicApiHandler {
-	seClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
-	if err != nil {
-		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
-		os.Exit(1)
-	}
-
-	egClient, err := helpers.CreateHTTPClient(&conf.EventGenerator.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("event_client"))
+	egClient, err := helpers.CreateHTTPSClient(&conf.EventGenerator.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("event_client"))
 	if err != nil {
 		logger.Error("Failed to create http client for EventGenerator", err, lager.Data{"eventgenerator": conf.EventGenerator.TLSClientCerts})
 		os.Exit(1)
@@ -60,7 +53,6 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		conf:                 conf,
 		policydb:             policydb,
 		bindingdb:            bindingdb,
-		scalingEngineClient:  seClient,
 		eventGeneratorClient: egClient,
 		policyValidator: policyvalidator.NewPolicyValidator(
 			conf.PolicySchemaPath,
@@ -230,44 +222,6 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 	_, err = w.Write([]byte("{}"))
 	if err != nil {
 		logger.Error(ActionWriteBody, err)
-	}
-}
-
-func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, req *http.Request, vars map[string]string) {
-	appId := vars["appId"]
-	logger := h.logger.Session("GetScalingHistories", lager.Data{"appId": appId})
-	logger.Info("Get ScalingHistories")
-
-	// be careful about removing this call! There's some backwards compatibility being done in this function
-	parameters, err := parseParameter(req, vars)
-	if err != nil {
-		logger.Error("bad-request", err, lager.Data{"appId": appId})
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	path, _ := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("guid", appId)
-	targetURL := h.conf.ScalingEngine.ScalingEngineUrl + path.RequestURI() + "?" + parameters.Encode()
-
-	targetRequest, _ := http.NewRequest(http.MethodGet, targetURL, nil)
-	targetRequest.Header.Set("Authorization", "Bearer none")
-
-	response, err := h.scalingEngineClient.Do(targetRequest)
-
-	if err != nil {
-		logger.Error("error-getting-scaling-history", err, lager.Data{"url": targetURL})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling history from scaling engine")
-		return
-	}
-	w.Header().Set("Content-Type", response.Header.Get("Content-Type"))
-	w.Header().Set("Content-Length", response.Header.Get("Content-Length"))
-
-	if _, err := io.Copy(w, response.Body); err != nil {
-		logger.Error("copy-response", err)
-		return
-	}
-	err = response.Body.Close()
-	if err != nil {
-		logger.Error("body-close", err)
 	}
 }
 

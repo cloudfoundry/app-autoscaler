@@ -78,7 +78,7 @@ var _ = SynchronizedBeforeSuite(
 		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
-		conf.Health.Port = healthport
+		conf.Health.ServerConfig.Port = healthport
 		conf.Logging.Level = "debug"
 
 		dbUrl := GetDbUrl()
@@ -105,8 +105,8 @@ var _ = SynchronizedBeforeSuite(
 		conf.LockSize = 32
 		conf.HttpClientTimeout = 10 * time.Second
 
-		conf.Health.HealthCheckUsername = "scalingenginehealthcheckuser"
-		conf.Health.HealthCheckPassword = "scalingenginehealthcheckpassword"
+		conf.Health.BasicAuth.Username = "scalingenginehealthcheckuser"
+		conf.Health.BasicAuth.Password = "scalingenginehealthcheckpassword"
 
 		configFile = writeConfig(&conf)
 
@@ -137,7 +137,7 @@ var _ = SynchronizedBeforeSuite(
 		_, err = testDB.Exec(testDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)"), appId, policy, "1234")
 		FailOnError("insert failed", err)
 
-		httpClient = NewEventGeneratorClient()
+		httpClient = NewScalingEngineClient()
 		healthHttpClient = &http.Client{}
 	})
 

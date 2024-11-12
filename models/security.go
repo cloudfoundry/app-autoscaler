@@ -6,6 +6,13 @@ import (
 	"code.cloudfoundry.org/tlsconfig"
 )
 
+type BasicAuth struct {
+	Username     string `yaml:"username"`
+	UsernameHash string `yaml:"username_hash"`
+	Password     string `yaml:"password"`
+	PasswordHash string `yaml:"password_hash"`
+}
+
 type TLSCerts struct {
 	KeyFile    string `yaml:"key_file" json:"keyFile"`
 	CertFile   string `yaml:"cert_file" json:"certFile"`

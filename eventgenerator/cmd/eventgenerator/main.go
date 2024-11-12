@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
@@ -13,6 +12,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"github.com/prometheus/client_golang/prometheus"
 	circuit "github.com/rubyist/circuitbreaker"
 
 	"flag"
@@ -21,7 +21,6 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -103,19 +102,22 @@ func main() {
 
 	eventGenerator := ifrit.RunFunc(runFunc(appManager, evaluators, evaluationManager, metricPollers, anAggregator))
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appManager.QueryAppMetrics, httpStatusCollector)
+	httpServer := server.NewServer(logger.Session("http_server"), conf, appMetricDB, policyDb, appManager.QueryAppMetrics, httpStatusCollector)
+
+	mtlsServer, err := httpServer.GetMtlsServer()
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
+
+	healthServer, err := httpServer.GetHealthServer()
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)
 	}
 	members := grouper.Members{
 		{"eventGenerator", eventGenerator},
-		{"http_server", httpServer},
+		{"https_server", mtlsServer},
 		{"health_server", healthServer},
 	}
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -162,7 +164,8 @@ func loadConfig(path string) (*config.Config, error) {
 	}
 
 	configFileBytes, err := io.ReadAll(configFile)
-	_ = configFile.Close()
+	defer func() { _ = configFile.Close() }()
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)
 	}
@@ -182,7 +185,7 @@ func loadConfig(path string) (*config.Config, error) {
 func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger, queryMetrics aggregator.QueryAppMetricsFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 
-	aClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
+	seClient, err := helpers.CreateHTTPSClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
 	if err != nil {
 		logger.Error("failed to create http client for ScalingEngine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
 		os.Exit(1)
@@ -190,7 +193,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, aClient, conf.ScalingEngine.ScalingEngineURL, triggersChan,
+		evaluators[i] = generator.NewEvaluator(logger, seClient, conf.ScalingEngine.ScalingEngineURL, triggersChan,
 			conf.DefaultBreachDurationSecs, queryMetrics, getBreaker, setCoolDownExpired)
 	}
 

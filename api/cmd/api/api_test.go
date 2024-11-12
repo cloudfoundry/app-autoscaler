@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
-
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,16 +22,45 @@ import (
 
 var _ = Describe("Api", func() {
 	var (
-		runner           *ApiRunner
-		rsp              *http.Response
-		brokerHttpClient *http.Client
+		runner *ApiRunner
+		rsp    *http.Response
+
+		brokerHttpClient        *http.Client
+		healthHttpClient        *http.Client
+		apiHttpClient           *http.Client
+		unifiedServerHttpClient *http.Client
+
+		serverURL        *url.URL
+		brokerURL        *url.URL
+		healthURL        *url.URL
+		unifiedServerURL *url.URL
+
+		vcapPort int
+		err      error
 	)
 
 	BeforeEach(func() {
-		brokerHttpClient = NewServiceBrokerClient()
 		runner = NewApiRunner()
-	})
 
+		vcapPort = 8080 + GinkgoParallelProcess()
+
+		brokerHttpClient = NewServiceBrokerClient()
+		healthHttpClient = &http.Client{}
+		apiHttpClient = NewPublicApiClient()
+		unifiedServerHttpClient = &http.Client{}
+
+		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", cfg.Server.Port))
+		Expect(err).NotTo(HaveOccurred())
+
+		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", cfg.BrokerServer.Port))
+		Expect(err).NotTo(HaveOccurred())
+
+		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", cfg.Health.ServerConfig.Port))
+		Expect(err).NotTo(HaveOccurred())
+
+		unifiedServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
+
+	})
 	Describe("Api configuration check", func() {
 		Context("with a missing config file", func() {
 			BeforeEach(func() {
@@ -41,7 +72,6 @@ var _ = Describe("Api", func() {
 			It("fails with an error", func() {
 				Eventually(runner.Session).Should(Exit(1))
 				Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
-
 			})
 		})
 
@@ -72,9 +102,9 @@ var _ = Describe("Api", func() {
 				runner.startCheck = ""
 				missingConfig := cfg
 
-				missingConfig.DB = make(map[string]db.DatabaseConfig)
-				missingConfig.DB[db.PolicyDb] = db.DatabaseConfig{URL: ""}
-				missingConfig.DB[db.BindingDb] = db.DatabaseConfig{URL: ""}
+				missingConfig.Db = make(map[string]db.DatabaseConfig)
+				missingConfig.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
+				missingConfig.Db[db.BindingDb] = db.DatabaseConfig{URL: ""}
 
 				var brokerCreds []config.BrokerCredentialsConfig
 				missingConfig.BrokerCredentials = brokerCreds
@@ -118,14 +148,17 @@ var _ = Describe("Api", func() {
 			BeforeEach(func() {
 				runner.Start()
 			})
+
 			It("succeeds with a 200", func() {
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://127.0.0.1:%d/v2/catalog", brokerPort), nil)
+				brokerURL.Path = "/v2/catalog"
+				req, err := http.NewRequest(http.MethodGet, brokerURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				req.SetBasicAuth(username, password)
 
 				rsp, err = brokerHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())
+
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				if rsp.StatusCode != http.StatusOK {
 					Fail(fmt.Sprintf("Not ok:%d", rsp.StatusCode))
@@ -153,7 +186,8 @@ var _ = Describe("Api", func() {
 				runner.Start()
 			})
 			It("succeeds with a 200", func() {
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://127.0.0.1:%d/v1/info", publicApiPort), nil)
+				serverURL.Path = "/v1/info"
+				req, err := http.NewRequest(http.MethodGet, serverURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				rsp, err = apiHttpClient.Do(req)
@@ -169,8 +203,8 @@ var _ = Describe("Api", func() {
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
 			basicAuthConfig := cfg
-			basicAuthConfig.Health.HealthCheckUsername = ""
-			basicAuthConfig.Health.HealthCheckPassword = ""
+			basicAuthConfig.Health.BasicAuth.Username = ""
+			basicAuthConfig.Health.BasicAuth.Password = ""
 			runner.configPath = writeConfig(&basicAuthConfig).Name()
 			runner.Start()
 		})
@@ -180,7 +214,8 @@ var _ = Describe("Api", func() {
 		})
 		Context("when a request to query health comes", func() {
 			It("returns with a 200", func() {
-				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d", healthport))
+				rsp, err := healthHttpClient.Get(healthURL.String())
+
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				raw, _ := io.ReadAll(rsp.Body)
@@ -224,7 +259,7 @@ var _ = Describe("Api", func() {
 				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				req.SetBasicAuth(cfg.Health.HealthCheckUsername, cfg.Health.HealthCheckPassword)
+				req.SetBasicAuth(cfg.Health.BasicAuth.Username, cfg.Health.BasicAuth.Password)
 
 				rsp, err := healthHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())
@@ -246,7 +281,8 @@ var _ = Describe("Api", func() {
 		})
 		Context("when a request to query health comes", func() {
 			It("returns with a 200", func() {
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://127.0.0.1:%d/v1/info", publicApiPort), nil)
+				serverURL.Path = "/v1/info"
+				req, err := http.NewRequest(http.MethodGet, serverURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				rsp, err = apiHttpClient.Do(req)
@@ -260,4 +296,83 @@ var _ = Describe("Api", func() {
 		})
 	})
 
+	When("running in CF", func() {
+		BeforeEach(func() {
+			os.Setenv("VCAP_APPLICATION", "{}")
+			os.Setenv("VCAP_SERVICES", getVcapServices())
+			os.Setenv("PORT", fmt.Sprintf("%d", vcapPort))
+			runner.Start()
+		})
+		AfterEach(func() {
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(0))
+			os.Unsetenv("VCAP_APPLICATION")
+			os.Unsetenv("VCAP_SERVICES")
+			os.Unsetenv("PORT")
+		})
+
+		It("should start a unified server", func() {
+			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v1/info", unifiedServerURL), nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			rsp, err = unifiedServerHttpClient.Do(req)
+			Expect(err).ToNot(HaveOccurred())
+
+			bodyBytes, err := io.ReadAll(rsp.Body)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bodyBytes).To(ContainSubstring("Automatically increase or decrease the number of application instances based on a policy you define."))
+
+			req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/catalog", unifiedServerURL), nil)
+			Expect(err).NotTo(HaveOccurred())
+			req.SetBasicAuth(username, password)
+
+			rsp, err = unifiedServerHttpClient.Do(req)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+
+			bodyBytes, err = io.ReadAll(rsp.Body)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bodyBytes).To(ContainSubstring("autoscaler-free-plan-id"))
+		})
+
+	})
+
 })
+
+func getVcapServices() (result string) {
+	var dbType string
+
+	// read file
+	dbClientCert, err := os.ReadFile("../../../../../test-certs/postgres.crt")
+	Expect(err).NotTo(HaveOccurred())
+	dbClientKey, err := os.ReadFile("../../../../../test-certs/postgres.key")
+	Expect(err).NotTo(HaveOccurred())
+	dbClientCA, err := os.ReadFile("../../../../../test-certs/autoscaler-ca.crt")
+	Expect(err).NotTo(HaveOccurred())
+
+	dbURL := os.Getenv("DBURL")
+	Expect(dbURL).NotTo(BeEmpty())
+
+	if strings.Contains(dbURL, "postgres") {
+		dbType = "postgres"
+	} else {
+		dbType = "mysql"
+	}
+
+	result = `{
+			"user-provided": [ { "name": "config", "tags": ["publicapiserver-config"], "credentials": { "publicapiserver": { } }}],
+			"autoscaler": [ {
+				"name": "some-service",
+				"credentials": {
+					"uri": "` + dbURL + `",
+
+					"client_cert": "` + strings.ReplaceAll(string(dbClientCert), "\n", "\\n") + `",
+					"client_key": "` + strings.ReplaceAll(string(dbClientKey), "\n", "\\n") + `",
+					"server_ca": "` + strings.ReplaceAll(string(dbClientCA), "\n", "\\n") + `"
+				},
+				"syslog_drain_url": "",
+				"tags": ["policy_db", "binding_db", "` + dbType + `"]
+			}]}` // #nosec G101
+
+	return result
+}

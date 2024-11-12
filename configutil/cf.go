@@ -154,7 +154,16 @@ func (vc *VCAPConfiguration) buildDatabaseURL(service *cfenv.Service, dbName str
 	return dbURL, nil
 }
 
-func (vc *VCAPConfiguration) addConnectionParams(service *cfenv.Service, dbName string, parameters url.Values) error {
+func contains(elems []string, v string) bool {
+	for _, s := range elems {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+func (vc *VCAPConfiguration) addPostgresConnectionParams(service *cfenv.Service, dbName string, parameters url.Values) error {
 	keys := []struct {
 		binding, connection string
 	}{
@@ -169,6 +178,17 @@ func (vc *VCAPConfiguration) addConnectionParams(service *cfenv.Service, dbName 
 		}
 	}
 	return nil
+}
+
+func (vc *VCAPConfiguration) addConnectionParams(service *cfenv.Service, dbName string, parameters url.Values) error {
+	// if service.Tags contains "postgres" then add the connection parameters
+	if contains(service.Tags, "mysql") {
+		return nil
+		// TODO: add support for MySQL TLS enabled connections
+		// return vc.addMySQLConnectionParams(service, dbName, parameters)
+	} else {
+		return vc.addPostgresConnectionParams(service, dbName, parameters)
+	}
 }
 
 func (vc *VCAPConfiguration) addConnectionParam(service *cfenv.Service, dbName, bindingKey, connectionParam string, parameters url.Values) error {

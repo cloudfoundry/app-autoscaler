@@ -50,7 +50,7 @@ var _ = Describe("Config", func() {
 				Expect(conf.CF.ClientID).To(Equal("client-id"))
 				Expect(conf.CF.Secret).To(Equal("client-secret"))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
-				Expect(conf.Health.Port).To(Equal(9999))
+				Expect(conf.Health.ServerConfig.Port).To(Equal(9999))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
 				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
@@ -95,7 +95,7 @@ var _ = Describe("Config", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.Logging.Level).To(Equal(config.DefaultLoggingLevel))
-				Expect(conf.Health.Port).To(Equal(8081))
+				Expect(conf.Health.ServerConfig.Port).To(Equal(8081))
 				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
@@ -195,7 +195,7 @@ scheduler:
 			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.DBLock.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.HttpClientTimeout = 10 * time.Second
-			conf.Health.Port = 8081
+			conf.Health.ServerConfig.Port = 8081
 
 		})
 

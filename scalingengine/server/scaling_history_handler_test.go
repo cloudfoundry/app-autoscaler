@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/apis/scalinghistory"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

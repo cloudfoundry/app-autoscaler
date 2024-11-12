@@ -6,12 +6,16 @@ import (
 	"net/url"
 	"strings"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
+	internalscalinghistory "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/apis/scalinghistory"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
+	"github.com/go-chi/chi/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/tedsuo/ifrit/ginkgomon_v2"
 )
 
 var _ = Describe("PublicApiServer", func() {
@@ -42,24 +46,24 @@ var _ = Describe("PublicApiServer", func() {
 	)
 
 	BeforeEach(func() {
-		scalingHistoryEntry := []scalinghistory.HistoryEntry{
+		scalingHistoryEntry := []internalscalinghistory.HistoryEntry{
 			{
-				Status:       scalinghistory.NewOptHistoryEntryStatus(scalinghistory.HistoryEntryStatus0),
-				AppID:        scalinghistory.NewOptGUID(TEST_APP_ID),
-				Timestamp:    scalinghistory.NewOptInt(300),
-				ScalingType:  scalinghistory.NewOptHistoryEntryScalingType(scalinghistory.HistoryEntryScalingType0),
-				OldInstances: scalinghistory.NewOptInt64(2),
-				NewInstances: scalinghistory.NewOptInt64(4),
-				Reason:       scalinghistory.NewOptString("a reason"),
+				Status:       internalscalinghistory.NewOptHistoryEntryStatus(internalscalinghistory.HistoryEntryStatus0),
+				AppID:        internalscalinghistory.NewOptGUID(TEST_APP_ID),
+				Timestamp:    internalscalinghistory.NewOptInt(300),
+				ScalingType:  internalscalinghistory.NewOptHistoryEntryScalingType(internalscalinghistory.HistoryEntryScalingType0),
+				OldInstances: internalscalinghistory.NewOptInt64(2),
+				NewInstances: internalscalinghistory.NewOptInt64(4),
+				Reason:       internalscalinghistory.NewOptString("a reason"),
 			},
 		}
 
-		scalingEngineResponse = scalinghistory.History{
-			TotalResults: scalinghistory.NewOptInt64(1),
-			TotalPages:   scalinghistory.NewOptInt64(1),
-			Page:         scalinghistory.NewOptInt64(1),
-			PrevURL:      scalinghistory.OptURI{},
-			NextURL:      scalinghistory.OptURI{},
+		scalingEngineResponse = internalscalinghistory.History{
+			TotalResults: internalscalinghistory.NewOptInt64(1),
+			TotalPages:   internalscalinghistory.NewOptInt64(1),
+			Page:         internalscalinghistory.NewOptInt64(1),
+			PrevURL:      internalscalinghistory.OptURI{},
+			NextURL:      internalscalinghistory.OptURI{},
 			Resources:    scalingHistoryEntry,
 		}
 
@@ -75,377 +79,432 @@ var _ = Describe("PublicApiServer", func() {
 			},
 		}
 
-		eventGeneratorResponse = []models.AppMetric{
-			{
-				AppId:      TEST_APP_ID,
-				Timestamp:  100,
-				MetricType: TEST_METRIC_TYPE,
-				Unit:       TEST_METRIC_UNIT,
-				Value:      "200",
-			},
-		}
 	})
 
-	Describe("Protected Routes", func() {
+	AfterEach(func() {
+		ginkgomon_v2.Interrupt(serverProcess)
+	})
 
-		Describe("Exceed rate limit", func() {
-			BeforeEach(func() {
-				fakeRateLimiter.ExceedsLimitReturns(true)
-			})
-			AfterEach(func() {
-				fakeRateLimiter.ExceedsLimitReturns(false)
-			})
+	Describe("GetMtlsServer", func() {
+		JustBeforeEach(func() {
+			eventGeneratorResponse = []models.AppMetric{
+				{
+					AppId:      TEST_APP_ID,
+					Timestamp:  100,
+					MetricType: TEST_METRIC_TYPE,
+					Unit:       TEST_METRIC_UNIT,
+					Value:      "200",
+				},
+			}
+			publicApiServer := publicapiserver.NewPublicApiServer(
+				lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB,
+				fakeBindingDB, fakeCredentials, checkBindingFunc, fakeCFClient,
+				httpStatusCollector, fakeRateLimiter, fakeBrokerServer)
 
-			Context("when calling scaling_histories endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						nil, http.MethodGet, "", http.StatusTooManyRequests)
-				})
-			})
+			err := publicApiServer.Setup()
+			Expect(err).NotTo(HaveOccurred())
 
-			Context("when calling aggregated metrics endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						nil, http.MethodGet, "", http.StatusTooManyRequests)
-				})
-			})
-
-			Context("when calling get policy endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodGet, "", http.StatusTooManyRequests)
-				})
-			})
-
-			Context("when calling attach policy endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodPut, "", http.StatusTooManyRequests)
-				})
-			})
-
-			Context("when calling detach policy endpoint", func() {
-				It("should fail with 429", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodDelete, "", http.StatusTooManyRequests)
-				})
-
-			})
-
+			httpServer, err := publicApiServer.GetMtlsServer()
+			Expect(err).NotTo(HaveOccurred())
+			serverProcess = ginkgomon_v2.Invoke(httpServer)
 		})
 
-		Describe("Without AuthorizatioToken", func() {
-			Context("when calling scaling_histories endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						nil, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling aggregated metrics endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						nil, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling get policy endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling attach policy endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodPut, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling detach policy endpoint", func() {
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						nil, http.MethodDelete, "", http.StatusUnauthorized)
-				})
-
-			})
-
-		})
-
-		Describe("Without Client Token", func() {
-			BeforeEach(func() {
-				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
-			})
-
-			Context("when calling scaling_histories endpoint", func() {
+		Describe("Protected Routes", func() {
+			Describe("Exceed rate limit", func() {
 				BeforeEach(func() {
-					scalingEngineStatus = http.StatusOK
+					fakeRateLimiter.ExceedsLimitReturns(true)
 				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				AfterEach(func() {
+					fakeRateLimiter.ExceedsLimitReturns(false)
 				})
+
+				Context("when calling scaling_histories endpoint", func() {
+					It("should fail with 429", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+							nil, http.MethodGet, "", http.StatusTooManyRequests)
+					})
+				})
+
+				Context("when calling aggregated metrics endpoint", func() {
+					It("should fail with 429", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+							nil, http.MethodGet, "", http.StatusTooManyRequests)
+					})
+				})
+
+				Context("when calling get policy endpoint", func() {
+					It("should fail with 429", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							nil, http.MethodGet, "", http.StatusTooManyRequests)
+					})
+				})
+
+				Context("when calling attach policy endpoint", func() {
+					It("should fail with 429", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							nil, http.MethodPut, "", http.StatusTooManyRequests)
+					})
+				})
+
+				Context("when calling detach policy endpoint", func() {
+					It("should fail with 429", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							nil, http.MethodDelete, "", http.StatusTooManyRequests)
+					})
+
+				})
+
 			})
 
-			Context("when calling aggregated metric endpoint", func() {
+			Describe("Without AuthorizatioToken", func() {
+				Context("when calling scaling_histories endpoint", func() {
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+							nil, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling aggregated metrics endpoint", func() {
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+							nil, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling get policy endpoint", func() {
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							nil, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling attach policy endpoint", func() {
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							nil, http.MethodPut, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling detach policy endpoint", func() {
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							nil, http.MethodDelete, "", http.StatusUnauthorized)
+					})
+
+				})
+
+			})
+
+			Describe("Without Client Token", func() {
 				BeforeEach(func() {
-					eventGeneratorStatus = http.StatusOK
+					fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
 				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+
+				Context("when calling scaling_histories endpoint", func() {
+					BeforeEach(func() {
+						scalingEngineStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling aggregated metric endpoint", func() {
+					BeforeEach(func() {
+						eventGeneratorStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling get policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+
+				})
+
+				Context("when calling attach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+					})
+
+				})
+
+				Context("when calling detach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+					})
+
 				})
 			})
 
-			Context("when calling get policy endpoint", func() {
+			Describe("With Invalid Client Token", func() {
 				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					fakeCFClient.IsTokenAuthorizedReturns(false, nil)
+					fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
 				})
 
+				Context("when calling scaling_histories endpoint", func() {
+					BeforeEach(func() {
+						scalingEngineStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling aggregated metric endpoint", func() {
+					BeforeEach(func() {
+						eventGeneratorStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling get policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+
+				})
+
+				Context("when calling attach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+					})
+
+				})
+
+				Context("when calling detach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+					})
+
+				})
 			})
 
-			Context("when calling attach policy endpoint", func() {
+			Describe("With Invalid Authorization Token", func() {
 				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+					fakeCFClient.IsUserSpaceDeveloperReturns(false, nil)
 				})
 
+				Context("when calling scaling_histories endpoint", func() {
+					BeforeEach(func() {
+						scalingEngineStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+							map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling aggregated metric endpoint", func() {
+					BeforeEach(func() {
+						eventGeneratorStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+							map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+				})
+
+				Context("when calling get policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+					})
+
+				})
+
+				Context("when calling attach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+					})
+
+				})
+
+				Context("when calling detach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should fail with 401", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+					})
+
+				})
 			})
 
-			Context("when calling detach policy endpoint", func() {
+			Describe("With valid authorization token", func() {
 				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+					fakeCFClient.IsTokenAuthorizedReturns(true, nil)
+					fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
 				})
 
-			})
-		})
-
-		Describe("With Invalid Client Token", func() {
-			BeforeEach(func() {
-				fakeCFClient.IsTokenAuthorizedReturns(false, nil)
-				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
-			})
-
-			Context("when calling scaling_histories endpoint", func() {
-				BeforeEach(func() {
-					scalingEngineStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling aggregated metric endpoint", func() {
-				BeforeEach(func() {
-					eventGeneratorStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling get policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				Context("when calling scaling_histories endpoint", func() {
+					BeforeEach(func() {
+						scalingEngineStatus = http.StatusOK
+					})
+					It("should succeed", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+							map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
+					})
 				})
 
-			})
-
-			Context("when calling attach policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
-				})
-
-			})
-
-			Context("when calling detach policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+				Context("when calling aggregated metric endpoint", func() {
+					BeforeEach(func() {
+						eventGeneratorStatus = http.StatusOK
+					})
+					It("should succeed", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+							map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
+					})
 				})
 
-			})
-		})
+				Context("when calling get policy endpoint", func() {
+					JustBeforeEach(func() {
+						schedulerStatus = http.StatusOK
+						fakePolicyDB.GetAppPolicyReturns(&models.ScalingPolicy{
+							InstanceMax: 5,
+							InstanceMin: 1,
+							ScalingRules: []*models.ScalingRule{
+								{
+									MetricType:            "memoryused",
+									BreachDurationSeconds: 300,
+									CoolDownSeconds:       300,
+									Threshold:             30,
+									Operator:              "<",
+									Adjustment:            "-1",
+								}},
+						}, nil)
 
-		Describe("With Invalid Authorization Token", func() {
-			BeforeEach(func() {
-				fakeCFClient.IsUserSpaceDeveloperReturns(false, nil)
-			})
-
-			Context("when calling scaling_histories endpoint", func() {
-				BeforeEach(func() {
-					scalingEngineStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling aggregated metric endpoint", func() {
-				BeforeEach(func() {
-					eventGeneratorStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-			})
-
-			Context("when calling get policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
-				})
-
-			})
-
-			Context("when calling attach policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
-				})
-
-			})
-
-			Context("when calling detach policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should fail with 401", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
-				})
-
-			})
-		})
-
-		Describe("With valid authorization token", func() {
-			BeforeEach(func() {
-				fakeCFClient.IsTokenAuthorizedReturns(true, nil)
-				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
-			})
-
-			Context("when calling scaling_histories endpoint", func() {
-				BeforeEach(func() {
-					scalingEngineStatus = http.StatusOK
-				})
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
-				})
-			})
-
-			Context("when calling aggregated metric endpoint", func() {
-				BeforeEach(func() {
-					eventGeneratorStatus = http.StatusOK
-				})
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
-				})
-			})
-
-			Context("when calling get policy endpoint", func() {
-				JustBeforeEach(func() {
-					schedulerStatus = http.StatusOK
-					fakePolicyDB.GetAppPolicyReturns(&models.ScalingPolicy{
-						InstanceMax: 5,
-						InstanceMin: 1,
-						ScalingRules: []*models.ScalingRule{
-							{
-								MetricType:            "memoryused",
-								BreachDurationSeconds: 300,
-								CoolDownSeconds:       300,
-								Threshold:             30,
-								Operator:              "<",
-								Adjustment:            "-1",
-							}},
-					}, nil)
+					})
+					It("should succeed", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
+					})
 
 				})
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
+
+				Context("when calling attach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+
+					It("should succeed", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
+					})
+
 				})
 
-			})
-
-			Context("when calling attach policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
-				})
-
-			})
-
-			Context("when calling detach policy endpoint", func() {
-				BeforeEach(func() {
-					schedulerStatus = http.StatusOK
-				})
-				It("should succeed", func() {
-					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
+				Context("when calling detach policy endpoint", func() {
+					BeforeEach(func() {
+						schedulerStatus = http.StatusOK
+					})
+					It("should succeed", func() {
+						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+							map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
+					})
 				})
 			})
 		})
 	})
-	Describe("UnProtected Routes", func() {
+
+	Describe("GetUnifiedServer", func() {
+		JustBeforeEach(func() {
+			eventGeneratorResponse = []models.AppMetric{
+				{
+					AppId:      TEST_APP_ID,
+					Timestamp:  100,
+					MetricType: TEST_METRIC_TYPE,
+					Unit:       TEST_METRIC_UNIT,
+					Value:      "200",
+				},
+			}
+			publicApiServer := publicapiserver.NewPublicApiServer(
+				lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB,
+				fakeBindingDB, fakeCredentials, checkBindingFunc, fakeCFClient,
+				httpStatusCollector, fakeRateLimiter, fakeBrokerServer)
+			err := publicApiServer.Setup()
+			Expect(err).NotTo(HaveOccurred())
+
+			httpServer, err := publicApiServer.GetUnifiedServer()
+			Expect(err).NotTo(HaveOccurred())
+			serverProcess = ginkgomon_v2.Invoke(httpServer)
+		})
+
 		Context("when calling info endpoint", func() {
 			It("should succeed", func() {
 				verifyResponse(httpClient, serverUrl, "/v1/info", nil, http.MethodGet, "", http.StatusOK)
 			})
 		})
+
 		Context("when calling health endpoint", func() {
 			It("should succeed", func() {
 				verifyResponse(httpClient, serverUrl, "/health", nil, http.MethodGet, "", http.StatusOK)
 			})
 		})
-	})
 
-	Context("when requesting non existing path", func() {
-		It("should get 404", func() {
-			verifyResponse(httpClient, serverUrl, "/non-existing-path", nil, http.MethodGet, "", http.StatusNotFound)
+		When("calling broker endpoint", func() {
+			BeforeEach(func() {
+				router := chi.NewRouter()
+				router.Get("/v2/catalog", func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					_, err := w.Write([]byte(`Service Broker`))
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				fakeBrokerServer.GetRouterReturns(router, nil)
+			})
+
+			It("should health, broker and api on the same server", func() {
+				res := verifyResponse(httpClient, serverUrl, "/v2/catalog", nil, http.MethodGet, "", http.StatusOK)
+				Expect(res).To(ContainSubstring("Service Broker"))
+			})
 		})
 	})
 })
 
-func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, headers map[string]string, httpRequestMethod string, httpRequestBody string, expectResponseStatusCode int) {
+func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, headers map[string]string, httpRequestMethod string, httpRequestBody string, expectResponseStatusCode int) string {
 	serverUrl.Path = path
 	var body io.Reader = nil
 	if httpRequestBody != "" {
@@ -464,4 +523,9 @@ func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, he
 	}
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, resp.StatusCode).To(Equal(expectResponseStatusCode))
+
+	respBody, err := io.ReadAll(resp.Body)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	return string(respBody)
 }

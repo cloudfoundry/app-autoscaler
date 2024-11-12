@@ -18,6 +18,11 @@ fi
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export POSTGRES_EXTERNAL_PORT="${PR_NUMBER:-5432}"
 
+export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
+export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
+export PUBLICAPISERVER_HOST="${PUBLICAPISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
+export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
+
 cat << EOF > /tmp/extension-file-secrets.yml.tpl
 postgres_ip: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_ip))
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
@@ -62,21 +67,31 @@ _schema-version: 3.3.0
 modules:
   - name: metricsforwarder
     requires:
-    - name: config
-    - name: policydb
+    - name: metricsforwarder-config
+    - name: database
     - name: syslog-client
     parameters:
       routes:
-      - route: ${METRICSFORWARDER_APPNAME}.\${default-domain}
+      - route: ${METRICSFORWARDER_HOST}.\${default-domain}
+      - route: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
+
+
+  - name: publicapiserver
+    parameters:
+      instances: 0
+      routes:
+      - route: ${PUBLICAPISERVER_HOST}.\${default-domain}
+      - route: ${SERVICEBROKER_HOST}.\${default-domain}
 
 resources:
-- name: config
+- name: metricsforwarder-config
   parameters:
     config:
       metricsforwarder:
         health:
-          password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
-- name: policydb
+          basic_auth:
+            password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
+- name: database
   parameters:
     config:
       uri: "${POSTGRES_URI}"
@@ -89,4 +104,13 @@ resources:
       client_cert: "${SYSLOG_CLIENT_CERT//$'\n'/\\n}"
       client_key: "${SYSLOG_CLIENT_KEY//$'\n'/\\n}"
       server_ca: "${SYSLOG_CLIENT_CA//$'\n'/\\n}"
+- name: publicapiserver-config
+  parameters:
+    config:
+      publicapiserver:
+        cf:
+          skip_ssl_validation: true
+        metrics_forwarder:
+          metrics_forwarder_url: ${METRICSFORWARDER_HOST}.\${default-domain}
+          metrics_forwarder_mtls_url: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
 EOF

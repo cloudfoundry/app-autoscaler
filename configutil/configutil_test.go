@@ -59,7 +59,7 @@ var _ = Describe("Configutil", func() {
 						"client_cert": expectedClientCertContent,
 						"client_key":  expectedClientKeyContent,
 						"server_ca":   expectedServerCAContent,
-					}, "some-custom-tls-service")
+					}, "some-custom-tls-service", "postgres")
 				})
 
 				It("returns a tls.Config with the expected values", func() {
@@ -93,7 +93,7 @@ var _ = Describe("Configutil", func() {
 					BeforeEach(func() {
 						vcapServicesJson = getDbVcapServices(map[string]string{
 							"uri": "http://example.com/path\x00with/invalid/character",
-						}, "some-db")
+						}, "some-db", "postgres")
 					})
 
 					It("errors", func() {
@@ -107,36 +107,72 @@ var _ = Describe("Configutil", func() {
 					var expectedClientKeyContent = "client-key-content"
 					var expectedServerCAContent = "server-ca-content"
 
-					BeforeEach(func() {
-						vcapServicesJson = getDbVcapServices(map[string]string{
-							"uri":         "postgres://foo:bar@postgres.example.com:5432/some-db",
-							"client_cert": expectedClientCertContent,
-							"client_key":  expectedClientKeyContent,
-							"server_ca":   expectedServerCAContent,
-						}, "some-db")
+					When("postgresDB", func() {
+						BeforeEach(func() {
+							vcapServicesJson = getDbVcapServices(map[string]string{
+								"uri":         "postgres://foo:bar@postgres.example.com:5432/some-db",
+								"client_cert": expectedClientCertContent,
+								"client_key":  expectedClientKeyContent,
+								"server_ca":   expectedServerCAContent,
+							}, "some-db", "postgres")
+						})
+
+						It("loads the db config from VCAP_SERVICES for postgres db", func() {
+							expectedDbUrl := "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fsome-db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fsome-db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fsome-db%2Fserver_ca.sslrootcert" // #nosec G101
+							dbUrl, err := vcapConfiguration.MaterializeDBFromService("some-db")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(dbUrl).To(Equal(expectedDbUrl))
+
+							By("writing certs to /tmp and assigns them to the DB config")
+							Expect(err).NotTo(HaveOccurred())
+							parsedURL, err := url.Parse(dbUrl)
+							Expect(err).NotTo(HaveOccurred())
+							queryParams := parsedURL.Query()
+
+							actualSSLCertPath := queryParams.Get("sslcert")
+							actualSSLKeyPath := queryParams.Get("sslkey")
+							actualSSLRootCertPath := queryParams.Get("sslrootcert")
+
+							assertCertFile(actualSSLCertPath, expectedClientCertContent)
+							assertCertFile(actualSSLKeyPath, expectedClientKeyContent)
+							assertCertFile(actualSSLRootCertPath, expectedServerCAContent)
+						})
+
 					})
 
-					It("loads the db config from VCAP_SERVICES for some-db", func() {
-						expectedDbUrl := "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fsome-db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fsome-db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fsome-db%2Fserver_ca.sslrootcert" // #nosec G101
-						dbUrl, err := vcapConfiguration.MaterializeDBFromService("some-db")
-						Expect(err).NotTo(HaveOccurred())
-						Expect(dbUrl).To(Equal(expectedDbUrl))
+					When("mysqlDB", func() {
+						BeforeEach(func() {
+							vcapServicesJson = getDbVcapServices(map[string]string{
+								"uri":         "mysql://foo:bar@mysql:3306/some-db",
+								"client_cert": expectedClientCertContent,
+								"client_key":  expectedClientKeyContent,
+								"server_ca":   expectedServerCAContent,
+							}, "some-db", "mysql")
+						})
 
-						By("writing certs to /tmp and assigns them to the DB config")
-						Expect(err).NotTo(HaveOccurred())
-						parsedURL, err := url.Parse(dbUrl)
-						Expect(err).NotTo(HaveOccurred())
-						queryParams := parsedURL.Query()
+						XIt("loads the db config from VCAP_SERVICES for postgres db", func() {
+							expectedDbUrl := "mysql://foo:bar@mysql:3306/some-db?ssl-ca=%2Ftmp%2Fsome-db%2Fserver_ca.ssl-ca&ssl-cert=%2Ftmp%2Fsome-db%2Fclient_cert.ssl-cert&ssl-key=%2Ftmp%2Fsome-db%2Fclient_key.ssl-key" // #nosec G101
 
-						actualSSLCertPath := queryParams.Get("sslcert")
-						actualSSLKeyPath := queryParams.Get("sslkey")
-						actualSSLRootCertPath := queryParams.Get("sslrootcert")
+							dbUrl, err := vcapConfiguration.MaterializeDBFromService("some-db")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(dbUrl).To(Equal(expectedDbUrl))
 
-						assertCertFile(actualSSLCertPath, expectedClientCertContent)
-						assertCertFile(actualSSLKeyPath, expectedClientKeyContent)
-						assertCertFile(actualSSLRootCertPath, expectedServerCAContent)
+							By("writing certs to /tmp and assigns them to the DB config")
+							Expect(err).NotTo(HaveOccurred())
+							parsedURL, err := url.Parse(dbUrl)
+							Expect(err).NotTo(HaveOccurred())
+							queryParams := parsedURL.Query()
+
+							actualSSLCertPath := queryParams.Get("ssl-cert")
+							actualSSLKeyPath := queryParams.Get("ssl-key")
+							actualSSLRootCertPath := queryParams.Get("ssl-ca")
+
+							assertCertFile(actualSSLCertPath, expectedClientCertContent)
+							assertCertFile(actualSSLKeyPath, expectedClientKeyContent)
+							assertCertFile(actualSSLRootCertPath, expectedServerCAContent)
+						})
+
 					})
-
 					AfterEach(func() {
 						os.Remove("/tmp/some-db/client_cert.sslcert")
 						os.Remove("/tmp/some-db/client_key.sslkey")
@@ -148,7 +184,7 @@ var _ = Describe("Configutil", func() {
 	})
 })
 
-func getDbVcapServices(creds map[string]string, serviceName string) string {
+func getDbVcapServices(creds map[string]string, serviceName string, dbType string) string {
 	credentials, err := json.Marshal(creds)
 	Expect(err).NotTo(HaveOccurred())
 	return `{
@@ -157,7 +193,7 @@ func getDbVcapServices(creds map[string]string, serviceName string) string {
 			"name": "some-service",
 			"credentials": ` + string(credentials) + `,
 			"syslog_drain_url": "",
-			"tags": ["` + serviceName + `"]
+			"tags": ["` + serviceName + `", "` + dbType + `"]
 			}
 		]}` // #nosec G101
 }

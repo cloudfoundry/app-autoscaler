@@ -42,7 +42,8 @@ server:
   node_addrs: [address1, address2]
   node_index: 1
 health:
-  port: 9999
+  server_config:
+    port: 9999
 db:
   policy_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
@@ -1060,7 +1061,8 @@ metricCollector:
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 300
 health:
-  port: NOT-INTEGER-VALUE
+  server_config:
+    port: NOT-INTEGER-VALUE
 `)
 			})
 

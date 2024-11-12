@@ -74,7 +74,7 @@ func initConfig() {
 		Secret:   "secret",
 	}
 	healthport = 8000 + GinkgoParallelProcess()
-	cfg.Health.Port = healthport
+	cfg.Health.ServerConfig.Port = healthport
 	cfg.Logging.Level = "debug"
 	dbUrl := testhelpers.GetDbUrl()
 
@@ -124,8 +124,8 @@ func initConfig() {
 	cfg.AppSyncer.SyncInterval = 60 * time.Second
 	cfg.HttpClientTimeout = 10 * time.Second
 
-	cfg.Health.HealthCheckUsername = "operatorhealthcheckuser"
-	cfg.Health.HealthCheckPassword = "operatorhealthcheckuser"
+	cfg.Health.BasicAuth.Username = "operatorhealthcheckuser"
+	cfg.Health.BasicAuth.Password = "operatorhealthcheckuser"
 }
 
 func writeConfig(c *config.Config) *os.File {

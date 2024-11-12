@@ -12,3 +12,15 @@ func LoadFile(filename string) string {
 	FailOnError("Could not read file", err)
 	return string(file)
 }
+
+func BytesToFile(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+
+	file, err := os.CreateTemp("", "")
+	FailOnError("Could create file", err)
+	_, err = file.Write(b)
+	FailOnError("Could write file", err)
+	return file.Name()
+}

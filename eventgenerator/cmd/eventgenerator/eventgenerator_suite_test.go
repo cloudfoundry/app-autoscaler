@@ -73,7 +73,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	_ = os.Remove(configFile.Name())
+	if configFile != nil {
+		err := os.Remove(configFile.Name())
+		Expect(err).NotTo(HaveOccurred())
+	}
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
@@ -312,8 +315,10 @@ func initConfig() {
 			ServerConfig: helpers.ServerConfig{
 				Port: healthport,
 			},
-			HealthCheckUsername: "healthcheckuser",
-			HealthCheckPassword: "healthcheckpassword",
+			BasicAuth: models.BasicAuth{
+				Username: "healthcheckuser",
+				Password: "healthcheckpassword",
+			},
 		},
 	}
 	configFile = writeConfig(&conf)

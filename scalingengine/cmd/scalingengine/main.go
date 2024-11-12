@@ -4,11 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
@@ -16,7 +14,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -79,25 +76,17 @@ func main() {
 	}
 	defer func() { _ = schedulerDB.Close() }()
 
-	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine")
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "policyDB", policyDb),
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "scalingengineDB", scalingEngineDB),
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "schedulerDB", schedulerDB),
-		httpStatusCollector,
-	}, true, logger.Session("scalingengine-prometheus"))
-
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDb, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB, scalingEngineDB, scalingEngine)
 
-	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, synchronizer, httpStatusCollector)
+	server := server.NewServer(logger.Session("http-server"), conf, policyDb, scalingEngineDB, schedulerDB, scalingEngine, synchronizer)
+	httpServer, err := server.GetMtlsServer()
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
 
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
+	healthServer, err := server.GetHealthServer()
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)

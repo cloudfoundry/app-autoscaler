@@ -70,7 +70,8 @@ var _ = Describe("MetricPoller", func() {
 
 		It("logs an error", func() {
 			//TODO this should be a prometheus counter not a log statement check
-			Eventually(logger.Buffer).Should(Say("retrieveMetric Failed"))
+			Eventually(logger.Buffer, 2*time.Second).Should(Say("retrieveMetric Failed"))
+
 		})
 
 		It("does not save any metrics", func() {

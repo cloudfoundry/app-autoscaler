@@ -11,18 +11,16 @@ import (
 	"strconv"
 	"testing"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/apis/scalinghistory"
+	internalscalinghistory "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/apis/scalinghistory"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -62,18 +60,20 @@ var (
 	schedulerStatus        int
 	schedulerErrJson       string
 
-	scalingEngineResponse    scalinghistory.History
+	scalingEngineResponse    internalscalinghistory.History
 	metricsCollectorResponse []models.AppInstanceMetric
 	eventGeneratorResponse   []models.AppMetric
 
-	fakeCFClient     *fakes.FakeCFClient
-	fakePolicyDB     *fakes.FakePolicyDB
-	fakeRateLimiter  *fakes.FakeLimiter
-	fakeCredentials  *fakes.FakeCredentials
-	checkBindingFunc api.CheckBindingFunc
-	hasBinding       = true
-	apiPort          = 0
-	testCertDir      = "../../../../test-certs"
+	fakeCFClient        *fakes.FakeCFClient
+	fakePolicyDB        *fakes.FakePolicyDB
+	fakeBindingDB       *fakes.FakeBindingDB
+	fakeRateLimiter     *fakes.FakeLimiter
+	httpStatusCollector *fakes.FakeHTTPStatusCollector
+	fakeCredentials     *fakes.FakeCredentials
+	fakeBrokerServer    *fakes.FakeBrokerServer
+	checkBindingFunc    api.CheckBindingFunc
+	hasBinding          = true
+	apiPort             = 0
 )
 
 func TestPublicapiserver(t *testing.T) {
@@ -88,7 +88,7 @@ var _ = BeforeSuite(func() {
 	eventGeneratorServer = ghttp.NewServer()
 	schedulerServer = ghttp.NewServer()
 
-	conf = CreateConfig(apiPort)
+	conf = createConfig(apiPort)
 
 	// verify MetricCollector certs
 	_, err := os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
@@ -111,23 +111,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	fakePolicyDB = &fakes.FakePolicyDB{}
+	fakeBindingDB = &fakes.FakeBindingDB{}
 	checkBindingFunc = func(appId string) bool {
 		return hasBinding
 	}
 	fakeCFClient = &fakes.FakeCFClient{}
-	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
+	httpStatusCollector = &fakes.FakeHTTPStatusCollector{}
 	fakeRateLimiter = &fakes.FakeLimiter{}
 	fakeCredentials = &fakes.FakeCredentials{}
-	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf,
-		fakePolicyDB, fakeCredentials,
-		checkBindingFunc, fakeCFClient,
-		httpStatusCollector, fakeRateLimiter, nil)
-	Expect(err).NotTo(HaveOccurred())
+	fakeBrokerServer = &fakes.FakeBrokerServer{}
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
 	Expect(err).NotTo(HaveOccurred())
-
-	serverProcess = ginkgomon_v2.Invoke(httpServer)
 
 	httpClient = &http.Client{}
 
@@ -151,11 +146,9 @@ var _ = BeforeSuite(func() {
 	schedulerErrJson = "{}"
 	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithPtr(&schedulerStatus, &schedulerErrJson))
 	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithPtr(&schedulerStatus, &schedulerErrJson))
-
 })
 
 var _ = AfterSuite(func() {
-	ginkgomon_v2.Interrupt(serverProcess)
 	scalingEngineServer.Close()
 	metricsCollectorServer.Close()
 	eventGeneratorServer.Close()
@@ -176,12 +169,17 @@ func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse 
 	Expect(errResp).To(Equal(errResponse))
 }
 
-func CreateConfig(apiServerPort int) *config.Config {
+func createConfig(apiServerPort int) *config.Config {
+	testCertDir := testhelpers.TestCertFolder()
 	return &config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "debug",
 		},
-		PublicApiServer: helpers.ServerConfig{
+		Server: helpers.ServerConfig{
+			Port: apiServerPort,
+		},
+
+		VCAPServer: helpers.ServerConfig{
 			Port: apiServerPort,
 		},
 		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",

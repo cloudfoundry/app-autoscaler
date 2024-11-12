@@ -48,10 +48,10 @@ var _ = Describe("Health Readiness", func() {
 		logger = lager.NewLogger("healthendpoint-test")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 
-		config.HealthCheckUsername = "test-user-name"
-		config.HealthCheckPassword = "test-user-password"
-		config.HealthCheckPasswordHash = ""
-		config.HealthCheckUsernameHash = ""
+		config.BasicAuth.Username = "test-user-name"
+		config.BasicAuth.Password = "test-user-password"
+		config.BasicAuth.PasswordHash = ""
+		config.BasicAuth.UsernameHash = ""
 		config.ReadinessCheckEnabled = true
 		checkers = []healthendpoint.Checker{}
 		tmsttr := time.Now()
@@ -67,10 +67,10 @@ var _ = Describe("Health Readiness", func() {
 	Context("Authentication parameter checks", func() {
 		When("username and password are defined", func() {
 			BeforeEach(func() {
-				config.HealthCheckUsername = "username"
-				config.HealthCheckPassword = "password"
-				config.HealthCheckUsernameHash = ""
-				config.HealthCheckPasswordHash = ""
+				config.BasicAuth.Username = "username"
+				config.BasicAuth.Password = "password"
+				config.BasicAuth.UsernameHash = ""
+				config.BasicAuth.PasswordHash = ""
 			})
 			When("Prometheus Health endpoint is called", func() {
 				It("should require basic auth", func() {
@@ -85,10 +85,10 @@ var _ = Describe("Health Readiness", func() {
 		})
 		When("username_hash and password_hash are defined", func() {
 			BeforeEach(func() {
-				config.HealthCheckUsername = ""
-				config.HealthCheckPassword = ""
-				config.HealthCheckUsernameHash = "username_hash"
-				config.HealthCheckPasswordHash = "username_hash"
+				config.BasicAuth.Username = ""
+				config.BasicAuth.Password = ""
+				config.BasicAuth.UsernameHash = "username_hash"
+				config.BasicAuth.PasswordHash = "username_hash"
 			})
 			When("Prometheus Health endpoint is called without basic auth", func() {
 				It("should require basic auth", func() {
@@ -109,8 +109,8 @@ var _ = Describe("Health Readiness", func() {
 
 	Context("without basic auth configured", func() {
 		BeforeEach(func() {
-			config.HealthCheckUsername = ""
-			config.HealthCheckPassword = ""
+			config.BasicAuth.Username = ""
+			config.BasicAuth.Password = ""
 		})
 		When("Prometheus Health endpoint is called", func() {
 			It("should respond OK", func() {
@@ -326,8 +326,8 @@ var _ = Describe("Health Readiness", func() {
 	Context("pprof endpoint", func() {
 		When("basic auth is not configured", func() {
 			BeforeEach(func() {
-				config.HealthCheckUsername = ""
-				config.HealthCheckPassword = ""
+				config.BasicAuth.Username = ""
+				config.BasicAuth.Password = ""
 			})
 			It("should not be available", func() {
 				apitest.New().

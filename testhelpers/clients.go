@@ -31,6 +31,10 @@ func NewSchedulerClient() *http.Client {
 	return CreateClientFor("scheduler")
 }
 
+func NewScalingEngineClient() *http.Client {
+	return CreateClientFor("scalingengine")
+}
+
 func CreateClientFor(name string) *http.Client {
 	certFolder := TestCertFolder()
 	return CreateClient(filepath.Join(certFolder, name+".crt"),

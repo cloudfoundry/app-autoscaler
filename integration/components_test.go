@@ -182,7 +182,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		PublicApiServer: helpers.ServerConfig{
+		Server: helpers.ServerConfig{
 			Port: publicApiPort,
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "api.key"),
@@ -198,7 +198,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		DB: map[string]db.DatabaseConfig{
+		Db: map[string]db.DatabaseConfig{
 			"policy_db": {
 				URL: dbURI,
 			},

@@ -143,7 +143,7 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 }
 
 func loadMetricsforwarderConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	data, err := vcapReader.GetServiceCredentialContent("config", "metricsforwarder")
+	data, err := vcapReader.GetServiceCredentialContent("metricsforwarder-config", "metricsforwarder")
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrMetricsforwarderConfigNotFound, err)
 	}

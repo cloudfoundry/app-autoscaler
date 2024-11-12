@@ -15,7 +15,8 @@ db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 health:
-  port: 8081
+  server_config:
+    port: 8081
 rate_limit:
   max_amount: 10
   valid_duration: 1s

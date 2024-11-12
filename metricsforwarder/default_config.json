@@ -4,7 +4,9 @@
     "cache_ttl": "900s",
     "cred_helper_impl": "default",
     "health": {
-      "username": "metricsforwarder"
+      "basic_auth": {
+        "username": "metricsforwarder"
+      }
     },
     "logging": {
       "level": "debug"

@@ -3,11 +3,12 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io"
+	"os"
 	"strings"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -31,6 +32,11 @@ const (
 	DefaultDiskUtilUpperThreshold = 100
 	DefaultDiskLowerThreshold     = 1
 	DefaultDiskUpperThreshold     = 2 * 1024
+)
+
+var (
+	ErrReadYaml                      = errors.New("failed to read config file")
+	ErrPublicApiServerConfigNotFound = errors.New("publicapiserver config service not found")
 )
 
 var defaultBrokerServerConfig = helpers.ServerConfig{
@@ -90,10 +96,13 @@ type LowerUpperThresholdConfig struct {
 }
 
 type Config struct {
-	Logging                            helpers.LoggingConfig         `yaml:"logging"`
-	BrokerServer                       helpers.ServerConfig          `yaml:"broker_server"`
-	PublicApiServer                    helpers.ServerConfig          `yaml:"public_api_server"`
-	DB                                 map[string]db.DatabaseConfig  `yaml:"db"`
+	Logging      helpers.LoggingConfig `yaml:"logging"`
+	BrokerServer helpers.ServerConfig  `yaml:"broker_server"`
+	Server       helpers.ServerConfig  `yaml:"public_api_server"`
+
+	VCAPServer helpers.ServerConfig `yaml:"vcap_server"`
+
+	Db                                 map[string]db.DatabaseConfig  `yaml:"db"`
 	BrokerCredentials                  []BrokerCredentialsConfig     `yaml:"broker_credentials"`
 	APIClientId                        string                        `yaml:"api_client_id"`
 	PlanCheck                          *PlanCheckConfig              `yaml:"plan_check"`
@@ -119,13 +128,15 @@ type PlanCheckConfig struct {
 	PlanDefinitions map[string]PlanDefinition `yaml:"plan_definitions"`
 }
 
-func LoadConfig(reader io.Reader) (*Config, error) {
-	conf := &Config{
-		Logging:         defaultLoggingConfig,
-		BrokerServer:    defaultBrokerServerConfig,
-		PublicApiServer: defaultPublicApiServerConfig,
+func defaultConfig() Config {
+	return Config{
+		Logging:      defaultLoggingConfig,
+		BrokerServer: defaultBrokerServerConfig,
+		Server:       defaultPublicApiServerConfig,
 		CF: cf.Config{
-			ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
+			ClientConfig: cf.ClientConfig{
+				SkipSSLValidation: false,
+			},
 		},
 		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,
@@ -150,18 +161,102 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			},
 		},
 	}
-
-	dec := yaml.NewDecoder(reader)
-	dec.KnownFields(true)
-	err := dec.Decode(conf)
-
+}
+func loadYamlFile(filepath string, conf *Config) error {
+	if filepath == "" {
+		return nil
+	}
+	file, err := os.Open(filepath)
 	if err != nil {
+		fmt.Fprintf(os.Stdout, "failed to open config file '%s': %s\n", filepath, err)
+		return ErrReadYaml
+	}
+	defer file.Close()
+
+	dec := yaml.NewDecoder(file)
+	dec.KnownFields(true)
+	if err := dec.Decode(conf); err != nil {
+		return fmt.Errorf("%w: %v", ErrReadYaml, err)
+	}
+	return nil
+}
+func loadPublicApiServerConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
+	data, err := vcapReader.GetServiceCredentialContent("publicapiserver-config", "publicapiserver")
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrPublicApiServerConfigNotFound, err)
+	}
+	return yaml.Unmarshal(data, conf)
+}
+
+func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
+	if !vcapReader.IsRunningOnCF() {
+		return nil
+	}
+
+	conf.VCAPServer.Port = vcapReader.GetPort()
+	if err := loadPublicApiServerConfig(conf, vcapReader); err != nil {
+		return err
+	}
+
+	if conf.Db == nil {
+		conf.Db = make(map[string]db.DatabaseConfig)
+	}
+
+	if err := configurePolicyDb(conf, vcapReader); err != nil {
+		return err
+	}
+
+	if err := configureBindingDb(conf, vcapReader); err != nil {
+		return err
+	}
+	return nil
+}
+
+func configurePolicyDb(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
+	currentPolicyDb, ok := conf.Db[db.PolicyDb]
+	if !ok {
+		conf.Db[db.PolicyDb] = db.DatabaseConfig{}
+	}
+
+	dbURL, err := vcapReader.MaterializeDBFromService(db.PolicyDb)
+	currentPolicyDb.URL = dbURL
+	if err != nil {
+		return err
+	}
+	conf.Db[db.PolicyDb] = currentPolicyDb
+	return nil
+}
+
+func configureBindingDb(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
+	currentBindingDb, ok := conf.Db[db.BindingDb]
+	if !ok {
+		conf.Db[db.BindingDb] = db.DatabaseConfig{}
+	}
+
+	dbURL, err := vcapReader.MaterializeDBFromService(db.BindingDb)
+	currentBindingDb.URL = dbURL
+	if err != nil {
+		return err
+	}
+	conf.Db[db.BindingDb] = currentBindingDb
+
+	return nil
+}
+
+func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
+	conf := defaultConfig()
+
+	if err := loadYamlFile(filepath, &conf); err != nil {
+		return nil, err
+	}
+
+	if err := loadVcapConfig(&conf, vcapReader); err != nil {
 		return nil, err
 	}
 
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
 
-	return conf, nil
+	return &conf, nil
 }
 
 func (c *Config) Validate() error {
@@ -170,7 +265,7 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	if c.DB[db.PolicyDb].URL == "" {
+	if c.Db[db.PolicyDb].URL == "" {
 		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
 	}
 	if c.Scheduler.SchedulerURL == "" {
@@ -210,7 +305,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: ScalingRules.CPU.UpperThreshold is less than zero")
 	}
 
-	if c.DB[db.BindingDb].URL == "" {
+	if c.Db[db.BindingDb].URL == "" {
 		return fmt.Errorf("Configuration error: BindingDB URL is empty")
 	}
 

@@ -133,9 +133,9 @@ var _ = Describe("Operator", Serial, func() {
 				Eventually(runner.Session.Buffer, 5*time.Second).Should(Say("operator.started"))
 				secondRunner = NewOperatorRunner()
 				secondRunner.startCheck = ""
-				cfg.Health.HealthCheckUsername = ""
-				cfg.Health.HealthCheckPassword = ""
-				cfg.Health.Port = 9000 + GinkgoParallelProcess()
+				cfg.Health.BasicAuth.Username = ""
+				cfg.Health.BasicAuth.Password = ""
+				cfg.Health.ServerConfig.Port = 9000 + GinkgoParallelProcess()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.Start()
 
@@ -150,7 +150,7 @@ var _ = Describe("Operator", Serial, func() {
 				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(Say("operator.successfully-acquired-lock"))
 
 				By("checking the health endpoint of the standing-by instance")
-				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", cfg.Health.Port))
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", cfg.Health.ServerConfig.Port))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
@@ -166,9 +166,9 @@ var _ = Describe("Operator", Serial, func() {
 				secondRunner = NewOperatorRunner()
 				secondRunner.startCheck = ""
 
-				cfg.Health.HealthCheckUsername = ""
-				cfg.Health.HealthCheckPassword = ""
-				cfg.Health.Port = 9000 + GinkgoParallelProcess()
+				cfg.Health.BasicAuth.Username = ""
+				cfg.Health.BasicAuth.Password = ""
+				cfg.Health.ServerConfig.Port = 9000 + GinkgoParallelProcess()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.Start()
 			})
@@ -210,7 +210,7 @@ var _ = Describe("Operator", Serial, func() {
 				runner.Start()
 				Eventually(runner.Session.Buffer, 10*time.Second).Should(Say("operator.started"))
 				secondRunner = NewOperatorRunner()
-				cfg.Health.Port = 9000 + GinkgoParallelProcess()
+				cfg.Health.ServerConfig.Port = 9000 + GinkgoParallelProcess()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.startCheck = ""
 				secondRunner.Start()
@@ -315,8 +315,8 @@ var _ = Describe("Operator", Serial, func() {
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
 			basicAuthConfig := cfg
-			basicAuthConfig.Health.HealthCheckUsername = ""
-			basicAuthConfig.Health.HealthCheckPassword = ""
+			basicAuthConfig.Health.BasicAuth.Username = ""
+			basicAuthConfig.Health.BasicAuth.Password = ""
 			runner.configPath = writeConfig(&basicAuthConfig).Name()
 
 			runner.Start()
@@ -375,7 +375,7 @@ var _ = Describe("Operator", Serial, func() {
 				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				req.SetBasicAuth(cfg.Health.HealthCheckUsername, cfg.Health.HealthCheckPassword)
+				req.SetBasicAuth(cfg.Health.BasicAuth.Username, cfg.Health.BasicAuth.Password)
 
 				rsp, err := healthHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())
@@ -415,7 +415,7 @@ var _ = Describe("Operator", Serial, func() {
 				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				req.SetBasicAuth(cfg.Health.HealthCheckUsername, cfg.Health.HealthCheckPassword)
+				req.SetBasicAuth(cfg.Health.BasicAuth.Username, cfg.Health.BasicAuth.Password)
 
 				rsp, err := healthHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())

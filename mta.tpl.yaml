@@ -13,8 +13,8 @@ modules:
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
       DT_RELEASE_BUILD_VERSION: ${mta-version}
     requires:
-    - name: config
-    - name: policydb
+    - name: metricsforwarder-config
+    - name: database
     - name: syslog-client
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
@@ -27,16 +27,41 @@ modules:
     build-parameters:
       builder: custom
       commands:
-      - make vendor
+      - make clean vendor
+  - name: publicapiserver
+    type: go
+    path: .
+    properties:
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
+    requires:
+    - name: publicapiserver-config
+    - name: database
+    - name: app-autoscaler-application-logs
+    parameters:
+      memory: 1G
+      disk-quota: 1G
+      instances: 2
+      stack: cflinuxfs4
+      routes:
+    build-parameters:
+      builder: custom
+      commands:
+      - make clean vendor
 
 resources:
-- name: config
+- name: metricsforwarder-config
   type: org.cloudfoundry.user-provided-service
   parameters:
     service-tags:
-    - config
+    - metricsforwarder-config
     path: metricsforwarder/default_config.json
-- name: policydb
+- name: publicapiserver-config
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - publicapiserver-config
+    path: api/default_config.json
+- name: database
   type: org.cloudfoundry.user-provided-service
   parameters:
     service-tags:

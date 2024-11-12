@@ -15,45 +15,32 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
-	"github.com/pivotal-cf/brokerapi/v11"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
-
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/go-chi/chi/v5"
+	"github.com/pivotal-cf/brokerapi/v11"
+	"github.com/pivotal-cf/brokerapi/v11/domain"
 	"github.com/tedsuo/ifrit"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type MiddleWareBrokerCredentials struct {
-	BrokerUsername     string
-	BrokerUsernameHash []byte
-	BrokerPassword     string
-	BrokerPasswordHash []byte
+type BrokerCredentials struct {
+	Username     string
+	UsernameHash []byte
+	Password     string
+	PasswordHash []byte
 }
 
-type basicAuthenticationMiddleware struct {
-	brokerCredentials []MiddleWareBrokerCredentials
+type AuthMiddleware struct {
+	credentials []BrokerCredentials
 }
 
-func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
+func (am *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
 			next.ServeHTTP(w, r)
 			return
 		}
-		username, password, authOK := r.BasicAuth()
-
-		crenditialFoundFlag := false
-		for _, brokerCredential := range bam.brokerCredentials {
-			usernameHashResult := bcrypt.CompareHashAndPassword(brokerCredential.BrokerUsernameHash, []byte(username))
-			passwordHashResult := bcrypt.CompareHashAndPassword(brokerCredential.BrokerPasswordHash, []byte(password))
-			if authOK && usernameHashResult == nil && passwordHashResult == nil {
-				crenditialFoundFlag = true
-				break
-			}
-		}
-
-		if !crenditialFoundFlag {
+		if !am.authenticate(r) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -61,80 +48,135 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, cfClient cf.CFClient, credentials cred_helper.Credentials) (ifrit.Runner, error) {
-	var middleWareBrokerCredentials []MiddleWareBrokerCredentials
-
-	for _, brokerCredential := range conf.BrokerCredentials {
-		brokerCredential = restrictToMaxBcryptLength(logger, brokerCredential)
-		if string(brokerCredential.BrokerUsernameHash) == "" {
-			var err error
-			brokerCredential.BrokerUsernameHash, err = bcrypt.GenerateFromPassword([]byte(brokerCredential.BrokerUsername), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
-			if err != nil {
-				logger.Error("failed-new-server-hashing-broker-username", err)
-				return nil, err
-			}
+func (am *AuthMiddleware) authenticate(r *http.Request) bool {
+	username, password, ok := r.BasicAuth()
+	if !ok {
+		return false
+	}
+	for _, cred := range am.credentials {
+		if bcrypt.CompareHashAndPassword(cred.UsernameHash, []byte(username)) == nil &&
+			bcrypt.CompareHashAndPassword(cred.PasswordHash, []byte(password)) == nil {
+			return true
 		}
+	}
+	return false
+}
 
-		if string(brokerCredential.BrokerPasswordHash) == "" {
-			var err error
-			brokerCredential.BrokerPasswordHash, err = bcrypt.GenerateFromPassword([]byte(brokerCredential.BrokerPassword), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
-			if err != nil {
-				logger.Error("failed-new-server-hashing-broker-password", err)
-				return nil, err
-			}
-		}
+type BrokerServer interface {
+	GetServer() (ifrit.Runner, error)
+	GetRouter() (*chi.Mux, error)
+}
 
-		var middleWareBrokerCredential MiddleWareBrokerCredentials
-		middleWareBrokerCredential.BrokerUsername = brokerCredential.BrokerUsername
-		middleWareBrokerCredential.BrokerUsernameHash = brokerCredential.BrokerUsernameHash
-		middleWareBrokerCredential.BrokerPassword = brokerCredential.BrokerPassword
-		middleWareBrokerCredential.BrokerPasswordHash = brokerCredential.BrokerPasswordHash
+type brokerServer struct {
+	logger              lager.Logger
+	conf                *config.Config
+	bindingDB           db.BindingDB
+	policyDB            db.PolicyDB
+	httpStatusCollector healthendpoint.HTTPStatusCollector
+	cfClient            cf.CFClient
+	credentials         cred_helper.Credentials
+}
 
-		middleWareBrokerCredentials = append(middleWareBrokerCredentials, middleWareBrokerCredential)
+func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingDB db.BindingDB, policyDB db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, cfClient cf.CFClient, credentials cred_helper.Credentials) *brokerServer {
+	return &brokerServer{
+		logger:              logger,
+		conf:                conf,
+		bindingDB:           bindingDB,
+		policyDB:            policyDB,
+		httpStatusCollector: httpStatusCollector,
+		cfClient:            cfClient,
+		credentials:         credentials,
+	}
+}
+
+func (s *brokerServer) GetServer() (ifrit.Runner, error) {
+	router, err := s.GetRouter()
+	if err != nil {
+		return nil, err
 	}
 
-	catalogBytes, err := os.ReadFile(conf.CatalogPath)
+	return helpers.NewHTTPServer(s.logger, s.conf.BrokerServer, router)
+}
+
+func prepareCredentials(logger lager.Logger, conf *config.Config) ([]BrokerCredentials, error) {
+	var credentialsList []BrokerCredentials
+	for _, cred := range conf.BrokerCredentials {
+		cred = restrictToMaxBcryptLength(logger, cred)
+		usernameHash, err := hashPassword(cred.BrokerUsername)
+		if err != nil {
+			return nil, err
+		}
+		passwordHash, err := hashPassword(cred.BrokerPassword)
+		if err != nil {
+			return nil, err
+		}
+		credentialsList = append(credentialsList, BrokerCredentials{
+			Username:     cred.BrokerUsername,
+			UsernameHash: usernameHash,
+			Password:     cred.BrokerPassword,
+			PasswordHash: passwordHash,
+		})
+	}
+	return credentialsList, nil
+}
+
+func hashPassword(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+}
+
+func loadCatalog(path string, logger lager.Logger) ([]domain.Service, error) {
+	catalogBytes, err := os.ReadFile(path)
 	if err != nil {
 		logger.Error("failed to read catalog file", err)
 		return nil, err
 	}
-	catalog := &struct {
+	var catalog struct {
 		Services []domain.Service `json:"services"`
-	}{}
-	err = json.Unmarshal(catalogBytes, catalog)
-	if err != nil {
+	}
+	if err := json.Unmarshal(catalogBytes, &catalog); err != nil {
 		logger.Error("failed to parse catalog", err)
 		return nil, err
 	}
-
-	basicAuthentication := &basicAuthenticationMiddleware{
-		brokerCredentials: middleWareBrokerCredentials,
-	}
-	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	autoscalerBroker := broker.New(logger.Session("broker"), conf, bindingdb, policydb, catalog.Services, credentials)
-
-	r := chi.NewRouter()
-
-	r.Use(basicAuthentication.Middleware)
-	r.Use(httpStatusCollectMiddleware.Collect)
-	brokerapi.AttachRoutes(r, autoscalerBroker, slog.New(lager.NewHandler(logger.Session("broker_handler"))))
-
-	r.HandleFunc(routes.BrokerHealthPath, GetHealth)
-
-	return helpers.NewHTTPServer(logger, conf.BrokerServer, r)
+	return catalog.Services, nil
 }
 
-func restrictToMaxBcryptLength(logger lager.Logger, brokerCredential config.BrokerCredentialsConfig) config.BrokerCredentialsConfig {
-	if len(brokerCredential.BrokerUsername) > 72 {
-		logger.Error("warning-configured-username-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"username-length": len(brokerCredential.BrokerUsername)})
-		brokerCredential.BrokerUsername = brokerCredential.BrokerUsername[:72]
-	}
-	if len(brokerCredential.BrokerPassword) > 72 {
-		logger.Error("warning-configured-password-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"password-length": len(brokerCredential.BrokerPassword)})
-		brokerCredential.BrokerPassword = brokerCredential.BrokerPassword[:72]
+func (s *brokerServer) GetRouter() (*chi.Mux, error) {
+	credentialsList, err := prepareCredentials(s.logger, s.conf)
+	if err != nil {
+		return nil, err
 	}
 
-	return brokerCredential
+	catalog, err := loadCatalog(s.conf.CatalogPath, s.logger)
+	if err != nil {
+		return nil, err
+	}
+
+	authMiddleware := &AuthMiddleware{credentials: credentialsList}
+	httpStatusMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(s.httpStatusCollector)
+
+	autoscalerBroker := broker.New(s.logger.Session("broker"), s.conf, s.bindingDB, s.policyDB, catalog, s.credentials)
+
+	router := chi.NewRouter()
+
+	router.Use(authMiddleware.Middleware)
+	router.Use(httpStatusMiddleware.Collect)
+
+	brokerapi.AttachRoutes(router, autoscalerBroker, slog.New(lager.NewHandler(s.logger.Session("broker_handler"))))
+	router.HandleFunc(routes.BrokerHealthPath, GetHealth)
+
+	return router, nil
+}
+
+func restrictToMaxBcryptLength(logger lager.Logger, cred config.BrokerCredentialsConfig) config.BrokerCredentialsConfig {
+	if len(cred.BrokerUsername) > 72 {
+		logger.Error("warning-configured-username-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"username-length": len(cred.BrokerUsername)})
+		cred.BrokerUsername = cred.BrokerUsername[:72]
+	}
+	if len(cred.BrokerPassword) > 72 {
+		logger.Error("warning-configured-password-too-long-using-only-first-72-characters", bcrypt.ErrPasswordTooLong, lager.Data{"password-length": len(cred.BrokerPassword)})
+		cred.BrokerPassword = cred.BrokerPassword[:72]
+	}
+	return cred
 }
 
 func GetHealth(w http.ResponseWriter, _ *http.Request) {

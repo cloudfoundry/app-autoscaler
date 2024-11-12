@@ -82,20 +82,12 @@ func main() {
 	policyDb := sqldb.CreatePolicyDb(conf.AppSyncer.DB, logger)
 	defer func() { _ = policyDb.Close() }()
 
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDb),
-
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "appMetricsDB", appMetricsDB),
-		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "scalingEngineDB", scalingEngineDB),
-	}, true, logger.Session("operator-prometheus"))
-
-	scalingEngineHttpclient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
+	scalingEngineHttpclient, err := helpers.CreateHTTPSClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
 	if err != nil {
 		logger.Error("failed to create http client for scalingengine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
 		os.Exit(1)
 	}
-	schedulerHttpclient, err := helpers.CreateHTTPClient(&conf.Scheduler.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scheduler_client"))
+	schedulerHttpclient, err := helpers.CreateHTTPSClient(&conf.Scheduler.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scheduler_client"))
 	if err != nil {
 		logger.Error("failed to create http client for scheduler", err, lager.Data{"schedulerTLS": conf.Scheduler.TLSClientCerts})
 		os.Exit(1)
@@ -143,7 +135,14 @@ func main() {
 	})
 	members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(conf.Health, []healthendpoint.Checker{}, logger.Session("health-server"), promRegistry, time.Now)
+	gatherer := createPrometheusRegistry(policyDb, appMetricsDB, scalingEngineDB, logger)
+	healthRouter, err := healthendpoint.NewHealthRouter(conf.Health, []healthendpoint.Checker{}, logger, gatherer, time.Now)
+	if err != nil {
+		logger.Error("failed to create health router", err)
+		os.Exit(1)
+	}
+
+	healthServer, err := helpers.NewHTTPServer(logger, conf.Health.ServerConfig, healthRouter)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)
@@ -161,4 +160,14 @@ func main() {
 	}
 
 	logger.Info("exited")
+}
+
+func createPrometheusRegistry(policyDB db.PolicyDB, appMetricsDB db.AppMetricDB, scalingEngineDB db.ScalingEngineDB, logger lager.Logger) *prometheus.Registry {
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "appMetricsDB", appMetricsDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "scalingEngineDB", scalingEngineDB),
+	}, true, logger.Session("operator-prometheus"))
+	return promRegistry
 }

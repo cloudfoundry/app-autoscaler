@@ -3,7 +3,6 @@ package main_test
 import (
 	"database/sql"
 	"encoding/json"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,8 +10,6 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -23,6 +20,8 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"gopkg.in/yaml.v3"
+
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,18 +36,16 @@ const (
 )
 
 var (
-	apPath           string
-	cfg              config.Config
-	configFile       *os.File
-	apiHttpClient    *http.Client
-	healthHttpClient *http.Client
-	catalogBytes     string
-	schedulerServer  *ghttp.Server
-	brokerPort       int
-	publicApiPort    int
-	healthport       int
-	infoBytes        string
-	ccServer         *mocks.Server
+	apPath          string
+	cfg             config.Config
+	configFile      *os.File
+	schedulerServer *ghttp.Server
+	catalogBytes    string
+	brokerPort      int
+	publicApiPort   int
+	healthport      int
+	infoBytes       string
+	ccServer        *mocks.Server
 )
 
 func TestApi(t *testing.T) {
@@ -125,7 +122,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
-	cfg.PublicApiServer = helpers.ServerConfig{
+	cfg.Server = helpers.ServerConfig{
 		Port: publicApiPort,
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "api.key"),
@@ -134,15 +131,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	}
 	cfg.Logging.Level = "info"
-	cfg.DB = make(map[string]db.DatabaseConfig)
+	cfg.Db = make(map[string]db.DatabaseConfig)
 	dbUrl := GetDbUrl()
-	cfg.DB[db.BindingDb] = db.DatabaseConfig{
+	cfg.Db[db.BindingDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.DB[db.PolicyDb] = db.DatabaseConfig{
+	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
@@ -201,8 +198,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		ServerConfig: helpers.ServerConfig{
 			Port: healthport,
 		},
-		HealthCheckUsername: "healthcheckuser",
-		HealthCheckPassword: "healthcheckpassword",
+		BasicAuth: models.BasicAuth{
+			Username: "healthcheckuser",
+			Password: "healthcheckpassword",
+		},
 	}
 	cfg.RateLimit.MaxAmount = 10
 	cfg.RateLimit.ValidDuration = 1 * time.Second
@@ -211,9 +210,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	configFile = writeConfig(&cfg)
 
-	apiHttpClient = NewApiClient()
-
-	healthHttpClient = &http.Client{}
 })
 
 var _ = SynchronizedAfterSuite(func() {

@@ -91,13 +91,13 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.RateLimit.ValidDuration = 1 * time.Second
 	cfg.Logging.Level = "debug"
 
-	cfg.Health.HealthCheckUsername = "metricsforwarderhealthcheckuser"
-	cfg.Health.HealthCheckPassword = "metricsforwarderhealthcheckpassword"
+	cfg.Health.BasicAuth.Username = "metricsforwarderhealthcheckuser"
+	cfg.Health.BasicAuth.Password = "metricsforwarderhealthcheckpassword"
 	cfg.Health.ReadinessCheckEnabled = true
 
 	cfg.Server.Port = 10000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
-	cfg.Health.Port = healthport
+	cfg.Health.ServerConfig.Port = healthport
 	cfg.CacheCleanupInterval = 10 * time.Minute
 	cfg.PolicyPollerInterval = 40 * time.Second
 	cfg.Db = make(map[string]db.DatabaseConfig)
