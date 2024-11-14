@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
 	code.cloudfoundry.org/go-loggregator/v10 v10.0.1
 	code.cloudfoundry.org/lager/v3 v3.10.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20241106172303-16409d5df4c4
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20241111093606-5f33c9298c54
 	code.cloudfoundry.org/tlsconfig v0.8.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -45,7 +45,7 @@ require (
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	golang.org/x/net v0.31.0
 	golang.org/x/time v0.7.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0-dev
 	gopkg.in/yaml.v3 v3.0.1
 )
 
