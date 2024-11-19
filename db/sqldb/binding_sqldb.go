@@ -308,19 +308,23 @@ func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(ctx context.Context, appId 
 	return nil
 }
 
-func (bdb *BindingSQLDB) GetAppBindingByAppId(ctx context.Context, appId string) (string, error) {
-	var bindingId string
-	query := bdb.sqldb.Rebind("SELECT binding_id FROM binding WHERE app_id =?")
-	err := bdb.sqldb.QueryRowContext(ctx, query, appId).Scan(&bindingId)
-
+func (bdb *BindingSQLDB) getServiceBindingByAppId(ctx context.Context, appId string) (*models.ServiceBinding, error) {
+	dbServiceBinding := &dbServiceBinding{}
+	query := bdb.sqldb.Rebind("SELECT  binding_id, service_instance_id, app_id, custom_metrics_strategy FROM binding WHERE app_id =?")
+	err := bdb.sqldb.GetContext(ctx, dbServiceBinding, query, appId)
 	if err != nil {
 		bdb.logger.Debug("get-service-binding-by-appid", lager.Data{"query": query, "appId": appId, "error": err})
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", db.ErrDoesNotExist
+			return nil, db.ErrDoesNotExist
 		}
-		return "", err
+		return nil, err
 	}
-	return bindingId, nil
+	return &models.ServiceBinding{
+		ServiceBindingID:      dbServiceBinding.ServiceBindingID,
+		ServiceInstanceID:     dbServiceBinding.ServiceInstanceID,
+		AppID:                 dbServiceBinding.AppID,
+		CustomMetricsStrategy: dbServiceBinding.CustomMetricsStrategy.String,
+	}, nil
 }
 func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 	var count int
@@ -441,19 +445,22 @@ func (bdb *BindingSQLDB) GetCustomMetricStrategyByAppId(ctx context.Context, app
 }
 
 func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error {
-
-	appBinding, err := bdb.GetAppBindingByAppId(ctx, appId)
+	appBinding, err := bdb.getServiceBindingByAppId(ctx, appId)
 	if err != nil {
 		return err
 	}
 	query := bdb.sqldb.Rebind("UPDATE binding SET custom_metrics_strategy = ? WHERE binding_id = ?")
-	result, err := bdb.sqldb.ExecContext(ctx, query, nullableString(customMetricsStrategy), appBinding)
+	result, err := bdb.sqldb.ExecContext(ctx, query, nullableString(customMetricsStrategy), appBinding.ServiceBindingID)
 	if err != nil {
 		bdb.logger.Error(fmt.Sprintf("failed to %s custom metric submission strategy", actionName), err,
-			lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
+			lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding.ServiceInstanceID, "appId": appId})
 		return err
 	}
 	if rowsAffected, err := result.RowsAffected(); err != nil || rowsAffected == 0 {
+		if customMetricsStrategy == appBinding.CustomMetricsStrategy {
+			bdb.logger.Info(fmt.Sprintf("custom metrics strategy already exists"), lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
+			return nil
+		}
 		bdb.logger.Error(fmt.Sprintf("failed to %s custom metric submission strategy", actionName), err,
 			lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
 		return errors.New("no rows affected")

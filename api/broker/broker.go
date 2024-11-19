@@ -503,10 +503,13 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		logger.Error("get-binding-configuration-from-request", err)
 		return result, err
 	}
-	bindingConfiguration, err = b.validateOrGetDefaultCustomMetricsStrategy(bindingConfiguration, logger)
+	bindingConfiguration, err = bindingConfiguration.ValidateOrGetDefaultCustomMetricsStrategy(bindingConfiguration)
 	if err != nil {
-		logger.Error("validate-or-get-default-custom-metric-strategy", err)
-		return result, err
+		actionName := "validate-or-get-default-custom-metric-strategy"
+		logger.Error(actionName, err)
+		return result, apiresponses.NewFailureResponseBuilder(
+			err, http.StatusBadRequest, actionName).
+			WithErrorKey(actionName).Build()
 	}
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
@@ -591,21 +594,6 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		CustomMetrics: *customMetricsCredentials,
 	}
 	return result, nil
-}
-
-func (b *Broker) validateOrGetDefaultCustomMetricsStrategy(bindingConfiguration *models.BindingConfig, logger lager.Logger) (*models.BindingConfig, error) {
-	strategy := bindingConfiguration.GetCustomMetricsStrategy()
-	if strategy == "" {
-		bindingConfiguration.SetCustomMetricsStrategy(models.CustomMetricsSameApp)
-	} else if strategy != models.CustomMetricsBoundApp {
-		actionName := "verify-custom-metrics-strategy"
-		return bindingConfiguration, apiresponses.NewFailureResponseBuilder(
-			ErrInvalidCustomMetricsStrategy, http.StatusBadRequest, actionName).
-			WithErrorKey(actionName).
-			Build()
-	}
-	logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
-	return bindingConfiguration, nil
 }
 
 func (b *Broker) getBindingConfigurationFromRequest(policyJson json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {
@@ -739,31 +727,16 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		b.logger.Error("get-binding", err, lager.Data{"instanceID": instanceID, "bindingID": bindingID, "fetchBindingDetails": details})
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
-	combinedConfig, bindingConfig := b.buildConfigurationIfPresent(serviceBinding.CustomMetricsStrategy)
-	if policy != nil && combinedConfig != nil { //both are present
-		combinedConfig.ScalingPolicy = *policy
-		combinedConfig.BindingConfig = *bindingConfig
-		result.Parameters = combinedConfig
-	} else if policy != nil { // only policy was given
-		result.Parameters = policy
-	} else if combinedConfig != nil { // only configuration was given
-		result.Parameters = bindingConfig
+	if policy != nil {
+		andPolicy, err := models.DetermineBindingConfigAndPolicy(policy, serviceBinding.CustomMetricsStrategy)
+		if err != nil {
+			return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to build policy and config response object"), http.StatusInternalServerError, "determine-BindingConfig-and-Policy")
+		}
+		result.Parameters = andPolicy
 	}
 	return result, nil
 }
 
-func (b *Broker) buildConfigurationIfPresent(customMetricsStrategy string) (*models.BindingConfigWithPolicy, *models.BindingConfig) {
-	var combinedConfig *models.BindingConfigWithPolicy
-	var bindingConfig *models.BindingConfig
-
-	if customMetricsStrategy != "" && customMetricsStrategy != models.CustomMetricsSameApp { //if custom metric was given in the binding process
-		combinedConfig = &models.BindingConfigWithPolicy{}
-		bindingConfig = &models.BindingConfig{}
-		bindingConfig.SetCustomMetricsStrategy(customMetricsStrategy)
-		combinedConfig.BindingConfig = *bindingConfig
-	}
-	return combinedConfig, bindingConfig
-}
 func (b *Broker) getServiceBinding(ctx context.Context, bindingID string) (*models.ServiceBinding, error) {
 	logger := b.logger.Session("get-service-binding", lager.Data{"bindingID": bindingID})
 

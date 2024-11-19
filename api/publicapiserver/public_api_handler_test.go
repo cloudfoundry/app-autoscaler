@@ -214,6 +214,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 	})
+
 	Describe("GetScalingPolicy", func() {
 		JustBeforeEach(func() {
 			handler.GetScalingPolicy(resp, req, pathVariables)
@@ -281,6 +282,44 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 
 				Expect(strings.TrimSpace(resp.Body.String())).To(Equal(`{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"<","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`))
+			})
+		})
+		Context("and custom metric strategy", func() {
+			When("custom metric strategy retrieval fails", func() {
+				BeforeEach(func() {
+					pathVariables["appId"] = TEST_APP_ID
+					setupPolicy(policydb)
+					bindingdb.GetCustomMetricStrategyByAppIdReturns("", fmt.Errorf("db error"))
+				})
+				It("should fail with 500", func() {
+					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error retrieving binding policy"}`))
+				})
+			})
+			When("custom metric strategy retrieved successfully", func() {
+				BeforeEach(func() {
+					pathVariables["appId"] = TEST_APP_ID
+					bindingdb.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
+				})
+				When("custom metric strategy and policy are present", func() {
+					BeforeEach(func() {
+						setupPolicy(policydb)
+					})
+					It("should return combined configuration with 200", func() {
+						Expect(resp.Code).To(Equal(http.StatusOK))
+						Expect(resp.Body.String()).To(MatchJSON(validCustomMetricsConfigurationStr))
+					})
+					When("policy is present only", func() {
+						BeforeEach(func() {
+							setupPolicy(policydb)
+							bindingdb.GetCustomMetricStrategyByAppIdReturns("", nil)
+						})
+						It("should return policy with 200", func() {
+							Expect(resp.Code).To(Equal(http.StatusOK))
+							Expect(resp.Body.String()).To(MatchJSON(ValidPolicyStr))
+						})
+					})
+				})
 			})
 		})
 	})
@@ -381,6 +420,7 @@ var _ = Describe("PublicApiHandler", func() {
 					Expect(resp.Body.String()).To(ContainSubstring("Failed to read binding configuration request body"))
 				})
 			})
+
 			When("invalid configuration is provided with the policy", func() {
 				BeforeEach(func() {
 					pathVariables["appId"] = TEST_APP_ID
@@ -412,9 +452,20 @@ var _ = Describe("PublicApiHandler", func() {
 					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(validCustomMetricsConfigurationStr))
 					schedulerStatus = 200
 				})
-				It("returns the policy and configuration with 201", func() {
+				It("returns the policy and configuration with 200", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 					Expect(resp.Body).To(MatchJSON(validCustomMetricsConfigurationStr))
+				})
+			})
+			When("configuration is removed but only policy is provided", func() {
+				BeforeEach(func() {
+					pathVariables["appId"] = TEST_APP_ID
+					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(ValidPolicyStr))
+					schedulerStatus = 200
+				})
+				It("returns the policy 200", func() {
+					Expect(resp.Body).To(MatchJSON(ValidPolicyStr))
+					Expect(resp.Code).To(Equal(http.StatusOK))
 				})
 			})
 		})
@@ -996,3 +1047,32 @@ var _ = Describe("PublicApiHandler", func() {
 
 	})
 })
+
+func setupPolicy(policydb *fakes.FakePolicyDB) {
+	policydb.GetAppPolicyReturns(&models.ScalingPolicy{
+		InstanceMax: 5,
+		InstanceMin: 1,
+		ScalingRules: []*models.ScalingRule{
+			{
+				MetricType:            "memoryused",
+				BreachDurationSeconds: 300,
+				CoolDownSeconds:       300,
+				Threshold:             30,
+				Operator:              ">",
+				Adjustment:            "-1",
+			}},
+		Schedules: &models.ScalingSchedules{
+			Timezone: "Asia/Kolkata",
+			RecurringSchedules: []*models.RecurringSchedule{
+				{
+					StartTime:             "10:00",
+					EndTime:               "18:00",
+					DaysOfWeek:            []int{1, 2, 3},
+					ScheduledInstanceMin:  1,
+					ScheduledInstanceMax:  10,
+					ScheduledInstanceInit: 5,
+				},
+			},
+		},
+	}, nil)
+}

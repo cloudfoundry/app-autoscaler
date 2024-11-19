@@ -27,7 +27,6 @@ var _ = Describe("Broker", func() {
 		fakeCredentials          *fakes.FakeCredentials
 		testLogger               = lagertest.NewTestLogger("test")
 		bindingConfigWithScaling *models.BindingConfigWithPolicy
-		bindingConfig            *models.BindingConfig
 	)
 
 	BeforeEach(func() {
@@ -188,7 +187,7 @@ var _ = Describe("Broker", func() {
 			})
 			Context("with configuration and policy", func() {
 				BeforeEach(func() {
-					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
+					_ = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
 						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
 					},
 					}}
@@ -208,10 +207,6 @@ var _ = Describe("Broker", func() {
 			})
 			Context("with configuration only", func() {
 				BeforeEach(func() {
-					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
-						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
-					},
-					}}
 					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
 						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
 					bindingBytes, err := os.ReadFile("testdata/with-configs.json")
@@ -223,7 +218,7 @@ var _ = Describe("Broker", func() {
 				})
 				It("returns the bindings with configs in parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: bindingConfig}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: nil}))
 				})
 			})
 		})

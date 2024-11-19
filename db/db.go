@@ -78,7 +78,6 @@ type BindingDB interface {
 	CountServiceInstancesInOrg(orgId string) (int, error)
 	GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error)
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
-	GetAppBindingByAppId(ctx context.Context, appId string) (string, error)
 	IsAppBoundToSameAutoscaler(ctx context.Context, appId string, appToScaleId string) (bool, error)
 	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error)
 	SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error

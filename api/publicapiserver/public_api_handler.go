@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+
+	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
@@ -98,14 +99,24 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling policy")
 		return
 	}
-
 	if scalingPolicy == nil {
 		logger.Info("policy doesn't exist")
 		writeErrorResponse(w, http.StatusNotFound, "Policy Not Found")
 		return
 	}
-
-	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicy)
+	customMetricStrategy, err := h.bindingdb.GetCustomMetricStrategyByAppId(r.Context(), appId)
+	if err != nil {
+		logger.Error("Failed to retrieve service binding from database", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
+		return
+	}
+	scalingPolicyResult, err := models.DetermineBindingConfigAndPolicy(scalingPolicy, customMetricStrategy)
+	if err != nil {
+		logger.Error("Failed to build policy and config response object", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
+		return
+	}
+	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicyResult)
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -132,13 +143,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, errMessage)
 		return
 	}
-	// FIXME Move this validation code in a central place within api. This is a duplicate in broker.bind
-	bindingConfiguration, err = h.validateOrGetDefaultCustomMetricsStrategy(bindingConfiguration, logger)
-	if err != nil {
-		logger.Error(ErrInvalidConfigurations.Error(), err)
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		return
-	}
+
 	policy, errResults := h.policyValidator.ValidatePolicy(policyBytes)
 	if errResults != nil {
 		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults})
@@ -161,15 +166,23 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	strategy := bindingConfiguration.GetCustomMetricsStrategy()
-	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, strategy, "update")
+
+	validatedBindingConfiguration, err := bindingConfiguration.ValidateOrGetDefaultCustomMetricsStrategy(bindingConfiguration)
+	if err != nil {
+		logger.Error(ErrInvalidConfigurations.Error(), err)
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	strategy := validatedBindingConfiguration.GetCustomMetricsStrategy()
+	logger.Info("saving custom metric submission strategy", lager.Data{"strategy": validatedBindingConfiguration.GetCustomMetricsStrategy(), "appId": appId})
+	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, validatedBindingConfiguration.GetCustomMetricsStrategy(), "update")
 	if err != nil {
 		actionName := "failed to save custom metric submission strategy in the database"
 		logger.Error(actionName, err)
 		writeErrorResponse(w, http.StatusInternalServerError, actionName)
 		return
 	}
-	response, err := h.buildResponse(strategy, bindingConfiguration, policy)
+	response, err := h.buildResponse(strategy, validatedBindingConfiguration, policy)
 	if err != nil {
 		logger.Error("Failed to marshal policy", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error building response")
@@ -335,21 +348,6 @@ func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, _ *http.Request, _ m
 	if err != nil {
 		h.logger.Error(ActionWriteBody, err)
 	}
-}
-
-func (h *PublicApiHandler) validateOrGetDefaultCustomMetricsStrategy(bindingConfiguration *models.BindingConfig, logger lager.Logger) (*models.BindingConfig, error) {
-	strategy := bindingConfiguration.GetCustomMetricsStrategy()
-	if strategy == "" {
-		bindingConfiguration.SetCustomMetricsStrategy(models.CustomMetricsSameApp)
-	} else if strategy != models.CustomMetricsBoundApp {
-		actionName := "verify-custom-metrics-strategy"
-		return bindingConfiguration, apiresponses.NewFailureResponseBuilder(
-			ErrInvalidCustomMetricsStrategy, http.StatusBadRequest, actionName).
-			WithErrorKey(actionName).
-			Build()
-	}
-	logger.Info("binding-configuration", lager.Data{"bindingConfiguration": bindingConfiguration})
-	return bindingConfiguration, nil
 }
 
 func (h *PublicApiHandler) getBindingConfigurationFromRequest(policyJson json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {

@@ -796,9 +796,22 @@ var _ = Describe("BindingSqldb", func() {
 						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
 						Expect(err).NotTo(HaveOccurred())
 					})
-					It("should update the custom metrics strategy", func() {
+					It("should update the custom metrics strategy to bound_app", func() {
+						Expect(err).NotTo(HaveOccurred())
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
 						Expect(customMetricStrategy).To(Equal("bound_app"))
+					})
+				})
+				When("custom metrics strategy is already present as same_app", func() {
+					BeforeEach(func() {
+						customMetricsStrategy = "same_app"
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should not update the same custom metrics strategy", func() {
+						Expect(err).NotTo(HaveOccurred())
+						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
+						Expect(customMetricStrategy).To(Equal("same_app"))
 					})
 				})
 				When("custom metrics strategy unknown value", func() {

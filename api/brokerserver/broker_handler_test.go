@@ -992,7 +992,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("should fail with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(MatchJSON(`{"error": "verify-custom-metrics-strategy", "description": "error: custom metrics strategy not supported"}`))
+					Expect(resp.Body.String()).To(MatchJSON(`{"error": "validate-or-get-default-custom-metric-strategy", "description": "error: custom metrics strategy not supported"}`))
 
 				})
 			})
