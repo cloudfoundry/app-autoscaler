@@ -154,7 +154,7 @@ func (l *logCacheFetcher) getMetricsRestAPI(appId string, metricType string, sta
 	if err != nil {
 		return []models.AppInstanceMetric{}, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", logcache_v1.EnvelopeType_GAUGE, appId, err)
 	}
-	l.logger.Info("received-rest-api-result", lager.Data{"envelopes": envelopes})
+	l.logger.Info("received-rest-api-result", lager.Data{"numEnvelopes": len(envelopes)})
 
 	metrics := l.envelopeProcessor.GetGaugeMetrics(envelopes, time.Now().UnixNano())
 
