@@ -60,7 +60,7 @@ databaseChangeLog:
   - changeSet:
       id: 3
       author: tanmoypal
-      dbms: postgres
+      dbms: postgresql
       logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - createIndex:
