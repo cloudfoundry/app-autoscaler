@@ -73,13 +73,13 @@ spring:
             pem:
               server:
                 keystore:
-                  certificate: {{ .TestCertDir }}/scheduler.crt
-                  private-key: {{ .TestCertDir }}/scheduler.key
+                  certificate: file:{{ .TestCertDir }}/scheduler.crt
+                  private-key: file:{{ .TestCertDir }}/scheduler.key
                 truststore:
-                  certificate: {{ .TestCertDir }}/autoscaler-ca.crt
+                  certificate: file:{{ .TestCertDir }}/autoscaler-ca.crt
               scalingengine:
                   keystore:
-                    certificate: {{ .TestCertDir }}/scalingengine.crt
-                    private-key: {{ .TestCertDir }}/scalingengine.key
+                    certificate: file:{{ .TestCertDir }}/scalingengine.crt
+                    private-key: file:{{ .TestCertDir }}/scalingengine.key
                   truststore:
-                    certificate: {{ .TestCertDir }}/autoscaler-ca.crt
+                    certificate: file:{{ .TestCertDir }}/autoscaler-ca.crt
