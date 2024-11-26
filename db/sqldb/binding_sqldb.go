@@ -458,7 +458,7 @@ func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(ctx context.Context, ap
 	}
 	if rowsAffected, err := result.RowsAffected(); err != nil || rowsAffected == 0 {
 		if customMetricsStrategy == appBinding.CustomMetricsStrategy {
-			bdb.logger.Info(fmt.Sprintf("custom metrics strategy already exists"), lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
+			bdb.logger.Info("custom metrics strategy already exists", lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
 			return nil
 		}
 		bdb.logger.Error(fmt.Sprintf("failed to %s custom metric submission strategy", actionName), err,

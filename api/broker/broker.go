@@ -171,7 +171,7 @@ func (b *Broker) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanc
 }
 
 func (b *Broker) validateAndCheckPolicy(rawJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
-	policy, errResults := b.policyValidator.ValidatePolicy(rawJson)
+	policy, errResults := b.policyValidator.ParseAndValidatePolicy(rawJson)
 	logger := b.logger.Session("validate-and-check-policy", lager.Data{"instanceID": instanceID, "policy": policy, "planID": planID, "errResults": errResults})
 
 	if errResults != nil {
@@ -503,6 +503,11 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		logger.Error("get-binding-configuration-from-request", err)
 		return result, err
 	}
+	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
+	if err != nil {
+		logger.Error("get-default-policy", err)
+		return result, err
+	}
 	bindingConfiguration, err = bindingConfiguration.ValidateOrGetDefaultCustomMetricsStrategy(bindingConfiguration)
 	if err != nil {
 		actionName := "validate-or-get-default-custom-metric-strategy"
@@ -510,11 +515,6 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		return result, apiresponses.NewFailureResponseBuilder(
 			err, http.StatusBadRequest, actionName).
 			WithErrorKey(actionName).Build()
-	}
-	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
-	if err != nil {
-		logger.Error("get-default-policy", err)
-		return result, err
 	}
 	defaultCustomMetricsCredentialType := b.conf.DefaultCustomMetricsCredentialType
 	customMetricsBindingAuthScheme, err := getOrDefaultCredentialType(policyJson, defaultCustomMetricsCredentialType, logger)

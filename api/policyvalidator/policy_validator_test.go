@@ -58,7 +58,7 @@ var _ = Describe("PolicyValidator", func() {
 		)
 	})
 	JustBeforeEach(func() {
-		policy, errResult = policyValidator.ValidatePolicy(json.RawMessage(policyString))
+		policy, errResult = policyValidator.ParseAndValidatePolicy(json.RawMessage(policyString))
 		policyBytes, err := json.Marshal(policy)
 		Expect(err).ToNot(HaveOccurred())
 		policyJson = string(policyBytes)
@@ -2562,6 +2562,118 @@ var _ = Describe("PolicyValidator", func() {
 				})
 			})
 
+		})
+	})
+	Context("Binding Configuration with custom metrics strategy", func() {
+		When("custom_metrics is missing", func() {
+			BeforeEach(func() {
+				policyString = `{
+                "instance_max_count":4,
+                "instance_min_count":1,
+                "scaling_rules":[
+                    {
+                        "metric_type":"memoryutil",
+                        "breach_duration_secs": 300,
+                        "threshold":90,
+                        "operator":">=",
+                        "adjustment": "+1"
+                    }
+                ]
+            }`
+			})
+			It("should not fail", func() {
+				Expect(errResult).To(BeNil())
+			})
+		})
+		When("allow_from is missing in metric_submission_strategy", func() {
+			BeforeEach(func() {
+				policyString = `{
+                "instance_max_count":4,
+                "instance_min_count":1,
+                "scaling_rules":[
+                    {
+                        "metric_type":"memoryutil",
+                        "breach_duration_secs": 300,
+                        "threshold":90,
+                        "operator":">=",
+                        "adjustment": "+1"
+                    }
+                ],
+                "configuration": {
+                    "custom_metrics": {
+                        "metric_submission_strategy": {}
+                    }
+                }
+            }`
+			})
+			It("should fail", func() {
+				Expect(errResult).To(Equal([]PolicyValidationErrors{
+					{
+						Context:     "(root).configuration.custom_metrics.metric_submission_strategy",
+						Description: "allow_from is required",
+					},
+				}))
+			})
+		})
+		When("allow_from is invalid in metric_submission_strategy", func() {
+			BeforeEach(func() {
+				policyString = `{
+                "instance_max_count":4,
+                "instance_min_count":1,
+                "scaling_rules":[
+                    {
+                        "metric_type":"memoryutil",
+                        "breach_duration_secs": 300,
+                        "threshold":90,
+                        "operator":">=",
+                        "adjustment": "+1"
+                    }
+                ],
+                "configuration": {
+                    "custom_metrics": {
+                        "metric_submission_strategy": {
+                            "allow_from": "invalid_value"
+                        }
+                    }
+                }
+            }`
+			})
+			It("should fail", func() {
+				Expect(errResult).To(Equal([]PolicyValidationErrors{
+					{
+						Context:     "(root).configuration.custom_metrics.metric_submission_strategy.allow_from",
+						Description: "configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\"",
+					},
+				}))
+			})
+		})
+		When("allow_from is valid in metric_submission_strategy", func() {
+			BeforeEach(func() {
+				policyString = `{
+                "instance_max_count":4,
+                "instance_min_count":1,
+                "scaling_rules":[
+                    {
+                        "metric_type":"memoryutil",
+                        "breach_duration_secs": 300,
+                        "threshold":90,
+                        "operator":">=",
+                        "adjustment": "+1"
+                    }
+                ],
+                "configuration": {
+                    "custom_metrics": {
+                        "metric_submission_strategy": {
+                            "allow_from": "bound_app"
+                        }
+                    }
+                }
+            }`
+			})
+			It("should succeed", func() {
+
+				Expect(errResult).To(BeNil())
+			})
 		})
 	})
 

@@ -429,7 +429,7 @@ var _ = Describe("PublicApiHandler", func() {
 				})
 				It("should not succeed and fail with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(MatchJSON(`{"code":"Bad Request","message":"error: custom metrics strategy not supported"}`))
+					Expect(resp.Body.String()).To(Equal(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\""}]`))
 				})
 			})
 

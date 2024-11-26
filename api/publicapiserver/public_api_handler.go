@@ -106,7 +106,7 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	}
 	customMetricStrategy, err := h.bindingdb.GetCustomMetricStrategyByAppId(r.Context(), appId)
 	if err != nil {
-		logger.Error("Failed to retrieve service binding from database", err)
+		logger.Error("Failed to retrieve customMetricStrategy from database", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
 		return
 	}
@@ -144,7 +144,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	policy, errResults := h.policyValidator.ValidatePolicy(policyBytes)
+	policy, errResults := h.policyValidator.ParseAndValidatePolicy(policyBytes)
 	if errResults != nil {
 		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
@@ -174,7 +174,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 	strategy := validatedBindingConfiguration.GetCustomMetricsStrategy()
-	logger.Info("saving custom metric submission strategy", lager.Data{"strategy": validatedBindingConfiguration.GetCustomMetricsStrategy(), "appId": appId})
+	logger.Info("saving custom metric submission strategy", lager.Data{"strategy": strategy, "appId": appId})
 	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, validatedBindingConfiguration.GetCustomMetricsStrategy(), "update")
 	if err != nil {
 		actionName := "failed to save custom metric submission strategy in the database"

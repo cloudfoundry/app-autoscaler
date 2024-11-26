@@ -31,7 +31,8 @@
               "properties": {
                 "allow_from": {
                   "type": "string",
-                  "enum": [ "bound_app", "same_app"
+                  "enum": [
+                    "bound_app"
                   ]
                 }
               },
@@ -44,10 +45,7 @@
             "metric_submission_strategy"
           ]
         }
-      },
-      "required": [
-        "custom_metrics"
-      ]
+      }
     },
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
