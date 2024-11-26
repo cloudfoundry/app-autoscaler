@@ -10,11 +10,8 @@ import (
 {
   "configuration": {
     "custom_metrics": {
-      "auth": {
-        "credential_type": "binding_secret"
-      },
       "metric_submission_strategy": {
-        "allow_from": "bound_app or same_app"
+        "allow_from": "bound_app"
       }
     }
   }
@@ -50,7 +47,7 @@ func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
 }
 
 /**
- * DetermineBindingConfigAndPolicy determines the binding configuration and policy based on the given parameters.
+ * GetBindingConfigAndPolicy combines the binding configuration and policy based on the given parameters.
  * It establishes the relationship between the scaling policy and the custom metrics strategy.
  * @param scalingPolicy the scaling policy
  * @param customMetricStrategy the custom metric strategy
@@ -59,39 +56,32 @@ func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
  * @throws an error if no policy or custom metrics strategy is found
 */
 
-func DetermineBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, customMetricStrategy string) (interface{}, error) {
+func GetBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, customMetricStrategy string) (interface{}, error) {
 	if scalingPolicy == nil {
 		return nil, fmt.Errorf("policy not found")
 	}
-
-	combinedConfig, bindingConfig := buildConfigurationIfPresent(customMetricStrategy)
-	if combinedConfig != nil { //both are present
-		combinedConfig.ScalingPolicy = *scalingPolicy
-		combinedConfig.BindingConfig = *bindingConfig
-		return combinedConfig, nil
+	if customMetricStrategy != "" && customMetricStrategy != CustomMetricsSameApp { //if customMetricStrategy found
+		return buildCombinedConfig(scalingPolicy, customMetricStrategy), nil
 	}
 	return scalingPolicy, nil
 }
 
-func buildConfigurationIfPresent(customMetricsStrategy string) (*BindingConfigWithPolicy, *BindingConfig) {
-	var combinedConfig *BindingConfigWithPolicy
-	var bindingConfig *BindingConfig
+func buildCombinedConfig(scalingPolicy *ScalingPolicy, customMetricStrategy string) *ScalingPolicyWithBindingConfig {
+	bindingConfig := &BindingConfig{}
+	bindingConfig.SetCustomMetricsStrategy(customMetricStrategy)
 
-	if customMetricsStrategy != "" && customMetricsStrategy != CustomMetricsSameApp { //if custom metric was given in the binding process
-		combinedConfig = &BindingConfigWithPolicy{}
-		bindingConfig = &BindingConfig{}
-		bindingConfig.SetCustomMetricsStrategy(customMetricsStrategy)
-		combinedConfig.BindingConfig = *bindingConfig
+	return &ScalingPolicyWithBindingConfig{
+		BindingConfig: bindingConfig,
+		ScalingPolicy: *scalingPolicy,
 	}
-	return combinedConfig, bindingConfig
 }
 
-func (b *BindingConfig) ValidateOrGetDefaultCustomMetricsStrategy(bindingConfiguration *BindingConfig) (*BindingConfig, error) {
-	strategy := bindingConfiguration.GetCustomMetricsStrategy()
+func (b *BindingConfig) ValidateOrGetDefaultCustomMetricsStrategy() (*BindingConfig, error) {
+	strategy := b.GetCustomMetricsStrategy()
 	if strategy == "" {
-		bindingConfiguration.SetCustomMetricsStrategy(CustomMetricsSameApp)
+		b.SetCustomMetricsStrategy(CustomMetricsSameApp)
 	} else if strategy != CustomMetricsBoundApp {
 		return nil, errors.New("error: custom metrics strategy not supported")
 	}
-	return bindingConfiguration, nil
+	return b, nil
 }

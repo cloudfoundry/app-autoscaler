@@ -508,7 +508,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		logger.Error("get-default-policy", err)
 		return result, err
 	}
-	bindingConfiguration, err = bindingConfiguration.ValidateOrGetDefaultCustomMetricsStrategy(bindingConfiguration)
+	bindingConfiguration, err = bindingConfiguration.ValidateOrGetDefaultCustomMetricsStrategy()
 	if err != nil {
 		actionName := "validate-or-get-default-custom-metric-strategy"
 		logger.Error(actionName, err)
@@ -728,11 +728,11 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
 	if policy != nil {
-		andPolicy, err := models.DetermineBindingConfigAndPolicy(policy, serviceBinding.CustomMetricsStrategy)
+		policyAndBinding, err := models.GetBindingConfigAndPolicy(policy, serviceBinding.CustomMetricsStrategy)
 		if err != nil {
-			return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to build policy and config response object"), http.StatusInternalServerError, "determine-BindingConfig-and-Policy")
+			return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to build policy and config object"), http.StatusInternalServerError, "determine-BindingConfig-and-Policy")
 		}
-		result.Parameters = andPolicy
+		result.Parameters = policyAndBinding
 	}
 	return result, nil
 }

@@ -139,36 +139,6 @@ var _ = Describe("PublicApiHandler", func() {
 				}]
 			}
 		}`
-		invalidCustomMetricsConfigurationStr = `{
-		  "configuration": {
-			"custom_metrics": {
-			  "metric_submission_strategy": {
-				"allow_from": "invalid"
-			  }
-			}
-		  },
-			"instance_min_count": 1,
-			"instance_max_count": 5,
-			"scaling_rules": [{
-				"metric_type": "memoryused",
-				"breach_duration_secs": 300,
-				"threshold": 30,
-				"operator": ">",
-				"cool_down_secs": 300,
-				"adjustment": "-1"
-			}],
-			"schedules": {
-				"timezone": "Asia/Kolkata",
-				"recurring_schedule": [{
-					"start_time": "10:00",
-					"end_time": "18:00",
-					"days_of_week": [1, 2, 3],
-					"instance_min_count": 1,
-					"instance_max_count": 10,
-					"initial_min_instance_count": 5
-				}]
-			}
-		}`
 	)
 	var (
 		policydb      *fakes.FakePolicyDB
@@ -412,61 +382,56 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("Binding Configuration", func() {
 			When("reading binding configuration from request fails", func() {
 				BeforeEach(func() {
-					pathVariables["appId"] = TEST_APP_ID
-					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString("incorrect.json"))
+					req = setupRequest("incorrect.json", TEST_APP_ID, pathVariables)
 				})
 				It("should not succeed and fail with 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-					Expect(resp.Body.String()).To(ContainSubstring("Failed to read binding configuration request body"))
+					Expect(resp.Body.String()).To(ContainSubstring("invalid character"))
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				})
 			})
 
 			When("invalid configuration is provided with the policy", func() {
 				BeforeEach(func() {
-					pathVariables["appId"] = TEST_APP_ID
-					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(InvalidCustomMetricsConfigurationStr))
+					req = setupRequest(InvalidCustomMetricsConfigurationStr, TEST_APP_ID, pathVariables)
 					schedulerStatus = 200
 				})
 				It("should not succeed and fail with 400", func() {
+					Expect(resp.Body.String()).To(MatchJSON(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\""}]`))
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(Equal(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\""}]`))
 				})
 			})
+		})
 
-			When("save configuration returned error", func() {
-				BeforeEach(func() {
-					pathVariables["appId"] = TEST_APP_ID
-					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(validCustomMetricsConfigurationStr))
-					schedulerStatus = 200
-					bindingdb.SetOrUpdateCustomMetricStrategyReturns(fmt.Errorf("failed to save custom metrics configuration"))
-				})
-				It("should not succeed and fail with internal server error", func() {
-					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-					Expect(resp.Body.String()).To(MatchJSON(`{"code":"Internal Server Error","message":"failed to save custom metric submission strategy in the database"}`))
-				})
+		When("save configuration returned error", func() {
+			BeforeEach(func() {
+				req = setupRequest(validCustomMetricsConfigurationStr, TEST_APP_ID, pathVariables)
+				schedulerStatus = 200
+				bindingdb.SetOrUpdateCustomMetricStrategyReturns(fmt.Errorf("failed to save custom metrics configuration"))
 			})
+			It("should not succeed and fail with internal server error", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(MatchJSON(`{"code":"Internal Server Error","message":"failed to save custom metric submission strategy in the database"}`))
+			})
+		})
 
-			When("valid configuration is provided with the policy", func() {
-				BeforeEach(func() {
-					pathVariables["appId"] = TEST_APP_ID
-					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(validCustomMetricsConfigurationStr))
-					schedulerStatus = 200
-				})
-				It("returns the policy and configuration with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-					Expect(resp.Body).To(MatchJSON(validCustomMetricsConfigurationStr))
-				})
+		When("valid configuration is provided with the policy", func() {
+			BeforeEach(func() {
+				req = setupRequest(validCustomMetricsConfigurationStr, TEST_APP_ID, pathVariables)
+				schedulerStatus = 200
 			})
-			When("configuration is removed but only policy is provided", func() {
-				BeforeEach(func() {
-					pathVariables["appId"] = TEST_APP_ID
-					req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(ValidPolicyStr))
-					schedulerStatus = 200
-				})
-				It("returns the policy 200", func() {
-					Expect(resp.Body).To(MatchJSON(ValidPolicyStr))
-					Expect(resp.Code).To(Equal(http.StatusOK))
-				})
+			It("returns the policy and configuration with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(resp.Body).To(MatchJSON(validCustomMetricsConfigurationStr))
+			})
+		})
+		When("configuration is removed but only policy is provided", func() {
+			BeforeEach(func() {
+				req = setupRequest(ValidPolicyStr, TEST_APP_ID, pathVariables)
+				schedulerStatus = 200
+			})
+			It("returns the policy 200", func() {
+				Expect(resp.Body).To(MatchJSON(ValidPolicyStr))
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 	})
@@ -1048,8 +1013,13 @@ var _ = Describe("PublicApiHandler", func() {
 	})
 })
 
-func setupPolicy(policydb *fakes.FakePolicyDB) {
-	policydb.GetAppPolicyReturns(&models.ScalingPolicy{
+func setupRequest(requestBody, appId string, pathVariables map[string]string) *http.Request {
+	pathVariables["appId"] = appId
+	req, _ := http.NewRequest(http.MethodPut, "", bytes.NewBufferString(requestBody))
+	return req
+}
+func setupPolicy(policyDb *fakes.FakePolicyDB) {
+	policyDb.GetAppPolicyReturns(&models.ScalingPolicy{
 		InstanceMax: 5,
 		InstanceMin: 1,
 		ScalingRules: []*models.ScalingRule{
