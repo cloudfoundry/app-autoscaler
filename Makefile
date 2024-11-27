@@ -4,7 +4,8 @@ MAKEFLAGS := -s
 aes_terminal_font_yellow := \e[38;2;255;255;0m
 aes_terminal_reset := \e[0m
 VERSION ?= 0.0.0-rc.1
-DEST ?= build
+DEST ?= /tmp/build
+MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
@@ -158,7 +159,7 @@ clean:
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy $(MAKEFILE_DIR)/$(DEST)/*.mtar --version-rule ALL -f --delete-services -e $(EXTENSION_FILE)
+	@cf deploy $(DEST)/*.mtar --version-rule ALL -f --delete-services -e $(EXTENSION_FILE)
 
 
 build-extension-file:
@@ -172,11 +173,12 @@ mta-logs:
 
 .PHONY: mta-build
 mta-build: mta-build-clean
-	@echo "bulding mtar file for version: $(VERSION)"
-	@cp mta.tpl.yaml mta.yaml
-	@sed -i 's/VERSION/$(VERSION)/g' mta.yaml
-	@mbt build
-	@mkdir -p "${PWD}/$(DEST)" && mv ${PWD}/mta_archives/com.github.cloudfoundry.app-autoscaler-release_$(VERSION).mtar ${PWD}/$(DEST)/app-autoscaler-release-v$(VERSION).mtar
+	@echo "building mtar file for version: $(VERSION)"
+	cp mta.tpl.yaml mta.yaml
+	sed -i 's/VERSION/$(VERSION)/g' mta.yaml
+	mkdir -p $(DEST)
+	mbt build -t /tmp --mtar $(MTAR_FILENAME)
+	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)
 
 mta-build-clean:
 	rm -rf mta_archives
