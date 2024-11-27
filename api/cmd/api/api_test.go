@@ -25,15 +25,15 @@ var _ = Describe("Api", func() {
 		runner *ApiRunner
 		rsp    *http.Response
 
-		brokerHttpClient        *http.Client
-		healthHttpClient        *http.Client
-		apiHttpClient           *http.Client
-		unifiedServerHttpClient *http.Client
+		brokerHttpClient   *http.Client
+		healthHttpClient   *http.Client
+		apiHttpClient      *http.Client
+		cfServerHttpClient *http.Client
 
-		serverURL        *url.URL
-		brokerURL        *url.URL
-		healthURL        *url.URL
-		unifiedServerURL *url.URL
+		serverURL   *url.URL
+		brokerURL   *url.URL
+		healthURL   *url.URL
+		cfServerURL *url.URL
 
 		vcapPort int
 		err      error
@@ -47,7 +47,7 @@ var _ = Describe("Api", func() {
 		brokerHttpClient = NewServiceBrokerClient()
 		healthHttpClient = &http.Client{}
 		apiHttpClient = NewPublicApiClient()
-		unifiedServerHttpClient = &http.Client{}
+		cfServerHttpClient = &http.Client{}
 
 		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", cfg.Server.Port))
 		Expect(err).NotTo(HaveOccurred())
@@ -58,7 +58,7 @@ var _ = Describe("Api", func() {
 		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", cfg.Health.ServerConfig.Port))
 		Expect(err).NotTo(HaveOccurred())
 
-		unifiedServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
+		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
 
 	})
 	Describe("Api configuration check", func() {
@@ -212,7 +212,7 @@ var _ = Describe("Api", func() {
 			runner.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
-		Context("when a request to query health comes", func() {
+		When("a request to query health comes", func() {
 			It("returns with a 200", func() {
 				rsp, err := healthHttpClient.Get(healthURL.String())
 
@@ -239,7 +239,7 @@ var _ = Describe("Api", func() {
 			runner.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
-		Context("when username and password are incorrect for basic authentication during health check", func() {
+		When("username and password are incorrect for basic authentication during health check", func() {
 			It("should return 401", func() {
 
 				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
@@ -253,7 +253,7 @@ var _ = Describe("Api", func() {
 			})
 		})
 
-		Context("when username and password are correct for basic authentication during health check", func() {
+		When("username and password are correct for basic authentication during health check", func() {
 			It("should return 200", func() {
 
 				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
@@ -279,7 +279,7 @@ var _ = Describe("Api", func() {
 			runner.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
-		Context("when a request to query health comes", func() {
+		When("a request to query health comes", func() {
 			It("returns with a 200", func() {
 				serverURL.Path = "/v1/info"
 				req, err := http.NewRequest(http.MethodGet, serverURL.String(), nil)
@@ -296,7 +296,7 @@ var _ = Describe("Api", func() {
 		})
 	})
 
-	When("running in CF", func() {
+	When("running CF server", func() {
 		BeforeEach(func() {
 			os.Setenv("VCAP_APPLICATION", "{}")
 			os.Setenv("VCAP_SERVICES", getVcapServices())
@@ -311,22 +311,22 @@ var _ = Describe("Api", func() {
 			os.Unsetenv("PORT")
 		})
 
-		It("should start a unified server", func() {
-			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v1/info", unifiedServerURL), nil)
+		It("should start a cf server", func() {
+			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v1/info", cfServerURL), nil)
 			Expect(err).NotTo(HaveOccurred())
 
-			rsp, err = unifiedServerHttpClient.Do(req)
+			rsp, err = cfServerHttpClient.Do(req)
 			Expect(err).ToNot(HaveOccurred())
 
 			bodyBytes, err := io.ReadAll(rsp.Body)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bodyBytes).To(ContainSubstring("Automatically increase or decrease the number of application instances based on a policy you define."))
 
-			req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/catalog", unifiedServerURL), nil)
+			req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/catalog", cfServerURL), nil)
 			Expect(err).NotTo(HaveOccurred())
 			req.SetBasicAuth(username, password)
 
-			rsp, err = unifiedServerHttpClient.Do(req)
+			rsp, err = cfServerHttpClient.Do(req)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 
@@ -334,9 +334,7 @@ var _ = Describe("Api", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bodyBytes).To(ContainSubstring("autoscaler-free-plan-id"))
 		})
-
 	})
-
 })
 
 func getVcapServices() (result string) {

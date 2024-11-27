@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
@@ -80,21 +81,29 @@ func main() {
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB, scalingEngineDB, scalingEngine)
 
 	server := server.NewServer(logger.Session("http-server"), conf, policyDb, scalingEngineDB, schedulerDB, scalingEngine, synchronizer)
-	httpServer, err := server.GetMtlsServer()
+	httpServer, err := server.CreateMtlsServer()
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
 
-	healthServer, err := server.GetHealthServer()
+	healthServer, err := server.CreateHealthServer()
 	if err != nil {
 		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
+
+	xm := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
+	cfServer, err := server.CreateCFServer(xm)
+	if err != nil {
+		logger.Error("failed to create cf server", err)
 		os.Exit(1)
 	}
 
 	members := grouper.Members{
 		{"http_server", httpServer},
 		{"health_server", healthServer},
+		{"cf_server", cfServer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

@@ -6,6 +6,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/apis/scalinghistory"
@@ -30,47 +31,67 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type Server struct {
-	logger          lager.Logger
-	conf            *config.Config
-	policyDB        db.PolicyDB
-	scalingEngineDB db.ScalingEngineDB
-	schedulerDB     db.SchedulerDB
-	scalingEngine   scalingengine.ScalingEngine
-	synchronizer    schedule.ActiveScheduleSychronizer
+	logger              lager.Logger
+	conf                *config.Config
+	policyDB            db.PolicyDB
+	scalingEngineDB     db.ScalingEngineDB
+	schedulerDB         db.SchedulerDB
+	scalingEngine       scalingengine.ScalingEngine
+	synchronizer        schedule.ActiveScheduleSychronizer
+	httpStatusCollector healthendpoint.HTTPStatusCollector
+
+	autoscalerRouter *routes.Router
+	healthRouter     *mux.Router
 }
 
 func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, schedulerDB db.SchedulerDB, scalingEngine scalingengine.ScalingEngine, synchronizer schedule.ActiveScheduleSychronizer) *Server {
 	return &Server{
-		logger:          logger,
-		conf:            conf,
-		policyDB:        policyDB,
-		scalingEngineDB: scalingEngineDB,
-		schedulerDB:     schedulerDB,
-		scalingEngine:   scalingEngine,
-		synchronizer:    synchronizer,
+		logger:              logger,
+		conf:                conf,
+		policyDB:            policyDB,
+		scalingEngineDB:     scalingEngineDB,
+		schedulerDB:         schedulerDB,
+		scalingEngine:       scalingEngine,
+		synchronizer:        synchronizer,
+		httpStatusCollector: healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine"),
+
+		autoscalerRouter: routes.NewRouter(),
 	}
 }
 
-func (s *Server) GetHealthServer() (ifrit.Runner, error) {
-	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine")
-	healthRouter, err := createHealthRouter(s.logger, s.conf, s.policyDB, s.scalingEngineDB, s.schedulerDB, httpStatusCollector)
-	if err != nil {
+func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
+	if err := s.createHealthRouter(); err != nil {
 		return nil, fmt.Errorf("failed to create health router: %w", err)
 	}
 
-	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, healthRouter)
+	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, s.healthRouter)
 }
 
-func (s *Server) GetMtlsServer() (ifrit.Runner, error) {
-	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine")
-	scalingEngineRouter, err := createScalingEngineRouter(s.logger, s.scalingEngineDB, s.scalingEngine, s.synchronizer, httpStatusCollector, s.conf.Server)
+func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
+	scalingEngine, err := s.createScalingEngineRoutes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create scaling engine router: %w", err)
+		return nil, fmt.Errorf("failed to create scaling engine routes: %w", err)
 	}
 
-	//	mainRouter := setupMainRouter(scalingEngineRouter, healthRouter)
+	scalingEngine.Use(am.XFCCAuthenticationMiddleware)
 
-	return helpers.NewHTTPServer(s.logger, s.conf.Server, scalingEngineRouter)
+	if err := s.createHealthRouter(); err != nil {
+		return nil, fmt.Errorf("failed to create health router: %w", err)
+	}
+
+	s.autoscalerRouter.GetRouter().PathPrefix("/v1").Handler(scalingEngine)
+	s.autoscalerRouter.GetRouter().PathPrefix("/health").Handler(s.healthRouter)
+
+	return helpers.NewHTTPServer(s.logger, s.conf.CFServer, s.autoscalerRouter.GetRouter())
+}
+
+func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
+	r, err := s.createScalingEngineRoutes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scaling engine routes: %w", err)
+	}
+
+	return helpers.NewHTTPServer(s.logger, s.conf.Server, r)
 }
 
 func createPrometheusRegistry(policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, schedulerDB db.SchedulerDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {
@@ -91,32 +112,41 @@ func createPrometheusRegistry(policyDB db.PolicyDB, scalingEngineDB db.ScalingEn
 	return promRegistry
 }
 
-func createHealthRouter(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, schedulerDB db.SchedulerDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (*mux.Router, error) {
+func (s *Server) createHealthRouter() error {
 	checkers := []healthendpoint.Checker{}
-	gatherer := createPrometheusRegistry(policyDB, scalingEngineDB, schedulerDB, httpStatusCollector, logger)
-	healthRouter, err := healthendpoint.NewHealthRouter(conf.Health, checkers, logger.Session("health-server"), gatherer, time.Now)
+	gatherer := createPrometheusRegistry(s.policyDB, s.scalingEngineDB, s.schedulerDB, s.httpStatusCollector, s.logger)
+	healthRouter, err := healthendpoint.NewHealthRouter(s.conf.Health, checkers, s.logger.Session("health-server"), gatherer, time.Now)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create health router: %w", err)
+		return err
 	}
-	return healthRouter, nil
+	s.healthRouter = healthRouter
+	return nil
 }
 
-func createScalingEngineRouter(logger lager.Logger, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, synchronizer schedule.ActiveScheduleSychronizer, httpStatusCollector healthendpoint.HTTPStatusCollector, serverConfig helpers.ServerConfig) (*mux.Router, error) {
-	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
+func Liveness(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	w.WriteHeader(http.StatusOK)
+}
 
-	se := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
-	syncHandler := NewSyncHandler(logger, synchronizer)
+func (s *Server) createScalingEngineRoutes() (*mux.Router, error) {
+	se := NewScalingHandler(s.logger, s.scalingEngineDB, s.scalingEngine)
+	syncHandler := NewSyncHandler(s.logger, s.synchronizer)
 
-	r := routes.ScalingEngineRoutes()
+	scalingHistoryHandler, err := newScalingHistoryHandler(s.logger, s.scalingEngineDB)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scaling history handler: %w", err)
+	}
+
+	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(s.httpStatusCollector)
+
+	autoscalerRouter := routes.NewRouter()
+	r := autoscalerRouter.CreateScalingEngineRoutes()
+
 	r.Use(otelmux.Middleware("scalingengine"))
 
 	r.Use(httpStatusCollectMiddleware.Collect)
+	r.Get(routes.LivenessRouteName).Handler(VarsFunc(Liveness))
 	r.Get(routes.ScaleRouteName).Handler(VarsFunc(se.Scale))
 
-	scalingHistoryHandler, err := newScalingHistoryHandler(logger, scalingEngineDB)
-	if err != nil {
-		return nil, err
-	}
 	r.Get(routes.GetScalingHistoriesRouteName).Handler(scalingHistoryHandler)
 
 	r.Get(routes.SetActiveScheduleRouteName).Handler(VarsFunc(se.StartActiveSchedule))
@@ -126,14 +156,6 @@ func createScalingEngineRouter(logger lager.Logger, scalingEngineDB db.ScalingEn
 	r.Get(routes.SyncActiveSchedulesRouteName).Handler(VarsFunc(syncHandler.Sync))
 	return r, nil
 }
-
-//  func setupMainRouter(r *mux.Router, healthRouter *mux.Router) *mux.Router {
-//  	mainRouter := mux.NewRouter()
-//  	mainRouter.PathPrefix("/v1").Handler(r)
-//  	mainRouter.PathPrefix("/health").Handler(healthRouter)
-//  	mainRouter.PathPrefix("/").Handler(healthRouter)
-//  	return mainRouter
-//  }
 
 func newScalingHistoryHandler(logger lager.Logger, scalingEngineDB db.ScalingEngineDB) (http.Handler, error) {
 	scalingHistoryHandler, err := NewScalingHistoryHandler(logger, scalingEngineDB)

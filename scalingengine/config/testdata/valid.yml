@@ -9,6 +9,13 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+
+cf_server:
+  port: 2222
+  xfcc:
+    valid_org_guid: valid_org_guid
+    valid_space_guid: valid_space_guid
+
 health:
   server_config:
     port: 9999

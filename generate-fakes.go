@@ -26,3 +26,4 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_log_cache_client.go ./eventgenerator/metric LogCacheClient
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_vcap_configuration_reader.go ./configutil VCAPConfigurationReader
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_broker_server.go ./api/brokerserver BrokerServer
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_xfcc_auth_middleware.go ./helpers/auth XFCCAuthMiddleware

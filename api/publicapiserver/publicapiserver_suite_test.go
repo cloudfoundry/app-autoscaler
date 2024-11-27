@@ -44,6 +44,8 @@ const (
 var (
 	serverProcess ifrit.Process
 	serverUrl     *url.URL
+	cfServerUrl   *url.URL
+	healthUrl     *url.URL
 	conf          *config.Config
 
 	infoBytes  []byte
@@ -73,7 +75,6 @@ var (
 	fakeBrokerServer    *fakes.FakeBrokerServer
 	checkBindingFunc    api.CheckBindingFunc
 	hasBinding          = true
-	apiPort             = 0
 )
 
 func TestPublicapiserver(t *testing.T) {
@@ -82,13 +83,60 @@ func TestPublicapiserver(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	apiPort = 12000 + GinkgoParallelProcess()
 	scalingEngineServer = ghttp.NewServer()
 	metricsCollectorServer = ghttp.NewServer()
 	eventGeneratorServer = ghttp.NewServer()
 	schedulerServer = ghttp.NewServer()
 
-	conf = createConfig(apiPort)
+	testCertDir := testhelpers.TestCertFolder()
+
+	conf = &config.Config{
+		Logging: helpers.LoggingConfig{
+			Level: "debug",
+		},
+		Server: helpers.ServerConfig{
+			Port: 12000 + GinkgoParallelProcess(),
+		},
+		Health: helpers.HealthConfig{
+			ServerConfig: helpers.ServerConfig{
+				Port: 13000 + GinkgoParallelProcess(),
+			},
+		},
+		VCAPServer: helpers.ServerConfig{
+			Port: 14000 + GinkgoParallelProcess(),
+		},
+		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",
+		Scheduler: config.SchedulerConfig{
+			SchedulerURL: schedulerServer.URL(),
+		},
+		InfoFilePath: "../exampleconfig/info-file.json",
+		EventGenerator: config.EventGeneratorConfig{
+			EventGeneratorUrl: eventGeneratorServer.URL(),
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		ScalingEngine: config.ScalingEngineConfig{
+			ScalingEngineUrl: scalingEngineServer.URL(),
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		MetricsForwarder: config.MetricsForwarderConfig{
+			MetricsForwarderUrl: "http://localhost:8088",
+		},
+		CF: cf.Config{
+			API:          "http://api.bosh-lite.com",
+			ClientID:     CLIENT_ID,
+			Secret:       CLIENT_SECRET,
+			ClientConfig: cf.ClientConfig{SkipSSLValidation: true},
+		},
+		APIClientId: "api-client-id",
+	}
 
 	// verify MetricCollector certs
 	_, err := os.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
@@ -121,7 +169,13 @@ var _ = BeforeSuite(func() {
 	fakeCredentials = &fakes.FakeCredentials{}
 	fakeBrokerServer = &fakes.FakeBrokerServer{}
 
-	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
+	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
+	Expect(err).NotTo(HaveOccurred())
+
+	cfServerUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.VCAPServer.Port))
+	Expect(err).NotTo(HaveOccurred())
+
+	healthUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Health.ServerConfig.Port))
 	Expect(err).NotTo(HaveOccurred())
 
 	httpClient = &http.Client{}
@@ -167,51 +221,4 @@ func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse 
 	err := json.NewDecoder(resp.Body).Decode(&errResp)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(errResp).To(Equal(errResponse))
-}
-
-func createConfig(apiServerPort int) *config.Config {
-	testCertDir := testhelpers.TestCertFolder()
-	return &config.Config{
-		Logging: helpers.LoggingConfig{
-			Level: "debug",
-		},
-		Server: helpers.ServerConfig{
-			Port: apiServerPort,
-		},
-
-		VCAPServer: helpers.ServerConfig{
-			Port: apiServerPort,
-		},
-		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",
-		Scheduler: config.SchedulerConfig{
-			SchedulerURL: schedulerServer.URL(),
-		},
-		InfoFilePath: "../exampleconfig/info-file.json",
-		EventGenerator: config.EventGeneratorConfig{
-			EventGeneratorUrl: eventGeneratorServer.URL(),
-			TLSClientCerts: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		ScalingEngine: config.ScalingEngineConfig{
-			ScalingEngineUrl: scalingEngineServer.URL(),
-			TLSClientCerts: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		MetricsForwarder: config.MetricsForwarderConfig{
-			MetricsForwarderUrl: "http://localhost:8088",
-		},
-		CF: cf.Config{
-			API:          "http://api.bosh-lite.com",
-			ClientID:     CLIENT_ID,
-			Secret:       CLIENT_SECRET,
-			ClientConfig: cf.ClientConfig{SkipSSLValidation: true},
-		},
-		APIClientId: "api-client-id",
-	}
 }

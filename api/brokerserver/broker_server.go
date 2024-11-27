@@ -63,7 +63,7 @@ func (am *AuthMiddleware) authenticate(r *http.Request) bool {
 }
 
 type BrokerServer interface {
-	GetServer() (ifrit.Runner, error)
+	CreateServer() (ifrit.Runner, error)
 	GetRouter() (*chi.Mux, error)
 }
 
@@ -89,7 +89,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingDB db.Bind
 	}
 }
 
-func (s *brokerServer) GetServer() (ifrit.Runner, error) {
+func (s *brokerServer) CreateServer() (ifrit.Runner, error) {
 	router, err := s.GetRouter()
 	if err != nil {
 		return nil, err

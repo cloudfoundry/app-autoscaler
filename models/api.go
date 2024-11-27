@@ -9,6 +9,11 @@ const (
 	X509Certificate = "x509"
 )
 
+type XFCCAuth struct {
+	ValidOrgGuid   string `yaml:"valid_org_guid"`
+	ValidSpaceGuid string `yaml:"valid_space_guid"`
+}
+
 type BrokerContext struct {
 	OrgGUID   string `json:"organization_guid"`
 	SpaceGUID string `json:"space_guid"`

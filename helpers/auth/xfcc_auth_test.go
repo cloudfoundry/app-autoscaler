@@ -1,18 +1,14 @@
 package auth_test
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
-	"math/big"
 	"net/http"
 	"net/http/httptest"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
@@ -45,7 +41,11 @@ var _ = Describe("XfccAuthMiddleware", func() {
 	JustBeforeEach(func() {
 		logger := lagertest.NewTestLogger("xfcc-auth-test")
 		buffer = logger.Buffer()
-		xm := auth.NewXfccAuthMiddleware(logger, orgGuid, spaceGuid)
+		xfccAuth := models.XFCCAuth{
+			ValidOrgGuid:   orgGuid,
+			ValidSpaceGuid: spaceGuid,
+		}
+		xm := auth.NewXfccAuthMiddleware(logger, xfccAuth)
 
 		server = httptest.NewServer(xm.XFCCAuthenticationMiddleware(handler))
 
@@ -82,7 +82,7 @@ var _ = Describe("XfccAuthMiddleware", func() {
 
 	When("xfcc cert matches org and space guids", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = generateClientCert(orgGuid, spaceGuid)
+			xfccClientCert, err = testhelpers.GenerateClientCert(orgGuid, spaceGuid)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe("XfccAuthMiddleware", func() {
 
 	When("xfcc cert does not match org guid", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = generateClientCert("wrong-org-guid", spaceGuid)
+			xfccClientCert, err = testhelpers.GenerateClientCert("wrong-org-guid", spaceGuid)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -106,7 +106,7 @@ var _ = Describe("XfccAuthMiddleware", func() {
 
 	When("xfcc cert does not match space guid", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = generateClientCert(orgGuid, "wrong-space-guid")
+			xfccClientCert, err = testhelpers.GenerateClientCert(orgGuid, "wrong-space-guid")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -116,38 +116,3 @@ var _ = Describe("XfccAuthMiddleware", func() {
 		})
 	})
 })
-
-// generateClientCert generates a client certificate with the specified spaceGUID and orgGUID
-// included in the organizational unit string.
-func generateClientCert(orgGUID, spaceGUID string) ([]byte, error) {
-	// Generate a random serial number for the certificate
-	//
-	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	if err != nil {
-		return nil, err
-	}
-
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new X.509 certificate template
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization:       []string{"My Organization"},
-			OrganizationalUnit: []string{fmt.Sprintf("space:%s org:%s", spaceGUID, orgGUID)},
-		},
-	}
-	// Generate the certificate
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// Encode the certificate to PEM format
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-
-	return certPEM, nil
-}

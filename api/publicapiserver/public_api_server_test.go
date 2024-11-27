@@ -85,7 +85,7 @@ var _ = Describe("PublicApiServer", func() {
 		ginkgomon_v2.Interrupt(serverProcess)
 	})
 
-	Describe("GetMtlsServer", func() {
+	Describe("CreateMtlsServer", func() {
 		JustBeforeEach(func() {
 			eventGeneratorResponse = []models.AppMetric{
 				{
@@ -101,12 +101,16 @@ var _ = Describe("PublicApiServer", func() {
 				fakeBindingDB, fakeCredentials, checkBindingFunc, fakeCFClient,
 				httpStatusCollector, fakeRateLimiter, fakeBrokerServer)
 
-			err := publicApiServer.Setup()
-			Expect(err).NotTo(HaveOccurred())
-
-			httpServer, err := publicApiServer.GetMtlsServer()
+			httpServer, err := publicApiServer.CreateMtlsServer()
 			Expect(err).NotTo(HaveOccurred())
 			serverProcess = ginkgomon_v2.Invoke(httpServer)
+		})
+
+		Context("when calling health endpoint", func() {
+			It("should succeed", func() {
+				res := verifyResponse(httpClient, serverUrl, "/health", nil, http.MethodGet, "", http.StatusOK)
+				Expect(res).To(ContainSubstring("alive"))
+			})
 		})
 
 		Describe("Protected Routes", func() {
@@ -344,6 +348,7 @@ var _ = Describe("PublicApiServer", func() {
 						schedulerStatus = http.StatusOK
 					})
 					It("should fail with 401", func() {
+
 						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
 							map[string]string{"Authorization": TEST_INVALID_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
 					})
@@ -449,7 +454,25 @@ var _ = Describe("PublicApiServer", func() {
 		})
 	})
 
-	Describe("GetUnifiedServer", func() {
+	Describe("CreateHealthServer", func() {
+		JustBeforeEach(func() {
+			publicApiServer := publicapiserver.NewPublicApiServer(
+				lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB,
+				fakeBindingDB, fakeCredentials, checkBindingFunc, fakeCFClient,
+				httpStatusCollector, fakeRateLimiter, fakeBrokerServer)
+
+			httpServer, err := publicApiServer.CreateHealthServer()
+			Expect(err).NotTo(HaveOccurred())
+			serverProcess = ginkgomon_v2.Invoke(httpServer)
+		})
+
+		It("should succeed", func() {
+			res := verifyResponse(httpClient, healthUrl, "/health", nil, http.MethodGet, "", http.StatusOK)
+			Expect(res).To(ContainSubstring("autoscaler_golangapiserver_bindingDB_idle"))
+		})
+	})
+
+	Describe("CreateCFServer", func() {
 		JustBeforeEach(func() {
 			eventGeneratorResponse = []models.AppMetric{
 				{
@@ -464,23 +487,22 @@ var _ = Describe("PublicApiServer", func() {
 				lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB,
 				fakeBindingDB, fakeCredentials, checkBindingFunc, fakeCFClient,
 				httpStatusCollector, fakeRateLimiter, fakeBrokerServer)
-			err := publicApiServer.Setup()
-			Expect(err).NotTo(HaveOccurred())
 
-			httpServer, err := publicApiServer.GetUnifiedServer()
+			httpServer, err := publicApiServer.CreateCFServer()
 			Expect(err).NotTo(HaveOccurred())
 			serverProcess = ginkgomon_v2.Invoke(httpServer)
 		})
 
 		Context("when calling info endpoint", func() {
 			It("should succeed", func() {
-				verifyResponse(httpClient, serverUrl, "/v1/info", nil, http.MethodGet, "", http.StatusOK)
+				verifyResponse(httpClient, cfServerUrl, "/v1/info", nil, http.MethodGet, "", http.StatusOK)
 			})
 		})
 
 		Context("when calling health endpoint", func() {
 			It("should succeed", func() {
-				verifyResponse(httpClient, serverUrl, "/health", nil, http.MethodGet, "", http.StatusOK)
+				res := verifyResponse(httpClient, cfServerUrl, "/health", nil, http.MethodGet, "", http.StatusOK)
+				Expect(res).To(ContainSubstring("alive"))
 			})
 		})
 
@@ -497,20 +519,20 @@ var _ = Describe("PublicApiServer", func() {
 			})
 
 			It("should health, broker and api on the same server", func() {
-				res := verifyResponse(httpClient, serverUrl, "/v2/catalog", nil, http.MethodGet, "", http.StatusOK)
+				res := verifyResponse(httpClient, cfServerUrl, "/v2/catalog", nil, http.MethodGet, "", http.StatusOK)
 				Expect(res).To(ContainSubstring("Service Broker"))
 			})
 		})
 	})
 })
 
-func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, headers map[string]string, httpRequestMethod string, httpRequestBody string, expectResponseStatusCode int) string {
-	serverUrl.Path = path
+func verifyResponse(httpClient *http.Client, url *url.URL, path string, headers map[string]string, httpRequestMethod string, httpRequestBody string, expectResponseStatusCode int) string {
+	url.Path = path
 	var body io.Reader = nil
 	if httpRequestBody != "" {
 		body = strings.NewReader(httpRequestBody)
 	}
-	req, err := http.NewRequest(httpRequestMethod, serverUrl.String(), body)
+	req, err := http.NewRequest(httpRequestMethod, url.String(), body)
 	if len(headers) > 0 {
 		for headerName, headerValue := range headers {
 			req.Header.Set(headerName, headerValue)

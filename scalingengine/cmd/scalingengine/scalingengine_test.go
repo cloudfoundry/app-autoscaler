@@ -12,10 +12,13 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gexec"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"github.com/onsi/gomega/gbytes"
 
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -29,12 +32,19 @@ var _ = Describe("Main", func() {
 
 		healthURL *url.URL
 		serverURL *url.URL
+
+		cfServerURL *url.URL
 	)
 
 	BeforeEach(func() {
 		runner = NewScalingEngineRunner()
 		serverURL, err = url.Parse("https://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
+		Expect(err).ToNot(HaveOccurred())
+
 		healthURL, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Health.ServerConfig.Port))
+		Expect(err).ToNot(HaveOccurred())
+
+		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf.CFServer.Port))
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -47,7 +57,7 @@ var _ = Describe("Main", func() {
 	})
 
 	Describe("with a correct config", func() {
-		Context("when starting 1 scaling engine instance", func() {
+		When("starting 1 scaling engine instance", func() {
 			It("scaling engine should start", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.startCheck))
 				Consistently(runner.Session).ShouldNot(Exit())
@@ -58,7 +68,7 @@ var _ = Describe("Main", func() {
 			})
 		})
 
-		Context("when starting multiple scaling engine instances", func() {
+		When("starting multiple scaling engine instances", func() {
 			var (
 				secondRunner *ScalingEngineRunner
 			)
@@ -69,6 +79,7 @@ var _ = Describe("Main", func() {
 
 				secondConf.Server.Port += 500
 				secondConf.Health.ServerConfig.Port += 500
+				secondConf.CFServer.Port += 500
 				secondRunner.configPath = writeConfig(&secondConf).Name()
 				secondRunner.Start()
 			})
@@ -158,7 +169,7 @@ var _ = Describe("Main", func() {
 			Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
 		})
 
-		Context("when a request to trigger scaling comes", func() {
+		When("a request to trigger scaling comes", func() {
 			It("returns with a 200", func() {
 				body, err := json.Marshal(models.Trigger{Adjustment: "+1"})
 				Expect(err).NotTo(HaveOccurred())
@@ -172,7 +183,7 @@ var _ = Describe("Main", func() {
 			})
 		})
 
-		Context("when a request to retrieve scaling history comes", func() {
+		When("a request to retrieve scaling history comes", func() {
 			It("returns with a 200", func() {
 				serverURL.Path = fmt.Sprintf("/v1/apps/%s/scaling_histories", appId)
 				req, err := http.NewRequest(http.MethodGet, serverURL.String(), nil)
@@ -221,7 +232,7 @@ var _ = Describe("Main", func() {
 			Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
 		})
 
-		Context("when a request to query health comes", func() {
+		When("a request to query health comes", func() {
 			It("returns with a 200", func() {
 				rsp, err := httpClient.Get(healthURL.String())
 				Expect(err).NotTo(HaveOccurred())
@@ -249,7 +260,7 @@ var _ = Describe("Main", func() {
 			Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
 		})
 
-		Context("when username and password are incorrect for basic authentication during health check", func() {
+		When("username and password are incorrect for basic authentication during health check", func() {
 			It("should return 401", func() {
 				req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
@@ -262,7 +273,7 @@ var _ = Describe("Main", func() {
 			})
 		})
 
-		Context("when username and password are correct for basic authentication during health check", func() {
+		When("username and password are correct for basic authentication during health check", func() {
 			It("should return 200", func() {
 
 				req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
@@ -286,7 +297,7 @@ var _ = Describe("Main", func() {
 			Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
 		})
 
-		Context("when username and password are incorrect for basic authentication during health check", func() {
+		When("username and password are incorrect for basic authentication during health check", func() {
 			It("should return 401", func() {
 
 				req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
@@ -300,7 +311,7 @@ var _ = Describe("Main", func() {
 			})
 		})
 
-		Context("when username and password are correct for basic authentication during health check", func() {
+		When("username and password are correct for basic authentication during health check", func() {
 			It("should return 200", func() {
 
 				req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
@@ -314,4 +325,34 @@ var _ = Describe("Main", func() {
 			})
 		})
 	})
+	When("running CF server", func() {
+
+		JustBeforeEach(func() {
+			Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
+		})
+		When("running outside cf", func() {
+			It("/v1/liveness should return 200", func() {
+				cfServerURL.Path = "/v1/liveness"
+
+				req, err := http.NewRequest(http.MethodGet, cfServerURL.String(), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				setXFCCCertHeader(req, conf.CFServer.XFCC.ValidOrgGuid, conf.CFServer.XFCC.ValidSpaceGuid)
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+
+			})
+		})
+	})
 })
+
+func setXFCCCertHeader(req *http.Request, orgGuid, spaceGuid string) {
+	xfccClientCert, err := GenerateClientCert(orgGuid, spaceGuid)
+	block, _ := pem.Decode(xfccClientCert)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(block).ShouldNot(BeNil())
+	req.Header.Add("X-Forwarded-Client-Cert", base64.StdEncoding.EncodeToString(block.Bytes))
+}

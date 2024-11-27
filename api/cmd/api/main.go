@@ -94,31 +94,25 @@ func main() {
 		credentialProvider, checkBindingFunc, cfClient, httpStatusCollector,
 		rateLimiter, brokerServer)
 
-	err = publicApiServer.Setup()
-	if err != nil {
-		logger.Error("failed to setup public api server", err)
-		os.Exit(1)
-	}
-
-	mtlsServer, err := publicApiServer.GetMtlsServer()
+	mtlsServer, err := publicApiServer.CreateMtlsServer()
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
 
-	healthServer, err := publicApiServer.GetHealthServer()
+	healthServer, err := publicApiServer.CreateHealthServer()
 	if err != nil {
 		logger.Error("failed to create health http server", err)
 		os.Exit(1)
 	}
 
-	brokerHttpServer, err := brokerServer.GetServer()
+	brokerHttpServer, err := brokerServer.CreateServer()
 	if err != nil {
 		logger.Error("failed to create broker http server", err)
 		os.Exit(1)
 	}
 
-	unifiedServer, err := publicApiServer.GetUnifiedServer()
+	unifiedServer, err := publicApiServer.CreateCFServer()
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)

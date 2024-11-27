@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
 )
 
@@ -16,13 +17,17 @@ var ErrorWrongSpace = errors.New("space guid is wrong")
 var ErrorWrongOrg = errors.New("org guid is wrong")
 var ErrXFCCHeaderNotFound = errors.New("xfcc header not found")
 
-type XFCCAuthMiddleware struct {
+type XFCCAuthMiddleware interface {
+	XFCCAuthenticationMiddleware(next http.Handler) http.Handler
+}
+
+type xfccAuthMiddleware struct {
 	logger    lager.Logger
 	spaceGuid string
 	orgGuid   string
 }
 
-func (m *XFCCAuthMiddleware) checkAuth(r *http.Request) error {
+func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
 	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
 	if xfccHeader == "" {
 		return ErrXFCCHeaderNotFound
@@ -49,7 +54,7 @@ func (m *XFCCAuthMiddleware) checkAuth(r *http.Request) error {
 	return nil
 }
 
-func (m *XFCCAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
+func (m *xfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := m.checkAuth(r)
 
@@ -63,11 +68,11 @@ func (m *XFCCAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) htt
 	})
 }
 
-func NewXfccAuthMiddleware(logger lager.Logger, orgGuid, spaceGuid string) *XFCCAuthMiddleware {
-	return &XFCCAuthMiddleware{
+func NewXfccAuthMiddleware(logger lager.Logger, xfccAuth models.XFCCAuth) XFCCAuthMiddleware {
+	return &xfccAuthMiddleware{
 		logger:    logger,
-		orgGuid:   orgGuid,
-		spaceGuid: spaceGuid,
+		orgGuid:   xfccAuth.ValidOrgGuid,
+		spaceGuid: xfccAuth.ValidSpaceGuid,
 	}
 }
 

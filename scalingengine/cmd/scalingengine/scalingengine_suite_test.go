@@ -35,8 +35,6 @@ func TestScalingengine(t *testing.T) {
 var (
 	enginePath       string
 	conf             config.Config
-	port             int
-	healthport       int
 	configFile       *os.File
 	ccUAA            *mocks.Server
 	appId            string
@@ -68,17 +66,20 @@ var _ = SynchronizedBeforeSuite(
 			Secret:   "autoscaler_client_secret",
 		}
 
-		port = 7000 + GinkgoParallelProcess()
-		healthport = 8000 + GinkgoParallelProcess()
 		testCertDir := "../../../../../test-certs"
 
 		verifyCertExistence(testCertDir)
 
-		conf.Server.Port = port
+		// Set services port
+		conf.Server.Port = 7000 + GinkgoParallelProcess()
+		conf.Health.ServerConfig.Port = 8000 + GinkgoParallelProcess()
+		conf.CFServer.Port = 9000 + GinkgoParallelProcess()
+		conf.CFServer.XFCC.ValidOrgGuid = "org-guid"
+		conf.CFServer.XFCC.ValidSpaceGuid = "space-guid"
+
 		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
-		conf.Health.ServerConfig.Port = healthport
 		conf.Logging.Level = "debug"
 
 		dbUrl := GetDbUrl()
