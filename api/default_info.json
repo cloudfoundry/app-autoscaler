@@ -1,8 +1,6 @@
-
-
 {
   "name": "Autoscaler",
-  "build": "14.3.0",
+  "build": "14.5.0",
   "support": "https://github.com/cloudfoundry/app-autoscaler-release",
   "description": "Automatically increase or decrease the number of application instances based on a policy you define."
-} 
+}
