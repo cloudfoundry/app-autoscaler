@@ -41,9 +41,10 @@ type (
 	}
 
 	IntrospectionResponse struct {
-		Active   bool   `json:"active"`
-		Email    string `json:"email"`
-		ClientId string `json:"client_id"`
+		Active   bool     `json:"active"`
+		Email    string   `json:"email"`
+		ClientId string   `json:"client_id"`
+		Scopes   []string `json:"scope"`
 	}
 
 	AuthClient interface {
@@ -297,42 +298,50 @@ func (c *Client) IsTokenAuthorized(token, clientId string) (bool, error) {
 	return c.CtxClient.IsTokenAuthorized(context.Background(), token, clientId)
 }
 func (c *CtxClient) IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error) {
-	endpoints, err := c.GetEndpoints(ctx)
+	introspectionResponse, err := c.introspectToken(ctx, token)
 	if err != nil {
 		return false, err
+	}
+	if introspectionResponse.Active && introspectionResponse.ClientId == clientId {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (c *CtxClient) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
+	endpoints, err := c.GetEndpoints(ctx)
+	if err != nil {
+		return nil, err
 	}
 	formData := url.Values{"token": {token}}
 	tokenURL := endpoints.Uaa.Url + PathIntrospectToken
 	request, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(formData.Encode()))
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	request.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
 	resp, err := c.Client.Do(request)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("received status code %v while calling /introspect endpoint", resp.Status)
+		return nil, fmt.Errorf("received status code %v while calling /introspect endpoint", resp.Status)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	introspectionResponse := &IntrospectionResponse{}
 	err = json.Unmarshal(responseBody, introspectionResponse)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	if introspectionResponse.Active && introspectionResponse.ClientId == clientId {
-		return true, nil
-	}
-
-	return false, nil
+	return introspectionResponse, nil
 }

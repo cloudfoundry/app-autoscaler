@@ -726,6 +726,6 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		ServicePlan("autoscaler-free-plan-id").
 		Info(fakeCCNOAAUAA.URL()).
 		OauthToken(testUserToken).
-		CheckToken(testUserScope).
+		Introspect(testUserScope).
 		UserInfo(http.StatusOK, testUserId)
 }

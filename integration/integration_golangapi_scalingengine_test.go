@@ -91,7 +91,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).CheckToken(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).Introspect(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {

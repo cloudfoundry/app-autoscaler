@@ -158,8 +158,8 @@ func (a AddMock) UserInfo(statusCode int, testUserId string) AddMock {
 	return a
 }
 
-func (a AddMock) CheckToken(testUserScope []string) AddMock {
-	a.server.RouteToHandler(http.MethodPost, "/check_token",
+func (a AddMock) Introspect(testUserScope []string) AddMock {
+	a.server.RouteToHandler(http.MethodPost, "/introspect",
 		ghttp.RespondWithJSONEncoded(http.StatusOK,
 			struct {
 				Scope []string `json:"scope"`

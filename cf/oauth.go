@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"code.cloudfoundry.org/lager/v3"
 )
@@ -60,12 +58,12 @@ func (c *Client) IsUserAdmin(userToken string) (bool, error) {
 	return c.CtxClient.IsUserAdmin(context.Background(), userToken)
 }
 func (c *CtxClient) IsUserAdmin(ctx context.Context, userToken string) (bool, error) {
-	scopes, err := c.getUserScope(ctx, userToken)
+	introspectionResponse, err := c.introspectToken(ctx, userToken)
 	if err != nil {
 		return false, err
 	}
 
-	for _, scope := range scopes {
+	for _, scope := range introspectionResponse.Scopes {
 		if scope == CCAdminScope {
 			c.logger.Info("user is cc admin")
 			return true, nil
@@ -73,42 +71,6 @@ func (c *CtxClient) IsUserAdmin(ctx context.Context, userToken string) (bool, er
 	}
 
 	return false, nil
-}
-
-func (c *CtxClient) getUserScope(ctx context.Context, userToken string) ([]string, error) {
-	userScopeEndpoint, err := c.getUserScopeEndpoint(ctx, userToken)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", userScopeEndpoint, nil)
-	if err != nil {
-		c.logger.Error("Failed to create getuserscope request", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
-		return nil, err
-	}
-	req.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
-
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		c.logger.Error("Failed to getuserscope, request failed", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
-		return nil, err
-	}
-
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Failed to get user scope", nil, lager.Data{"userScopeEndpoint": userScopeEndpoint, "statusCode": resp.StatusCode})
-		return nil, fmt.Errorf("Failed to get user scope, statusCode : %v", resp.StatusCode)
-	}
-
-	userScope := struct {
-		Scope []string `json:"scope"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&userScope)
-	if err != nil {
-		c.logger.Error("Failed to parse user scope response body", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
-		return nil, err
-	}
-	return userScope.Scope, nil
 }
 
 func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, error) {
@@ -166,16 +128,4 @@ func (c *CtxClient) getSpaceId(ctx context.Context, appId Guid) (SpaceId, error)
 	}
 
 	return spaceId, nil
-}
-
-func (c *CtxClient) getUserScopeEndpoint(ctx context.Context, userToken string) (string, error) {
-	parameters := url.Values{}
-	parameters.Add("token", strings.Split(userToken, " ")[1])
-
-	endpoints, err := c.GetEndpoints(ctx)
-	if err != nil {
-		return "", err
-	}
-	userScopeEndpoint := endpoints.Uaa.Url + "/check_token?" + parameters.Encode()
-	return userScopeEndpoint, nil
 }

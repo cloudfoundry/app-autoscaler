@@ -132,7 +132,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).CheckToken(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).Introspect(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
 			})
 			Context("Create policy", func() {
 				It("should error with status code 401", func() {

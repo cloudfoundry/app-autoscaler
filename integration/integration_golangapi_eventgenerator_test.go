@@ -89,7 +89,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).CheckToken(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
+				fakeCCNOAAUAA.Add().Info(fakeCCNOAAUAA.URL()).Introspect(testUserScope).UserInfo(http.StatusUnauthorized, "ERR")
 			})
 			It("should error with status code 401", func() {
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer], pathVariables,

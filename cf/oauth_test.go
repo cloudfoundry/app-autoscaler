@@ -69,7 +69,7 @@ var _ = Describe("Oauth", func() {
 		fakeCCServer = mocks.NewServer()
 		fakeTokenServer = mocks.NewServer()
 		fakeTokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWithJSONEncodedPtr(&userInfoStatus, &userInfoResponse))
-		fakeTokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWithJSONEncodedPtr(&userScopeStatus, &userScopeResponse))
+		fakeTokenServer.RouteToHandler(http.MethodPost, "/introspect", ghttp.RespondWithJSONEncodedPtr(&userScopeStatus, &userScopeResponse))
 		fakeTokenServer.RouteToHandler("POST", cf.PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
 			AccessToken: "test-access-token",
 			ExpiresIn:   12000,
@@ -265,13 +265,13 @@ var _ = Describe("Oauth", func() {
 			It("should return false", func() {
 				Expect(isUserAdminFlag).To(BeFalse())
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Failed to get user scope, statusCode : 400"))
+				Expect(err).To(MatchError(ContainSubstring("400")))
 			})
 		})
 
 		Context("userscope response is not in json format", func() {
 			BeforeEach(func() {
-				fakeTokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWith(http.StatusOK, "non-json-response"))
+				fakeTokenServer.RouteToHandler(http.MethodPost, "/introspect", ghttp.RespondWith(http.StatusOK, "non-json-response"))
 			})
 			It("should error", func() {
 				Expect(isUserAdminFlag).To(BeFalse())

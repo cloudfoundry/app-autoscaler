@@ -262,7 +262,7 @@ var _ = Describe("Cf cloud controller", func() {
 			BeforeEach(func() {
 				testUserScope := []string{"cloud_controller.admin"}
 				mocks.Add().Info(mocks.URL())
-				mocks.Add().CheckToken(testUserScope).OauthToken("a-test-access-token")
+				mocks.Add().Introspect(testUserScope).OauthToken("a-test-access-token")
 				setCfcClient(0, mocks.URL())
 				DeferCleanup(mocks.Close)
 			})
