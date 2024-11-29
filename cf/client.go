@@ -320,7 +320,12 @@ func (c *CtxClient) introspectToken(ctx context.Context, token string) (*Introsp
 	if err != nil {
 		return nil, err
 	}
-	request.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
+
+	err = c.addAuth(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
 	resp, err := c.Client.Do(request)
@@ -344,4 +349,14 @@ func (c *CtxClient) introspectToken(ctx context.Context, token string) (*Introsp
 	}
 
 	return introspectionResponse, nil
+}
+
+func (c *CtxClient) addAuth(ctx context.Context, req *http.Request) error {
+	tokens, err := c.GetTokens(ctx)
+	if err != nil {
+		return fmt.Errorf("get token failed: %w", err)
+	}
+
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
+	return nil
 }
