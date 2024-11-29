@@ -134,7 +134,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 
 	policy, errResults := h.policyValidator.ParseAndValidatePolicy(policyBytes)
 	if errResults != nil {
-		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults})
+		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults, "policy": string(policyBytes)})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 		return
 	}
