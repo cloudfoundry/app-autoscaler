@@ -5,9 +5,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net/http"
 )
 
 // generateClientCert generates a client certificate with the specified spaceGUID and orgGUID
@@ -43,4 +45,16 @@ func GenerateClientCert(orgGUID, spaceGUID string) ([]byte, error) {
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 
 	return certPEM, nil
+}
+
+func SetXFCCCertHeader(req *http.Request, orgGuid, spaceGuid string) error {
+	xfccClientCert, err := GenerateClientCert(orgGuid, spaceGuid)
+	if err != nil {
+		return err
+	}
+
+	block, _ := pem.Decode(xfccClientCert)
+
+	req.Header.Add("X-Forwarded-Client-Cert", base64.StdEncoding.EncodeToString(block.Bytes))
+	return nil
 }

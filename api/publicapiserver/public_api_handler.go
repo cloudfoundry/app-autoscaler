@@ -275,7 +275,18 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	}
 
 	pathFn := func() string {
-		path, _ := routes.EventGeneratorRoutes().Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
+		r := routes.NewRouter()
+		router := r.CreateEventGeneratorRoutes()
+		if router == nil {
+			panic("Failed to create event generator routes")
+		}
+
+		route := router.Get(routes.GetAggregatedMetricHistoriesRouteName)
+		path, err := route.URLPath("appid", appId, "metrictype", metricType)
+		if err != nil {
+			logger.Error("Failed to create path", err)
+			panic(err)
+		}
 		return h.conf.EventGenerator.EventGeneratorUrl + path.RequestURI() + "?" + parameters.Encode()
 	}
 	proxyRequest(pathFn, h.eventGeneratorClient.Get, w, req.URL, parameters, "metrics history from eventgenerator", logger)

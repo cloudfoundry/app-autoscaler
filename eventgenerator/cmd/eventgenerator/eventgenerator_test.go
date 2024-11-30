@@ -10,7 +10,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,8 +25,9 @@ var _ = Describe("Eventgenerator", func() {
 		httpClientForEventGenerator *http.Client
 		httpClientForHealth         *http.Client
 
-		serverURL *url.URL
-		healthURL *url.URL
+		serverURL   *url.URL
+		healthURL   *url.URL
+		cfServerURL *url.URL
 
 		err error
 	)
@@ -34,25 +35,28 @@ var _ = Describe("Eventgenerator", func() {
 	BeforeEach(func() {
 		runner = NewEventGeneratorRunner()
 
-		httpClientForEventGenerator = testhelpers.NewEventGeneratorClient()
+		httpClientForEventGenerator = NewEventGeneratorClient()
 		httpClientForHealth = &http.Client{}
 
 		serverURL, err = url.Parse("https://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
-		healthURL, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Health.ServerConfig.Port))
-
 		Expect(err).ToNot(HaveOccurred())
 
+		healthURL, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Health.ServerConfig.Port))
+		Expect(err).ToNot(HaveOccurred())
+
+		cfServerURL, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.CFServer.Port))
+		Expect(err).ToNot(HaveOccurred())
+
+	})
+
+	JustBeforeEach(func() {
+		runner.Start()
 	})
 
 	AfterEach(func() {
 		runner.KillWithFire()
 	})
-
 	Context("with a valid config file", func() {
-		BeforeEach(func() {
-			runner.Start()
-		})
-
 		It("Starts successfully, retrives metrics and  generates events", func() {
 			Consistently(runner.Session).ShouldNot(Exit())
 			Eventually(func() bool { return mockLogCache.ReadRequestsCount() >= 1 }, 5*time.Second).Should(BeTrue())
@@ -64,7 +68,6 @@ var _ = Describe("Eventgenerator", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 			runner.configPath = "bogus"
-			runner.Start()
 		})
 
 		It("fails with an error", func() {
@@ -82,7 +85,6 @@ var _ = Describe("Eventgenerator", func() {
 			// #nosec G306
 			err = os.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
-			runner.Start()
 		})
 
 		AfterEach(func() {
@@ -116,7 +118,6 @@ var _ = Describe("Eventgenerator", func() {
 			}
 			configFile := writeConfig(conf)
 			runner.configPath = configFile.Name()
-			runner.Start()
 		})
 
 		AfterEach(func() {
@@ -130,9 +131,6 @@ var _ = Describe("Eventgenerator", func() {
 	})
 
 	When("an interrupt is sent", func() {
-		BeforeEach(func() {
-			runner.Start()
-		})
 
 		It("should stop", func() {
 			runner.Session.Interrupt()
@@ -144,7 +142,6 @@ var _ = Describe("Eventgenerator", func() {
 		When("a request for aggregated metrics history comes", func() {
 			BeforeEach(func() {
 				serverURL.Path = "/v1/apps/an-app-id/aggregated_metric_histories/a-metric-type"
-				runner.Start()
 			})
 
 			It("returns with a 200", func() {
@@ -169,8 +166,6 @@ var _ = Describe("Eventgenerator", func() {
 				basicAuthConfig.Health.BasicAuth.Password = ""
 				runner.configPath = writeConfig(&basicAuthConfig).Name()
 
-				runner.Start()
-
 			})
 
 			When("a request to query health comes", func() {
@@ -194,9 +189,6 @@ var _ = Describe("Eventgenerator", func() {
 		})
 
 		When("Health server is ready to serve RESTful API with basic Auth", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
 
 			When("username and password are incorrect for basic authentication during health check", func() {
 				It("should return 401", func() {
@@ -226,9 +218,6 @@ var _ = Describe("Eventgenerator", func() {
 		})
 
 		When("Health server is ready to serve RESTful API with basic Auth", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
 
 			When("username and password are incorrect for basic authentication during health check", func() {
 				It("should return 401", func() {
@@ -254,6 +243,25 @@ var _ = Describe("Eventgenerator", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				})
+			})
+		})
+	})
+
+	When("running CF server", func() {
+		Context("Get /v1/liveness", func() {
+			It("should return 200", func() {
+				cfServerURL.Path = "/v1/liveness"
+
+				req, err := http.NewRequest(http.MethodGet, cfServerURL.String(), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = SetXFCCCertHeader(req, conf.CFServer.XFCC.ValidOrgGuid, conf.CFServer.XFCC.ValidSpaceGuid)
+				Expect(err).NotTo(HaveOccurred())
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 			})
 		})
 	})

@@ -41,6 +41,8 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
   node_addrs: [address1, address2]
   node_index: 1
+cf_server:
+  port: 9082
 health:
   server_config:
     port: 9999
@@ -104,6 +106,9 @@ circuitBreaker:
 						},
 						NodeAddrs: []string{"address1", "address2"},
 						NodeIndex: 1,
+					},
+					CFServer: helpers.ServerConfig{
+						Port: 9082,
 					},
 					Health: helpers.HealthConfig{
 						ServerConfig: helpers.ServerConfig{
@@ -233,6 +238,9 @@ defaultBreachDurationSecs: 600
 							Port: 8080,
 							TLS:  models.TLSCerts{},
 						},
+					},
+					CFServer: helpers.ServerConfig{
+						Port: 8082,
 					},
 					Health: helpers.HealthConfig{
 						ServerConfig: helpers.ServerConfig{

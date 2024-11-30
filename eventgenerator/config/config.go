@@ -14,30 +14,35 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                   string = "info"
-	DefaultServerPort                     int    = 8080
-	DefaultHealthServerPort               int    = 8081
-	DefaultPolicyPollerInterval                  = 40 * time.Second
-	DefaultAggregatorExecuteInterval             = 40 * time.Second
-	DefaultSaveInterval                          = 5 * time.Second
-	DefaultMetricPollerCount              int    = 20
-	DefaultAppMonitorChannelSize          int    = 200
-	DefaultAppMetricChannelSize           int    = 200
-	DefaultEvaluationExecuteInterval             = 40 * time.Second
-	DefaultEvaluatorCount                 int    = 20
-	DefaultTriggerArrayChannelSize        int    = 200
-	DefaultBackOffInitialInterval                = 5 * time.Minute
-	DefaultBackOffMaxInterval                    = 2 * time.Hour
-	DefaultBreakerConsecutiveFailureCount int64  = 3
-	DefaultHttpClientTimeout                     = 5 * time.Second
-	DefaultMetricCacheSizePerApp                 = 100
+	DefaultLoggingLevel                   = "info"
+	DefaultServerPort                     = 8080
+	DefaultHealthServerPort               = 8081
+	DefaultPolicyPollerInterval           = 40 * time.Second
+	DefaultAggregatorExecuteInterval      = 40 * time.Second
+	DefaultSaveInterval                   = 5 * time.Second
+	DefaultMetricPollerCount              = 20
+	DefaultAppMonitorChannelSize          = 200
+	DefaultAppMetricChannelSize           = 200
+	DefaultEvaluationExecuteInterval      = 40 * time.Second
+	DefaultEvaluatorCount                 = 20
+	DefaultTriggerArrayChannelSize        = 200
+	DefaultBackOffInitialInterval         = 5 * time.Minute
+	DefaultBackOffMaxInterval             = 2 * time.Hour
+	DefaultBreakerConsecutiveFailureCount = 3
+	DefaultHttpClientTimeout              = 5 * time.Second
+	DefaultMetricCacheSizePerApp          = 100
 )
+
+var defaultCFServerConfig = helpers.ServerConfig{
+	Port: 8082,
+}
 
 type ServerConfig struct {
 	helpers.ServerConfig `yaml:",inline"`
 	NodeAddrs            []string `yaml:"node_addrs"`
 	NodeIndex            int      `yaml:"node_index"`
 }
+
 type DBConfig struct {
 	PolicyDB    db.DatabaseConfig `yaml:"policy_db"`
 	AppMetricDB db.DatabaseConfig `yaml:"app_metrics_db"`
@@ -75,9 +80,11 @@ type CircuitBreakerConfig struct {
 	BackOffMaxInterval      time.Duration `yaml:"back_off_max_interval"`
 	ConsecutiveFailureCount int64         `yaml:"consecutive_failure_count"`
 }
+
 type Config struct {
 	Logging                   helpers.LoggingConfig `yaml:"logging"`
 	Server                    ServerConfig          `yaml:"server"`
+	CFServer                  helpers.ServerConfig  `yaml:"cf_server"`
 	Health                    helpers.HealthConfig  `yaml:"health"`
 	DB                        DBConfig              `yaml:"db"`
 	Aggregator                AggregatorConfig      `yaml:"aggregator"`
@@ -91,7 +98,18 @@ type Config struct {
 }
 
 func LoadConfig(config []byte) (*Config, error) {
-	conf := &Config{
+	conf := defaultConfig()
+	dec := yaml.NewDecoder(bytes.NewBuffer(config))
+	dec.KnownFields(true)
+	if err := dec.Decode(conf); err != nil {
+		return nil, err
+	}
+	setDefaults(conf)
+	return conf, nil
+}
+
+func defaultConfig() *Config {
+	return &Config{
 		Logging: helpers.LoggingConfig{
 			Level: DefaultLoggingLevel,
 		},
@@ -100,6 +118,7 @@ func LoadConfig(config []byte) (*Config, error) {
 				Port: DefaultServerPort,
 			},
 		},
+		CFServer: defaultCFServerConfig,
 		Health: helpers.HealthConfig{
 			ServerConfig: helpers.ServerConfig{
 				Port: DefaultHealthServerPort,
@@ -121,14 +140,9 @@ func LoadConfig(config []byte) (*Config, error) {
 		},
 		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
-	dec := yaml.NewDecoder(bytes.NewBuffer(config))
-	dec.KnownFields(true)
-	err := dec.Decode(conf)
+}
 
-	if err != nil {
-		return nil, err
-	}
-
+func setDefaults(conf *Config) {
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
 	if conf.CircuitBreaker.ConsecutiveFailureCount == 0 {
 		conf.CircuitBreaker.ConsecutiveFailureCount = DefaultBreakerConsecutiveFailureCount
@@ -139,29 +153,68 @@ func LoadConfig(config []byte) (*Config, error) {
 	if conf.CircuitBreaker.BackOffMaxInterval == 0 {
 		conf.CircuitBreaker.BackOffMaxInterval = DefaultBackOffMaxInterval
 	}
-	return conf, nil
 }
 
 func (c *Config) Validate() error {
+	if err := c.validateDB(); err != nil {
+		return err
+	}
+	if err := c.validateScalingEngine(); err != nil {
+		return err
+	}
+	if err := c.validateMetricCollector(); err != nil {
+		return err
+	}
+	if err := c.validateAggregator(); err != nil {
+		return err
+	}
+	if err := c.validateEvaluator(); err != nil {
+		return err
+	}
+	if err := c.validateDefaults(); err != nil {
+		return err
+	}
+	if err := c.validateServer(); err != nil {
+		return err
+	}
+	if err := c.validateHealth(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Config) validateDB() error {
 	if c.DB.PolicyDB.URL == "" {
 		return fmt.Errorf("Configuration error: db.policy_db.url is empty")
 	}
 	if c.DB.AppMetricDB.URL == "" {
 		return fmt.Errorf("Configuration error: db.app_metrics_db.url is empty")
 	}
+	return nil
+}
+
+func (c *Config) validateScalingEngine() error {
 	if c.ScalingEngine.ScalingEngineURL == "" {
 		return fmt.Errorf("Configuration error: scalingEngine.scaling_engine_url is empty")
 	}
+	return nil
+}
+
+func (c *Config) validateMetricCollector() error {
 	if c.MetricCollector.MetricCollectorURL == "" {
 		return fmt.Errorf("Configuration error: metricCollector.metric_collector_url is empty")
 	}
-	if c.Aggregator.AggregatorExecuteInterval <= time.Duration(0) {
+	return nil
+}
+
+func (c *Config) validateAggregator() error {
+	if c.Aggregator.AggregatorExecuteInterval <= 0 {
 		return fmt.Errorf("Configuration error: aggregator.aggregator_execute_interval is less-equal than 0")
 	}
-	if c.Aggregator.PolicyPollerInterval <= time.Duration(0) {
+	if c.Aggregator.PolicyPollerInterval <= 0 {
 		return fmt.Errorf("Configuration error: aggregator.policy_poller_interval is less-equal than 0")
 	}
-	if c.Aggregator.SaveInterval <= time.Duration(0) {
+	if c.Aggregator.SaveInterval <= 0 {
 		return fmt.Errorf("Configuration error: aggregator.save_interval is less-equal than 0")
 	}
 	if c.Aggregator.MetricPollerCount <= 0 {
@@ -173,12 +226,14 @@ func (c *Config) Validate() error {
 	if c.Aggregator.AppMetricChannelSize <= 0 {
 		return fmt.Errorf("Configuration error: aggregator.app_metric_channel_size is less-equal than 0")
 	}
-
 	if c.Aggregator.MetricCacheSizePerApp <= 0 {
 		return fmt.Errorf("Configuration error: aggregator.metric_cache_size_per_app is less-equal than 0")
 	}
+	return nil
+}
 
-	if c.Evaluator.EvaluationManagerInterval <= time.Duration(0) {
+func (c *Config) validateEvaluator() error {
+	if c.Evaluator.EvaluationManagerInterval <= 0 {
 		return fmt.Errorf("Configuration error: evaluator.evaluation_manager_execute_interval is less-equal than 0")
 	}
 	if c.Evaluator.EvaluatorCount <= 0 {
@@ -187,24 +242,29 @@ func (c *Config) Validate() error {
 	if c.Evaluator.TriggerArrayChannelSize <= 0 {
 		return fmt.Errorf("Configuration error: evaluator.trigger_array_channel_size is less-equal than 0")
 	}
+	return nil
+}
+
+func (c *Config) validateDefaults() error {
 	if c.DefaultBreachDurationSecs < 60 || c.DefaultBreachDurationSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")
 	}
 	if c.DefaultStatWindowSecs < 60 || c.DefaultStatWindowSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultStatWindowSecs should be between 60 and 3600")
 	}
-
-	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
-		return fmt.Errorf("Configuration error: server.node_index out of range")
-	}
-
-	if c.HttpClientTimeout <= time.Duration(0) {
+	if c.HttpClientTimeout <= 0 {
 		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
-
-	if err := c.Health.Validate(); err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func (c *Config) validateServer() error {
+	if c.Server.NodeIndex < 0 || c.Server.NodeIndex >= len(c.Server.NodeAddrs) {
+		return fmt.Errorf("Configuration error: server.node_index out of range")
+	}
+	return nil
+}
+
+func (c *Config) validateHealth() error {
+	return c.Health.Validate()
 }

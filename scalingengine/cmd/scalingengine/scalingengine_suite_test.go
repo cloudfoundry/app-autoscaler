@@ -17,6 +17,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	yaml "gopkg.in/yaml.v3"
 
@@ -188,29 +189,34 @@ func NewScalingEngineRunner() *ScalingEngineRunner {
 	}
 }
 
-func (engine *ScalingEngineRunner) Start() {
+func (se *ScalingEngineRunner) Start() {
 	// #nosec G204
-	engineSession, err := gexec.Start(
+	seSession, err := gexec.Start(
 		exec.Command(
 			enginePath,
 			"-c",
-			engine.configPath,
+			se.configPath,
 		),
 		gexec.NewPrefixedWriter("\x1b[32m[o]\x1b[32m[engine]\x1b[0m ", GinkgoWriter),
 		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[engine]\x1b[0m ", GinkgoWriter),
 	)
 	Expect(err).NotTo(HaveOccurred())
-	engine.Session = engineSession
+
+	if se.startCheck != "" {
+		Eventually(seSession.Buffer, 6).Should(gbytes.Say(se.startCheck))
+	}
+
+	se.Session = seSession
 }
 
-func (engine *ScalingEngineRunner) Interrupt() {
-	if engine.Session != nil {
-		engine.Session.Interrupt().Wait(5 * time.Second)
+func (se *ScalingEngineRunner) Interrupt() {
+	if se.Session != nil {
+		se.Session.Interrupt().Wait(5 * time.Second)
 	}
 }
 
-func (engine *ScalingEngineRunner) KillWithFire() {
-	if engine.Session != nil {
-		engine.Session.Kill().Wait(5 * time.Second)
+func (se *ScalingEngineRunner) KillWithFire() {
+	if se.Session != nil {
+		se.Session.Kill().Wait(5 * time.Second)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -26,12 +27,21 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	vh(w, r, vars)
 }
-func createEventGeneratorRouter(logger lager.Logger, queryAppMetric aggregator.QueryAppMetricsFunc, httpStatusCollector healthendpoint.HTTPStatusCollector, serverConfig config.ServerConfig) (*mux.Router, error) {
-	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	eh := NewEventGenHandler(logger, queryAppMetric)
-	r := routes.EventGeneratorRoutes()
+
+func Liveness(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) createEventGeneratorRouter() (*mux.Router, error) {
+	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(s.httpStatusCollector)
+	eh := NewEventGenHandler(s.logger, s.queryAppMetric)
+	autoscalerRouter := routes.NewRouter()
+
+	r := autoscalerRouter.CreateEventGeneratorRoutes()
 	r.Use(otelmux.Middleware("eventgenerator"))
 	r.Use(httpStatusCollectMiddleware.Collect)
+
+	r.Get(routes.LivenessRouteName).Handler(VarsFunc(Liveness))
 	r.Get(routes.GetAggregatedMetricHistoriesRouteName).Handler(VarsFunc(eh.GetAggregatedMetricHistories))
 	return r, nil
 }
@@ -43,15 +53,8 @@ type Server struct {
 	policyDb            db.PolicyDB
 	queryAppMetric      aggregator.QueryAppMetricsFunc
 	httpStatusCollector healthendpoint.HTTPStatusCollector
-}
 
-func (s *Server) GetMtlsServer() (ifrit.Runner, error) {
-	eventGeneratorRouter, err := createEventGeneratorRouter(s.logger, s.queryAppMetric, s.httpStatusCollector, s.conf.Server)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create event generator router: %w", err)
-	}
-
-	return helpers.NewHTTPServer(s.logger, serverConfigFrom(s.conf), eventGeneratorRouter)
+	healthRouter *mux.Router
 }
 
 func NewServer(logger lager.Logger, conf *config.Config, appMetricDB db.AppMetricDB, policyDb db.PolicyDB, queryAppMetric aggregator.QueryAppMetricsFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) *Server {
@@ -72,26 +75,52 @@ func serverConfigFrom(conf *config.Config) helpers.ServerConfig {
 	}
 }
 
-func (s *Server) GetHealthServer() (ifrit.Runner, error) {
-	healthRouter, err := createHealthRouter(s.appMetricDB, s.policyDb, s.logger, s.conf, s.httpStatusCollector)
+func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
+	err := s.createHealthRouter()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create health router: %w", err)
 	}
-	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, healthRouter)
+	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, s.healthRouter)
 }
 
-func createHealthRouter(appMetricDB db.AppMetricDB, policyDb db.PolicyDB, logger lager.Logger, conf *config.Config, httpStatusCollector healthendpoint.HTTPStatusCollector) (*mux.Router, error) {
+func (s *Server) createHealthRouter() error {
 	checkers := []healthendpoint.Checker{}
-	gatherer := CreatePrometheusRegistry(appMetricDB, policyDb, httpStatusCollector, logger)
-	healthRouter, err := healthendpoint.NewHealthRouter(conf.Health, checkers, logger.Session("health-server"), gatherer, time.Now)
+	gatherer := createPrometheusRegistry(s.appMetricDB, s.policyDb, s.httpStatusCollector, s.logger)
+	healthRouter, err := healthendpoint.NewHealthRouter(s.conf.Health, checkers, s.logger.Session("health-server"), gatherer, time.Now)
 	if err != nil {
+		return fmt.Errorf("failed to create health router: %w", err)
+	}
+
+	s.healthRouter = healthRouter
+	return nil
+}
+
+func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
+	eventGeneratorRouter, err := s.createEventGeneratorRouter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create event generator router: %w", err)
+	}
+
+	eventGeneratorRouter.Use(am.XFCCAuthenticationMiddleware)
+	if err := s.createHealthRouter(); err != nil {
 		return nil, fmt.Errorf("failed to create health router: %w", err)
 	}
 
-	return healthRouter, nil
+	eventGeneratorRouter.PathPrefix("/health").Handler(s.healthRouter)
+
+	return helpers.NewHTTPServer(s.logger, s.conf.CFServer, eventGeneratorRouter)
 }
 
-func CreatePrometheusRegistry(appMetricDB db.AppMetricDB, policyDb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {
+func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
+	eventGeneratorRouter, err := s.createEventGeneratorRouter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create event generator router: %w", err)
+	}
+
+	return helpers.NewHTTPServer(s.logger, serverConfigFrom(s.conf), eventGeneratorRouter)
+}
+
+func createPrometheusRegistry(appMetricDB db.AppMetricDB, policyDb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB),

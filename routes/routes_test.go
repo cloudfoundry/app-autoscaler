@@ -211,10 +211,14 @@ var _ = Describe("Routes", func() {
 	})
 
 	Describe("EventGeneratorRoutes", func() {
+		JustBeforeEach(func() {
+			autoscalerRouter.CreateEventGeneratorRoutes()
+		})
+
 		Context("GetAggregatedMetricHistoriesRouteName", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.EventGeneratorRoutes().Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", testAppId, "metrictype", testMetricType)
+					path, err := router.Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", testAppId, "metrictype", testMetricType)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/aggregated_metric_histories/" + testMetricType))
 				})
@@ -222,7 +226,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.EventGeneratorRoutes().Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("wrongVariable", testAppId)
+					_, err := router.Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -230,7 +234,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.EventGeneratorRoutes().Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", testAppId)
+					_, err := router.Get(routes.GetAggregatedMetricHistoriesRouteName).URLPath("appid", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})

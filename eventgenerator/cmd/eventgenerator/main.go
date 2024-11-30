@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"github.com/prometheus/client_golang/prometheus"
 	circuit "github.com/rubyist/circuitbreaker"
@@ -104,32 +105,39 @@ func main() {
 
 	httpServer := server.NewServer(logger.Session("http_server"), conf, appMetricDB, policyDb, appManager.QueryAppMetrics, httpStatusCollector)
 
-	mtlsServer, err := httpServer.GetMtlsServer()
+	mtlsServer, err := httpServer.CreateMtlsServer()
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
 
-	healthServer, err := httpServer.GetHealthServer()
+	healthServer, err := httpServer.CreateHealthServer()
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)
 	}
+
+	xm := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
+	cfServer, err := httpServer.CreateCFServer(xm)
+	if err != nil {
+		logger.Error("failed to create cf server", err)
+		os.Exit(1)
+	}
+
 	members := grouper.Members{
 		{"eventGenerator", eventGenerator},
 		{"https_server", mtlsServer},
 		{"health_server", healthServer},
+		{"cf_server", cfServer},
 	}
+
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
-
 	logger.Info("started")
-
 	err = <-monitor.Wait()
 	if err != nil {
 		logger.Error("exited-with-failure", err)
 		os.Exit(1)
 	}
-
 	logger.Info("exited")
 }
 

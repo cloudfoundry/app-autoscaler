@@ -38,8 +38,6 @@ var (
 	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile         *os.File
 	conf               config.Config
-	egPort             int
-	healthport         int
 	httpClient         *http.Client
 	healthHttpClient   *http.Client
 	mockLogCache       *testhelpers.MockLogCache
@@ -240,22 +238,9 @@ func initHttpEndPoints() {
 func initConfig() {
 	testCertDir := testhelpers.TestCertFolder()
 
-	egPort = 7000 + GinkgoParallelProcess()
-	healthport = 8000 + GinkgoParallelProcess()
 	dbUrl := testhelpers.GetDbUrl()
 	conf = config.Config{
-		Logging: helpers.LoggingConfig{
-			Level: "debug",
-		},
 		Server: config.ServerConfig{
-			ServerConfig: helpers.ServerConfig{
-				Port: egPort,
-				TLS: models.TLSCerts{
-					KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-					CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-				},
-			},
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
 		},
@@ -313,7 +298,7 @@ func initConfig() {
 		HttpClientTimeout:         10 * time.Second,
 		Health: helpers.HealthConfig{
 			ServerConfig: helpers.ServerConfig{
-				Port: healthport,
+				Port: 8000 + GinkgoParallelProcess(),
 			},
 			BasicAuth: models.BasicAuth{
 				Username: "healthcheckuser",
@@ -321,6 +306,19 @@ func initConfig() {
 			},
 		},
 	}
+
+	conf.Health.ServerConfig.Port = 8000 + GinkgoParallelProcess()
+
+	conf.CFServer.Port = 9000 + GinkgoParallelProcess()
+	conf.CFServer.XFCC.ValidOrgGuid = "org-guid"
+	conf.CFServer.XFCC.ValidSpaceGuid = "space-guid"
+
+	// Configure the server to use the test certs
+	conf.Server.Port = 7000 + GinkgoParallelProcess()
+	conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "eventgenerator.key")
+	conf.Server.TLS.CertFile = filepath.Join(testCertDir, "eventgenerator.crt")
+	conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
+	conf.Logging.Level = "debug"
 	configFile = writeConfig(&conf)
 }
 
@@ -361,7 +359,7 @@ func (eg *EventGeneratorRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if eg.startCheck != "" {
-		Eventually(egSession.Buffer, 2).Should(gbytes.Say(eg.startCheck))
+		Eventually(egSession.Buffer, 6).Should(gbytes.Say(eg.startCheck))
 	}
 
 	eg.Session = egSession
