@@ -8,7 +8,9 @@ import (
 
 var _ = Describe("BindingConfigs", func() {
 
-	Describe("GetBindingConfigAndPolicy", func() {
+	var bindingConfig *BindingConfig
+
+	Context("GetBindingConfigAndPolicy", func() {
 		var (
 			scalingPolicy        *ScalingPolicy
 			customMetricStrategy string
@@ -20,7 +22,7 @@ var _ = Describe("BindingConfigs", func() {
 			result, err = GetBindingConfigAndPolicy(scalingPolicy, customMetricStrategy)
 		})
 
-		Context("when both scaling policy and custom metric strategy are present", func() {
+		When("both scaling policy and custom metric strategy are present", func() {
 			BeforeEach(func() {
 				scalingPolicy = &ScalingPolicy{
 					InstanceMax: 5,
@@ -48,7 +50,7 @@ var _ = Describe("BindingConfigs", func() {
 			})
 		})
 
-		Context("when only scaling policy is present", func() {
+		When("only scaling policy is present", func() {
 			BeforeEach(func() {
 				scalingPolicy = &ScalingPolicy{
 					InstanceMax: 5,
@@ -73,7 +75,7 @@ var _ = Describe("BindingConfigs", func() {
 			})
 		})
 
-		Context("when policy is not found", func() {
+		When("policy is not found", func() {
 			BeforeEach(func() {
 				scalingPolicy = nil
 				customMetricStrategy = CustomMetricsBoundApp
@@ -85,10 +87,6 @@ var _ = Describe("BindingConfigs", func() {
 			})
 		})
 	})
-
-	var (
-		bindingConfig *BindingConfig
-	)
 
 	Context("GetCustomMetricsStrategy", func() {
 		It("should return the correct custom metrics strategy", func() {
