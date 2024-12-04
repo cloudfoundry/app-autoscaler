@@ -26,8 +26,7 @@ var _ = Describe("Broker", func() {
 		fakePolicyDB             *fakes.FakePolicyDB
 		fakeCredentials          *fakes.FakeCredentials
 		testLogger               = lagertest.NewTestLogger("test")
-		bindingConfigWithScaling *models.BindingConfigWithScaling
-		bindingConfig            *models.BindingConfig
+		bindingConfigWithScaling *models.ScalingPolicyWithBindingConfig
 	)
 
 	BeforeEach(func() {
@@ -188,10 +187,6 @@ var _ = Describe("Broker", func() {
 			})
 			Context("with configuration and policy", func() {
 				BeforeEach(func() {
-					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
-						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
-					},
-					}}
 					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
 						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
 					bindingBytes, err := os.ReadFile("testdata/policy-with-configs.json")
@@ -208,10 +203,6 @@ var _ = Describe("Broker", func() {
 			})
 			Context("with configuration only", func() {
 				BeforeEach(func() {
-					bindingConfig = &models.BindingConfig{Configuration: models.Configuration{CustomMetrics: models.CustomMetricsConfig{
-						MetricSubmissionStrategy: models.MetricsSubmissionStrategy{AllowFrom: "bound_app"},
-					},
-					}}
 					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
 						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
 					bindingBytes, err := os.ReadFile("testdata/with-configs.json")
@@ -221,9 +212,9 @@ var _ = Describe("Broker", func() {
 					Expect(err).ShouldNot(HaveOccurred())
 					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})
-				It("returns the bindings with configs in parameters", func() {
+				It("returns no binding configs in parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: bindingConfig}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: nil}))
 				})
 			})
 		})

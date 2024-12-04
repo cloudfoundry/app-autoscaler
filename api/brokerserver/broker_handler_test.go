@@ -991,9 +991,8 @@ var _ = Describe("BrokerHandler", func() {
 					verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 				})
 				It("should fail with 400", func() {
+					Expect(resp.Body.String()).To(ContainSubstring("{\"description\":\"invalid policy provided: [{\\\"context\\\":\\\"(root).configuration.custom_metrics.metric_submission_strategy.allow_from\\\",\\\"description\\\":\\\"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \\\\\\\"bound_app\\\\\\\"\\\"}]\"}"))
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(MatchJSON(`{"error": "verify-custom-metrics-strategy", "description": "error: custom metrics strategy not supported"}`))
-
 				})
 			})
 			When("are empty", func() {
@@ -1048,9 +1047,6 @@ var _ = Describe("BrokerHandler", func() {
 					bindingPolicy = `{
 				  "configuration": {
 					"custom_metrics": {
-					  "auth": {
-						"credential_type": "binding_secret"
-					  },
 					  "metric_submission_strategy": {
 						"allow_from": "bound_app"
 					  }

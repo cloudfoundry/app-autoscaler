@@ -38,6 +38,9 @@ func (p *PolicyJson) GetAppPolicy() (*AppPolicy, error) {
 	return &AppPolicy{AppId: p.AppId, ScalingPolicy: &scalingPolicy}, nil
 }
 
+// ScalingPolicy is a customer facing entity and represents the scaling policy for an application.
+// It can be created/deleted/retrieved by the user via the binding process and public api. If a change is required in the policy,
+// the corresponding endpoints should be also be updated in the public api server.
 type ScalingPolicy struct {
 	InstanceMin  int               `json:"instance_min_count"`
 	InstanceMax  int               `json:"instance_max_count"`

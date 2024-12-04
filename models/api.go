@@ -60,9 +60,9 @@ type ServiceBinding struct {
 	CustomMetricsStrategy string `db:"custom_metrics_strategy"`
 }
 
-type BindingConfigWithScaling struct {
-	BindingConfig
+type ScalingPolicyWithBindingConfig struct {
 	ScalingPolicy
+	*BindingConfig
 }
 
 type BindingRequestBody struct {
