@@ -182,7 +182,7 @@ var _ = Describe("Broker", func() {
 				})
 				It("returns the Binding with parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: scalingPolicy}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: &models.ScalingPolicyWithBindingConfig{ScalingPolicy: *scalingPolicy, BindingConfig: nil}}))
 				})
 			})
 			Context("with configuration and policy", func() {
