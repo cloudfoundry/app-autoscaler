@@ -56,17 +56,19 @@ func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
  * @throws an error if no policy or custom metrics strategy is found
 */
 
-func GetBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, customMetricStrategy string) (interface{}, error) {
+func GetBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, customMetricStrategy string) (*ScalingPolicyWithBindingConfig, error) {
 	if scalingPolicy == nil {
 		return nil, fmt.Errorf("policy not found")
 	}
 	if customMetricStrategy != "" && customMetricStrategy != CustomMetricsSameApp { //if customMetricStrategy found
-		return buildCombinedConfig(scalingPolicy, customMetricStrategy), nil
+		return buildPolicyAndConfig(scalingPolicy, customMetricStrategy), nil
 	}
-	return scalingPolicy, nil
+	return &ScalingPolicyWithBindingConfig{
+		ScalingPolicy: *scalingPolicy,
+	}, nil
 }
 
-func buildCombinedConfig(scalingPolicy *ScalingPolicy, customMetricStrategy string) *ScalingPolicyWithBindingConfig {
+func buildPolicyAndConfig(scalingPolicy *ScalingPolicy, customMetricStrategy string) *ScalingPolicyWithBindingConfig {
 	bindingConfig := &BindingConfig{}
 	bindingConfig.SetCustomMetricsStrategy(customMetricStrategy)
 

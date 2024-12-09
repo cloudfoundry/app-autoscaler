@@ -71,7 +71,7 @@ var _ = Describe("BindingConfigs", func() {
 
 			It("should return scaling policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(scalingPolicy))
+				Expect(result).To(Equal(&ScalingPolicyWithBindingConfig{ScalingPolicy: *scalingPolicy, BindingConfig: nil}))
 			})
 		})
 
