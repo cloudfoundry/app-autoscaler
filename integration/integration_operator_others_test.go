@@ -39,7 +39,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 		startFakeCCNOAAUAA(initInstanceCount)
 
-		golangApiServerConfPath = components.PrepareGolangApiServerConfig(
+		golangApiServerConfPath := components.PrepareGolangApiServerConfig(
 			dbUrl,
 			components.Ports[GolangAPIServer],
 			components.Ports[GolangServiceBroker],
@@ -49,7 +49,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 			"https://127.0.0.1:8888",
 			tmpDir)
-		startGolangApiServer()
+		startGolangApiServer(golangApiServerConfPath)
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 		provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, testAppId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 

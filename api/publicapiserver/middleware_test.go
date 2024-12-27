@@ -131,7 +131,7 @@ var _ = Describe("Middleware", func() {
 			})
 			It("should fail with 500", func() {
 				CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
-					Code:    "Internal-Server-Error",
+					Code:    http.StatusText(http.StatusInternalServerError),
 					Message: "Failed to check if user is admin",
 				})
 			})

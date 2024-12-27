@@ -5,46 +5,67 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"math/big"
 	"net/http"
+	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 )
 
-// generateClientCert generates a client certificate with the specified spaceGUID and orgGUID
-// included in the organizational unit string.
-func GenerateClientCert(orgGUID, spaceGUID string) ([]byte, error) {
-	// Generate a random serial number for the certificate
-	//
+func GenerateClientCertWithPrivateKeyExpiring(orgGUID, spaceGUID string, privateKey *rsa.PrivateKey, notAfter time.Time) ([]byte, error) {
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		return nil, err
 	}
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new X.509 certificate template
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
+		NotBefore:    time.Now(),
+		NotAfter:     notAfter,
 		Subject: pkix.Name{
 			Organization:       []string{"My Organization"},
 			OrganizationalUnit: []string{fmt.Sprintf("space:%s org:%s", spaceGUID, orgGUID)},
 		},
 	}
-	// Generate the certificate
+
+	if privateKey == nil {
+		return nil, fmt.Errorf("private key is nil")
+	}
+
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// Encode the certificate to PEM format
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 
 	return certPEM, nil
+}
+
+func GenerateClientCertWithPrivateKey(orgGUID, spaceGUID string, privateKey *rsa.PrivateKey) ([]byte, error) {
+	notAfter := time.Now().AddDate(1, 0, 0)
+	return GenerateClientCertWithPrivateKeyExpiring(orgGUID, spaceGUID, privateKey, notAfter)
+}
+
+func GenerateClientCert(orgGUID, spaceGUID string) ([]byte, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	return GenerateClientCertWithPrivateKey(orgGUID, spaceGUID, privateKey)
+}
+
+func GenerateClientKeyWithPrivateKey(privateKey *rsa.PrivateKey) []byte {
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	pemBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	}
+
+	return pem.EncodeToMemory(pemBlock)
 }
 
 func SetXFCCCertHeader(req *http.Request, orgGuid, spaceGuid string) error {
@@ -53,8 +74,8 @@ func SetXFCCCertHeader(req *http.Request, orgGuid, spaceGuid string) error {
 		return err
 	}
 
-	block, _ := pem.Decode(xfccClientCert)
+	cert := auth.NewCert(string(xfccClientCert))
 
-	req.Header.Add("X-Forwarded-Client-Cert", base64.StdEncoding.EncodeToString(block.Bytes))
+	req.Header.Add("X-Forwarded-Client-Cert", cert.GetXFCCHeader())
 	return nil
 }

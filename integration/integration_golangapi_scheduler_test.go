@@ -54,7 +54,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 	Describe("When offered as a service", func() {
 
 		BeforeEach(func() {
-			golangApiServerConfPath = components.PrepareGolangApiServerConfig(
+			golangApiServerConfPath := components.PrepareGolangApiServerConfig(
 				dbUrl,
 				components.Ports[GolangAPIServer],
 				components.Ports[GolangServiceBroker],
@@ -64,7 +64,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
 				"https://127.0.0.1:8888",
 				tmpDir)
-			startGolangApiServer()
+			startGolangApiServer(golangApiServerConfPath)
 
 			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)
 			Expect(err).NotTo(HaveOccurred())

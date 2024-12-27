@@ -31,7 +31,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
 
-		golangApiServerConfPath = components.PrepareGolangApiServerConfig(
+		golangApiServerConfPath := components.PrepareGolangApiServerConfig(
 			dbUrl,
 			components.Ports[GolangAPIServer],
 			components.Ports[GolangServiceBroker],
@@ -42,7 +42,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			"https://127.0.0.1:8888",
 			tmpDir)
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
-		startGolangApiServer()
+		startGolangApiServer(golangApiServerConfPath)
 		serviceInstanceId = getRandomIdRef("serviceInstId")
 		orgId = getRandomIdRef("orgId")
 		spaceId = getRandomIdRef("spaceId")
@@ -66,7 +66,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			})
 			It("should error with status code 500", func() {
 				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
-					"code":    "Internal-Server-Error",
+					"code":    http.StatusText(http.StatusInternalServerError),
 					"message": "Failed to check if user is admin",
 				})
 			})
@@ -81,7 +81,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			})
 			It("should error with status code 500", func() {
 				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
-					"code":    "Internal-Server-Error",
+					"code":    http.StatusText(http.StatusInternalServerError),
 					"message": "Failed to check if user is admin",
 				})
 			})

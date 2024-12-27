@@ -54,7 +54,6 @@ var _ = Describe("Main", func() {
 	})
 
 	Describe("With incorrect config", func() {
-
 		Context("with a missing config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
@@ -259,9 +258,10 @@ var _ = Describe("Main", func() {
 			})
 		})
 	})
+
 	When("running CF server", func() {
-		When("running outside cf", func() {
-			It("/v1/liveness should return 200", func() {
+		Describe("GET /v1/liveness", func() {
+			It("should return 200", func() {
 				cfServerURL.Path = "/v1/liveness"
 
 				req, err := http.NewRequest(http.MethodGet, cfServerURL.String(), nil)

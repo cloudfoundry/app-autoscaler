@@ -121,11 +121,12 @@ build_test-%: generate-fakes
 
 check: fmt lint build test
 
+.PHONY: generate-fakes
 test: generate-fakes
 	@echo "Running tests"
 	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} ${TEST} --skip-package='integration'
 
-testsuite: generate-fakes
+testsuite:
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' go run 'github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}' -p ${GINKGO_OPTS} ${TEST}
 

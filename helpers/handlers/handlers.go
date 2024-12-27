@@ -26,7 +26,7 @@ func WriteJSONResponse(w http.ResponseWriter, statusCode int, jsonObj interface{
 
 	if err != nil {
 		logger.Error("marshall-json-response", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Length", strconv.Itoa(len(result)))

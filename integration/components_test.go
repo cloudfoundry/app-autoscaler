@@ -33,6 +33,7 @@ const (
 	Scheduler           = "scheduler"
 	MetricsCollector    = "metricsCollector"
 	EventGenerator      = "eventGenerator"
+	CfEventGenerator    = "cfEventGenerator"
 	ScalingEngine       = "scalingEngine"
 	Operator            = "operator"
 )
@@ -325,6 +326,9 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 	conf := &egConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
+		},
+		CFServer: helpers.ServerConfig{
+			Port: components.Ports[CfEventGenerator],
 		},
 		Server: egConfig.ServerConfig{
 			ServerConfig: helpers.ServerConfig{

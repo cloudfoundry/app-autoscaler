@@ -251,6 +251,7 @@ func NewApiRunner() *ApiRunner {
 }
 
 func (ap *ApiRunner) Start() {
+	GinkgoHelper()
 	// #nosec G204
 	apSession, err := gexec.Start(exec.Command(
 		apPath,

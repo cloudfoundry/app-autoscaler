@@ -191,10 +191,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	metricsCollectorServer.RouteToHandler(http.MethodGet, metricsCollectorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&metricsCollectorStatus, &metricsCollectorResponse))
 
-	eventGeneratorPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+`)
-	Expect(err).NotTo(HaveOccurred())
-	eventGeneratorServer.RouteToHandler(http.MethodGet, eventGeneratorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&eventGeneratorStatus, &eventGeneratorResponse))
-
 	schedulerPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/schedules`)
 	Expect(err).NotTo(HaveOccurred())
 	schedulerErrJson = "{}"
@@ -216,6 +212,7 @@ func GetTestHandler() http.HandlerFunc {
 }
 
 func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
+	GinkgoHelper()
 	Expect(resp.Code).To(Equal(statusCode))
 	var errResp models.ErrorResponse
 	err := json.NewDecoder(resp.Body).Decode(&errResp)

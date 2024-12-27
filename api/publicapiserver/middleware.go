@@ -61,7 +61,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 		if err != nil {
 			mw.logger.Error("failed to check if user is admin", err, nil)
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Internal-Server-Error",
+				Code:    http.StatusText(http.StatusInternalServerError),
 				Message: "Failed to check if user is admin"})
 			return
 		}

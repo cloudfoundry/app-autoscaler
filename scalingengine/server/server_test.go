@@ -37,7 +37,7 @@ var _ = Describe("Server", func() {
 		err        error
 		method     string
 		bodyReader io.Reader
-		route      = routes.ScalingEngineRoutes()
+		route      = routes.NewRouter().CreateScalingEngineRoutes()
 
 		scalingEngineDB    *fakes.FakeScalingEngineDB
 		sychronizer        *fakes.FakeActiveScheduleSychronizer

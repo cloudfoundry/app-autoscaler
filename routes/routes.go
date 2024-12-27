@@ -151,10 +151,6 @@ func (r *Router) CreateEventGeneratorRoutes() *mux.Router {
 	return r.router
 }
 
-func ScalingEngineRoutes() *mux.Router {
-	return autoScalerRouteInstance.GetRouter()
-}
-
 func MetricsForwarderRoutes() *mux.Router {
 	return autoScalerRouteInstance.GetRouter()
 }

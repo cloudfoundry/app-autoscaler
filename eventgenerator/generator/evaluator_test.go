@@ -104,7 +104,8 @@ var _ = Describe("Evaluator", func() {
 		httpClient = cfhttp.NewClient()
 		triggerChan = make(chan []*models.Trigger, 1)
 
-		path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", testAppId)
+		r := routes.NewRouter()
+		path, err := r.CreateScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", testAppId)
 		Expect(err).NotTo(HaveOccurred())
 		urlPath = path.Path
 

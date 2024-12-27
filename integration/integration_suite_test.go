@@ -40,21 +40,19 @@ const (
 )
 
 var (
-	components              Components
-	tmpDir                  string
-	golangApiServerConfPath string
-	schedulerConfPath       string
-	eventGeneratorConfPath  string
-	scalingEngineConfPath   string
-	operatorConfPath        string
-	brokerAuth              string
-	dbUrl                   string
-	LOGLEVEL                string
-	dbHelper                *sqlx.DB
-	fakeCCNOAAUAA           *mocks.Server
-	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
-	processMap              = map[string]ifrit.Process{}
-	mockLogCache            = &MockLogCache{}
+	components            Components
+	tmpDir                string
+	schedulerConfPath     string
+	scalingEngineConfPath string
+	operatorConfPath      string
+	brokerAuth            string
+	dbUrl                 string
+	LOGLEVEL              string
+	dbHelper              *sqlx.DB
+	fakeCCNOAAUAA         *mocks.Server
+	testUserScope         = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
+	processMap            = map[string]ifrit.Process{}
+	mockLogCache          = &MockLogCache{}
 
 	defaultHttpClientTimeout = 10 * time.Second
 
@@ -157,11 +155,12 @@ func PreparePorts() Ports {
 		Scheduler:           15000 + GinkgoParallelProcess(),
 		MetricsCollector:    16000 + GinkgoParallelProcess(),
 		EventGenerator:      17000 + GinkgoParallelProcess(),
+		CfEventGenerator:    17500 + GinkgoParallelProcess(),
 		ScalingEngine:       18000 + GinkgoParallelProcess(),
 	}
 }
 
-func startGolangApiServer() {
+func startGolangApiServer(golangApiServerConfPath string) {
 	processMap[GolangAPIServer] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{GolangAPIServer, components.GolangAPIServer(golangApiServerConfPath)},
 	}))
@@ -173,7 +172,7 @@ func startScheduler() {
 	}))
 }
 
-func startEventGenerator() {
+func startEventGenerator(eventGeneratorConfPath string) {
 	processMap[EventGenerator] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{EventGenerator, components.EventGenerator(eventGeneratorConfPath)},
 	}))

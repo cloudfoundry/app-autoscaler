@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"net/url"
 
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -33,11 +32,8 @@ type ScalingHistoryResult struct {
 	Resources    []models.AppScalingHistory `json:"resources"`
 }
 
-func getAppAggregatedMetricUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
-	return fmt.Sprintf("/v1/apps/%s/aggregated_metric_histories/%s?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, metricType, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
-}
-
 func compareAppAggregatedMetricResult(o1, o2 AppAggregatedMetricResult) {
+	GinkgoHelper()
 	compareUrlValues(o1.NextUrl, o2.NextUrl)
 	compareUrlValues(o1.PrevUrl, o2.PrevUrl)
 	o1.PrevUrl = ""
@@ -56,18 +52,6 @@ func compareUrlValues(actual string, expected string) {
 	actualQuery := actualURL.Query()
 	expectedQuery := expectedURL.Query()
 	Expect(actualQuery).To(Equal(expectedQuery))
-}
-
-func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
-	var actual AppAggregatedMetricResult
-	resp, err := getAppAggregatedMetrics(apiServerPort, pathVariables, parameters)
-	body := MustReadAll(resp.Body)
-	FailOnError(fmt.Sprintf("getAppAggregatedMetrics failed: %d-%s", resp.StatusCode, body), err)
-	defer func() { _ = resp.Body.Close() }()
-	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	err = json.Unmarshal([]byte(body), &actual)
-	Expect(err).NotTo(HaveOccurred())
-	compareAppAggregatedMetricResult(actual, result)
 }
 
 func getScalingHistoriesUrl(appId string, parameteters map[string]string, pageNo int) string {

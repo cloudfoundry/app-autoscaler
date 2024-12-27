@@ -25,10 +25,10 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 	})
 
 	JustBeforeEach(func() {
-		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], mockLogCache.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, saveInterval, evaluationManagerInterval, defaultHttpClientTimeout, tmpDir)
+		eventGeneratorConfPath := components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], mockLogCache.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, saveInterval, evaluationManagerInterval, defaultHttpClientTimeout, tmpDir)
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 
-		startEventGenerator()
+		startEventGenerator(eventGeneratorConfPath)
 		startScalingEngine()
 	})
 

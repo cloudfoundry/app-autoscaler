@@ -75,7 +75,7 @@ func (s *PublicApiServer) CreateHealthServer() (ifrit.Runner, error) {
 		return nil, err
 	}
 
-	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, s.healthRouter)
+	return helpers.NewHTTPServer(s.logger.Session("HealthServer"), s.conf.Health.ServerConfig, s.healthRouter)
 }
 
 func (s *PublicApiServer) setupBrokerRouter() error {
@@ -104,7 +104,7 @@ func (s *PublicApiServer) CreateCFServer() (ifrit.Runner, error) {
 
 	r := s.autoscalerRouter.GetRouter()
 
-	return helpers.NewHTTPServer(s.logger, s.conf.VCAPServer, r)
+	return helpers.NewHTTPServer(s.logger.Session("CfServer"), s.conf.VCAPServer, r)
 }
 
 func (s *PublicApiServer) CreateMtlsServer() (ifrit.Runner, error) {
@@ -112,7 +112,7 @@ func (s *PublicApiServer) CreateMtlsServer() (ifrit.Runner, error) {
 		return nil, err
 	}
 
-	return helpers.NewHTTPServer(s.logger, s.conf.Server, s.autoscalerRouter.GetRouter())
+	return helpers.NewHTTPServer(s.logger.Session("MtlsServer"), s.conf.Server, s.autoscalerRouter.GetRouter())
 }
 
 func (s *PublicApiServer) setupApiProtectedRoutes(pah *PublicApiHandler, scalingHistoryHandler http.Handler) {

@@ -188,7 +188,10 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 		return nil
 	}
 
-	path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
+	r := routes.NewRouter()
+	scalingEngineRouter := r.CreateScalingEngineRoutes()
+
+	path, err := scalingEngineRouter.Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
 	if err != nil {
 		return fmt.Errorf("failed to create url ScaleRouteName, %s: %w", trigger.AppId, err)
 	}
