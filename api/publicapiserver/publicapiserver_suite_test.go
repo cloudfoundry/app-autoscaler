@@ -31,7 +31,8 @@ const (
 	CLIENT_ID                         = "client-id"
 	CLIENT_SECRET                     = "client-secret"
 	TEST_APP_ID                       = "deadbeef-dead-beef-dead-beef00000075"
-	TEST_USER_TOKEN                   = "bearer testusertoken"
+	TEST_BEARER_TOKEN                 = "testusertoken"
+	TEST_USER_TOKEN                   = "bearer " + TEST_BEARER_TOKEN
 	INVALID_USER_TOKEN                = "bearer invalid_user_token invalid_user_token"
 	INVALID_USER_TOKEN_WITHOUT_BEARER = "not-bearer testusertoken"
 	TEST_INVALID_USER_TOKEN           = "bearer testinvalidusertoken"

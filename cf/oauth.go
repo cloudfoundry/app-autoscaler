@@ -85,7 +85,7 @@ func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, er
 		c.logger.Error("Failed to get user info, create request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
 	}
-	req.Header.Set("Authorization", userToken)
+	req.Header.Set("Authorization", "Bearer "+userToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.Client.Do(req)

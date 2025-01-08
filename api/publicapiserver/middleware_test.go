@@ -52,27 +52,27 @@ var _ = Describe("Middleware", func() {
 			router.ServeHTTP(resp, req)
 		})
 
-		Context("User token is not present in Authorization header", func() {
+		When("Authorization header is not preset", func() {
 			BeforeEach(func() {
 				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
 			})
 			It("should fail with 401", func() {
 				CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
 					Code:    "Unauthorized",
-					Message: "User token is not present in Authorization header",
+					Message: "Authorization header is not present",
 				})
 
 			})
 		})
 
 		Context("Invalid user token format", func() {
-			Context("when user token is not a bearer token", func() {
+			When("Authorization header does not contain a bearer token", func() {
 				BeforeEach(func() {
 					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
 					req.Header.Add("Authorization", INVALID_USER_TOKEN_WITHOUT_BEARER)
 				})
 				It("should fail with 401", func() {
-					Eventually(logger.Buffer).Should(Say("Token should start with bearer"))
+					Eventually(logger.Buffer).Should(Say("authorization credentials should specify bearer scheme"))
 					CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
 						Code:    "Unauthorized",
 						Message: "Invalid bearer token",
@@ -86,7 +86,7 @@ var _ = Describe("Middleware", func() {
 					req.Header.Add("Authorization", INVALID_USER_TOKEN)
 				})
 				It("should fail with 401", func() {
-					Eventually(logger.Buffer).Should(Say("Token should contain two parts separated by space"))
+					Eventually(logger.Buffer).Should(Say("authorization credentials should contain scheme and token separated by space"))
 					CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
 						Code:    "Unauthorized",
 						Message: "Invalid bearer token",
@@ -130,6 +130,10 @@ var _ = Describe("Middleware", func() {
 				req.Header.Add("Authorization", TEST_USER_TOKEN)
 			})
 			It("should fail with 500", func() {
+				By("checking if the token is from an admin user")
+				Expect(fakeCFClient.IsUserAdminCallCount()).To(Equal(1))
+				Expect(fakeCFClient.IsUserAdminArgsForCall(0)).To(Equal(TEST_BEARER_TOKEN))
+
 				CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
 					Code:    http.StatusText(http.StatusInternalServerError),
 					Message: "Failed to check if user is admin",
@@ -145,6 +149,10 @@ var _ = Describe("Middleware", func() {
 				req.Header.Add("Authorization", TEST_USER_TOKEN)
 			})
 			It("should succeed with 200", func() {
+				By("checking if the token is from an admin user")
+				Expect(fakeCFClient.IsUserAdminCallCount()).To(Equal(1))
+				Expect(fakeCFClient.IsUserAdminArgsForCall(0)).To(Equal(TEST_BEARER_TOKEN))
+
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})

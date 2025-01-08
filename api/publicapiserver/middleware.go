@@ -2,6 +2,7 @@ package publicapiserver
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,15 +35,16 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
-		userToken := r.Header.Get("Authorization")
-		if userToken == "" {
-			mw.logger.Error("userToken is not present", nil, lager.Data{"url": r.URL.String()})
+		authHeaderValue := r.Header.Get("Authorization")
+		if authHeaderValue == "" {
+			mw.logger.Error("authorization-header-is-not-present", nil, lager.Data{"url": r.URL.String()})
 			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 				Code:    "Unauthorized",
-				Message: "User token is not present in Authorization header"})
+				Message: "Authorization header is not present"})
 			return
 		}
-		if !mw.isValidUserToken(userToken) {
+		userToken, err := mw.extractBearerToken(authHeaderValue)
+		if err != nil {
 			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 				Code:    "Unauthorized",
 				Message: "Invalid bearer token"})
@@ -125,19 +127,18 @@ func (mw *Middleware) CheckServiceBinding(next http.Handler) http.Handler {
 	})
 }
 
-func (mw *Middleware) isValidUserToken(userToken string) bool {
-	lowerCaseToken := strings.ToLower(userToken)
-	if !strings.HasPrefix(lowerCaseToken, "bearer ") {
-		mw.logger.Error("Token should start with bearer", cf.ErrInvalidTokenFormat)
-		return false
+func (mw *Middleware) extractBearerToken(token string) (string, error) {
+	if !strings.HasPrefix(strings.ToLower(token), "bearer ") {
+		mw.logger.Error("check-bearer-scheme", fmt.Errorf("authorization credentials should specify bearer scheme"))
+		return "", cf.ErrInvalidTokenFormat
 	}
-	tokenSplitted := strings.Split(lowerCaseToken, " ")
+	tokenSplitted := strings.Split(token, " ")
 	if len(tokenSplitted) != 2 {
-		mw.logger.Error("Token should contain two parts separated by space", cf.ErrInvalidTokenFormat)
-		return false
+		mw.logger.Error("split-auth-credentials", fmt.Errorf("authorization credentials should contain scheme and token separated by space"))
+		return "", cf.ErrInvalidTokenFormat
 	}
 
-	return true
+	return tokenSplitted[1], nil
 }
 
 func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
