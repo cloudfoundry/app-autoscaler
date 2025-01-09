@@ -76,6 +76,11 @@ databaseChangeLog:
                   type: bigint
             indexName: index_app_metrics
             tableName: app_metric
+      preConditions:
+       - onFail: MARK_RAN
+       - not:
+         - indexExists:
+             indexName: index_app_metrics
   - changeSet:
       id: 4
       author: byang
