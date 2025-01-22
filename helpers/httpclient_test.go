@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -53,7 +52,10 @@ var _ = Describe("HTTPClient", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			cfInstanceCertContent, err = testhelpers.GenerateClientCertWithPrivateKeyExpiring("org", "space", privateKey, notAfter)
-			certTmpDir = os.TempDir()
+
+			certTmpDir, err = os.MkdirTemp("", "cert-tests-*")
+			Expect(err).NotTo(HaveOccurred())
+
 			cfInstanceKeyContent = testhelpers.GenerateClientKeyWithPrivateKey(privateKey)
 
 			cfInstanceCertFile, err = configutil.MaterializeContentInFile(certTmpDir, "eventgenerator.crt", string(cfInstanceCertContent))
@@ -63,6 +65,9 @@ var _ = Describe("HTTPClient", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			logger = lagertest.NewTestLogger("http-client-test")
+
+			Expect(fileExists(cfInstanceCertFile)).To(BeTrue())
+			Expect(fileExists(cfInstanceKeyFile)).To(BeTrue())
 
 			tlsCerts := &models.TLSCerts{
 				KeyFile:    cfInstanceKeyFile,
@@ -75,8 +80,11 @@ var _ = Describe("HTTPClient", func() {
 		})
 
 		AfterEach(func() {
-			os.Remove(cfInstanceCertFile)
-			os.Remove(cfInstanceKeyFile)
+			err = os.Remove(cfInstanceCertFile)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.Remove(cfInstanceKeyFile)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		When("No cert is provided", func() {
@@ -117,12 +125,12 @@ var _ = Describe("HTTPClient", func() {
 				cfInstanceCertFileToRotateContent, err = testhelpers.GenerateClientCertWithPrivateKey("org", "space", privateKey)
 				Expect(err).ToNot(HaveOccurred())
 
+				oldCertExpiration := getCertExpirationFromClient(client)
+
 				By("Rotating with unexpired one")
 				_, err = configutil.MaterializeContentInFile(certTmpDir, "eventgenerator.crt", string(cfInstanceCertFileToRotateContent))
 				Expect(err).NotTo(HaveOccurred())
 
-				oldCertExpiration := getCertExpirationFromClient(client)
-				fmt.Println(oldCertExpiration)
 				Expect(getCertFromClient(client)).To(Equal(string(cfInstanceCertContent)))
 				resp, err := client.Get(fakeServer.URL())
 				Expect(err).ToNot(HaveOccurred())
@@ -166,4 +174,8 @@ func getPEM(cert tls.Certificate) string {
 	}
 
 	return result
+}
+func fileExists(file string) bool {
+	_, err := os.Stat(file)
+	return !os.IsNotExist(err)
 }
