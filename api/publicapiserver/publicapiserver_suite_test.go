@@ -1,9 +1,7 @@
 package publicapiserver_test
 
 import (
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -192,6 +190,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	metricsCollectorServer.RouteToHandler(http.MethodGet, metricsCollectorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&metricsCollectorStatus, &metricsCollectorResponse))
 
+	eventGeneratorPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+`)
+	Expect(err).NotTo(HaveOccurred())
+	eventGeneratorServer.RouteToHandler(http.MethodGet, eventGeneratorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&eventGeneratorStatus, &eventGeneratorResponse))
+
 	schedulerPathMatcher, err := regexp.Compile(`/v1/apps/[A-Za-z0-9\-]+/schedules`)
 	Expect(err).NotTo(HaveOccurred())
 	schedulerErrJson = "{}"
@@ -204,19 +206,3 @@ var _ = AfterSuite(func() {
 	metricsCollectorServer.Close()
 	eventGeneratorServer.Close()
 })
-
-func GetTestHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("Success"))
-		Expect(err).NotTo(HaveOccurred())
-	}
-}
-
-func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
-	GinkgoHelper()
-	Expect(resp.Code).To(Equal(statusCode))
-	var errResp models.ErrorResponse
-	err := json.NewDecoder(resp.Body).Decode(&errResp)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(errResp).To(Equal(errResponse))
-}

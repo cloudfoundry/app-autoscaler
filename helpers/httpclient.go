@@ -60,10 +60,10 @@ func (t *TLSReloadTransport) RoundTrip(req *http.Request) (*http.Response, error
 
 	// Checks for cert validity within 5m timeframe. See https://docs.cloudfoundry.org/devguide/deploy-apps/instance-identity.html
 	if t.certificateExpiringWithin(5 * time.Minute) {
-		t.logger.Debug("reloading-cert", lager.Data{"request": req})
+		t.logger.Debug("reloading-cert")
 		t.reloadCert()
 	} else {
-		t.logger.Debug("cert-not-expiring", lager.Data{"request": req})
+		t.logger.Debug("cert-not-expiring")
 	}
 
 	return t.Base.RoundTrip(req)

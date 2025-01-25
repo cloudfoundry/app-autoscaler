@@ -398,6 +398,7 @@ var _ = Describe("PublicApiServer", func() {
 					BeforeEach(func() {
 						eventGeneratorStatus = http.StatusOK
 					})
+
 					It("should succeed", func() {
 						verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
 							map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)

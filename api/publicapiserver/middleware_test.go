@@ -1,6 +1,7 @@
 package publicapiserver_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -258,3 +259,19 @@ var _ = Describe("Middleware", func() {
 	})
 
 })
+
+func GetTestHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte("Success"))
+		Expect(err).NotTo(HaveOccurred())
+	}
+}
+
+func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
+	GinkgoHelper()
+	Expect(resp.Code).To(Equal(statusCode))
+	var errResp models.ErrorResponse
+	err := json.NewDecoder(resp.Body).Decode(&errResp)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(errResp).To(Equal(errResponse))
+}
