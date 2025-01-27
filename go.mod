@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
-go 1.22.5
+go 1.23.0
 
 require (
 	code.cloudfoundry.org/cfhttp/v2 v2.23.0
