@@ -2,6 +2,7 @@ package operator_test
 
 import (
 	"context"
+	"errors"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -18,6 +19,7 @@ var _ = Describe("AppSynchronizer", func() {
 		appSynchronizer *operator.ApplicationSynchronizer
 		cfc             *fakes.FakeContextClient
 		policyDB        *fakes.FakePolicyDB
+		appDetails      map[string]bool
 	)
 
 	BeforeEach(func() {
@@ -29,16 +31,16 @@ var _ = Describe("AppSynchronizer", func() {
 
 	Describe("Sync", func() {
 		JustBeforeEach(func() {
+			policyDB.GetAppIdsReturns(appDetails, nil)
 			appSynchronizer.Operate(context.Background())
 		})
 
 		BeforeEach(func() {
-			appDetails := make(map[string]bool)
+			appDetails = make(map[string]bool)
 			appDetails["an-app-id"] = true
-			policyDB.GetAppIdsReturns(appDetails, nil)
 		})
 
-		Context("when trying to delete existing application records from policy db", func() {
+		When("trying to delete existing application records from policy db", func() {
 			BeforeEach(func() {
 				cfc.GetAppReturns(&cf.App{}, nil)
 			})
@@ -49,7 +51,7 @@ var _ = Describe("AppSynchronizer", func() {
 			})
 		})
 
-		Context("when trying to delete non-existent application records from policy db", func() {
+		When("trying to delete non-existent application records from policy db", func() {
 			BeforeEach(func() {
 				cfc.GetAppReturns(nil, cf.CfResourceNotFound)
 			})
@@ -57,6 +59,18 @@ var _ = Describe("AppSynchronizer", func() {
 				Eventually(policyDB.GetAppIdsCallCount).Should(Equal(1))
 				Eventually(cfc.GetAppCallCount).Should(Equal(1))
 				Eventually(policyDB.DeletePolicyCallCount).Should(Equal(1))
+			})
+
+			When("deleting non-existent application records from policy db fails", func() {
+				BeforeEach(func() {
+					appDetails["a-second-id"] = true
+					policyDB.DeletePolicyReturns(errors.New("some error"))
+				})
+				It("it should continue and try to delete the others", func() {
+					Eventually(policyDB.GetAppIdsCallCount).Should(Equal(1))
+					Eventually(cfc.GetAppCallCount).Should(Equal(2))
+					Eventually(policyDB.DeletePolicyCallCount).Should(Equal(2))
+				})
 			})
 		})
 	})

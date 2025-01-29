@@ -49,8 +49,7 @@ func (as ApplicationSynchronizer) Operate(ctx context.Context) {
 				err = as.policyDb.DeletePolicy(ctx, appID)
 				if err != nil {
 					as.logger.Error("failed-to-prune-non-existent-application-details", err)
-					//TODO make this a continue and write a test.
-					return
+					continue
 				}
 				as.logger.Info("successfully-pruned-non-existent-application", lager.Data{"appid": appID})
 			}
