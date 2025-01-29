@@ -44,12 +44,12 @@ require (
 	golang.org/x/crypto v0.32.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/net v0.34.0
-	golang.org/x/time v0.8.0
-	google.golang.org/grpc v1.68.1
+	golang.org/x/time v0.9.0
+	google.golang.org/grpc v1.69.4
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250115164207-1a7da9e5054f
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250127172529-29210b9bc287
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20241202111822-779c0b5a3368 // indirect
@@ -100,8 +100,8 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250106144421-5f5ef82da422 // indirect
-	google.golang.org/protobuf v1.36.3 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250124145028-65684f501c47 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250124145028-65684f501c47 // indirect
+	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
