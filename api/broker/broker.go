@@ -19,8 +19,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/google/uuid"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
-	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v12/domain"
+	"github.com/pivotal-cf/brokerapi/v12/domain/apiresponses"
 	"golang.org/x/exp/slices"
 )
 
@@ -104,10 +104,19 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 	logger.Info("begin")
 	defer logger.Info("end")
 
-	if instanceID == "" || details.OrganizationGUID == "" || details.SpaceGUID == "" || details.ServiceID == "" || details.PlanID == "" {
-		err := errors.New("failed to create service instance when trying to get mandatory data")
-		logger.Error("check-for-mandatory-data", err)
-		return result, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "check-for-mandatory-data")
+	fields := map[string]string{
+		"instanceID":        instanceID,
+		"organization_guid": details.OrganizationGUID,
+		"space_guid":        details.SpaceGUID,
+		"plan_id":           details.PlanID,
+	}
+
+	for name, value := range fields {
+		if value == "" {
+			err := fmt.Errorf("missing %s", name)
+			logger.Error("missing-mandatory-field", err)
+			return result, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "missing-mandatory-field")
+		}
 	}
 
 	parameters, err := parseInstanceParameters(details.RawParameters)

@@ -155,6 +155,7 @@ var _ = Describe("Api", func() {
 				brokerURL.Path = "/v2/catalog"
 				req, err := http.NewRequest(http.MethodGet, brokerURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("X-Broker-API-Version", "2.14")
 
 				req.SetBasicAuth(username, password)
 
@@ -354,6 +355,7 @@ var _ = Describe("Api", func() {
 
 			req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/catalog", cfServerURL), nil)
 			Expect(err).NotTo(HaveOccurred())
+			req.Header.Set("X-Broker-API-Version", "2.14")
 			req.SetBasicAuth(username, password)
 
 			rsp, err = cfServerHttpClient.Do(req)

@@ -62,6 +62,7 @@ var _ = Describe("BrokerServer", func() {
 			JustBeforeEach(func() {
 				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("X-Broker-API-Version", "2.14")
 
 				req.SetBasicAuth(username, password)
 
@@ -84,6 +85,7 @@ var _ = Describe("BrokerServer", func() {
 			JustBeforeEach(func() {
 				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("X-Broker-API-Version", "2.14")
 
 				req.SetBasicAuth(username2, password2)
 
@@ -106,6 +108,7 @@ var _ = Describe("BrokerServer", func() {
 		JustBeforeEach(func() {
 			req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 			Expect(err).NotTo(HaveOccurred())
+			req.Header.Set("X-Broker-API-Version", "2.14")
 
 			req.SetBasicAuth(username, password)
 
@@ -121,6 +124,7 @@ var _ = Describe("BrokerServer", func() {
 		JustBeforeEach(func() {
 			req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 			Expect(err).NotTo(HaveOccurred())
+			req.Header.Set("X-Broker-API-Version", "2.14")
 
 			req.SetBasicAuth(username, password)
 
@@ -140,6 +144,7 @@ var _ = Describe("BrokerServer", func() {
 		JustBeforeEach(func() {
 			req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 			Expect(err).NotTo(HaveOccurred())
+			req.Header.Set("X-Broker-API-Version", "2.14")
 
 			rsp, err = httpClient.Do(req)
 			Expect(err).ToNot(HaveOccurred())

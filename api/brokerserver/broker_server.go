@@ -17,8 +17,8 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/go-chi/chi/v5"
-	"github.com/pivotal-cf/brokerapi/v11"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
+	"github.com/pivotal-cf/brokerapi/v12"
+	"github.com/pivotal-cf/brokerapi/v12/domain"
 	"github.com/tedsuo/ifrit"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -158,10 +158,9 @@ func (s *brokerServer) GetRouter() (*chi.Mux, error) {
 
 	router := chi.NewRouter()
 
-	router.Use(authMiddleware.Middleware)
-	router.Use(httpStatusMiddleware.Collect)
+	brokerAPI := brokerapi.NewWithOptions(autoscalerBroker, slog.New(lager.NewHandler(s.logger.Session("broker_handler"))), brokerapi.WithCustomAuth(authMiddleware.Middleware), brokerapi.WithAdditionalMiddleware(httpStatusMiddleware.Collect))
+	router.Handle(("/*"), brokerAPI)
 
-	brokerapi.AttachRoutes(router, autoscalerBroker, slog.New(lager.NewHandler(s.logger.Session("broker_handler"))))
 	router.HandleFunc(routes.BrokerHealthPath, GetHealth)
 
 	return router, nil

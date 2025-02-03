@@ -13,10 +13,9 @@ import (
 	"net/url"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"github.com/go-logr/logr"
-	"github.com/pivotal-cf/brokerapi/v11/handlers"
+	"github.com/pivotal-cf/brokerapi/v12/handlers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -43,6 +42,7 @@ var _ = Describe("BrokerHandler", func() {
 		resp             *httptest.ResponseRecorder
 		req              *http.Request
 	)
+
 	BeforeEach(func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
@@ -78,16 +78,20 @@ var _ = Describe("BrokerHandler", func() {
 		var body []byte
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-			req = testhelpers.SetURLParams(req, "instance_id", testInstanceId)
+			req.SetPathValue("instance_id", testInstanceId)
 			handler.Provision(resp, req)
 		})
 		BeforeEach(func() {
 			instanceCreationReqBody = &models.InstanceCreationRequestBody{
-				OrgGUID:   "an-org-guid",
-				SpaceGUID: "an-space-guid",
+				OrgGUID:   testOrgId,
+				SpaceGUID: testSpaceId,
 				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 					ServiceID: "autoscaler-guid",
 					PlanID:    "autoscaler-free-plan-id",
+					BrokerContext: models.BrokerContext{
+						OrgGUID:   testOrgId,
+						SpaceGUID: testSpaceId,
+					},
 				},
 			}
 		})
@@ -302,7 +306,7 @@ var _ = Describe("BrokerHandler", func() {
 		callUpdateServiceInstance := func() {
 			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
 			Expect(err).NotTo(HaveOccurred())
-			req = testhelpers.SetURLParams(req, "instance_id", testInstanceId)
+			req.SetPathValue("instance_id", testInstanceId)
 			handler.Update(resp, req)
 		}
 		updatePlanAndDefaultPolicy := func(fromPlan string, targetPlan string, defaultPolicy json.RawMessage) {
@@ -695,7 +699,7 @@ var _ = Describe("BrokerHandler", func() {
 	Describe("DeleteServiceInstance", func() {
 		JustBeforeEach(func() {
 			req, _ = http.NewRequest(http.MethodDelete, "", nil)
-			req = testhelpers.SetURLParams(req, "instance_id", testInstanceId)
+			req.SetPathValue("instance_id", testInstanceId)
 			values := url.Values{}
 			values.Set("service_id", "autoscaler-guid")
 			values.Set("plan_id", "autoscaler-free-plan-id")
@@ -1551,7 +1555,8 @@ var _ = Describe("BrokerHandler", func() {
 	Describe("UnBindServiceInstance", func() {
 		BeforeEach(func() {
 			req, _ = http.NewRequest(http.MethodDelete, "", nil)
-			req = testhelpers.SetURLParams(req, "instance_id", testInstanceId, "binding_id", testBindingId)
+			req.SetPathValue("instance_id", testInstanceId)
+			req.SetPathValue("binding_id", testBindingId)
 			values := url.Values{}
 			values.Set("service_id", "autoscaler-guid")
 			values.Set("plan_id", "autoscaler-free-plan-id")

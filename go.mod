@@ -27,7 +27,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pivotal-cf/brokerapi/v11 v11.0.10
+	github.com/pivotal-cf/brokerapi/v12 v12.0.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.5.17

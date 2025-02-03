@@ -14,8 +14,8 @@ import (
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
-	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v12/domain"
+	"github.com/pivotal-cf/brokerapi/v12/domain/apiresponses"
 )
 
 var _ = Describe("Broker", func() {

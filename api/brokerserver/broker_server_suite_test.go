@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
+	"github.com/pivotal-cf/brokerapi/v12/domain"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
