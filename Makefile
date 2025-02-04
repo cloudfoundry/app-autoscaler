@@ -8,6 +8,7 @@ DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
+GO_MINOR_VERSION = $(shell echo $(GO_VERSION) | cut --delimiter=. --field=2)
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
@@ -176,7 +177,8 @@ mta-logs:
 mta-build: mta-build-clean
 	@echo "building mtar file for version: $(VERSION)"
 	cp mta.tpl.yaml mta.yaml
-	sed -i 's/VERSION/$(VERSION)/g' mta.yaml
+	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
+	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
 	mkdir -p $(DEST)
 	mbt build -t /tmp --mtar $(MTAR_FILENAME)
 	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)

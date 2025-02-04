@@ -3,15 +3,17 @@ description: Application Autoscaler Release for Cloud Foundry
 _schema-version: "3.3.0"
 provider: Cloud Foundry Foundation
 copyright: Apache License 2.0
-version: VERSION
+version: MTA_VERSION
 
 modules:
   - name: metricsforwarder
     type: go
     path: .
     properties:
-      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
       DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
     requires:
     - name: metricsforwarder-config
     - name: database
@@ -32,7 +34,10 @@ modules:
     type: go
     path: .
     properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
     requires:
     - name: publicapiserver-config
     - name: database
