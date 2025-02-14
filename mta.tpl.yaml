@@ -5,6 +5,12 @@ provider: Cloud Foundry Foundation
 copyright: Apache License 2.0
 version: MTA_VERSION
 
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+      - make clean vendor
+
 modules:
   - name: metricsforwarder
     type: go
@@ -26,10 +32,6 @@ modules:
       instances: 2
       stack: cflinuxfs4
       routes:
-    build-parameters:
-      builder: custom
-      commands:
-      - make clean vendor
   - name: publicapiserver
     type: go
     path: .
@@ -48,10 +50,6 @@ modules:
       instances: 2
       stack: cflinuxfs4
       routes:
-    build-parameters:
-      builder: custom
-      commands:
-      - make clean vendor
 
 resources:
 - name: metricsforwarder-config
