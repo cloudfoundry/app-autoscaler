@@ -217,8 +217,15 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 
 	configureEventGenerator(conf)
 	configureScheduler(conf)
+	configureScalingEngine(conf)
 
 	return nil
+}
+
+func configureScalingEngine(conf *Config) {
+	conf.ScalingEngine.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.ScalingEngine.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.ScalingEngine.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
 
 func configureEventGenerator(conf *Config) {
