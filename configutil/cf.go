@@ -27,12 +27,16 @@ type VCAPConfiguration struct {
 	appEnv *cfenv.App
 }
 
-func NewVCAPConfigurationReader() (*VCAPConfiguration, error) {
-	appEnv, err := cfenv.Current()
-	if err != nil {
-		fmt.Println("failed to read VCAP_APPLICATION environment variable")
+func NewVCAPConfigurationReader() (result *VCAPConfiguration, err error) {
+	var appEnv *cfenv.App
+	result = &VCAPConfiguration{}
+
+	if cfenv.IsRunningOnCF() {
+		appEnv, err = cfenv.Current()
+		result.appEnv = appEnv
 	}
-	return &VCAPConfiguration{appEnv: appEnv}, nil
+
+	return result, err
 }
 
 func (vc *VCAPConfiguration) GetPort() int {

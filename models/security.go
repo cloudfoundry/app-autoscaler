@@ -7,16 +7,16 @@ import (
 )
 
 type BasicAuth struct {
-	Username     string `yaml:"username"`
-	UsernameHash string `yaml:"username_hash"`
-	Password     string `yaml:"password"`
-	PasswordHash string `yaml:"password_hash"`
+	Username     string `yaml:"username" json:"username"`
+	UsernameHash string `yaml:"username_hash" json:"usernameHash"`
+	Password     string `yaml:"password" json:"password"`
+	PasswordHash string `yaml:"password_hash" json:"passwordHash"`
 }
 
 type TLSCerts struct {
-	KeyFile    string `yaml:"key_file" json:"keyFile"`
-	CertFile   string `yaml:"cert_file" json:"certFile"`
-	CACertFile string `yaml:"ca_file" json:"caCertFile"`
+	KeyFile    string `yaml:"key_file" json:"key_file"`
+	CertFile   string `yaml:"cert_file" json:"cert_file"`
+	CACertFile string `yaml:"ca_file" json:"ca_file"`
 }
 
 func (t *TLSCerts) CreateClientConfig() (*tls.Config, error) {

@@ -25,12 +25,18 @@ scheduler:
     healthserver:
         port: 0
 server:
+    forward-headers-strategy: framework
     port: {{ .Port }}
+    http:
+        port: {{ .HttpPort }}
     ssl:
         ciphers: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
         enabled-protocols: TLSv1.3
         bundle: "server"
         client-auth: NEED
+cfserver:
+  validOrgGuid: some-org-guid
+  validSpaceGuid: some-space-guid
 spring:
     aop:
         auto: false

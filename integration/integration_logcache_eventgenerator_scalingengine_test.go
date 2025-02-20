@@ -3,6 +3,7 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -17,8 +18,14 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		testAppId         string
 		timeout           = 2 * time.Duration(breachDurationSecs) * time.Second
 		initInstanceCount = 2
+		tmpDir            string
+		err               error
 	)
+
 	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "autoscaler")
+		Expect(err).NotTo(HaveOccurred())
+
 		testAppId = getRandomIdRef("testAppId")
 		startFakeCCNOAAUAA(initInstanceCount)
 		startMockLogCache()
@@ -33,6 +40,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 	})
 
 	AfterEach(func() {
+		os.RemoveAll(tmpDir)
 		stopEventGenerator()
 		stopScalingEngine()
 		stopMockLogCache()

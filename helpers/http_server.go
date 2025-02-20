@@ -12,9 +12,9 @@ import (
 )
 
 type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
-	XFCC models.XFCCAuth `yaml:"xfcc"`
+	Port int             `yaml:"port" json:"port"`
+	TLS  models.TLSCerts `yaml:"tls" json:"tls"`
+	XFCC models.XFCCAuth `yaml:"xfcc" json:"xfcc"`
 }
 
 func NewHTTPServer(logger lager.Logger, conf ServerConfig, handler http.Handler) (ifrit.Runner, error) {

@@ -7,19 +7,19 @@ import (
 )
 
 type ClientConfig struct {
-	MaxRetries              int   `yaml:"max_retries"`
-	MaxRetryWaitMs          int64 `yaml:"max_retry_wait_ms"`
-	IdleConnectionTimeoutMs int64 `yaml:"idle_connection_timeout_ms"`
-	MaxIdleConnsPerHost     int   `yaml:"max_idle_conns_per_host_ms"`
-	SkipSSLValidation       bool  `yaml:"skip_ssl_validation"`
+	MaxRetries              int   `yaml:"max_retries" json:"max_retries,omitempty"`
+	MaxRetryWaitMs          int64 `yaml:"max_retry_wait_ms" json:"max_retry_wait_ms"`
+	IdleConnectionTimeoutMs int64 `yaml:"idle_connection_timeout_ms" json:"idle_connection_timeout_ms"`
+	MaxIdleConnsPerHost     int   `yaml:"max_idle_conns_per_host_ms" json:"max_idle_conns_per_host_ms"`
+	SkipSSLValidation       bool  `yaml:"skip_ssl_validation" json:"skip_ssl_validation"`
 }
 
 type Config struct {
 	ClientConfig `yaml:",inline"`
-	API          string `yaml:"api"`
-	ClientID     string `yaml:"client_id"`
-	Secret       string `yaml:"secret"`
-	PerPage      int    `yaml:"per_page"`
+	API          string `yaml:"api" json:"api"`
+	ClientID     string `yaml:"client_id" json:"client_id"`
+	Secret       string `yaml:"secret" json:"secret"`
+	PerPage      int    `yaml:"per_page" json:"per_page"`
 }
 
 func (conf *Config) Validate() error {

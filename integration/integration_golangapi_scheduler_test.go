@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
+	"strconv"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -25,9 +29,16 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		binding3Id        string
 		orgId             string
 		spaceId           string
+		tmpDir            string
+
+		err       error
+		brokerUrl *url.URL
 	)
 
 	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "autoscaler")
+		Expect(err).NotTo(HaveOccurred())
+
 		startFakeCCNOAAUAA(initInstanceCount)
 		httpClient = testhelpers.NewApiClient()
 		httpClientForPublicApi = testhelpers.NewPublicApiClient()
@@ -45,25 +56,26 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		app2Id = uuid.NewString()
 		app3Id = uuid.NewString()
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
+
+		brokerUrl, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", components.Ports[GolangServiceBroker]))
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
+		os.RemoveAll(tmpDir)
 		stopScheduler()
 	})
 
-	Describe("When offered as a service", func() {
-
+	When("offered as a service", func() {
 		BeforeEach(func() {
 			golangApiServerConfPath := components.PrepareGolangApiServerConfig(
 				dbUrl,
-				components.Ports[GolangAPIServer],
-				components.Ports[GolangServiceBroker],
 				fakeCCNOAAUAA.URL(),
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]),
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
 				fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
-				"https://127.0.0.1:8888",
 				tmpDir)
+
 			startGolangApiServer(golangApiServerConfPath)
 
 			resp, err := detachPolicy(appId, components.Ports[GolangAPIServer], httpClientForPublicApi)
@@ -186,7 +198,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				stopScheduler()
 			})
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
 			})
 
 			Context("Create policy", func() {
@@ -219,11 +231,12 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Create policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
 			})
 			AfterEach(func() {
-				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(brokerUrl, bindingId, appId, serviceInstanceId, httpClientForPublicApi)
 			})
+
 			Context("public api", func() {
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
@@ -254,16 +267,17 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 					})
 				})
 			})
-
 		})
 
 		Describe("creating and binding a service instance without a default policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
 			})
+
 			AfterEach(func() {
-				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(brokerUrl, bindingId, appId, serviceInstanceId, httpClientForPublicApi)
 			})
+
 			Context("and then setting a default policy", func() {
 				var (
 					newDefaultPolicy []byte
@@ -294,7 +308,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				resp          *http.Response
 			)
 			JustBeforeEach(func() {
-				resp, err = provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				resp, err = provisionServiceInstance(brokerUrl, serviceInstanceId, orgId, spaceId, defaultPolicy, httpClientForPublicApi)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			AfterEach(func() { _ = resp.Body.Close() })
@@ -335,16 +349,16 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				})
 
 				AfterEach(func() {
-					resp, err = unbindService(binding2Id, app2Id, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					resp, err = unbindService(brokerUrl, binding2Id, app2Id, serviceInstanceId, httpClientForPublicApi)
 					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
 					defer func() { _ = resp.Body.Close() }()
 					Expect(resp.StatusCode).To(Equal(http.StatusOK), ResponseMessage(resp))
 
-					resp, err = unbindService(binding3Id, app3Id, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					resp, err = unbindService(brokerUrl, binding3Id, app3Id, serviceInstanceId, httpClientForPublicApi)
 					Expect(err).NotTo(HaveOccurred(), "Error: %s", err)
 					defer func() { _ = resp.Body.Close() }()
 					Expect(resp.StatusCode).To(Equal(http.StatusOK), ResponseMessage(resp))
-					unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					unbindAndDeProvision(brokerUrl, bindingId, appId, serviceInstanceId, httpClientForPublicApi)
 				})
 
 				It("creates a policy and associated schedules", func() {
@@ -424,11 +438,13 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Update policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
 			})
+
 			AfterEach(func() {
-				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(brokerUrl, bindingId, appId, serviceInstanceId, httpClientForPublicApi)
 			})
+
 			Context("public api", func() {
 				Context("Update policies with schedules", func() {
 					BeforeEach(func() {
@@ -453,10 +469,10 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Delete Policies", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
 			})
 			AfterEach(func() {
-				unbindAndDeProvision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				unbindAndDeProvision(brokerUrl, bindingId, appId, serviceInstanceId, httpClientForPublicApi)
 			})
 
 			Context("public api", func() {
@@ -481,6 +497,80 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				})
 			})
 
+		})
+	})
+
+	When("connection to scheduler through the gorouter", func() {
+		BeforeEach(func() {
+			golangConf := DefaultGolangAPITestConfig()
+
+			golangConf.Scheduler.SchedulerURL = fmt.Sprintf("https://127.0.0.1:%d", components.Ports[GoRouterProxy])
+			golangConf.EventGenerator.EventGeneratorUrl = fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator])
+			golangConf.ScalingEngine.ScalingEngineUrl = fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine])
+			golangConf.CF.API = fakeCCNOAAUAA.URL()
+
+			certTmpDir := os.TempDir()
+
+			cfInstanceCertFileContent, cfInstanceKeyContent, err := testhelpers.GenerateClientCertWithCA("some-org-guid", "some-space-guid", "../../../test-certs/gorouter-ca.crt", "../../../test-certs/gorouter-ca.key")
+			Expect(err).ToNot(HaveOccurred())
+
+			certFile, err := configutil.MaterializeContentInFile(certTmpDir, "cf.crt", string(cfInstanceCertFileContent))
+			Expect(err).NotTo(HaveOccurred())
+			os.Setenv("CF_INSTANCE_CERT", certFile)
+
+			keyFile, err := configutil.MaterializeContentInFile(certTmpDir, "cf.key", string(cfInstanceKeyContent))
+			Expect(err).NotTo(HaveOccurred())
+			os.Setenv("CF_INSTANCE_KEY", keyFile)
+
+			os.Setenv("VCAP_APPLICATION", `{}`)
+
+			golangConfJson, err := golangConf.ToJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			vcapServicesJson := testhelpers.GetVcapServices("publicapiserver-config", golangConfJson)
+			os.Setenv("VCAP_SERVICES", vcapServicesJson)
+
+			os.Setenv("PORT", strconv.Itoa(components.Ports[GolangAPICFServer]))
+
+			startGolangApiCFServer()
+			startGoRouterProxyTo(components.Ports[SchedulerCFServer])
+		})
+
+		AfterEach(func() {
+			stopGolangApiServer()
+			stopGoRouterProxy()
+			os.Unsetenv("VCAP_APPLICATION")
+			os.Unsetenv("CF_INSTANCE_KEY")
+			os.Unsetenv("CF_INSTANCE_CERT")
+		})
+
+		Describe("Create policy", func() {
+			BeforeEach(func() {
+				provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
+			})
+			AfterEach(func() {
+				unbindAndDeProvision(brokerUrl, bindingId, appId, serviceInstanceId, httpClientForPublicApi)
+			})
+
+			When("Policies with schedules", func() {
+				It("creates a policy and associated schedules", func() {
+					policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
+
+					// change to golangCFAPIServer ?
+					doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+
+					checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+				})
+
+				It("fails with an invalid policy", func() {
+					policyStr = readPolicyFromFile("fakeInvalidPolicy.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusBadRequest, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					checkApiServerStatus(appId, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					checkSchedulerStatus(appId, http.StatusNotFound)
+				})
+			})
 		})
 	})
 })

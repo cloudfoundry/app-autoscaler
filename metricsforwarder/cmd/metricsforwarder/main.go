@@ -36,9 +36,9 @@ func main() {
 
 	vcapConfiguration, err := configutil.NewVCAPConfigurationReader()
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read vcap configuration : %s\n", err.Error())
-		os.Exit(1)
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 	}
+
 	conf, err = config.LoadConfig(path, vcapConfiguration)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stdout, "failed to load config : %s\n", err.Error())

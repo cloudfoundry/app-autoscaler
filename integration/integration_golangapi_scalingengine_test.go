@@ -4,12 +4,15 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
+	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"github.com/google/uuid"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
@@ -22,9 +25,15 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 		bindingId         string
 		orgId             string
 		spaceId           string
+
+		tmpDir string
+		err    error
 	)
 
 	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "autoscaler")
+		Expect(err).NotTo(HaveOccurred())
+
 		httpClient = testhelpers.NewApiClient()
 		httpClientForPublicApi = testhelpers.NewPublicApiClient()
 		startFakeCCNOAAUAA(initInstanceCount)
@@ -33,14 +42,12 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 
 		golangApiServerConfPath := components.PrepareGolangApiServerConfig(
 			dbUrl,
-			components.Ports[GolangAPIServer],
-			components.Ports[GolangServiceBroker],
 			fakeCCNOAAUAA.URL(),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
-			"https://127.0.0.1:8888",
 			tmpDir)
+
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
 		startGolangApiServer(golangApiServerConfPath)
 		serviceInstanceId = getRandomIdRef("serviceInstId")
@@ -53,6 +60,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 	})
 
 	AfterEach(func() {
+		os.RemoveAll(tmpDir)
 		stopGolangApiServer()
 		stopScalingEngine()
 	})
@@ -119,7 +127,9 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 
 		When("the app is bound to the service instance", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				brokerURL, err := url.Parse(fmt.Sprintf("https://127.0.0.1:%d", components.Ports[GolangServiceBroker]))
+				Expect(err).NotTo(HaveOccurred())
+				provisionAndBind(brokerURL, serviceInstanceId, orgId, spaceId, bindingId, appId, httpClientForPublicApi)
 			})
 
 			Context("ScalingEngine is down", func() {

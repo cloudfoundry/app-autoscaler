@@ -15,9 +15,11 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 )
 
-var ErrorWrongSpace = errors.New("space guid is wrong")
-var ErrorWrongOrg = errors.New("org guid is wrong")
-var ErrXFCCHeaderNotFound = errors.New("xfcc header not found")
+var (
+	ErrorWrongSpace       = errors.New("space guid is wrong")
+	ErrorWrongOrg         = errors.New("org guid is wrong")
+	ErrXFCCHeaderNotFound = errors.New("xfcc header not found")
+)
 
 type XFCCAuthMiddleware interface {
 	XFCCAuthenticationMiddleware(next http.Handler) http.Handler
@@ -50,17 +52,31 @@ type xfccAuthMiddleware struct {
 	xfccAuth *models.XFCCAuth
 }
 
-func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
+func NewXfccAuthMiddleware(logger lager.Logger, xfccAuth models.XFCCAuth) XFCCAuthMiddleware {
+	return &xfccAuthMiddleware{
+		logger:   logger,
+		xfccAuth: &xfccAuth,
+	}
+}
+
+func (m *xfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := m.checkAuth(r); err != nil {
+			m.logger.Error("xfcc-auth-error", err)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func CheckAuth(r *http.Request, org, space string) error {
 	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
 	if xfccHeader == "" {
 		return ErrXFCCHeaderNotFound
 	}
 
-	attrs := make(map[string]string)
-	for _, v := range strings.Split(xfccHeader, ";") {
-		attr := strings.SplitN(v, "=", 2)
-		attrs[attr[0]] = attr[1]
-	}
+	attrs := parseXFCCHeader(xfccHeader)
 
 	data, err := base64.StdEncoding.DecodeString(attrs["Cert"])
 	if err != nil {
@@ -72,53 +88,52 @@ func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
 		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
-	if m.getSpaceGuid(cert) != m.xfccAuth.ValidSpaceGuid {
+	if getSpaceGuid(cert) != space {
 		return ErrorWrongSpace
 	}
 
-	if m.getOrgGuid(cert) != m.xfccAuth.ValidOrgGuid {
+	if getOrgGuid(cert) != org {
 		return ErrorWrongOrg
 	}
 
 	return nil
 }
 
-func (m *xfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := m.checkAuth(r)
+func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
+	return CheckAuth(r, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
+}
 
-		if err != nil {
-			m.logger.Error("xfcc-auth-error", err)
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
+func parseXFCCHeader(xfccHeader string) map[string]string {
+	attrs := make(map[string]string)
+	for _, v := range strings.Split(xfccHeader, ";") {
+		attr := strings.SplitN(v, "=", 2)
+		if len(attr) == 2 {
+			attrs[attr[0]] = attr[1]
 		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func NewXfccAuthMiddleware(logger lager.Logger, xfccAuth models.XFCCAuth) XFCCAuthMiddleware {
-	return &xfccAuthMiddleware{
-		logger:   logger,
-		xfccAuth: &xfccAuth,
 	}
+	return attrs
 }
 
-func (m *xfccAuthMiddleware) getSpaceGuid(cert *x509.Certificate) string {
-	var certSpaceGuid string
+func getSpaceGuid(cert *x509.Certificate) string {
+	return getGuidFromCert(cert, "space:")
+}
+
+func getOrgGuid(cert *x509.Certificate) string {
+	return getGuidFromCert(cert, "org:")
+}
+
+func getGuidFromCert(cert *x509.Certificate, prefix string) string {
 	for _, ou := range cert.Subject.OrganizationalUnit {
-		if strings.Contains(ou, "space:") {
-			kv := m.mapFrom(ou)
-			certSpaceGuid = kv["space"]
-			break
+		if strings.Contains(ou, prefix) {
+			kv := mapFrom(ou)
+			return kv[strings.TrimSuffix(prefix, ":")]
 		}
 	}
-	return certSpaceGuid
+	return ""
 }
 
-func (m *xfccAuthMiddleware) mapFrom(input string) map[string]string {
+func mapFrom(input string) map[string]string {
 	result := make(map[string]string)
-
 	r := regexp.MustCompile(`(\w+):((\w+-)*\w+)`)
 	matches := r.FindAllStringSubmatch(input, -1)
 
@@ -126,18 +141,5 @@ func (m *xfccAuthMiddleware) mapFrom(input string) map[string]string {
 		result[match[1]] = match[2]
 	}
 
-	m.logger.Debug("parseCertOrganizationalUnit", lager.Data{"input": input, "result": result})
 	return result
-}
-
-func (m *xfccAuthMiddleware) getOrgGuid(cert *x509.Certificate) string {
-	var certOrgGuid string
-	for _, ou := range cert.Subject.OrganizationalUnit {
-		if strings.Contains(ou, "org:") {
-			kv := m.mapFrom(ou)
-			certOrgGuid = kv["org"]
-			break
-		}
-	}
-	return certOrgGuid
 }

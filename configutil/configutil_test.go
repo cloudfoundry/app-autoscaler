@@ -1,7 +1,6 @@
 package configutil_test
 
 import (
-	"encoding/json"
 	"io"
 	"net/url"
 	"os"
@@ -11,6 +10,7 @@ import (
 
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 )
 
 var _ = Describe("Configutil", func() {
@@ -55,11 +55,12 @@ var _ = Describe("Configutil", func() {
 				var expectedServerCAContent = "server-ca-content"
 
 				BeforeEach(func() {
-					vcapServicesJson = getDbVcapServices(map[string]string{
+					vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
 						"client_cert": expectedClientCertContent,
 						"client_key":  expectedClientKeyContent,
 						"server_ca":   expectedServerCAContent,
 					}, "some-custom-tls-service", "postgres")
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns a tls.Config with the expected values", func() {
@@ -91,9 +92,10 @@ var _ = Describe("Configutil", func() {
 			When("VCAP_SERVICES has relational db service bind to app", func() {
 				When("when uri is wrong", func() {
 					BeforeEach(func() {
-						vcapServicesJson = getDbVcapServices(map[string]string{
+						vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
 							"uri": "http://example.com/path\x00with/invalid/character",
 						}, "some-db", "postgres")
+						Expect(err).NotTo(HaveOccurred())
 					})
 
 					It("errors", func() {
@@ -109,12 +111,13 @@ var _ = Describe("Configutil", func() {
 
 					When("postgresDB", func() {
 						BeforeEach(func() {
-							vcapServicesJson = getDbVcapServices(map[string]string{
+							vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
 								"uri":         "postgres://foo:bar@postgres.example.com:5432/some-db",
 								"client_cert": expectedClientCertContent,
 								"client_key":  expectedClientKeyContent,
 								"server_ca":   expectedServerCAContent,
 							}, "some-db", "postgres")
+							Expect(err).NotTo(HaveOccurred())
 						})
 
 						It("loads the db config from VCAP_SERVICES for postgres db", func() {
@@ -142,12 +145,13 @@ var _ = Describe("Configutil", func() {
 
 					When("mysqlDB", func() {
 						BeforeEach(func() {
-							vcapServicesJson = getDbVcapServices(map[string]string{
+							vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
 								"uri":         "mysql://foo:bar@mysql:3306/some-db",
 								"client_cert": expectedClientCertContent,
 								"client_key":  expectedClientKeyContent,
 								"server_ca":   expectedServerCAContent,
 							}, "some-db", "mysql")
+							Expect(err).NotTo(HaveOccurred())
 						})
 
 						XIt("loads the db config from VCAP_SERVICES for postgres db", func() {
@@ -183,20 +187,6 @@ var _ = Describe("Configutil", func() {
 		})
 	})
 })
-
-func getDbVcapServices(creds map[string]string, serviceName string, dbType string) string {
-	credentials, err := json.Marshal(creds)
-	Expect(err).NotTo(HaveOccurred())
-	return `{
-		"user-provided": [ { "name": "config", "credentials": { "metricsforwarder": { } }}],
-		"autoscaler": [ {
-			"name": "some-service",
-			"credentials": ` + string(credentials) + `,
-			"syslog_drain_url": "",
-			"tags": ["` + serviceName + `", "` + dbType + `"]
-			}
-		]}` // #nosec G101
-}
 
 func assertCertFile(actualCertPath, expectedContent string) {
 	Expect(actualCertPath).NotTo(BeEmpty())

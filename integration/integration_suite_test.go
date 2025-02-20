@@ -41,7 +41,6 @@ const (
 
 var (
 	components            Components
-	tmpDir                string
 	schedulerConfPath     string
 	scalingEngineConfPath string
 	operatorConfPath      string
@@ -101,9 +100,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 	components.Ports = PreparePorts()
 
-	tmpDir, err = os.MkdirTemp("", "autoscaler")
-	Expect(err).NotTo(HaveOccurred())
-
 	dbUrl = GetDbUrl()
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
@@ -115,14 +111,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if LOGLEVEL == "" {
 		LOGLEVEL = "info"
 	}
-})
-
-var _ = SynchronizedAfterSuite(func() {
-	if len(tmpDir) > 0 {
-		_ = os.RemoveAll(tmpDir)
-	}
-}, func() {
-
 })
 
 var _ = BeforeEach(func() {
@@ -144,6 +132,7 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler", "build", "scalingengine")
 	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler", "build", "operator")
 	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler", "build", "api")
+	builtExecutables[GoRouterProxy] = path.Join(rootDir, "src", "autoscaler", "build", "gorouterproxy")
 
 	return builtExecutables
 }
@@ -151,18 +140,35 @@ func CompileTestedExecutables() Executables {
 func PreparePorts() Ports {
 	return Ports{
 		GolangAPIServer:     22000 + GinkgoParallelProcess(),
+		GolangAPICFServer:   22500 + GinkgoParallelProcess(),
 		GolangServiceBroker: 23000 + GinkgoParallelProcess(),
 		Scheduler:           15000 + GinkgoParallelProcess(),
+		SchedulerCFServer:   15500 + GinkgoParallelProcess(),
 		MetricsCollector:    16000 + GinkgoParallelProcess(),
 		EventGenerator:      17000 + GinkgoParallelProcess(),
 		CfEventGenerator:    17500 + GinkgoParallelProcess(),
 		ScalingEngine:       18000 + GinkgoParallelProcess(),
+		GoRouterProxy:       19000 + GinkgoParallelProcess(),
 	}
 }
 
 func startGolangApiServer(golangApiServerConfPath string) {
+	GinkgoHelper()
 	processMap[GolangAPIServer] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{GolangAPIServer, components.GolangAPIServer(golangApiServerConfPath)},
+	}))
+}
+
+func startGolangApiCFServer() {
+	GinkgoHelper()
+	processMap[GolangAPIServer] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{GolangAPIServer, components.GolangAPICFServer()},
+	}))
+}
+
+func startGoRouterProxyTo(portToForward int) {
+	processMap[GoRouterProxy] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{"gorouter-proxy", components.GoRouterProxy(portToForward)},
 	}))
 }
 
@@ -207,15 +213,23 @@ func startMockLogCache() {
 func stopGolangApiServer() {
 	ginkgomon_v2.Kill(processMap[GolangAPIServer], 5*time.Second)
 }
+
+func stopGoRouterProxy() {
+	ginkgomon_v2.Kill(processMap[GoRouterProxy], 5*time.Second)
+}
+
 func stopScheduler() {
 	ginkgomon_v2.Kill(processMap[Scheduler], 5*time.Second)
 }
+
 func stopScalingEngine() {
 	ginkgomon_v2.Kill(processMap[ScalingEngine], 5*time.Second)
 }
+
 func stopEventGenerator() {
 	ginkgomon_v2.Kill(processMap[EventGenerator], 5*time.Second)
 }
+
 func stopOperator() {
 	ginkgomon_v2.Kill(processMap[Operator], 5*time.Second)
 }
@@ -255,7 +269,7 @@ func testFileFragment(filename string) string {
 	return base
 }
 
-func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+func provisionServiceInstance(brokerUrl *url.URL, serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, httpClient *http.Client) (*http.Response, error) {
 	By("provisionServiceInstance")
 	var bindBody map[string]interface{}
 	if defaultPolicy != nil {
@@ -281,7 +295,7 @@ func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId st
 
 	body, err := json.Marshal(bindBody)
 	Expect(err).NotTo(HaveOccurred())
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), bytes.NewReader(body))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v2/service_instances/%s", brokerUrl.String(), serviceInstanceId), bytes.NewReader(body))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("X-Broker-API-Version", "2.14")
 	req.Header.Set("Content-Type", "application/json")
@@ -314,9 +328,9 @@ func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, broke
 	return httpClient.Do(req)
 }
 
-func deProvisionServiceInstance(serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+func deProvisionServiceInstance(brokerUrl *url.URL, serviceInstanceId string, httpClient *http.Client) (*http.Response, error) {
 	By("deProvisionServiceInstance")
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s?service_id=%s&plan_id=%s", brokerPort, serviceInstanceId, serviceId, planId), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/v2/service_instances/%s?service_id=%s&plan_id=%s", brokerUrl.String(), serviceInstanceId, serviceId, planId), nil)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 	req.Header.Set("X-Broker-API-Version", "2.14")
 	req.Header.Set("Content-Type", "application/json")
@@ -353,9 +367,9 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 	return httpClient.Do(req)
 }
 
-func unbindService(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+func unbindService(brokerUrl *url.URL, bindingId string, appId string, serviceInstanceId string, httpClient *http.Client) (*http.Response, error) {
 	By("unbindService")
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s", brokerPort, serviceInstanceId, bindingId, serviceId, planId), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s", brokerUrl.String(), serviceInstanceId, bindingId, serviceId, planId), nil)
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("X-Broker-API-Version", "2.14")
 	req.Header.Set("Content-Type", "application/json")
@@ -363,8 +377,10 @@ func unbindService(bindingId string, appId string, serviceInstanceId string, bro
 	return httpClient.Do(req)
 }
 
-func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, brokerPort int, httpClient *http.Client) {
-	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, nil, brokerPort, httpClient)
+// It is used to provision and bind a service instance to an app
+func provisionAndBind(brokerUrl *url.URL, serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, httpClient *http.Client) {
+	brokerPort := components.Ports[GolangServiceBroker]
+	resp, err := provisionServiceInstance(brokerUrl, serviceInstanceId, orgId, spaceId, nil, httpClient)
 	Expect(err).WithOffset(1).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).WithOffset(1).To(Equal(http.StatusCreated), fmt.Sprintf("response was '%s'", MustReadAll(resp.Body)))
 	_ = resp.Body.Close()
@@ -375,13 +391,13 @@ func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bi
 	_ = resp.Body.Close()
 }
 
-func unbindAndDeProvision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
-	resp, err := unbindService(bindingId, appId, serviceInstanceId, brokerPort, httpClient)
+func unbindAndDeProvision(brokerUrl *url.URL, bindingId string, appId string, serviceInstanceId string, httpClient *http.Client) {
+	resp, err := unbindService(brokerUrl, bindingId, appId, serviceInstanceId, httpClient)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, resp.StatusCode).To(Equal(http.StatusOK))
 	_ = resp.Body.Close()
 
-	resp, err = deProvisionServiceInstance(serviceInstanceId, brokerPort, httpClient)
+	resp, err = deProvisionServiceInstance(brokerUrl, serviceInstanceId, httpClient)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, resp.StatusCode).To(Equal(http.StatusOK))
 	_ = resp.Body.Close()

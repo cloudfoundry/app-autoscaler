@@ -390,7 +390,7 @@ func getVcapServices() (result string) {
 	}
 
 	result = `{
-			"user-provided": [ { "name": "config", "tags": ["publicapiserver-config"], "credentials": { "publicapiserver": { } }}],
+			"user-provided": [ { "name": "config", "tags": ["publicapiserver-config"], "credentials": { "publicapiserver-config": { } }}],
 			"autoscaler": [ {
 				"name": "some-service",
 				"credentials": {

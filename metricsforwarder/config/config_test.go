@@ -333,6 +333,11 @@ health:
 			err = conf.Validate()
 		})
 
+		It("should set logging to redacted by default", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.Logging.PlainTextSink).To(BeFalse())
+		})
+
 		When("syslog is available", func() {
 			BeforeEach(func() {
 				conf.SyslogConfig = SyslogConfig{

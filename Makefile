@@ -22,7 +22,7 @@ EXTENSION_FILE := $(shell mktemp)
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 
-binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -v vendor)
+binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -Ev "vendor|integration")
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
 export GO111MODULE=on
 
@@ -124,9 +124,15 @@ test: generate-fakes
 	@echo "Running tests"
 	APP_AUTOSCALER_TEST_RUN='true' ginkgo -p ${GINKGO_OPTS} ${TEST} --skip-package='integration'
 
-testsuite:
+.PHONY: testsuite
+testsuite: build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' ginkgo -p ${GINKGO_OPTS} ${TEST}
+
+.PHONY: build-gorouterproxy
+build-gorouterproxy:
+	@echo "# building gorouterproxy"
+	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/gorouterproxy integration/gorouterproxy/main.go
 
 .PHONY: integration
 integration: generate-fakes

@@ -8,9 +8,9 @@ import (
 )
 
 type HealthConfig struct {
-	ServerConfig          ServerConfig     `yaml:"server_config"`
-	BasicAuth             models.BasicAuth `yaml:"basic_auth"`
-	ReadinessCheckEnabled bool             `yaml:"readiness_enabled"`
+	ServerConfig          ServerConfig     `yaml:"server_config" json:"server_config"`
+	BasicAuth             models.BasicAuth `yaml:"basic_auth" json:"basic_auth"`
+	ReadinessCheckEnabled bool             `yaml:"readiness_enabled" json:"readiness_enabled"`
 }
 
 var ErrConfiguration = fmt.Errorf("configuration error")

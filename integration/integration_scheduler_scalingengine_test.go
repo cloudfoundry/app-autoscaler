@@ -3,6 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -18,9 +19,14 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		testGuid          string
 		initInstanceCount = 2
 		policyStr         string
+		tmpDir            string
+		err               error
 	)
 
 	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "autoscaler")
+		Expect(err).NotTo(HaveOccurred())
+
 		httpClient = testhelpers.NewSchedulerClient()
 
 		testAppId = uuid.NewString()
@@ -34,10 +40,10 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		startScheduler()
 
 		policyStr = setPolicySpecificDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"), 70*time.Second, 2*time.Hour)
-
 	})
 
 	AfterEach(func() {
+		os.RemoveAll(tmpDir)
 		deletePolicy(testAppId)
 		stopScheduler()
 		stopScalingEngine()

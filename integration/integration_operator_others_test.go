@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -25,9 +27,16 @@ var _ = Describe("Integration_Operator_Others", func() {
 		bindingId         string
 		orgId             string
 		spaceId           string
+
+		brokerUrl *url.URL
+		err       error
+		tmpDir    string
 	)
 
 	BeforeEach(func() {
+		tmpDir, err = os.MkdirTemp("", "autoscaler")
+		Expect(err).NotTo(HaveOccurred())
+
 		httpClient = testhelpers.NewApiClient()
 
 		testAppId = uuid.NewString()
@@ -41,17 +50,19 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 		golangApiServerConfPath := components.PrepareGolangApiServerConfig(
 			dbUrl,
-			components.Ports[GolangAPIServer],
-			components.Ports[GolangServiceBroker],
 			fakeCCNOAAUAA.URL(),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
 			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
-			"https://127.0.0.1:8888",
 			tmpDir)
+
 		startGolangApiServer(golangApiServerConfPath)
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("broker_username:broker_password"))
-		provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, testAppId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+
+		brokerUrl, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", components.Ports[GolangServiceBroker]))
+		Expect(err).NotTo(HaveOccurred())
+
+		provisionAndBind(brokerUrl, serviceInstanceId, orgId, spaceId, bindingId, testAppId, httpClientForPublicApi)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
@@ -73,6 +84,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 		stopScalingEngine()
 		stopOperator()
 		stopGolangApiServer()
+		os.RemoveAll(tmpDir)
 	})
 
 	Describe("Synchronizer", func() {

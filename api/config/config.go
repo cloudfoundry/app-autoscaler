@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -52,80 +53,81 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 }
 
 type SchedulerConfig struct {
-	SchedulerURL   string          `yaml:"scheduler_url"`
-	TLSClientCerts models.TLSCerts `yaml:"tls"`
+	SchedulerURL   string          `yaml:"scheduler_url" json:"scheduler_url"`
+	TLSClientCerts models.TLSCerts `yaml:"tls" json:"tls"`
 }
+
 type ScalingEngineConfig struct {
-	ScalingEngineUrl string          `yaml:"scaling_engine_url"`
-	TLSClientCerts   models.TLSCerts `yaml:"tls"`
+	ScalingEngineUrl string          `yaml:"scaling_engine_url" json:"scaling_engine_url"`
+	TLSClientCerts   models.TLSCerts `yaml:"tls" json:"tls"`
 }
 
 type EventGeneratorConfig struct {
-	EventGeneratorUrl string          `yaml:"event_generator_url"`
-	TLSClientCerts    models.TLSCerts `yaml:"tls"`
+	EventGeneratorUrl string          `yaml:"event_generator_url" json:"event_generator_url"`
+	TLSClientCerts    models.TLSCerts `yaml:"tls" json:"tls"`
 }
 type MetricsForwarderConfig struct {
-	MetricsForwarderUrl     string `yaml:"metrics_forwarder_url"`
-	MetricsForwarderMtlsUrl string `yaml:"metrics_forwarder_mtls_url"`
+	MetricsForwarderUrl     string `yaml:"metrics_forwarder_url" json:"metrics_forwarder_url"`
+	MetricsForwarderMtlsUrl string `yaml:"metrics_forwarder_mtls_url" json:"metrics_forwarder_mtls_url"`
 }
 
 type PlanDefinition struct {
-	PlanCheckEnabled  bool `yaml:"planCheckEnabled"`
-	SchedulesCount    int  `yaml:"schedules_count"`
-	ScalingRulesCount int  `yaml:"scaling_rules_count"`
-	PlanUpdateable    bool `yaml:"plan_updateable"`
+	PlanCheckEnabled  bool `yaml:"planCheckEnabled" json:"planCheckEnabled"`
+	SchedulesCount    int  `yaml:"schedules_count" json:"schedules_count"`
+	ScalingRulesCount int  `yaml:"scaling_rules_count" json:"scaling_rules_count"`
+	PlanUpdateable    bool `yaml:"plan_updateable" json:"plan_updateable"`
 }
 
 type BrokerCredentialsConfig struct {
-	BrokerUsername     string `yaml:"broker_username"`
-	BrokerUsernameHash []byte `yaml:"broker_username_hash"`
-	BrokerPassword     string `yaml:"broker_password"`
-	BrokerPasswordHash []byte `yaml:"broker_password_hash"`
+	BrokerUsername     string `yaml:"broker_username" json:"broker_username"`
+	BrokerUsernameHash []byte `yaml:"broker_username_hash" json:"broker_username_hash"`
+	BrokerPassword     string `yaml:"broker_password" json:"broker_password"`
+	BrokerPasswordHash []byte `yaml:"broker_password_hash" json:"broker_password_hash"`
 }
 
 type ScalingRulesConfig struct {
-	CPU      LowerUpperThresholdConfig `yaml:"cpu"`
-	CPUUtil  LowerUpperThresholdConfig `yaml:"cpuutil"`
-	DiskUtil LowerUpperThresholdConfig `yaml:"diskutil"`
-	Disk     LowerUpperThresholdConfig `yaml:"disk"`
+	CPU      LowerUpperThresholdConfig `yaml:"cpu" json:"cpu"`
+	CPUUtil  LowerUpperThresholdConfig `yaml:"cpuutil" json:"cpuutil"`
+	DiskUtil LowerUpperThresholdConfig `yaml:"diskutil" json:"diskutil"`
+	Disk     LowerUpperThresholdConfig `yaml:"disk" json:"disk"`
 }
 
 type LowerUpperThresholdConfig struct {
-	LowerThreshold int `yaml:"lower_threshold"`
-	UpperThreshold int `yaml:"upper_threshold"`
+	LowerThreshold int `yaml:"lower_threshold" json:"lower_threshold"`
+	UpperThreshold int `yaml:"upper_threshold" json:"upper_threshold"`
 }
 
 type Config struct {
-	Logging      helpers.LoggingConfig `yaml:"logging"`
-	BrokerServer helpers.ServerConfig  `yaml:"broker_server"`
-	Server       helpers.ServerConfig  `yaml:"public_api_server"`
+	Logging      helpers.LoggingConfig `yaml:"logging" json:"logging"`
+	BrokerServer helpers.ServerConfig  `yaml:"broker_server" json:"broker_server"`
+	Server       helpers.ServerConfig  `yaml:"public_api_server" json:"public_api_server"`
 
-	VCAPServer helpers.ServerConfig `yaml:"vcap_server"`
+	VCAPServer helpers.ServerConfig `yaml:"vcap_server" json:"vcap_server"`
 
-	Db                                 map[string]db.DatabaseConfig  `yaml:"db"`
-	BrokerCredentials                  []BrokerCredentialsConfig     `yaml:"broker_credentials"`
-	APIClientId                        string                        `yaml:"api_client_id"`
-	PlanCheck                          *PlanCheckConfig              `yaml:"plan_check"`
-	CatalogPath                        string                        `yaml:"catalog_path"`
-	CatalogSchemaPath                  string                        `yaml:"catalog_schema_path"`
-	DashboardRedirectURI               string                        `yaml:"dashboard_redirect_uri"`
-	PolicySchemaPath                   string                        `yaml:"policy_schema_path"`
-	Scheduler                          SchedulerConfig               `yaml:"scheduler"`
-	ScalingEngine                      ScalingEngineConfig           `yaml:"scaling_engine"`
-	EventGenerator                     EventGeneratorConfig          `yaml:"event_generator"`
-	CF                                 cf.Config                     `yaml:"cf"`
-	InfoFilePath                       string                        `yaml:"info_file_path"`
-	MetricsForwarder                   MetricsForwarderConfig        `yaml:"metrics_forwarder"`
-	Health                             helpers.HealthConfig          `yaml:"health"`
-	RateLimit                          models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperImpl                     string                        `yaml:"cred_helper_impl"`
-	StoredProcedureConfig              *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
-	ScalingRules                       ScalingRulesConfig            `yaml:"scaling_rules"`
-	DefaultCustomMetricsCredentialType string                        `yaml:"default_credential_type"`
+	Db                                 map[string]db.DatabaseConfig  `yaml:"db" json:"db,omitempty"`
+	BrokerCredentials                  []BrokerCredentialsConfig     `yaml:"broker_credentials" json:"broker_credentials"`
+	APIClientId                        string                        `yaml:"api_client_id" json:"api_client_id"`
+	PlanCheck                          *PlanCheckConfig              `yaml:"plan_check" json:"plan_check"`
+	CatalogPath                        string                        `yaml:"catalog_path" json:"catalog_path"`
+	CatalogSchemaPath                  string                        `yaml:"catalog_schema_path" json:"catalog_schema_path"`
+	DashboardRedirectURI               string                        `yaml:"dashboard_redirect_uri" json:"dashboard_redirect_uri"`
+	PolicySchemaPath                   string                        `yaml:"policy_schema_path" json:"policy_schema_path"`
+	Scheduler                          SchedulerConfig               `yaml:"scheduler" json:"scheduler"`
+	ScalingEngine                      ScalingEngineConfig           `yaml:"scaling_engine" json:"scaling_engine"`
+	EventGenerator                     EventGeneratorConfig          `yaml:"event_generator" json:"event_generator"`
+	CF                                 cf.Config                     `yaml:"cf" json:"cf"`
+	InfoFilePath                       string                        `yaml:"info_file_path" json:"info_file_path"`
+	MetricsForwarder                   MetricsForwarderConfig        `yaml:"metrics_forwarder" json:"metrics_forwarder"`
+	Health                             helpers.HealthConfig          `yaml:"health" json:"health"`
+	RateLimit                          models.RateLimitConfig        `yaml:"rate_limit" json:"rate_limit,omitempty"`
+	CredHelperImpl                     string                        `yaml:"cred_helper_impl" json:"cred_helper_impl"`
+	StoredProcedureConfig              *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config" json:"stored_procedure_binding_credential_config"`
+	ScalingRules                       ScalingRulesConfig            `yaml:"scaling_rules" json:"scaling_rules"`
+	DefaultCustomMetricsCredentialType string                        `yaml:"default_credential_type" json:"default_credential_type"`
 }
 
 type PlanCheckConfig struct {
-	PlanDefinitions map[string]PlanDefinition `yaml:"plan_definitions"`
+	PlanDefinitions map[string]PlanDefinition `yaml:"plan_definitions" json:"plan_definitions"`
 }
 
 func defaultConfig() Config {
@@ -181,7 +183,7 @@ func loadYamlFile(filepath string, conf *Config) error {
 	return nil
 }
 func loadPublicApiServerConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	data, err := vcapReader.GetServiceCredentialContent("publicapiserver-config", "publicapiserver")
+	data, err := vcapReader.GetServiceCredentialContent("publicapiserver-config", "publicapiserver-config")
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrPublicApiServerConfigNotFound, err)
 	}
@@ -192,6 +194,9 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 	if !vcapReader.IsRunningOnCF() {
 		return nil
 	}
+
+	// enable plain text logging. See src/autoscaler/helpers/logger.go
+	conf.Logging.PlainTextSink = true
 
 	conf.VCAPServer.Port = vcapReader.GetPort()
 	if err := loadPublicApiServerConfig(conf, vcapReader); err != nil {
@@ -211,13 +216,21 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 	}
 
 	configureEventGenerator(conf)
+	configureScheduler(conf)
 
 	return nil
 }
 
 func configureEventGenerator(conf *Config) {
+	conf.EventGenerator.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CERT")
 	conf.EventGenerator.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
 	conf.EventGenerator.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
+}
+
+func configureScheduler(conf *Config) {
+	conf.Scheduler.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.Scheduler.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.Scheduler.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
 
 func configurePolicyDb(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
@@ -267,6 +280,24 @@ func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) 
 	return &conf, nil
 }
 
+func FromJSON(data []byte) (*Config, error) {
+	result := &Config{}
+	err := json.Unmarshal(data, result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config from json: %s", err)
+	}
+	return result, nil
+}
+
+func (c *Config) ToJSON() (string, error) {
+	b, err := json.Marshal(c)
+
+	if err != nil {
+		err = fmt.Errorf("failed to marshal config to json: %s", err)
+		return "", err
+	}
+	return string(b), nil
+}
 func (c *Config) Validate() error {
 	err := c.CF.Validate()
 	if err != nil {

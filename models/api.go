@@ -10,8 +10,8 @@ const (
 )
 
 type XFCCAuth struct {
-	ValidOrgGuid   string `yaml:"valid_org_guid"`
-	ValidSpaceGuid string `yaml:"valid_space_guid"`
+	ValidOrgGuid   string `yaml:"valid_org_guid" json:"valid_org_guid"`
+	ValidSpaceGuid string `yaml:"valid_space_guid" json:"valid_space_guid"`
 }
 
 type BrokerContext struct {
