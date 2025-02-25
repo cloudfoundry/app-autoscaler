@@ -44,12 +44,12 @@ require (
 	golang.org/x/crypto v0.34.0
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
 	golang.org/x/net v0.35.0
-	golang.org/x/time v0.9.0
+	golang.org/x/time v0.10.0
 	google.golang.org/grpc v1.70.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250219182151-9fdb1cabc7b2
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250224174004-546df14abb99
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20250217093403-cd1363c1f46a // indirect
