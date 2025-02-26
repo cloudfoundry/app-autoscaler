@@ -78,7 +78,6 @@ func cachedResponse(timefunc func() time.Time, next handler) handler {
 
 func (c *cacheEntry) save(currentTime time.Time, recorder *httptest.ResponseRecorder) {
 	c.responseTime = currentTime
-	//nolint:bodyclose
 	c.response = recorder.Result()
 	c.body = recorder.Body.Bytes()
 }
