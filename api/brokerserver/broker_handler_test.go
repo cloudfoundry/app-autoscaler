@@ -14,8 +14,8 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 
+	"code.cloudfoundry.org/brokerapi/v13/handlers"
 	"github.com/go-logr/logr"
-	"github.com/pivotal-cf/brokerapi/v12/handlers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"

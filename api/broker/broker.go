@@ -17,10 +17,10 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/brokerapi/v13/domain"
+	"code.cloudfoundry.org/brokerapi/v13/domain/apiresponses"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/google/uuid"
-	"github.com/pivotal-cf/brokerapi/v12/domain"
-	"github.com/pivotal-cf/brokerapi/v12/domain/apiresponses"
 	"golang.org/x/exp/slices"
 )
 

@@ -15,10 +15,10 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
+	"code.cloudfoundry.org/brokerapi/v13"
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/go-chi/chi/v5"
-	"github.com/pivotal-cf/brokerapi/v12"
-	"github.com/pivotal-cf/brokerapi/v12/domain"
 	"github.com/tedsuo/ifrit"
 	"golang.org/x/crypto/bcrypt"
 )

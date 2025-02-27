@@ -3,6 +3,7 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 go 1.23.1
 
 require (
+	code.cloudfoundry.org/brokerapi/v13 v13.0.0
 	code.cloudfoundry.org/cfhttp/v2 v2.33.0
 	code.cloudfoundry.org/clock v1.22.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
@@ -27,7 +28,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pivotal-cf/brokerapi/v12 v12.0.1
 	github.com/prometheus/client_golang v1.21.0
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.5.17
