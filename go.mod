@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/cfhttp/v2 v2.35.0
 	code.cloudfoundry.org/clock v1.28.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
-	code.cloudfoundry.org/go-loggregator/v10 v10.0.1
+	code.cloudfoundry.org/go-loggregator/v10 v10.1.0
 	code.cloudfoundry.org/lager/v3 v3.16.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250225224648-c172d9c9930a
 	code.cloudfoundry.org/tlsconfig v0.18.0
