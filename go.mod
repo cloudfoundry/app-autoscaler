@@ -11,7 +11,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.27.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250225224648-c172d9c9930a
 	code.cloudfoundry.org/tlsconfig v0.19.0
-	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-faster/errors v0.7.1

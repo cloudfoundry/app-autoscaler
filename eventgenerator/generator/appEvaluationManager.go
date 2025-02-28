@@ -10,7 +10,7 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	circuit "github.com/rubyist/circuitbreaker"
 )
 
@@ -107,7 +107,6 @@ func (a *AppEvaluationManager) doEvaluate() {
 					bf := backoff.NewExponentialBackOff()
 					bf.InitialInterval = a.breakerConfig.BackOffInitialInterval
 					bf.MaxInterval = a.breakerConfig.BackOffMaxInterval
-					bf.MaxElapsedTime = 0      // never stop retry
 					bf.RandomizationFactor = 0 // do not randomize
 					bf.Multiplier = 2
 					bf.Reset()

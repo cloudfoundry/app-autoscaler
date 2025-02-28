@@ -14,7 +14,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/v2"
 	"code.cloudfoundry.org/lager/v3/lagertest"
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -634,7 +634,6 @@ var _ = Describe("Evaluator", func() {
 					bf := backoff.NewExponentialBackOff()
 					bf.InitialInterval = 500 * time.Millisecond
 					bf.MaxInterval = 1 * time.Second
-					bf.MaxElapsedTime = 0
 					bf.RandomizationFactor = 0
 					bf.Multiplier = 2
 					bf.Reset()
