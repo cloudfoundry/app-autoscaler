@@ -336,8 +336,8 @@ code.cloudfoundry.org/lager/v3 v3.27.0 h1:LZ/cxraneE84Rq7J7Z6lDA7x/nbe5iOM90yKJm
 code.cloudfoundry.org/lager/v3 v3.27.0/go.mod h1:f8QnZ+7h8JXO/qujwTKVbuPj83gJuVJEXuet/1DTjjc=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250225224648-c172d9c9930a h1:bK50oGLpxC2tpEUsAw1dhLzFioTK5LLWOADg6cq/fRI=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250225224648-c172d9c9930a/go.mod h1:NYkMDevdzW8sZIOkK0nldQwVIaJZUEz5gKjXnjoRLA8=
-code.cloudfoundry.org/tlsconfig v0.18.0 h1:p2SSvVYOqBXKbFD8f8A+Uky5zdlTSJgSWfpk71q7wts=
-code.cloudfoundry.org/tlsconfig v0.18.0/go.mod h1:bhzn8qKcq9voqMOWrCoLuDSpbek31TtcUONu1GDjbDY=
+code.cloudfoundry.org/tlsconfig v0.19.0 h1:HOpEtyQ+M0z6XT4F28/b4oY3DKfHy4rh5ITf3zJ/WLE=
+code.cloudfoundry.org/tlsconfig v0.19.0/go.mod h1:Tw1bAcguRWrUAtMBX1g9cFbejKWoeHzMjhejZyVUJ0Q=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
@@ -1065,8 +1065,8 @@ golang.org/x/crypto v0.30.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ss
 golang.org/x/crypto v0.31.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ssk=
 golang.org/x/crypto v0.32.0/go.mod h1:ZnnJkOaASj8g0AjIduWNlq2NRxL0PlBrbKVyZ6V/Ugc=
 golang.org/x/crypto v0.33.0/go.mod h1:bVdXmD7IV/4GdElGPozy6U7lWdRXA4qyRVGJV57uQ5M=
-golang.org/x/crypto v0.34.0 h1:+/C6tk6rf/+t5DhUketUbD1aNGqiSX3j15Z6xuIDlBA=
-golang.org/x/crypto v0.34.0/go.mod h1:dy7dXNW32cAb/6/PRuTNsix8T+vJAqvuIy5Bli/x0YQ=
+golang.org/x/crypto v0.35.0 h1:b15kiHdrGCHrP6LvwaQ3c03kgNhhiMgvlhxHQhmg2Xs=
+golang.org/x/crypto v0.35.0/go.mod h1:dy7dXNW32cAb/6/PRuTNsix8T+vJAqvuIy5Bli/x0YQ=
 golang.org/x/exp v0.0.0-20180321215751-8460e604b9de/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20180807140117-3d87b88a115f/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
