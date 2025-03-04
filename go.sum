@@ -334,8 +334,8 @@ code.cloudfoundry.org/go-metric-registry v0.0.0-20250225215424-238194030075 h1:P
 code.cloudfoundry.org/go-metric-registry v0.0.0-20250225215424-238194030075/go.mod h1:5cBxgxm73iKM/A+3QtZVf07adgjgas5Q9y17C9MS2oE=
 code.cloudfoundry.org/lager/v3 v3.28.0 h1:SypXJGyBHVXkJFN3mgj5ndwMSP0IR+iE9vvaIaYvlL0=
 code.cloudfoundry.org/lager/v3 v3.28.0/go.mod h1:k4G2PFGK6R46i8v4+Cv9LjCCWl4OkOFahfEi1WlhYic=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250303093803-d6bcb6ccd748 h1:3OhkrQpHYRPkHZ8tZmT0mwefA1bKyl+kDXWQrafBBy0=
-code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250303093803-d6bcb6ccd748/go.mod h1:S7zsHAdNfsFJpPm1ee70BFOtgZVXGno+xypH6wLIRzA=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250304195834-cd0efca1a35f h1:7OfYKLqGK1yWT0ZrAZG/7RjWQHADL5YK8qJW6DBOEeA=
+code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250304195834-cd0efca1a35f/go.mod h1:S7zsHAdNfsFJpPm1ee70BFOtgZVXGno+xypH6wLIRzA=
 code.cloudfoundry.org/tlsconfig v0.20.0 h1:KutIw0C20n/v2sOYIzaTiE85IZzUJXbSRWGYZqzy7rs=
 code.cloudfoundry.org/tlsconfig v0.20.0/go.mod h1:EmhTAjI91VUkKhShpS6TmwFw3QDh0cXzcETpnDdtAq0=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
