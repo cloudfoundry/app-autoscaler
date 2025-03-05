@@ -6,7 +6,7 @@ require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.0
 	code.cloudfoundry.org/cfhttp/v2 v2.36.0
 	code.cloudfoundry.org/clock v1.29.0
-	code.cloudfoundry.org/go-log-cache/v3 v3.0.3
+	code.cloudfoundry.org/go-log-cache/v3 v3.1.0
 	code.cloudfoundry.org/go-loggregator/v10 v10.1.0
 	code.cloudfoundry.org/lager/v3 v3.28.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250304195834-cd0efca1a35f
@@ -72,7 +72,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250302191652-9094ed2288e7 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -101,8 +101,8 @@ require (
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250227231956-55c901821b1e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250227231956-55c901821b1e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250303144028-a0af3efb3deb // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
