@@ -6,7 +6,7 @@
       "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
       "id": "autoscaler-guid",
       "instances_retrievable": true,
-      "name": "autoscaler-3119",
+      "name": "DEPLOYMENT_NAME",
       "plans": [
         {
           "description": "This is the free service plan for the Auto-Scaling service.",

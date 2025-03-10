@@ -4,14 +4,13 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
@@ -60,7 +59,12 @@ var _ = Describe("Gorouterproxy", func() {
 		_, port, err := net.SplitHostPort(testserver.URL[len("http://"):])
 		Expect(err).ShouldNot(HaveOccurred())
 
-		cmd := exec.Command(cmdPath, "--port", proxyPort, "--forwardTo", port)
+		testCertDir := "../../../../test-certs"
+		cmd := exec.Command(cmdPath,
+			"--port", proxyPort,
+			"--forwardTo", port,
+			"--certFile", filepath.Join(testCertDir, "gorouter.crt"),
+			"--keyFile", filepath.Join(testCertDir, "gorouter.key"))
 		session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).ShouldNot(HaveOccurred())
 
@@ -81,25 +85,13 @@ var _ = Describe("Gorouterproxy", func() {
 		cert, err := testhelpers.GenerateClientCertWithPrivateKey(orgGUID, spaceGUID, privateKey)
 		Expect(err).ToNot(HaveOccurred())
 
-		testCertDir := "../../../../test-certs"
-
-		rootCertFile := testCertDir + "/gorouter-ca.crt"
-
 		tlsCert, err := tls.X509KeyPair(cert, key)
 		Expect(err).ToNot(HaveOccurred())
-
-		caCert, err := os.ReadFile(rootCertFile)
-		if err != nil {
-			panic(fmt.Sprintf("Failed to load CA certificate: %v", err))
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
 
 		c := &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					Certificates: []tls.Certificate{tlsCert},
-					RootCAs:      caCertPool,
 					//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
 					InsecureSkipVerify: true,
 				},

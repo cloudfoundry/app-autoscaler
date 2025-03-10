@@ -9,9 +9,47 @@ build-parameters:
   before-all:
     - builder: custom
       commands:
-      - make clean vendor
+      - make clean vendor vendor-changelogs clean-dbtasks package-dbtasks
+
 
 modules:
+  - name: dbtasks
+    type: java
+    path: dbtasks/target/db-1.0-SNAPSHOT.jar
+    properties:
+      JBP_LOG_LEVEL:
+      DEBUG:
+    build-parameters:
+      builder: custom
+      commands: []
+    requires:
+    - name: database
+    parameters:
+      no-route: true
+      no-start: true
+      tasks:
+      - name: apply-api-changelog
+        command: " chmod +x ./BOOT-INF/classes/bin/apply-api-changelog.sh ; /home/vcap/app/BOOT-INF/classes/bin/apply-api-changelog.sh"
+
+  - name: publicapiserver
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
+    requires:
+    - name: publicapiserver-config
+    - name: database
+    - name: app-autoscaler-application-logs
+    parameters:
+      memory: 1G
+      disk-quota: 1G
+      instances: 0
+      stack: cflinuxfs4
+      routes:
+
   - name: metricsforwarder
     type: go
     path: .
@@ -26,24 +64,6 @@ modules:
     - name: syslog-client
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
-    parameters:
-      memory: 1G
-      disk-quota: 1G
-      instances: 2
-      stack: cflinuxfs4
-      routes:
-  - name: publicapiserver
-    type: go
-    path: .
-    properties:
-      DT_RELEASE_BUILD_VERSION: ${mta-version}
-      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
-      GOTOOLCHAIN: local
-      GOVERSION: go1.GO_MINOR_VERSION
-    requires:
-    - name: publicapiserver-config
-    - name: database
-    - name: app-autoscaler-application-logs
     parameters:
       memory: 1G
       disk-quota: 1G

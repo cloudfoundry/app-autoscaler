@@ -73,11 +73,13 @@ var _ = Describe("Config", func() {
 				BeforeEach(func() {
 					os.Setenv("CF_INSTANCE_KEY", "some/path/in/container/cfcert.key")
 					os.Setenv("CF_INSTANCE_CERT", "some/path/in/container/cfcert.crt")
+					os.Setenv("CF_INSTANCE_CA_CERT", "some/path/in/container/cfcert.crt")
 				})
 
 				AfterEach(func() {
 					os.Unsetenv("CF_INSTANCE_KEY")
 					os.Unsetenv("CF_INSTANCE_CERT")
+					os.Unsetenv("CF_INSTANCE_CA_CERT")
 				})
 
 				It("sets EventGenerator TlSClientCert", func() {

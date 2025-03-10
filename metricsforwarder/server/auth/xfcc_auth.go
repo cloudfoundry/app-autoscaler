@@ -18,6 +18,7 @@ var ErrorNoAppIDFound = errors.New("certificate does not contain an app id")
 var ErrorAppIDWrong = errors.New("app is not allowed to send metrics due to invalid app id in certificate")
 var ErrorAppNotBound = errors.New("application is not bound to the same service instance")
 
+// TODO: find common functionality in src/autoscaler/helpers/auth/xfcc_auth.go and reuse it
 func (a *Auth) XFCCAuth(r *http.Request, bindingDB db.BindingDB, appToScaleID string) error {
 	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
 	if xfccHeader == "" {

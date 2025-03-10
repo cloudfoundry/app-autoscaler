@@ -150,6 +150,16 @@ fmt: importfmt
 lint:
 	@cd ../../; make lint_autoscaler OPTS=${OPTS}
 
+.PHONY: clean-dbtasks package-dbtasks vendor-changelogs
+clean-dbtasks:
+	pushd dbtasks; mvn clean; popd
+
+package-dbtasks:
+	pushd dbtasks; mvn package ; popd
+
+vendor-changelogs:
+	cp $(MAKEFILE_DIR)/api/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
+
 .PHONY: clean
 clean:
 	@echo "# cleaning autoscaler"
@@ -166,6 +176,10 @@ mta-deploy: mta-build build-extension-file
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
 	@cf deploy $(DEST)/*.mtar --version-rule ALL -f --delete-services -e $(EXTENSION_FILE)
 
+
+.PHONY: mta-deploy
+mta-undeploy:
+	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
 
 build-extension-file:
 	echo "extension file at: $(EXTENSION_FILE)"

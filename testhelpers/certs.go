@@ -28,7 +28,7 @@ func GenerateClientCertWithPrivateKeyExpiring(orgGUID, spaceGUID string, private
 		NotAfter:     notAfter,
 		Subject: pkix.Name{
 			Organization:       []string{"My Organization"},
-			OrganizationalUnit: []string{fmt.Sprintf("space:%s org:%s", spaceGUID, orgGUID)},
+			OrganizationalUnit: []string{fmt.Sprintf("OU=space:%s+OU=organization:%s", spaceGUID, orgGUID)},
 			CommonName:         "localhost",
 		},
 		DNSNames:    []string{"localhost"},
@@ -107,11 +107,14 @@ func GenerateClientCertWithCA(orgGUID, spaceGUID string, caCertPath, caKeyPath s
 		NotAfter:     time.Now().AddDate(1, 0, 0),
 		Subject: pkix.Name{
 			Organization:       []string{"My Organization"},
-			OrganizationalUnit: []string{fmt.Sprintf("space:%s org:%s", spaceGUID, orgGUID)},
+			OrganizationalUnit: []string{fmt.Sprintf("OU=space:%s+OU=organization:%s", spaceGUID, orgGUID)},
 			CommonName:         "localhost",
 		},
-		DNSNames:    []string{"localhost"},
-		IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
+		DNSNames:              []string{"localhost"},
+		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
 	}
 
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, caCert, &privateKey.PublicKey, caKey)
@@ -120,7 +123,10 @@ func GenerateClientCertWithCA(orgGUID, spaceGUID string, caCertPath, caKeyPath s
 	}
 
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	caCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCert.Raw})
+	caCertPEM, err := os.ReadFile(caCertPath) // Read CA cert directly
+	if err != nil {
+		return nil, nil, err
+	}
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
 
 	fullCertChain := append(certPEM, caCertPEM...)

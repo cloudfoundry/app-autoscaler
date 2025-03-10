@@ -1,28 +1,12 @@
 {
-  "publicapiserver": {
+  "publicapiserver-config": {
     "cf": {
-      "api": "https://api.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org",
-      "client_id": "autoscaler_client_id",
-      "secret": "autoscaler_client_secret",
       "skip_ssl_validation": false,
       "max_retries": 3,
       "max_retry_wait_ms": 0,
       "idle_connection_timeout_ms": 5000,
       "max_idle_conns_per_host_ms": 200
     },
-    "broker_server": {
-      "port": 6102
-    },
-    "broker_credentials": [
-      {
-        "broker_password": "REPLACE_ME",
-        "broker_username": "autoscaler-broker-user"
-      },
-      {
-        "broker_password": "REPLACE_ME",
-        "broker_username": "autoscaler-broker-user-blue"
-      }
-    ],
     "catalog_path": "/home/vcap/app/api/default_catalog.json",
     "catalog_schema_path": "/home/vcap/app/api/schemas/catalog.schema.json",
     "info_file_path": "/home/vcap/app/api/default_info.json",
@@ -34,29 +18,8 @@
         "port": 1080
       }
     },
-    "scaling_engine": {
-      "scaling_engine_url": "https://autoscaler-3119.scalingengine.service.cf.internal:6104",
-      "tls": {
-        "key_file": "/var/vcap/jobs/golangapiserver/config/certs/scalingengine/client.key",
-        "cert_file": "/var/vcap/jobs/golangapiserver/config/certs/scalingengine/client.crt",
-        "ca_file": "/var/vcap/jobs/golangapiserver/config/certs/scalingengine/ca.crt"
-      }
-    },
-    "event_generator": {
-      "event_generator_url": "https://autoscaler-3119.eventgenerator.service.cf.internal:6105",
-      "tls": {
-        "key_file": "/var/vcap/jobs/golangapiserver/config/certs/eventgenerator/client.key",
-        "cert_file": "/var/vcap/jobs/golangapiserver/config/certs/eventgenerator/client.crt",
-        "ca_file": "/var/vcap/jobs/golangapiserver/config/certs/eventgenerator/ca.crt"
-      }
-    },
-    "scheduler": {
-      "scheduler_url": "https://autoscaler-3119.autoscalerscheduler.service.cf.internal:6102",
-      "tls": {
-        "key_file": "/var/vcap/jobs/golangapiserver/config/certs/scheduler/client.key",
-        "cert_file": "/var/vcap/jobs/golangapiserver/config/certs/scheduler/client.crt",
-        "ca_file": "/var/vcap/jobs/golangapiserver/config/certs/scheduler/ca.crt"
-      }
+    "broker_server": {
+      "port": 0
     },
     "scaling_rules": {
       "cpu": {

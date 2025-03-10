@@ -215,6 +215,10 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
+	// TODO: Implement support for catalog via user provided service.
+	// write to file and set to c.CatalogSchemaPath  and c.CatalogPath
+	// if catalog json is found in container
+
 	configureEventGenerator(conf)
 	configureScheduler(conf)
 	configureScalingEngine(conf)
@@ -223,19 +227,19 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 }
 
 func configureScalingEngine(conf *Config) {
-	conf.ScalingEngine.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.ScalingEngine.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CA_CERT")
 	conf.ScalingEngine.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
 	conf.ScalingEngine.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
 
 func configureEventGenerator(conf *Config) {
-	conf.EventGenerator.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.EventGenerator.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CA_CERT")
 	conf.EventGenerator.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
 	conf.EventGenerator.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
 
 func configureScheduler(conf *Config) {
-	conf.Scheduler.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CERT")
+	conf.Scheduler.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CA_CERT")
 	conf.Scheduler.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
 	conf.Scheduler.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
@@ -283,7 +287,6 @@ func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) 
 	}
 
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
-
 	return &conf, nil
 }
 

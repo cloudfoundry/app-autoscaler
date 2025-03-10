@@ -517,6 +517,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			certFile, err := configutil.MaterializeContentInFile(certTmpDir, "cf.crt", string(cfInstanceCertFileContent))
 			Expect(err).NotTo(HaveOccurred())
 			os.Setenv("CF_INSTANCE_CERT", certFile)
+			os.Setenv("CF_INSTANCE_CA_CERT", certFile)
 
 			keyFile, err := configutil.MaterializeContentInFile(certTmpDir, "cf.key", string(cfInstanceKeyContent))
 			Expect(err).NotTo(HaveOccurred())
@@ -541,6 +542,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			stopGoRouterProxy()
 			os.Unsetenv("VCAP_APPLICATION")
 			os.Unsetenv("CF_INSTANCE_KEY")
+			os.Unsetenv("CF_INSTANCE_CA_KEY")
 			os.Unsetenv("CF_INSTANCE_CERT")
 		})
 

@@ -39,21 +39,20 @@ func startServer() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	certFile, keyFile := getCertFiles()
+	if !fileExists(*certFile) || !fileExists(*keyFile) {
+		logger.Printf("Cert or key file does not exist: cert=%s, key=%s", *certFile, *keyFile)
+		return
+	}
 
 	logger.Printf("gorouter-proxy.started - port %s, forwardTo %s", *port, *forwardTo)
-	if err := server.ListenAndServeTLS(certFile, keyFile); err != nil {
+	if err := server.ListenAndServeTLS(*certFile, *keyFile); err != nil {
 		logger.Printf("Error starting server: %v", err)
 	}
 }
 
-func getCertFiles() (string, string) {
-	if *keyFile != "" && *certFile != "" {
-		return *certFile, *keyFile
-	}
-
-	testCertDir := "../../../../test-certs"
-	return testCertDir + "/gorouter.crt", testCertDir + "/gorouter.key"
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil || !os.IsNotExist(err)
 }
 
 func forwardHandler(w http.ResponseWriter, inRequest *http.Request) {

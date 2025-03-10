@@ -44,7 +44,7 @@ func NewCert(fullChainPem string) *Cert {
 }
 
 func (c *Cert) GetXFCCHeader() string {
-	return fmt.Sprintf("Hash=%x;Cert=%s", c.Sha256, c.Base64)
+	return c.Base64
 }
 
 type xfccAuthMiddleware struct {
@@ -76,9 +76,7 @@ func CheckAuth(r *http.Request, org, space string) error {
 		return ErrXFCCHeaderNotFound
 	}
 
-	attrs := parseXFCCHeader(xfccHeader)
-
-	data, err := base64.StdEncoding.DecodeString(attrs["Cert"])
+	data, err := base64.StdEncoding.DecodeString(xfccHeader)
 	if err != nil {
 		return fmt.Errorf("base64 parsing failed: %w", err)
 	}
@@ -103,23 +101,12 @@ func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
 	return CheckAuth(r, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
 }
 
-func parseXFCCHeader(xfccHeader string) map[string]string {
-	attrs := make(map[string]string)
-	for _, v := range strings.Split(xfccHeader, ";") {
-		attr := strings.SplitN(v, "=", 2)
-		if len(attr) == 2 {
-			attrs[attr[0]] = attr[1]
-		}
-	}
-	return attrs
-}
-
 func getSpaceGuid(cert *x509.Certificate) string {
 	return getGuidFromCert(cert, "space:")
 }
 
 func getOrgGuid(cert *x509.Certificate) string {
-	return getGuidFromCert(cert, "org:")
+	return getGuidFromCert(cert, "organization:")
 }
 
 func getGuidFromCert(cert *x509.Certificate, prefix string) string {
