@@ -9,18 +9,18 @@
   <packaging>jar</packaging>
 
   <name>db</name>
-  <description>AutoScaler DB</description>
+  <description>AutoScaler DB which executes the liquibase change logs</description>
 
   <parent>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-parent</artifactId>
-  <version>2.7.18</version>
-  <relativePath/>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.4.3</version>
+    <relativePath/>
   </parent>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>1.8</java.version>
+    <java.version>17</java.version>
   </properties>
 
   <dependencies>
@@ -44,22 +44,20 @@
       <artifactId>mysql-connector-j</artifactId>
       <version>9.2.0</version>
     </dependency>
-      <!-- Spring Boot -->
+    <!-- Spring Boot -->
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
-      <version>2.7.18</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
-      <version>2.7.18</version>
     </dependency>
     <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.17.0</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.17.0</version>
     </dependency>
   </dependencies>
 
