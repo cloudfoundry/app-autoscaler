@@ -322,8 +322,8 @@ code.cloudfoundry.org/brokerapi/v13 v13.0.0 h1:mfQwr65EGoHmxr6ou+NED0SZkyAC6BHxi
 code.cloudfoundry.org/brokerapi/v13 v13.0.0/go.mod h1:QAz6OebAZMP6+PyCldpKErbCRkV+0PTdV/zg6SFJPY8=
 code.cloudfoundry.org/cfhttp/v2 v2.36.0 h1:CxFyj6DL8U9xwAvSGcUwD5VWB/6CjMate1d1/lHt/xE=
 code.cloudfoundry.org/cfhttp/v2 v2.36.0/go.mod h1:9bGcHpsK5olMhqo9ATVh1YJZWSenr7o2zwgHVA6LSZI=
-code.cloudfoundry.org/clock v1.29.0 h1:j0ZaxWsKJomgSEKHN+WeBM6QtE3z5zz4sL8+PHy62Cc=
-code.cloudfoundry.org/clock v1.29.0/go.mod h1:LwoAL1eASicRkaPI2oS3CbMCG6FY/dKh/WQXbMXCTIk=
+code.cloudfoundry.org/clock v1.30.0 h1:CdMaHBbl10HQ7Rb7qJaj+Czxf13EJg4qP+k/fSHpsnE=
+code.cloudfoundry.org/clock v1.30.0/go.mod h1:InZxWMguoCGE9ywQgCPAh0X+/IpNdU96mJTaTl15zyk=
 code.cloudfoundry.org/go-diodes v0.0.0-20250310100414-f7864bba1e4e h1:Z0BoM2wUJKv5OMjrG1WGMfeAi83SV99Zc5KnCkvletw=
 code.cloudfoundry.org/go-diodes v0.0.0-20250310100414-f7864bba1e4e/go.mod h1:1hp+1BZyfJADhq8H+AE/H+LrgRkqhfUywRuTatcJHno=
 code.cloudfoundry.org/go-log-cache/v3 v3.1.0 h1:/7Fn9ID9wCzLSbqaw6JBJbVo5481xn7L/gI/ysZAaBE=
