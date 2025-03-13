@@ -3,6 +3,10 @@ package testhelpers
 import (
 	"encoding/json"
 	"os"
+
+	. "github.com/onsi/ginkgo/v2"
+
+	. "github.com/onsi/gomega"
 )
 
 func GetDbVcapServices(creds map[string]string, serviceName string, dbType string) (string, error) {
@@ -23,24 +27,39 @@ func GetDbVcapServices(creds map[string]string, serviceName string, dbType strin
 }
 
 func GetVcapServices(userProvidedServiceName string, configJson string) string {
+	GinkgoHelper()
 	dbURL := os.Getenv("DBURL")
 
-	return `{
-		"user-provided": [ {
-			"tags": [ "` + userProvidedServiceName + `" ],
-			"name": "` + userProvidedServiceName + `",
-			"credentials": {
-				"` + userProvidedServiceName + `": ` + configJson + `
-			}
+	catalogBytes, err := os.ReadFile("../api/exampleconfig/catalog-example.json")
+	Expect(err).NotTo(HaveOccurred())
 
-		}],
-		"autoscaler": [ {
-			"name": "some-service",
-			"credentials": {
-				"uri": "` + dbURL + `"
+	vcapServices := map[string]interface{}{
+		"user-provided": []map[string]interface{}{
+			{
+				"name":        userProvidedServiceName,
+				"tags":        []string{userProvidedServiceName},
+				"credentials": map[string]interface{}{userProvidedServiceName: json.RawMessage(configJson)},
+			},
+			{
+				"name":        "broker-catalog",
+				"tags":        []string{"broker-catalog"},
+				"credentials": map[string]interface{}{"broker-catalog": json.RawMessage(catalogBytes)},
+			},
+		},
+		"autoscaler": []map[string]interface{}{
+			{
+				"name": "some-service",
+				"credentials": map[string]interface{}{
+					"uri": dbURL,
 				},
-			"syslog_drain_url": "",
-			"tags": [ "policy_db","binding_db", "postgres" ]
+				"syslog_drain_url": "",
+				"tags":             []string{"policy_db", "binding_db", "postgres"},
+			},
+		},
+	}
 
-	   }]}`
+	vcapServicesJson, err := json.Marshal(vcapServices)
+	Expect(err).NotTo(HaveOccurred())
+
+	return string(vcapServicesJson)
 }

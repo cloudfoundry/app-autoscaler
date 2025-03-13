@@ -41,6 +41,7 @@ modules:
       GOVERSION: go1.GO_MINOR_VERSION
     requires:
     - name: publicapiserver-config
+    - name: broker-catalog
     - name: database
     - name: app-autoscaler-application-logs
     parameters:
@@ -84,6 +85,11 @@ resources:
     service-tags:
     - publicapiserver-config
     path: api/default_config.json
+- name: broker-catalog
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - broker-catalog
 - name: database
   type: org.cloudfoundry.user-provided-service
   parameters:

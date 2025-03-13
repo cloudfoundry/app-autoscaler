@@ -7,7 +7,6 @@
       "idle_connection_timeout_ms": 5000,
       "max_idle_conns_per_host_ms": 200
     },
-    "catalog_path": "/home/vcap/app/api/default_catalog.json",
     "catalog_schema_path": "/home/vcap/app/api/schemas/catalog.schema.json",
     "info_file_path": "/home/vcap/app/api/default_info.json",
     "policy_schema_path": "/home/vcap/app/api/policyvalidator/policy_json.schema.json",

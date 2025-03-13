@@ -316,12 +316,12 @@ var _ = Describe("Api", func() {
 
 			cfInstanceCertFile, err := configutil.MaterializeContentInFile(certTmpDir, "eventgenerator.crt", string(cfInstanceCert))
 			Expect(err).NotTo(HaveOccurred())
-			os.Setenv("CF_INSTANCE_CERT", string(cfInstanceCertFile))
+			os.Setenv("CF_INSTANCE_CERT", cfInstanceCertFile)
 
 			cfInstanceKey := testhelpers.GenerateClientKeyWithPrivateKey(rsaPrivateKey)
 			cfInstanceKeyFile, err = configutil.MaterializeContentInFile(certTmpDir, "eventgenerator.key", string(cfInstanceKey))
 			Expect(err).NotTo(HaveOccurred())
-			os.Setenv("CF_INSTANCE_KEY", string(cfInstanceKeyFile))
+			os.Setenv("CF_INSTANCE_KEY", cfInstanceKeyFile)
 
 			os.Setenv("VCAP_APPLICATION", "{}")
 			os.Setenv("VCAP_SERVICES", getVcapServices())
@@ -380,6 +380,9 @@ func getVcapServices() (result string) {
 	dbClientCA, err := os.ReadFile("../../../../../test-certs/autoscaler-ca.crt")
 	Expect(err).NotTo(HaveOccurred())
 
+	catalogBytes, err := os.ReadFile("../../exampleconfig/catalog-example.json")
+	Expect(err).NotTo(HaveOccurred())
+
 	dbURL := os.Getenv("DBURL")
 	Expect(dbURL).NotTo(BeEmpty())
 
@@ -390,12 +393,14 @@ func getVcapServices() (result string) {
 	}
 
 	result = `{
-			"user-provided": [ { "name": "config", "tags": ["publicapiserver-config"], "credentials": { "publicapiserver-config": { } }}],
+			"user-provided": [
+			  { "name": "publicapiserver-config", "tags": ["publicapiserver-config"], "credentials": { "publicapiserver-config": { } }},
+			  { "name": "broker-catalog", "tags": ["broker-catalog"], "credentials": { "broker-catalog": ` + string(catalogBytes) + ` }}
+            ],
 			"autoscaler": [ {
 				"name": "some-service",
 				"credentials": {
 					"uri": "` + dbURL + `",
-
 					"client_cert": "` + strings.ReplaceAll(string(dbClientCert), "\n", "\\n") + `",
 					"client_key": "` + strings.ReplaceAll(string(dbClientKey), "\n", "\\n") + `",
 					"server_ca": "` + strings.ReplaceAll(string(dbClientCA), "\n", "\\n") + `"
