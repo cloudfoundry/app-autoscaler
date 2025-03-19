@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-05/schema#",
+  "title": "Example Schema",
+  "description": "A basic example schema for JSON Schema version 0.5",
+  "type": "object",
+  "properties": {
+    "property1": {
+      "type": "string",
+      "description": "An example string property"
+    },
+    "property2": {
+      "type": "integer",
+      "description": "An example integer property"
+    }
+  },
+  "required": ["property1"],
+  "additionalProperties": false
+}
