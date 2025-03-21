@@ -21,7 +21,14 @@ type BindReqParamParser struct {
 
 func (p BindReqParamParser) Parse(bindingReqParams string) (BindingRequestParameters, error) {
 	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
-	_, err := p.schema.Validate(documentLoader)
+	validationResult, err := p.schema.Validate(documentLoader)
+	if err != nil {
+		// Defined by the implementation of `Validate`, this only happens, if the provided document
+		// (in this context `documentLoader`) can not be loaded.
+		return BindingRequestParameters{}, err
+	} else if ! validationResult.Valid() {
+		return BindingRequestParameters{}, fmt.Errorf("%s", validationResult.Errors())
+	}
 
 	var result BindingRequestParameters
 	err = json.Unmarshal([]byte(bindingReqParams), &result)
@@ -51,12 +58,17 @@ func New(bindReqParamSchemaPath string) (BindReqParamParser, error) {
 func main() {
 
 	// JSON string to be parsed
+	// jsonString := `{
+	//	"invalid-param": "The whole json does not match the schema."
+	// }`
 	jsonString := `{
-		"property1": "example string",
-		"property2": 42
+		"schema-version": "1.0",
+		"parameters": {
+		   "app-guid": "x342.|"
+		}
 	}`
 
-	parser, err := New("file://./binding_request.schema.json")
+	parser, err := New("file://./binding_request_params.schema.json")
 	if err != nil {
 		fmt.Println(err)
 		return

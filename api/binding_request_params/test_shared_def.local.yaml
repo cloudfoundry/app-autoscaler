@@ -1,0 +1,6 @@
+---
+schemas:
+  guid:
+    type: "string"
+    description: "Nichts zu sagen!"
+    pattern: "(\\d|[a-f]){8}-(\\d|[a-f]){4}-(\\d|[a-f]){4}-(\\d|[a-f]){4}-(\\d|[a-f]){12}"

@@ -1,18 +1,32 @@
 {
   "$schema": "http://json-schema.org/draft-05/schema#",
-  "title": "Example Schema",
-  "description": "A basic example schema for JSON Schema version 0.5",
+  "title": "Binding-request-parameters-schema",
+  "description": "Schema for a structure containing additional parameters for a service-binding creation with an instances of Application Autoscaler.",
   "type": "object",
+
   "properties": {
-    "property1": {
+    "schema-version": {
+      "description": "Version-identifier for the used schema of this parameters-object.",
       "type": "string",
-      "description": "An example string property"
+      "pattern": "^[0-9]+(\\.[0-9]+)?$"
     },
-    "property2": {
-      "type": "integer",
-      "description": "An example integer property"
+    "parameters": {
+      "description": "Additional parameters to a binding-request",
+      "type": "object",
+      "properties": {
+        "app-guid": {
+          "$ref": "../test_shared_def.local.1up.json#/schemas/guid"
+        },
+        "scaling-policy": {
+          "type": "object",
+          "description": "A valid autoscaler-policy"
+        }
+      },
+
+      "additionalProperties": false
     }
   },
-  "required": ["property1"],
+
+  "required": ["schema-version"],
   "additionalProperties": false
 }

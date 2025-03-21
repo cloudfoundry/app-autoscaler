@@ -219,4 +219,8 @@ var _ = Describe("Broker", func() {
 			})
 		})
 	})
-})
+
+	Describe("Bind", func() {
+
+	})
+}) // End `Describe "Broker"`
