@@ -221,6 +221,62 @@ var _ = Describe("Broker", func() {
 	})
 
 	Describe("Bind", func() {
+		var ctx context.Context
+		var instanceID string
+		var bindingID string
+		var details domain.BindDetails
 
+		BeforeEach(func() {
+			ctx = context.Background()
+			instanceID = "some_instance-id"
+			bindingID = "some_binding-id"
+		})
+		Context("Create a binding", func() {
+			It("Fails when the additional config-parameter “app-guid” is provided", func() {
+				var bindingParams = []byte(`
+{
+  "configuration": {
+	"app-guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
+	"custom_metrics": {
+	  "metric_submission_strategy": {
+		"allow_from": "bound_app"
+	  }
+	}
+  }
+}`)
+				details = domain.BindDetails{
+					AppGUID: "", // Deprecated field!
+					PlanID: "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource {
+						AppGuid: "AppGUID_for_bindings",
+//	SpaceGuid          string `json:"space_guid,omitempty"`
+//	Route              string `json:"route,omitempty"`
+//	CredentialClientID string `json:"credential_client_id,omitempty"`
+//	BackupAgent        bool   `json:"backup_agent,omitempty"`
+					}, //  *BindResource
+
+					// RawContext: json.RawMessage // `json:"context,omitempty"`
+					RawParameters: bindingParams, // `json:"parameters,omitempty"`
+				}
+
+				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).NotTo(BeNil())
+				// 🚧 To-do!
+			})
+
+			It("Supports provision of an Autoscaler Policy as RawParameters", func(){
+
+			})
+			It("Does not require the provision of an Autoscaler Policy as RawParameters", func(){
+				// 🚧 To-do: Check usage of default-policy?
+			})
+		})
+		Context("Create a service-key", func() {
+			It("Fails when there is an AppGUID in the BindDetails", func() {
+
+			})
+		})
 	})
 }) // End `Describe "Broker"`

@@ -9,11 +9,12 @@ import (
 /* The configuration object received as part of the binding parameters. Example config:
 {
   "configuration": {
-    "custom_metrics": {
-      "metric_submission_strategy": {
-        "allow_from": "bound_app"
-      }
-    }
+	"app-guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
+	"custom_metrics": {
+	  "metric_submission_strategy": {
+		"allow_from": "bound_app"
+	  }
+	}
   }
 */
 
@@ -27,7 +28,8 @@ type BindingConfig struct {
 	Configuration Configuration `json:"configuration"`
 }
 type Configuration struct {
-	CustomMetrics CustomMetricsConfig `json:"custom_metrics"`
+	AppGUID GUID `json:"app-guid,omitempty"`
+	CustomMetrics CustomMetricsConfig `json:"custom_metrics,omitempty"`
 }
 
 type CustomMetricsConfig struct {
@@ -52,7 +54,7 @@ func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
  * @param scalingPolicy the scaling policy
  * @param customMetricStrategy the custom metric strategy
  * @return the binding configuration and policy if both are present, the scaling policy if only the policy is present,
-* 			the binding configuration if only the configuration is present
+*			the binding configuration if only the configuration is present
  * @throws an error if no policy or custom metrics strategy is found
 */
 

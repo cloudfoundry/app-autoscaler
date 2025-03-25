@@ -489,12 +489,27 @@ func (b *Broker) LastOperation(_ context.Context, instanceID string, details dom
 
 // Bind creates a new service binding
 // PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
+// 🚧 To-do: Check if the last parameter can not just be removed seamlessly.
 func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, details domain.BindDetails, _ bool) (domain.Binding, error) {
 	logger := b.logger.Session("bind", lager.Data{"instanceID": instanceID, "bindingID": bindingID, "bindDetails": details})
 	logger.Info("begin")
 	defer logger.Info("end")
 
 	result := domain.Binding{}
+
+	var bindingConfigRaw json.RawMessage
+	if details.RawParameters != nil {
+		bindingConfigRaw = details.RawParameters
+	}
+	bindingConfig, err := b.getBindingConfigurationFromRequest(bindingConfigRaw, logger)
+
+	// // 🚧 To-do: Check if exactly one is provided.
+	// requestAppGuid := details.BindResource.AppGuid
+	// paramsAppGuid := bindingConfig.Configuration.AppGUID
+
+	// 👎 Access to `details.AppGUID` has been deprecated, see:
+	// <https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md#request-creating-a-service-binding>
+	// Better: appGUID := details.BindResource.AppGuid
 	appGUID := details.AppGUID
 
 	if appGUID == "" {
@@ -503,11 +518,6 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		return result, apiresponses.NewFailureResponseBuilder(err, http.StatusUnprocessableEntity, "check-required-app-guid").WithErrorKey("RequiresApp").Build()
 	}
 
-	var bindingConfigRaw json.RawMessage
-	if details.RawParameters != nil {
-		bindingConfigRaw = details.RawParameters
-	}
-	bindingConfig, err := b.getBindingConfigurationFromRequest(bindingConfigRaw, logger)
 	if err != nil {
 		logger.Error("get-binding-configuration-from-request", err)
 		return result, err
