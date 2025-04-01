@@ -320,8 +320,8 @@ cloud.google.com/go/websecurityscanner v1.7.3/go.mod h1:gy0Kmct4GNLoCePWs9xkQym1
 cloud.google.com/go/workflows v1.13.3/go.mod h1:Xi7wggEt/ljoEcyk+CB/Oa1AHBCk0T1f5UH/exBB5CE=
 code.cloudfoundry.org/brokerapi/v13 v13.0.2 h1:qRpvq8Br7zS6oLLNOlHX/Wj8z3vQbeBJPmrhUe0CSYU=
 code.cloudfoundry.org/brokerapi/v13 v13.0.2/go.mod h1:riuhIKk7Hq0LtuCw3BKyF2xLDaq95whNjWUGYaY/IfI=
-code.cloudfoundry.org/cfhttp/v2 v2.39.0 h1:GDAHeKE+r0zkMVXXmd8f/Z649yx07YOc3EPMOwo6fxw=
-code.cloudfoundry.org/cfhttp/v2 v2.39.0/go.mod h1:h8toWraiU6IHE8ItILsIPWk+dRiwPzs5i+XdYjwOLaU=
+code.cloudfoundry.org/cfhttp/v2 v2.40.0 h1:rW4QK8CqBWfrj9DM3D12sy30pS7cEq42XLd9NAZ7pXo=
+code.cloudfoundry.org/cfhttp/v2 v2.40.0/go.mod h1:IvCOhih2LcuPP/ubteu3T6U/P4j3ZBSMeafHGMyfhbo=
 code.cloudfoundry.org/clock v1.30.0 h1:CdMaHBbl10HQ7Rb7qJaj+Czxf13EJg4qP+k/fSHpsnE=
 code.cloudfoundry.org/clock v1.30.0/go.mod h1:InZxWMguoCGE9ywQgCPAh0X+/IpNdU96mJTaTl15zyk=
 code.cloudfoundry.org/go-diodes v0.0.0-20250324121313-75aea42a1fc3 h1:oQiNj5/9QCZOb8QUm+OebyXwLSoszsPHNE1AxeS03Ag=
