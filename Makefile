@@ -147,8 +147,12 @@ fmt: importfmt
 	@FORMATTED=`go fmt $(PACKAGE_DIRS)`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
-lint:
-	@cd ../../; make lint_autoscaler OPTS=${OPTS}
+# This target depends on the fakes, because the tests are linted as well.
+lint: generate-fakes
+	readonly GOVERSION='${GO_VERSION}' ;\
+	export GOVERSION ;\
+	echo "Linting with Golang $${GOVERSION}" ;\
+	golangci-lint run --config='../../.golangci.yaml' ${OPTS}
 
 .PHONY: clean-dbtasks package-dbtasks vendor-changelogs
 clean-dbtasks:

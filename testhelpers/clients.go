@@ -1,6 +1,5 @@
 package testhelpers
 
-//nolint:stylecheck
 import (
 	"net/http"
 	"os"
