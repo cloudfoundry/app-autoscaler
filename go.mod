@@ -49,7 +49,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250407143221-ac9807e6c755
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250409194420-de1ac958c67a
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20250324121313-75aea42a1fc3 // indirect
