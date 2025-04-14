@@ -7,10 +7,10 @@ require (
 	code.cloudfoundry.org/cfhttp/v2 v2.40.0
 	code.cloudfoundry.org/clock v1.33.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.0
-	code.cloudfoundry.org/go-loggregator/v10 v10.1.0
+	code.cloudfoundry.org/go-loggregator/v10 v10.2.0
 	code.cloudfoundry.org/lager/v3 v3.33.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250331083435-1867c33e0e7c
-	code.cloudfoundry.org/tlsconfig v0.22.0
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250408201336-2c462792ccc6
+	code.cloudfoundry.org/tlsconfig v0.23.0
 	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/go-chi/chi/v5 v5.2.1
@@ -52,8 +52,8 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250409194420-de1ac958c67a
 
 require (
-	code.cloudfoundry.org/go-diodes v0.0.0-20250324121313-75aea42a1fc3 // indirect
-	code.cloudfoundry.org/go-metric-registry v0.0.0-20250326210619-55aec564e1b0 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20250403121146-782f4df60cf8 // indirect
+	code.cloudfoundry.org/go-metric-registry v0.0.0-20250331175216-3c40da940de1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/prometheus/procfs v0.16.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.59.0 // indirect
+	github.com/valyala/fasthttp v1.60.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
