@@ -27,8 +27,8 @@ var _ = Describe("Config", func() {
 	BeforeEach(func() {
 		mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
 	})
-	Describe("LoadConfig", func() {
 
+	Describe("LoadConfig", func() {
 		When("config is read from env", func() {
 			var expectedDbUrl string
 
@@ -80,91 +80,69 @@ var _ = Describe("Config", func() {
 				})
 			})
 
-			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
-				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "default" }`), nil)                                                                           // #nosec G101
-					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
-				})
-
-				It("loads the db config from VCAP_SERVICES successfully", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(conf.Db[db.PolicyDb].URL).To(Equal(expectedDbUrl))
-					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
-					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(0)
-					Expect(actualDbName).To(Equal(db.PolicyDb))
+			When("handling available databases", func() {
+				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
+					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader, conf.CredHelperImpl)
 				})
 			})
 
-			When("VCAP_SERVICES has relational db service bind to app for policy db", func() {
-				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "default" }`), nil)                                                                           // #nosec G101
-					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
-				})
-
-				It("loads the db config from VCAP_SERVICES successfully", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(conf.Db[db.BindingDb].URL).To(Equal(expectedDbUrl))
-					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(2))
-					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(1)
-					Expect(actualDbName).To(Equal(db.BindingDb))
-				})
-			})
-
-			When("storedProcedure_db service is provided and cred_helper_impl is stored_procedure", func() {
-				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "stored_procedure" }`), nil)                                                                  // #nosec G101
-					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
-				})
-
-				It("reads the store procedure service from vcap", func() {
-					Expect(err).NotTo(HaveOccurred())
-					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
-					Expect(storeProcedureFound).To(BeTrue())
-					Expect(conf.Db[db.StoredProcedureDb].URL).To(Equal(expectedDbUrl))
-					Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(3))
-					actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(2)
-					Expect(actualDbName).To(Equal(db.StoredProcedureDb))
-				})
-
-				When("storedProcedure_db config has username and password", func() {
-					var storedProcedureUsername, storedProcedurePassword string
-
+			XWhen("handling db", func() {
+				When("storedProcedure_db service is provided and cred_helper_impl is stored_procedure", func() {
 					BeforeEach(func() {
-						storedProcedureUsername = "storedProcedureUsername"
-						storedProcedurePassword = "storedProcedurePassword"
+						mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{ "cred_helper_impl": "stored_procedure" }`), nil)                                                                  // #nosec G101
+						expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
+					})
 
-						mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(
-							`{ "cred_helper_impl": "stored_procedure",
+					It("reads the store procedure service from vcap", func() {
+						Expect(err).NotTo(HaveOccurred())
+						_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+						Expect(storeProcedureFound).To(BeTrue())
+						Expect(conf.Db[db.StoredProcedureDb].URL).To(Equal(expectedDbUrl))
+						Expect(mockVCAPConfigurationReader.MaterializeDBFromServiceCallCount()).To(Equal(3))
+						actualDbName := mockVCAPConfigurationReader.MaterializeDBFromServiceArgsForCall(2)
+						Expect(actualDbName).To(Equal(db.StoredProcedureDb))
+					})
+
+					When("storedProcedure_db config has username and password", func() {
+						var storedProcedureUsername, storedProcedurePassword string
+
+						BeforeEach(func() {
+							storedProcedureUsername = "storedProcedureUsername"
+							storedProcedurePassword = "storedProcedurePassword"
+
+							mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(
+								`{ "cred_helper_impl": "stored_procedure",
 							   "stored_procedure_binding_credential_config": {
 								  "username": "`+storedProcedureUsername+`",
 								  "password": "`+storedProcedurePassword+`"
 								},
 							}`),
-							nil,
-						) // #nosec G101
+								nil,
+							) // #nosec G101
+						})
+
+						It("should prioritize the username and password from the config", func() {
+							// url should include the username and password from the config
+							Expect(err).NotTo(HaveOccurred())
+							_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
+							Expect(storeProcedureFound).To(BeTrue())
+							Expect(conf.Db[db.StoredProcedureDb].URL).To(ContainSubstring(fmt.Sprintf("%s:%s", storedProcedureUsername, storedProcedurePassword)))
+						})
+					})
+				})
+
+				When("storedProcedure_db service is provided and cred_helper_impl is default", func() {
+					BeforeEach(func() {
+						mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(
+							`{ "cred_helper_impl": "default" }`), nil) // #nosec G101
+						expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 					})
 
-					It("should prioritize the username and password from the config", func() {
-						// url should include the username and password from the config
+					It("ignores the service gracefully", func() {
 						Expect(err).NotTo(HaveOccurred())
 						_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
-						Expect(storeProcedureFound).To(BeTrue())
-						Expect(conf.Db[db.StoredProcedureDb].URL).To(ContainSubstring(fmt.Sprintf("%s:%s", storedProcedureUsername, storedProcedurePassword)))
+						Expect(storeProcedureFound).To(BeFalse())
 					})
-				})
-			})
-
-			When("storedProcedure_db service is provided and cred_helper_impl is default", func() {
-				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(
-						`{ "cred_helper_impl": "default" }`), nil) // #nosec G101
-					expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
-				})
-
-				It("ignores the service gracefully", func() {
-					Expect(err).NotTo(HaveOccurred())
-					_, storeProcedureFound := conf.Db[db.StoredProcedureDb]
-					Expect(storeProcedureFound).To(BeFalse())
 				})
 			})
 

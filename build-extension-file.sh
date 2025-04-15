@@ -87,6 +87,7 @@ modules:
     - name: database
     - name: syslog-client
     parameters:
+      instances: 2
       routes:
       - route: ${METRICSFORWARDER_HOST}.\${default-domain}
       - route: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
@@ -128,7 +129,6 @@ resources:
             broker_password: $SERVICE_BROKER_PASSWORD
           - broker_username: 'autoscaler-broker-user-blue'
             broker_password: $SERVICE_BROKER_PASSWORD_BLUE
-
 - name: database
   parameters:
     config:

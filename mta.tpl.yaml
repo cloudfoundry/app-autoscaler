@@ -1,3 +1,8 @@
+# This is a main template to build the mta extension descriptor file.
+# The template is amended/modified by a custom logic, done in src/autoscaler/build-extension-file.sh
+# The custom logic is used to replace the placeholders with the actual values specially, `version: MTA_VERSION`
+# - version: MTA_VERSION: is replaced once the mta artifact are build and the version is known.
+
 ID: com.github.cloudfoundry.app-autoscaler-release
 description: Application Autoscaler Release for Cloud Foundry
 _schema-version: "3.3.0"
@@ -47,7 +52,7 @@ modules:
     parameters:
       memory: 1G
       disk-quota: 1G
-      instances: 0
+      instances: 0 # overidden in build-extension-file.sh
       stack: cflinuxfs4
       routes:
 
@@ -68,7 +73,7 @@ modules:
     parameters:
       memory: 1G
       disk-quota: 1G
-      instances: 2
+      instances: 0 # overidden in build-extension-file.sh
       stack: cflinuxfs4
       routes:
 
