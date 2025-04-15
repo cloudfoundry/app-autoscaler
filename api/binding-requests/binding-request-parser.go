@@ -3,7 +3,10 @@ package main // 🚧 To-do: Rename package to `bindrequestparser`
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/xeipuuv/gojsonschema"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 // 🚧 To-do: Remove this debug-code once, finished!
@@ -11,15 +14,15 @@ var Unimplemented error = fmt.Errorf("🚧 To-do: This is still uninmplemented!"
 
 
 type BindingRequestParameters struct {
-	Property1 string `json:"property1"`
-	Property2 int    `json:"property2"`
+	Configuration *models.BindingConfig `json:"configuration"`
+	ScalingPolicy *models.ScalingPolicy `json:"scaling-policy"`
 }
 
-type BindReqParamParser struct {
+type BindingRequestParser struct {
 	schema *gojsonschema.Schema
 }
 
-func (p BindReqParamParser) Parse(bindingReqParams string) (BindingRequestParameters, error) {
+func (p BindingRequestParser) Parse(bindingReqParams string) (BindingRequestParameters, error) {
 	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
 	validationResult, err := p.schema.Validate(documentLoader)
 	if err != nil {
@@ -27,6 +30,7 @@ func (p BindReqParamParser) Parse(bindingReqParams string) (BindingRequestParame
 		// (in this context `documentLoader`) can not be loaded.
 		return BindingRequestParameters{}, err
 	} else if ! validationResult.Valid() {
+		// The error contains a description of all detected violations against the schema.
 		return BindingRequestParameters{}, fmt.Errorf("%s", validationResult.Errors())
 	}
 
@@ -39,16 +43,16 @@ func (p BindReqParamParser) Parse(bindingReqParams string) (BindingRequestParame
 	}
 }
 
-func New(bindReqParamSchemaPath string) (BindReqParamParser, error) {
+func New(bindReqParamSchemaPath string) (BindingRequestParser, error) {
 	// 🚧 To-do: Refine on error-type to provide specific one!
 
 	// Type for parameter `bindReqParamSchemaPath` is same type as used in golang's std-library
 	schemaLoader := gojsonschema.NewReferenceLoader(bindReqParamSchemaPath)
 	schema, err := gojsonschema.NewSchema(schemaLoader)
 	if err != nil {
-		return BindReqParamParser{}, err
+		return BindingRequestParser{}, err
 	} else {
-		return BindReqParamParser{schema: schema}, nil
+		return BindingRequestParser{schema: schema}, nil
 	}
 }
 
@@ -61,10 +65,14 @@ func main() {
 	// jsonString := `{
 	//	"invalid-param": "The whole json does not match the schema."
 	// }`
+	// jsonString := `{
+	//	"configuration": {
+	//	   "app_guid": "x342.|"
+	//	}
+	// }`
 	jsonString := `{
-		"schema-version": "1.0",
-		"parameters": {
-		   "app-guid": "x342.|"
+		"configuration": {
+		   "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91"
 		}
 	}`
 
@@ -80,7 +88,7 @@ func main() {
 		return
 	}
 
-	// Print the parsed data
-	fmt.Printf("Property1: %s\n", result.Property1)
-	fmt.Printf("Property2: %d\n", result.Property2)
+	// // Print the parsed data
+	// fmt.Printf("Property1: %s\n", result)
+	fmt.Printf("AppGUID = %s", result.Configuration.AppGUID)
 }

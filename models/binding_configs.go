@@ -25,10 +25,7 @@ const (
 )
 
 type BindingConfig struct {
-	Configuration Configuration `json:"configuration"`
-}
-type Configuration struct {
-	AppGUID GUID `json:"app-guid,omitempty"`
+	AppGUID GUID `json:"app_guid,omitempty"`
 	CustomMetrics CustomMetricsConfig `json:"custom_metrics,omitempty"`
 }
 
@@ -41,11 +38,11 @@ type MetricsSubmissionStrategy struct {
 }
 
 func (b *BindingConfig) GetCustomMetricsStrategy() string {
-	return b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom
+	return b.CustomMetrics.MetricSubmissionStrategy.AllowFrom
 }
 
 func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
-	b.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
+	b.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
 }
 
 /**
