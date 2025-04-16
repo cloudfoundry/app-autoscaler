@@ -327,8 +327,8 @@ cloud.google.com/go/vpcaccess v1.8.5/go.mod h1:R/oMa0mkPbi5GuIascldW5g/IHXq9YX0T
 cloud.google.com/go/webrisk v1.10.5/go.mod h1:Cd8ce1mCt1fbiufmVkHeZZlPGfe4LQVHw006MtBIxvk=
 cloud.google.com/go/websecurityscanner v1.7.5/go.mod h1:QGRxdN0ihdyjwDPaLf96O+ks4u+SBG7/bPNs+fc+LR0=
 cloud.google.com/go/workflows v1.14.0/go.mod h1:kjar2tf4qQu7VoCTFX+L3yy+2dIFTWr6R4i52DN6ySk=
-code.cloudfoundry.org/brokerapi/v13 v13.0.2 h1:qRpvq8Br7zS6oLLNOlHX/Wj8z3vQbeBJPmrhUe0CSYU=
-code.cloudfoundry.org/brokerapi/v13 v13.0.2/go.mod h1:riuhIKk7Hq0LtuCw3BKyF2xLDaq95whNjWUGYaY/IfI=
+code.cloudfoundry.org/brokerapi/v13 v13.0.3 h1:+g6OwToS16XOtHxXSAavwwoDyd3MvJ9471lvN/wWfg0=
+code.cloudfoundry.org/brokerapi/v13 v13.0.3/go.mod h1:x9lN4AQb24623rcKzXt2o57F5jVBn+UDMpl1Ms8+Yv0=
 code.cloudfoundry.org/cfhttp/v2 v2.40.0 h1:rW4QK8CqBWfrj9DM3D12sy30pS7cEq42XLd9NAZ7pXo=
 code.cloudfoundry.org/cfhttp/v2 v2.40.0/go.mod h1:IvCOhih2LcuPP/ubteu3T6U/P4j3ZBSMeafHGMyfhbo=
 code.cloudfoundry.org/clock v1.33.0 h1:hC2VXUzs39keCGtljMeCA4W4Dtt2qdkQ5S5PP6Kq5WE=
