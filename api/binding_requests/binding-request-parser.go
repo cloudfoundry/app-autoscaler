@@ -1,4 +1,4 @@
-package main // 🚧 To-do: Rename package to `bindrequestparser`
+package binding_requests
 
 import (
 	"encoding/json"
@@ -22,6 +22,16 @@ type BindingRequestParser struct {
 	schema *gojsonschema.Schema
 }
 
+type JsonSchemaError struct {
+	errors []gojsonschema.ResultError
+}
+
+func (e JsonSchemaError) Error() string {
+	return fmt.Sprintf("%s", e.errors)
+}
+
+
+
 func (p BindingRequestParser) Parse(bindingReqParams string) (BindingRequestParameters, error) {
 	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
 	validationResult, err := p.schema.Validate(documentLoader)
@@ -31,7 +41,7 @@ func (p BindingRequestParser) Parse(bindingReqParams string) (BindingRequestPara
 		return BindingRequestParameters{}, err
 	} else if ! validationResult.Valid() {
 		// The error contains a description of all detected violations against the schema.
-		return BindingRequestParameters{}, fmt.Errorf("%s", validationResult.Errors())
+		return BindingRequestParameters{}, JsonSchemaError{validationResult.Errors()}
 	}
 
 	var result BindingRequestParameters
@@ -43,17 +53,24 @@ func (p BindingRequestParser) Parse(bindingReqParams string) (BindingRequestPara
 	}
 }
 
-func New(bindReqParamSchemaPath string) (BindingRequestParser, error) {
-	// 🚧 To-do: Refine on error-type to provide specific one!
-
-	// Type for parameter `bindReqParamSchemaPath` is same type as used in golang's std-library
-	schemaLoader := gojsonschema.NewReferenceLoader(bindReqParamSchemaPath)
-	schema, err := gojsonschema.NewSchema(schemaLoader)
+func new(jsonLoader gojsonschema.JSONLoader) (BindingRequestParser, error) {
+	schema, err := gojsonschema.NewSchema(jsonLoader)
 	if err != nil {
 		return BindingRequestParser{}, err
 	} else {
 		return BindingRequestParser{schema: schema}, nil
 	}
+}
+
+func NewFromString(jsonSchema string) (BindingRequestParser, error) {
+	schemaLoader := gojsonschema.NewStringLoader(jsonSchema)
+	return new(schemaLoader)
+}
+
+func NewFromFile(pathToSchemaFile string) (BindingRequestParser, error) {
+	// The type for parameter `pathToSchemaFile` is same type as used in golang's std-library
+	schemaLoader := gojsonschema.NewReferenceLoader(pathToSchemaFile)
+	return new(schemaLoader)
 }
 
 
@@ -76,7 +93,7 @@ func main() {
 		}
 	}`
 
-	parser, err := New("file://./binding-request.json")
+	parser, err := NewFromFile("file://./binding-request.json")
 	if err != nil {
 		fmt.Println(err)
 		return
