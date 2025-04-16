@@ -36,7 +36,6 @@ const (
 )
 
 var (
-	ErrReadYaml                      = errors.New("failed to read config file")
 	ErrPublicApiServerConfigNotFound = errors.New("publicapiserver config service not found")
 )
 
@@ -140,6 +139,7 @@ func defaultConfig() Config {
 				SkipSSLValidation: false,
 			},
 		},
+		Db: make(map[string]db.DatabaseConfig),
 		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,
 			ValidDuration: DefaultValidDuration,
@@ -164,24 +164,6 @@ func defaultConfig() Config {
 		},
 	}
 }
-func loadYamlFile(filepath string, conf *Config) error {
-	if filepath == "" {
-		return nil
-	}
-	file, err := os.Open(filepath)
-	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to open config file '%s': %s\n", filepath, err)
-		return ErrReadYaml
-	}
-	defer file.Close()
-
-	dec := yaml.NewDecoder(file)
-	dec.KnownFields(true)
-	if err := dec.Decode(conf); err != nil {
-		return fmt.Errorf("%w: %v", ErrReadYaml, err)
-	}
-	return nil
-}
 func loadPublicApiServerConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
 	data, err := vcapReader.GetServiceCredentialContent("publicapiserver-config", "publicapiserver-config")
 	if err != nil {
@@ -203,15 +185,7 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	if conf.Db == nil {
-		conf.Db = make(map[string]db.DatabaseConfig)
-	}
-
-	if err := configurePolicyDb(conf, vcapReader); err != nil {
-		return err
-	}
-
-	if err := configureBindingDb(conf, vcapReader); err != nil {
+	if err := vcapReader.ConfigureDatabases(&conf.Db, conf.StoredProcedureConfig, conf.CredHelperImpl); err != nil {
 		return err
 	}
 
@@ -260,41 +234,10 @@ func configureScheduler(conf *Config) {
 	conf.Scheduler.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
 
-func configurePolicyDb(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	currentPolicyDb, ok := conf.Db[db.PolicyDb]
-	if !ok {
-		conf.Db[db.PolicyDb] = db.DatabaseConfig{}
-	}
-
-	dbURL, err := vcapReader.MaterializeDBFromService(db.PolicyDb)
-	currentPolicyDb.URL = dbURL
-	if err != nil {
-		return err
-	}
-	conf.Db[db.PolicyDb] = currentPolicyDb
-	return nil
-}
-
-func configureBindingDb(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	currentBindingDb, ok := conf.Db[db.BindingDb]
-	if !ok {
-		conf.Db[db.BindingDb] = db.DatabaseConfig{}
-	}
-
-	dbURL, err := vcapReader.MaterializeDBFromService(db.BindingDb)
-	currentBindingDb.URL = dbURL
-	if err != nil {
-		return err
-	}
-	conf.Db[db.BindingDb] = currentBindingDb
-
-	return nil
-}
-
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
 	conf := defaultConfig()
 
-	if err := loadYamlFile(filepath, &conf); err != nil {
+	if err := helpers.LoadYamlFile(filepath, &conf); err != nil {
 		return nil, err
 	}
 
