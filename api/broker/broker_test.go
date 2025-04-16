@@ -245,15 +245,15 @@ var _ = Describe("Broker", func() {
   }
 }`)
 				details = domain.BindDetails{
-					AppGUID: "", // Deprecated field!
-					PlanID: "some_plan-id",
+					AppGUID:   "", // Deprecated field!
+					PlanID:    "some_plan-id",
 					ServiceID: "some_service-id",
-					BindResource: &domain.BindResource {
+					BindResource: &domain.BindResource{
 						AppGuid: "AppGUID_for_bindings",
-//	SpaceGuid          string `json:"space_guid,omitempty"`
-//	Route              string `json:"route,omitempty"`
-//	CredentialClientID string `json:"credential_client_id,omitempty"`
-//	BackupAgent        bool   `json:"backup_agent,omitempty"`
+						//	SpaceGuid          string `json:"space_guid,omitempty"`
+						//	Route              string `json:"route,omitempty"`
+						//	CredentialClientID string `json:"credential_client_id,omitempty"`
+						//	BackupAgent        bool   `json:"backup_agent,omitempty"`
 					}, //  *BindResource
 
 					// RawContext: json.RawMessage // `json:"context,omitempty"`
@@ -266,10 +266,10 @@ var _ = Describe("Broker", func() {
 				// 🚧 To-do!
 			})
 
-			It("Supports provision of an Autoscaler Policy as RawParameters", func(){
+			It("Supports provision of an Autoscaler Policy as RawParameters", func() {
 
 			})
-			It("Does not require the provision of an Autoscaler Policy as RawParameters", func(){
+			It("Does not require the provision of an Autoscaler Policy as RawParameters", func() {
 				// 🚧 To-do: Check usage of default-policy?
 			})
 		})

@@ -25,7 +25,7 @@ const (
 )
 
 type BindingConfig struct {
-	AppGUID GUID `json:"app_guid,omitempty"`
+	AppGUID       GUID                `json:"app_guid,omitempty"` // Empty value represents null-value (i.e. not set).
 	CustomMetrics CustomMetricsConfig `json:"custom_metrics,omitempty"`
 }
 

@@ -11,7 +11,7 @@ import (
 var _ = Describe("BindingRequestParser", func() {
 	const schemaFilePath string = "file://./binding-request.json"
 	var (
-		err error
+		err                  error
 		bindingRequestParser binding_requests.BindingRequestParser
 	)
 	var _ = BeforeEach(func() {
@@ -19,9 +19,9 @@ var _ = Describe("BindingRequestParser", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	Context("When using the new format for binding-requests", func(){
-		Context("and parsing a valid and complete one", func(){
-			It("should return a correctly populated BindingRequestParameters", func(){
+	Context("When using the new format for binding-requests", func() {
+		Context("and parsing a valid and complete one", func() {
+			It("should return a correctly populated BindingRequestParameters", func() {
 				bindingRequestRaw := `
 {
   "configuration": {

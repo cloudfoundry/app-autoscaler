@@ -91,11 +91,9 @@ var _ = Describe("BindingConfigs", func() {
 	Context("GetCustomMetricsStrategy", func() {
 		It("should return the correct custom metrics strategy", func() {
 			bindingConfig = &BindingConfig{
-				Configuration: Configuration{
-					CustomMetrics: CustomMetricsConfig{
-						MetricSubmissionStrategy: MetricsSubmissionStrategy{
-							AllowFrom: CustomMetricsBoundApp,
-						},
+				CustomMetrics: CustomMetricsConfig{
+					MetricSubmissionStrategy: MetricsSubmissionStrategy{
+						AllowFrom: CustomMetricsBoundApp,
 					},
 				},
 			}
@@ -107,7 +105,7 @@ var _ = Describe("BindingConfigs", func() {
 		It("should set the custom metrics strategy correctly", func() {
 			bindingConfig = &BindingConfig{}
 			bindingConfig.SetCustomMetricsStrategy(CustomMetricsBoundApp)
-			Expect(bindingConfig.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom).To(Equal(CustomMetricsBoundApp))
+			Expect(bindingConfig.CustomMetrics.MetricSubmissionStrategy.AllowFrom).To(Equal(CustomMetricsBoundApp))
 		})
 	})
 
@@ -133,11 +131,9 @@ var _ = Describe("BindingConfigs", func() {
 		When("custom metrics strategy is unsupported", func() {
 			BeforeEach(func() {
 				bindingConfig = &BindingConfig{
-					Configuration: Configuration{
-						CustomMetrics: CustomMetricsConfig{
-							MetricSubmissionStrategy: MetricsSubmissionStrategy{
-								AllowFrom: "unsupported_strategy",
-							},
+					CustomMetrics: CustomMetricsConfig{
+						MetricSubmissionStrategy: MetricsSubmissionStrategy{
+							AllowFrom: "unsupported_strategy",
 						},
 					},
 				}
