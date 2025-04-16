@@ -1,4 +1,4 @@
-package binding_requests_test
+package binding_request_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"

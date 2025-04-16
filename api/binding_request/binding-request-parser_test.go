@@ -1,11 +1,11 @@
-package binding_requests_test
+package binding_request_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_requests"
-	cp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_requests/clean_parser"
+	br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request"
+	cp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/clean_parser"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 

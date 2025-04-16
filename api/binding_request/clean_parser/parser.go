@@ -5,7 +5,7 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_requests"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request"
 )
 
 type CleanBindingRequestParser struct {
@@ -32,23 +32,23 @@ func NewFromFile(pathToSchemaFile string) (CleanBindingRequestParser, error) {
 	return new(schemaLoader)
 }
 
-func (p CleanBindingRequestParser) Parse(bindingReqParams string) (binding_requests.Parameters, error) {
+func (p CleanBindingRequestParser) Parse(bindingReqParams string) (binding_request.Parameters, error) {
 	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
 	validationResult, err := p.schema.Validate(documentLoader)
 	if err != nil {
 		// Defined by the implementation of `Validate`, this only happens, if the provided document
 		// (in this context `documentLoader`) can not be loaded.
-		return binding_requests.Parameters{}, err
+		return binding_request.Parameters{}, err
 	} else if !validationResult.Valid() {
 		// The error contains a description of all detected violations against the schema.
-		allErrors := binding_requests.JsonSchemaError(validationResult.Errors())
-		return binding_requests.Parameters{}, allErrors
+		allErrors := binding_request.JsonSchemaError(validationResult.Errors())
+		return binding_request.Parameters{}, allErrors
 	}
 
-	var result binding_requests.Parameters
+	var result binding_request.Parameters
 	err = json.Unmarshal([]byte(bindingReqParams), &result)
 	if err != nil {
-		return binding_requests.Parameters{}, err
+		return binding_request.Parameters{}, err
 	} else {
 		return result, nil
 	}

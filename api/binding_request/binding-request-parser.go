@@ -1,4 +1,4 @@
-package binding_requests
+package binding_request
 
 import (
 	"fmt"
