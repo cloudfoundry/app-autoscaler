@@ -97,7 +97,7 @@ ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-file
 
 
 # CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
-build-%:
+build-%: generate-openapi-generated-clients-and-servers
 	@echo "# building $*"
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
