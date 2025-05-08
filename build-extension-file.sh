@@ -75,12 +75,16 @@ version: 1.0.0
 _schema-version: 3.3.0
 
 modules:
-  - name: publicapiserver
+  - name: apiserver
     parameters:
       instances: 1
       routes:
       - route: ${PUBLICAPISERVER_HOST}.\${default-domain}
       - route: ${SERVICEBROKER_HOST}.\${default-domain}
+    requires:
+      - name: apiserver-config
+      - name: broker-catalog
+      - name: database
   - name: metricsforwarder
     requires:
     - name: metricsforwarder-config
@@ -103,10 +107,10 @@ resources:
           basic_auth:
             password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
 
-- name: publicapiserver-config
+- name: apiserver-config
   parameters:
     config:
-      publicapiserver-config:
+      apiserver-config:
         scaling_rules:
           cpu:
             upper_threshold: $CPU_LOWER_THRESHOLD
