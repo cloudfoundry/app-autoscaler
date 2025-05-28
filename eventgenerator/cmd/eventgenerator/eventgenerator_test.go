@@ -10,7 +10,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,7 +35,7 @@ var _ = Describe("Eventgenerator", func() {
 	BeforeEach(func() {
 		runner = NewEventGeneratorRunner()
 
-		httpClientForEventGenerator = NewEventGeneratorClient()
+		httpClientForEventGenerator = testhelpers.NewEventGeneratorClient()
 		httpClientForHealth = &http.Client{}
 
 		serverURL, err = url.Parse("https://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
@@ -93,7 +93,7 @@ var _ = Describe("Eventgenerator", func() {
 
 		It("fails with an error", func() {
 			Eventually(runner.Session).Should(Exit(1))
-			Expect(runner.Session.Buffer()).To(Say("failed to parse config file"))
+			Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
 		})
 	})
 
@@ -104,13 +104,13 @@ var _ = Describe("Eventgenerator", func() {
 				Logging: helpers.LoggingConfig{
 					Level: "debug",
 				},
-				Aggregator: config.AggregatorConfig{
+				Aggregator: &config.AggregatorConfig{
 					AggregatorExecuteInterval: 2 * time.Second,
 					PolicyPollerInterval:      2 * time.Second,
 					MetricPollerCount:         2,
 					AppMonitorChannelSize:     2,
 				},
-				Evaluator: config.EvaluatorConfig{
+				Evaluator: &config.EvaluatorConfig{
 					EvaluationManagerInterval: 2 * time.Second,
 					EvaluatorCount:            2,
 					TriggerArrayChannelSize:   2,
@@ -131,7 +131,6 @@ var _ = Describe("Eventgenerator", func() {
 	})
 
 	When("an interrupt is sent", func() {
-
 		It("should stop", func() {
 			runner.Session.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
@@ -178,9 +177,9 @@ var _ = Describe("Eventgenerator", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					healthData := string(raw)
-					Expect(healthData).To(ContainSubstring("autoscaler_eventgenerator_concurrent_http_request"))
-					Expect(healthData).To(ContainSubstring("autoscaler_eventgenerator_policyDB"))
-					Expect(healthData).To(ContainSubstring("autoscaler_eventgenerator_appMetricDB"))
+					Expect(healthData).To(ContainSubstring("_concurrent_http_request"))
+					Expect(healthData).To(ContainSubstring("_policyDB"))
+					Expect(healthData).To(ContainSubstring("_appMetricDB"))
 					Expect(healthData).To(ContainSubstring("go_goroutines"))
 					Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
 					rsp.Body.Close()
@@ -189,59 +188,15 @@ var _ = Describe("Eventgenerator", func() {
 		})
 
 		When("Health server is ready to serve RESTful API with basic Auth", func() {
-
 			When("username and password are incorrect for basic authentication during health check", func() {
 				It("should return 401", func() {
-					req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
-					Expect(err).NotTo(HaveOccurred())
-
-					req.SetBasicAuth("wrongusername", "wrongpassword")
-
-					rsp, err := httpClientForHealth.Do(req)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+					testhelpers.CheckHealthAuth(GinkgoT(), httpClientForHealth, healthURL.String(), "wrongusername", "wrongpassword", http.StatusUnauthorized)
 				})
 			})
 
 			When("username and password are correct for basic authentication during health check", func() {
 				It("should return 200", func() {
-					req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
-					Expect(err).NotTo(HaveOccurred())
-
-					req.SetBasicAuth(conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password)
-
-					rsp, err := httpClientForHealth.Do(req)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				})
-			})
-		})
-
-		When("Health server is ready to serve RESTful API with basic Auth", func() {
-
-			When("username and password are incorrect for basic authentication during health check", func() {
-				It("should return 401", func() {
-					req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
-					Expect(err).NotTo(HaveOccurred())
-
-					req.SetBasicAuth("wrongusername", "wrongpassword")
-
-					rsp, err := httpClientForHealth.Do(req)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
-				})
-			})
-
-			When("username and password are correct for basic authentication during health check", func() {
-				It("should return 200", func() {
-					req, err := http.NewRequest(http.MethodGet, healthURL.String(), nil)
-					Expect(err).NotTo(HaveOccurred())
-
-					req.SetBasicAuth(conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password)
-
-					rsp, err := httpClientForHealth.Do(req)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					testhelpers.CheckHealthAuth(GinkgoT(), httpClientForHealth, healthURL.String(), conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password, http.StatusOK)
 				})
 			})
 		})
@@ -255,7 +210,7 @@ var _ = Describe("Eventgenerator", func() {
 				req, err := http.NewRequest(http.MethodGet, cfServerURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = SetXFCCCertHeader(req, conf.CFServer.XFCC.ValidOrgGuid, conf.CFServer.XFCC.ValidSpaceGuid)
+				err = testhelpers.SetXFCCCertHeader(req, conf.CFServer.XFCC.ValidOrgGuid, conf.CFServer.XFCC.ValidSpaceGuid)
 				Expect(err).NotTo(HaveOccurred())
 
 				rsp, err := healthHttpClient.Do(req)

@@ -213,7 +213,7 @@ var _ = Describe("Routes", func() {
 
 	Describe("CreateEventGeneratorRoutes", func() {
 		JustBeforeEach(func() {
-			autoscalerRouter.CreateEventGeneratorRoutes()
+			autoscalerRouter.CreateEventGeneratorSubrouter()
 		})
 
 		Context("GetAggregatedMetricHistoriesRouteName", func() {

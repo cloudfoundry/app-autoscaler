@@ -32,18 +32,17 @@ func Liveness(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) createEventGeneratorRouter() (*mux.Router, error) {
-	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(s.httpStatusCollector)
+func (s *Server) createEventGeneratorRoutes() *mux.Router {
 	eh := NewEventGenHandler(s.logger, s.queryAppMetric)
-	autoscalerRouter := routes.NewRouter()
 
-	r := autoscalerRouter.CreateEventGeneratorRoutes()
+	r := s.autoscalerRouter.CreateEventGeneratorSubrouter()
 	r.Use(otelmux.Middleware("eventgenerator"))
-	r.Use(httpStatusCollectMiddleware.Collect)
+	r.Use(healthendpoint.NewHTTPStatusCollectMiddleware(s.httpStatusCollector).Collect)
 
 	r.Get(routes.LivenessRouteName).Handler(VarsFunc(Liveness))
 	r.Get(routes.GetAggregatedMetricHistoriesRouteName).Handler(VarsFunc(eh.GetAggregatedMetricHistories))
-	return r, nil
+
+	return r
 }
 
 type Server struct {
@@ -54,7 +53,8 @@ type Server struct {
 	queryAppMetric      aggregator.QueryAppMetricsFunc
 	httpStatusCollector healthendpoint.HTTPStatusCollector
 
-	healthRouter *mux.Router
+	autoscalerRouter *routes.Router
+	healthRouter     *mux.Router
 }
 
 func NewServer(logger lager.Logger, conf *config.Config, appMetricDB db.AppMetricDB, policyDb db.PolicyDB, queryAppMetric aggregator.QueryAppMetricsFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) *Server {
@@ -63,27 +63,34 @@ func NewServer(logger lager.Logger, conf *config.Config, appMetricDB db.AppMetri
 		conf:                conf,
 		appMetricDB:         appMetricDB,
 		policyDb:            policyDb,
+		autoscalerRouter:    routes.NewRouter(),
 		queryAppMetric:      queryAppMetric,
 		httpStatusCollector: httpStatusCollector,
 	}
 }
 
-func serverConfigFrom(conf *config.Config) helpers.ServerConfig {
-	return helpers.ServerConfig{
-		TLS:  conf.Server.TLS,
-		Port: conf.Server.Port,
-	}
-}
-
 func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
-	err := s.createHealthRouter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create health router: %w", err)
+	if err := s.setupHealthRouter(); err != nil {
+		return nil, err
 	}
-	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, s.healthRouter)
+	return helpers.NewHTTPServer(s.logger.Session("HealthServer"), s.conf.Health.ServerConfig, s.healthRouter)
 }
 
-func (s *Server) createHealthRouter() error {
+func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
+	eventgenerator := s.createEventGeneratorRoutes()
+	eventgenerator.Use(am.XFCCAuthenticationMiddleware)
+
+	if err := s.setupHealthRouter(); err != nil {
+		return nil, err
+	}
+
+	s.autoscalerRouter.GetRouter().PathPrefix("/v1").Handler(eventgenerator)
+	s.autoscalerRouter.GetRouter().PathPrefix("/health").Handler(s.healthRouter)
+
+	return helpers.NewHTTPServer(s.logger.Session("CfServer"), s.conf.CFServer, s.autoscalerRouter.GetRouter())
+}
+
+func (s *Server) setupHealthRouter() error {
 	checkers := []healthendpoint.Checker{}
 	gatherer := createPrometheusRegistry(s.appMetricDB, s.policyDb, s.httpStatusCollector, s.logger)
 	healthRouter, err := healthendpoint.NewHealthRouter(s.conf.Health, checkers, s.logger.Session("health-server"), gatherer, time.Now)
@@ -95,29 +102,10 @@ func (s *Server) createHealthRouter() error {
 	return nil
 }
 
-func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
-	eventGeneratorRouter, err := s.createEventGeneratorRouter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create event generator router: %w", err)
-	}
-
-	eventGeneratorRouter.Use(am.XFCCAuthenticationMiddleware)
-	if err := s.createHealthRouter(); err != nil {
-		return nil, fmt.Errorf("failed to create health router: %w", err)
-	}
-
-	eventGeneratorRouter.PathPrefix("/health").Handler(s.healthRouter)
-
-	return helpers.NewHTTPServer(s.logger, s.conf.CFServer, eventGeneratorRouter)
-}
-
 func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
-	eventGeneratorRouter, err := s.createEventGeneratorRouter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create event generator router: %w", err)
-	}
+	eventgenerator := s.createEventGeneratorRoutes()
 
-	return helpers.NewHTTPServer(s.logger, serverConfigFrom(s.conf), eventGeneratorRouter)
+	return helpers.NewHTTPServer(s.logger, s.conf.Server, eventgenerator)
 }
 
 func createPrometheusRegistry(appMetricDB db.AppMetricDB, policyDb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, logger lager.Logger) *prometheus.Registry {

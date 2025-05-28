@@ -188,7 +188,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	history.NewInstances = newInstances
 
 	if newInstances == instances {
-		logger.Info("scaling ignored: correct amount of instances")
+		logger.Info(fmt.Sprintf("ignoring scale app:%s already has %d instances", appId, newInstances))
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
 		result.Adjustment = 0

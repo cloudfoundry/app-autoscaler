@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -101,7 +100,7 @@ type Config struct {
 	BrokerServer helpers.ServerConfig  `yaml:"broker_server" json:"broker_server"`
 	Server       helpers.ServerConfig  `yaml:"public_api_server" json:"public_api_server"`
 
-	VCAPServer helpers.ServerConfig `yaml:"vcap_server" json:"vcap_server"`
+	CFServer helpers.ServerConfig `yaml:"cf_server" json:"cf_server"`
 
 	Db                                 map[string]db.DatabaseConfig  `yaml:"db" json:"db,omitempty"`
 	BrokerCredentials                  []BrokerCredentialsConfig     `yaml:"broker_credentials" json:"broker_credentials"`
@@ -173,6 +172,7 @@ func loadPublicApiServerConfig(conf *Config, vcapReader configutil.VCAPConfigura
 }
 
 func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
+	tlsCert := vcapReader.GetInstanceTLSCerts()
 	if !vcapReader.IsRunningOnCF() {
 		return nil
 	}
@@ -180,7 +180,10 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 	// enable plain text logging. See src/autoscaler/helpers/logger.go
 	conf.Logging.PlainTextSink = true
 
-	conf.VCAPServer.Port = vcapReader.GetPort()
+	// Avoid port conflict: assign actual port to CF server, set BOSH server port to 0 (unused)
+	conf.CFServer.Port = vcapReader.GetPort()
+	conf.Server.Port = 0
+
 	if err := loadPublicApiServerConfig(conf, vcapReader); err != nil {
 		return err
 	}
@@ -193,9 +196,9 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	configureEventGenerator(conf)
-	configureScheduler(conf)
-	configureScalingEngine(conf)
+	conf.ScalingEngine.TLSClientCerts = tlsCert
+	conf.EventGenerator.TLSClientCerts = tlsCert
+	conf.Scheduler.TLSClientCerts = tlsCert
 
 	return nil
 }
@@ -214,24 +217,6 @@ func configureCatalog(conf *Config, vcapReader configutil.VCAPConfigurationReade
 	conf.CatalogPath = catalogPath
 
 	return err
-}
-
-func configureScalingEngine(conf *Config) {
-	conf.ScalingEngine.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CA_CERT")
-	conf.ScalingEngine.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
-	conf.ScalingEngine.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
-}
-
-func configureEventGenerator(conf *Config) {
-	conf.EventGenerator.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CA_CERT")
-	conf.EventGenerator.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
-	conf.EventGenerator.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
-}
-
-func configureScheduler(conf *Config) {
-	conf.Scheduler.TLSClientCerts.CACertFile = os.Getenv("CF_INSTANCE_CA_CERT")
-	conf.Scheduler.TLSClientCerts.CertFile = os.Getenv("CF_INSTANCE_CERT")
-	conf.Scheduler.TLSClientCerts.KeyFile = os.Getenv("CF_INSTANCE_KEY")
 }
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
@@ -258,15 +243,6 @@ func FromJSON(data []byte) (*Config, error) {
 	return result, nil
 }
 
-func (c *Config) ToJSON() (string, error) {
-	b, err := json.Marshal(c)
-
-	if err != nil {
-		err = fmt.Errorf("failed to marshal config to json: %s", err)
-		return "", err
-	}
-	return string(b), nil
-}
 func (c *Config) Validate() error {
 	err := c.CF.Validate()
 	if err != nil {

@@ -43,8 +43,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 		When("UAACreds are configured", func() {
 			BeforeEach(func() {
 				conf = config.Config{
-
-					Aggregator: config.AggregatorConfig{
+					Aggregator: &config.AggregatorConfig{
 						AggregatorExecuteInterval: 40 * time.Second,
 					},
 					MetricCollector: config.MetricCollectorConfig{
@@ -98,6 +97,9 @@ var _ = Describe("logCacheFetcherFactory", func() {
 			BeforeEach(func() {
 				testCertDir := testhelpers.TestCertFolder()
 				conf = config.Config{
+					Aggregator: &config.AggregatorConfig{
+						AggregatorExecuteInterval: 40 * time.Second,
+					},
 					MetricCollector: config.MetricCollectorConfig{
 						MetricCollectorURL: "foo",
 						TLSClientCerts: models.TLSCerts{

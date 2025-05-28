@@ -17,6 +17,7 @@ const (
 	PolicyDb           = "policy_db"
 	BindingDb          = "binding_db"
 	StoredProcedureDb  = "storedprocedure_db"
+	AppMetricsDb       = "app_metrics_db"
 )
 
 type OrderType uint8

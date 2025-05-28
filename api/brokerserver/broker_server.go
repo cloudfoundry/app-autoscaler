@@ -161,7 +161,7 @@ func (s *brokerServer) GetRouter() (*chi.Mux, error) {
 	brokerAPI := brokerapi.NewWithOptions(autoscalerBroker, slog.New(lager.NewHandler(s.logger.Session("broker_handler"))), brokerapi.WithCustomAuth(authMiddleware.Middleware), brokerapi.WithAdditionalMiddleware(httpStatusMiddleware.Collect))
 	router.Handle(("/*"), brokerAPI)
 
-	router.HandleFunc(routes.BrokerHealthPath, GetHealth)
+	router.HandleFunc(routes.HealthPath, GetHealth)
 
 	return router, nil
 }

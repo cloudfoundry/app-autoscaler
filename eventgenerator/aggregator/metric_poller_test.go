@@ -52,6 +52,7 @@ var _ = Describe("MetricPoller", func() {
 
 		BeforeEach(func() {
 			metricFetcher, err := metric.NewLogCacheFetcherFactory(metric.StandardLogCacheFetcherCreator).CreateFetcher(logger, config.Config{
+				Aggregator: &config.AggregatorConfig{},
 				MetricCollector: config.MetricCollectorConfig{
 					MetricCollectorURL: "this.endpoint.does.not.exist:1234",
 				},
@@ -191,6 +192,7 @@ var _ = Describe("MetricPoller", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			metricFetcher, err = metric.NewLogCacheFetcherFactory(metric.StandardLogCacheFetcherCreator).CreateFetcher(logger, config.Config{
+				Aggregator: &config.AggregatorConfig{},
 				MetricCollector: config.MetricCollectorConfig{
 					MetricCollectorURL: mockLogCache.URL(),
 					TLSClientCerts: models.TLSCerts{

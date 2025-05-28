@@ -239,12 +239,13 @@ func initConfig() {
 	testCertDir := testhelpers.TestCertFolder()
 
 	dbUrl := testhelpers.GetDbUrl()
+	timeout := 10 * time.Second
 	conf = config.Config{
-		Server: config.ServerConfig{
-			NodeAddrs: []string{"localhost"},
-			NodeIndex: 0,
+		Pool: &config.PoolConfig{
+			TotalInstances: 1,
+			InstanceIndex:  0,
 		},
-		Aggregator: config.AggregatorConfig{
+		Aggregator: &config.AggregatorConfig{
 			AggregatorExecuteInterval: 1 * time.Second,
 			PolicyPollerInterval:      1 * time.Second,
 			SaveInterval:              1 * time.Second,
@@ -253,19 +254,19 @@ func initConfig() {
 			AppMetricChannelSize:      1,
 			MetricCacheSizePerApp:     500,
 		},
-		Evaluator: config.EvaluatorConfig{
+		Evaluator: &config.EvaluatorConfig{
 			EvaluationManagerInterval: 1 * time.Second,
 			EvaluatorCount:            1,
 			TriggerArrayChannelSize:   1,
 		},
-		DB: config.DBConfig{
-			PolicyDB: db.DatabaseConfig{
+		Db: map[string]db.DatabaseConfig{
+			"policy_db": {
 				URL:                   dbUrl,
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 10 * time.Second,
 			},
-			AppMetricDB: db.DatabaseConfig{
+			"app_metrics_db": {
 				URL:                   dbUrl,
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
@@ -288,14 +289,14 @@ func initConfig() {
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		CircuitBreaker: config.CircuitBreakerConfig{
+		CircuitBreaker: &config.CircuitBreakerConfig{
 			BackOffInitialInterval:  5 * time.Minute,
 			BackOffMaxInterval:      2 * time.Hour,
 			ConsecutiveFailureCount: 3,
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
-		HttpClientTimeout:         10 * time.Second,
+		HttpClientTimeout:         &timeout,
 		Health: helpers.HealthConfig{
 			ServerConfig: helpers.ServerConfig{
 				Port: 8000 + GinkgoParallelProcess(),
@@ -346,13 +347,20 @@ func NewEventGeneratorRunner() *EventGeneratorRunner {
 	}
 }
 
+func NewEventGeneratorCFRunner() *EventGeneratorRunner {
+	return &EventGeneratorRunner{
+		configPath: configFile.Name(),
+		startCheck: "eventgenerator.started",
+	}
+}
 func (eg *EventGeneratorRunner) Start() {
-	// #nosec G204
-	egSession, err := gexec.Start(exec.Command(
-		egPath,
-		"-c",
-		eg.configPath,
-	),
+	execArgs := []string{}
+
+	if os.Getenv("VCAP_APPLICATION") == "" {
+		execArgs = append(execArgs, "-c", eg.configPath)
+	}
+
+	egSession, err := gexec.Start(exec.Command(egPath, execArgs...),
 		gexec.NewPrefixedWriter("\x1b[32m[o]\x1b[32m[eg]\x1b[0m ", GinkgoWriter),
 		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[eg]\x1b[0m ", GinkgoWriter),
 	)

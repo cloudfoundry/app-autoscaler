@@ -179,6 +179,7 @@ func startScheduler() {
 }
 
 func startEventGenerator(eventGeneratorConfPath string) {
+	GinkgoHelper()
 	processMap[EventGenerator] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{EventGenerator, components.EventGenerator(eventGeneratorConfPath)},
 	}))

@@ -31,36 +31,23 @@ var _ = Describe("Config", func() {
 		mockVCAPConfigurationReader = &fakes.FakeVCAPConfigurationReader{}
 	})
 
-	Describe("ToJSON and FromJSON", func() {
-		BeforeEach(func() {
-			configBytes = []byte(testhelpers.LoadFile("valid_config.yml"))
-		})
-
-		JustBeforeEach(func() {
-			configFile = testhelpers.BytesToFile(configBytes)
-			conf, err = LoadConfig(configFile, mockVCAPConfigurationReader)
-		})
-
-		It("should return the config in json format", func() {
-			Expect(err).NotTo(HaveOccurred())
-
-			json, err := conf.ToJSON()
-			Expect(err).NotTo(HaveOccurred())
-
-			unmarshalConfig, err := FromJSON([]byte(json))
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(unmarshalConfig).To(Equal(conf))
-		})
-	})
-
 	Describe("Load Config", func() {
 		When("runnning in a cf container", func() {
-			var expectedDbUrl string
+			var expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
+			var expectedTLSConfig = models.TLSCerts{
+				KeyFile:    "some/path/in/container/cfcert.key",
+				CertFile:   "some/path/in/container/cfcert.crt",
+				CACertFile: "some/path/in/container/cfcert.crt",
+			}
 
-			JustBeforeEach(func() {
+			BeforeEach(func() {
+				mockVCAPConfigurationReader.GetPortReturns(3333)
+				mockVCAPConfigurationReader.GetInstanceTLSCertsReturns(expectedTLSConfig)
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
 				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
+			})
+
+			JustBeforeEach(func() {
 				conf, err = LoadConfig("", mockVCAPConfigurationReader)
 			})
 
@@ -69,48 +56,24 @@ var _ = Describe("Config", func() {
 				Expect(conf.Logging.PlainTextSink).To(BeTrue())
 			})
 
-			When("vcap CF_INSTANCE_CERT is set", func() {
-				BeforeEach(func() {
-					os.Setenv("CF_INSTANCE_KEY", "some/path/in/container/cfcert.key")
-					os.Setenv("CF_INSTANCE_CERT", "some/path/in/container/cfcert.crt")
-					os.Setenv("CF_INSTANCE_CA_CERT", "some/path/in/container/cfcert.crt")
-				})
+			It("send certs to scalingengineScalingEngine TlSClientCert", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.ScalingEngine.TLSClientCerts).To(Equal(expectedTLSConfig))
+			})
+			It("send certs to Scheduler TlSClientCert", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.Scheduler.TLSClientCerts).To(Equal(expectedTLSConfig))
+			})
 
-				AfterEach(func() {
-					os.Unsetenv("CF_INSTANCE_KEY")
-					os.Unsetenv("CF_INSTANCE_CERT")
-					os.Unsetenv("CF_INSTANCE_CA_CERT")
-				})
+			It("sets EventGenerator TlSClientCert", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.EventGenerator.TLSClientCerts).To(Equal(expectedTLSConfig))
+			})
 
-				It("sets EventGenerator TlSClientCert", func() {
-					Expect(conf.EventGenerator.TLSClientCerts.KeyFile).To(Equal("some/path/in/container/cfcert.key"))
-					Expect(conf.EventGenerator.TLSClientCerts.CertFile).To(Equal("some/path/in/container/cfcert.crt"))
-					Expect(conf.EventGenerator.TLSClientCerts.CACertFile).To(Equal("some/path/in/container/cfcert.crt"))
-				})
-
-				It("sets Scheduler TlSClientCert", func() {
-					Expect(conf.Scheduler.TLSClientCerts.KeyFile).To(Equal("some/path/in/container/cfcert.key"))
-					Expect(conf.Scheduler.TLSClientCerts.CertFile).To(Equal("some/path/in/container/cfcert.crt"))
-					Expect(conf.Scheduler.TLSClientCerts.CACertFile).To(Equal("some/path/in/container/cfcert.crt"))
-				})
-
-				It("sets ScalingEngine TlSClientCert", func() {
-					Expect(conf.ScalingEngine.TLSClientCerts.KeyFile).To(Equal("some/path/in/container/cfcert.key"))
-					Expect(conf.ScalingEngine.TLSClientCerts.CertFile).To(Equal("some/path/in/container/cfcert.crt"))
-					Expect(conf.ScalingEngine.TLSClientCerts.CACertFile).To(Equal("some/path/in/container/cfcert.crt"))
-				})
-
-				When("vcap PORT is set to a number", func() {
-					BeforeEach(func() {
-						mockVCAPConfigurationReader.GetPortReturns(3333)
-					})
-
-					It("sets env variable over config file", func() {
-						Expect(err).NotTo(HaveOccurred())
-						Expect(conf.VCAPServer.Port).To(Equal(3333))
-					})
-				})
-
+			It("sets env variable over config file", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.CFServer.Port).To(Equal(3333))
+				Expect(conf.Server.Port).To(Equal(0))
 			})
 
 			When("handling available databases", func() {
