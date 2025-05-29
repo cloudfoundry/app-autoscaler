@@ -27,10 +27,10 @@ var _ = Describe("Api", func() {
 		runner *ApiRunner
 		rsp    *http.Response
 
-		brokerHttpClient    *http.Client
-		httpClientForHealth *http.Client
-		apiHttpClient       *http.Client
-		cfServerHttpClient  *http.Client
+		brokerHttpClient   *http.Client
+		healthHttpClient   *http.Client
+		apiHttpClient      *http.Client
+		cfServerHttpClient *http.Client
 
 		serverURL   *url.URL
 		brokerURL   *url.URL
@@ -47,7 +47,7 @@ var _ = Describe("Api", func() {
 		vcapPort = 8080 + GinkgoParallelProcess()
 
 		brokerHttpClient = testhelpers.NewServiceBrokerClient()
-		httpClientForHealth = &http.Client{}
+		healthHttpClient = &http.Client{}
 		apiHttpClient = testhelpers.NewPublicApiClient()
 		cfServerHttpClient = &http.Client{}
 
@@ -207,20 +207,13 @@ var _ = Describe("Api", func() {
 			runner.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
+
 		When("a request to query health comes", func() {
 			It("returns with a 200", func() {
-				rsp, err := httpClientForHealth.Get(healthURL.String())
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := io.ReadAll(rsp.Body)
-				healthData := string(raw)
-				Expect(healthData).To(ContainSubstring("_concurrent_http_request"))
-				Expect(healthData).To(ContainSubstring("_policyDB"))
-				Expect(healthData).To(ContainSubstring("_bindingDB"))
-				Expect(healthData).To(ContainSubstring("go_goroutines"))
-				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
-				rsp.Body.Close()
-
+				testhelpers.CheckHealthResponse(healthHttpClient, healthURL.String(), []string{
+					"autoscaler_golangapiserver_concurrent_http_request", "autoscaler_golangapiserver_policyDB",
+					"autoscaler_golangapiserver_bindingDB", "go_goroutines", "go_memstats_alloc_bytes",
+				})
 			})
 		})
 	})
@@ -234,13 +227,13 @@ var _ = Describe("Api", func() {
 		When("Health server is ready to serve RESTful API with basic Auth", func() {
 			When("username and password are incorrect for basic authentication during health check", func() {
 				It("should return 401", func() {
-					testhelpers.CheckHealthAuth(GinkgoT(), httpClientForHealth, healthURL.String(), "wrongusername", "wrongpassword", http.StatusUnauthorized)
+					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), "wrongusername", "wrongpassword", http.StatusUnauthorized)
 				})
 			})
 
 			When("username and password are correct for basic authentication during health check", func() {
 				It("should return 200", func() {
-					testhelpers.CheckHealthAuth(GinkgoT(), httpClientForHealth, healthURL.String(), conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password, http.StatusOK)
+					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password, http.StatusOK)
 				})
 			})
 		})

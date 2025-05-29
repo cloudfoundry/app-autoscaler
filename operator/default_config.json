@@ -1,0 +1,33 @@
+{
+  "operator-config": {
+    "health": {
+      "basic_auth": {
+        "username": "operator"
+      }
+    },
+    "cf": {
+      "skip_ssl_validation": false,
+      "max_retries": 3,
+      "max_retry_wait_ms": 0,
+      "idle_connection_timeout_ms": 5000,
+      "max_idle_conns_per_host_ms": 200
+    },
+    "logging": {
+      "level": "info"
+    },
+    "http_client_timeout": "60s",
+    "scaling_engine": {
+      "sync_interval": "600s"
+    },
+    "scheduler": {
+      "sync_interval": "600s"
+    },
+    "app_syncer": {
+      "sync_interval": "24h"
+    },
+    "db_lock": {
+      "ttl": "15s",
+      "retry_interval": "5s"
+    }
+  }
+}

@@ -15,7 +15,7 @@
         "max_idle_connections": 10,
         "connection_max_lifetime": "60s"
       },
-      "app_metrics_db": {
+      "appmetrics_db": {
         "max_open_connections": 100,
         "max_idle_connections": 10,
         "connection_max_lifetime": "60s"

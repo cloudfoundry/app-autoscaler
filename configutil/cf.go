@@ -18,6 +18,7 @@ import (
 var (
 	ErrDbServiceNotFound = errors.New("failed to get service by name")
 	ErrMissingCredential = errors.New("failed to get required credential from service")
+	AvailableDatabases   = []string{db.PolicyDb, db.BindingDb, db.AppMetricsDb, db.LockDb, db.ScalingEngineDb}
 )
 
 type VCAPConfigurationReader interface {
@@ -289,20 +290,10 @@ func (vc *VCAPConfiguration) configureDb(dbName string, confDb *map[string]db.Da
 }
 
 func (vc *VCAPConfiguration) ConfigureDatabases(confDb *map[string]db.DatabaseConfig, storedProcedureConfig *models.StoredProcedureConfig, credHelperImpl string) error {
-	if err := vc.configureDb(db.PolicyDb, confDb); err != nil {
-		return err
-	}
-
-	if err := vc.configureDb(db.BindingDb, confDb); err != nil {
-		return err
-	}
-
-	if err := vc.configureDb(db.BindingDb, confDb); err != nil {
-		return err
-	}
-
-	if err := vc.configureDb(db.AppMetricsDb, confDb); err != nil {
-		return err
+	for _, dbName := range AvailableDatabases {
+		if err := vc.configureDb(dbName, confDb); err != nil {
+			return err
+		}
 	}
 
 	if storedProcedureConfig != nil && credHelperImpl == "stored_procedure" {

@@ -34,6 +34,8 @@ postgres_ip: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_ip))
 
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
 
+operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
+
 eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
 eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
 eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
@@ -56,6 +58,32 @@ credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets
 export METRICSFORWARDER_UAA_SKIP_SSL_VALIDATION="$(yq ".metricsforwarder_uaa_skip_ssl_validation" /tmp/mtar-secrets.yml)"
 export METRICSFORWARDER_APPNAME="${METRICSFORWARDER_APPNAME:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_HEALTH_PASSWORD="$(yq ".metricsforwarder_health_password" /tmp/mtar-secrets.yml)"
+export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
+export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
+export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
+
+export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
+export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
+
+export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
+export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
+export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
+
+
+export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
+
+export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
+
+export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
+
+export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
+export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
+export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
+export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
+export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
@@ -96,7 +124,7 @@ modules:
     parameters:
       instances: ${APISERVER_INSTANCES}
       routes:
-      - route: ${PUBLICAPISERVER_HOST}.\${default-domain}
+      - route: ${APISERVER_HOST}.\${default-domain}
       - route: ${SERVICEBROKER_HOST}.\${default-domain}
     requires:
       - name: apiserver-config
@@ -121,6 +149,14 @@ modules:
       routes:
       - route: ${METRICSFORWARDER_HOST}.\${default-domain}
       - route: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
+  - name: operator
+    requires:
+    - name: operator-config
+    - name: database
+    parameters:
+      instances: ${OPERATOR_INSTANCES}
+      routes:
+      - route: ${OPERATOR_HOST}.\${default-domain}
 
 
 
@@ -179,6 +215,23 @@ resources:
             broker_password: $SERVICE_BROKER_PASSWORD
           - broker_username: 'autoscaler-broker-user-blue'
             broker_password: $SERVICE_BROKER_PASSWORD_BLUE
+
+- name: operator-config
+  parameters:
+    config:
+      operator-config:
+        health:
+          basic_auth:
+            password: "${OPERATOR_HEALTH_PASSWORD}"
+        cf:
+          api:  https://api.\${default-domain}
+          client_id: ${OPERATOR_CF_CLIENT_ID}
+          secret: ${OPERATOR_CF_CLIENT_SECRET}
+        scaling_engine:
+          scaling_engine_url: https://${SCALINGENGINE_HOST}.\${default-domain}
+        scheduler:
+          scheduler_url: https://${SCHEDULER_HOST}.\${default-domain}
+
 - name: database
   parameters:
     config:

@@ -266,7 +266,7 @@ func initConfig() {
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 10 * time.Second,
 			},
-			"app_metrics_db": {
+			"appmetrics_db": {
 				URL:                   dbUrl,
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,

@@ -1,19 +1,20 @@
 
 logging:
 level: "debug"
-app_metrics_db:
-  db:
+db:
+  appmetrics_db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+app_metrics_db:
   refresh_interval: 24h
   cutoff_duration: 20h
 scaling_engine_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h

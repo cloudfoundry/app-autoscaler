@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"io"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,4 +20,16 @@ func CheckHealthAuth(t GinkgoTInterface, client *http.Client, url string, userna
 
 	defer resp.Body.Close()
 	Expect(resp.StatusCode).To(Equal(expectedStatus))
+}
+
+func CheckHealthResponse(client *http.Client, url string, expected []string) {
+	rsp, err := client.Get(url)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+	raw, _ := io.ReadAll(rsp.Body)
+	healthData := string(raw)
+	for _, s := range expected {
+		Expect(healthData).To(ContainSubstring(s))
+	}
+	rsp.Body.Close()
 }

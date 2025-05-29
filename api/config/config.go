@@ -172,10 +172,11 @@ func loadPublicApiServerConfig(conf *Config, vcapReader configutil.VCAPConfigura
 }
 
 func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	tlsCert := vcapReader.GetInstanceTLSCerts()
 	if !vcapReader.IsRunningOnCF() {
 		return nil
 	}
+
+	tlsCert := vcapReader.GetInstanceTLSCerts()
 
 	// enable plain text logging. See src/autoscaler/helpers/logger.go
 	conf.Logging.PlainTextSink = true

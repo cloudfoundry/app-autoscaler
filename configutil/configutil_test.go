@@ -181,6 +181,7 @@ var _ = Describe("Configutil", func() {
 						"client_key":  expectedClientKeyContent,
 						"server_ca":   expectedServerCAContent,
 					}, databaseNames, "postgres")
+
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -196,10 +197,12 @@ var _ = Describe("Configutil", func() {
 							db.BindingDb: {
 								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fbinding_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fbinding_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fbinding_db%2Fserver_ca.sslrootcert", // #nosec G101
 							},
-							db.AppMetricsDb: {},
 							db.StoredProcedureDb: {
 								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fstoredprocedure_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fstoredprocedure_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fstoredprocedure_db%2Fserver_ca.sslrootcert",
 							},
+							db.LockDb:          {},
+							db.ScalingEngineDb: {},
+							db.AppMetricsDb:    {},
 						}
 					})
 
@@ -226,21 +229,23 @@ var _ = Describe("Configutil", func() {
 							db.BindingDb: {
 								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fbinding_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fbinding_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fbinding_db%2Fserver_ca.sslrootcert", // #nosec G101
 							},
-							db.AppMetricsDb: {},
 							db.StoredProcedureDb: {
 								URL: "postgres://storedProcedureUsername:storedProcedurePassword@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fstoredprocedure_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fstoredprocedure_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fstoredprocedure_db%2Fserver_ca.sslrootcert", // #nosec G101
 							},
+							db.AppMetricsDb:    {},
+							db.ScalingEngineDb: {},
+							db.LockDb:          {},
 						}
 
 						err := vcapConfiguration.ConfigureDatabases(actualDbs, actualProcedureConfig, "stored_procedure")
 						Expect(err).NotTo(HaveOccurred())
-
 						Expect(*actualDbs).To(Equal(*expectedDbs))
 					})
 				})
 			})
 
 			When("stored procedure implementation is set to default", func() {
+
 				BeforeEach(func() {
 					databaseNames = []string{db.PolicyDb, db.BindingDb, db.AppMetricsDb}
 					vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
@@ -248,7 +253,7 @@ var _ = Describe("Configutil", func() {
 						"client_cert": expectedClientCertContent,
 						"client_key":  expectedClientKeyContent,
 						"server_ca":   expectedServerCAContent,
-					}, databaseNames, "postgres")
+					}, AvailableDatabases, "postgres")
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -264,7 +269,13 @@ var _ = Describe("Configutil", func() {
 								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fbinding_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fbinding_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fbinding_db%2Fserver_ca.sslrootcert", // #nosec G101
 							},
 							db.AppMetricsDb: {
-								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fapp_metrics_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fapp_metrics_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fapp_metrics_db%2Fserver_ca.sslrootcert", // #nosec G101
+								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fappmetrics_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fappmetrics_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fappmetrics_db%2Fserver_ca.sslrootcert", // #nosec G101
+							},
+							db.LockDb: {
+								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Flock_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Flock_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Flock_db%2Fserver_ca.sslrootcert", // #nosec G101
+							},
+							db.ScalingEngineDb: {
+								URL: "postgres://foo:bar@postgres.example.com:5432/some-db?sslcert=%2Ftmp%2Fscalingengine_db%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fscalingengine_db%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fscalingengine_db%2Fserver_ca.sslrootcert", // #nosec G101
 							},
 						}
 					})

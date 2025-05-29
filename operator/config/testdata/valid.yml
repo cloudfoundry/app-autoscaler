@@ -9,20 +9,32 @@ health:
     port: 9999
 logging:
   level: "debug"
-app_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+db:
+  policy_db:
+    url: "postgres://localhost/autoscaler?sslmode=disable"
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
+  lock_db:
+    url: "postgres://localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  appmetrics_db:
+    url: "postgres://localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+
+app_metrics_db:
   refresh_interval: 10h
   cutoff_duration: 15h
 scaling_engine_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
 scaling_engine:
@@ -40,15 +52,8 @@ scheduler:
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 app_syncer:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
   sync_interval: 60s
 db_lock:
   ttl: 15s
-  db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   retry_interval: 5s
 http_client_timeout: 10s

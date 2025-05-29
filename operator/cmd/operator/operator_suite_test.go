@@ -27,12 +27,11 @@ import (
 )
 
 var (
-	prPath           string
-	cfg              config.Config
-	configFile       *os.File
-	cfServer         *mocks.Server
-	healthHttpClient *http.Client
-	healthport       int
+	prPath     string
+	conf       config.Config
+	configFile *os.File
+	cfServer   *mocks.Server
+	healthport int
 )
 
 func TestOperator(t *testing.T) {
@@ -50,8 +49,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(pathsByte []byte) {
 	prPath = string(pathsByte)
 	initConfig()
-	healthHttpClient = &http.Client{}
-	configFile = writeConfig(&cfg)
+	configFile = writeConfig(&conf)
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -68,79 +66,80 @@ func initConfig() {
 		GetAppProcesses(2).
 		OauthToken("some-test-token")
 
-	cfg.CF = cf.Config{
+	conf.CF = cf.Config{
 		API:      cfServer.URL(),
 		ClientID: "client-id",
 		Secret:   "secret",
 	}
 	healthport = 8000 + GinkgoParallelProcess()
-	cfg.Health.ServerConfig.Port = healthport
-	cfg.Logging.Level = "debug"
+	conf.Health.ServerConfig.Port = healthport
+	conf.Logging.Level = "debug"
 	dbUrl := testhelpers.GetDbUrl()
+	conf.Db = make(map[string]db.DatabaseConfig)
 
-	cfg.AppMetricsDB.DB = db.DatabaseConfig{
+	conf.Db[db.AppMetricsDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.AppMetricsDB.RefreshInterval = 12 * time.Hour
-	cfg.AppMetricsDB.CutoffDuration = 20 * 24 * time.Hour
+	conf.AppMetricsDb.RefreshInterval = 12 * time.Hour
+	conf.AppMetricsDb.CutoffDuration = 20 * 24 * time.Hour
 
-	cfg.ScalingEngineDB.DB = db.DatabaseConfig{
+	conf.Db[db.ScalingEngineDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.ScalingEngineDB.RefreshInterval = 12 * time.Hour
-	cfg.ScalingEngineDB.CutoffDuration = 20 * 24 * time.Hour
+	conf.ScalingEngineDb.RefreshInterval = 12 * time.Hour
+	conf.ScalingEngineDb.CutoffDuration = 20 * 24 * time.Hour
 
-	cfg.ScalingEngine = config.ScalingEngineConfig{
+	conf.ScalingEngine = config.ScalingEngineConfig{
 		URL:          "http://localhost:8082",
 		SyncInterval: 10 * time.Second,
 	}
 
-	cfg.Scheduler = config.SchedulerConfig{
+	conf.Scheduler = config.SchedulerConfig{
 		URL:          "http://localhost:8083",
 		SyncInterval: 10 * time.Second,
 	}
 
-	cfg.DBLock.DB = db.DatabaseConfig{
+	conf.Db[db.LockDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 
-	cfg.DBLock.LockTTL = 15 * time.Second
-	cfg.DBLock.LockRetryInterval = 5 * time.Second
-	cfg.AppSyncer.DB = db.DatabaseConfig{
+	conf.DBLock.LockTTL = 15 * time.Second
+	conf.DBLock.LockRetryInterval = 5 * time.Second
+	conf.Db[db.PolicyDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.AppSyncer.SyncInterval = 60 * time.Second
-	cfg.HttpClientTimeout = 10 * time.Second
+	conf.AppSyncer.SyncInterval = 60 * time.Second
+	conf.HttpClientTimeout = 10 * time.Second
 
-	cfg.Health.BasicAuth.Username = "operatorhealthcheckuser"
-	cfg.Health.BasicAuth.Password = "operatorhealthcheckuser"
+	conf.Health.BasicAuth.Username = "operatorhealthcheckuser"
+	conf.Health.BasicAuth.Password = "operatorhealthcheckuser"
 }
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := os.CreateTemp("", "pr")
+	conf, err := os.CreateTemp("", "pr")
 	Expect(err).NotTo(HaveOccurred())
-	defer func() { _ = cfg.Close() }()
+	defer func() { _ = conf.Close() }()
 
 	var bytes []byte
 	bytes, err = yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = cfg.Write(bytes)
+	_, err = conf.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
-	return cfg
+	return conf
 }
 
 type OperatorRunner struct {

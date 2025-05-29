@@ -393,8 +393,8 @@ func (components *Components) PrepareEventGeneratorConfig(dbURI string, port int
 			TriggerArrayChannelSize:   1,
 		},
 		Db: map[string]db.DatabaseConfig{
-			"policy_db":      {URL: dbURI},
-			"app_metrics_db": {URL: dbURI},
+			"policy_db":     {URL: dbURI},
+			"appmetrics_db": {URL: dbURI},
 		},
 		ScalingEngine: egConfig.ScalingEngineConfig{
 			ScalingEngineURL: scalingEngineURL,
@@ -466,19 +466,20 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 			ClientID: "admin",
 			Secret:   "admin",
 		},
-		AppMetricsDB: opConfig.DbPrunerConfig{
-			RefreshInterval: 2 * time.Minute,
-			CutoffDuration:  cutoffDuration,
-			DB: db.DatabaseConfig{
-				URL: dbURI,
-			},
+		Db: map[string]db.DatabaseConfig{
+			"policy_db":        {URL: dbURI},
+			"binding_db":       {URL: dbURI},
+			"appmetrics_db":    {URL: dbURI},
+			"scalingengine_db": {URL: dbURI},
+			"lock_db":          {URL: dbURI},
 		},
-		ScalingEngineDB: opConfig.DbPrunerConfig{
+		AppMetricsDb: opConfig.DbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDuration:  cutoffDuration,
-			DB: db.DatabaseConfig{
-				URL: dbURI,
-			},
+		},
+		ScalingEngineDb: opConfig.DbPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDuration:  cutoffDuration,
 		},
 		ScalingEngine: opConfig.ScalingEngineConfig{
 			URL:          scalingEngineURL,
@@ -499,17 +500,11 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 			},
 		},
 		DBLock: opConfig.DBLockConfig{
-			LockTTL: 30 * time.Second,
-			DB: db.DatabaseConfig{
-				URL: dbURI,
-			},
+			LockTTL:           30 * time.Second,
 			LockRetryInterval: 15 * time.Second,
 		},
 		AppSyncer: opConfig.AppSyncerConfig{
 			SyncInterval: 60 * time.Second,
-			DB: db.DatabaseConfig{
-				URL: dbURI,
-			},
 		},
 		HttpClientTimeout: httpClientTimeout,
 	}
@@ -517,7 +512,7 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 	return WriteYmlConfig(tmpDir, Operator, &conf)
 }
 
-func WriteYmlConfig(dir string, componentName string, c interface{}) string {
+func WriteYmlConfig(dir string, componentName string, c any) string {
 	cfgFile, err := os.CreateTemp(dir, componentName)
 	Expect(err).NotTo(HaveOccurred())
 	defer cfgFile.Close()
