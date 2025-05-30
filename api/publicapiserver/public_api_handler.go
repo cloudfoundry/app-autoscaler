@@ -282,7 +282,8 @@ func (h *PublicApiHandler) saveDefaultPolicy(w http.ResponseWriter, r *http.Requ
 func (h *PublicApiHandler) proxyRequest(logger lager.Logger, appId string, metricType string, w http.ResponseWriter, req *http.Request, parameters *url.Values, requestDescription string) {
 	reqUrl := req.URL
 	r := routes.NewRouter()
-	router := r.CreateEventGeneratorRoutes()
+	router := r.CreateEventGeneratorSubrouter()
+
 	if router == nil {
 		panic("Failed to create event generator routes")
 	}

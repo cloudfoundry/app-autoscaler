@@ -10,6 +10,9 @@ provider: Cloud Foundry Foundation
 copyright: Apache License 2.0
 version: MTA_VERSION
 
+parameters:
+  enable-parallel-deployments: true
+
 build-parameters:
   before-all:
     - builder: custom
@@ -34,9 +37,24 @@ modules:
       no-start: true
       tasks:
       - name: apply-api-changelog
-        command: " chmod +x ./BOOT-INF/classes/bin/apply-api-changelog.sh ; /home/vcap/app/BOOT-INF/classes/bin/apply-api-changelog.sh"
+        command: |
+          chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
+          /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
+            BOOT-INF/classes/api.db.changelog.yml \
+            BOOT-INF/classes/servicebroker.db.changelog.yaml
+      - name: apply-eventgenerator-changelog
+        command: |
+          chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
+          /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
+            BOOT-INF/classes/dataaggregator.db.changelog.yml \
+            BOOT-INF/classes/metricscollector.db.changelog.yml
+      - name: apply-operator-changelog
+        command: |
+          chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
+          /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
+            BOOT-INF/classes/operator.db.changelog.yml
 
-  - name: publicapiserver
+  - name: apiserver
     type: go
     path: .
     properties:
@@ -45,14 +63,35 @@ modules:
       GOTOOLCHAIN: local
       GOVERSION: go1.GO_MINOR_VERSION
     requires:
-    - name: publicapiserver-config
+    - name: apiserver-config
     - name: broker-catalog
     - name: database
     - name: app-autoscaler-application-logs
+    - name: app-autoscaler-dynatrace
     parameters:
+      instances: 0 # overidden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
+
+  - name: eventgenerator
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/cmd/eventgenerator
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
+    requires:
+    - name: eventgenerator-config
+    - name: database
+    - name: app-autoscaler-application-logs
+    - name: app-autoscaler-dynatrace
+    parameters:
       instances: 0 # overidden in build-extension-file.sh
+      memory: 1G
+      disk-quota: 1G
       stack: cflinuxfs4
       routes:
 
@@ -71,9 +110,29 @@ modules:
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
+      instances: 0 # overidden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
+
+  - name: operator
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/cmd/operator
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
+    requires:
+    - name: operator-config
+    - name: database
+    - name: app-autoscaler-application-logs
+    - name: app-autoscaler-dynatrace
+    parameters:
       instances: 0 # overidden in build-extension-file.sh
+      memory: 1G
+      disk-quota: 1G
       stack: cflinuxfs4
       routes:
 
@@ -84,12 +143,24 @@ resources:
     service-tags:
     - metricsforwarder-config
     path: metricsforwarder/default_config.json
-- name: publicapiserver-config
+- name: eventgenerator-config
   type: org.cloudfoundry.user-provided-service
   parameters:
     service-tags:
-    - publicapiserver-config
+    - eventgenerator-config
+    path: eventgenerator/default_config.json
+- name: apiserver-config
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - apiserver-config
     path: api/default_config.json
+- name: operator-config
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - operator-config
+    path: operator/default_config.json
 - name: broker-catalog
   type: org.cloudfoundry.user-provided-service
   parameters:
@@ -101,6 +172,9 @@ resources:
     service-tags:
     - policy_db
     - binding_db
+    - appmetrics_db
+    - scalingengine_db
+    - lock_db
     - relational
 - name: syslog-client
   type: org.cloudfoundry.user-provided-service

@@ -51,24 +51,28 @@ var _ = Describe("Api", func() {
 		apiHttpClient = testhelpers.NewPublicApiClient()
 		cfServerHttpClient = &http.Client{}
 
-		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", cfg.Server.Port))
+		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf.Server.Port))
 		Expect(err).NotTo(HaveOccurred())
 
-		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", cfg.BrokerServer.Port))
+		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf.BrokerServer.Port))
 		Expect(err).NotTo(HaveOccurred())
 
-		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", cfg.Health.ServerConfig.Port))
+		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf.Health.ServerConfig.Port))
 		Expect(err).NotTo(HaveOccurred())
 
 		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
 
 	})
+
+	JustBeforeEach(func() {
+		runner.Start()
+	})
+
 	Describe("Api configuration check", func() {
 		Context("with a missing config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				runner.configPath = "bogus"
-				runner.Start()
 			})
 
 			It("fails with an error", func() {
@@ -86,7 +90,6 @@ var _ = Describe("Api", func() {
 				// #nosec G306
 				err = os.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
-				runner.Start()
 			})
 
 			AfterEach(func() {
@@ -102,7 +105,7 @@ var _ = Describe("Api", func() {
 		Context("with missing configuration", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				missingConfig := cfg
+				missingConfig := conf
 
 				missingConfig.Db = make(map[string]db.DatabaseConfig)
 				missingConfig.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
@@ -114,7 +117,6 @@ var _ = Describe("Api", func() {
 				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelProcess()
 				missingConfig.Logging.Level = "debug"
 				runner.configPath = writeConfig(&missingConfig).Name()
-				runner.Start()
 			})
 
 			AfterEach(func() {
@@ -130,10 +132,6 @@ var _ = Describe("Api", func() {
 	})
 
 	Describe("when interrupt is sent", func() {
-		BeforeEach(func() {
-			runner.Start()
-		})
-
 		It("should stop", func() {
 			runner.Session.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
@@ -147,9 +145,6 @@ var _ = Describe("Api", func() {
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 		Context("When a request comes to broker catalog", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
 
 			It("succeeds with a 200", func() {
 				brokerURL.Path = "/v2/catalog"
@@ -185,9 +180,6 @@ var _ = Describe("Api", func() {
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 		Context("When a request comes to public api info", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
 			It("succeeds with a 200", func() {
 				serverURL.Path = "/v1/info"
 				req, err := http.NewRequest(http.MethodGet, serverURL.String(), nil)
@@ -203,80 +195,55 @@ var _ = Describe("Api", func() {
 			})
 		})
 	})
+
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
-			basicAuthConfig := cfg
+			basicAuthConfig := conf
 			basicAuthConfig.Health.BasicAuth.Username = ""
 			basicAuthConfig.Health.BasicAuth.Password = ""
 			runner.configPath = writeConfig(&basicAuthConfig).Name()
-			runner.Start()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
+
 		When("a request to query health comes", func() {
 			It("returns with a 200", func() {
-				rsp, err := healthHttpClient.Get(healthURL.String())
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := io.ReadAll(rsp.Body)
-				healthData := string(raw)
-				Expect(healthData).To(ContainSubstring("autoscaler_golangapiserver_concurrent_http_request"))
-				Expect(healthData).To(ContainSubstring("autoscaler_golangapiserver_policyDB"))
-				Expect(healthData).To(ContainSubstring("autoscaler_golangapiserver_bindingDB"))
-				Expect(healthData).To(ContainSubstring("go_goroutines"))
-				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
-				rsp.Body.Close()
-
+				testhelpers.CheckHealthResponse(healthHttpClient, healthURL.String(), []string{
+					"autoscaler_golangapiserver_concurrent_http_request", "autoscaler_golangapiserver_policyDB",
+					"autoscaler_golangapiserver_bindingDB", "go_goroutines", "go_memstats_alloc_bytes",
+				})
 			})
 		})
 	})
 
 	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
-		BeforeEach(func() {
-			runner.Start()
-		})
 		AfterEach(func() {
 			runner.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
-		When("username and password are incorrect for basic authentication during health check", func() {
-			It("should return 401", func() {
 
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
-				Expect(err).NotTo(HaveOccurred())
-
-				req.SetBasicAuth("wrongusername", "wrongpassword")
-
-				rsp, err := healthHttpClient.Do(req)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+		When("Health server is ready to serve RESTful API with basic Auth", func() {
+			When("username and password are incorrect for basic authentication during health check", func() {
+				It("should return 401", func() {
+					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), "wrongusername", "wrongpassword", http.StatusUnauthorized)
+				})
 			})
-		})
 
-		When("username and password are correct for basic authentication during health check", func() {
-			It("should return 200", func() {
-
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
-				Expect(err).NotTo(HaveOccurred())
-
-				req.SetBasicAuth(cfg.Health.BasicAuth.Username, cfg.Health.BasicAuth.Password)
-
-				rsp, err := healthHttpClient.Do(req)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			When("username and password are correct for basic authentication during health check", func() {
+				It("should return 200", func() {
+					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password, http.StatusOK)
+				})
 			})
 		})
 	})
 
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
-			pluginPathConfig := cfg
+			pluginPathConfig := conf
 			pluginPathConfig.CredHelperImpl = "default"
 			runner.configPath = writeConfig(&pluginPathConfig).Name()
-			runner.Start()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
@@ -326,7 +293,6 @@ var _ = Describe("Api", func() {
 			os.Setenv("VCAP_APPLICATION", "{}")
 			os.Setenv("VCAP_SERVICES", getVcapServices())
 			os.Setenv("PORT", fmt.Sprintf("%d", vcapPort))
-			runner.Start()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
@@ -394,7 +360,7 @@ func getVcapServices() (result string) {
 
 	result = `{
 			"user-provided": [
-			  { "name": "publicapiserver-config", "tags": ["publicapiserver-config"], "credentials": { "publicapiserver-config": { } }},
+			  { "name": "apiserver-config", "tags": ["apiserver-config"], "credentials": { "apiserver-config": { } }},
 			  { "name": "broker-catalog", "tags": ["broker-catalog"], "credentials": { "broker-catalog": ` + string(catalogBytes) + ` }}
             ],
 			"autoscaler": [ {

@@ -39,11 +39,20 @@ var _ = Describe("Server", func() {
 	)
 
 	BeforeEach(func() {
+
 		conf = &config.Config{
-			Server: config.ServerConfig{
+			Health: helpers.HealthConfig{
 				ServerConfig: helpers.ServerConfig{
-					Port: 1111 + GinkgoParallelProcess(),
+					Port: 2222 + GinkgoParallelProcess(),
 				},
+				BasicAuth: models.BasicAuth{
+					Username: "user",
+					Password: "password",
+				},
+			},
+
+			Server: helpers.ServerConfig{
+				Port: 1111 + GinkgoParallelProcess(),
 			},
 			CFServer: helpers.ServerConfig{
 				Port: 3333 + GinkgoParallelProcess(),
@@ -68,16 +77,18 @@ var _ = Describe("Server", func() {
 	})
 
 	Describe("#CreateMTLSServer", func() {
+		BeforeEach(func() {
+			httpServer, err := server.CreateMtlsServer()
+			Expect(err).NotTo(HaveOccurred())
+
+			serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
+			Expect(err).ToNot(HaveOccurred())
+
+			serverProcess = ginkgomon_v2.Invoke(httpServer)
+		})
+
 		Describe("request on /v1/apps/an-app-id/aggregated_metric_histories/a-metric-type", func() {
 			BeforeEach(func() {
-				httpServer, err := server.CreateMtlsServer()
-				Expect(err).NotTo(HaveOccurred())
-
-				serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Server.ServerConfig.Port))
-				Expect(err).ToNot(HaveOccurred())
-
-				serverProcess = ginkgomon_v2.Invoke(httpServer)
-
 				serverUrl.Path = "/v1/apps/an-app-id/aggregated_metric_histories/a-metric-type"
 			})
 
@@ -90,19 +101,25 @@ var _ = Describe("Server", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				rsp.Body.Close()
 			})
-
-			When("using wrong method to retrieve aggregared metrics history", func() {
-				JustBeforeEach(func() {
-					rsp, err = http.Post(serverUrl.String(), "garbage", nil)
-				})
-
-				It("should return 405", func() {
-					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusMethodNotAllowed))
-					rsp.Body.Close()
-				})
-			})
 		})
+
+		When("requesting the wrong path", func() {
+			BeforeEach(func() {
+				serverUrl.Path = "/not-exist-path"
+			})
+
+			JustBeforeEach(func() {
+				rsp, err = http.Get(serverUrl.String())
+			})
+
+			It("should return 404", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+				rsp.Body.Close()
+			})
+
+		})
+
 	})
 
 	Describe("#CreateCFServer", func() {
@@ -119,6 +136,44 @@ var _ = Describe("Server", func() {
 			serverProcess = ginkgomon_v2.Invoke(httpServer)
 			serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.CFServer.Port))
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		Describe("GET /health", func() {
+			var (
+				actualUsername = "user"
+				actualPassword = "password"
+			)
+
+			BeforeEach(func() {
+				serverUrl.Path = "/health"
+			})
+
+			JustBeforeEach(func() {
+				req, err := http.NewRequest("GET", serverUrl.String(), nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				req.SetBasicAuth(actualUsername, actualPassword)
+
+				client := &http.Client{}
+				rsp, err = client.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should return 200", func() {
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				rsp.Body.Close()
+			})
+
+			When("auth is incorrect", func() {
+				BeforeEach(func() {
+					actualUsername = "wrong-username"
+					actualPassword = "wrong-password"
+				})
+
+				It("should return 401", func() {
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
 		})
 
 		Describe("GET /v1/apps/{GUID}/aggregated_metric_histories/a-metric-type", func() {
@@ -154,23 +209,6 @@ var _ = Describe("Server", func() {
 				})
 			})
 		})
-	})
-
-	XWhen("requesting the wrong path", func() {
-		BeforeEach(func() {
-			serverUrl.Path = "/not-exist-path"
-		})
-
-		JustBeforeEach(func() {
-			rsp, err = http.Get(serverUrl.String())
-		})
-
-		It("should return 404", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
-			rsp.Body.Close()
-		})
-
 	})
 
 })

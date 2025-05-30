@@ -525,10 +525,11 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 			os.Setenv("VCAP_APPLICATION", `{}`)
 
-			golangConfJson, err := golangConf.ToJSON()
+			golangConfJson, err := configutil.ToJSON(golangConf)
+
 			Expect(err).NotTo(HaveOccurred())
 
-			vcapServicesJson := testhelpers.GetVcapServices("publicapiserver-config", golangConfJson)
+			vcapServicesJson := testhelpers.GetVcapServices("apiserver-config", golangConfJson)
 			os.Setenv("VCAP_SERVICES", vcapServicesJson)
 
 			os.Setenv("PORT", strconv.Itoa(components.Ports[GolangAPICFServer]))

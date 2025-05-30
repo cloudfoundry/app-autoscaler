@@ -21,7 +21,8 @@ export POSTGRES_EXTERNAL_PORT="${PR_NUMBER:-5432}"
 export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
-export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
+export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
+export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
 export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export PUBLICAPISERVER_HOST="${PUBLICAPISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
@@ -30,7 +31,17 @@ export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
 cat << EOF > /tmp/extension-file-secrets.yml.tpl
 postgres_ip: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_ip))
+
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
+
+operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
+
+eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
+eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
+eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
+
+
+
 policy_db_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/database_password))
 policy_db_server_ca: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.ca))
 policy_db_client_cert: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.certificate))
@@ -44,8 +55,42 @@ EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
 
+export METRICSFORWARDER_UAA_SKIP_SSL_VALIDATION="$(yq ".metricsforwarder_uaa_skip_ssl_validation" /tmp/mtar-secrets.yml)"
 export METRICSFORWARDER_APPNAME="${METRICSFORWARDER_APPNAME:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_HEALTH_PASSWORD="$(yq ".metricsforwarder_health_password" /tmp/mtar-secrets.yml)"
+export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
+export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
+export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
+
+export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
+export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
+
+export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
+export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
+export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
+
+
+export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
+
+export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
+
+export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
+
+export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
+export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
+export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
+export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
+export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
+
+export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
+export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
+export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
+export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -75,22 +120,43 @@ version: 1.0.0
 _schema-version: 3.3.0
 
 modules:
-  - name: publicapiserver
+  - name: apiserver
     parameters:
-      instances: 1
+      instances: ${APISERVER_INSTANCES}
       routes:
-      - route: ${PUBLICAPISERVER_HOST}.\${default-domain}
+      - route: ${APISERVER_HOST}.\${default-domain}
       - route: ${SERVICEBROKER_HOST}.\${default-domain}
+    requires:
+      - name: apiserver-config
+      - name: broker-catalog
+      - name: database
+  - name: eventgenerator
+    requires:
+    - name: eventgenerator-config
+    - name: database
+    parameters:
+      instances: ${EVENTGENERATOR_INSTANCES}
+      routes:
+      - route: ${EVENTGENERATOR_CF_HOST}.\${default-domain}
+      - route: ${EVENTGENERATOR_HOST}.\${default-domain}
   - name: metricsforwarder
     requires:
     - name: metricsforwarder-config
-    - name: database
     - name: syslog-client
+    - name: database
     parameters:
-      instances: 2
+      instances: ${METRICSFORWARDER_INSTANCES}
       routes:
       - route: ${METRICSFORWARDER_HOST}.\${default-domain}
       - route: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
+  - name: operator
+    requires:
+    - name: operator-config
+    - name: database
+    parameters:
+      instances: ${OPERATOR_INSTANCES}
+      routes:
+      - route: ${OPERATOR_HOST}.\${default-domain}
 
 
 
@@ -103,10 +169,30 @@ resources:
           basic_auth:
             password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
 
-- name: publicapiserver-config
+- name: eventgenerator-config
   parameters:
     config:
-      publicapiserver-config:
+      eventgenerator-config:
+        metricCollector:
+          metric_collector_url: https://log-cache.\${default-domain}
+          port: ''
+          uaa:
+            client_id: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID}"
+            client_secret: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET}"
+            url: https://uaa.\${default-domain}
+            skip_ssl_validation: true
+        pool:
+          total_instances: ${EVENTGENERATOR_INSTANCES}
+        health:
+          basic_auth:
+            password: "${EVENTGENERATOR_HEALTH_PASSWORD}"
+        scalingEngine:
+          scaling_engine_url: https://${SCALINGENGINE_HOST}.\${default-domain}
+
+- name: apiserver-config
+  parameters:
+    config:
+      apiserver-config:
         scaling_rules:
           cpu:
             upper_threshold: $CPU_LOWER_THRESHOLD
@@ -123,12 +209,29 @@ resources:
         scaling_engine:
           scaling_engine_url: https://${SCALINGENGINE_HOST}.\${default-domain}
         event_generator:
-          event_generator_url: https://${EVENTGENERATOR_HOST}.\${default-domain}
+          event_generator_url: https://${EVENTGENERATOR_CF_HOST}.\${default-domain}
         broker_credentials:
           - broker_username: 'autoscaler-broker-user'
             broker_password: $SERVICE_BROKER_PASSWORD
           - broker_username: 'autoscaler-broker-user-blue'
             broker_password: $SERVICE_BROKER_PASSWORD_BLUE
+
+- name: operator-config
+  parameters:
+    config:
+      operator-config:
+        health:
+          basic_auth:
+            password: "${OPERATOR_HEALTH_PASSWORD}"
+        cf:
+          api:  https://api.\${default-domain}
+          client_id: ${OPERATOR_CF_CLIENT_ID}
+          secret: ${OPERATOR_CF_CLIENT_SECRET}
+        scaling_engine:
+          scaling_engine_url: https://${SCALINGENGINE_HOST}.\${default-domain}
+        scheduler:
+          scheduler_url: https://${SCHEDULER_HOST}.\${default-domain}
+
 - name: database
   parameters:
     config:

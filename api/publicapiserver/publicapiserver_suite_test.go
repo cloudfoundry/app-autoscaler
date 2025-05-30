@@ -101,7 +101,7 @@ var _ = BeforeSuite(func() {
 				Port: 13000 + GinkgoParallelProcess(),
 			},
 		},
-		VCAPServer: helpers.ServerConfig{
+		CFServer: helpers.ServerConfig{
 			Port: 14000 + GinkgoParallelProcess(),
 		},
 		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",
@@ -171,7 +171,7 @@ var _ = BeforeSuite(func() {
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
 	Expect(err).NotTo(HaveOccurred())
 
-	cfServerUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.VCAPServer.Port))
+	cfServerUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.CFServer.Port))
 	Expect(err).NotTo(HaveOccurred())
 
 	healthUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Health.ServerConfig.Port))

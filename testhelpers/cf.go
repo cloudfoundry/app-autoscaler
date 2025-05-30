@@ -9,15 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func GetStoredProcedureDbVcapServices(creds map[string]string, databaseName string, dbType string) (string, error) {
-	credentials, err := json.Marshal(creds)
-	if err != nil {
-		return "", err
-	}
-
-	return getDbVcapServices(string(credentials), []string{databaseName}, dbType, "stored_procedure")
-}
-
 func GetDbVcapServices(creds map[string]string, databaseNames []string, dbType string) (string, error) {
 	credentials, err := json.Marshal(creds)
 	if err != nil {
@@ -30,18 +21,18 @@ func GetDbVcapServices(creds map[string]string, databaseNames []string, dbType s
 // supports multiple db tags in the same vcap user provided service
 func getDbVcapServices(creds string, databaseNames []string, dbType string, credHelperImpl string) (string, error) {
 	tag := append(databaseNames, dbType)
-	vcapServices := map[string]interface{}{
-		"user-provided": []map[string]interface{}{
+	vcapServices := map[string]any{
+		"user-provided": []map[string]any{
 			{
 				"name": "config",
-				"credentials": map[string]interface{}{
-					"metricsforwarder": map[string]interface{}{
+				"credentials": map[string]any{
+					"metricsforwarder": map[string]any{
 						"cred_helper_impl": credHelperImpl,
 					},
 				},
 			},
 		},
-		"autoscaler": []map[string]interface{}{
+		"autoscaler": []map[string]any{
 			{
 				"name":             "some-service",
 				"credentials":      json.RawMessage(creds),
@@ -66,23 +57,23 @@ func GetVcapServices(userProvidedServiceName string, configJson string) string {
 	catalogBytes, err := os.ReadFile("../api/exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
 
-	vcapServices := map[string]interface{}{
-		"user-provided": []map[string]interface{}{
+	vcapServices := map[string]any{
+		"user-provided": []map[string]any{
 			{
 				"name":        userProvidedServiceName,
 				"tags":        []string{userProvidedServiceName},
-				"credentials": map[string]interface{}{userProvidedServiceName: json.RawMessage(configJson)},
+				"credentials": map[string]any{userProvidedServiceName: json.RawMessage(configJson)},
 			},
 			{
 				"name":        "broker-catalog",
 				"tags":        []string{"broker-catalog"},
-				"credentials": map[string]interface{}{"broker-catalog": json.RawMessage(catalogBytes)},
+				"credentials": map[string]any{"broker-catalog": json.RawMessage(catalogBytes)},
 			},
 		},
-		"autoscaler": []map[string]interface{}{
+		"autoscaler": []map[string]any{
 			{
 				"name": "some-service",
-				"credentials": map[string]interface{}{
+				"credentials": map[string]any{
 					"uri": dbURL,
 				},
 				"syslog_drain_url": "",

@@ -8,6 +8,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/collection"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -36,15 +37,14 @@ type AppManager struct {
 	mLock                 sync.RWMutex
 }
 
-func NewAppManager(logger lager.Logger, clock clock.Clock, interval time.Duration, nodeNum, nodeIndex int,
-	metricCacheSizePerApp int, policyDB db.PolicyDB, appMetricDB db.AppMetricDB) *AppManager {
+func NewAppManager(logger lager.Logger, clock clock.Clock, aggregator config.AggregatorConfig, pool config.PoolConfig, policyDB db.PolicyDB, appMetricDB db.AppMetricDB) *AppManager {
 	return &AppManager{
 		logger:                logger.Session("AppManager"),
 		clock:                 clock,
-		interval:              interval,
-		nodeNum:               nodeNum,
-		nodeIndex:             nodeIndex,
-		metricCacheSizePerApp: metricCacheSizePerApp,
+		interval:              aggregator.PolicyPollerInterval,
+		nodeNum:               pool.TotalInstances,
+		nodeIndex:             pool.InstanceIndex,
+		metricCacheSizePerApp: aggregator.MetricCacheSizePerApp,
 		metricCache:           make(map[string]*collection.TSDCache),
 		policyDB:              policyDB,
 		appMetricDB:           appMetricDB,

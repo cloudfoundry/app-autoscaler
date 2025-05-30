@@ -37,7 +37,7 @@ const (
 
 var (
 	apPath          string
-	cfg             config.Config
+	conf            config.Config
 	configFile      *os.File
 	schedulerServer *ghttp.Server
 	catalogBytes    string
@@ -114,7 +114,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	publicApiPort = 9000 + GinkgoParallelProcess()
 	healthport = 7000 + GinkgoParallelProcess()
 
-	cfg.BrokerServer = helpers.ServerConfig{
+	conf.BrokerServer = helpers.ServerConfig{
 		Port: brokerPort,
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
@@ -122,7 +122,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
-	cfg.Server = helpers.ServerConfig{
+	conf.Server = helpers.ServerConfig{
 		Port: publicApiPort,
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "api.key"),
@@ -130,16 +130,16 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
-	cfg.Logging.Level = "info"
-	cfg.Db = make(map[string]db.DatabaseConfig)
+	conf.Logging.Level = "info"
+	conf.Db = make(map[string]db.DatabaseConfig)
 	dbUrl := GetDbUrl()
-	cfg.Db[db.BindingDb] = db.DatabaseConfig{
+	conf.Db[db.BindingDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
+	conf.Db[db.PolicyDb] = db.DatabaseConfig{
 		URL:                   dbUrl,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
@@ -160,17 +160,17 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	var brokerCreds []config.BrokerCredentialsConfig
 	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
-	cfg.BrokerCredentials = brokerCreds
+	conf.BrokerCredentials = brokerCreds
 
-	cfg.CatalogPath = "../../exampleconfig/catalog-example.json"
-	cfg.CatalogSchemaPath = "../../schemas/catalog.schema.json"
-	cfg.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"
+	conf.CatalogPath = "../../exampleconfig/catalog-example.json"
+	conf.CatalogSchemaPath = "../../schemas/catalog.schema.json"
+	conf.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"
 
 	schedulerServer = ghttp.NewServer()
-	cfg.Scheduler.SchedulerURL = schedulerServer.URL()
-	cfg.InfoFilePath = "../../exampleconfig/info-file.json"
+	conf.Scheduler.SchedulerURL = schedulerServer.URL()
+	conf.InfoFilePath = "../../exampleconfig/info-file.json"
 
-	cfg.EventGenerator = config.EventGeneratorConfig{
+	conf.EventGenerator = config.EventGeneratorConfig{
 		EventGeneratorUrl: "http://localhost:8084",
 		TLSClientCerts: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
@@ -178,7 +178,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
-	cfg.ScalingEngine = config.ScalingEngineConfig{
+	conf.ScalingEngine = config.ScalingEngineConfig{
 		ScalingEngineUrl: "http://localhost:8085",
 		TLSClientCerts: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
@@ -186,15 +186,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
-	cfg.MetricsForwarder = config.MetricsForwarderConfig{
+	conf.MetricsForwarder = config.MetricsForwarderConfig{
 		MetricsForwarderUrl: "http://localhost:8088",
 	}
 
-	cfg.CF.API = ccServer.URL()
-	cfg.CF.ClientID = "client-id"
-	cfg.CF.Secret = "client-secret"
-	cfg.CF.SkipSSLValidation = true
-	cfg.Health = helpers.HealthConfig{
+	conf.CF.API = ccServer.URL()
+	conf.CF.ClientID = "client-id"
+	conf.CF.Secret = "client-secret"
+	conf.CF.SkipSSLValidation = true
+	conf.Health = helpers.HealthConfig{
 		ServerConfig: helpers.ServerConfig{
 			Port: healthport,
 		},
@@ -203,12 +203,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			Password: "healthcheckpassword",
 		},
 	}
-	cfg.RateLimit.MaxAmount = 10
-	cfg.RateLimit.ValidDuration = 1 * time.Second
+	conf.RateLimit.MaxAmount = 10
+	conf.RateLimit.ValidDuration = 1 * time.Second
 
-	cfg.CredHelperImpl = "default"
+	conf.CredHelperImpl = "default"
 
-	configFile = writeConfig(&cfg)
+	configFile = writeConfig(&conf)
 
 })
 
@@ -224,17 +224,17 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func writeConfig(c *config.Config) *os.File {
-	cfg, err := os.CreateTemp("", "ap")
+	conf, err := os.CreateTemp("", "ap")
 	Expect(err).NotTo(HaveOccurred())
-	defer func() { _ = cfg.Close() }()
+	defer func() { _ = conf.Close() }()
 
 	bytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = cfg.Write(bytes)
+	_, err = conf.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
-	return cfg
+	return conf
 }
 
 type ApiRunner struct {

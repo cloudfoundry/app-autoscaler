@@ -1,9 +1,7 @@
-app_metrics_db:
-  db:
+db:
+  appmetrics_db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-scaling_engine_db:
-  db:
+  scalingengine_db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-app_syncer:
-  db:
+  policy_db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"

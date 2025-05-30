@@ -104,7 +104,7 @@ func (s *PublicApiServer) CreateCFServer() (ifrit.Runner, error) {
 
 	r := s.autoscalerRouter.GetRouter()
 
-	return helpers.NewHTTPServer(s.logger.Session("CfServer"), s.conf.VCAPServer, r)
+	return helpers.NewHTTPServer(s.logger.Session("CfServer"), s.conf.CFServer, r)
 }
 
 func (s *PublicApiServer) CreateMtlsServer() (ifrit.Runner, error) {

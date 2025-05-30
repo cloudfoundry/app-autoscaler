@@ -13,8 +13,12 @@ GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 
+
+db_type ?= postgres
 DB_HOST ?= localhost
-DBURL ?= "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"
+DBURL := $(shell case "${db_type}" in\
+			 (postgres) printf "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"; ;; \
+				 (mysql) printf "root@tcp(${DB_HOST})/autoscaler?tls=false"; ;; esac)
 
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 EXTENSION_FILE := $(shell mktemp)
@@ -97,7 +101,7 @@ ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-file
 
 
 # CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
-build-%:
+build-%: generate-openapi-generated-clients-and-servers
 	@echo "# building $*"
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
@@ -163,6 +167,8 @@ package-dbtasks:
 
 vendor-changelogs:
 	cp $(MAKEFILE_DIR)/api/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
+	cp $(MAKEFILE_DIR)/eventgenerator/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
+	cp $(MAKEFILE_DIR)/operator/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
 .PHONY: clean
 clean:

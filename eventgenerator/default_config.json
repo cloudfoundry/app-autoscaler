@@ -1,0 +1,46 @@
+{
+  "eventgenerator-config": {
+    "health": {
+      "basic_auth": {
+        "username": "eventgenerator"
+      }
+    },
+    "http_client_timeout": "60s",
+    "metricCollector": {
+      "metric_collector_url": "log-cache.service.cf.internal:8080"
+    },
+    "db": {
+      "policy_db": {
+        "max_open_connections": 100,
+        "max_idle_connections": 10,
+        "connection_max_lifetime": "60s"
+      },
+      "appmetrics_db": {
+        "max_open_connections": 100,
+        "max_idle_connections": 10,
+        "connection_max_lifetime": "60s"
+      }
+    },
+    "aggregator": {
+      "aggregator_execute_interval": "40s",
+      "policy_poller_interval": "60s",
+      "metric_poller_count": 20,
+      "app_monitor_channel_size": 200,
+      "save_interval": "5s",
+      "app_metric_channel_size": 1000,
+      "metric_cache_size_per_app": 300
+    },
+    "evaluator": {
+      "evaluation_manager_execute_interval": "60s",
+      "evaluator_count": 20,
+      "trigger_array_channel_size": 200
+    },
+    "defaultStatWindowSecs": 120,
+    "defaultBreachDurationSecs": 120,
+    "circuitBreaker": {
+      "back_off_initial_interval": "5m",
+      "back_off_max_interval": "120m",
+      "consecutive_failure_count": 3
+    }
+  }
+}
