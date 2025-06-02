@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.2.0
 	code.cloudfoundry.org/lager/v3 v3.37.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250517042608-bc715c8bfcaf
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250602130638-f8817454a734
 	code.cloudfoundry.org/tlsconfig v0.27.0
 	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -45,7 +45,7 @@ require (
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 	golang.org/x/net v0.40.0
 	golang.org/x/time v0.11.0
-	google.golang.org/grpc v1.72.1
+	google.golang.org/grpc v1.72.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -102,8 +102,8 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250512202823-5a2f75b736a9 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250519155744-55703ea1f237 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
