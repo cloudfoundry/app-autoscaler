@@ -6,11 +6,14 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 type CleanBindingRequestParser struct {
 	schema *gojsonschema.Schema
 }
+
+var _ binding_request.Parser = CleanBindingRequestParser{}
 
 func new(jsonLoader gojsonschema.JSONLoader) (CleanBindingRequestParser, error) {
 	schema, err := gojsonschema.NewSchema(jsonLoader)
@@ -45,11 +48,21 @@ func (p CleanBindingRequestParser) Parse(bindingReqParams string) (binding_reque
 		return binding_request.Parameters{}, allErrors
 	}
 
-	var result binding_request.Parameters
-	err = json.Unmarshal([]byte(bindingReqParams), &result)
+	var parsedParameters parameters
+	err = json.Unmarshal([]byte(bindingReqParams), &parsedParameters)
 	if err != nil {
 		return binding_request.Parameters{}, err
-	} else {
-		return result, nil
 	}
+
+	return toBindingParameters(parsedParameters), nil
+}
+
+func toBindingParameters(parameters) binding_request.Parameters {
+	result := binding_request.Parameters{}
+	result.Configuration.AppGUID = models.GUID(parameters.Configuration.AppGuid)
+	result.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom = parameters.Configuration.CustomMetricsCfg.MetricSubmStrat.AllowFrom
+
+	// 🚧 To-do: Do the same for the policy.
+
+	return result
 }

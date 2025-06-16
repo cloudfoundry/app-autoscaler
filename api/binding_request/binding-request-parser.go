@@ -9,8 +9,11 @@ import (
 )
 
 type Parameters struct {
-	Configuration *models.BindingConfig `json:"configuration"`
-	ScalingPolicy *models.ScalingPolicy `json:"scaling-policy"`
+	// 🚧 To-do: We should distinguish between raw data and correctly validated data.
+	Configuration *models.BindingConfig
+
+	// 🚧 To-do: We should distinguish between raw data and correctly validated data.
+	ScalingPolicy *models.ScalingPolicy
 }
 
 type JsonSchemaError []gojsonschema.ResultError
@@ -21,7 +24,9 @@ func (e JsonSchemaError) Error() string {
 }
 
 type Parser interface {
-	// NewFromString(jsonSchema string) (BindingRequestParser, error)
-	// NewFromFile(pathToSchemaFile string) (BindingRequestParser, error)
+	// Default policies are specified on service-instance-level. Consequently, we need to leave the
+	// field Parameters.ScalingPolicy empty when no policy has been specified and instead … let the
+	// consumer of the BindingRequest decided what to do with this (i.e. he will use then the
+	// default-policy.)
 	Parse(bindingReqParams string) (Parameters, error)
 }
