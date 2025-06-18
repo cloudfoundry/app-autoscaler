@@ -41,7 +41,7 @@ type scalingPolicy struct {
 type scalingRule struct {
 	MetricType          string `json:"metric_type"`
 	BreachDurationSecs  int    `json:"breach_duration_secs,omitempty"`
-	Threshold           int    `json:"threshold"`
+	Threshold           int64    `json:"threshold"`
 	Operator            string `json:"operator"`
 	CoolDownSecs        int    `json:"cool_down_secs,omitempty"`
 	Adjustment          string `json:"adjustment"`
