@@ -57,10 +57,15 @@ func (p CleanBindingRequestParser) Parse(bindingReqParams string) (binding_reque
 	return toBindingParameters(parsedParameters), nil
 }
 
-func toBindingParameters(parameters) binding_request.Parameters {
+func toBindingParameters(params parameters) binding_request.Parameters {
 	result := binding_request.Parameters{}
-	result.Configuration.AppGUID = models.GUID(parameters.Configuration.AppGuid)
-	result.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom = parameters.Configuration.CustomMetricsCfg.MetricSubmStrat.AllowFrom
+	if params.Configuration != nil {
+		result.Configuration = &models.BindingConfig{}
+
+		result.Configuration.AppGUID = models.GUID(params.Configuration.AppGuid)
+		result.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom =
+			params.Configuration.CustomMetricsCfg.MetricSubmStrat.AllowFrom
+	}
 
 	// 🚧 To-do: Do the same for the policy.
 
