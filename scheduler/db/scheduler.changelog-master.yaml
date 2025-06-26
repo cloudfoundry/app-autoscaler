@@ -1,0 +1,422 @@
+---
+databaseChangeLog:
+   - changeSet:
+      id: 1
+      author: Fujitsu
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - createTable:
+            tableName: app_scaling_specific_date_schedule
+            columns:
+              - column:
+                  name: schedule_id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timezone
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_date_time
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date_time
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
+        - createIndex:
+             columns:
+             - column:
+                 name: app_id
+                 type: varchar(50)
+             indexName: idx_app_id
+             tableName: app_scaling_specific_date_schedule
+
+   - changeSet:
+      id: 2
+      author: Fujitsu
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - createTable:
+            tableName: app_scaling_recurring_schedule
+            columns:
+              - column:
+                  name: schedule_id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timezone
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: days_of_week
+                  type: Integer
+              - column:
+                  name: days_of_month
+                  type: Integer
+              - column:
+                  name: start_date
+                  type: date
+              - column:
+                  name: end_date
+                  type: date
+              - column:
+                  name: start_time
+                  type: time
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_time
+                  type: time
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
+        - createIndex:
+             columns:
+             - column:
+                 name: app_id
+                 type: varchar(50)
+             indexName: idx_recurring_app_id
+             tableName: app_scaling_recurring_schedule
+   - changeSet:
+      id: 3
+      author: Fujitsu
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+      - createSequence:
+          cycle: true
+          sequenceName: schedule_id_sequence
+   - changeSet:
+      id: 4
+      author: Fujitsu
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - createTable:
+            tableName: app_scaling_active_schedule
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_job_identifier
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: now()
+              - column:
+                  name: instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
+        - createIndex:
+             columns:
+             - column:
+                 name: app_id
+                 type: varchar(50)
+             indexName: idx_active_schedule_app_id
+             tableName: app_scaling_active_schedule
+   - changeSet:
+      id: 5
+      author: qibobo
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - addColumn:
+            tableName: app_scaling_recurring_schedule
+            columns:
+            - column:
+                name: guid
+                type: varchar(50)
+        - addColumn:
+            tableName: app_scaling_specific_date_schedule
+            columns:
+            - column:
+                name: guid
+                type: varchar(50)
+   - changeSet:
+      id: 6
+      author: fujitsu
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - addNotNullConstraint:
+            columnDataType: varchar(50)
+            columnName: guid
+            defaultNullValue: "1"
+            tableName: app_scaling_recurring_schedule
+        - addNotNullConstraint:
+            columnDataType: varchar(50)
+            columnName: guid
+            defaultNullValue: "1"
+            tableName: app_scaling_specific_date_schedule
+   - changeSet:
+      id: 7
+      author: aqan213
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - addDefaultValue:
+            columnDataType: bigint
+            columnName: schedule_id
+            defaultValueSequenceNext: schedule_id_sequence
+            tableName: app_scaling_specific_date_schedule
+   - changeSet:
+      id: 8
+      author: aqan213
+      dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - addDefaultValue:
+            columnDataType: bigint
+            columnName: schedule_id
+            defaultValueSequenceNext: schedule_id_sequence
+            tableName: app_scaling_recurring_schedule
+   - changeSet:
+      id: 9
+      author: aqan213
+      dbms: mysql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - createTable:
+            tableName: app_scaling_specific_date_schedule
+            columns:
+              - column:
+                  name: schedule_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timezone
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_date_time
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date_time
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  defaultValue: "1"
+                  constraints:
+                      nullable: false
+        - createIndex:
+             columns:
+             - column:
+                 name: app_id
+                 type: varchar(50)
+             indexName: idx_app_id
+             tableName: app_scaling_specific_date_schedule
+   - changeSet:
+      id: 10
+      author: aqan213
+      dbms: mysql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
+      changes:
+        - createTable:
+            tableName: app_scaling_recurring_schedule
+            columns:
+              - column:
+                  name: schedule_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timezone
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: days_of_week
+                  type: Integer
+              - column:
+                  name: days_of_month
+                  type: Integer
+              - column:
+                  name: start_date
+                  type: date
+              - column:
+                  name: end_date
+                  type: date
+              - column:
+                  name: start_time
+                  type: time
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_time
+                  type: time
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  defaultValue: "1"
+                  constraints:
+                      nullable: false
+        - createIndex:
+             columns:
+             - column:
+                 name: app_id
+                 type: varchar(50)
+             indexName: idx_recurring_app_id
+             tableName: app_scaling_recurring_schedule
+

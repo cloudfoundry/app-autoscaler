@@ -1,0 +1,146 @@
+management:
+    endpoints:
+        enabled: false
+spring:
+    application:
+        name: scheduler
+    mvc:
+        pathmatch:
+            matching-strategy: ant-path-matcher
+        servlet:
+            load-on-startup: 1
+    aop:
+        auto: false
+    data:
+        jpa:
+            repositories:
+                enabled: false
+    main:
+        allow-bean-definition-overriding: true
+    ############################################################
+    #    DataSources
+    ############################################################
+    datasource:
+        driverClassName: org.postgresql.Driver
+        password: "${DB_PASSWORD:postgres}"
+        url: jdbc:postgresql://${DB_HOST}/autoscaler
+        username: "${DB_USERNAME:postgres}"
+    policy-db-datasource:
+        driverClassName: org.postgresql.Driver
+        password: "${DB_PASSWORD:postgres}"
+        url: jdbc:postgresql://${DB_HOST}/autoscaler
+        username: "${DB_USERNAME:postgres}"
+
+    ############################################################
+    #    Quartz Properties
+    ############################################################
+    quartz:
+        properties:
+            org:
+                quartz:
+                    jobStore:
+                        driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+                        isClustered: true
+                        misfireThreshold: 120000
+                    scheduler:
+                        instanceId: scheduler-12345
+                        instanceName: app-autoscaler
+                    threadPool:
+                        threadCount: 10
+    ############################################################
+    #    SSL Bundles
+    ############################################################
+    ssl:
+        bundle:
+            pem:
+                server:
+                    keystore:
+                        certificate:  "file:src/test/resources/certs/test-scheduler.crt"
+                        private-key:  "file:src/test/resources/certs/test-scheduler.key"
+                    truststore:
+                        certificate: "file:src/test/resources/certs/test-ca.crt"
+                scalingengine:
+                  keystore:
+                    certificate:  "file:src/test/resources/certs/test-scheduler.crt"
+                    private-key:  "file:src/test/resources/certs/test-scheduler.key"
+                  truststore:
+                    certificate: "file:src/test/resources/certs/test-ca.crt"
+
+############################################################
+#    Logging
+############################################################
+logging:
+    level:
+        org:
+            cloudfoundry:
+                autoscaler:
+                    scheduler: info
+            hibernate: error
+            hibernate.SQL: warn
+            hibernate.cache: error
+            hibernate.hql.ast.AST: error
+            hibernate.jdbc: warn
+            hibernate.pretty: error
+            hibernate.tool.hbm2ddl: error
+            hibernate.transaction: warn
+            hibernate.type: error
+            quartz: info
+            springframework:
+                web: info
+############################################################
+#    Client SSL keys
+############################################################
+client:
+    httpClientTimeout: 5
+    ssl:
+        protocol: TLSv1.2
+############################################################
+#    Scalingengine
+############################################################
+autoscaler:
+    scalingengine:
+        url: https://localhost:8091
+scalingengine:
+    notification:
+        reschedule:
+            maxcount: 2
+scalingenginejob:
+    reschedule:
+        interval:
+            millisecond: 100
+        maxcount: 5
+############################################################
+#    Scheduler Health Server
+############################################################
+scheduler:
+    healthserver:
+        password: "${SCHEDULER_HEALTH_PASSWORD:test-password}"
+        port: 8081
+        username: "${SCHEDULER_HEALTH_USERNAME:test-user}"
+
+############################################################
+#    Server SSL keys
+############################################################
+
+server:
+    forward-headers-strategy: framework
+    port: 8083
+    http:
+        port: 8082
+    ssl:
+        ciphers: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        enabled-protocols: TLSv1.3
+        bundle: "server"
+        client-auth: NEED
+
+
+############################################################
+#    Unified cf Server - XFCC
+############################################################
+
+cfserver:
+  validOrgGuid: "some-org-guid"
+  validSpaceGuid: "some-space-guid"
+  healthserver:
+    username: "${CFSERVER_HEALTH_USERNAME:test-user}"
+    password: "${CFSERVER_HEALTH_PASSWORD:test-password}"

@@ -127,7 +127,7 @@ func CompileTestedExecutables() Executables {
 	Expect(err).NotTo(HaveOccurred())
 	rootDir := path.Join(workingDir, "..", "..", "..")
 
-	builtExecutables[Scheduler] = path.Join(rootDir, "src", "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
+	builtExecutables[Scheduler] = path.Join(rootDir, "src", "autoscaler", "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
 	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler", "build", "eventgenerator")
 	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler", "build", "scalingengine")
 	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler", "build", "operator")

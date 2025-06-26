@@ -6,6 +6,8 @@ aes_terminal_reset := \e[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
+AUTOSCALER_DIR ?= $(shell pwd)/../..
+CI_DIR ?= ${AUTOSCALER_DIR}/ci
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_MINOR_VERSION = $(shell echo $(GO_VERSION) | cut --delimiter=. --field=2)
@@ -14,6 +16,7 @@ PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/'
 								 | grep --invert-match --regexp='e2e')
 
 
+MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler
 db_type ?= postgres
 DB_HOST ?= localhost
 DBURL := $(shell case "${db_type}" in\
@@ -30,8 +33,7 @@ binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sor
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
 export GO111MODULE=on
 
-#TODO: https://github.com/cloudfoundry/app-autoscaler-release/issues/564 allow the tests to be run in parallel
-#GINKGO_OPTS=-r --race --require-suite -p --randomize-all --cover
+.PHONY: clean-dbtasks package-dbtasks vendor-changelogs clean-scheduler package-scheduler
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
 
@@ -99,6 +101,10 @@ go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
 ${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
 	go mod vendor
 
+.PHONY: go-mod-vendor-mta
+go-mod-vendor-mta: generate-openapi-generated-clients-and-servers
+	GOFLAGS="-tags=!test" go mod vendor -e
+
 
 # CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
 build-%: generate-openapi-generated-clients-and-servers
@@ -158,17 +164,24 @@ lint: generate-fakes
 	echo "Linting with Golang $${GOVERSION}" ;\
 	golangci-lint run --config='../../.golangci.yaml' ${OPTS}
 
-.PHONY: clean-dbtasks package-dbtasks vendor-changelogs
 clean-dbtasks:
 	pushd dbtasks; mvn clean; popd
 
 package-dbtasks:
 	pushd dbtasks; mvn package ; popd
 
+clean-scheduler:
+	pushd scheduler; mvn clean; popd
+
+build-scheduler:
+	pushd scheduler; mvn package -Dmaven.test.skip=true; popd
+
+
 vendor-changelogs:
 	cp $(MAKEFILE_DIR)/api/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/eventgenerator/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/operator/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
+	cp $(MAKEFILE_DIR)/scheduler/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
 .PHONY: clean
 clean:
@@ -184,8 +197,7 @@ clean:
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy $(DEST)/*.mtar --version-rule ALL -f --delete-services -e $(EXTENSION_FILE)
-
+	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES)
 
 .PHONY: mta-deploy
 mta-undeploy:
@@ -212,3 +224,13 @@ mta-build: mta-build-clean
 
 mta-build-clean:
 	rm -rf mta_archives
+
+
+.PHONY: cf-login
+cf-login:
+	@echo '⚠️ Please note that this login only works for cf and concourse,' \
+		  'in spite of performing a login as well on bosh and credhub.' \
+		  'The necessary changes to the environment get lost when make exits its process.'
+	@${CI_DIR}/autoscaler/scripts/os-infrastructure-login.sh
+
+deploy-apps: cf-login mta-deploy

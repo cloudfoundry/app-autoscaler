@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "scheduler.healthserver.port",
+      "type": "java.lang.Integer",
+      "description": "Prometheus server port."
+    }
+  ] }

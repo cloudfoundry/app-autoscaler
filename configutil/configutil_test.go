@@ -164,7 +164,6 @@ var _ = Describe("Configutil", func() {
 			var actualDbs *map[string]db.DatabaseConfig
 			var expectedDbs *map[string]db.DatabaseConfig
 			var expectedServerCAContent = "server-ca-content"
-			var databaseNames []string
 
 			BeforeEach(func() {
 				vcapApplicationJson = `{}`
@@ -174,7 +173,7 @@ var _ = Describe("Configutil", func() {
 				var actualProcedureConfig *models.StoredProcedureConfig
 
 				BeforeEach(func() {
-					databaseNames = []string{db.PolicyDb, db.BindingDb, db.StoredProcedureDb}
+					var databaseNames = []string{db.PolicyDb, db.BindingDb, db.StoredProcedureDb}
 					vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
 						"uri":         dbUri,
 						"client_cert": expectedClientCertContent,
@@ -247,7 +246,6 @@ var _ = Describe("Configutil", func() {
 			When("stored procedure implementation is set to default", func() {
 
 				BeforeEach(func() {
-					databaseNames = []string{db.PolicyDb, db.BindingDb, db.AppMetricsDb}
 					vcapServicesJson, err = testhelpers.GetDbVcapServices(map[string]string{
 						"uri":         dbUri,
 						"client_cert": expectedClientCertContent,

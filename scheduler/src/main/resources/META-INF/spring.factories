@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+org.cloudfoundry.autoscaler.scheduler.conf.CloudFoundryConfigurationProcessor

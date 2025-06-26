@@ -1,5 +1,6 @@
 build/
-fakes/
+fakes/*
 mta_archives/
 api/default_catalog.json
 mta.yaml
+Makefile_*
