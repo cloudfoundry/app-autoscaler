@@ -81,7 +81,7 @@ modules:
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -99,14 +99,14 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks"
-      ignore: [ "scheduler", "dbtasks" ]
+      ignore: [ "scheduler", "dbtasks" , "scalingengine"]
     requires:
     - name: eventgenerator-config
     - name: database
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -150,14 +150,14 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks"
-      ignore: [ "scheduler", "dbtasks" ]
+      ignore: [ "scheduler", "dbtasks", "eventgenerator", "api", "metricsforwarder"]
     requires:
     - name: operator-config
     - name: database
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -179,7 +179,7 @@ modules:
     - name: scheduler-config
     - name: database
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
