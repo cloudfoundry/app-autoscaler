@@ -150,7 +150,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks"
-      ignore: [ "scheduler", "dbtasks", "eventgenerator", "api", "metricsforwarder"]
+      ignore: [ "scheduler", "dbtasks", "eventgenerator"]
     requires:
     - name: operator-config
     - name: database
