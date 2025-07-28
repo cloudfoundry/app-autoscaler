@@ -3,6 +3,10 @@
 
 set -e
 
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# shellcheck source=../../ci/autoscaler/scripts/vars.source.sh
+source "${script_dir}/../../ci/autoscaler/scripts/vars.source.sh"
+
 if [ -z "$1" ]; then
   echo "extension file path not provided"
   exit 1
@@ -18,14 +22,6 @@ fi
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export POSTGRES_EXTERNAL_PORT="${PR_NUMBER:-5432}"
 
-export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
-export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
-export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
-export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
-export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
-export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
-export PUBLICAPISERVER_HOST="${PUBLICAPISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
-export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
@@ -73,7 +69,9 @@ export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgene
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
 
 
-export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
+export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
+export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
+export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
@@ -84,13 +82,6 @@ export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
 export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
-
-export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
-export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
-export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
-export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -157,8 +148,15 @@ modules:
       instances: ${OPERATOR_INSTANCES}
       routes:
       - route: ${OPERATOR_HOST}.\${default-domain}
-
-
+  - name: scheduler
+    requires:
+    - name: scheduler-config
+    - name: database
+    parameters:
+      instances: ${SCHEDULER_INSTANCES}
+      routes:
+      - route: ${SCHEDULER_HOST}.\${default-domain}
+      - route: ${SCHEDULER_CF_HOST}.\${default-domain}
 
 resources:
 - name: metricsforwarder-config
@@ -202,7 +200,7 @@ resources:
           client_id: autoscaler_client_id
           secret: autoscaler_client_secret
         scheduler:
-          scheduler_url: https://${SCHEDULER_HOST}.\${default-domain}
+          scheduler_url: https://${SCHEDULER_CF_HOST}.\${default-domain}
         metrics_forwarder:
           metrics_forwarder_url: https://${METRICSFORWARDER_HOST}.\${default-domain}
           metrics_forwarder_mtls_url: https://${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
@@ -216,6 +214,16 @@ resources:
           - broker_username: 'autoscaler-broker-user-blue'
             broker_password: $SERVICE_BROKER_PASSWORD_BLUE
 
+- name: scheduler-config
+  parameters:
+    config:
+      cfserver:
+        healthserver:
+          password: "test-password"
+          username: "test-user"
+      autoscaler:
+        scalingengine:
+          url: https://${SCALINGENGINE_HOST}.\${default-domain}
 - name: operator-config
   parameters:
     config:
@@ -230,7 +238,7 @@ resources:
         scaling_engine:
           scaling_engine_url: https://${SCALINGENGINE_HOST}.\${default-domain}
         scheduler:
-          scheduler_url: https://${SCHEDULER_HOST}.\${default-domain}
+          scheduler_url: https://${SCHEDULER_CF_HOST}.\${default-domain}
 
 - name: database
   parameters:

@@ -3,8 +3,14 @@
 
 set -euo pipefail
 
+JAVA_BIN=${JAVA_BIN:-"/home/vcap/app/.java-buildpack/open_jdk_jre/bin/java"}
 CERTS_DIR="$(mktemp -d)"
 mkdir -p "$CERTS_DIR"
+
+if [ ! -f "$JAVA_BIN" ]; then
+	echo "Java binary not found at $JAVA_BIN"
+	exit 1
+fi
 
 extract_service() {
   local json="$1"
@@ -75,12 +81,8 @@ function run_liquibase() {
   local -r changelog="$4"
 
   local classpath=$(readlink -f /home/vcap/app/BOOT-INF/lib/* | tr '\n' ':')
-  local java_bin="/home/vcap/app/.java-buildpack/open_jdk_jre/bin/java"
-  if [ ! -f "$java_bin" ]; then
-    java_bin="/home/vcap/app/META-INF/.sap_java_buildpack/sapjvm/bin/java"
-  fi
 
-  "$java_bin" -cp "$classpath" liquibase.integration.commandline.Main \
+  "$JAVA_BIN" -cp "$classpath" liquibase.integration.commandline.Main \
     --url "$jdbcdburl" --username="$user" --password="$password" --driver=org.postgresql.Driver --logLevel=DEBUG --changeLogFile="$changelog" update
 }
 

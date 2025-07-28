@@ -17,8 +17,7 @@ build-parameters:
   before-all:
     - builder: custom
       commands:
-      - make clean vendor vendor-changelogs clean-dbtasks package-dbtasks
-
+      - make clean go-mod-vendor-mta vendor-changelogs clean-dbtasks package-dbtasks clean-scheduler build-scheduler
 
 modules:
   - name: dbtasks
@@ -53,6 +52,12 @@ modules:
           chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
           /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
             BOOT-INF/classes/operator.db.changelog.yml
+      - name: apply-scheduler-changelog
+        command: |
+          chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
+          /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
+            BOOT-INF/classes/scheduler.changelog-master.yaml \
+            BOOT-INF/classes/quartz.changelog-master.yaml
 
   - name: apiserver
     type: go
@@ -136,6 +141,26 @@ modules:
       stack: cflinuxfs4
       routes:
 
+  - name: scheduler
+    type: java
+    path: scheduler/target/scheduler-1.0-SNAPSHOT.war
+    build-parameters:
+      builder: custom
+      commands: []
+    properties:
+      JBP_LOG_LEVEL:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ "version": "21.+", "jre": { "version": "21.+", "java_home": ".java-buildpack/java_home" } }'
+      DEBUG:
+    requires:
+    - name: scheduler-config
+    - name: database
+    parameters:
+      instances: 0 # overidden in build-extension-file.sh
+      memory: 1G
+      disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
+
 resources:
 - name: metricsforwarder-config
   type: org.cloudfoundry.user-provided-service
@@ -161,6 +186,12 @@ resources:
     service-tags:
     - operator-config
     path: operator/default_config.json
+- name: scheduler-config
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - scheduler-config
+    path: scheduler/default_config.json
 - name: broker-catalog
   type: org.cloudfoundry.user-provided-service
   parameters:

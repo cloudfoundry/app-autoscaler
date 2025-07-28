@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: aqan213
+      dbms: mysql
+      changes:
+        - addPrimaryKey:
+            columnNames: "id,author,filename"
+            constraintName: "PK_DATABASECHANGELOG"
+            schemaName: autoscaler
+            tableName: DATABASECHANGELOG
