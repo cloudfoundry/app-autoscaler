@@ -5,31 +5,37 @@
   "type": "object",
 
   "properties": {
-    "custom_metrics": {
+    "configuration": {
       "type": "object",
       "properties": {
-        "metric_submission_strategy": {
+        "custom_metrics": {
           "type": "object",
           "properties": {
-            "allow_from": {
-              "type": "string",
-              "enum": [
-                "bound_app"
+            "metric_submission_strategy": {
+              "type": "object",
+              "properties": {
+                "allow_from": {
+                  "type": "string",
+                  "enum": [
+                    "bound_app"
+                  ]
+                }
+              },
+              "required": [
+                "allow_from"
               ]
             }
           },
           "required": [
-            "allow_from"
-          ]
+            "metric_submission_strategy"
+          ],
+          "additionalProperties": false
+        },
+        "app_guid": {
+          "$ref": "./shared_definitions.json#/schemas/guid"
         }
       },
-      "required": [
-        "metric_submission_strategy"
-      ],
       "additionalProperties": false
-    },
-    "app_guid": {
-      "$ref": "./shared_definitions.json#/schemas/guid"
     },
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
