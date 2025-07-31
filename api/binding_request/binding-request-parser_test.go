@@ -5,20 +5,23 @@ import (
 	. "github.com/onsi/gomega"
 
 	br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request"
-	cp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/clean_parser"
+	cp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/combined_parser"
+	lp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/legacy_parser"
+	clp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/clean_parser"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 var _ = Describe("BindingRequestParser", func() {
 	const schemaFilePath string = "file://./binding-request.json"
 	var (
-		err                  error
 		bindingRequestParser br.Parser
 	)
 	var _ = BeforeEach(func() {
-		// 🚧 To-do: Use a proper combined parser.
-		bindingRequestParser, err = cp.NewFromFile(schemaFilePath)
+		cleanParser, err := clp.NewFromFile(schemaFilePath)
 		Expect(err).NotTo(HaveOccurred())
+		legacyParser, err := lp.New()
+		Expect(err).NotTo(HaveOccurred())
+		bindingRequestParser = cp.New([]br.Parser{cleanParser, legacyParser})
 	})
 
 	Context("When using the new format for binding-requests", func() {

@@ -17,7 +17,7 @@ var _ binding_request.Parser = LegacyBindingRequestParser{}
 
 
 func New() (LegacyBindingRequestParser, error) {
-	const schemaFilePath string = "file://./legacy-binding-request.json"
+	const schemaFilePath string = "file://./legacy_parser/legacy-binding-request.json"
 	schemaLoader := gojsonschema.NewReferenceLoader(schemaFilePath)
 	schema, err := gojsonschema.NewSchema(schemaLoader)
 	if err != nil {

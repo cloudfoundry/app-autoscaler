@@ -1,11 +1,6 @@
 package combined_parser
 
 import (
-	"encoding/json"
-
-	"github.com/xeipuuv/gojsonschema"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request"
 )
 
@@ -17,8 +12,24 @@ type CombinedBindingRequestParser struct {
 	parsers []binding_request.Parser
 }
 
+// Ensure CombinedBindingRequestParser implements the binding_request.Parser interface.
+var _ binding_request.Parser = CombinedBindingRequestParser{}
+
+func New(parsers []binding_request.Parser) CombinedBindingRequestParser {
+	return CombinedBindingRequestParser{parsers: parsers}
+}
+
 func (p CombinedBindingRequestParser) Parse(
 	bindingReqParams string,
 ) (binding_request.Parameters, error) {
-	return binding_request.Parameters{}, models.ErrUnimplemented // 🚧 To-do
+	var firstErr error
+	for i, parser := range p.parsers {
+		params, err := parser.Parse(bindingReqParams)
+		if i == 0 && err != nil {
+			firstErr = err // Store the first error to return later if no parser is successful.
+		} else if err == nil {
+			return params, nil
+		}
+	}
+	return binding_request.Parameters{}, firstErr
 }
