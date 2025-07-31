@@ -105,6 +105,7 @@ var _ = Describe("BindingRequestParser", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bindingRequest.Configuration.AppGUID).
 				To(Equal(models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")))
+			// 🚧 To-do: Add a few more field-comparisons;
 		})
 	})
 })

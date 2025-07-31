@@ -10,6 +10,7 @@ import (
 )
 
 type LegacyBindingRequestParser struct {
+	// This part here parses the legacy-policy.
 	policyValidator policyvalidator.PolicyValidator // 🚧 To-do: Check if this is really needed!
 }
 
