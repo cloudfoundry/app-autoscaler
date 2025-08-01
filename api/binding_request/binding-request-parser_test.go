@@ -5,9 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request"
+	clp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/clean_parser"
 	cp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/combined_parser"
 	lp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/legacy_parser"
-	clp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request/clean_parser"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
@@ -81,7 +81,7 @@ var _ = Describe("BindingRequestParsers", func() {
 	Describe("CleanBindingRequestParser", func() {
 		var (
 			cleanParser clp.CleanBindingRequestParser
-			err error
+			err         error
 		)
 		var _ = BeforeEach(func() {
 			cleanParser, err = clp.NewFromFile(cleanSchemaFilePath)
@@ -105,7 +105,7 @@ var _ = Describe("BindingRequestParsers", func() {
 	Describe("LegacyBindingRequestParser", func() {
 		var (
 			legacyParser lp.LegacyBindingRequestParser
-			err error
+			err          error
 		)
 		var _ = BeforeEach(func() {
 			legacyParser, err = lp.New()
@@ -128,8 +128,8 @@ var _ = Describe("BindingRequestParsers", func() {
 
 	Describe("CombinedBindingRequestParser", func() {
 		var (
-			cleanParser clp.CleanBindingRequestParser
-			legacyParser lp.LegacyBindingRequestParser
+			cleanParser    clp.CleanBindingRequestParser
+			legacyParser   lp.LegacyBindingRequestParser
 			combinedParser cp.CombinedBindingRequestParser
 
 			err error

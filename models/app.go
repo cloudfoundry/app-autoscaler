@@ -53,8 +53,6 @@ type AppScalingResult struct {
 	CooldownExpiredAt int64         `json:"cool_down_expired_at"`
 }
 
-
-
 // ================================================================================
 // GUIDs
 // ================================================================================
@@ -74,11 +72,17 @@ func NewCfGuidParser() CfGuidParser {
 	filePath := "../../../schema/json/shared_definitions.json"
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
-		// fmt.Errorf("Could not read file \"%s\"\nError: %w", filePath, err)
-		panic(`Assumed guid-schema not found.
-This is a programming-error as the file must be on the hardcorded location.`)
+		errMsg := fmt.Errorf("could not read file \"%s\"\nError: %w", filePath, err)
+		panic(fmt.Sprintf(
+			"%s\nThis is a programming-error as the file must be on the hardcoded location.",
+			errMsg))
 	}
 
+	// Unfortunately there is no ordinary library comparable to
+	// e.g. <https://crates.io/crates/serde_json> that allows to parse arbitrary JSON without
+	// defining homomorphic structs in the host-language. So here comes a type that describes the
+	// structure of the file `…/shared_definitions.json` (see above) with the sole intention to read
+	// out the content of the field `pattern`.
 	type Schema struct {
 		Schemas struct {
 			Guid struct {
@@ -87,7 +91,13 @@ This is a programming-error as the file must be on the hardcorded location.`)
 		} `json:"schemas"`
 	}
 	var schema Schema
-	json.Unmarshal(jsonData, schema)
+	err = json.Unmarshal(jsonData, &schema)
+	if err != nil {
+		errMsg := fmt.Errorf("could not unmarshal JSON from file \"%s\"\nError: %w", filePath, err)
+		panic(fmt.Sprintf(
+			"%s\nThis is a programming-error as the local Schema-struct must match roughly the file-structure.",
+			errMsg))
+	}
 	pattern := schema.Schemas.Guid.Pattern
 
 	r, err := regexp.CompilePOSIX(pattern)
@@ -101,7 +111,7 @@ This is a programming-error as the pattern must be a valid POSIX-regexp.`)
 
 func (p CfGuidParser) Parse(rawGuid string) (CfGuid, error) {
 	matched := p.regexp.MatchString(rawGuid) // regexp.MatchString(p.regexp, rawGuid)
-	if ! matched {
+	if !matched {
 		msg := fmt.Sprintf("The provided string does not look like a Cloud Foundry GUID: %s", rawGuid)
 		return "<guid-parsing-error>", errors.New(msg)
 	}

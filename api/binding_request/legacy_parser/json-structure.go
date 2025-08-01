@@ -2,7 +2,6 @@ package legacy_parser
 
 import "code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-
 type policyAndBindingCfg struct {
 	BindingConfig bindingConfig     `json:"configuration"`
 	InstanceMin   int               `json:"instance_min_count"`
@@ -10,8 +9,6 @@ type policyAndBindingCfg struct {
 	ScalingRules  []*scalingRule    `json:"scaling_rules,omitempty"`
 	Schedules     *scalingSchedules `json:"schedules,omitempty"`
 }
-
-
 
 // ================================================================================
 // Binding-configuration
@@ -29,8 +26,6 @@ type customMetricsConfig struct {
 type metricsSubmissionStrategy struct {
 	AllowFrom string `json:"allow_from"`
 }
-
-
 
 // ================================================================================
 // Scaling-policy details

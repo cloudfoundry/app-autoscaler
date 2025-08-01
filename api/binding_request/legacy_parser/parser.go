@@ -15,7 +15,6 @@ type LegacyBindingRequestParser struct {
 
 var _ binding_request.Parser = LegacyBindingRequestParser{}
 
-
 func New() (LegacyBindingRequestParser, error) {
 	const schemaFilePath string = "file://./legacy-binding-request.json"
 	schemaLoader := gojsonschema.NewReferenceLoader(schemaFilePath)
@@ -111,13 +110,9 @@ func toBindingParameters(params policyAndBindingCfg) binding_request.Parameters 
 	return result
 }
 
-
-
-
 // ================================================================================
 // Alternative Legacy Binding Request Parser
 // ================================================================================
-
 
 // import (
 //	"encoding/json"
@@ -155,7 +150,6 @@ func toBindingParameters(params policyAndBindingCfg) binding_request.Parameters 
 //		ScalingPolicy: policy, // 🚧 To-do: Return nil, if policy is empty
 //	}, models.ErrUnimplemented
 // }
-
 
 // func (p LegacyBindingRequestParser) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
 //	if policyJson != nil || len(policyJson) != 0 {

@@ -74,6 +74,7 @@ var _ = Describe("MetricPoller", func() {
 
 			// Subsequently disabling linting, because there is nothing wrong with using whitespaces
 			// to separate two multiplicands from the operation-symbol.
+			// (Actually it is more readable.)
 			Eventually(logger.Buffer, 10 * time.Second).Should(Say("retrieveMetric Failed")) //nolint
 
 		})

@@ -75,13 +75,13 @@ func toBindingParameters(params parameters) binding_request.Parameters {
 
 		result.ScalingPolicy.ScalingRules = []*models.ScalingRule{}
 		for _, rule := range params.ScalingPolicy.ScalingRules {
-			r := models.ScalingRule {
-				MetricType: rule.MetricType,
+			r := models.ScalingRule{
+				MetricType:            rule.MetricType,
 				BreachDurationSeconds: rule.BreachDurationSecs,
-				Threshold: rule.Threshold,
-				Operator: rule.Operator,
-				CoolDownSeconds: rule.CoolDownSecs,
-				Adjustment: rule.Adjustment,
+				Threshold:             rule.Threshold,
+				Operator:              rule.Operator,
+				CoolDownSeconds:       rule.CoolDownSecs,
+				Adjustment:            rule.Adjustment,
 			}
 			result.ScalingPolicy.ScalingRules = append(result.ScalingPolicy.ScalingRules, &r)
 		}
@@ -95,15 +95,15 @@ func toBindingParameters(params parameters) binding_request.Parameters {
 				result.ScalingPolicy.Schedules.RecurringSchedules = []*models.RecurringSchedule{}
 				for _, schedule := range params.ScalingPolicy.Schedules.RecurringSchedule {
 					rs := models.RecurringSchedule{
-						StartTime:           schedule.StartTime,
-						EndTime:             schedule.EndTime,
-						DaysOfWeek:          schedule.DaysOfWeek,
-						DaysOfMonth:         schedule.DaysOfMonth,
-						ScheduledInstanceMin: schedule.InstanceMinCount,
-						ScheduledInstanceMax: schedule.InstanceMaxCount,
+						StartTime:             schedule.StartTime,
+						EndTime:               schedule.EndTime,
+						DaysOfWeek:            schedule.DaysOfWeek,
+						DaysOfMonth:           schedule.DaysOfMonth,
+						ScheduledInstanceMin:  schedule.InstanceMinCount,
+						ScheduledInstanceMax:  schedule.InstanceMaxCount,
 						ScheduledInstanceInit: schedule.InitialMinInstanceCount,
-						StartDate:           schedule.StartDate,
-						EndDate:             schedule.EndDate,
+						StartDate:             schedule.StartDate,
+						EndDate:               schedule.EndDate,
 					}
 					result.ScalingPolicy.Schedules.RecurringSchedules = append(result.ScalingPolicy.Schedules.RecurringSchedules, &rs)
 				}
@@ -113,10 +113,10 @@ func toBindingParameters(params parameters) binding_request.Parameters {
 				result.ScalingPolicy.Schedules.SpecificDateSchedules = []*models.SpecificDateSchedule{}
 				for _, specificDate := range params.ScalingPolicy.Schedules.SpecificDate {
 					sd := models.SpecificDateSchedule{
-						StartDateTime:       specificDate.StartDateTime,
-						EndDateTime:         specificDate.EndDateTime,
-						ScheduledInstanceMin:    specificDate.InstanceMinCount,
-						ScheduledInstanceMax:    specificDate.InstanceMaxCount,
+						StartDateTime:         specificDate.StartDateTime,
+						EndDateTime:           specificDate.EndDateTime,
+						ScheduledInstanceMin:  specificDate.InstanceMinCount,
+						ScheduledInstanceMax:  specificDate.InstanceMaxCount,
 						ScheduledInstanceInit: specificDate.InitialMinInstanceCount,
 					}
 					result.ScalingPolicy.Schedules.SpecificDateSchedules = append(result.ScalingPolicy.Schedules.SpecificDateSchedules, &sd)
