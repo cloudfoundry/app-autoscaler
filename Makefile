@@ -134,6 +134,8 @@ test: generate-fakes
 	@echo "Running tests"
 	APP_AUTOSCALER_TEST_RUN='true' ginkgo -p ${GINKGO_OPTS} ${TEST} --skip-package='integration'
 
+# 🚧 To-do: Requires fakes to be generated before, but `generate-fakes` does not seem to be
+# sufficient.
 .PHONY: testsuite
 testsuite: build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
