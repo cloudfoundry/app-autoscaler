@@ -743,7 +743,7 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
 	if policy != nil {
-		policyAndBinding, err := models.GetBindingConfigAndPolicy(policy, serviceBinding.CustomMetricsStrategy)
+		policyAndBinding, err := models.GetBindingConfigAndPolicy(policy, serviceBinding)
 		if err != nil {
 			return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to build policy and config object"), http.StatusInternalServerError, "determine-BindingConfig-and-Policy")
 		}

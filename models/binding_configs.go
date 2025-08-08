@@ -26,7 +26,7 @@ const (
 
 type BindingConfig struct {
 	AppGUID       GUID                `json:"app_guid,omitempty"` // Empty value represents null-value (i.e. not set).
-	CustomMetrics CustomMetricsConfig `json:"custom_metrics,omitempty"`
+	CustomMetrics *CustomMetricsConfig `json:"custom_metrics,omitempty"`
 }
 
 type CustomMetricsConfig struct {
@@ -42,6 +42,9 @@ func (b *BindingConfig) GetCustomMetricsStrategy() string {
 }
 
 func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
+	if b.CustomMetrics == nil {
+		b.CustomMetrics = &CustomMetricsConfig{}
+	}
 	b.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
 }
 
@@ -55,21 +58,34 @@ func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
  * @throws an error if no policy or custom metrics strategy is found
 */
 
-func GetBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, customMetricStrategy string) (*ScalingPolicyWithBindingConfig, error) {
+func GetBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, serviceBinding *ServiceBinding) (*ScalingPolicyWithBindingConfig, error) {
 	if scalingPolicy == nil {
 		return nil, fmt.Errorf("policy not found")
 	}
-	if customMetricStrategy != "" && customMetricStrategy != CustomMetricsSameApp { //if customMetricStrategy found
-		return buildPolicyAndConfig(scalingPolicy, customMetricStrategy), nil
+	if serviceBinding == nil {
+		return nil, fmt.Errorf("service-binding not found")
+	}
+	isBindingConfigRelevant := serviceBinding.CustomMetricsStrategy != "" &&
+		serviceBinding.CustomMetricsStrategy != CustomMetricsSameApp ||
+		serviceBinding.AppID != ""
+
+	if isBindingConfigRelevant {
+		return buildPolicyAndConfig(scalingPolicy, serviceBinding), nil
 	}
 	return &ScalingPolicyWithBindingConfig{
 		ScalingPolicy: *scalingPolicy,
 	}, nil
 }
 
-func buildPolicyAndConfig(scalingPolicy *ScalingPolicy, customMetricStrategy string) *ScalingPolicyWithBindingConfig {
-	bindingConfig := &BindingConfig{}
-	bindingConfig.SetCustomMetricsStrategy(customMetricStrategy)
+func buildPolicyAndConfig(scalingPolicy *ScalingPolicy, serviceBinding *ServiceBinding) *ScalingPolicyWithBindingConfig {
+	bindingConfig := &BindingConfig{
+		// As well correct, if AppID is `""`, see definition of type `BindingConfig`
+		AppGUID: GUID(serviceBinding.AppID),
+	}
+	isCustomMetricsRelevant := serviceBinding.CustomMetricsStrategy != ""
+	if isCustomMetricsRelevant {
+		bindingConfig.SetCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
+	}
 
 	return &ScalingPolicyWithBindingConfig{
 		BindingConfig: bindingConfig,
