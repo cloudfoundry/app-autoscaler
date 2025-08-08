@@ -1,5 +1,6 @@
 {
   "configuration": {
+    "app_guid": "an-app-id",
     "custom_metrics": {
       "metric_submission_strategy": {
         "allow_from": "bound_app"

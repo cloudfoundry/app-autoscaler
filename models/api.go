@@ -62,7 +62,7 @@ type ServiceBinding struct {
 
 type ScalingPolicyWithBindingConfig struct {
 	ScalingPolicy
-	*BindingConfig
+	*BindingConfig `json:"configuration,omitempty"`
 }
 
 type BindingRequestBody struct {
