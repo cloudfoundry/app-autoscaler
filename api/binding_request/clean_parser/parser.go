@@ -63,8 +63,7 @@ func toBindingParameters(params parameters) binding_request.Parameters {
 		result.Configuration = &models.BindingConfig{}
 
 		result.Configuration.AppGUID = models.GUID(params.Configuration.AppGuid)
-		result.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom =
-			params.Configuration.CustomMetricsCfg.MetricSubmStrat.AllowFrom
+		result.Configuration.SetCustomMetricsStrategy(params.Configuration.CustomMetricsCfg.MetricSubmStrat.AllowFrom)
 	}
 
 	if params.ScalingPolicy != nil {

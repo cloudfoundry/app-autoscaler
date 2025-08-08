@@ -10,16 +10,18 @@ var _ = Describe("BindingConfigs", func() {
 
 	var bindingConfig *BindingConfig
 
+	const testAppID = "an-app-id"
+
 	Context("GetBindingConfigAndPolicy", func() {
 		var (
 			scalingPolicy        *ScalingPolicy
-			customMetricStrategy string
+			serviceBinding   *ServiceBinding
 			result               interface{}
 			err                  error
 		)
 
 		JustBeforeEach(func() {
-			result, err = GetBindingConfigAndPolicy(scalingPolicy, customMetricStrategy)
+			result, err = GetBindingConfigAndPolicy(scalingPolicy, serviceBinding)
 		})
 
 		When("both scaling policy and custom metric strategy are present", func() {
@@ -38,7 +40,10 @@ var _ = Describe("BindingConfigs", func() {
 						},
 					},
 				}
-				customMetricStrategy = CustomMetricsBoundApp
+				serviceBinding = &ServiceBinding{
+					AppID:                 testAppID,
+					CustomMetricsStrategy: CustomMetricsBoundApp,
+				}
 			})
 
 			It("should return combined configuration", func() {
@@ -46,7 +51,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(result).To(BeAssignableToTypeOf(&ScalingPolicyWithBindingConfig{}))
 				combinedConfig := result.(*ScalingPolicyWithBindingConfig)
 				Expect(combinedConfig.ScalingPolicy).To(Equal(*scalingPolicy))
-				Expect(combinedConfig.BindingConfig.GetCustomMetricsStrategy()).To(Equal(customMetricStrategy))
+				Expect(combinedConfig.BindingConfig.GetCustomMetricsStrategy()).To(Equal(serviceBinding))
 			})
 		})
 
@@ -78,7 +83,10 @@ var _ = Describe("BindingConfigs", func() {
 		When("policy is not found", func() {
 			BeforeEach(func() {
 				scalingPolicy = nil
-				customMetricStrategy = CustomMetricsBoundApp
+				serviceBinding = &ServiceBinding{
+					AppID:                 testAppID,
+					CustomMetricsStrategy: CustomMetricsBoundApp,
+				}
 			})
 
 			It("should return an error", func() {
@@ -91,7 +99,7 @@ var _ = Describe("BindingConfigs", func() {
 	Context("GetCustomMetricsStrategy", func() {
 		It("should return the correct custom metrics strategy", func() {
 			bindingConfig = &BindingConfig{
-				CustomMetrics: CustomMetricsConfig{
+				CustomMetrics: &CustomMetricsConfig{
 					MetricSubmissionStrategy: MetricsSubmissionStrategy{
 						AllowFrom: CustomMetricsBoundApp,
 					},
@@ -131,7 +139,7 @@ var _ = Describe("BindingConfigs", func() {
 		When("custom metrics strategy is unsupported", func() {
 			BeforeEach(func() {
 				bindingConfig = &BindingConfig{
-					CustomMetrics: CustomMetricsConfig{
+					CustomMetrics: &CustomMetricsConfig{
 						MetricSubmissionStrategy: MetricsSubmissionStrategy{
 							AllowFrom: "unsupported_strategy",
 						},

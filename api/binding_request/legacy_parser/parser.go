@@ -51,7 +51,7 @@ func toBindingParameters(params policyAndBindingCfg) binding_request.Parameters 
 	result := binding_request.Parameters{}
 	result.Configuration = &models.BindingConfig{
 		AppGUID: models.GUID(params.BindingConfig.AppGUID),
-		CustomMetrics: models.CustomMetricsConfig{
+		CustomMetrics: &models.CustomMetricsConfig{
 			MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
 				AllowFrom: params.BindingConfig.CustomMetrics.MetricSubmissionStrategy.AllowFrom,
 			},

@@ -38,7 +38,14 @@ type MetricsSubmissionStrategy struct {
 }
 
 func (b *BindingConfig) GetCustomMetricsStrategy() string {
-	return b.CustomMetrics.MetricSubmissionStrategy.AllowFrom
+	var result string
+	if b.CustomMetrics == nil {
+		result = ""
+	} else {
+		result = b.CustomMetrics.MetricSubmissionStrategy.AllowFrom
+	}
+
+	return result
 }
 
 func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
