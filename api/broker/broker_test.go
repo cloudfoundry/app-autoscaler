@@ -177,7 +177,7 @@ var _ = Describe("Broker", func() {
 			Context("with policy", func() {
 				BeforeEach(func() {
 					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
+						ServiceInstanceID: testInstanceId, AppID: ""}, nil)
 					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
 				})
 				It("returns the Binding with parameters", func() {
