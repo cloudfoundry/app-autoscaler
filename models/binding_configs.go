@@ -25,7 +25,7 @@ const (
 )
 
 type BindingConfig struct {
-	AppGUID       GUID                `json:"app_guid,omitempty"` // Empty value represents null-value (i.e. not set).
+	AppGUID       GUID                 `json:"app_guid,omitempty"` // Empty value represents null-value (i.e. not set).
 	CustomMetrics *CustomMetricsConfig `json:"custom_metrics,omitempty"`
 }
 
@@ -48,57 +48,87 @@ func (b *BindingConfig) GetCustomMetricsStrategy() string {
 	return result
 }
 
-func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) {
+// SetCustomMetricsStrategy sets the custom metrics strategy for this binding configuration.
+// Validates that the provided strategy is one of the supported values.
+//
+// Parameters:
+//   - allowFrom: The custom metrics strategy to set. Must be either CustomMetricsSameApp or CustomMetricsBoundApp.
+//
+// Returns:
+//   - error: InvalidArgumentError if the provided strategy is not supported, nil otherwise.
+func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) error {
 	if b.CustomMetrics == nil {
 		b.CustomMetrics = &CustomMetricsConfig{}
 	}
+
+	// Validate strategy
+	if allowFrom != CustomMetricsSameApp && allowFrom != CustomMetricsBoundApp {
+		return &InvalidArgumentError{
+			Param: "allowFrom",
+			Value: allowFrom,
+			Msg:   "custom metrics strategy must be either 'same_app' or 'bound_app'",
+		}
+	}
+
 	b.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
+	return nil
 }
+
+
+// CreateBindingConfigWithValidation creates a BindingConfig from an AppGUID and CustomMetricsStrategy.
+func BindingConfigFromParameters(appGUID GUID, customMetricsStrategy string) (*BindingConfig, error) {
+	config := &BindingConfig{
+		AppGUID: appGUID,
+	}
+	err := config.SetCustomMetricsStrategy(customMetricsStrategy)
+	if err != nil {
+		e := fmt.Errorf(
+			"error: provided strategy is unsupported:\n\t%s, %w",
+			customMetricsStrategy, err)
+		return nil, e
+	}
+
+	return config, nil
+}
+
+
 
 /**
- * GetBindingConfigAndPolicy combines the binding configuration and policy based on the given parameters.
- * It establishes the relationship between the scaling policy and the custom metrics strategy.
- * @param scalingPolicy the scaling policy
- * @param customMetricStrategy the custom metric strategy
- * @return the binding configuration and policy if both are present, the scaling policy if only the policy is present,
-*			the binding configuration if only the configuration is present
- * @throws an error if no policy or custom metrics strategy is found
-*/
+ * BindingConfigFromServiceBinding creates a binding configuration from a service binding.
+ * Only creates a configuration if the service binding contains relevant custom metrics strategy
+ * (other than "same_app") or has an AppID set.
+ *
+ * @param serviceBinding the service binding to extract configuration from; must not be nil
+ * @return *BindingConfig the extracted binding configuration, or nil if no relevant config found
+ * @return error InvalidArgumentError if serviceBinding is nil, nil otherwise
+ */
+func BindingConfigFromServiceBinding(serviceBinding *ServiceBinding) (*BindingConfig, error) {
+	var bindingConfig *BindingConfig
 
-func GetBindingConfigAndPolicy(scalingPolicy *ScalingPolicy, serviceBinding *ServiceBinding) (*ScalingPolicyWithBindingConfig, error) {
-	if scalingPolicy == nil {
-		return nil, fmt.Errorf("policy not found")
-	}
 	if serviceBinding == nil {
-		return nil, fmt.Errorf("service-binding not found")
+		err := InvalidArgumentError{
+			Param: "serviceBinding",
+			Value: serviceBinding,
+			Msg:   "serviceBinding must not be nil, see function-contract;",
+		}
+		return nil, &err
 	}
-	isBindingConfigRelevant := serviceBinding.CustomMetricsStrategy != "" &&
-		serviceBinding.CustomMetricsStrategy != CustomMetricsSameApp ||
-		serviceBinding.AppID != ""
 
-	if isBindingConfigRelevant {
-		return buildPolicyAndConfig(scalingPolicy, serviceBinding), nil
-	}
-	return &ScalingPolicyWithBindingConfig{
-		ScalingPolicy: *scalingPolicy,
-	}, nil
-}
-
-func buildPolicyAndConfig(scalingPolicy *ScalingPolicy, serviceBinding *ServiceBinding) *ScalingPolicyWithBindingConfig {
-	bindingConfig := &BindingConfig{
-		// As well correct, if AppID is `""`, see definition of type `BindingConfig`
+	bindingConfig = &BindingConfig{
 		AppGUID: GUID(serviceBinding.AppID),
 	}
-	isCustomMetricsRelevant := serviceBinding.CustomMetricsStrategy != ""
-	if isCustomMetricsRelevant {
-		bindingConfig.SetCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
+	err := bindingConfig.SetCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
+
+	if err != nil {
+		e := fmt.Errorf(
+			"error: serviceBinding contained unsupported strategy:\n\t%s, %w",
+			serviceBinding, err)
+		return nil, e
 	}
 
-	return &ScalingPolicyWithBindingConfig{
-		BindingConfig: bindingConfig,
-		ScalingPolicy: *scalingPolicy,
-	}
+	return bindingConfig, nil
 }
+
 
 func (b *BindingConfig) ValidateOrGetDefaultCustomMetricsStrategy() (*BindingConfig, error) {
 	strategy := b.GetCustomMetricsStrategy()

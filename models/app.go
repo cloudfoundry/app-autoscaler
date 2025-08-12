@@ -73,6 +73,8 @@ func NewCfGuidParser() CfGuidParser {
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
 		errMsg := fmt.Errorf("could not read file \"%s\"\nError: %w", filePath, err)
+		// Panicing here is O.K. because it does not make sense to launch autoscaler because it has
+		// been shipped with an invalid (or non-existent) file that should contain a json-schema.
 		panic(fmt.Sprintf(
 			"%s\nThis is a programming-error as the file must be on the hardcoded location.",
 			errMsg))
@@ -94,6 +96,8 @@ func NewCfGuidParser() CfGuidParser {
 	err = json.Unmarshal(jsonData, &schema)
 	if err != nil {
 		errMsg := fmt.Errorf("could not unmarshal JSON from file \"%s\"\nError: %w", filePath, err)
+		// Panicing here is O.K. because it does not make sense to launch autoscaler because it has
+		// been shipped with an file with invalid json-code.
 		panic(fmt.Sprintf(
 			"%s\nThis is a programming-error as the local Schema-struct must match roughly the file-structure.",
 			errMsg))
@@ -102,6 +106,8 @@ func NewCfGuidParser() CfGuidParser {
 
 	r, err := regexp.CompilePOSIX(pattern)
 	if err != nil {
+		// Panicing here is O.K. because it does not make sense to launch autoscaler because it has
+		// been shipped with an invalid json-schema.
 		panic(`The provided pattern is invalid.
 This is a programming-error as the pattern must be a valid POSIX-regexp.`)
 	}
@@ -110,7 +116,7 @@ This is a programming-error as the pattern must be a valid POSIX-regexp.`)
 }
 
 func (p CfGuidParser) Parse(rawGuid string) (CfGuid, error) {
-	matched := p.regexp.MatchString(rawGuid) // regexp.MatchString(p.regexp, rawGuid)
+	matched := p.regexp.MatchString(rawGuid)
 	if !matched {
 		msg := fmt.Sprintf("The provided string does not look like a Cloud Foundry GUID: %s", rawGuid)
 		return "<guid-parsing-error>", errors.New(msg)

@@ -102,18 +102,33 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusNotFound, "Policy Not Found")
 		return
 	}
+
 	customMetricStrategy, err := h.bindingdb.GetCustomMetricStrategyByAppId(r.Context(), appId)
+
 	if err != nil {
 		logger.Error("Failed to retrieve customMetricStrategy from database", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
 		return
 	}
-	scalingPolicyWithCustomMetricStrategy, err := models.GetBindingConfigAndPolicy(scalingPolicy, customMetricStrategy)
+
+	bindingConfig, err := models.BindingConfigFromParameters(models.GUID(appId), customMetricStrategy)
+	if err != nil {
+		logger.Error("Failed to generate BindingConfig", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding config")
+		return
+	}
+
+	scalingPolicyWithCustomMetricStrategy := &models.ScalingPolicyWithBindingConfig{
+		ScalingPolicy: *scalingPolicy,
+		BindingConfig: bindingConfig,
+	}
+
 	if err != nil {
 		logger.Error("Failed to build policy and config response object", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
 		return
 	}
+
 	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicyWithCustomMetricStrategy)
 }
 
@@ -180,7 +195,11 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, actionName)
 		return
 	}
-	responseJson, err := buildResponse(policy, customMetricStrategy, logger)
+	scalingPolicyWithCustomMetricStrategy := models.ScalingPolicyWithBindingConfig{
+		ScalingPolicy: *policy,
+		BindingConfig: bindingConfiguration,
+	}
+	responseJson, err := buildResponse(scalingPolicyWithCustomMetricStrategy, logger)
 	if err != nil {
 		logger.Error("Failed to to build response", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error building response")
@@ -383,12 +402,7 @@ func (h *PublicApiHandler) getBindingConfigurationFromRequest(rawJson json.RawMe
 	return bindingConfiguration, err
 }
 
-func buildResponse(policy *models.ScalingPolicy, customMetricStrategy string, logger lager.Logger) ([]byte, error) {
-	scalingPolicyWithCustomMetricStrategy, err := models.GetBindingConfigAndPolicy(policy, customMetricStrategy)
-	if err != nil {
-		logger.Error("Failed to build policy and config response object", err)
-		return nil, errors.New("error: building binding and policy")
-	}
+func buildResponse(scalingPolicyWithCustomMetricStrategy models.ScalingPolicyWithBindingConfig, logger lager.Logger) ([]byte, error) {
 	responseJson, err := json.Marshal(scalingPolicyWithCustomMetricStrategy)
 	if err != nil {
 		logger.Error("Failed to marshal policy", err)

@@ -742,13 +742,19 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		b.logger.Error("get-binding", err, lager.Data{"instanceID": instanceID, "bindingID": bindingID, "fetchBindingDetails": details})
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to retrieve scaling policy"), http.StatusInternalServerError, "get-policy")
 	}
-	if policy != nil {
-		policyAndBinding, err := models.GetBindingConfigAndPolicy(policy, serviceBinding)
-		if err != nil {
-			return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to build policy and config object"), http.StatusInternalServerError, "determine-BindingConfig-and-Policy")
-		}
-		result.Parameters = policyAndBinding
+
+	bindingConfig, err := models.BindingConfigFromServiceBinding(serviceBinding)
+	if err != nil {
+		b.logger.Error("generate-binding-config", err, lager.Data{"instanceID": instanceID, "bindingID": bindingID, "fetchBindingDetails": details})
+		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to generate binding config"), http.StatusInternalServerError, "generate-binding-config")
 	}
+
+	policyAndBinding := models.ScalingPolicyWithBindingConfig{
+		ScalingPolicy: *policy,
+		BindingConfig: bindingConfig,
+	}
+	result.Parameters = policyAndBinding
+
 	return result, nil
 }
 
