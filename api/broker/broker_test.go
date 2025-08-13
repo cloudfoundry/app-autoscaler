@@ -157,8 +157,12 @@ var _ = Describe("Broker", func() {
 		Context("when the binding exists", func() {
 			Context("without policy", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId,
+						AppID: testAppId,
+						CustomMetricsStrategy: "same_app",
+					}, nil)
 					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})
 				It("returns the empty binding without parameters", func() {
@@ -170,25 +174,51 @@ var _ = Describe("Broker", func() {
 					})
 					By("returning an empty response", func() {
 						Expect(err).ShouldNot(HaveOccurred())
-						Expect(Binding).To(Equal(domain.GetBindingSpec{}))
+						Expect(Binding).To(Equal(domain.GetBindingSpec{
+							Parameters: &models.BindingConfig{
+									AppGUID: models.GUID(testAppId),
+									CustomMetrics: &models.CustomMetricsConfig{
+										MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
+											AllowFrom: models.CustomMetricsSameApp,
+										},
+									},
+							},
+						}))
 					})
 				})
 			})
 			Context("with policy", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: ""}, nil)
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId,
+						AppID: "",
+						CustomMetricsStrategy: "same_app",
+					}, nil)
 					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
 				})
 				It("returns the Binding with parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: &models.ScalingPolicyWithBindingConfig{ScalingPolicy: *scalingPolicy, BindingConfig: nil}}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: &models.ScalingPolicyWithBindingConfig{
+						ScalingPolicy: *scalingPolicy,
+						BindingConfig: &models.BindingConfig{
+							CustomMetrics: &models.CustomMetricsConfig{
+								MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
+									AllowFrom: models.CustomMetricsSameApp,
+								},
+							},
+						},
+					}}))
 				})
 			})
 			Context("with configuration and policy", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId,
+						AppID: testAppId,
+						CustomMetricsStrategy: "bound_app",
+					}, nil)
 					bindingBytes, err := os.ReadFile("testdata/policy-with-configs.json")
 					Expect(err).ShouldNot(HaveOccurred())
 
@@ -203,8 +233,12 @@ var _ = Describe("Broker", func() {
 			})
 			Context("with configuration only", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId,
+						AppID: testAppId,
+						CustomMetricsStrategy: "bound_app",
+					}, nil)
 					bindingBytes, err := os.ReadFile("testdata/with-configs.json")
 					Expect(err).ShouldNot(HaveOccurred())
 
@@ -214,7 +248,16 @@ var _ = Describe("Broker", func() {
 				})
 				It("returns no binding configs in parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: nil}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{
+							Parameters: &models.BindingConfig{
+									AppGUID: models.GUID(testAppId),
+									CustomMetrics: &models.CustomMetricsConfig{
+										MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
+											AllowFrom: models.CustomMetricsBoundApp,
+										},
+									},
+							},
+					}))
 				})
 			})
 		})

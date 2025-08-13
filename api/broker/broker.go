@@ -749,11 +749,15 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 		return domain.GetBindingSpec{}, apiresponses.NewFailureResponse(errors.New("failed to generate binding config"), http.StatusInternalServerError, "generate-binding-config")
 	}
 
-	policyAndBinding := models.ScalingPolicyWithBindingConfig{
-		ScalingPolicy: *policy,
-		BindingConfig: bindingConfig,
+	if policy != nil {
+		policyAndBinding := &models.ScalingPolicyWithBindingConfig{
+			ScalingPolicy: *policy,
+			BindingConfig: bindingConfig,
+		}
+		result.Parameters = policyAndBinding
+	} else {
+		result.Parameters = bindingConfig
 	}
-	result.Parameters = policyAndBinding
 
 	return result, nil
 }

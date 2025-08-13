@@ -121,6 +121,22 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	return policyList, rows.Err()
 }
 
+// GetAppPolicy retrieves the scaling policy for a specific application from the policy database.
+// It fetches the policy JSON from the database, unmarshals it into a ScalingPolicy struct,
+// and returns the policy object.
+//
+// Parameters:
+//   - ctx: Context for request lifecycle management and cancellation
+//   - appId: The unique identifier of the application whose policy is to be retrieved
+//
+// Returns:
+//   - *models.ScalingPolicy: The scaling policy for the application, or nil if no policy exists
+//   - error: nil on success, database error on query/scan failure, JSON unmarshal error on invalid policy data
+//
+// Edge cases:
+//   - Returns (nil, nil) when no policy exists for the given appId
+//   - Returns (nil, error) on database connection issues or query execution failures
+//   - Returns (nil, error) when policy JSON is malformed or cannot be unmarshaled
 func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error) {
 	var policyJson []byte
 	query := pdb.sqldb.Rebind("SELECT policy_json FROM policy_json WHERE app_id =?")
@@ -143,6 +159,7 @@ func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models
 	}
 	return scalingPolicy, nil
 }
+
 
 func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error {
 	var query string
