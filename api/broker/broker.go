@@ -506,7 +506,14 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	// // 🚧 To-do: Check if exactly one is provided.
 	// requestAppGuid := details.BindResource.AppGuid
 	// paramsAppGuid := bindingConfig.Configuration.AppGUID
-	appGUID := details.BindResource.AppGuid
+	var appGUID string
+	if details.BindResource != nil {
+		appGUID = details.BindResource.AppGuid
+	} else {
+		// 👎 Access to `details.AppGUID` has been deprecated, see:
+		// <https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md#request-creating-a-service-binding>
+		appGUID = details.AppGUID
+	}
 
 	if appGUID == "" {
 		err := errors.New("error: service must be bound to an application - service key creation is not supported")

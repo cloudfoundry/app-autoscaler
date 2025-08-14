@@ -1028,6 +1028,7 @@ var _ = Describe("BrokerHandler", func() {
 					}]
 				}`
 					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+					bindingRequestBody.AppID = "an-app-id"
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 
