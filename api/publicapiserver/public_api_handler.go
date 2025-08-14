@@ -123,11 +123,12 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		BindingConfig: bindingConfig,
 	}
 
-	if err != nil {
-		logger.Error("Failed to build policy and config response object", err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
-		return
-	}
+	// // 🚧 To-do: Remove me if I stay superfluous!
+	// if err != nil {
+	//	logger.Error("Failed to build policy and config response object", err)
+	//	writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
+	//	return
+	// }
 
 	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicyWithCustomMetricStrategy)
 }
