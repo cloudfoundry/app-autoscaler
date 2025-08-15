@@ -16,6 +16,7 @@ import (
 	  }
 	}
   }
+}
 */
 
 // BindingConfig represents the configuration for a service binding.
