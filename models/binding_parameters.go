@@ -12,7 +12,7 @@ import (
 // `NewBindingParameters`.
 type BindingParameters struct {
 	// configuration contains the binding configuration settings.
-	configuration BindingConfig // 🚧 To-do: We should distinguish between raw data and correctly validated data.
+	configuration BindingConfig
 
 	// True if and only if there has not been set any policy for that app. If true, then the content
 	// of the field `scalingPolicy` is meaningless.
@@ -24,25 +24,39 @@ type BindingParameters struct {
 
 
 func NewBindingParameters(
-	configuration BindingConfig, useDefaultPolicy bool, scalingPolicy ScalingPolicy,
-) *BindingParameters {
-	return &BindingParameters{
-		configuration:    configuration,
-		useDefaultPolicy: useDefaultPolicy,
-		scalingPolicy:    scalingPolicy,
+	configuration BindingConfig, scalingPolicy *ScalingPolicy,
+) (bps *BindingParameters) {
+	if scalingPolicy == nil {
+		bps = &BindingParameters{
+			configuration:    configuration,
+			useDefaultPolicy: true,
+			scalingPolicy:    ScalingPolicy{}, // Default policy, which is empty.
+		}
+	} else {
+		bps = &BindingParameters{
+			configuration:    configuration,
+			useDefaultPolicy: false,
+			scalingPolicy:    *scalingPolicy,
+		}
 	}
+
+	return bps
 }
 
 func (bp *BindingParameters) GetConfiguration() BindingConfig {
 	return bp.configuration
 }
 
-func (bp *BindingParameters) GetUseDefaultPolicy() bool {
-	return bp.useDefaultPolicy
-}
+// GetScalingPolicy returns the scaling policy for the binding and nil if no one has been set (which
+// means, the default-policy is used).
+func (bp *BindingParameters) GetScalingPolicy() (p *ScalingPolicy) {
+	if bp.useDefaultPolicy {
+		p = nil // No scaling policy has been set, so we return nil.
+	} else {
+		p = &bp.scalingPolicy
+	}
 
-func (bp *BindingParameters) GetScalingPolicy() ScalingPolicy {
-	return bp.scalingPolicy
+	return p
 }
 
 
@@ -52,19 +66,11 @@ func (bp *BindingParameters) GetScalingPolicy() ScalingPolicy {
 // ================================================================================
 
 type bindingParamsJsonRawRepr struct {
-	Configuration    json.RawMessage `json:"configuration"`
-	UseDefaultPolicy json.RawMessage `json:"use_default_policy"`
-	ScalingPolicy    json.RawMessage `json:"scaling_policy"`
+	*ScalingPolicy
+	Configuration    json.RawMessage `json:"configuration,omitempty"`
 }
 
 func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
-	var useDefaultPolicy json.RawMessage
-	if bp.useDefaultPolicy {
-		useDefaultPolicy = json.RawMessage("true")
-	} else {
-		useDefaultPolicy = json.RawMessage("false")
-	}
-
 	cfgRaw, err := bp.configuration.ToRawJSON()
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -72,17 +78,16 @@ func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
 			bp.configuration, err)
 	}
 
-	policyRaw, err := bp.scalingPolicy.ToRawJSON()
-	if err != nil {
-		return nil, fmt.Errorf(
-			"could not serialise scaling policy to json: %s\n\t%w",
-			bp.scalingPolicy, err)
+	var policy *ScalingPolicy
+	if bp.useDefaultPolicy {
+		policy = nil // ScalingPolicy{} // Gets not serialized, which is equivalent to null in JSON.
+	} else {
+		policy = &bp.scalingPolicy
 	}
 
 	bpRaw := bindingParamsJsonRawRepr{
 		Configuration:    cfgRaw,
-		UseDefaultPolicy: useDefaultPolicy,
-		ScalingPolicy:    policyRaw,
+		ScalingPolicy:    policy,
 	}
 
 	data, err := json.Marshal(bpRaw)
@@ -90,4 +95,20 @@ func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func BindingParametersFromRawJSON(data json.RawMessage) (*BindingParameters, error) {
+	var bpRaw bindingParamsJsonRawRepr
+	if err := json.Unmarshal(data, &bpRaw); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal BindingParameters: %w", err)
+	}
+
+	configuration, err := BindingConfigFromRawJSON(bpRaw.Configuration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+	}
+
+	scalingPolicy := bpRaw.ScalingPolicy
+
+	return NewBindingParameters(*configuration, scalingPolicy), nil
 }
