@@ -52,8 +52,26 @@ type ScalingPolicy struct {
 	Schedules    *ScalingSchedules `json:"schedules,omitempty"`
 }
 
+
+func (s ScalingPolicy) ToRawJSON() (json.RawMessage, error) {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(data), nil
+}
+
+func FromRawJSON(data json.RawMessage) (ScalingPolicy, error) {
+	var scalingPolicy ScalingPolicy
+	if err := json.Unmarshal(data, &scalingPolicy); err != nil {
+		return ScalingPolicy{}, fmt.Errorf("failed to unmarshal ScalingPolicy: %w", err)
+	}
+	return scalingPolicy, nil
+}
+
+
 func (s ScalingPolicy) String() string {
-	aJson, _ := json.Marshal(s)
+	aJson, _ := s.ToRawJSON()
 	return string(aJson)
 }
 

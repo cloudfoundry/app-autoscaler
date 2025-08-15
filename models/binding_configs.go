@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 )
 
@@ -18,80 +18,23 @@ import (
   }
 */
 
-const (
-	CustomMetricsBoundApp = "bound_app"
-	// CustomMetricsSameApp default value if not specified
-	CustomMetricsSameApp = "same_app"
-)
-
+// BindingConfig represents the configuration for a service binding.
 type BindingConfig struct {
-	AppGUID       GUID                 `json:"app_guid,omitempty"` // Empty value represents null-value (i.e. not set).
-	CustomMetrics *CustomMetricsConfig `json:"custom_metrics,omitempty"`
+	appGUID       GUID                 // Empty value represents null-value (i.e. not set).
+	customMetrics customMetricsConfig
 }
 
-type CustomMetricsConfig struct {
-	MetricSubmissionStrategy MetricsSubmissionStrategy `json:"metric_submission_strategy"`
-}
 
-type MetricsSubmissionStrategy struct {
-	AllowFrom string `json:"allow_from"`
-}
-
-func (b *BindingConfig) GetCustomMetricsStrategy() string {
-	var result string
-	if b.CustomMetrics == nil {
-		result = ""
-	} else {
-		result = b.CustomMetrics.MetricSubmissionStrategy.AllowFrom
+func NewBindingConfig(appGUID GUID, customMetricStrategy CustomMetricsStrategy) *BindingConfig {
+	return &BindingConfig{
+		appGUID:       appGUID,
+		customMetrics: customMetricsConfig{
+			MetricSubmissionStrategy: metricsSubmissionStrategy{
+				AllowFrom: customMetricStrategy,
+			},
+		},
 	}
-
-	return result
 }
-
-// SetCustomMetricsStrategy sets the custom metrics strategy for this binding configuration.
-// Validates that the provided strategy is one of the supported values.
-//
-// Parameters:
-//   - allowFrom: The custom metrics strategy to set. Must be either CustomMetricsSameApp or CustomMetricsBoundApp.
-//
-// Returns:
-//   - error: InvalidArgumentError if the provided strategy is not supported, nil otherwise.
-func (b *BindingConfig) SetCustomMetricsStrategy(allowFrom string) error {
-	if b.CustomMetrics == nil {
-		b.CustomMetrics = &CustomMetricsConfig{}
-	}
-
-	// Validate strategy
-	if allowFrom != CustomMetricsSameApp && allowFrom != CustomMetricsBoundApp {
-		return &InvalidArgumentError{
-			Param: "allowFrom",
-			Value: allowFrom,
-			Msg:   "custom metrics strategy must be either 'same_app' or 'bound_app'",
-		}
-	}
-
-	b.CustomMetrics.MetricSubmissionStrategy.AllowFrom = allowFrom
-	return nil
-}
-
-
-// CreateBindingConfigWithValidation creates a BindingConfig from an AppGUID and CustomMetricsStrategy.
-func BindingConfigFromParameters(appGUID GUID, customMetricsStrategy string) (*BindingConfig, error) {
-	config := &BindingConfig{
-		AppGUID: appGUID,
-	}
-	err := config.SetCustomMetricsStrategy(customMetricsStrategy)
-	if err != nil {
-		e := fmt.Errorf(
-			"error: provided strategy is unsupported:\n\t%s, %w",
-			customMetricsStrategy, err)
-		return nil, e
-	}
-
-	return config, nil
-}
-
-
 
 /**
  * BindingConfigFromServiceBinding creates a binding configuration from a service binding.
@@ -115,27 +58,139 @@ func BindingConfigFromServiceBinding(serviceBinding *ServiceBinding) (*BindingCo
 	}
 
 	bindingConfig = &BindingConfig{
-		AppGUID: GUID(serviceBinding.AppID),
-	}
-	err := bindingConfig.SetCustomMetricsStrategy(serviceBinding.CustomMetricsStrategy)
-
-	if err != nil {
-		e := fmt.Errorf(
-			"error: serviceBinding contained unsupported strategy:\n\t%s, %w",
-			serviceBinding, err)
-		return nil, e
+		appGUID: GUID(serviceBinding.AppID),
 	}
 
+	var customMetricStrategy CustomMetricsStrategy // Validierung nötig!
+	switch serviceBinding.CustomMetricsStrategy {
+	case "bound_app": customMetricStrategy = CustomMetricsBoundApp
+	case "same_app", "": customMetricStrategy = CustomMetricsSameApp
+	default: {
+		err := fmt.Errorf(
+			"error: serviceBinding contained unsupported strategy:\n\t%s",
+			serviceBinding)
+		return nil, err
+	}}
+
+	bindingConfig.customMetrics = customMetricsConfig{
+		MetricSubmissionStrategy: metricsSubmissionStrategy{
+			AllowFrom: customMetricStrategy,
+		},
+	}
 	return bindingConfig, nil
 }
 
+// GetAppGUID returns the GUID of the application associated with this binding.
+func (bc *BindingConfig) GetAppGUID() GUID {
+	return bc.appGUID
+}
 
-func (b *BindingConfig) ValidateOrGetDefaultCustomMetricsStrategy() (*BindingConfig, error) {
-	strategy := b.GetCustomMetricsStrategy()
-	if strategy == "" {
-		b.SetCustomMetricsStrategy(CustomMetricsSameApp)
-	} else if strategy != CustomMetricsBoundApp {
-		return nil, errors.New("error: custom metrics strategy not supported")
+// GetCustomMetricStrategy returns the custom metrics configuration for this binding.
+func (bc *BindingConfig) GetCustomMetricStrategy() CustomMetricsStrategy {
+	return bc.customMetrics.MetricSubmissionStrategy.AllowFrom
+}
+
+
+
+// ================================================================================
+// Types expressing a binding-configuration
+// ================================================================================
+
+// CustomMetricsStrategy defines the strategy for submitting custom metrics. It can be either
+// "bound_app" or "same_app".
+type CustomMetricsStrategy struct {
+	value string // Not exported to prohibit construction of CustomMetricsStrategy values outside
+				 // this package.
+}
+
+var (
+	CustomMetricsBoundApp = CustomMetricsStrategy{"bound_app"}
+
+	// CustomMetricsSameApp default value if not specified
+	CustomMetricsSameApp = CustomMetricsStrategy{"same_app"}
+	DefaultCustomMetricsStrategy = CustomMetricsSameApp
+)
+
+func (s CustomMetricsStrategy) String() string {
+	return s.value
+}
+
+func (s CustomMetricsStrategy) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.value)
+}
+
+func (s *CustomMetricsStrategy) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
 	}
-	return b, nil
+
+	switch value {
+	case "bound_app":
+		*s = CustomMetricsBoundApp
+	case "same_app":
+		*s = CustomMetricsSameApp
+	default:
+		return fmt.Errorf("unsupported CustomMetricsStrategy: %s", value)
+	}
+
+	return nil
+}
+
+
+
+// ================================================================================
+// Deserialization and serialization methods for BindingConfig
+// ================================================================================
+
+type bindingConfigJsonRawRepr struct {
+	AppGUID       GUID                 `json:"app_guid,omitempty"`       // Empty value represents null-value (i.e. not set).
+	CustomMetrics *customMetricsConfig `json:"custom_metrics,omitempty"` // nil value represents null-value (i.e. not set).
+}
+
+type customMetricsConfig struct {
+	MetricSubmissionStrategy metricsSubmissionStrategy `json:"metric_submission_strategy"`
+}
+
+type metricsSubmissionStrategy struct {
+	AllowFrom CustomMetricsStrategy `json:"allow_from"`
+}
+
+func (bc BindingConfig) ToRawJSON() (json.RawMessage, error) {
+	var customMetrics *customMetricsConfig
+	if bc.GetCustomMetricStrategy() == DefaultCustomMetricsStrategy{
+		customMetrics = nil // Default strategy does not need to be serialized
+	} else {
+		customMetrics = &bc.customMetrics
+	}
+	bindingConfigRaw := bindingConfigJsonRawRepr{
+		AppGUID:       bc.appGUID,
+		CustomMetrics: customMetrics,
+	}
+
+	data, err := json.Marshal(bindingConfigRaw)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal BindingConfig: %w", err)
+	}
+	return json.RawMessage(data), nil
+}
+
+func BindingConfigFromRawJSON(data json.RawMessage) (*BindingConfig, error) {
+	var bindingConfigRaw bindingConfigJsonRawRepr
+	if err := json.Unmarshal(data, &bindingConfigRaw); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal BindingConfig: %w", err)
+	}
+	bindingConfig := &BindingConfig{
+		appGUID: bindingConfigRaw.AppGUID,
+	}
+	if bindingConfigRaw.CustomMetrics != nil {
+		bindingConfig.customMetrics = *bindingConfigRaw.CustomMetrics
+	} else {
+		bindingConfig.customMetrics = customMetricsConfig{
+			MetricSubmissionStrategy: metricsSubmissionStrategy{
+				AllowFrom: DefaultCustomMetricsStrategy,
+			},
+		}
+	}
+	return bindingConfig, nil
 }
