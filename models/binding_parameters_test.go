@@ -57,7 +57,7 @@ var _ = Describe("BindingParameters", func() {
 
 		Context("with valid configuration and without policy", func() {
 			BeforeEach(func() {
-				rawJSON = []byte(`{"configuration": {"app-guid": "test-app-guid"}}`)
+				rawJSON = []byte(`{"configuration": {"app_guid": "test-app-guid"}}`)
 				config = *NewBindingConfig(GUID("test-app-guid"), CustomMetricsSameApp)
 				scalingPolicy = nil
 			})
@@ -66,7 +66,7 @@ var _ = Describe("BindingParameters", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingParameters).NotTo(BeNil())
 				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
-				Expect(bindingParameters.GetScalingPolicy()).To(Equal(nil))
+				Expect(bindingParameters.GetScalingPolicy()).To(BeNil())
 			})
 		})
 
@@ -75,7 +75,7 @@ var _ = Describe("BindingParameters", func() {
 				rawJSON = []byte(`
 {
   "configuration": {
-	  "app-guid": "test-app-guid",
+	  "app_guid": "test-app-guid",
 	  "custom_metrics": {
 		"metric_submission_strategy": {
 			"allow_from": "bound_app"
@@ -162,7 +162,7 @@ var _ = Describe("BindingParameters", func() {
 	}
   ]
 }`)
-				config = BindingConfig{}
+				config = *DefaultBindingConfig()
 				scalingPolicy = &ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 4,

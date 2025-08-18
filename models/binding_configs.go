@@ -37,6 +37,10 @@ func NewBindingConfig(appGUID GUID, customMetricStrategy CustomMetricsStrategy) 
 	}
 }
 
+func DefaultBindingConfig() *BindingConfig {
+	return NewBindingConfig(GUID(""), DefaultCustomMetricsStrategy)
+}
+
 /**
  * BindingConfigFromServiceBinding creates a binding configuration from a service binding.
  * Only creates a configuration if the service binding contains relevant custom metrics strategy

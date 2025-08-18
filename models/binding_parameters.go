@@ -66,8 +66,8 @@ func (bp *BindingParameters) GetScalingPolicy() (p *ScalingPolicy) {
 // ================================================================================
 
 type bindingParamsJsonRawRepr struct {
-	*ScalingPolicy
 	Configuration    json.RawMessage `json:"configuration,omitempty"`
+	*ScalingPolicy
 }
 
 func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
@@ -103,9 +103,15 @@ func BindingParametersFromRawJSON(data json.RawMessage) (*BindingParameters, err
 		return nil, fmt.Errorf("failed to unmarshal BindingParameters: %w", err)
 	}
 
-	configuration, err := BindingConfigFromRawJSON(bpRaw.Configuration)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+	var configuration *BindingConfig
+	if len(bpRaw.Configuration) > 0 {
+		var err error
+		configuration, err = BindingConfigFromRawJSON(bpRaw.Configuration)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
+		}
+	} else {
+		configuration = DefaultBindingConfig()
 	}
 
 	scalingPolicy := bpRaw.ScalingPolicy
