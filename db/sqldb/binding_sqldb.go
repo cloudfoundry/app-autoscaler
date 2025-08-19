@@ -201,7 +201,11 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(ctx context.Context, serviceInsta
 	return db.ErrDoesNotExist
 }
 
-func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string, customMetricsStrategy string) error {
+func (bdb *BindingSQLDB) CreateServiceBinding(
+	ctx context.Context,
+	bindingId string, serviceInstanceId string,
+	appId models.GUID, customMetricsStrategy models.CustomMetricsStrategy,
+) error {
 	err := bdb.isBindingExists(ctx, bindingId, serviceInstanceId, appId)
 	if err != nil {
 		return err
@@ -209,7 +213,9 @@ func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId str
 	query := bdb.sqldb.Rebind("INSERT INTO binding" +
 		"(binding_id, service_instance_id, app_id, created_at, custom_metrics_strategy) " +
 		"VALUES(?, ?, ?, ?,?)")
-	_, err = bdb.sqldb.ExecContext(ctx, query, bindingId, serviceInstanceId, appId, time.Now(), nullableString(customMetricsStrategy))
+	_, err = bdb.sqldb.ExecContext(ctx,
+		query, bindingId, serviceInstanceId,
+		appId, time.Now(), nullableString(customMetricsStrategy.String()))
 
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId, "bindingId": bindingId, "appId": appId, "customMetricsStrategy": customMetricsStrategy})
@@ -218,7 +224,11 @@ func (bdb *BindingSQLDB) CreateServiceBinding(ctx context.Context, bindingId str
 	return nil
 }
 
-func (bdb *BindingSQLDB) isBindingExists(ctx context.Context, bindingId string, serviceInstanceId string, appId string) error {
+func (bdb *BindingSQLDB) isBindingExists(
+	ctx context.Context,
+	bindingId string, serviceInstanceId string,
+	appId models.GUID,
+) error {
 	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE app_id =?")
 	rows, err := bdb.sqldb.QueryContext(ctx, query, appId)
 	if err != nil {

@@ -60,6 +60,7 @@ type ServiceBinding struct {
 	CustomMetricsStrategy string `db:"custom_metrics_strategy"`
 }
 
+// 🚧 To-do: We now have `BindingParameters` and this is obsolete!
 type ScalingPolicyWithBindingConfig struct {
 	ScalingPolicy
 	*BindingConfig `json:"configuration,omitempty"`

@@ -26,7 +26,7 @@ var _ = Describe("Broker", func() {
 		fakePolicyDB             *fakes.FakePolicyDB
 		fakeCredentials          *fakes.FakeCredentials
 		testLogger               = lagertest.NewTestLogger("test")
-		bindingConfigWithScaling *models.ScalingPolicyWithBindingConfig
+		bindingConfigWithScaling *models.BindingParameters
 	)
 
 	BeforeEach(func() {
@@ -175,14 +175,8 @@ var _ = Describe("Broker", func() {
 					By("returning an empty response", func() {
 						Expect(err).ShouldNot(HaveOccurred())
 						Expect(Binding).To(Equal(domain.GetBindingSpec{
-							Parameters: &models.BindingConfig{
-									AppGUID: models.GUID(testAppId),
-									CustomMetrics: &models.CustomMetricsConfig{
-										MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
-											AllowFrom: models.CustomMetricsSameApp,
-										},
-									},
-							},
+							Parameters: models.NewBindingConfig(
+								models.GUID(testAppId), models.CustomMetricsSameApp),
 						}))
 					})
 				})
@@ -198,17 +192,15 @@ var _ = Describe("Broker", func() {
 					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
 				})
 				It("returns the Binding with parameters", func() {
+					responesParams := domain.GetBindingSpec{
+						Parameters: models.NewBindingParameters(
+							*models.NewBindingConfig(models.GUID(""), models.CustomMetricsSameApp),
+							scalingPolicy,
+						),
+					}
+
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: &models.ScalingPolicyWithBindingConfig{
-						ScalingPolicy: *scalingPolicy,
-						BindingConfig: &models.BindingConfig{
-							CustomMetrics: &models.CustomMetricsConfig{
-								MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
-									AllowFrom: models.CustomMetricsSameApp,
-								},
-							},
-						},
-					}}))
+					Expect(Binding).To(Equal(responesParams))
 				})
 			})
 			Context("with configuration and policy", func() {
@@ -219,11 +211,10 @@ var _ = Describe("Broker", func() {
 						AppID: testAppId,
 						CustomMetricsStrategy: "bound_app",
 					}, nil)
-					bindingBytes, err := os.ReadFile("testdata/policy-with-configs.json")
-					Expect(err).ShouldNot(HaveOccurred())
 
-					err = json.Unmarshal(bindingBytes, &bindingConfigWithScaling)
-					Expect(err).ShouldNot(HaveOccurred())
+					bindingConfig := models.NewBindingConfig(
+						models.GUID(testAppId), models.CustomMetricsBoundApp)
+					bindingConfigWithScaling = models.NewBindingParameters(*bindingConfig, scalingPolicy)
 					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
 				})
 				It("returns the Binding with configs and policy in parameters", func() {
@@ -249,14 +240,8 @@ var _ = Describe("Broker", func() {
 				It("returns no binding configs in parameters", func() {
 					Expect(err).To(BeNil())
 					Expect(Binding).To(Equal(domain.GetBindingSpec{
-							Parameters: &models.BindingConfig{
-									AppGUID: models.GUID(testAppId),
-									CustomMetrics: &models.CustomMetricsConfig{
-										MetricSubmissionStrategy: models.MetricsSubmissionStrategy{
-											AllowFrom: models.CustomMetricsBoundApp,
-										},
-									},
-							},
+						Parameters: models.NewBindingConfig(
+							models.GUID(testAppId), models.CustomMetricsBoundApp),
 					}))
 				})
 			})

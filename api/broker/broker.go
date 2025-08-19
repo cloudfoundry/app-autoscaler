@@ -515,6 +515,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		appGUID = details.AppGUID
 	}
 
+	// 🚧 To-do: Implement feature: service-key-creation
 	if appGUID == "" {
 		err := errors.New("error: service must be bound to an application - service key creation is not supported")
 		logger.Error("check-required-app-guid", err)
@@ -530,14 +531,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		logger.Error("get-default-policy", err)
 		return result, err
 	}
-	bindingConfig, err = bindingConfig.ValidateOrGetDefaultCustomMetricsStrategy()
-	if err != nil {
-		actionName := "validate-or-get-default-custom-metric-strategy"
-		logger.Error(actionName, err)
-		return result, apiresponses.NewFailureResponseBuilder(
-			err, http.StatusBadRequest, actionName).
-			WithErrorKey(actionName).Build()
-	}
+
 	defaultCustomMetricsCredentialType := b.conf.DefaultCustomMetricsCredentialType
 	customMetricsBindingAuthScheme, err := getOrDefaultCredentialType(bindingConfigRaw, defaultCustomMetricsCredentialType, logger)
 	if err != nil {
@@ -565,7 +559,9 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	if err := b.handleExistingBindingsResiliently(ctx, instanceID, appGUID, logger); err != nil {
 		return result, err
 	}
-	err = createServiceBinding(ctx, b.bindingdb, bindingID, instanceID, appGUID, bindingConfig.GetCustomMetricsStrategy())
+	err = createServiceBinding(
+		ctx, b.bindingdb, bindingID, instanceID,
+		models.GUID(appGUID), bindingConfig.GetCustomMetricStrategy())
 
 	if err != nil {
 		actionCreateServiceBinding := "create-service-binding"
@@ -618,21 +614,20 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	return result, nil
 }
 
-func (b *Broker) getBindingConfigurationFromRequest(bindingConfigRaw json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {
-	bindingConfiguration := &models.BindingConfig{}
-	var err error
-	if bindingConfigRaw != nil {
-		err = json.Unmarshal(bindingConfigRaw, &bindingConfiguration)
-		if err != nil {
-			actionReadBindingConfiguration := "read-binding-configurations"
-			logger.Error("unmarshal-binding-configuration", err)
-			return bindingConfiguration, apiresponses.NewFailureResponseBuilder(
-				ErrInvalidConfigurations, http.StatusBadRequest, actionReadBindingConfiguration).
-				WithErrorKey(actionReadBindingConfiguration).
-				Build()
-		}
+func (b *Broker) getBindingConfigurationFromRequest(
+	bindingConfigRaw json.RawMessage, logger lager.Logger,
+) (*models.BindingConfig, error) {
+	bindingConfiguration, err := models.BindingConfigFromRawJSON(bindingConfigRaw)
+	if err != nil {
+		actionReadBindingConfiguration := "read-binding-configuration"
+		logger.Error("unmarshal-binding-configuration", err)
+		return nil, apiresponses.NewFailureResponseBuilder(
+			ErrInvalidConfigurations, http.StatusBadRequest, actionReadBindingConfiguration).
+			WithErrorKey(actionReadBindingConfiguration).
+			Build()
 	}
-	return bindingConfiguration, err
+	logger.Debug("getBindingConfigurationFromRequest", lager.Data{"bindingConfiguration": bindingConfiguration})
+	return bindingConfiguration, nil
 }
 
 func getOrDefaultCredentialType(policyJson json.RawMessage, credentialTypeConfig string, logger lager.Logger) (*models.CustomMetricsBindingAuthScheme, error) {
@@ -757,10 +752,7 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 	}
 
 	if policy != nil {
-		policyAndBinding := &models.ScalingPolicyWithBindingConfig{
-			ScalingPolicy: *policy,
-			BindingConfig: bindingConfig,
-		}
+		policyAndBinding := models.NewBindingParameters(*bindingConfig, policy)
 		result.Parameters = policyAndBinding
 	} else {
 		result.Parameters = bindingConfig
@@ -912,7 +904,11 @@ func isValidCredentialType(credentialType string) bool {
 	return credentialType == models.BindingSecret || credentialType == models.X509Certificate
 }
 
-func createServiceBinding(ctx context.Context, bindingDB db.BindingDB, bindingID, instanceID, appGUID string, customMetricsStrategy string) error {
+func createServiceBinding(
+	ctx context.Context,
+	bindingDB db.BindingDB, bindingID, instanceID string,
+	appGUID models.GUID, customMetricsStrategy models.CustomMetricsStrategy,
+) error {
 	switch customMetricsStrategy {
 	case models.CustomMetricsBoundApp, models.CustomMetricsSameApp:
 		err := bindingDB.CreateServiceBinding(ctx, bindingID, instanceID, appGUID, customMetricsStrategy)

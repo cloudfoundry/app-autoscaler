@@ -26,6 +26,18 @@ type BindingConfig struct {
 }
 
 
+// NewBindingConfig creates a new BindingConfig with the specified application GUID and custom metrics strategy.
+// This constructor ensures proper initialization of the BindingConfig structure with its nested configuration objects.
+//
+// Parameters:
+//   - appGUID: The GUID of the application to associate with this binding configuration.
+//     Can be empty (GUID("")) to represent no specific application association.
+//   - customMetricStrategy: The custom metrics submission strategy to use for this binding.
+//     Must be one of the predefined CustomMetricsStrategy values (CustomMetricsBoundApp or CustomMetricsSameApp).
+//
+// Returns:
+//   - *BindingConfig: A pointer to a newly created and initialized BindingConfig instance.
+//     The returned instance is never nil and contains properly initialized nested structures.
 func NewBindingConfig(appGUID GUID, customMetricStrategy CustomMetricsStrategy) *BindingConfig {
 	return &BindingConfig{
 		appGUID:       appGUID,
