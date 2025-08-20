@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// BindingParameters contains all data the necessary data to establish the relationship between
+// BindingParameters contains all the necessary data to establish the relationship between
 // application binding configuration and its associated scaling behavior.
 //
 // ⛔ Do not create `BindingParameters` values directly via `BindingParameters{}` because it can lead to
