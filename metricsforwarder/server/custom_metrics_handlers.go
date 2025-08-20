@@ -191,7 +191,7 @@ func (mh *CustomMetricsHandler) isAppWithBoundStrategy(appGUID string) (bool, er
 		mh.logger.Error("error-getting-custom-metrics-strategy", err, lager.Data{"appId": appGUID})
 		return false, err
 	}
-	if submissionStrategy == "bound_app" {
+	if submissionStrategy == models.CustomMetricsBoundApp {
 		mh.logger.Info("bounded-metrics-submission-strategy", lager.Data{"appId": appGUID, "submission_strategy": submissionStrategy})
 		return true, nil
 	}

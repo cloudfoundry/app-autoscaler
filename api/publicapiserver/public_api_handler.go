@@ -111,26 +111,17 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	bindingConfig, err := models.BindingConfigFromParameters(models.GUID(appId), customMetricStrategy)
+	// 🚧 To-do: calculate which app-id should be in there – empty one or he one from above?
+	bindingConfig := models.NewBindingConfig(models.GUID(appId), customMetricStrategy)
+	bindingParameters := models.NewBindingParameters(*bindingConfig, scalingPolicy)
+	bindingParametersRawJSON, err := bindingParameters.ToRawJSON()
 	if err != nil {
-		logger.Error("Failed to generate BindingConfig", err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding config")
+		logger.Error("Failed to convert binding parameters to raw JSON", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Error converting binding parameters to raw JSON")
 		return
 	}
 
-	scalingPolicyWithCustomMetricStrategy := &models.ScalingPolicyWithBindingConfig{
-		ScalingPolicy: *scalingPolicy,
-		BindingConfig: bindingConfig,
-	}
-
-	// // 🚧 To-do: Remove me if I stay superfluous!
-	// if err != nil {
-	//	logger.Error("Failed to build policy and config response object", err)
-	//	writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving binding policy")
-	//	return
-	// }
-
-	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicyWithCustomMetricStrategy)
+	handlers.WriteJSONResponse(w, http.StatusOK, bindingParametersRawJSON)
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -158,7 +149,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	bindingConfiguration, err := h.getBindingConfigurationFromRequest(policyBytes, logger)
+	bindingConfiguration, err := models.BindingConfigFromRawJSON(policyBytes)
 	if err != nil {
 		errMessage := "Failed to read binding configuration request body"
 		logger.Error(errMessage, err)
@@ -181,26 +172,17 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	validatedBindingConfiguration, err := bindingConfiguration.ValidateOrGetDefaultCustomMetricsStrategy()
-	if err != nil {
-		logger.Error(ErrInvalidConfigurations.Error(), err)
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	customMetricStrategy := validatedBindingConfiguration.GetCustomMetricsStrategy()
+	customMetricStrategy := bindingConfiguration.GetCustomMetricStrategy()
 	logger.Info("saving custom metric submission strategy", lager.Data{"customMetricStrategy": customMetricStrategy, "appId": appId})
-	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, validatedBindingConfiguration.GetCustomMetricsStrategy(), "update")
+	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, customMetricStrategy, "update")
 	if err != nil {
 		actionName := "failed to save custom metric submission strategy in the database"
 		logger.Error(actionName, err)
 		writeErrorResponse(w, http.StatusInternalServerError, actionName)
 		return
 	}
-	scalingPolicyWithCustomMetricStrategy := models.ScalingPolicyWithBindingConfig{
-		ScalingPolicy: *policy,
-		BindingConfig: bindingConfiguration,
-	}
-	responseJson, err := buildResponse(scalingPolicyWithCustomMetricStrategy, logger)
+	bindingParameters := models.NewBindingParameters(*bindingConfiguration, policy)
+	responseJson, err := bindingParameters.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to to build response", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error building response")
@@ -240,12 +222,13 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, "", "delete"); err != nil {
-		actionName := "failed to delete custom metric submission strategy in the database"
-		logger.Error(actionName, err)
-		writeErrorResponse(w, http.StatusInternalServerError, actionName)
-		return
-	}
+	if err := h.bindingdb.SetOrUpdateCustomMetricStrategy(
+		r.Context(), appId, models.DefaultCustomMetricsStrategy, "delete"); err != nil {
+			actionName := "failed to delete custom metric submission strategy in the database"
+			logger.Error(actionName, err)
+			writeErrorResponse(w, http.StatusInternalServerError, actionName)
+			return
+		}
 
 	// find via the app id the binding -> service instance
 	// default policy? then apply that
@@ -390,24 +373,26 @@ func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, _ *http.Request, _ m
 	}
 }
 
-func (h *PublicApiHandler) getBindingConfigurationFromRequest(rawJson json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {
-	bindingConfiguration := &models.BindingConfig{}
-	var err error
-	if rawJson != nil {
-		err = json.Unmarshal(rawJson, &bindingConfiguration)
-		if err != nil {
-			logger.Error("unmarshal-binding-configuration", err)
-			return bindingConfiguration, err
-		}
-	}
-	return bindingConfiguration, err
-}
+// 🚧 To-do: Remove me!
+// func (h *PublicApiHandler) getBindingConfigurationFromRequest(rawJson json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {
+//	var bindingConfiguration models.BindingConfig
+//	var err error
+//	if rawJson != nil {
+//		err = json.Unmarshal(rawJson, &bindingConfiguration)
+//		if err != nil {
+//			logger.Error("unmarshal-binding-configuration", err)
+//			return bindingConfiguration, err
+//		}
+//	}
+//	return bindingConfiguration, err
+// }
 
-func buildResponse(scalingPolicyWithCustomMetricStrategy models.ScalingPolicyWithBindingConfig, logger lager.Logger) ([]byte, error) {
-	responseJson, err := json.Marshal(scalingPolicyWithCustomMetricStrategy)
-	if err != nil {
-		logger.Error("Failed to marshal policy", err)
-		return nil, errors.New("error: marshalling policy")
-	}
-	return responseJson, nil
-}
+// // 🚧 To-do: Remove me!
+// func buildResponse(scalingPolicyWithCustomMetricStrategy models.ScalingPolicyWithBindingConfig, logger lager.Logger) ([]byte, error) {
+//	responseJson, err := json.Marshal(scalingPolicyWithCustomMetricStrategy)
+//	if err != nil {
+//		logger.Error("Failed to marshal policy", err)
+//		return nil, errors.New("error: marshalling policy")
+//	}
+//	return responseJson, nil
+// }

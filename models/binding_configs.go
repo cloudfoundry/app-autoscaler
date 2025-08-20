@@ -20,6 +20,9 @@ import (
 */
 
 // BindingConfig represents the configuration for a service binding.
+//
+// ⛔ Do not create `BindingConfig` values directly via `BindingConfig{}` because it can lead to
+// undefined behaviour due to bypassing all validations.  Use the constructor-functions instead!
 type BindingConfig struct {
 	appGUID       GUID                 // Empty value represents null-value (i.e. not set).
 	customMetrics customMetricsConfig
@@ -115,6 +118,10 @@ func (bc *BindingConfig) GetCustomMetricStrategy() CustomMetricsStrategy {
 
 // CustomMetricsStrategy defines the strategy for submitting custom metrics. It can be either
 // "bound_app" or "same_app".
+//
+// ⛔ Do not create CustomMetricsStrategy values directly via `CustomMetricsStrategy{}` because it
+// can lead to undefined behaviour due to bypassing all validations.  Use the predefined constants
+// instead.
 type CustomMetricsStrategy struct {
 	value string // Not exported to prohibit construction of CustomMetricsStrategy values outside
 				 // this package.
@@ -131,6 +138,7 @@ var (
 func (s CustomMetricsStrategy) String() string {
 	return s.value
 }
+var _ fmt.Stringer = CustomMetricsStrategy{}
 
 func (s CustomMetricsStrategy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.value)
@@ -193,6 +201,10 @@ func (bc BindingConfig) ToRawJSON() (json.RawMessage, error) {
 }
 
 func BindingConfigFromRawJSON(data json.RawMessage) (*BindingConfig, error) {
+	if len(data) <= 0 {
+		return NewBindingConfig(GUID(""), DefaultCustomMetricsStrategy), nil
+	}
+
 	var bindingConfigRaw bindingConfigJsonRawRepr
 	if err := json.Unmarshal(data, &bindingConfigRaw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BindingConfig: %w", err)

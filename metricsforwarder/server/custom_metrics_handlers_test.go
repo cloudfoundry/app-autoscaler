@@ -84,12 +84,12 @@ var _ = Describe("MetricHandler", func() {
 					   "instance_index":0,
 					   "test" :
 					   "metrics":[
-					      {
-					         "name":"custom_metric1",
-					         "type":"gauge",
-					         "value":200,
-					         "unit":"unit"
-					      }
+						  {
+							 "name":"custom_metric1",
+							 "type":"gauge",
+							 "value":200,
+							 "unit":"unit"
+						  }
 					   ]
 				}`)
 			})
@@ -202,12 +202,12 @@ var _ = Describe("MetricHandler", func() {
 				body = []byte(`{
 					   "instance_index":0,
 					   "metrics":[
-					      {
-					         "name":"memoryused",
-					         "type":"gauge",
-					         "value":200,
-					         "unit":"unit"
-					      }
+						  {
+							 "name":"memoryused",
+							 "type":"gauge",
+							 "value":200,
+							 "unit":"unit"
+						  }
 					   ]
 				}`)
 				scalingPolicy = &models.ScalingPolicy{
@@ -244,12 +244,12 @@ var _ = Describe("MetricHandler", func() {
 				body = []byte(`{
 					   "instance_index":0,
 					   "metrics":[
-					      {
-					         "name":"wrong_metric_type",
-					         "type":"gauge",
-					         "value":200,
-					         "unit":"unit"
-					      }
+						  {
+							 "name":"wrong_metric_type",
+							 "type":"gauge",
+							 "value":200,
+							 "unit":"unit"
+						  }
 					   ]
 				}`)
 				scalingPolicy = &models.ScalingPolicy{
@@ -308,7 +308,7 @@ var _ = Describe("MetricHandler", func() {
 			})
 			When("neighbour app is bound to same autoscaler instance without policy", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
+					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns(models.CustomMetricsBoundApp, nil)
 					customMetrics := []*models.CustomMetric{
 						{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",

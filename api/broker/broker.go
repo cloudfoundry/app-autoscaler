@@ -502,7 +502,10 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		bindingConfigRaw = details.RawParameters
 	}
 	bindingConfig, err := b.getBindingConfigurationFromRequest(bindingConfigRaw, logger)
-
+	if err != nil {
+		logger.Error("get-binding-configuration-from-request", err)
+		return result, err
+	}
 	// // 🚧 To-do: Check if exactly one is provided.
 	// requestAppGuid := details.BindResource.AppGuid
 	// paramsAppGuid := bindingConfig.Configuration.AppGUID
@@ -515,17 +518,13 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		appGUID = details.AppGUID
 	}
 
-	// 🚧 To-do: Implement feature: service-key-creation
+	// 🚧 To-do: Implement feature: service-key-creation; Use appID from `bindingConfig`!
 	if appGUID == "" {
 		err := errors.New("error: service must be bound to an application - service key creation is not supported")
 		logger.Error("check-required-app-guid", err)
 		return result, apiresponses.NewFailureResponseBuilder(err, http.StatusUnprocessableEntity, "check-required-app-guid").WithErrorKey("RequiresApp").Build()
 	}
 
-	if err != nil {
-		logger.Error("get-binding-configuration-from-request", err)
-		return result, err
-	}
 	policy, err := b.getPolicyFromJsonRawMessage(bindingConfigRaw, instanceID, details.PlanID)
 	if err != nil {
 		logger.Error("get-default-policy", err)

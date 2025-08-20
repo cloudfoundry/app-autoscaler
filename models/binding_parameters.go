@@ -8,8 +8,8 @@ import (
 // BindingParameters contains all data the necessary data to establish the relationship between
 // application binding configuration and its associated scaling behavior.
 //
-// This type is immutable and should be created using the constructor function
-// `NewBindingParameters`.
+// ⛔ Do not create `BindingParameters` values directly via `BindingParameters{}` because it can lead to
+// undefined behaviour due to bypassing all validations. Use the constructor-functions instead!
 type BindingParameters struct {
 	// configuration contains the binding configuration settings.
 	configuration BindingConfig

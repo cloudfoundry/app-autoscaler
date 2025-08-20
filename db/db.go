@@ -82,8 +82,8 @@ type BindingDB interface {
 	GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error)
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	IsAppBoundToSameAutoscaler(ctx context.Context, appId string, appToScaleId string) (bool, error)
-	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error)
-	SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error
+	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (models.CustomMetricsStrategy, error)
+	SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy models.CustomMetricsStrategy, actionName string) error
 }
 
 type AppMetricDB interface {

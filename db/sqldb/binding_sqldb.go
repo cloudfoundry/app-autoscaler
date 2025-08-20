@@ -17,6 +17,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"slices"
 )
 
 type BindingSQLDB struct {
@@ -438,36 +439,39 @@ func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricS
 		return false, nil
 	}
 	// check if the app to scale is in the list of apps bound to the same service instance and return true .otherwise return false
-	for _, app := range appIds {
-		if app == appToScaleId {
+	if slices.Contains(appIds, appToScaleId) {
 			return true, nil
 		}
-	}
 	return false, nil
 }
 
-func (bdb *BindingSQLDB) GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error) {
+func (bdb *BindingSQLDB) GetCustomMetricStrategyByAppId(
+	ctx context.Context, appId string,
+) (models.CustomMetricsStrategy, error) {
 	customMetricsStrategy, err := bdb.fetchCustomMetricStrategyByAppId(ctx, appId)
 	if err != nil {
-		return "", err
+		return models.DefaultCustomMetricsStrategy, err
 	}
 	return customMetricsStrategy, nil
 }
 
-func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error {
+func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(
+	ctx context.Context, appId string,
+	customMetricsStrategy models.CustomMetricsStrategy, actionName string,
+) error {
 	appBinding, err := bdb.getServiceBindingByAppId(ctx, appId)
 	if err != nil {
 		return err
 	}
 	query := bdb.sqldb.Rebind("UPDATE binding SET custom_metrics_strategy = ? WHERE binding_id = ?")
-	result, err := bdb.sqldb.ExecContext(ctx, query, nullableString(customMetricsStrategy), appBinding.ServiceBindingID)
+	result, err := bdb.sqldb.ExecContext(ctx, query, nullableString(customMetricsStrategy.String()), appBinding.ServiceBindingID)
 	if err != nil {
 		bdb.logger.Error(fmt.Sprintf("failed to %s custom metric submission strategy", actionName), err,
 			lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding.ServiceInstanceID, "appId": appId})
 		return err
 	}
 	if rowsAffected, err := result.RowsAffected(); err != nil || rowsAffected == 0 {
-		if customMetricsStrategy == appBinding.CustomMetricsStrategy {
+		if customMetricsStrategy.String() == appBinding.CustomMetricsStrategy {
 			bdb.logger.Info("custom metrics strategy already exists", lager.Data{"query": query, "customMetricsStrategy": customMetricsStrategy, "bindingId": appBinding, "appId": appId})
 			return nil
 		}
@@ -478,27 +482,42 @@ func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(ctx context.Context, ap
 	return nil
 }
 
-func (bdb *BindingSQLDB) fetchCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error) {
-	var customMetricsStrategy sql.NullString
+func (bdb *BindingSQLDB) fetchCustomMetricStrategyByAppId(
+	ctx context.Context, appId string,
+) (models.CustomMetricsStrategy, error) {
+	var customMetricsStrategyRaw sql.NullString
 	query := bdb.sqldb.Rebind("SELECT custom_metrics_strategy FROM binding WHERE app_id =?")
 	rows, err := bdb.sqldb.QueryContext(ctx, query, appId)
 
 	if err != nil {
 		bdb.logger.Error("get-custom-metrics-strategy-by-appid", err, lager.Data{"query": query, "appId": appId})
-		return "", err
+		return models.DefaultCustomMetricsStrategy, err
 	}
 	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
-		if err = rows.Scan(&customMetricsStrategy); err != nil {
+		if err = rows.Scan(&customMetricsStrategyRaw); err != nil {
 			bdb.logger.Error("error-finding-customMetricsStrategy-in-binding-table", err)
-			return "", err
+			return models.DefaultCustomMetricsStrategy, err
 		}
 	}
 	err = rows.Err()
 	if err != nil {
 		bdb.logger.Error("error-finding-customMetricsStrategy-in-binding-table", err)
-		return "", err
+		return models.DefaultCustomMetricsStrategy, err
 	}
-	return customMetricsStrategy.String, nil
+
+	var customMetricsStrategy models.CustomMetricsStrategy
+	switch customMetricsStrategyRaw.String {
+	case models.CustomMetricsBoundApp.String():
+		customMetricsStrategy = models.CustomMetricsBoundApp
+	case models.CustomMetricsSameApp.String():
+		customMetricsStrategy = models.CustomMetricsSameApp
+	default:
+		bdb.logger.Error("unsupported-custom-metrics-strategy", fmt.Errorf("unsupported CustomMetricsStrategy: %s", customMetricsStrategyRaw.String),
+			lager.Data{"query": query, "appId": appId})
+		return models.DefaultCustomMetricsStrategy, fmt.Errorf("unsupported CustomMetricsStrategy: %s", customMetricsStrategyRaw.String)
+	}
+
+	return customMetricsStrategy, nil
 }
