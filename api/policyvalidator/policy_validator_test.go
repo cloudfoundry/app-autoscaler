@@ -18,7 +18,7 @@ var _ = Describe("PolicyValidator", func() {
 		policyValidator        *PolicyValidator
 		errResult              []PolicyValidationErrors
 		policyString           string
-		policy                 *models.ScalingPolicy
+		policy                 *models.PolicyDefinition
 		policyJson             string
 		lowerCPUThreshold      int
 		upperCPUThreshold      int
@@ -2546,7 +2546,7 @@ var _ = Describe("PolicyValidator", func() {
 								"instance_min_count":5,
 								"instance_max_count":10,
 								"initial_min_instance_count":7
-							 	}
+								}
 							]
 						 }
 					}`
@@ -2568,18 +2568,18 @@ var _ = Describe("PolicyValidator", func() {
 		When("custom_metrics is missing", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ]
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				]
+			}`
 			})
 			It("should not fail", func() {
 				Expect(errResult).To(BeNil())
@@ -2588,23 +2588,23 @@ var _ = Describe("PolicyValidator", func() {
 		When("allow_from is missing in metric_submission_strategy", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ],
-                "configuration": {
-                    "custom_metrics": {
-                        "metric_submission_strategy": {}
-                    }
-                }
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				],
+				"configuration": {
+					"custom_metrics": {
+						"metric_submission_strategy": {}
+					}
+				}
+			}`
 			})
 			It("should fail", func() {
 				Expect(errResult).To(Equal([]PolicyValidationErrors{
@@ -2618,25 +2618,25 @@ var _ = Describe("PolicyValidator", func() {
 		When("allow_from is invalid in metric_submission_strategy", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ],
-                "configuration": {
-                    "custom_metrics": {
-                        "metric_submission_strategy": {
-                            "allow_from": "invalid_value"
-                        }
-                    }
-                }
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				],
+				"configuration": {
+					"custom_metrics": {
+						"metric_submission_strategy": {
+							"allow_from": "invalid_value"
+						}
+					}
+				}
+			}`
 			})
 			It("should fail", func() {
 				Expect(errResult).To(Equal([]PolicyValidationErrors{
@@ -2650,25 +2650,25 @@ var _ = Describe("PolicyValidator", func() {
 		When("allow_from is valid in metric_submission_strategy", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ],
-                "configuration": {
-                    "custom_metrics": {
-                        "metric_submission_strategy": {
-                            "allow_from": "bound_app"
-                        }
-                    }
-                }
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				],
+				"configuration": {
+					"custom_metrics": {
+						"metric_submission_strategy": {
+							"allow_from": "bound_app"
+						}
+					}
+				}
+			}`
 			})
 			It("should succeed", func() {
 

@@ -14,7 +14,7 @@ type planChecker struct {
 	logger lager.Logger
 }
 type PlanChecker interface {
-	CheckPlan(policy *models.ScalingPolicy, planID string) (bool, string, error)
+	CheckPlan(policy *models.PolicyDefinition, planID string) (bool, string, error)
 	IsPlanUpdatable(planID string) (bool, error)
 }
 
@@ -25,7 +25,7 @@ func NewPlanChecker(config *config.PlanCheckConfig, logger lager.Logger) *planCh
 	}
 }
 
-func (pc planChecker) CheckPlan(policy *models.ScalingPolicy, planID string) (bool, string, error) {
+func (pc planChecker) CheckPlan(policy *models.PolicyDefinition, planID string) (bool, string, error) {
 	if pc.conf == nil {
 		pc.logger.Info("plan-checker-not-configured-allowing-all")
 		return true, "", nil

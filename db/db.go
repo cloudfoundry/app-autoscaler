@@ -52,9 +52,9 @@ type PolicyDB interface {
 	io.Closer
 
 	GetAppIds(ctx context.Context) (map[string]bool, error)
-	GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error)
-	SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error
-	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.ScalingPolicy, newPolicyGuid string) ([]string, error)
+	GetAppPolicy(ctx context.Context, appId string) (*models.PolicyDefinition, error)
+	SaveAppPolicy(ctx context.Context, appId string, policy *models.PolicyDefinition, policyGuid string) error
+	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.PolicyDefinition, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	DeletePolicy(ctx context.Context, appId string) error

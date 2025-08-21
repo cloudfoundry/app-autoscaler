@@ -42,7 +42,7 @@ var _ = Describe("MetricHandler", func() {
 
 		found bool
 
-		scalingPolicy *models.ScalingPolicy
+		scalingPolicy *models.PolicyDefinition
 
 		serverURL *url.URL
 	)
@@ -109,7 +109,7 @@ var _ = Describe("MetricHandler", func() {
 		Context("when a valid request to publish custom metrics comes", func() {
 			Context("when allowedMetrics exists in the cache", func() {
 				BeforeEach(func() {
-					scalingPolicy = &models.ScalingPolicy{
+					scalingPolicy = &models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 6,
 						ScalingRules: []*models.ScalingRule{{
@@ -140,7 +140,7 @@ var _ = Describe("MetricHandler", func() {
 
 			Context("when allowedMetrics does not exists in the cache but exist in the database", func() {
 				BeforeEach(func() {
-					scalingPolicy = &models.ScalingPolicy{
+					scalingPolicy = &models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 6,
 						ScalingRules: []*models.ScalingRule{{
@@ -210,7 +210,7 @@ var _ = Describe("MetricHandler", func() {
 						  }
 					   ]
 				}`)
-				scalingPolicy = &models.ScalingPolicy{
+				scalingPolicy = &models.PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
@@ -252,7 +252,7 @@ var _ = Describe("MetricHandler", func() {
 						  }
 					   ]
 				}`)
-				scalingPolicy = &models.ScalingPolicy{
+				scalingPolicy = &models.PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
@@ -280,7 +280,7 @@ var _ = Describe("MetricHandler", func() {
 		Context("when a valid request to publish custom metrics comes from a neighbour App", func() {
 			When("neighbour app is bound to same autoscaler instance with policy", func() {
 				BeforeEach(func() {
-					scalingPolicy = &models.ScalingPolicy{
+					scalingPolicy = &models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 6,
 						ScalingRules: []*models.ScalingRule{{

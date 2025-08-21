@@ -30,7 +30,7 @@ var (
 	testPlanID        string
 	testDefaultPolicy string
 	testDefaultGuid   string
-	scalingPolicy     = &models.ScalingPolicy{}
+	scalingPolicy     = &models.PolicyDefinition{}
 )
 
 func TestServer(t *testing.T) {

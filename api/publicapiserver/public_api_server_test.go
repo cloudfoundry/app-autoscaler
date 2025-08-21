@@ -408,7 +408,7 @@ var _ = Describe("PublicApiServer", func() {
 				Context("when calling get policy endpoint", func() {
 					JustBeforeEach(func() {
 						schedulerStatus = http.StatusOK
-						fakePolicyDB.GetAppPolicyReturns(&models.ScalingPolicy{
+						fakePolicyDB.GetAppPolicyReturns(&models.PolicyDefinition{
 							InstanceMax: 5,
 							InstanceMin: 1,
 							ScalingRules: []*models.ScalingRule{

@@ -144,7 +144,7 @@ func cleanPolicyTable() {
 	}
 }
 
-func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy, policyGuid string) {
+func insertPolicy(appId string, scalingPolicy *models.PolicyDefinition, policyGuid string) {
 	policyJson, e := json.Marshal(scalingPolicy)
 	if e != nil {
 		Fail("failed to marshall scaling policy" + e.Error())
@@ -158,7 +158,7 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy, policyGuid 
 	}
 }
 
-func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, guid string) {
+func insertPolicyWithGuid(appId string, scalingPolicy *models.PolicyDefinition, guid string) {
 	By("Insert policy:" + guid)
 	policyJson, e := json.Marshal(scalingPolicy)
 	if e != nil {
@@ -400,7 +400,7 @@ func validateLockNotInDB(owner string) error {
 }
 
 func formatPolicyString(policyStr string) (string, error) {
-	scalingPolicy := &models.ScalingPolicy{}
+	scalingPolicy := &models.PolicyDefinition{}
 	err := json.Unmarshal([]byte(policyStr), &scalingPolicy)
 	if err != nil {
 		return "", fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)

@@ -23,14 +23,14 @@ const testPolicyStr = `
    "instance_min_count":1,
    "instance_max_count":5,
    "scaling_rules":[
-      {
-         "metric_type":"test-metric-name",
-         "breach_duration_secs":300,
-         "threshold":30,
-         "operator":"<",
-         "cool_down_secs":300,
-         "adjustment":"-1"
-      }
+	  {
+		 "metric_type":"test-metric-name",
+		 "breach_duration_secs":300,
+		 "threshold":30,
+		 "operator":"<",
+		 "cool_down_secs":300,
+		 "adjustment":"-1"
+	  }
    ]
 }`
 
@@ -175,7 +175,7 @@ var _ = Describe("AppManager", func() {
 				Eventually(appManager.GetPolicies).Should(Equal(map[string]*models.AppPolicy{
 					testAppId: {
 						AppId: testAppId,
-						ScalingPolicy: &models.ScalingPolicy{
+						ScalingPolicy: &models.PolicyDefinition{
 							InstanceMax: 5,
 							InstanceMin: 1,
 							ScalingRules: []*models.ScalingRule{{

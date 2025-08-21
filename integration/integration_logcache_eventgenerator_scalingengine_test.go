@@ -52,7 +52,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale out", func() {
 			Context("application's responsetime break the scaling out rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -80,7 +80,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's memoryutil do not break the scaling out rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -110,7 +110,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale in", func() {
 			Context("application's memoryutil break the scaling in rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -138,7 +138,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's memoryutil do not break the scaling in rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -173,7 +173,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale out", func() {
 			Context("application's memory break the scaling out rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -201,7 +201,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's memory do not break the scaling out rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -231,7 +231,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale in", func() {
 			Context("application's memory break the scaling in rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -259,7 +259,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's memory do not break the scaling in rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -294,7 +294,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale out", func() {
 			Context("application's responsetime break the scaling out rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -322,7 +322,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's responsetime do not break the scaling out rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -352,7 +352,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale in", func() {
 			Context("application's responsetime break the scaling in rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -380,7 +380,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's responsetime do not break the scaling in rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -415,7 +415,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale out", func() {
 			Context("application's throughput break the scaling out rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -443,7 +443,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's throughput do not break the scaling out rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -473,7 +473,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale in", func() {
 			Context("application's throughput break the scaling in rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -501,7 +501,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's throughput do not break the scaling in rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -536,7 +536,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale out", func() {
 			Context("application's queuelength break the scaling out rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -564,7 +564,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's queuelength do not break the scaling out rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -594,7 +594,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 		Context("Scale in", func() {
 			Context("application's queuelength break the scaling in rule for more than breach duration", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{
@@ -622,7 +622,7 @@ var _ = Describe("Integration_Eventgenerator_Scalingengine", func() {
 			})
 			Context("application's queuelength do not break the scaling in rule", func() {
 				BeforeEach(func() {
-					testPolicy := models.ScalingPolicy{
+					testPolicy := models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 5,
 						ScalingRules: []*models.ScalingRule{

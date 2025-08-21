@@ -14,7 +14,7 @@ var _ = Describe("BindingParameters", func() {
 
 	Context("NewBindingParameters", func() {
 		var (
-			scalingPolicy *ScalingPolicy
+			scalingPolicy ScalingPolicy
 			config        BindingConfig
 		)
 
@@ -32,7 +32,7 @@ var _ = Describe("BindingParameters", func() {
 
 		Context("with valid scaling policy", func() {
 			BeforeEach(func() {
-				scalingPolicy = &ScalingPolicy{}
+				scalingPolicy = *NewScalingPolicy(DefaultCustomMetricsStrategy, nil)
 			})
 
 			It("should create binding parameters with provided scaling policy", func() {
@@ -48,7 +48,7 @@ var _ = Describe("BindingParameters", func() {
 		var (
 			rawJSON []byte
 			config  BindingConfig
-			scalingPolicy *ScalingPolicy
+			scalingPolicy *PolicyDefinition
 		)
 
 		JustBeforeEach(func() {
@@ -57,8 +57,8 @@ var _ = Describe("BindingParameters", func() {
 
 		Context("with valid configuration and without policy", func() {
 			BeforeEach(func() {
-				rawJSON = []byte(`{"configuration": {"app_guid": "test-app-guid"}}`)
-				config = *NewBindingConfig(GUID("test-app-guid"), CustomMetricsSameApp)
+				rawJSON = []byte(`{"binding_cfg": {"app_guid": "test-app-guid"}}`)
+				config = *NewBindingConfig(GUID("test-app-guid"), DefaultCustomMetricsStrategy)
 				scalingPolicy = nil
 			})
 
@@ -66,7 +66,6 @@ var _ = Describe("BindingParameters", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingParameters).NotTo(BeNil())
 				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
-				Expect(bindingParameters.GetScalingPolicy()).To(BeNil())
 			})
 		})
 
@@ -105,7 +104,7 @@ var _ = Describe("BindingParameters", func() {
   ]
 }`)
 				config = *NewBindingConfig(GUID("test-app-guid"), CustomMetricsBoundApp)
-				scalingPolicy = &ScalingPolicy{
+				scalingPolicy = &PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 4,
 					ScalingRules: []*ScalingRule{
@@ -163,7 +162,7 @@ var _ = Describe("BindingParameters", func() {
   ]
 }`)
 				config = *DefaultBindingConfig()
-				scalingPolicy = &ScalingPolicy{
+				scalingPolicy = &PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 4,
 					ScalingRules: []*ScalingRule{

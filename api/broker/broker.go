@@ -172,14 +172,14 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 	return result, err
 }
 
-func (b *Broker) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
+func (b *Broker) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanceID string, planID string) (*models.PolicyDefinition, error) {
 	if policyJson != nil || len(policyJson) != 0 {
 		return b.validateAndCheckPolicy(policyJson, instanceID, planID)
 	}
 	return nil, nil
 }
 
-func (b *Broker) validateAndCheckPolicy(rawJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
+func (b *Broker) validateAndCheckPolicy(rawJson json.RawMessage, instanceID string, planID string) (*models.PolicyDefinition, error) {
 	policy, errResults := b.policyValidator.ParseAndValidatePolicy(rawJson)
 	logger := b.logger.Session("validate-and-check-policy", lager.Data{"instanceID": instanceID, "policy": policy, "planID": planID, "errResults": errResults})
 
@@ -348,7 +348,7 @@ func (b *Broker) Update(ctx context.Context, instanceID string, details domain.U
 	return result, nil
 }
 
-func (b *Broker) applyDefaultPolicyUpdate(ctx context.Context, allBoundApps []string, serviceInstance *models.ServiceInstance, defaultPolicy *models.ScalingPolicy, defaultPolicyGuid string) error {
+func (b *Broker) applyDefaultPolicyUpdate(ctx context.Context, allBoundApps []string, serviceInstance *models.ServiceInstance, defaultPolicy *models.PolicyDefinition, defaultPolicyGuid string) error {
 	if defaultPolicy == nil {
 		// default policy was present and will now be removed
 		return b.removeDefaultPolicyFromApps(ctx, serviceInstance)
@@ -381,7 +381,7 @@ func (b *Broker) getServiceInstance(ctx context.Context, instanceID string) (*mo
 	return serviceInstance, nil
 }
 
-func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolicy *models.ScalingPolicy, updatedDefaultPolicyGuid string, allBoundApps []string, serviceInstance *models.ServiceInstance) error {
+func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolicy *models.PolicyDefinition, updatedDefaultPolicyGuid string, allBoundApps []string, serviceInstance *models.ServiceInstance) error {
 	instanceID := serviceInstance.ServiceInstanceId
 	b.logger.Info("update-service-instance-set-or-update", lager.Data{"instanceID": instanceID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "serviceInstance": serviceInstance})
 
@@ -421,7 +421,7 @@ func (b *Broker) removeDefaultPolicyFromApps(ctx context.Context, serviceInstanc
 }
 
 func (b *Broker) checkScalingPoliciesUnderNewPlan(ctx context.Context, allBoundApps []string, servicePlan string, instanceID string) error {
-	var existingPolicy *models.ScalingPolicy
+	var existingPolicy *models.PolicyDefinition
 	var err error
 	for _, appId := range allBoundApps {
 		existingPolicy, err = b.policydb.GetAppPolicy(ctx, appId)
@@ -438,7 +438,7 @@ func (b *Broker) checkScalingPoliciesUnderNewPlan(ctx context.Context, allBoundA
 	return nil
 }
 
-func (b *Broker) determineDefaultPolicy(parameters *models.InstanceParameters, serviceInstance *models.ServiceInstance, planID string) (defaultPolicy *models.ScalingPolicy, defaultPolicyGuid string, defaultPolicyIsNew bool, err error) {
+func (b *Broker) determineDefaultPolicy(parameters *models.InstanceParameters, serviceInstance *models.ServiceInstance, planID string) (defaultPolicy *models.PolicyDefinition, defaultPolicyGuid string, defaultPolicyIsNew bool, err error) {
 	if serviceInstance.DefaultPolicy != "" {
 		err = json.Unmarshal([]byte(serviceInstance.DefaultPolicy), &defaultPolicy)
 		if err != nil {
@@ -642,7 +642,7 @@ func getOrDefaultCredentialType(policyJson json.RawMessage, credentialTypeConfig
 	return credentialType, nil
 }
 
-func (b *Broker) attachPolicyToApp(ctx context.Context, appGUID string, policy *models.ScalingPolicy, policyGuidStr string, logger lager.Logger) error {
+func (b *Broker) attachPolicyToApp(ctx context.Context, appGUID string, policy *models.PolicyDefinition, policyGuidStr string, logger lager.Logger) error {
 	logger = logger.Session("saving-policy-json", lager.Data{"policy": policy})
 	if policy == nil {
 		logger.Info("no-policy-json-provided")
@@ -788,7 +788,7 @@ func (b *Broker) LastBindingOperation(_ context.Context, instanceID string, bind
 	return domain.LastOperation{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "last-binding-operation-is-not-implemented")
 }
 
-func (b *Broker) planDefinitionExceeded(policy *models.ScalingPolicy, planID string, instanceID string) error {
+func (b *Broker) planDefinitionExceeded(policy *models.PolicyDefinition, planID string, instanceID string) error {
 	ok, checkResult, err := b.PlanChecker.CheckPlan(policy, planID)
 	if err != nil {
 		b.logger.Error("failed to check policy for plan adherence", err, lager.Data{"instanceID": instanceID, "policy": policy})

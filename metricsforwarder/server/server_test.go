@@ -34,7 +34,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 		req           *http.Request
 		body          []byte
 		err           error
-		scalingPolicy *models.ScalingPolicy
+		scalingPolicy *models.PolicyDefinition
 		client        *http.Client
 
 		serverURL *url.URL
@@ -55,7 +55,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("POST /v1/apps/some-app-id/metrics", func() {
 		BeforeEach(func() {
-			scalingPolicy = &models.ScalingPolicy{
+			scalingPolicy = &models.PolicyDefinition{
 				InstanceMin: 1,
 				InstanceMax: 6,
 				ScalingRules: []*models.ScalingRule{{
@@ -166,7 +166,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 	When("multiple requests to forward custom metrics come beyond rate limit", func() {
 		BeforeEach(func() {
 			rateLimiter.ExceedsLimitReturns(true)
-			scalingPolicy = &models.ScalingPolicy{
+			scalingPolicy = &models.PolicyDefinition{
 				InstanceMin: 1,
 				InstanceMax: 6,
 				ScalingRules: []*models.ScalingRule{{

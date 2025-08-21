@@ -137,7 +137,7 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 //   - Returns (nil, nil) when no policy exists for the given appId
 //   - Returns (nil, error) on database connection issues or query execution failures
 //   - Returns (nil, error) when policy JSON is malformed or cannot be unmarshaled
-func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error) {
+func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models.PolicyDefinition, error) {
 	var policyJson []byte
 	query := pdb.sqldb.Rebind("SELECT policy_json FROM policy_json WHERE app_id =?")
 	err := pdb.sqldb.QueryRowContext(ctx, query, appId).Scan(&policyJson)
@@ -151,7 +151,7 @@ func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models
 		return nil, err
 	}
 
-	scalingPolicy := &models.ScalingPolicy{}
+	scalingPolicy := &models.PolicyDefinition{}
 	err = json.Unmarshal(policyJson, scalingPolicy)
 	if err != nil {
 		pdb.logger.Error("get-app-policy-unmarshal", err, lager.Data{"policyJson": string(policyJson)})
@@ -161,7 +161,7 @@ func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models
 }
 
 
-func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error {
+func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policy *models.PolicyDefinition, policyGuid string) error {
 	var query string
 	queryPrefix := "INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?,?,?) "
 	switch pdb.sqldb.DriverName() {
@@ -181,7 +181,7 @@ func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policy 
 	return err
 }
 
-func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundApps []string, oldPolicyGuid string, policy *models.ScalingPolicy, newPolicyGuid string) ([]string, error) {
+func (pdb *PolicySQLDB) SetOrUpdateDefaultAppPolicy(ctx context.Context, boundApps []string, oldPolicyGuid string, policy *models.PolicyDefinition, newPolicyGuid string) ([]string, error) {
 	if len(boundApps) == 0 && oldPolicyGuid == "" {
 		return nil, nil
 	}

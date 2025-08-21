@@ -240,7 +240,7 @@ var _ = Describe("PublicApiHandler", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID // 🚧 To-do: 🧐 When do we get an empty app-id from there?
 				bindingdb.GetCustomMetricStrategyByAppIdReturns(models.DefaultCustomMetricsStrategy, nil)
-				policydb.GetAppPolicyReturns(&models.ScalingPolicy{
+				policydb.GetAppPolicyReturns(&models.PolicyDefinition{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
@@ -1048,7 +1048,7 @@ func setupRequest(requestBody, appId string, pathVariables map[string]string) *h
 	return req
 }
 func setupPolicy(policyDb *fakes.FakePolicyDB) {
-	policyDb.GetAppPolicyReturns(&models.ScalingPolicy{
+	policyDb.GetAppPolicyReturns(&models.PolicyDefinition{
 		InstanceMax: 5,
 		InstanceMin: 1,
 		ScalingRules: []*models.ScalingRule{

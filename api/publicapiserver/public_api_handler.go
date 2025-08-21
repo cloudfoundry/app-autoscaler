@@ -111,7 +111,7 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// 🚧 To-do: calculate which app-id should be in there – empty one or he one from above?
+	// 🚧 To-do: Serialise a `ScalingPolicy (alt)` in the new terminology.
 	bindingConfig := models.NewBindingConfig(models.GUID(appId), customMetricStrategy)
 	bindingParameters := models.NewBindingParameters(*bindingConfig, scalingPolicy)
 	bindingParametersRawJSON, err := bindingParameters.ToRawJSON()
@@ -259,7 +259,7 @@ func (h *PublicApiHandler) saveDefaultPolicy(w http.ResponseWriter, r *http.Requ
 	policyGuidStr := serviceInstance.DefaultPolicyGuid
 	logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
 
-	var policy *models.ScalingPolicy
+	var policy *models.PolicyDefinition
 	if err := json.Unmarshal([]byte(policyStr), &policy); err != nil {
 		h.logger.Error("default policy invalid", err, lager.Data{"appId": appId, "policy": policyStr})
 		writeErrorResponse(w, http.StatusInternalServerError, "Default policy not valid")

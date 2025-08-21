@@ -32,7 +32,7 @@ var _ = Describe("Aggregator", func() {
 		policyMap            = map[string]*models.AppPolicy{
 			testAppId: {
 				AppId: testAppId,
-				ScalingPolicy: &models.ScalingPolicy{
+				ScalingPolicy: &models.PolicyDefinition{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{

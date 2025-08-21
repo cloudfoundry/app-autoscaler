@@ -18,7 +18,7 @@ var _ = Describe("Plan check operations", func() {
 		planChecker      plancheck.PlanChecker
 		ok               bool
 		err              error
-		testPolicy       *models.ScalingPolicy
+		testPolicy       *models.PolicyDefinition
 		testPlanId       string
 	)
 	BeforeEach(func() {})
@@ -32,7 +32,7 @@ var _ = Describe("Plan check operations", func() {
 			ok, validationResult, err = planChecker.CheckPlan(testPolicy, testPlanId)
 		})
 		BeforeEach(func() {
-			testPolicy = &models.ScalingPolicy{
+			testPolicy = &models.PolicyDefinition{
 				InstanceMin:  1,
 				InstanceMax:  4,
 				ScalingRules: nil,
@@ -64,7 +64,7 @@ var _ = Describe("Plan check operations", func() {
 				ok, validationResult, err = planChecker.CheckPlan(testPolicy, testPlanId)
 			})
 			BeforeEach(func() {
-				testPolicy = &models.ScalingPolicy{
+				testPolicy = &models.PolicyDefinition{
 					InstanceMin:  1,
 					InstanceMax:  4,
 					ScalingRules: nil,
@@ -105,7 +105,7 @@ var _ = Describe("Plan check operations", func() {
 			Context("when checking a plan with too many rules", func() {
 				BeforeEach(func() {
 					testPlanId = "small-plan-id"
-					testPolicy = &models.ScalingPolicy{
+					testPolicy = &models.PolicyDefinition{
 						ScalingRules: []*models.ScalingRule{
 							{},
 							{},
@@ -121,7 +121,7 @@ var _ = Describe("Plan check operations", func() {
 			Context("when checking a plan with enough rules allowed", func() {
 				BeforeEach(func() {
 					testPlanId = "small-plan-id"
-					testPolicy = &models.ScalingPolicy{
+					testPolicy = &models.PolicyDefinition{
 						InstanceMin: 1,
 						InstanceMax: 10,
 						ScalingRules: []*models.ScalingRule{
@@ -138,7 +138,7 @@ var _ = Describe("Plan check operations", func() {
 			Context("when checking a plan with too many schedules", func() {
 				BeforeEach(func() {
 					testPlanId = "small-plan-id"
-					testPolicy = &models.ScalingPolicy{
+					testPolicy = &models.PolicyDefinition{
 						InstanceMin:  1,
 						InstanceMax:  10,
 						ScalingRules: nil,
@@ -162,7 +162,7 @@ var _ = Describe("Plan check operations", func() {
 			Context("when checking a plan with enough schedules allowed", func() {
 				BeforeEach(func() {
 					testPlanId = "small-plan-id"
-					testPolicy = &models.ScalingPolicy{
+					testPolicy = &models.PolicyDefinition{
 						InstanceMin:  1,
 						InstanceMax:  10,
 						ScalingRules: nil,

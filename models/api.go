@@ -62,7 +62,7 @@ type ServiceBinding struct {
 
 // 🚧 To-do: We now have `BindingParameters` and this is obsolete!
 type ScalingPolicyWithBindingConfig struct {
-	ScalingPolicy
+	PolicyDefinition
 	*BindingConfig `json:"configuration,omitempty"`
 }
 
