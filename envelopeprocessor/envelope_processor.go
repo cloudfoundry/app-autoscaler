@@ -5,7 +5,6 @@ import (
 	"math"
 	"slices"
 	"strconv"
-	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
@@ -73,110 +72,6 @@ func GetGaugeInstanceMetrics(envelopes []*loggregator_v2.Envelope, currentTimeSt
 		}
 	}
 	return metrics
-}
-
-func GetHttpStartStopInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, currentTimestamp int64,
-	collectionInterval time.Duration) []models.AppInstanceMetric {
-	var metrics []models.AppInstanceMetric
-
-	numRequestsPerAppIdx := calcNumReqs(envelopes)
-	sumResponseTimesPerAppIdx := calcSumResponseTimes(envelopes)
-
-	throughputMetrics := getThroughputInstanceMetrics(envelopes, appID, numRequestsPerAppIdx, collectionInterval, currentTimestamp)
-	responseTimeMetric := getResponsetimeInstanceMetrics(envelopes, appID, numRequestsPerAppIdx, sumResponseTimesPerAppIdx, currentTimestamp)
-
-	metrics = append(metrics, throughputMetrics...)
-	metrics = append(metrics, responseTimeMetric...)
-
-	return metrics
-}
-
-func getResponsetimeInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, numRequestsPerAppIdx map[uint64]int64, sumReponseTimesPerAppIdx map[uint64]int64, currentTimestamp int64) []models.AppInstanceMetric {
-	var metrics []models.AppInstanceMetric
-
-	if len(envelopes) == 0 {
-		responseTimeMetric := models.AppInstanceMetric{
-			AppId:         appID,
-			InstanceIndex: 0,
-			Name:          models.MetricNameResponseTime,
-			Unit:          models.UnitMilliseconds,
-			Value:         "0",
-			CollectedAt:   currentTimestamp,
-			Timestamp:     currentTimestamp,
-		}
-		metrics = append(metrics, responseTimeMetric)
-	} else {
-		for _, instanceIndex := range maps.Keys(sumReponseTimesPerAppIdx) {
-			numReq := numRequestsPerAppIdx[instanceIndex]
-			sumResponseTime := sumReponseTimesPerAppIdx[instanceIndex]
-
-			responseTimeMetric := models.AppInstanceMetric{
-				AppId:         appID,
-				InstanceIndex: instanceIndex,
-				Name:          models.MetricNameResponseTime,
-				Unit:          models.UnitMilliseconds,
-				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(sumResponseTime)/float64(numReq*1000*1000)))),
-				CollectedAt:   currentTimestamp,
-				Timestamp:     currentTimestamp,
-			}
-			metrics = append(metrics, responseTimeMetric)
-		}
-	}
-	return metrics
-}
-
-func getThroughputInstanceMetrics(envelopes []*loggregator_v2.Envelope, appID string, numRequestsPerAppIdx map[uint64]int64, collectionInterval time.Duration, currentTimestamp int64) []models.AppInstanceMetric {
-	var metrics []models.AppInstanceMetric
-
-	if len(envelopes) == 0 {
-		throughputMetric := models.AppInstanceMetric{
-			AppId:         appID,
-			InstanceIndex: 0,
-			Name:          models.MetricNameThroughput,
-			Unit:          models.UnitRPS,
-			Value:         "0",
-			CollectedAt:   currentTimestamp,
-			Timestamp:     currentTimestamp,
-		}
-		metrics = append(metrics, throughputMetric)
-	} else {
-		for _, instanceIndex := range maps.Keys(numRequestsPerAppIdx) {
-			numReq := numRequestsPerAppIdx[instanceIndex]
-
-			throughputMetric := models.AppInstanceMetric{
-				AppId:         appID,
-				InstanceIndex: instanceIndex,
-				Name:          models.MetricNameThroughput,
-				Unit:          models.UnitRPS,
-				Value:         fmt.Sprintf("%d", int(math.Ceil(float64(numReq)/collectionInterval.Seconds()))),
-				CollectedAt:   currentTimestamp,
-				Timestamp:     currentTimestamp,
-			}
-			metrics = append(metrics, throughputMetric)
-		}
-	}
-
-	return metrics
-}
-
-func calcSumResponseTimes(envelopes []*loggregator_v2.Envelope) (sumReponseTimesPerAppIdx map[uint64]int64) {
-	sumReponseTimesPerAppIdx = map[uint64]int64{}
-	for _, envelope := range envelopes {
-		instanceIdx, _ := strconv.ParseUint(envelope.InstanceId, 10, 32)
-
-		sumReponseTimesPerAppIdx[instanceIdx] += envelope.GetTimer().Stop - envelope.GetTimer().Start
-	}
-	return
-}
-
-func calcNumReqs(envelopes []*loggregator_v2.Envelope) (numRequestsPerAppIdx map[uint64]int64) {
-	numRequestsPerAppIdx = map[uint64]int64{}
-	for _, envelope := range envelopes {
-		instanceIdx, _ := strconv.ParseUint(envelope.InstanceId, 10, 32)
-
-		numRequestsPerAppIdx[instanceIdx] += 1
-	}
-	return
 }
 
 func isContainerMetricEnvelope(e *loggregator_v2.Envelope) bool {
