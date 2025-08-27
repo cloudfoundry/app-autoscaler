@@ -28,6 +28,7 @@ EXTENSION_FILE := $(shell mktemp)
 
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
+export GOFIPS140=v1.0.0
 
 binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -Ev "vendor|integration")
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
