@@ -28,6 +28,7 @@ EXTENSION_FILE := $(shell mktemp)
 
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
+export GOFIPS140=v1.0.0
 
 binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -Ev "vendor|integration")
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
@@ -221,6 +222,8 @@ mta-build: mta-build-clean
 	mkdir -p $(DEST)
 	mbt build -t /tmp --mtar $(MTAR_FILENAME)
 	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)
+	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
+	du -h $(DEST)/$(MTAR_FILENAME)
 
 mta-build-clean:
 	rm -rf mta_archives

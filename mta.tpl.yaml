@@ -17,18 +17,20 @@ build-parameters:
   before-all:
     - builder: custom
       commands:
-      - make clean go-mod-vendor-mta vendor-changelogs clean-dbtasks package-dbtasks clean-scheduler build-scheduler
+       - make clean go-mod-vendor-mta vendor-changelogs
 
 modules:
   - name: dbtasks
     type: java
-    path: dbtasks/target/db-1.0-SNAPSHOT.jar
+    path: .
     properties:
       JBP_LOG_LEVEL:
       DEBUG:
     build-parameters:
       builder: custom
-      commands: []
+      commands:
+        - make clean-dbtasks package-dbtasks
+      build-result: dbtasks/target/db-1.0-SNAPSHOT.jar
     requires:
     - name: database
     parameters:
@@ -65,8 +67,14 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
+      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.GO_MINOR_VERSION
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler and dbtasks" > /dev/null
+      ignore: [ "scheduler", "dbtasks" ]
     requires:
     - name: apiserver-config
     - name: broker-catalog
@@ -74,7 +82,7 @@ modules:
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -86,15 +94,21 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/cmd/eventgenerator
+      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.GO_MINOR_VERSION
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
+      ignore: [ "scheduler", "dbtasks" , "scalingengine"]
     requires:
     - name: eventgenerator-config
     - name: database
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -106,8 +120,14 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
+      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.GO_MINOR_VERSION
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler and dbtasks" > /dev/null
+      ignore: [ "scheduler", "dbtasks" ]
     requires:
     - name: metricsforwarder-config
     - name: database
@@ -115,7 +135,7 @@ modules:
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -127,15 +147,21 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/cmd/operator
+      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.GO_MINOR_VERSION
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
+      ignore: [ "scheduler", "dbtasks", "eventgenerator"]
     requires:
     - name: operator-config
     - name: database
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
@@ -143,10 +169,12 @@ modules:
 
   - name: scheduler
     type: java
-    path: scheduler/target/scheduler-1.0-SNAPSHOT.war
+    path: .
     build-parameters:
       builder: custom
-      commands: []
+      commands:
+        - make clean-scheduler build-scheduler
+      build-result: scheduler/target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:
       JBP_CONFIG_OPEN_JDK_JRE: '{ "version": "21.+", "jre": { "version": "21.+", "java_home": ".java-buildpack/java_home" } }'
@@ -155,7 +183,7 @@ modules:
     - name: scheduler-config
     - name: database
     parameters:
-      instances: 0 # overidden in build-extension-file.sh
+      instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4

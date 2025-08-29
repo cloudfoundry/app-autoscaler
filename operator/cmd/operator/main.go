@@ -47,6 +47,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	helpers.AssertFIPSMode()
+
 	helpers.SetupOpenTelemetry()
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
