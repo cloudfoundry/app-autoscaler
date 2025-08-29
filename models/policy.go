@@ -65,9 +65,9 @@ func NewScalingPolicy(
 	return scalingPolicy
 }
 
-// GetScalingPolicy returns the scaling policy for the binding and nil if no one has been set (which
+// GetPolicyDefinition returns the scaling policy for the binding and nil if no one has been set (which
 // means, the default-policy is used).
-func (sp *ScalingPolicy) GetScalingPolicy() (p *PolicyDefinition) {
+func (sp *ScalingPolicy) GetPolicyDefinition() (p *PolicyDefinition) {
 	if sp.useDefaultPolicyDef {
 		p = nil // No scaling policy has been set, so we return nil.
 	} else {

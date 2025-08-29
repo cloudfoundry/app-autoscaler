@@ -8,7 +8,7 @@ import (
 
 var _ = Describe("BindingParameters", func() {
 	var (
-		bindingParameters *BindingParameters
+		appScalingCfg *AppScalingConfig
 		err               error
 	)
 
@@ -19,14 +19,14 @@ var _ = Describe("BindingParameters", func() {
 		)
 
 		JustBeforeEach(func() {
-			bindingParameters = NewBindingParameters(config, scalingPolicy)
+			appScalingCfg = NewAppScalingConfig(config, scalingPolicy)
 		})
 
 		Context("with nil scaling policy", func() {
 			It("should create binding parameters with default policy", func() {
-				Expect(bindingParameters).NotTo(BeNil())
-				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
-				Expect(bindingParameters.GetScalingPolicy()).To(BeNil())
+				Expect(appScalingCfg).NotTo(BeNil())
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
+				Expect(appScalingCfg.GetScalingPolicy()).To(BeNil())
 			})
 		})
 
@@ -37,9 +37,9 @@ var _ = Describe("BindingParameters", func() {
 
 			It("should create binding parameters with provided scaling policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(bindingParameters).NotTo(BeNil())
-				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
-				Expect(bindingParameters.GetScalingPolicy()).To(Equal(scalingPolicy))
+				Expect(appScalingCfg).NotTo(BeNil())
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
+				Expect(appScalingCfg.GetScalingPolicy()).To(Equal(scalingPolicy))
 			})
 		})
 	})
@@ -52,7 +52,7 @@ var _ = Describe("BindingParameters", func() {
 		)
 
 		JustBeforeEach(func() {
-			bindingParameters, err = BindingParametersFromRawJSON(rawJSON)
+			appScalingCfg, err = BindingParametersFromRawJSON(rawJSON)
 		})
 
 		Context("with valid configuration and without policy", func() {
@@ -64,8 +64,8 @@ var _ = Describe("BindingParameters", func() {
 
 			It("should create binding parameters successfully", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(bindingParameters).NotTo(BeNil())
-				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
+				Expect(appScalingCfg).NotTo(BeNil())
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
 			})
 		})
 
@@ -73,35 +73,36 @@ var _ = Describe("BindingParameters", func() {
 			BeforeEach(func() {
 				rawJSON = []byte(`
 {
-  "configuration": {
-	  "app_guid": "test-app-guid",
-	  "custom_metrics": {
-		"metric_submission_strategy": {
-			"allow_from": "bound_app"
-		}
+  "binding_cfg": {
+	"app_guid": "test-app-guid",
+	"custom_metrics": {
+	  "metric_submission_strategy": {
+		"allow_from": "bound_app"
 	  }
-  },
-
-  "instance_min_count": 1,
-  "instance_max_count": 4,
-  "scaling_rules": [
-	{
-	  "metric_type": "memoryutil",
-	  "breach_duration_secs": 600,
-	  "threshold": 30,
-	  "operator": "<",
-	  "cool_down_secs": 300,
-	  "adjustment": "-1"
-	},
-	{
-	  "metric_type": "memoryutil",
-	  "breach_duration_secs": 600,
-	  "threshold": 90,
-	  "operator": ">=",
-	  "cool_down_secs": 300,
-	  "adjustment": "+1"
 	}
-  ]
+  },
+  "policy": {
+	"instance_min_count": 1,
+	"instance_max_count": 4,
+	"scaling_rules": [
+	  {
+		"metric_type": "memoryutil",
+		"breach_duration_secs": 600,
+		"threshold": 30,
+		"operator": "<",
+		"cool_down_secs": 300,
+		"adjustment": "-1"
+	  },
+	  {
+		"metric_type": "memoryutil",
+		"breach_duration_secs": 600,
+		"threshold": 90,
+		"operator": ">=",
+		"cool_down_secs": 300,
+		"adjustment": "+1"
+	  }
+	]
+  }
 }`)
 				config = *NewBindingConfig(GUID("test-app-guid"), CustomMetricsBoundApp)
 				scalingPolicy = &PolicyDefinition{
@@ -130,9 +131,11 @@ var _ = Describe("BindingParameters", func() {
 
 			It("should create binding parameters successfully", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(bindingParameters).NotTo(BeNil())
-				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
-				Expect(bindingParameters.GetScalingPolicy()).To(Equal(scalingPolicy))
+				Expect(appScalingCfg).NotTo(BeNil())
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
+
+				var resultCfg *PolicyDefinition = appScalingCfg.GetScalingPolicy().GetPolicyDefinition()
+				Expect(resultCfg).To(Equal(scalingPolicy))
 			})
 		})
 
@@ -188,9 +191,9 @@ var _ = Describe("BindingParameters", func() {
 
 			It("should create binding parameters successfully", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(bindingParameters).NotTo(BeNil())
-				Expect(bindingParameters.GetConfiguration()).To(Equal(config))
-				Expect(bindingParameters.GetScalingPolicy()).To(Equal(scalingPolicy))
+				Expect(appScalingCfg).NotTo(BeNil())
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
+				Expect(appScalingCfg.GetScalingPolicy()).To(Equal(scalingPolicy))
 			})
 		})
 	})

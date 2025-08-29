@@ -91,13 +91,13 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	logger := h.logger.Session("GetScalingPolicy", lager.Data{"appId": appId})
 	logger.Info("Get Scaling Policy")
 
-	scalingPolicy, err := h.policydb.GetAppPolicy(r.Context(), appId)
+	policyDef, err := h.policydb.GetAppPolicy(r.Context(), appId)
 	if err != nil {
 		logger.Error("Failed to retrieve scaling policy from database", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling policy")
 		return
 	}
-	if scalingPolicy == nil {
+	if policyDef == nil {
 		logger.Info("policy doesn't exist")
 		writeErrorResponse(w, http.StatusNotFound, "Policy Not Found")
 		return
@@ -113,15 +113,15 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 
 	// 🚧 To-do: Serialise a `ScalingPolicy (alt)` in the new terminology.
 	bindingConfig := models.NewBindingConfig(models.GUID(appId), customMetricStrategy)
-	bindingParameters := models.NewBindingParameters(*bindingConfig, scalingPolicy)
-	bindingParametersRawJSON, err := bindingParameters.ToRawJSON()
+	scalingPolicy := models.NewScalingPolicy(bindingConfig.GetCustomMetricStrategy(), policyDef)
+	scalingPolicyRawJSON, err := scalingPolicy.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to convert binding parameters to raw JSON", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error converting binding parameters to raw JSON")
 		return
 	}
 
-	handlers.WriteJSONResponse(w, http.StatusOK, bindingParametersRawJSON)
+	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicyRawJSON)
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -181,7 +181,8 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, actionName)
 		return
 	}
-	bindingParameters := models.NewBindingParameters(*bindingConfiguration, policy)
+	bindingParameters := models.NewAppScalingConfig(
+		*bindingConfiguration, *models.NewScalingPolicy(customMetricStrategy, policy))
 	responseJson, err := bindingParameters.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to to build response", err)

@@ -5,14 +5,12 @@ import (
 	"fmt"
 )
 
-// 🚧 To-do: BindingParameters ↦ AppScalingConfig
-
-// BindingParameters contains all the necessary data to establish the relationship between
+// AppScalingConfig contains all the necessary data to establish the relationship between
 // application binding configuration and its associated scaling behavior.
 //
-// ⛔ Do not create `BindingParameters` values directly via `BindingParameters{}` because it can lead to
+// ⛔ Do not create `AppScalingConfig` values directly via `AppScalingConfig{}` because it can lead to
 // undefined behaviour due to bypassing all validations. Use the constructor-functions instead!
-type BindingParameters struct {
+type AppScalingConfig struct {
 	// configuration contains the binding configuration settings.
 	configuration BindingConfig
 
@@ -20,22 +18,22 @@ type BindingParameters struct {
 	scalingPolicy ScalingPolicy // 🚧 To-do: We should distinguish between raw data and correctly validated data.
 }
 
-func NewBindingParameters(
+func NewAppScalingConfig(
 	configuration BindingConfig, scalingPolicy ScalingPolicy,
-) (bps *BindingParameters) {
-	return &BindingParameters{
+) (bps *AppScalingConfig) {
+	return &AppScalingConfig{
 		configuration: configuration,
 		scalingPolicy: scalingPolicy,
 	}
 }
 
-func (bp *BindingParameters) GetConfiguration() BindingConfig {
+func (bp *AppScalingConfig) GetConfiguration() BindingConfig {
 	return bp.configuration
 }
 
 // GetScalingPolicy returns the scaling policy for the binding and nil if no one has been set (which
 // means, the default-policy is used).
-func (bp *BindingParameters) GetScalingPolicy() (p *ScalingPolicy) {
+func (bp *AppScalingConfig) GetScalingPolicy() (p *ScalingPolicy) {
 	return &bp.scalingPolicy
 }
 
@@ -43,12 +41,12 @@ func (bp *BindingParameters) GetScalingPolicy() (p *ScalingPolicy) {
 // Deserialisation and serialisation methods for BindingParameters
 // ================================================================================
 
-type bindingParamsJsonRawRepr struct {
+type appScalingCfgRawRepr struct {
 	CfgRaw    json.RawMessage `json:"binding_cfg,omitempty"`
 	PolicyRaw json.RawMessage `json:"policy,omitempty"`
 }
 
-func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
+func (bp AppScalingConfig) ToRawJSON() (json.RawMessage, error) {
 	cfgRaw, err := bp.configuration.ToRawJSON()
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -62,7 +60,7 @@ func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
 			"could not serialise scaling policy to json: \n\t%w", err)
 	}
 
-	bpRaw := bindingParamsJsonRawRepr{
+	bpRaw := appScalingCfgRawRepr{
 		CfgRaw:    cfgRaw,
 		PolicyRaw: policyRaw,
 	}
@@ -74,8 +72,8 @@ func (bp BindingParameters) ToRawJSON() (json.RawMessage, error) {
 	return data, nil
 }
 
-func BindingParametersFromRawJSON(data json.RawMessage) (*BindingParameters, error) {
-	var bpRaw bindingParamsJsonRawRepr
+func BindingParametersFromRawJSON(data json.RawMessage) (*AppScalingConfig, error) {
+	var bpRaw appScalingCfgRawRepr
 	if err := json.Unmarshal(data, &bpRaw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BindingParameters: %w", err)
 	}
@@ -90,5 +88,5 @@ func BindingParametersFromRawJSON(data json.RawMessage) (*BindingParameters, err
 		return nil, fmt.Errorf("failed to unmarshal scaling policy: %w", err)
 	}
 
-	return NewBindingParameters(*cfg, *policy), nil
+	return NewAppScalingConfig(*cfg, *policy), nil
 }

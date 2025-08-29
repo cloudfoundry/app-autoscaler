@@ -30,7 +30,7 @@ var (
 	testPlanID        string
 	testDefaultPolicy string
 	testDefaultGuid   string
-	scalingPolicy     = &models.PolicyDefinition{}
+	policyDef     = &models.PolicyDefinition{}
 )
 
 func TestServer(t *testing.T) {
@@ -42,7 +42,7 @@ var _ = BeforeSuite(func() {
 	policyBytes, err := os.ReadFile("testdata/policy.json")
 	Expect(err).ShouldNot(HaveOccurred())
 	testDefaultPolicy = string(policyBytes)
-	err = json.Unmarshal(policyBytes, scalingPolicy)
+	err = json.Unmarshal(policyBytes, policyDef)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	testDefaultGuid = "a-not-so-guid"

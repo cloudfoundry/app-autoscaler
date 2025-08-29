@@ -56,15 +56,24 @@ func DefaultBindingConfig() *BindingConfig {
 	return NewBindingConfig(GUID(""), DefaultCustomMetricsStrategy)
 }
 
-/**
- * BindingConfigFromServiceBinding creates a binding configuration from a service binding.
- * Only creates a configuration if the service binding contains relevant custom metrics strategy
- * (other than "same_app") or has an AppID set.
- *
- * @param serviceBinding the service binding to extract configuration from; must not be nil
- * @return *BindingConfig the extracted binding configuration, or nil if no relevant config found
- * @return error InvalidArgumentError if serviceBinding is nil, nil otherwise
- */
+
+// BindingConfigFromServiceBinding creates a new BindingConfig from an existing ServiceBinding.
+//
+// Parameters:
+//   - serviceBinding: The ServiceBinding instance from which to extract configuration data.
+//     Must not be nil. The AppID field is used as the application GUID, and the
+//     CustomMetricsStrategy field determines the metrics submission strategy.
+//
+// Returns:
+//   - *BindingConfig: A newly created BindingConfig instance with the extracted configuration.
+//     Returns nil if an error occurs during processing.
+//   - error: An InvalidArgumentError if serviceBinding is nil, or a formatting error if the
+//     CustomMetricsStrategy contains an unsupported value.
+//
+// Edge cases:
+//   - If serviceBinding is nil, returns an InvalidArgumentError with detailed parameter information.
+//   - If CustomMetricsStrategy is empty string, defaults to CustomMetricsSameApp strategy.
+//   - If CustomMetricsStrategy contains an unsupported value, returns a descriptive error.
 func BindingConfigFromServiceBinding(serviceBinding *ServiceBinding) (*BindingConfig, error) {
 	var bindingConfig *BindingConfig
 

@@ -101,8 +101,8 @@ var _ = Describe("Policy", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(deserializedPolicy).NotTo(BeNil())
 
-					originalPolicyDef := scalingPolicy.GetScalingPolicy()
-					deserializedPolicyDef := deserializedPolicy.GetScalingPolicy()
+					originalPolicyDef := scalingPolicy.GetPolicyDefinition()
+					deserializedPolicyDef := deserializedPolicy.GetPolicyDefinition()
 
 					Expect(deserializedPolicyDef.InstanceMin).To(Equal(originalPolicyDef.InstanceMin))
 					Expect(deserializedPolicyDef.InstanceMax).To(Equal(originalPolicyDef.InstanceMax))
@@ -137,8 +137,8 @@ var _ = Describe("Policy", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(deserializedPolicy).NotTo(BeNil())
 
-					originalPolicyDef := scalingPolicy.GetScalingPolicy()
-					deserializedPolicyDef := deserializedPolicy.GetScalingPolicy()
+					originalPolicyDef := scalingPolicy.GetPolicyDefinition()
+					deserializedPolicyDef := deserializedPolicy.GetPolicyDefinition()
 
 					Expect(deserializedPolicyDef.InstanceMin).To(Equal(originalPolicyDef.InstanceMin))
 					Expect(deserializedPolicyDef.InstanceMax).To(Equal(originalPolicyDef.InstanceMax))
@@ -158,7 +158,7 @@ var _ = Describe("Policy", func() {
 					deserializedPolicy, err = ScalingPolicyFromRawJSON(serializedData)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(deserializedPolicy).NotTo(BeNil())
-					Expect(deserializedPolicy.GetScalingPolicy()).To(BeNil())
+					Expect(deserializedPolicy.GetPolicyDefinition()).To(BeNil())
 				})
 			})
 		})
