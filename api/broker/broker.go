@@ -490,23 +490,35 @@ func (b *Broker) LastOperation(_ context.Context, instanceID string, details dom
 // Bind creates a new service binding
 // PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 // 🚧 To-do: Check if the last parameter can not just be removed seamlessly.
-func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, details domain.BindDetails, _ bool) (domain.Binding, error) {
+func (b *Broker) Bind(
+	ctx context.Context, instanceID string, bindingID string, details domain.BindDetails, _ bool,
+) (domain.Binding, error) {
 	logger := b.logger.Session("bind", lager.Data{"instanceID": instanceID, "bindingID": bindingID, "bindDetails": details})
 	logger.Info("begin")
 	defer logger.Info("end")
 
 	result := domain.Binding{}
 
-	var bindingConfigRaw json.RawMessage
+	var scalingPolicyRaw json.RawMessage
 	if details.RawParameters != nil {
-		bindingConfigRaw = details.RawParameters
+		scalingPolicyRaw = details.RawParameters
 	}
-	bindingConfig, err := b.getBindingConfigurationFromRequest(bindingConfigRaw, logger)
+
+	// This just gets used for legacy-reasons. The actually parsing happens in the step
+	// afterwards. But it still does not validate against the schema.
+	_, err := b.getPolicyFromJsonRawMessage(scalingPolicyRaw, instanceID, details.PlanID)
 	if err != nil {
-		logger.Error("get-binding-configuration-from-request", err)
+		logger.Error("get-default-policy", err)
 		return result, err
 	}
-	// // 🚧 To-do: Check if exactly one is provided.
+
+	scalingPolicy, err := b.getBindingConfigurationFromRequest(scalingPolicyRaw, logger) // 🚧 Rename: getScalingPolicyFromRequest
+	if err != nil {
+		logger.Error("get-scaling-policy-configuration-from-request", err)
+		return result, err
+	}
+
+	// // 🚧 To-do: Check if exactly one is provided. We don't want to accept both to be present.
 	// requestAppGuid := details.BindResource.AppGuid
 	// paramsAppGuid := bindingConfig.Configuration.AppGUID
 	var appGUID string
@@ -525,17 +537,19 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 		return result, apiresponses.NewFailureResponseBuilder(err, http.StatusUnprocessableEntity, "check-required-app-guid").WithErrorKey("RequiresApp").Build()
 	}
 
-	policy, err := b.getPolicyFromJsonRawMessage(bindingConfigRaw, instanceID, details.PlanID)
-	if err != nil {
-		logger.Error("get-default-policy", err)
-		return result, err
-	}
 
+	// 🚧 To-do: Just spottet this! Looks like we have a configurable credential-type and
+	// auth-scheme. This probably should make obsolete definitions like
+	// `DefaultCustomMetricsBindingAuthScheme`
 	defaultCustomMetricsCredentialType := b.conf.DefaultCustomMetricsCredentialType
-	customMetricsBindingAuthScheme, err := getOrDefaultCredentialType(bindingConfigRaw, defaultCustomMetricsCredentialType, logger)
+	customMetricsBindingAuthScheme, err := getOrDefaultCredentialType(scalingPolicyRaw, defaultCustomMetricsCredentialType, logger)
 	if err != nil {
 		return result, err
 	}
+	// In theory whe should already have the correct auth-scheme from above. But for backwards compatibility we use it from here:
+	scalingPolicy = models.NewBindingConfig(
+		scalingPolicy.GetAppGUID(),
+		*customMetricsBindingAuthScheme)
 
 	policyGuidStr := uuid.NewString()
 
@@ -560,7 +574,7 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 	}
 	err = createServiceBinding(
 		ctx, b.bindingdb, bindingID, instanceID,
-		models.GUID(appGUID), bindingConfig.GetCustomMetricStrategy())
+		models.GUID(appGUID), scalingPolicy.GetCustomMetricStrategy())
 
 	if err != nil {
 		actionCreateServiceBinding := "create-service-binding"
@@ -614,19 +628,19 @@ func (b *Broker) Bind(ctx context.Context, instanceID string, bindingID string, 
 }
 
 func (b *Broker) getBindingConfigurationFromRequest(
-	bindingConfigRaw json.RawMessage, logger lager.Logger,
-) (*models.BindingConfig, error) {
-	bindingConfiguration, err := models.BindingConfigFromRawJSON(bindingConfigRaw)
+	scalingPolicyRaw json.RawMessage, logger lager.Logger,
+) (*models.ScalingPolicy, error) {
+	scalingPolicy, err := models.ScalingPolicyFromRawJSON(scalingPolicyRaw)
 	if err != nil {
-		actionReadBindingConfiguration := "read-binding-configuration"
-		logger.Error("unmarshal-binding-configuration", err)
+		actionReadScalingPolicy := "read-scaling-policy"
+		logger.Error("unmarshal-scaling-policy", err)
 		return nil, apiresponses.NewFailureResponseBuilder(
-			ErrInvalidConfigurations, http.StatusBadRequest, actionReadBindingConfiguration).
-			WithErrorKey(actionReadBindingConfiguration).
+			ErrInvalidConfigurations, http.StatusBadRequest, actionReadScalingPolicy).
+			WithErrorKey(actionReadScalingPolicy).
 			Build()
 	}
-	logger.Debug("getBindingConfigurationFromRequest", lager.Data{"bindingConfiguration": bindingConfiguration})
-	return bindingConfiguration, nil
+	logger.Debug("getScalingPolicyFromRequest", lager.Data{"scalingPolicy": scalingPolicy})
+	return scalingPolicy, nil
 }
 
 func getOrDefaultCredentialType(policyJson json.RawMessage, credentialTypeConfig string, logger lager.Logger) (*models.CustomMetricsBindingAuthScheme, error) {

@@ -169,3 +169,5 @@ var _ = Describe("BindingConfigs", func() {
 		})
 	})
 })
+
+// Ich möchte die Tests oben ersetzen durch aktualisierte Tests, die die neuen, öffentlich sichtbaren Funktionen und geänderten Inhalte überprüfen.
