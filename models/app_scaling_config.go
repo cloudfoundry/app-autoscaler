@@ -15,7 +15,7 @@ type AppScalingConfig struct {
 	configuration BindingConfig
 
 	// scalingPolicy defines the scaling behavior and rules for the binding.
-	scalingPolicy ScalingPolicy // 🚧 To-do: We should distinguish between raw data and correctly validated data.
+	scalingPolicy ScalingPolicy
 }
 
 func NewAppScalingConfig(
@@ -37,53 +37,56 @@ func (bp *AppScalingConfig) GetScalingPolicy() (p *ScalingPolicy) {
 	return &bp.scalingPolicy
 }
 
+
+
+
 // ================================================================================
-// Deserialisation and serialisation methods for BindingParameters
+// Deserialisation and serialisation methods for AppScalingConfig
 // ================================================================================
 
 type appScalingCfgRawRepr struct {
-	CfgRaw    json.RawMessage `json:"binding_cfg,omitempty"`
-	PolicyRaw json.RawMessage `json:"policy,omitempty"`
+	CfgRaw    json.RawMessage `json:"binding-configuration,omitempty"`
+	PolicyRaw json.RawMessage `json:"scaling-policy,omitempty"`
 }
 
-func (bp AppScalingConfig) ToRawJSON() (json.RawMessage, error) {
-	cfgRaw, err := bp.configuration.ToRawJSON()
+func (asc AppScalingConfig) ToRawJSON() (json.RawMessage, error) {
+	cfgRaw, err := asc.configuration.ToRawJSON()
 	if err != nil {
 		return nil, fmt.Errorf(
 			"could not serialise configuration to json: %s\n\t%w",
-			bp.configuration, err)
+			asc.configuration, err)
 	}
 
-	policyRaw, err := bp.scalingPolicy.ToRawJSON()
+	policyRaw, err := asc.scalingPolicy.ToRawJSON()
 	if err != nil {
 		return nil, fmt.Errorf(
 			"could not serialise scaling policy to json: \n\t%w", err)
 	}
 
-	bpRaw := appScalingCfgRawRepr{
+	ascRaw := appScalingCfgRawRepr{
 		CfgRaw:    cfgRaw,
 		PolicyRaw: policyRaw,
 	}
 
-	data, err := json.Marshal(bpRaw)
+	data, err := json.Marshal(ascRaw)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func BindingParametersFromRawJSON(data json.RawMessage) (*AppScalingConfig, error) {
-	var bpRaw appScalingCfgRawRepr
-	if err := json.Unmarshal(data, &bpRaw); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BindingParameters: %w", err)
+func AppScalingConfigFromRawJSON(data json.RawMessage) (*AppScalingConfig, error) {
+	var ascRaw appScalingCfgRawRepr
+	if err := json.Unmarshal(data, &ascRaw); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal AppScalingConfig: %w", err)
 	}
 
-	cfg, err := BindingConfigFromRawJSON(bpRaw.CfgRaw)
+	cfg, err := BindingConfigFromRawJSON(ascRaw.CfgRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal binding configuration: %w", err)
 	}
 
-	policy, err := ScalingPolicyFromRawJSON(bpRaw.PolicyRaw)
+	policy, err := ScalingPolicyFromRawJSON(ascRaw.PolicyRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal scaling policy: %w", err)
 	}

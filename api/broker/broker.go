@@ -517,6 +517,31 @@ func (b *Broker) Bind(
 		logger.Error("get-scaling-policy-configuration-from-request", err)
 		return result, err
 	}
+	policyGuidStr := uuid.NewString()
+
+	// 🚧 ⛔ To-do: That's not logical if we overwrite here the mechanism provided by policy to store
+	// that it wants to have the default policy-definition
+	if defaultPolicyWanted := scalingPolicy.GetPolicyDefinition() == nil; defaultPolicyWanted {
+		serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
+		if err != nil {
+			logger.Error("get-service-instance", err)
+			return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, "get-service-instance")
+		}
+		if serviceInstance.DefaultPolicy != "" {
+			defaultScalingPolicy, err := models.ScalingPolicyFromRawJSON(json.RawMessage(serviceInstance.DefaultPolicy))
+			if err != nil {
+				errRsp := apiresponses.NewFailureResponse(
+					fmt.Errorf("unmarshalling default policy: '%s' failed: %w",
+						serviceInstance.DefaultPolicy, err),
+					http.StatusInternalServerError, "unmarshal default policy")
+				return result, errRsp
+			}
+			scalingPolicy = models.NewScalingPolicy(
+				scalingPolicy.GetCustomMetricsStrategy(), defaultScalingPolicy.GetPolicyDefinition())
+			policyGuidStr = serviceInstance.DefaultPolicyGuid
+		}
+	}
+
 
 	// // 🚧 To-do: Check if exactly one is provided. We don't want to accept both to be present.
 	// requestAppGuid := details.BindResource.AppGuid
@@ -537,44 +562,24 @@ func (b *Broker) Bind(
 		return result, apiresponses.NewFailureResponseBuilder(err, http.StatusUnprocessableEntity, "check-required-app-guid").WithErrorKey("RequiresApp").Build()
 	}
 
-
-	// 🚧 To-do: Just spottet this! Looks like we have a configurable credential-type and
-	// auth-scheme. This probably should make obsolete definitions like
-	// `DefaultCustomMetricsBindingAuthScheme`
 	defaultCustomMetricsCredentialType := b.conf.DefaultCustomMetricsCredentialType
 	customMetricsBindingAuthScheme, err := getOrDefaultCredentialType(scalingPolicyRaw, defaultCustomMetricsCredentialType, logger)
 	if err != nil {
 		return result, err
 	}
-	// In theory whe should already have the correct auth-scheme from above. But for backwards compatibility we use it from here:
-	scalingPolicy = models.NewBindingConfig(
-		scalingPolicy.GetAppGUID(),
-		*customMetricsBindingAuthScheme)
 
-	policyGuidStr := uuid.NewString()
+	// To-do: 🚧 Factor everything that is involved in this creation out into an own helper-function.
+	appScalingConfig := models.NewAppScalingConfig(
+		*models.NewBindingConfig(models.GUID(appGUID), customMetricsBindingAuthScheme),
+		*scalingPolicy)
 
-	// fallback to default policy if no policy was provided
-	if policy == nil {
-		serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
-		if err != nil {
-			logger.Error("get-service-instance", err)
-			return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, "get-service-instance")
-		}
-		if serviceInstance.DefaultPolicy != "" {
-			err = json.Unmarshal([]byte(serviceInstance.DefaultPolicy), &policy)
-			if err != nil {
-				return result, apiresponses.NewFailureResponse(fmt.Errorf("unmarshalling default policy: '%s' failed: %w", serviceInstance.DefaultPolicy, err), http.StatusInternalServerError, "unmarshal default policy")
-			}
-			policyGuidStr = serviceInstance.DefaultPolicyGuid
-		}
-	}
 
 	if err := b.handleExistingBindingsResiliently(ctx, instanceID, appGUID, logger); err != nil {
 		return result, err
 	}
 	err = createServiceBinding(
 		ctx, b.bindingdb, bindingID, instanceID,
-		models.GUID(appGUID), scalingPolicy.GetCustomMetricStrategy())
+		appScalingConfig.GetConfiguration().GetAppGUID(), scalingPolicy.GetCustomMetricsStrategy())
 
 	if err != nil {
 		actionCreateServiceBinding := "create-service-binding"
@@ -587,9 +592,11 @@ func (b *Broker) Bind(
 		}
 		return result, apiresponses.NewFailureResponse(ErrCreatingServiceBinding, http.StatusInternalServerError, actionCreateServiceBinding)
 	}
+
 	customMetricsCredentials := &models.CustomMetricsCredentials{
 		MtlsUrl: b.conf.MetricsForwarder.MetricsForwarderMtlsUrl,
 	}
+
 	if !isValidCredentialType(customMetricsBindingAuthScheme.CredentialType) {
 		actionValidateCredentialType := "validate-credential-type" // #nosec G101
 		logger.Error("invalid credential-type provided", err, lager.Data{"credential-type": customMetricsBindingAuthScheme.CredentialType})

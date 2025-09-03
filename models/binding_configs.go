@@ -9,33 +9,6 @@ import (
 // BindingConfig and its associated sub-programs
 // ================================================================================
 
-// BindingConfig represents the configuration for a service binding.
-//
-// ⛔ Do not create `BindingConfig` values directly via `BindingConfig{}` because it can lead to
-// undefined behaviour due to bypassing all validations.  Use the constructor-functions instead!
-type BindingConfig struct {
-	appGUID                  GUID // This always must be set.
-
-	// Whether to use the default authentication scheme for custom metrics binding.
-	useDefaultAuthScheme      bool
-
-	// Meaningful only if useDefaultAuthScheme is false.
-	customMetricsBindingAuth CustomMetricsBindingAuthScheme
-}
-```
-
-The examples show different scenarios:
-
-1. **Custom OAuth2 Bearer Token**: When using `binding-secret` credential type for OAuth2-based authentication
-2. **X.509 Certificate**: When using `x509` credential type for certificate-based authentication
-3. **Default Authentication**: When using the default authentication scheme (the `credential-type` field is omitted)
-4. **Minimal Configuration**: When both the app GUID and authentication scheme use their respective defaults
-
-The JSON structure follows the `bindingConfigJsonRawRepr` struct in your serialization code, where:
-- `app_guid` contains the application identifier
-- `credential-type` specifies the authentication method (omitted when using defaults)
-- Both fields can be omitted if using default values, resulting in an empty JSON object `{}`
-
 
 // BindingConfig represents the configuration for a service binding.
 //
@@ -172,7 +145,7 @@ func (bc BindingConfig) ToRawJSON() (json.RawMessage, error) {
 
 func BindingConfigFromRawJSON(data json.RawMessage) (*BindingConfig, error) {
 	if len(data) <= 0 {
-		msg := fmt.Sprintf("data must not be empty, see function-contract;")
+		msg := "data must not be empty, see function-contract;"
 		return nil, &InvalidArgumentError{
 			Param: "data",
 			Value: data,
@@ -184,17 +157,16 @@ func BindingConfigFromRawJSON(data json.RawMessage) (*BindingConfig, error) {
 	if err := json.Unmarshal(data, &bindingConfigRaw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BindingConfig: %w", err)
 	}
-	bindingConfig := &BindingConfig{
-		appGUID: bindingConfigRaw.AppGUID,
-	}
 
-	if bindingConfigRaw.CmAuthScheme != nil {
-		bindingConfig.customMetricsBindingAuth = *bindingConfigRaw.CmAuthScheme
-	} else {
-		bindingConfig.customMetricsBindingAuth = DefaultCustomMetricsBindingAuthScheme
-	}
+	bindingConfig := NewBindingConfig(bindingConfigRaw.AppGUID, bindingConfigRaw.CmAuthScheme)
 	return bindingConfig, nil
 }
+
+func (bc BindingConfig) String() string {
+	return fmt.Sprintf("BindingConfig{appGUID: %s, useDefaultAuthScheme: %t}",
+		bc.appGUID, bc.useDefaultAuthScheme)
+}
+var _ fmt.Stringer = BindingConfig{}
 
 
 

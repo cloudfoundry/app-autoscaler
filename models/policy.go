@@ -6,27 +6,6 @@ import (
 	"time"
 )
 
-// ==================== Example JSON-representation of a ScalingPolicy =====================
-// {
-//   "configuration": {
-//     "custom_metrics": {
-//       "metric_submission_strategy": {
-//         "allow_from": "bound_app"
-//       }
-//     }
-//   },
-//   "instance_min_count": 1,
-//   "instance_max_count": 5,
-//   "scaling_rules": [
-//     {
-//       "metric_type": "memoryused",
-//       "threshold": 30,
-//       "operator": "<",
-//       "adjustment": "-1"
-//     }
-//   ]
-// }
-
 
 
 // ================================================================================
@@ -110,7 +89,20 @@ func NewScalingPolicy(
 	//	MetricSubmissionStrategy: metricsSubmissionStrategy{
 	//		AllowFrom: customMetricStrategy,
 	//	},
-	// }
+// }
+
+
+// GetCustomMetricsStrategy returns the custom metrics strategy configured for this scaling policy.
+// This determines which applications are allowed to submit custom metrics for scaling decisions.
+//
+// The strategy can be either "bound_app" (only the bound application can submit metrics) or
+// "same_app" (default strategy where the application submits its own metrics).
+//
+// Returns:
+//   CustomMetricsStrategy: The configured strategy for custom metrics submission
+func (sp ScalingPolicy) GetCustomMetricsStrategy() CustomMetricsStrategy {
+	return sp.policyCfg.CustomMetricsCfg.MetricSubmissionStrategy.AllowFrom
+}
 
 
 // GetPolicyDefinition returns the scaling policy for the binding and nil if no one has been set (which
@@ -126,6 +118,28 @@ func (sp *ScalingPolicy) GetPolicyDefinition() (p *PolicyDefinition) {
 }
 
 // -------------------- Deserialisation and serialisation --------------------
+
+// Json-serialized example of a ScalingPolicy:
+// {
+//   "configuration": {
+//     "custom_metrics": {
+//       "metric_submission_strategy": {
+//         "allow_from": "bound_app"
+//       }
+//     }
+//   },
+//   "instance_min_count": 1,
+//   "instance_max_count": 5,
+//   "scaling_rules": [
+//     {
+//       "metric_type": "memoryused",
+//       "threshold": 30,
+//       "operator": "<",
+//       "adjustment": "-1"
+//     }
+//   ]
+// }
+
 
 type scalingPolicyJsonRawRepr struct {
 	PolicyConfiguration *policyConfiguration `json:"configuration,omitempty"`
@@ -153,10 +167,20 @@ func (sp ScalingPolicy) ToRawJSON() (json.RawMessage, error) {
 		PolicyDefinition:    policy,
 	}
 
-	data, err := json.Marshal(spRaw)
-	if err != nil {
-		return nil, err
+	var data json.RawMessage
+	// If both fields are nil (i.e. they represent just the default), we return an empty JSON
+	// object.
+	definitionAndConfigAreBothDefault := spRaw.PolicyConfiguration == nil && spRaw.PolicyDefinition == nil
+	if definitionAndConfigAreBothDefault {
+		data = nil
+	} else {
+		var err error
+		data, err = json.Marshal(spRaw)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return data, nil
 }
 
@@ -180,6 +204,8 @@ func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
 
 	return NewScalingPolicy(cms, spRaw.PolicyDefinition), nil
 }
+
+
 
 // ================================================================================
 // policyConfiguration
