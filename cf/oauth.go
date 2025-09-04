@@ -87,6 +87,7 @@ func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, er
 	}
 	req.Header.Set("Authorization", "Bearer "+userToken)
 	req.Header.Set("Content-Type", "application/json")
+	c.setUserAgent(req)
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
