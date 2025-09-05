@@ -113,31 +113,34 @@ func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPU
 	return policyValidator
 }
 
-func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*models.PolicyDefinition, ValidationErrors) {
+
+// 🚧 To-do: Move this validation into the ScalingPolicy-type in the package `models` itself.
+func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*models.ScalingPolicy, ValidationErrors) {
+	// ---------- JSON-schema-validation ----------
 	policyLoader := gojsonschema.NewBytesLoader(rawJson)
-	policy := &models.PolicyDefinition{}
-
-	err := json.Unmarshal(rawJson, &policy)
-	if err != nil {
-		resultErrors := []PolicyValidationErrors{
-			{Context: "(root)", Description: err.Error()},
-		}
-		return policy, resultErrors
-	}
-
 	result, err := gojsonschema.Validate(pv.policySchemaLoader, policyLoader)
 	if err != nil {
 		resultErrors := []PolicyValidationErrors{
 			{Context: "(root)", Description: err.Error()},
 		}
-		return policy, resultErrors
+		return nil, resultErrors
 	}
 
 	if !result.Valid() {
-		return policy, getErrorsObject(result.Errors())
+		return nil, getErrorsObject(result.Errors())
 	}
 
-	pv.validateAttributes(policy, result)
+	// ---------- Policy-parsing ----------
+	policy, err := models.ScalingPolicyFromRawJSON(rawJson)
+	if err != nil {
+		resultErrors := []PolicyValidationErrors{
+			{Context: "(root)", Description: err.Error()},
+		}
+		return policy, resultErrors
+	}
+
+	// ---------- Policy-attribute-validation ----------
+	pv.validateAttributes(policy.GetPolicyDefinition(), result)
 
 	if len(result.Errors()) > 0 {
 		return policy, getErrorsObject(result.Errors())
@@ -146,6 +149,9 @@ func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*mod
 	return policy, nil
 }
 
+
+// 🚧 To-do: When making the type `models.PolicyDefinition` safe, then this validation should go
+// into a functional constructor.
 func (pv *PolicyValidator) validateAttributes(policy *models.PolicyDefinition, result *gojsonschema.Result) {
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
 

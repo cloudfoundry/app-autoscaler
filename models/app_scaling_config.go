@@ -27,8 +27,8 @@ func NewAppScalingConfig(
 	}
 }
 
-func (bp *AppScalingConfig) GetConfiguration() BindingConfig {
-	return bp.configuration
+func (bp *AppScalingConfig) GetConfiguration() *BindingConfig {
+	return &bp.configuration
 }
 
 // GetScalingPolicy returns the scaling policy for the binding and nil if no one has been set (which

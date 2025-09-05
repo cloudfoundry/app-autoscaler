@@ -29,15 +29,15 @@ var _ = Describe("BindingConfigs", func() {
 			})
 		})
 
-		Context("with OAuth2BearerToken authentication scheme", func() {
+		Context("with BindingSecret authentication scheme", func() {
 			BeforeEach(func() {
-				bindingConfig = NewBindingConfig(testAppGUID, &OAuth2BearerToken)
+				bindingConfig = NewBindingConfig(testAppGUID, &BindingSecret)
 			})
 
-			It("should create binding config with OAuth2BearerToken auth scheme", func() {
+			It("should create binding config with BindingSecret auth scheme", func() {
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(OAuth2BearerToken))
+				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(BindingSecret))
 			})
 		})
 
@@ -77,9 +77,9 @@ var _ = Describe("BindingConfigs", func() {
 			})
 		})
 
-		Context("with OAuth2BearerToken authentication scheme", func() {
+		Context("with BindingSecret authentication scheme", func() {
 			BeforeEach(func() {
-				bindingConfig = NewBindingConfig(testAppGUID, &OAuth2BearerToken)
+				bindingConfig = NewBindingConfig(testAppGUID, &BindingSecret)
 				rawJSON, err = bindingConfig.ToRawJSON()
 				rawJSONString = string(rawJSON)
 			})
@@ -132,7 +132,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(GUID("550e8400-e29b-41d4-a716-446655440000")))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(OAuth2BearerToken))
+				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(BindingSecret))
 			})
 		})
 
@@ -150,7 +150,7 @@ var _ = Describe("BindingConfigs", func() {
 			})
 		})
 
-		Context("with OAuth2BearerToken authentication scheme", func() {
+		Context("with BindingSecret authentication scheme", func() {
 			BeforeEach(func() {
 				rawJSON = json.RawMessage(`{"app_guid":"test-app-guid","credential-type":"binding-secret"}`)
 			})
@@ -160,7 +160,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(OAuth2BearerToken))
+				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(BindingSecret))
 			})
 		})
 
@@ -252,7 +252,7 @@ var _ = Describe("BindingConfigs", func() {
 
 		Context("with custom authentication scheme", func() {
 			BeforeEach(func() {
-				bindingConfig = NewBindingConfig(testAppGUID, &OAuth2BearerToken)
+				bindingConfig = NewBindingConfig(testAppGUID, &BindingSecret)
 			})
 
 			It("should return string representation", func() {
@@ -266,8 +266,8 @@ var _ = Describe("BindingConfigs", func() {
 
 var _ = Describe("CustomMetricsBindingAuthScheme", func() {
 	Context("String", func() {
-		It("should return correct string for OAuth2BearerToken", func() {
-			Expect(OAuth2BearerToken.String()).To(Equal("binding-secret"))
+		It("should return correct string for BindingSecret", func() {
+			Expect(BindingSecret.String()).To(Equal("binding-secret"))
 		})
 
 		It("should return correct string for X509Certificate", func() {
@@ -276,8 +276,8 @@ var _ = Describe("CustomMetricsBindingAuthScheme", func() {
 	})
 
 	Context("JSON marshaling", func() {
-		It("should marshal OAuth2BearerToken correctly", func() {
-			data, err := json.Marshal(OAuth2BearerToken)
+		It("should marshal BindingSecret correctly", func() {
+			data, err := json.Marshal(BindingSecret)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(data)).To(Equal(`"binding-secret"`))
 		})
@@ -293,14 +293,14 @@ var _ = Describe("CustomMetricsBindingAuthScheme", func() {
 		var scheme CustomMetricsBindingAuthScheme
 		var err error
 
-		Context("with valid OAuth2BearerToken value", func() {
+		Context("with valid BindingSecret value", func() {
 			BeforeEach(func() {
 				err = json.Unmarshal([]byte(`"binding-secret"`), &scheme)
 			})
 
 			It("should unmarshal correctly", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(scheme).To(Equal(OAuth2BearerToken))
+				Expect(scheme).To(Equal(BindingSecret))
 			})
 		})
 
@@ -341,14 +341,14 @@ var _ = Describe("CustomMetricsBindingAuthScheme", func() {
 		var scheme *CustomMetricsBindingAuthScheme
 		var err error
 
-		Context("with valid OAuth2BearerToken string", func() {
+		Context("with valid BindingSecret string", func() {
 			BeforeEach(func() {
 				scheme, err = ParseCustomMetricsBindingAuthScheme("binding-secret")
 			})
 
 			It("should parse correctly", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(*scheme).To(Equal(OAuth2BearerToken))
+				Expect(*scheme).To(Equal(BindingSecret))
 			})
 		})
 

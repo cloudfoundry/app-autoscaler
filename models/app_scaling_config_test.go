@@ -33,7 +33,7 @@ var _ = Describe("AppScalingConfig", func() {
 
 			It("should create app scaling config with default policy", func() {
 				Expect(appScalingCfg).NotTo(BeNil())
-				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(&config))
 				Expect(appScalingCfg.GetScalingPolicy()).NotTo(BeNil())
 				Expect(appScalingCfg.GetScalingPolicy().GetPolicyDefinition()).To(BeNil())
 			})
@@ -61,7 +61,7 @@ var _ = Describe("AppScalingConfig", func() {
 
 			It("should create app scaling config with provided policy", func() {
 				Expect(appScalingCfg).NotTo(BeNil())
-				Expect(appScalingCfg.GetConfiguration()).To(Equal(config))
+				Expect(appScalingCfg.GetConfiguration()).To(Equal(&config))
 				Expect(appScalingCfg.GetScalingPolicy()).NotTo(BeNil())
 				Expect(appScalingCfg.GetScalingPolicy().GetPolicyDefinition()).NotTo(BeNil())
 				Expect(appScalingCfg.GetScalingPolicy().GetCustomMetricsStrategy()).To(Equal(CustomMetricsBoundApp))
@@ -99,7 +99,7 @@ var _ = Describe("AppScalingConfig", func() {
 
 		Context("with custom configuration and policy", func() {
 			BeforeEach(func() {
-				config := *NewBindingConfig(testAppGUID, &OAuth2BearerToken)
+				config := *NewBindingConfig(testAppGUID, &BindingSecret)
 				policyDef := &PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 5,
@@ -234,7 +234,7 @@ var _ = Describe("AppScalingConfig", func() {
 			var rawJSON json.RawMessage
 
 			BeforeEach(func() {
-				config := *NewBindingConfig(testAppGUID, &OAuth2BearerToken)
+				config := *NewBindingConfig(testAppGUID, &BindingSecret)
 				policyDef := &PolicyDefinition{
 					InstanceMin: 3,
 					InstanceMax: 7,

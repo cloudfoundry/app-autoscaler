@@ -178,6 +178,10 @@ var _ fmt.Stringer = BindingConfig{}
 // CustomMetricsBindingAuthScheme represents an authentication scheme configuration for custom
 // metrics binding operations.
 //
+// There are only twosupported authentication schemes:
+//   - X509Certificate: Uses x.509 certificates for authentication.
+//   - BindingSecret: Uses a password-based authentication scheme (similar to Basic Auth).
+//
 // The struct enforces immutability by making the credentialType field private, which prevents
 // direct field access and modification after instantiation.  This design pattern ensures that only
 // valid, predefined credential types can be set through controlled constructor functions or
@@ -195,7 +199,7 @@ var (
 	X509Certificate   = CustomMetricsBindingAuthScheme{credentialType: "x509"}
 
 	// BasicAuth-Variant
-	OAuth2BearerToken = CustomMetricsBindingAuthScheme{credentialType: "binding-secret"}
+	BindingSecret = CustomMetricsBindingAuthScheme{credentialType: "binding-secret"}
 )
 
 // String returns a string representation of the authentication scheme
@@ -237,7 +241,7 @@ func ParseCustomMetricsBindingAuthScheme(
 	case "x509":
 		c = &X509Certificate
 	case "binding-secret":
-		c = &OAuth2BearerToken
+		c = &BindingSecret
 	default:
 		return nil, fmt.Errorf("unknown credential type: %s", credentialType)
 	}

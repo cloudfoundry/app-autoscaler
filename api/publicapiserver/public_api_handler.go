@@ -111,9 +111,7 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// 🚧 To-do: Serialise a `ScalingPolicy (alt)` in the new terminology.
-	bindingConfig := models.NewBindingConfig(models.GUID(appId), customMetricStrategy)
-	scalingPolicy := models.NewScalingPolicy(bindingConfig.GetCustomMetricStrategy(), policyDef)
+	scalingPolicy := models.NewScalingPolicy(customMetricStrategy, policyDef)
 	scalingPolicyRawJSON, err := scalingPolicy.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to convert binding parameters to raw JSON", err)
@@ -142,7 +140,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	policy, errResults := h.policyValidator.ParseAndValidatePolicy(policyBytes)
+	scalingPolicy, errResults := h.policyValidator.ParseAndValidatePolicy(policyBytes)
 	if errResults != nil {
 		logger.Info("Failed to validate policy", lager.Data{"errResults": errResults, "policy": string(policyBytes)})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
@@ -158,15 +156,15 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	}
 
 	policyGuid := uuid.NewString()
-	if err := h.policydb.SaveAppPolicy(r.Context(), appId, policy, policyGuid); err != nil {
+	if err := h.policydb.SaveAppPolicy(r.Context(), appId, policyDefinition, policyGuid); err != nil {
 		logger.Error("Failed to save policy", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
 		return
 	}
 
-	h.logger.Info("creating/updating schedules", lager.Data{"policy": policy})
+	h.logger.Info("creating/updating schedules", lager.Data{"policy": policyDefinition})
 
-	if err := h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policy, policyGuid); err != nil {
+	if err := h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policyDefinition, policyGuid); err != nil {
 		logger.Error("Failed to create/update schedule", err)
 		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -182,7 +180,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 	bindingParameters := models.NewAppScalingConfig(
-		*bindingConfiguration, *models.NewScalingPolicy(customMetricStrategy, policy))
+		*bindingConfiguration, *models.NewScalingPolicy(customMetricStrategy, policyDefinition))
 	responseJson, err := bindingParameters.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to to build response", err)

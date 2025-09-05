@@ -189,10 +189,11 @@ var _ = Describe("Broker", func() {
 					fakePolicyDB.GetAppPolicyReturns(policyDef, nil)
 				})
 				It("returns the binding with parameters", func() {
-					stgy := models.CustomMetricsSameApp
+					auth := models.X509Certificate
+					stgy := models.DefaultCustomMetricsStrategy
 					responesParams := domain.GetBindingSpec{
 						Parameters: models.NewAppScalingConfig(
-							*models.NewBindingConfig(models.GUID(""), stgy),
+							*models.NewBindingConfig(models.GUID(""), &auth),
 							*models.NewScalingPolicy(stgy, policyDef),
 						),
 					}
@@ -211,7 +212,7 @@ var _ = Describe("Broker", func() {
 					}, nil)
 
 					bindingConfig := models.NewBindingConfig(
-						models.GUID(testAppId), models.CustomMetricsBoundApp)
+						models.GUID(testAppId), &models.X509Certificate)
 					scalingPolicy := models.NewScalingPolicy(
 						models.DefaultCustomMetricsStrategy, policyDef)
 					appScalingCfg = models.NewAppScalingConfig(*bindingConfig, *scalingPolicy)
@@ -241,7 +242,7 @@ var _ = Describe("Broker", func() {
 					Expect(err).To(BeNil())
 					Expect(Binding).To(Equal(domain.GetBindingSpec{
 						Parameters: models.NewBindingConfig(
-							models.GUID(testAppId), models.CustomMetricsBoundApp),
+							models.GUID(testAppId), &models.X509Certificate),
 					}))
 				})
 			})

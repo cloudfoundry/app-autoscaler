@@ -257,8 +257,20 @@ var (
 func (s CustomMetricsStrategy) String() string {
 	return s.value
 }
-
 var _ fmt.Stringer = CustomMetricsStrategy{}
+
+func ParseCustomMetricsStrategy(value string) (*CustomMetricsStrategy, error) {
+	switch value {
+	case "bound_app":
+		return &CustomMetricsBoundApp, nil
+	case "same_app":
+		return &CustomMetricsSameApp, nil
+	default:
+		return nil, fmt.Errorf("unsupported CustomMetricsStrategy: %s", value)
+	}
+}
+
+
 
 func (s CustomMetricsStrategy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.value)
