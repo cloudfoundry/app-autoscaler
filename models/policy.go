@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-
-
 // ================================================================================
 // ScalingPolicy
 // ================================================================================
@@ -117,6 +115,10 @@ func (sp *ScalingPolicy) GetPolicyDefinition() (p *PolicyDefinition) {
 	return p
 }
 
+func (sp *ScalingPolicy) IsDefaultScalingPolicy() bool {
+	return sp.useDefaultPolicyDef && sp.policyCfg == defaultPolicyConfiguration()
+}
+
 // -------------------- Deserialisation and serialisation --------------------
 
 // Json-serialized example of a ScalingPolicy:
@@ -205,6 +207,18 @@ func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
 	return NewScalingPolicy(cms, spRaw.PolicyDefinition), nil
 }
 
+
+func (sp ScalingPolicy) MarshalJSON() ([]byte, error) {
+	rawJson, err := sp.ToRawJSON()
+	if err != nil {
+		return nil, err
+	} else if rawJson == nil {
+		// If the rawJson is nil, we return an empty JSON object.
+		rawJson = []byte("{}")
+	}
+
+	return []byte(rawJson), nil
+}
 
 
 // ================================================================================

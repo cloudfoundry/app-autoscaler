@@ -866,7 +866,11 @@ func (b *Broker) GetBinding(ctx context.Context, instanceID string, bindingID st
 	}
 
 	scalingPolicy := models.NewScalingPolicy(*customMetricStrategy, policyDef)
-	result.Parameters = scalingPolicy
+	if !scalingPolicy.IsDefaultScalingPolicy() {
+		// The scaling policy should only be serialised into the response if it differs in some way
+		// from the default-value.
+		result.Parameters = scalingPolicy
+	}
 
 	return result, nil
 }
