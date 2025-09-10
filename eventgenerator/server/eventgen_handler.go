@@ -77,11 +77,12 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 
 	if len(orderParam) == 1 {
 		orderStr := strings.ToUpper(orderParam[0])
-		if orderStr == db.DESCSTR {
+		switch orderStr {
+		case db.DESCSTR:
 			order = db.DESC
-		} else if orderStr == db.ASCSTR {
+		case db.ASCSTR:
 			order = db.ASC
-		} else {
+		default:
 			h.logger.Error("get-aggregated-metric-histories-parse-order", err, lager.Data{"order": orderParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",

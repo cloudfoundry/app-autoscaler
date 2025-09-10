@@ -49,6 +49,7 @@ func (r PagedResourceRetriever[T]) GetAllPages(ctx context.Context, pathAndQuery
 	pageNumber := 1
 	var resources []T
 
+	//nolint:staticcheck // QF1008: embedded field access is intentional for API design
 	url := r.Retriever.ApiUrl(pathAndQuery)
 
 	for url != "" && ctx.Err() == nil {
@@ -64,6 +65,7 @@ func (r PagedResourceRetriever[T]) GetAllPages(ctx context.Context, pathAndQuery
 }
 
 func (r PagedResourceRetriever[T]) GetPage(ctx context.Context, pathAndQuery string) (Response[T], error) {
+	//nolint:staticcheck // QF1008: embedded field access is intentional for API design
 	return r.getPage(ctx, r.Retriever.ApiUrl(pathAndQuery))
 }
 
@@ -72,6 +74,7 @@ func (r PagedResourceRetriever[T]) getPage(ctx context.Context, url string) (Res
 }
 
 func (r ResourceRetriever[T]) Get(ctx context.Context, pathAndQuery string) (T, error) {
+	//nolint:staticcheck // QF1008: embedded field access is intentional for API design
 	return r.get(ctx, r.Retriever.ApiUrl(pathAndQuery))
 }
 
@@ -102,6 +105,7 @@ func (r ResourceRetriever[T]) sendAndDeserialise(ctx context.Context, req *http.
 }
 
 func (r ResourceRetriever[T]) Post(ctx context.Context, pathAndQuery string, bodyStuct any) (T, error) {
+	//nolint:staticcheck // QF1008: embedded field access is intentional for API design
 	return r.post(ctx, r.Retriever.ApiUrl(pathAndQuery), bodyStuct)
 }
 
@@ -129,6 +133,7 @@ func (r AuthenticatedClient) SendRequest(ctx context.Context, req *http.Request)
 }
 
 func (c *CtxClient) SendRequest(_ context.Context, req *http.Request) (*http.Response, error) {
+	c.setUserAgent(req)
 	resp, err := c.retryClient.Do(req)
 	if err != nil {
 		return resp, err
@@ -152,6 +157,7 @@ func (c *CtxClient) ApiUrl(pathAndQuery string) string {
 }
 
 func (r AuthenticatedClient) addAuth(ctx context.Context, req *http.Request) error {
+	//nolint:staticcheck // QF1008: embedded field access is intentional for API design
 	tokens, err := r.Retriever.GetTokens(ctx)
 	if err != nil {
 		return fmt.Errorf("get token failed: %w", err)

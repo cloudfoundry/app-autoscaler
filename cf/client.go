@@ -217,6 +217,7 @@ func (c *CtxClient) doRequestCredGrant(ctx context.Context, formData *url.Values
 	}
 	req.Header.Set("Authorization", c.authHeader)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+	c.setUserAgent(req)
 
 	var resp *http.Response
 	resp, err = c.Client.Do(req)
@@ -327,6 +328,7 @@ func (c *CtxClient) introspectToken(ctx context.Context, token string) (*Introsp
 	}
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+	c.setUserAgent(request)
 
 	resp, err := c.Client.Do(request)
 	if err != nil {
@@ -359,4 +361,8 @@ func (c *CtxClient) addAuth(ctx context.Context, req *http.Request) error {
 
 	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 	return nil
+}
+
+func (c *CtxClient) setUserAgent(req *http.Request) {
+	req.Header.Set("User-Agent", GetUserAgent())
 }

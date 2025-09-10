@@ -311,7 +311,7 @@ func (b *Broker) Update(ctx context.Context, instanceID string, details domain.U
 		return result, err
 	}
 
-	if !(servicePlanIsNew || defaultPolicyIsNew) {
+	if !servicePlanIsNew && !defaultPolicyIsNew {
 		logger.Info("no-changes-requested")
 		return result, nil
 	}
