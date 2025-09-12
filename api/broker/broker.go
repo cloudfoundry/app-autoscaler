@@ -671,7 +671,7 @@ func getOrDefaultCredentialType(
 ) (*models.CustomMetricsBindingAuthScheme, error) {
 	credentialType := defaultCredentialType
 
-	if len(policyJson) <= 0 {
+	if len(policyJson) > 0 {
 		var policy struct {
 			CredentialType string `json:"credential-type,omitempty"`
 		}
@@ -686,8 +686,10 @@ func getOrDefaultCredentialType(
 			parsedCredentialType, err := models.ParseCustomMetricsBindingAuthScheme(policy.CredentialType)
 			if err != nil {
 				logger.Error("error: parse-credential-type", err)
-				return nil, apiresponses.NewFailureResponse(
-					ErrInvalidCredentialType, http.StatusBadRequest, "error-parse-credential-type")
+				return nil, apiresponses.NewFailureResponseBuilder(
+					ErrInvalidCredentialType, http.StatusBadRequest, "error-parse-credential-type").
+					WithErrorKey("validate-credential-type").Build()
+				// For backwards-compatibility we use "validate-credential-type" here.
 			}
 			credentialType = parsedCredentialType
 		}
