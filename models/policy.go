@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -177,10 +178,17 @@ func (sp ScalingPolicy) ToRawJSON() (json.RawMessage, error) {
 		data = nil
 	} else {
 		var err error
-		data, err = json.Marshal(spRaw)
+		var buf bytes.Buffer
+		encoder := json.NewEncoder(&buf)
+		encoder.SetEscapeHTML(false)
+
+		err = encoder.Encode(spRaw)
 		if err != nil {
 			return nil, err
 		}
+
+		data = json.RawMessage(bytes.TrimSpace(buf.Bytes()))
+
 	}
 
 	return data, nil

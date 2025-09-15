@@ -18,7 +18,8 @@ var _ = Describe("PolicyValidator", func() {
 		policyValidator        *PolicyValidator
 		errResult              []PolicyValidationErrors
 		policyString           string
-		policy                 *models.PolicyDefinition
+		policy                 *models.ScalingPolicy
+		policyDefinition       *models.PolicyDefinition
 		policyJson             string
 		lowerCPUThreshold      int
 		upperCPUThreshold      int
@@ -29,6 +30,7 @@ var _ = Describe("PolicyValidator", func() {
 		lowerDiskThreshold     int
 		upperDiskThreshold     int
 	)
+
 	BeforeEach(func() {
 		lowerCPUThreshold = 1
 		upperCPUThreshold = 15
@@ -59,10 +61,14 @@ var _ = Describe("PolicyValidator", func() {
 	})
 	JustBeforeEach(func() {
 		policy, errResult = policyValidator.ParseAndValidatePolicy(json.RawMessage(policyString))
-		policyBytes, err := json.Marshal(policy)
+		if policy != nil && len(errResult) <= 0 {
+			policyDefinition = policy.GetPolicyDefinition()
+		}
+		policyBytes, err := json.Marshal(policyDefinition)
 		Expect(err).ToNot(HaveOccurred())
 		policyJson = string(policyBytes)
 	})
+
 	Context("Policy Schema &  Validation", func() {
 		Context("when invalid json", func() {
 			BeforeEach(func() {
@@ -375,8 +381,8 @@ var _ = Describe("PolicyValidator", func() {
 				It("should fail", func() {
 					Expect(errResult).To(Equal([]PolicyValidationErrors{
 						{
-							Context:     "(root)",
-							Description: "json: cannot unmarshal number 90.55 into Go struct field ScalingRule.scaling_rules.threshold of type int64",
+							Context:     "(root).scaling_rules.0.threshold",
+							Description: "Invalid type. Expected: integer, given: number",
 						},
 					}))
 				})
@@ -985,8 +991,8 @@ var _ = Describe("PolicyValidator", func() {
 				It("should fail", func() {
 					Expect(errResult).To(Equal([]PolicyValidationErrors{
 						{
-							Context:     "(root)",
-							Description: "json: cannot unmarshal string into Go struct field ScalingRule.scaling_rules.breach_duration_secs of type int",
+							Context:     "(root).scaling_rules.0.breach_duration_secs",
+							Description: "Invalid type. Expected: integer, given: string",
 						},
 					}))
 				})

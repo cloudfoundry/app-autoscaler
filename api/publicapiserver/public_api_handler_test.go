@@ -267,12 +267,13 @@ var _ = Describe("PublicApiHandler", func() {
 					},
 				}, nil)
 			})
-			FIt("should succeed", func() {
+			It("should succeed", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 
 				result := strings.TrimSpace(resp.Body.String())
 
-				Expect(result).To(Equal(`{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"<","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`))
+				expectation := `{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"<","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`
+				Expect(result).To(Equal(expectation))
 			})
 		})
 		Context("and custom metric strategy", func() {

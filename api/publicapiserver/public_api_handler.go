@@ -112,14 +112,13 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	}
 
 	scalingPolicy := models.NewScalingPolicy(customMetricStrategy, policyDef)
-	scalingPolicyRawJSON, err := scalingPolicy.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to convert binding parameters to raw JSON", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error converting binding parameters to raw JSON")
 		return
 	}
 
-	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicyRawJSON)
+	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicy)
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -147,30 +146,24 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	bindingConfiguration, err := models.BindingConfigFromRawJSON(policyBytes)
-	if err != nil {
-		errMessage := "Failed to read binding configuration request body"
-		logger.Error(errMessage, err)
-		writeErrorResponse(w, http.StatusInternalServerError, errMessage)
-		return
-	}
-
 	policyGuid := uuid.NewString()
-	if err := h.policydb.SaveAppPolicy(r.Context(), appId, policyDefinition, policyGuid); err != nil {
-		logger.Error("Failed to save policy", err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
-		return
-	}
+	if err := h.policydb.SaveAppPolicy(r.Context(),
+		appId, scalingPolicy.GetPolicyDefinition(), policyGuid); err != nil {
+			logger.Error("Failed to save policy", err)
+			writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
+			return
+		}
 
-	h.logger.Info("creating/updating schedules", lager.Data{"policy": policyDefinition})
+	h.logger.Info("creating/updating schedules", lager.Data{"policy": scalingPolicy})
 
-	if err := h.schedulerUtil.CreateOrUpdateSchedule(r.Context(), appId, policyDefinition, policyGuid); err != nil {
-		logger.Error("Failed to create/update schedule", err)
-		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
+	if err := h.schedulerUtil.CreateOrUpdateSchedule(r.Context(),
+		appId, scalingPolicy.GetPolicyDefinition(), policyGuid); err != nil {
+			logger.Error("Failed to create/update schedule", err)
+			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 
-	customMetricStrategy := bindingConfiguration.GetCustomMetricStrategy()
+	customMetricStrategy := scalingPolicy.GetCustomMetricsStrategy()
 	logger.Info("saving custom metric submission strategy", lager.Data{"customMetricStrategy": customMetricStrategy, "appId": appId})
 	err = h.bindingdb.SetOrUpdateCustomMetricStrategy(r.Context(), appId, customMetricStrategy, "update")
 	if err != nil {
@@ -179,9 +172,8 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, actionName)
 		return
 	}
-	bindingParameters := models.NewAppScalingConfig(
-		*bindingConfiguration, *models.NewScalingPolicy(customMetricStrategy, policyDefinition))
-	responseJson, err := bindingParameters.ToRawJSON()
+
+	responseJson, err := scalingPolicy.ToRawJSON()
 	if err != nil {
 		logger.Error("Failed to to build response", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Error building response")
