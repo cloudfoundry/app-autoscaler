@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
+	"unsafe"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -406,8 +408,20 @@ var _ = Describe("BindingSqldb", func() {
 
 			When("service binding is created with invalid custom metrics strategy", func() {
 				BeforeEach(func() {
-					// This is the only way to construct an invalid strategy
-					customMetricsStrategy = models.CustomMetricsStrategy{}
+					// 🚸 The only invalid strategy one could create without dangerous methodologies
+					// like using reflection, is this one:
+					//
+					// `customMetricsStrategy = models.CustomMetricsStrategy{}`
+					//
+					// However this is not “invalid enough” for our tests. The reason is that we
+					// generate the empty-string as a strategy which gets mapped to the value `NULL`
+					// in the database. This is perfectly legal because we allow `NULL` values in
+					// the table. Therefore we follow this violent approach here:
+					valueField := reflect.ValueOf(&customMetricsStrategy).Elem().FieldByName("value")
+					reflect.NewAt(valueField.Type(), unsafe.Pointer(valueField.UnsafeAddr())).
+						Elem().SetString("totally_invalid")
+					// 🤔 We could as well think about eliminating this test and “similar” ones as
+					// well as a benefit resulting of this re-design.
 				})
 				It("should throw an error with foreign key violation", func() {
 					Expect(err).To(HaveOccurred())
@@ -740,7 +754,7 @@ var _ = Describe("BindingSqldb", func() {
 			})
 			It("should get the custom metrics strategy from the database", func() {
 				customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-				Expect(customMetricStrategy).To(Equal("bound_app"))
+				Expect(customMetricStrategy.String()).To(Equal("bound_app"))
 			})
 		})
 		Context("When service instance and binding exists with custom metrics strategy 'same_app'", func() {
@@ -750,7 +764,7 @@ var _ = Describe("BindingSqldb", func() {
 			})
 			It("should get the custom metrics strategy from the database", func() {
 				customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-				Expect(customMetricStrategy).To(Equal("same_app"))
+				Expect(customMetricStrategy.String()).To(Equal("same_app"))
 			})
 		})
 
@@ -777,12 +791,12 @@ var _ = Describe("BindingSqldb", func() {
 				When("custom metrics strategy is not present (already null)", func() {
 					BeforeEach(func() {
 						customMetricsStrategy = models.CustomMetricsBoundApp
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsBoundApp)
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.DefaultCustomMetricsStrategy)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should save the custom metrics strategy", func() {
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("bound_app"))
+						Expect(customMetricStrategy.String()).To(Equal("bound_app"))
 					})
 				})
 				When("custom metrics strategy is not present (already null)", func() {
@@ -793,7 +807,7 @@ var _ = Describe("BindingSqldb", func() {
 					})
 					It("should save the custom metrics strategy", func() {
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("same_app"))
+						Expect(customMetricStrategy.String()).To(Equal("same_app"))
 					})
 				})
 				When("custom metrics strategy is already present", func() {
@@ -805,7 +819,7 @@ var _ = Describe("BindingSqldb", func() {
 					It("should update the custom metrics strategy to bound_app", func() {
 						Expect(err).NotTo(HaveOccurred())
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("bound_app"))
+						Expect(customMetricStrategy.String()).To(Equal("bound_app"))
 					})
 				})
 				When("custom metrics strategy is already present as same_app", func() {
@@ -817,14 +831,27 @@ var _ = Describe("BindingSqldb", func() {
 					It("should not update the same custom metrics strategy", func() {
 						Expect(err).NotTo(HaveOccurred())
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("same_app"))
+						Expect(customMetricStrategy.String()).To(Equal("same_app"))
 					})
 				})
 				When("custom metrics strategy unknown value", func() {
 					BeforeEach(func() {
-						// This is the only way to define an invalid strategy.
-						customMetricsStrategy = models.CustomMetricsStrategy{}
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
+						// 🚸 The only invalid strategy one could create without dangerous methodologies
+						// like using reflection, is this one:
+						//
+						// `customMetricsStrategy = models.CustomMetricsStrategy{}`
+						//
+						// However this is not “invalid enough” for our tests. The reason is that we
+						// generate the empty-string as a strategy which gets mapped to the value `NULL`
+						// in the database. This is perfectly legal because we allow `NULL` values in
+						// the table. Therefore we follow this violent approach here:
+						valueField := reflect.ValueOf(&customMetricsStrategy).Elem().FieldByName("value")
+						reflect.NewAt(valueField.Type(), unsafe.Pointer(valueField.UnsafeAddr())).
+							Elem().SetString("totally_invalid")
+						// 🤔 We could as well think about eliminating this test and “similar” ones as
+						// well as a benefit resulting of this re-design.
+
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.DefaultCustomMetricsStrategy)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should throw an error", func() {
@@ -845,9 +872,9 @@ var _ = Describe("BindingSqldb", func() {
 						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsBoundApp)
 						Expect(err).NotTo(HaveOccurred())
 					})
-					It("should update the custom metrics strategy with empty values", func() {
+					It("should update the custom metrics strategy with the value of the default one", func() {
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal(""))
+						Expect(customMetricStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 					})
 				})
 			})
