@@ -211,12 +211,14 @@ func (bdb *BindingSQLDB) CreateServiceBinding(
 	if err != nil {
 		return err
 	}
+
 	query := bdb.sqldb.Rebind("INSERT INTO binding" +
 		"(binding_id, service_instance_id, app_id, created_at, custom_metrics_strategy) " +
-		"VALUES(?, ?, ?, ?,?)")
+		"VALUES(?, ?, ?, ?, ?)")
+	customMetricsStrategyString := nullableString(customMetricsStrategy.String())
 	_, err = bdb.sqldb.ExecContext(ctx,
 		query, bindingId, serviceInstanceId,
-		appId, time.Now(), nullableString(customMetricsStrategy.String()))
+		appId, time.Now(), customMetricsStrategyString)
 
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId, "bindingId": bindingId, "appId": appId, "customMetricsStrategy": customMetricsStrategy})
