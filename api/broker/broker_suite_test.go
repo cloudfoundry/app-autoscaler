@@ -48,8 +48,10 @@ var _ = BeforeSuite(func() {
 	testDefaultGuid = "a-not-so-guid"
 
 	conf = &config.Config{
-		CatalogPath:          "../exampleconfig/catalog-example.json",
-		DashboardRedirectURI: dashBoardURL,
+		CatalogPath:                        "../exampleconfig/catalog-example.json",
+		DashboardRedirectURI:               dashBoardURL,
+		PolicySchemaPath:                   "../policyvalidator/policy_json.schema.json",
+		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
 
 	catalogBytes, err := os.ReadFile("../exampleconfig/catalog-example.json")

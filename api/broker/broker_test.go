@@ -156,6 +156,25 @@ var _ = Describe("Broker", func() {
 			})
 		})
 		Context("when the binding exists", func() {
+			Context("without policy", func() {
+				BeforeEach(func() {
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
+						ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
+					fakePolicyDB.GetAppPolicyReturns(nil, nil)
+				})
+				It("returns the empty binding without parameters", func() {
+					By("querying the DB", func() {
+						Expect(fakePolicyDB.GetAppPolicyCallCount()).To(Equal(1))
+						ctx, appId := fakePolicyDB.GetAppPolicyArgsForCall(0)
+						Expect(ctx).NotTo(BeNil())
+						Expect(appId).To(Equal(testAppId))
+					})
+					By("returning an empty response", func() {
+						Expect(err).ShouldNot(HaveOccurred())
+						Expect(Binding).To(Equal(domain.GetBindingSpec{}))
+					})
+				})
+			})
 			Context("with default policy and default custom-metrics-strategy", func() {
 				BeforeEach(func() {
 					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
@@ -289,14 +308,53 @@ var _ = Describe("Broker", func() {
 				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
 
 				Expect(err).NotTo(BeNil())
-				// 🚧 To-do!
+				Expect(err).To(MatchError(ContainSubstring("app-guid is not supported in configuration")))
 			})
 
-			It("Supports provision of an Autoscaler Policy as RawParameters", func() {
+			FIt("Supports provision of an Autoscaler Policy as RawParameters", func() {
+				var bindingParams = []byte(`
+{
+  "instance_min_count": 1,
+  "instance_max_count": 5,
+  "scaling_rules": [
+	{
+	  "metric_type": "memoryused",
+	  "threshold": 30,
+	  "operator": "<",
+	  "adjustment": "-1"
+	}
+  ]
+}`)
+				details = domain.BindDetails{
+					AppGUID:   "",
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+					},
+					RawParameters: bindingParams,
+				}
 
+				binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).To(BeNil())
+				Expect(binding).NotTo(BeNil())
+
+				// Check if there is a policy that is associated with the generated binding and that
+				// it corresponds to the json in `bindingParams`
+				Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+				_, appId, policy, policyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+				Expect(appId).To(Equal("AppGUID_for_bindings"))
+				Expect(policy).NotTo(BeNil())
+				Expect(policyGuid).NotTo(BeEmpty())
+
+				policyJson, err := policy.ToRawJSON()
+				Expect(err).To(BeNil())
+				Expect(policyJson).To(MatchJSON(bindingParams))
 			})
 			It("Does not require the provision of an Autoscaler Policy as RawParameters", func() {
 				// 🚧 To-do: Check usage of default-policy?
+
 			})
 		})
 		Context("Create a service-key", func() {
