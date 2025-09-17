@@ -311,7 +311,7 @@ var _ = Describe("Broker", func() {
 				Expect(err).To(MatchError(ContainSubstring("app-guid is not supported in configuration")))
 			})
 
-			FIt("Supports provision of an Autoscaler Policy as RawParameters", func() {
+			It("Supports provision of an Autoscaler Policy as RawParameters", func() {
 				var bindingParams = []byte(`
 {
   "instance_min_count": 1,
@@ -353,13 +353,36 @@ var _ = Describe("Broker", func() {
 				Expect(policyJson).To(MatchJSON(bindingParams))
 			})
 			It("Does not require the provision of an Autoscaler Policy as RawParameters", func() {
-				// 🚧 To-do: Check usage of default-policy?
+				details = domain.BindDetails{
+					AppGUID:   "",
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+					},
+				}
 
+				binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).To(BeNil())
+				Expect(binding).NotTo(BeNil())
+
+				// Check that no policy is saved when no parameters are provided
+				Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(0))
+
+				// Check that the binding is created with default configuration
+				Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+				_, bindingId, serviceInstanceId, appId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+				Expect(serviceInstanceId).To(Equal(instanceID))
+				Expect(bindingId).To(Equal(bindingID))
+				Expect(appId).To(Equal("AppGUID_for_bindings"))
+				Expect(customMetricsStrategy).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 			})
 		})
 		Context("Create a service-key", func() {
 			It("Fails when there is an AppGUID in the BindDetails", func() {
-
+				// 🚧 To-do!
 			})
 		})
 	})
