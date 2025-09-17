@@ -449,11 +449,7 @@ func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricS
 func (bdb *BindingSQLDB) GetCustomMetricStrategyByAppId(
 	ctx context.Context, appId string,
 ) (models.CustomMetricsStrategy, error) {
-	customMetricsStrategy, err := bdb.fetchCustomMetricStrategyByAppId(ctx, appId)
-	if err != nil {
-		return models.DefaultCustomMetricsStrategy, err
-	}
-	return customMetricsStrategy, nil
+	return bdb.fetchCustomMetricStrategyByAppId(ctx, appId)
 }
 
 func (bdb *BindingSQLDB) SetOrUpdateCustomMetricStrategy(
@@ -508,17 +504,12 @@ func (bdb *BindingSQLDB) fetchCustomMetricStrategyByAppId(
 		return models.DefaultCustomMetricsStrategy, err
 	}
 
-	var customMetricsStrategy models.CustomMetricsStrategy
-	switch customMetricsStrategyRaw.String {
-	case models.CustomMetricsBoundApp.String():
-		customMetricsStrategy = models.CustomMetricsBoundApp
-	case models.CustomMetricsSameApp.String():
-		customMetricsStrategy = models.CustomMetricsSameApp
-	default:
+	customMetricsStrategy, err := models.ParseCustomMetricsStrategy(customMetricsStrategyRaw.String)
+	if err != nil {
 		bdb.logger.Error("unsupported-custom-metrics-strategy", fmt.Errorf("unsupported CustomMetricsStrategy: %s", customMetricsStrategyRaw.String),
 			lager.Data{"query": query, "appId": appId})
 		return models.DefaultCustomMetricsStrategy, fmt.Errorf("unsupported CustomMetricsStrategy: %s", customMetricsStrategyRaw.String)
 	}
 
-	return customMetricsStrategy, nil
+	return *customMetricsStrategy, nil
 }

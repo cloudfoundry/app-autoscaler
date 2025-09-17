@@ -280,6 +280,8 @@ func ParseCustomMetricsStrategy(value string) (*CustomMetricsStrategy, error) {
 		return &CustomMetricsBoundApp, nil
 	case "same_app":
 		return &CustomMetricsSameApp, nil
+	case "":
+		return &DefaultCustomMetricsStrategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported CustomMetricsStrategy: %s", value)
 	}

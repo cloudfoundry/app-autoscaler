@@ -183,7 +183,7 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 }
 
 func (b *Broker) getPolicyFromJsonRawMessage(policyJson json.RawMessage, instanceID string, planID string) (*models.ScalingPolicy, error) {
-	if len(policyJson) <= 0 { // no nil-check needed as nil has len 0
+	if isEmptyPolicy := len(policyJson) <= 0; isEmptyPolicy { // no nil-check needed: `len(nil) == 0`
 		return nil, nil
 	}
 
@@ -196,8 +196,8 @@ func (b *Broker) validateAndCheckPolicy(rawJson json.RawMessage, instanceID stri
 
 	if errResults != nil {
 		// 🚫 The subsequent log-message is a strong assumption about the context of the caller. But
-		// how can we that actually know here that we operate on a default-policy? In fact, when we
-		// are in the call-stack of `Bind` then we are *not* called with a default-policy.
+		// how can we actually know here that we operate on a default-policy? In fact, when we are
+		// in the call-stack of `Bind` then we are *not* called with a default-policy.
 		logger.Info("got-invalid-default-policy")
 		resultsJson, err := json.Marshal(errResults)
 		if err != nil {
@@ -584,7 +584,9 @@ func (b *Broker) Bind(
 		return result, err
 	}
 
-	// To-do: 🚧 Factor everything that is involved in this creation out into an own helper-function.
+	// To-do: 🚧 Factor everything that is involved in this creation out into an own
+	// helper-function. Consider a function analogous to `getScalingPolicyFromRequest` that is
+	// defined within this file.
 	appScalingConfig := models.NewAppScalingConfig(
 		*models.NewBindingConfig(models.GUID(appGUID), customMetricsBindingAuthScheme),
 		*scalingPolicy)
