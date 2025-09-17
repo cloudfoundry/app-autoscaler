@@ -238,7 +238,7 @@ var _ = Describe("PublicApiHandler", func() {
 
 		When("policy exist", func() {
 			BeforeEach(func() {
-				pathVariables["appId"] = TEST_APP_ID // 🚧 To-do: 🧐 When do we get an empty app-id from there?
+				pathVariables["appId"] = TEST_APP_ID
 				bindingdb.GetCustomMetricStrategyByAppIdReturns(models.DefaultCustomMetricsStrategy, nil)
 				policydb.GetAppPolicyReturns(&models.PolicyDefinition{
 					InstanceMax: 5,

@@ -25,7 +25,7 @@ var _ = Describe("BindingConfigs", func() {
 			It("should create binding config with default auth scheme", func() {
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(bindingConfig.GetCustomMetricStrategy()).To(BeNil())
+				Expect(bindingConfig.GetCustomMetricsBindingAuth()).To(BeNil())
 			})
 		})
 
@@ -37,7 +37,7 @@ var _ = Describe("BindingConfigs", func() {
 			It("should create binding config with BindingSecret auth scheme", func() {
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(BindingSecret))
+				Expect(*bindingConfig.GetCustomMetricsBindingAuth()).To(Equal(BindingSecret))
 			})
 		})
 
@@ -49,7 +49,7 @@ var _ = Describe("BindingConfigs", func() {
 			It("should create binding config with X509Certificate auth scheme", func() {
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(X509Certificate))
+				Expect(*bindingConfig.GetCustomMetricsBindingAuth()).To(Equal(X509Certificate))
 			})
 		})
 	})
@@ -132,7 +132,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(GUID("550e8400-e29b-41d4-a716-446655440000")))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(BindingSecret))
+				Expect(*bindingConfig.GetCustomMetricsBindingAuth()).To(Equal(BindingSecret))
 			})
 		})
 
@@ -146,7 +146,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(bindingConfig.GetCustomMetricStrategy()).To(BeNil())
+				Expect(bindingConfig.GetCustomMetricsBindingAuth()).To(BeNil())
 			})
 		})
 
@@ -160,7 +160,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(BindingSecret))
+				Expect(*bindingConfig.GetCustomMetricsBindingAuth()).To(Equal(BindingSecret))
 			})
 		})
 
@@ -174,7 +174,7 @@ var _ = Describe("BindingConfigs", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(bindingConfig).NotTo(BeNil())
 				Expect(bindingConfig.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*bindingConfig.GetCustomMetricStrategy()).To(Equal(X509Certificate))
+				Expect(*bindingConfig.GetCustomMetricsBindingAuth()).To(Equal(X509Certificate))
 			})
 		})
 

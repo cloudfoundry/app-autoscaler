@@ -176,7 +176,7 @@ var _ = Describe("AppScalingConfig", func() {
 
 				config := appScalingCfg.GetConfiguration()
 				Expect(config.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(*config.GetCustomMetricStrategy()).To(Equal(X509Certificate))
+				Expect(*config.GetCustomMetricsBindingAuth()).To(Equal(X509Certificate))
 
 				policy := appScalingCfg.GetScalingPolicy()
 				Expect(policy.GetCustomMetricsStrategy()).To(Equal(CustomMetricsBoundApp))
@@ -207,7 +207,7 @@ var _ = Describe("AppScalingConfig", func() {
 
 				config := appScalingCfg.GetConfiguration()
 				Expect(config.GetAppGUID()).To(Equal(testAppGUID))
-				Expect(config.GetCustomMetricStrategy()).To(BeNil())
+				Expect(config.GetCustomMetricsBindingAuth()).To(BeNil())
 
 				policy := appScalingCfg.GetScalingPolicy()
 				Expect(policy.GetCustomMetricsStrategy()).To(Equal(DefaultCustomMetricsStrategy))

@@ -363,27 +363,3 @@ func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, _ *http.Request, _ m
 		h.logger.Error(ActionWriteBody, err)
 	}
 }
-
-// 🚧 To-do: Remove me!
-// func (h *PublicApiHandler) getBindingConfigurationFromRequest(rawJson json.RawMessage, logger lager.Logger) (*models.BindingConfig, error) {
-//	var bindingConfiguration models.BindingConfig
-//	var err error
-//	if rawJson != nil {
-//		err = json.Unmarshal(rawJson, &bindingConfiguration)
-//		if err != nil {
-//			logger.Error("unmarshal-binding-configuration", err)
-//			return bindingConfiguration, err
-//		}
-//	}
-//	return bindingConfiguration, err
-// }
-
-// // 🚧 To-do: Remove me!
-// func buildResponse(scalingPolicyWithCustomMetricStrategy models.ScalingPolicyWithBindingConfig, logger lager.Logger) ([]byte, error) {
-//	responseJson, err := json.Marshal(scalingPolicyWithCustomMetricStrategy)
-//	if err != nil {
-//		logger.Error("Failed to marshal policy", err)
-//		return nil, errors.New("error: marshalling policy")
-//	}
-//	return responseJson, nil
-// }

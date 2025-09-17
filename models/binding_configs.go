@@ -92,9 +92,9 @@ func (bc *BindingConfig) GetAppGUID() GUID {
 	return bc.appGUID
 }
 
-// 🚧 To-do: Rename to `GetCustomMetricsBindingAuth` and rewrite documentation!
-// GetCustomMetricStrategy returns the custom metrics configuration for this binding.
-func (bc *BindingConfig) GetCustomMetricStrategy() *CustomMetricsBindingAuthScheme {
+// GetCustomMetricsBindingAuth returns the authentification-configuration towards the
+// metricsforwarder for this binding.
+func (bc *BindingConfig) GetCustomMetricsBindingAuth() *CustomMetricsBindingAuthScheme {
 	if bc.useDefaultAuthScheme {
 		return nil
 	}

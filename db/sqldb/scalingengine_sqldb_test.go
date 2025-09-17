@@ -712,18 +712,15 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	})
 
 	Describe("GetActiveSchedules", Serial, func() {
-
 		JustBeforeEach(func() {
 			schedules, err = sdb.GetActiveSchedules()
 		})
-
 		Context("when the table is empty", func() {
 			It("returns an empty active schedules", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(schedules).To(BeEmpty())
 			})
 		})
-
 		Context("when the table is not empty", func() {
 			BeforeEach(func() {
 				err = insertActiveSchedule(appId, scheduleId, 2, 10, 5)
@@ -740,7 +737,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(schedules).To(HaveKeyWithValue(appId2, scheduleId2))
 				Expect(schedules).To(HaveKeyWithValue(appId3, scheduleId3))
 			})
-
 		})
 		Context("when there is database error", func() {
 			BeforeEach(func() {

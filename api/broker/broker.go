@@ -506,7 +506,6 @@ func (b *Broker) LastOperation(_ context.Context, instanceID string, details dom
 
 // Bind creates a new service binding
 // PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
-// 🚧 To-do: Check if the last parameter can not just be removed seamlessly.
 func (b *Broker) Bind(
 	ctx context.Context, instanceID string, bindingID string, details domain.BindDetails, _ bool,
 ) (domain.Binding, error) {
@@ -529,7 +528,7 @@ func (b *Broker) Bind(
 		return result, err
 	}
 
-	scalingPolicy, err := b.getBindingConfigurationFromRequest(scalingPolicyRaw, logger) // 🚧 Rename: getScalingPolicyFromRequest
+	scalingPolicy, err := b.getScalingPolicyFromRequest(scalingPolicyRaw, logger)
 	if err != nil {
 		logger.Error("get-scaling-policy-configuration-from-request", err)
 		return result, err
@@ -648,7 +647,7 @@ func (b *Broker) Bind(
 	return result, nil
 }
 
-func (b *Broker) getBindingConfigurationFromRequest(
+func (b *Broker) getScalingPolicyFromRequest(
 	scalingPolicyRaw json.RawMessage, logger lager.Logger,
 ) (*models.ScalingPolicy, error) {
 	scalingPolicy, err := models.ScalingPolicyFromRawJSON(scalingPolicyRaw)
