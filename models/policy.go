@@ -32,7 +32,7 @@ type ScalingPolicy struct {
 //
 // Parameters:
 //   - policyDefinition: The PolicyDefinition that defines the scaling behavior for the application.
-//                       Pass nil to use the default policy.
+//     Pass nil to use the default policy.
 //   - customMetricsStrategy: The strategy for custom metrics submission, which determines which
 //     app submits custom metrics.
 //
@@ -67,29 +67,27 @@ func NewScalingPolicy(
 	return scalingPolicy
 }
 
-
-// 🚧 To-do: Reuse this, in case we need an construtor that parser the custom-metric-strategy.
-	// var customMetricStrategy CustomMetricsStrategy // Validierung nötig!
-	// switch serviceBinding.CustomMetricsStrategy {
-	// case "bound_app":
-	//	customMetricStrategy = CustomMetricsBoundApp
-	// case "same_app", "":
-	//	customMetricStrategy = CustomMetricsSameApp
-	// default:
-	//	{
-	//		err := fmt.Errorf(
-	//			"error: serviceBinding contained unsupported strategy:\n\t%s",
-	//			serviceBinding)
-	//		return nil, err
-	//	}
-	// }
-
-	// bindingConfig.customMetrics = customMetricsConfig{
-	//	MetricSubmissionStrategy: metricsSubmissionStrategy{
-	//		AllowFrom: customMetricStrategy,
-	//	},
+// 🚧 To-do: Reuse this, in case we need a constructor that parses the custom-metric-strategy.
+// var customMetricStrategy CustomMetricsStrategy // Validierung nötig!
+// switch serviceBinding.CustomMetricsStrategy {
+// case "bound_app":
+//	customMetricStrategy = CustomMetricsBoundApp
+// case "same_app", "":
+//	customMetricStrategy = CustomMetricsSameApp
+// default:
+//	{
+//		err := fmt.Errorf(
+//			"error: serviceBinding contained unsupported strategy:\n\t%s",
+//			serviceBinding)
+//		return nil, err
+//	}
 // }
 
+// bindingConfig.customMetrics = customMetricsConfig{
+//	MetricSubmissionStrategy: metricsSubmissionStrategy{
+//		AllowFrom: customMetricStrategy,
+//	},
+// }
 
 // GetCustomMetricsStrategy returns the custom metrics strategy configured for this scaling policy.
 // This determines which applications are allowed to submit custom metrics for scaling decisions.
@@ -98,11 +96,11 @@ func NewScalingPolicy(
 // "same_app" (default strategy where the application submits its own metrics).
 //
 // Returns:
-//   CustomMetricsStrategy: The configured strategy for custom metrics submission
+//
+//	CustomMetricsStrategy: The configured strategy for custom metrics submission
 func (sp ScalingPolicy) GetCustomMetricsStrategy() CustomMetricsStrategy {
 	return sp.policyCfg.CustomMetricsCfg.MetricSubmissionStrategy.AllowFrom
 }
-
 
 // GetPolicyDefinition returns the scaling policy for the binding and nil if no one has been set (which
 // means, the default-policy is used).
@@ -142,7 +140,6 @@ func (sp *ScalingPolicy) IsDefaultScalingPolicy() bool {
 //     }
 //   ]
 // }
-
 
 type scalingPolicyJsonRawRepr struct {
 	PolicyConfiguration *policyConfiguration `json:"configuration,omitempty"`
@@ -188,7 +185,6 @@ func (sp ScalingPolicy) ToRawJSON() (json.RawMessage, error) {
 		}
 
 		data = json.RawMessage(bytes.TrimSpace(buf.Bytes()))
-
 	}
 
 	return data, nil
@@ -215,7 +211,6 @@ func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
 	return NewScalingPolicy(cms, spRaw.PolicyDefinition), nil
 }
 
-
 func (sp ScalingPolicy) MarshalJSON() ([]byte, error) {
 	rawJson, err := sp.ToRawJSON()
 	if err != nil {
@@ -227,7 +222,6 @@ func (sp ScalingPolicy) MarshalJSON() ([]byte, error) {
 
 	return []byte(rawJson), nil
 }
-
 
 // ================================================================================
 // policyConfiguration
@@ -255,8 +249,6 @@ func defaultPolicyConfiguration() policyConfiguration {
 	}
 }
 
-
-
 // CustomMetricsStrategy defines the strategy for submitting custom metrics. It can be either
 // "bound_app" or "same_app".
 //
@@ -279,6 +271,7 @@ var (
 func (s CustomMetricsStrategy) String() string {
 	return s.value
 }
+
 var _ fmt.Stringer = CustomMetricsStrategy{}
 
 func ParseCustomMetricsStrategy(value string) (*CustomMetricsStrategy, error) {
@@ -291,8 +284,6 @@ func ParseCustomMetricsStrategy(value string) (*CustomMetricsStrategy, error) {
 		return nil, fmt.Errorf("unsupported CustomMetricsStrategy: %s", value)
 	}
 }
-
-
 
 func (s CustomMetricsStrategy) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.value)
@@ -315,10 +306,6 @@ func (s *CustomMetricsStrategy) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-
-
-
-
 
 // ================================================================================
 // PolicyDefinition

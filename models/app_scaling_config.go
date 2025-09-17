@@ -27,18 +27,15 @@ func NewAppScalingConfig(
 	}
 }
 
-func (bp *AppScalingConfig) GetConfiguration() *BindingConfig {
-	return &bp.configuration
+func (asc *AppScalingConfig) GetConfiguration() *BindingConfig {
+	return &asc.configuration
 }
 
 // GetScalingPolicy returns the scaling policy for the binding and nil if no one has been set (which
 // means, the default-policy is used).
-func (bp *AppScalingConfig) GetScalingPolicy() (p *ScalingPolicy) {
-	return &bp.scalingPolicy
+func (asc *AppScalingConfig) GetScalingPolicy() (p *ScalingPolicy) {
+	return &asc.scalingPolicy
 }
-
-
-
 
 // ================================================================================
 // Deserialisation and serialisation methods for AppScalingConfig

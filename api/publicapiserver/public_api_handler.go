@@ -149,19 +149,19 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	policyGuid := uuid.NewString()
 	if err := h.policydb.SaveAppPolicy(r.Context(),
 		appId, scalingPolicy.GetPolicyDefinition(), policyGuid); err != nil {
-			logger.Error("Failed to save policy", err)
-			writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
-			return
-		}
+		logger.Error("Failed to save policy", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
+		return
+	}
 
 	h.logger.Info("creating/updating schedules", lager.Data{"policy": scalingPolicy})
 
 	if err := h.schedulerUtil.CreateOrUpdateSchedule(r.Context(),
 		appId, scalingPolicy.GetPolicyDefinition(), policyGuid); err != nil {
-			logger.Error("Failed to create/update schedule", err)
-			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+		logger.Error("Failed to create/update schedule", err)
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	customMetricStrategy := scalingPolicy.GetCustomMetricsStrategy()
 	logger.Info("saving custom metric submission strategy", lager.Data{"customMetricStrategy": customMetricStrategy, "appId": appId})
@@ -215,11 +215,11 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 
 	if err := h.bindingdb.SetOrUpdateCustomMetricStrategy(
 		r.Context(), appId, models.DefaultCustomMetricsStrategy, "delete"); err != nil {
-			actionName := "failed to delete custom metric submission strategy in the database"
-			logger.Error(actionName, err)
-			writeErrorResponse(w, http.StatusInternalServerError, actionName)
-			return
-		}
+		actionName := "failed to delete custom metric submission strategy in the database"
+		logger.Error(actionName, err)
+		writeErrorResponse(w, http.StatusInternalServerError, actionName)
+		return
+	}
 
 	// find via the app id the binding -> service instance
 	// default policy? then apply that

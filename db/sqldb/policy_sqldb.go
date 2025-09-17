@@ -160,7 +160,6 @@ func (pdb *PolicySQLDB) GetAppPolicy(ctx context.Context, appId string) (*models
 	return scalingPolicy, nil
 }
 
-
 func (pdb *PolicySQLDB) SaveAppPolicy(ctx context.Context, appId string, policy *models.PolicyDefinition, policyGuid string) error {
 	var query string
 	queryPrefix := "INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?,?,?) "

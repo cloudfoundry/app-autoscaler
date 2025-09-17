@@ -63,8 +63,11 @@ type ScalingPolicyWithBindingConfig struct {
 
 type BindingRequestBody struct {
 	BrokerCommonRequestBody
-	AppID  string          `json:"app_guid"`
-	// 🚧 To-do: Support `bind_resource` as described in https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md#request-creating-a-service-binding; Afterwards make use of it in tests;
+	AppID string `json:"app_guid"`
+
+	// 🚧 To-do: Support `bind_resource` as described in
+	// <https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md#request-creating-a-service-binding>;
+	// Afterwards make use of it in tests;
 	Policy json.RawMessage `json:"parameters,omitempty"`
 }
 

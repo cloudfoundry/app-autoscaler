@@ -131,8 +131,8 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
-		var policyStr string = string(policyJson) // The input may be not parsable, hence we use the
-												  // original string.
+		// The input may be not parsable, hence we use the original string.
+		policyStr := string(policyJson)
 		b.logger.Error("setting default policy", err, lager.Data{"policy": policyStr})
 		return result, err
 	}
@@ -146,7 +146,7 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 		if err != nil {
 			const msg = "⚠️ this should never happen as the policy has been parsed from json before."
 			logger.Error("failed-marshalling-policy", err, lager.Data{
-				"policy": policy,
+				"policy":  policy,
 				"message": msg,
 			})
 			return result, fmt.Errorf(
@@ -160,7 +160,7 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 		ServiceInstanceId: instanceID,
 		OrgId:             details.OrganizationGUID,
 		SpaceId:           details.SpaceGUID,
-		DefaultPolicy:     policyStr, // empty string if no default policy is set (i.e. nil)
+		DefaultPolicy:     policyStr,     // empty string if no default policy is set (i.e. nil)
 		DefaultPolicyGuid: policyGuidStr, // empty string if no default policy is set (i.e. nil)
 	}
 	err = b.bindingdb.CreateServiceInstance(ctx, instance)
@@ -564,9 +564,9 @@ func (b *Broker) Bind(
 		b.conf.DefaultCustomMetricsCredentialType)
 	if err != nil {
 		programmingError := &models.InvalidArgumentError{
-			Param:   "default-credential-type",
-			Value:   b.conf.DefaultCustomMetricsCredentialType,
-			Msg:	 "error parsing default credential type",
+			Param: "default-credential-type",
+			Value: b.conf.DefaultCustomMetricsCredentialType,
+			Msg:   "error parsing default credential type",
 		}
 		logger.Error("parse-default-credential-type", programmingError,
 			lager.Data{
@@ -589,7 +589,6 @@ func (b *Broker) Bind(
 	appScalingConfig := models.NewAppScalingConfig(
 		*models.NewBindingConfig(models.GUID(appGUID), customMetricsBindingAuthScheme),
 		*scalingPolicy)
-
 
 	if err := b.handleExistingBindingsResiliently(ctx, instanceID, appGUID, logger); err != nil {
 		return result, err
@@ -699,8 +698,6 @@ func getOrDefaultCredentialType(
 	return credentialType, nil
 }
 
-
-
 func (b *Broker) attachPolicyOrDefaultPolicyToApp(
 	ctx context.Context,
 	instanceID string, appGUID models.GUID,
@@ -715,7 +712,6 @@ func (b *Broker) attachPolicyOrDefaultPolicyToApp(
 		if err := attachPolicyToApp(ctx, b, appGUID, policyDefinition, policyGuidStr, logger); err != nil {
 			return err
 		}
-
 	} else {
 		// Try to save the default-policy of the service-instance, if any.
 		logger.Info("no-policy-json-provided")
@@ -758,7 +754,7 @@ func attachPolicyToApp(
 		return &models.InvalidArgumentError{
 			Param: "policyDefinition",
 			Value: nil,
-			Msg: "No policy definition provided",
+			Msg:   "No policy definition provided",
 		}
 	}
 	appGUIDStr := string(appGUID)

@@ -66,7 +66,7 @@ var _ = Describe("Policy", func() {
 	var p1, p2, policyJson *PolicyJson
 	var err error
 
-	Context("JsonSerialisation", func(){
+	Context("JsonSerialisation", func() {
 		// Schreibe Tests, die Überprüfen, ob eine ScalingPolicy korrekt deserialisiert wird.
 		// Schreibe außerdem Tests, die überprüfen, dass eine ScalingPolicy, deren CustomMetricsStrategy der Standardstrategie entspricht, ohne policyCfg-Teil serialisiert wird.
 

@@ -12,7 +12,7 @@ var _ = Describe("AppScalingConfig", func() {
 	var (
 		appScalingCfg *AppScalingConfig
 		err           error
-		testAppGUID   GUID = GUID("test-app-guid")
+		testAppGUID   = GUID("test-app-guid")
 	)
 
 	Context("NewAppScalingConfig", func() {

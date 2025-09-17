@@ -232,8 +232,7 @@ var _ = Describe("Broker", func() {
 					bindingBytes, err := os.ReadFile("testdata/with-configs.json")
 					Expect(err).ShouldNot(HaveOccurred())
 
-					var scalingPolicy models.ScalingPolicy
-					err = json.Unmarshal(bindingBytes, &scalingPolicy)
+					_, err = models.ScalingPolicyFromRawJSON(bindingBytes)
 					Expect(err).ShouldNot(HaveOccurred())
 					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})

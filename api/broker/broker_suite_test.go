@@ -30,7 +30,7 @@ var (
 	testPlanID        string
 	testDefaultPolicy string
 	testDefaultGuid   string
-	policyDef     = &models.PolicyDefinition{}
+	policyDef         = &models.PolicyDefinition{}
 )
 
 func TestServer(t *testing.T) {

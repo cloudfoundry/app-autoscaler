@@ -113,7 +113,6 @@ func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPU
 	return policyValidator
 }
 
-
 // 🚧 To-do: Move this validation into the ScalingPolicy-type in the package `models` itself.
 func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*models.ScalingPolicy, ValidationErrors) {
 	// ---------- JSON-schema-validation ----------
@@ -148,7 +147,6 @@ func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*mod
 
 	return policy, nil
 }
-
 
 // 🚧 To-do: When making the type `models.PolicyDefinition` safe, then this validation should go
 // into a functional constructor.

@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
@@ -15,9 +17,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"slices"
 )
 
 type BindingSQLDB struct {
@@ -442,8 +441,8 @@ func (bdb *BindingSQLDB) IsAppBoundToSameAutoscaler(ctx context.Context, metricS
 	}
 	// check if the app to scale is in the list of apps bound to the same service instance and return true .otherwise return false
 	if slices.Contains(appIds, appToScaleId) {
-			return true, nil
-		}
+		return true, nil
+	}
 	return false, nil
 }
 

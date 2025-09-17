@@ -9,21 +9,19 @@ import (
 // BindingConfig and its associated sub-programs
 // ================================================================================
 
-
 // BindingConfig represents the configuration for a service binding.
 //
 // ⛔ Do not create `BindingConfig` values directly via `BindingConfig{}` because it can lead to
 // undefined behaviour due to bypassing all validations.  Use the constructor-functions instead!
 type BindingConfig struct {
-	appGUID                  GUID // This always must be set.
+	appGUID GUID // This always must be set.
 
 	// Whether to use the default authentication scheme for custom metrics binding.
-	useDefaultAuthScheme      bool
+	useDefaultAuthScheme bool
 
 	// Meaningful only if useDefaultAuthScheme is false.
 	customMetricsBindingAuth CustomMetricsBindingAuthScheme
 }
-
 
 // NewBindingConfig creates a new BindingConfig instance with the specified application GUID and authentication scheme.
 //
@@ -54,8 +52,6 @@ func NewBindingConfig(
 		customMetricsBindingAuth: *customMetricsBindingAuth,
 	}
 }
-
-
 
 // // BindingConfigFromServiceBinding creates a new BindingConfig from an existing ServiceBinding.
 // //
@@ -105,8 +101,6 @@ func (bc *BindingConfig) GetCustomMetricStrategy() *CustomMetricsBindingAuthSche
 	return &bc.customMetricsBindingAuth
 }
 
-
-
 // ---------- Deserialization and serialization methods for BindingConfig ----------
 
 // Json-Serialized example of a BindingConfig:
@@ -114,7 +108,6 @@ func (bc *BindingConfig) GetCustomMetricStrategy() *CustomMetricsBindingAuthSche
 //   "app_guid": "550e8400-e29b-41d4-a716-446655440000",
 //   "credential-type": "binding-secret"
 // }
-
 
 type bindingConfigJsonRawRepr struct {
 	AppGUID GUID `json:"app_guid"`
@@ -132,7 +125,7 @@ func (bc BindingConfig) ToRawJSON() (json.RawMessage, error) {
 	}
 
 	bindingConfigRaw := bindingConfigJsonRawRepr{
-		AppGUID:       bc.appGUID,
+		AppGUID:      bc.appGUID,
 		CmAuthScheme: authScheme,
 	}
 
@@ -166,14 +159,12 @@ func (bc BindingConfig) String() string {
 	return fmt.Sprintf("BindingConfig{appGUID: %s, useDefaultAuthScheme: %t}",
 		bc.appGUID, bc.useDefaultAuthScheme)
 }
+
 var _ fmt.Stringer = BindingConfig{}
-
-
 
 // ================================================================================
 // Nested configuration objects for BindingConfig
 // ================================================================================
-
 
 // CustomMetricsBindingAuthScheme represents an authentication scheme configuration for custom
 // metrics binding operations.
@@ -196,7 +187,7 @@ type CustomMetricsBindingAuthScheme struct {
 
 // Predefined CustomMetricsBindingAuthScheme values
 var (
-	X509Certificate   = CustomMetricsBindingAuthScheme{credentialType: "x509"}
+	X509Certificate = CustomMetricsBindingAuthScheme{credentialType: "x509"}
 
 	// BasicAuth-Variant
 	BindingSecret = CustomMetricsBindingAuthScheme{credentialType: "binding-secret"}
@@ -206,16 +197,15 @@ var (
 func (c CustomMetricsBindingAuthScheme) String() string {
 	return c.credentialType
 }
+
 var _ fmt.Stringer = CustomMetricsBindingAuthScheme{} // Ensure CustomMetricsBindingAuthScheme implements fmt.Stringer
-
-
 
 // MarshalJSON implements the json.Marshaler interface for CustomMetricsBindingAuthScheme
 func (c CustomMetricsBindingAuthScheme) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.credentialType)
 }
-var _ json.Marshaler = CustomMetricsBindingAuthScheme{}   // Ensure CustomMetricsBindingAuthScheme implements json.Marshaler
 
+var _ json.Marshaler = CustomMetricsBindingAuthScheme{} // Ensure CustomMetricsBindingAuthScheme implements json.Marshaler
 
 // UnmarshalJSON implements the json.Unmarshaler interface for CustomMetricsBindingAuthScheme
 func (c *CustomMetricsBindingAuthScheme) UnmarshalJSON(data []byte) error {
@@ -232,6 +222,7 @@ func (c *CustomMetricsBindingAuthScheme) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
 var _ json.Unmarshaler = &CustomMetricsBindingAuthScheme{} // Ensure *CustomMetricsBindingAuthScheme implements json.Unmarshaler
 
 func ParseCustomMetricsBindingAuthScheme(

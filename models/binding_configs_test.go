@@ -13,7 +13,7 @@ var _ = Describe("BindingConfigs", func() {
 	var (
 		bindingConfig *BindingConfig
 		err           error
-		testAppGUID   GUID = GUID("test-app-guid")
+		testAppGUID   = GUID("test-app-guid")
 	)
 
 	Context("NewBindingConfig", func() {
