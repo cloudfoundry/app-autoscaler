@@ -1,0 +1,23 @@
+{
+  "scalingengine-config": {
+    "health": {
+      "basic_auth": {
+        "username": "scalingengine"
+      }
+    },
+    "cf": {
+      "skip_ssl_validation": false,
+      "max_retries": 3,
+      "max_retry_wait_ms": 0,
+      "idle_connection_timeout_ms": 5000,
+      "max_idle_conns_per_host_ms": 200
+    },
+    "logging": {
+      "level": "info"
+    },
+    "http_client_timeout": "60s",
+    "defaultCoolDownSecs": 300,
+    "lockSize": 32
+  }
+}
+

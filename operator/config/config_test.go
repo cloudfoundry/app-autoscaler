@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -78,7 +79,7 @@ var _ = Describe("Config", func() {
 				})
 
 				It("should error with config service not found", func() {
-					Expect(errors.Is(err, config.ErrOperatorConfigNotFound)).To(BeTrue())
+					Expect(errors.Is(err, configutil.ErrServiceConfigNotFound)).To(BeTrue())
 				})
 			})
 		})

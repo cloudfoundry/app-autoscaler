@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -49,11 +50,13 @@ var _ = Describe("Server", func() {
 
 	BeforeEach(func() {
 		conf = &config.Config{
-			Server: helpers.ServerConfig{
-				Port: 2222 + GinkgoParallelProcess(),
-			},
-			CFServer: helpers.ServerConfig{
-				Port: 3333 + GinkgoParallelProcess(),
+			BaseConfig: configutil.BaseConfig{
+				Server: helpers.ServerConfig{
+					Port: 2222 + GinkgoParallelProcess(),
+				},
+				CFServer: helpers.ServerConfig{
+					Port: 3333 + GinkgoParallelProcess(),
+				},
 			},
 		}
 		scalingEngineDB = &fakes.FakeScalingEngineDB{}

@@ -14,6 +14,7 @@ import (
 
 	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	egConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -360,18 +361,24 @@ func (components *Components) PrepareSchedulerConfig(dbURI string, scalingEngine
 func (components *Components) PrepareEventGeneratorConfig(dbURI string, port int, metricsCollectorURL string, scalingEngineURL string, aggregatorExecuteInterval time.Duration,
 	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
-		Logging: helpers.LoggingConfig{
-			Level: LOGLEVEL,
-		},
-		CFServer: helpers.ServerConfig{
-			Port: components.Ports[CfEventGenerator],
-		},
-		Server: helpers.ServerConfig{
-			Port: port,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		BaseConfig: configutil.BaseConfig{
+			Logging: helpers.LoggingConfig{
+				Level: LOGLEVEL,
+			},
+			CFServer: helpers.ServerConfig{
+				Port: components.Ports[CfEventGenerator],
+			},
+			Server: helpers.ServerConfig{
+				Port: port,
+				TLS: models.TLSCerts{
+					KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+					CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				},
+			},
+			Db: map[string]db.DatabaseConfig{
+				"policy_db":     {URL: dbURI},
+				"appmetrics_db": {URL: dbURI},
 			},
 		},
 		Pool: &egConfig.PoolConfig{
@@ -391,10 +398,6 @@ func (components *Components) PrepareEventGeneratorConfig(dbURI string, port int
 			EvaluationManagerInterval: evaluationManagerInterval,
 			EvaluatorCount:            1,
 			TriggerArrayChannelSize:   1,
-		},
-		Db: map[string]db.DatabaseConfig{
-			"policy_db":     {URL: dbURI},
-			"appmetrics_db": {URL: dbURI},
 		},
 		ScalingEngine: egConfig.ScalingEngineConfig{
 			ScalingEngineURL: scalingEngineURL,
@@ -421,32 +424,28 @@ func (components *Components) PrepareEventGeneratorConfig(dbURI string, port int
 
 func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := seConfig.Config{
+		BaseConfig: configutil.BaseConfig{
+			Logging: helpers.LoggingConfig{
+				Level: LOGLEVEL,
+			},
+			Server: helpers.ServerConfig{
+				Port: port,
+				TLS: models.TLSCerts{
+					KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+					CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				},
+			},
+			Db: map[string]db.DatabaseConfig{
+				"policy_db":        {URL: dbURI},
+				"scalingengine_db": {URL: dbURI},
+				"scheduler_db":     {URL: dbURI},
+			},
+		},
 		CF: cf.Config{
 			API:      ccUAAURL,
 			ClientID: "admin",
 			Secret:   "admin",
-		},
-		Server: helpers.ServerConfig{
-			Port: port,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		Logging: helpers.LoggingConfig{
-			Level: LOGLEVEL,
-		},
-		DB: seConfig.DBConfig{
-			PolicyDB: db.DatabaseConfig{
-				URL: dbURI,
-			},
-			ScalingEngineDB: db.DatabaseConfig{
-				URL: dbURI,
-			},
-			SchedulerDB: db.DatabaseConfig{
-				URL: dbURI,
-			},
 		},
 		DefaultCoolDownSecs: 300,
 		LockSize:            32,

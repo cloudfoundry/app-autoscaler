@@ -1,8 +1,6 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"os"
 	"time"
 
@@ -10,53 +8,31 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
-	"github.com/tedsuo/ifrit/sigmon"
 )
 
 func main() {
-	var path string
-	var err error
-	var conf *config.Config
+	path := startup.ParseFlags()
 
-	flag.StringVar(&path, "c", "", "config file")
-	flag.Parse()
+	vcapConfiguration, _ := startup.LoadVCAPConfiguration()
 
-	vcapConfiguration, err := configutil.NewVCAPConfigurationReader()
+	conf, err := startup.LoadAndValidateConfig(path, vcapConfiguration, config.LoadConfig)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read vcap configuration : %s\n", err.Error())
-	}
-
-	conf, err = config.LoadConfig(path, vcapConfiguration)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 
-	err = conf.Validate()
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
-		os.Exit(1)
-	}
+	startup.SetupEnvironment()
 
-	helpers.AssertFIPSMode()
-
-	helpers.SetupOpenTelemetry()
-
-	logger := helpers.InitLoggerFromConfig(&conf.Logging, "api")
-
-	members := grouper.Members{}
+	logger := startup.InitLogger(&conf.Logging, "api")
 
 	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
 	defer func() { _ = policyDb.Close() }()
@@ -70,17 +46,11 @@ func main() {
 	paClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
 	err = cfClient.Login()
-	if err != nil {
-		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "failed to login cloud foundry", lager.Data{"API": conf.CF.API})
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
 	bindingDb, err := sqldb.NewBindingSQLDB(conf.Db[db.BindingDb], logger.Session("bindingdb-db"))
-	if err != nil {
-		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.Db[db.BindingDb]})
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "failed to connect bindingdb database", lager.Data{"dbConfig": conf.Db[db.BindingDb]})
 	defer func() { _ = bindingDb.Close() }()
 	checkBindingFunc := func(appId string) bool {
 		return bindingDb.CheckServiceBinding(appId)
@@ -96,46 +66,27 @@ func main() {
 		rateLimiter, brokerServer)
 
 	mtlsServer, err := publicApiServer.CreateMtlsServer()
-	if err != nil {
-		logger.Error("failed to create public api http server", err)
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "failed to create public api http server")
 
 	healthServer, err := publicApiServer.CreateHealthServer()
-	if err != nil {
-		logger.Error("failed to create health http server", err)
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "failed to create health http server")
 
 	brokerHttpServer, err := brokerServer.CreateServer()
-	if err != nil {
-		logger.Error("failed to create broker http server", err)
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "failed to create broker http server")
 
 	unifiedServer, err := publicApiServer.CreateCFServer()
-	if err != nil {
-		logger.Error("failed to create public api http server", err)
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "failed to create public api http server")
 
+	members := grouper.Members{}
 	members = append(members,
-		grouper.Member{"public_api_http_server", mtlsServer},
-		grouper.Member{"broker", brokerHttpServer},
-		grouper.Member{"health_server", healthServer},
-		grouper.Member{"unified_server", unifiedServer},
+		grouper.Member{Name: "public_api_http_server", Runner: mtlsServer},
+		grouper.Member{Name: "broker", Runner: brokerHttpServer},
+		grouper.Member{Name: "health_server", Runner: healthServer},
+		grouper.Member{Name: "unified_server", Runner: unifiedServer},
 	)
 
-	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
-
-	logger.Info("started")
-
-	err = <-monitor.Wait()
-
+	err = startup.StartServices(logger, members)
 	if err != nil {
-		logger.Error("exited-with-failure", err)
 		os.Exit(1)
 	}
-
-	logger.Info("exited")
 }

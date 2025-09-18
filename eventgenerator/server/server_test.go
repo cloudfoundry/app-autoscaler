@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -41,21 +42,22 @@ var _ = Describe("Server", func() {
 	BeforeEach(func() {
 
 		conf = &config.Config{
-			Health: helpers.HealthConfig{
-				ServerConfig: helpers.ServerConfig{
-					Port: 2222 + GinkgoParallelProcess(),
+			BaseConfig: configutil.BaseConfig{
+				Health: helpers.HealthConfig{
+					ServerConfig: helpers.ServerConfig{
+						Port: 2222 + GinkgoParallelProcess(),
+					},
+					BasicAuth: models.BasicAuth{
+						Username: "user",
+						Password: "password",
+					},
 				},
-				BasicAuth: models.BasicAuth{
-					Username: "user",
-					Password: "password",
+				Server: helpers.ServerConfig{
+					Port: 1111 + GinkgoParallelProcess(),
 				},
-			},
-
-			Server: helpers.ServerConfig{
-				Port: 1111 + GinkgoParallelProcess(),
-			},
-			CFServer: helpers.ServerConfig{
-				Port: 3333 + GinkgoParallelProcess(),
+				CFServer: helpers.ServerConfig{
+					Port: 3333 + GinkgoParallelProcess(),
+				},
 			},
 		}
 

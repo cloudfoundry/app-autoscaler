@@ -11,14 +11,17 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"github.com/cloud-gov/go-cfenv"
+	"gopkg.in/yaml.v3"
 )
 
 var (
-	ErrDbServiceNotFound = errors.New("failed to get service by name")
-	ErrMissingCredential = errors.New("failed to get required credential from service")
-	AvailableDatabases   = []string{db.PolicyDb, db.BindingDb, db.AppMetricsDb, db.LockDb, db.ScalingEngineDb}
+	ErrServiceConfigNotFound = errors.New("vcap_services config not found")
+	ErrDbServiceNotFound     = errors.New("failed to get service by name")
+	ErrMissingCredential     = errors.New("failed to get required credential from service")
+	AvailableDatabases       = []string{db.PolicyDb, db.BindingDb, db.AppMetricsDb, db.LockDb, db.ScalingEngineDb, db.SchedulerDb}
 )
 
 type VCAPConfigurationReader interface {
@@ -289,6 +292,19 @@ func (vc *VCAPConfiguration) configureDb(dbName string, confDb *map[string]db.Da
 	return nil
 }
 
+func LoadConfig[T any](conf *T, vcapReader VCAPConfigurationReader, credentialName string) error {
+	data, err := vcapReader.GetServiceCredentialContent(credentialName, credentialName)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrServiceConfigNotFound, err)
+	}
+
+	var raw string
+	if json.Unmarshal(data, &raw) == nil {
+		return yaml.Unmarshal([]byte(raw), conf)
+	}
+	return yaml.Unmarshal(data, conf)
+}
+
 func (vc *VCAPConfiguration) ConfigureDatabases(confDb *map[string]db.DatabaseConfig, storedProcedureConfig *models.StoredProcedureConfig, credHelperImpl string) error {
 	for _, dbName := range AvailableDatabases {
 		if err := vc.configureDb(dbName, confDb); err != nil {
@@ -311,4 +327,78 @@ func ToJSON(v any) (string, error) {
 		return "", fmt.Errorf("failed to marshal to json: %w", err)
 	}
 	return string(b), nil
+}
+
+// CommonVCAPConfiguration applies common VCAP configuration settings to any config struct.
+// It handles the repeated patterns found in component LoadVcapConfig functions.
+type CommonVCAPConfig interface {
+	SetLoggingPlainText()
+	SetPortsForCF(cfPort int)
+	SetXFCCValidation(spaceGuid, orgGuid string)
+	GetDatabaseConfig() *map[string]db.DatabaseConfig
+}
+
+// BaseConfig contains common configuration fields and methods shared across components
+type BaseConfig struct {
+	Logging  helpers.LoggingConfig        `yaml:"logging" json:"logging"`
+	Server   helpers.ServerConfig         `yaml:"server" json:"server"`
+	CFServer helpers.ServerConfig         `yaml:"cf_server" json:"cf_server"`
+	Health   helpers.HealthConfig         `yaml:"health" json:"health"`
+	Db       map[string]db.DatabaseConfig `yaml:"db" json:"db"`
+}
+
+// SetLoggingLevel implements configutil.Configurable
+func (c *BaseConfig) SetLoggingLevel() {
+	c.Logging.Level = strings.ToLower(c.Logging.Level)
+}
+
+// GetLogging returns the logging configuration
+func (c *BaseConfig) GetLogging() *helpers.LoggingConfig {
+	return &c.Logging
+}
+
+// SetLoggingPlainText implements configutil.CommonVCAPConfig
+func (c *BaseConfig) SetLoggingPlainText() {
+	c.Logging.PlainTextSink = true
+}
+
+// SetPortsForCF implements configutil.CommonVCAPConfig
+func (c *BaseConfig) SetPortsForCF(cfPort int) {
+	c.CFServer.Port = cfPort
+	c.Server.Port = 0
+}
+
+// SetXFCCValidation implements configutil.CommonVCAPConfig
+func (c *BaseConfig) SetXFCCValidation(spaceGuid, orgGuid string) {
+	c.CFServer.XFCC.ValidSpaceGuid = spaceGuid
+	c.CFServer.XFCC.ValidOrgGuid = orgGuid
+}
+
+// GetDatabaseConfig implements configutil.CommonVCAPConfig
+func (c *BaseConfig) GetDatabaseConfig() *map[string]db.DatabaseConfig {
+	return &c.Db
+}
+
+// ApplyCommonVCAPConfiguration handles the common VCAP configuration steps
+func ApplyCommonVCAPConfiguration[T any, PT interface {
+	*T
+	CommonVCAPConfig
+}](conf PT, vcapReader VCAPConfigurationReader, serviceName string) error {
+	// enable plain text logging. See src/autoscaler/helpers/logger.go
+	conf.SetLoggingPlainText()
+
+	// Avoid port conflict: assign actual port to CF server, set BOSH server port to 0 (unused)
+	conf.SetPortsForCF(vcapReader.GetPort())
+
+	if err := LoadConfig(conf, vcapReader, serviceName); err != nil {
+		return err
+	}
+
+	if err := vcapReader.ConfigureDatabases(conf.GetDatabaseConfig(), nil, ""); err != nil {
+		return err
+	}
+
+	conf.SetXFCCValidation(vcapReader.GetSpaceGuid(), vcapReader.GetOrgGuid())
+
+	return nil
 }

@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	rpc "code.cloudfoundry.org/go-log-cache/v3/rpc/logcache_v1"
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
@@ -241,6 +242,31 @@ func initConfig() {
 	dbUrl := testhelpers.GetDbUrl()
 	timeout := 10 * time.Second
 	conf = config.Config{
+		BaseConfig: configutil.BaseConfig{
+			Db: map[string]db.DatabaseConfig{
+				"policy_db": {
+					URL:                   dbUrl,
+					MaxOpenConnections:    10,
+					MaxIdleConnections:    5,
+					ConnectionMaxLifetime: 10 * time.Second,
+				},
+				"appmetrics_db": {
+					URL:                   dbUrl,
+					MaxOpenConnections:    10,
+					MaxIdleConnections:    5,
+					ConnectionMaxLifetime: 10 * time.Second,
+				},
+			},
+			Health: helpers.HealthConfig{
+				ServerConfig: helpers.ServerConfig{
+					Port: 8000 + GinkgoParallelProcess(),
+				},
+				BasicAuth: models.BasicAuth{
+					Username: "healthcheckuser",
+					Password: "healthcheckpassword",
+				},
+			},
+		},
 		Pool: &config.PoolConfig{
 			TotalInstances: 1,
 			InstanceIndex:  0,
@@ -258,20 +284,6 @@ func initConfig() {
 			EvaluationManagerInterval: 1 * time.Second,
 			EvaluatorCount:            1,
 			TriggerArrayChannelSize:   1,
-		},
-		Db: map[string]db.DatabaseConfig{
-			"policy_db": {
-				URL:                   dbUrl,
-				MaxOpenConnections:    10,
-				MaxIdleConnections:    5,
-				ConnectionMaxLifetime: 10 * time.Second,
-			},
-			"appmetrics_db": {
-				URL:                   dbUrl,
-				MaxOpenConnections:    10,
-				MaxIdleConnections:    5,
-				ConnectionMaxLifetime: 10 * time.Second,
-			},
 		},
 		ScalingEngine: config.ScalingEngineConfig{
 			ScalingEngineURL: mockScalingEngine.URL(),
@@ -297,15 +309,6 @@ func initConfig() {
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
 		HttpClientTimeout:         &timeout,
-		Health: helpers.HealthConfig{
-			ServerConfig: helpers.ServerConfig{
-				Port: 8000 + GinkgoParallelProcess(),
-			},
-			BasicAuth: models.BasicAuth{
-				Username: "healthcheckuser",
-				Password: "healthcheckpassword",
-			},
-		},
 	}
 
 	conf.Health.ServerConfig.Port = 8000 + GinkgoParallelProcess()

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"context"
