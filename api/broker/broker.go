@@ -813,9 +813,9 @@ func (b *Broker) handleExistingBindingsResiliently(ctx context.Context, instance
 					errors.Is(err, ErrDeletePolicyForUnbinding) ||
 					errors.Is(err, ErrDeleteSchedulesForUnbinding) ||
 					errors.Is(err, ErrCredentialNotDeleted) {
-						return apiresponses.NewFailureResponse(
-							ErrCreatingServiceBinding, http.StatusInternalServerError,
-							"delete-existing-service-binding-before-binding")
+					return apiresponses.NewFailureResponse(
+						ErrCreatingServiceBinding, http.StatusInternalServerError,
+						"delete-existing-service-binding-before-binding")
 				}
 			}
 		}
@@ -1032,8 +1032,6 @@ func createServiceBinding(
 	default:
 		return ErrInvalidCustomMetricsStrategy
 	}
-
-
 
 	return nil
 }
