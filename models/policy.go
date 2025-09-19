@@ -304,12 +304,20 @@ type PolicyDefinition struct {
 	Schedules    *ScalingSchedules `json:"schedules,omitempty"`
 }
 
-func (s PolicyDefinition) ToRawJSON() (json.RawMessage, error) {
-	data, err := json.Marshal(s)
+func (pd PolicyDefinition) ToRawJSON() (json.RawMessage, error) {
+	var err error
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+
+	err = encoder.Encode(pd)
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(data), nil
+
+	data := json.RawMessage(bytes.TrimSpace(buf.Bytes()))
+
+	return data, nil
 }
 
 func FromRawJSON(data json.RawMessage) (PolicyDefinition, error) {
@@ -320,8 +328,8 @@ func FromRawJSON(data json.RawMessage) (PolicyDefinition, error) {
 	return scalingPolicy, nil
 }
 
-func (s PolicyDefinition) String() string {
-	aJson, _ := s.ToRawJSON()
+func (pd PolicyDefinition) String() string {
+	aJson, _ := pd.ToRawJSON()
 	return string(aJson)
 }
 

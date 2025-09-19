@@ -158,12 +158,25 @@ var _ = Describe("BindingSqldb", func() {
 		)
 
 		BeforeEach(func() {
-			createdPolicyJsonStr = policyJsonStr
+			// 🚸 Parse first and then serialise, to eliminate whitespace-issues that only appear on
+			// this test-suite, when executed on a MySQL-DBMS.
+			policy, err := models.ScalingPolicyFromRawJSON([]byte(policyJsonStr))
+			Expect(err).NotTo(HaveOccurred())
+			p, err := policy.ToRawJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			createdPolicyJsonStr = string(p)
 			createdPolicyGuid = policyGuid
 		})
 
 		JustBeforeEach(func() {
-			err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: createdPolicyJsonStr, DefaultPolicyGuid: createdPolicyGuid})
+			err = bdb.CreateServiceInstance(context.Background(),
+				models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+					OrgId:             testOrgGuid,
+					SpaceId:           testSpaceGuid,
+					DefaultPolicy:     createdPolicyJsonStr,
+					DefaultPolicyGuid: createdPolicyGuid})
 		})
 		Context("When instance is being created first time", func() {
 			It("should succeed", func() {

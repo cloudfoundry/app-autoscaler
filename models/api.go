@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"reflect"
 )
 
 type XFCCAuth struct {
@@ -46,6 +47,43 @@ type ServiceInstance struct {
 	SpaceId           string `db:"space_id"`
 	DefaultPolicy     string `db:"default_policy"`
 	DefaultPolicyGuid string `db:"default_policy_guid"`
+}
+
+func (s *ServiceInstance) Equals(other *ServiceInstance) bool {
+	if s == other {
+		return true
+	}
+	if s == nil || other == nil {
+		return false
+	}
+
+	if s.ServiceInstanceId != other.ServiceInstanceId ||
+		s.OrgId != other.OrgId ||
+		s.SpaceId != other.SpaceId ||
+		s.DefaultPolicyGuid != other.DefaultPolicyGuid {
+		return false
+	}
+
+	return s.policiesEqual(other)
+}
+
+func (s *ServiceInstance) policiesEqual(other *ServiceInstance) bool {
+	if (s.DefaultPolicy == "" || s.DefaultPolicy == "null") &&
+		(other.DefaultPolicy == "" || other.DefaultPolicy == "null") {
+		return true
+	}
+
+	var policy1, policy2 PolicyDefinition
+
+	if err := json.Unmarshal([]byte(s.DefaultPolicy), &policy1); err != nil {
+		return false
+	}
+
+	if err := json.Unmarshal([]byte(other.DefaultPolicy), &policy2); err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(policy1, policy2)
 }
 
 type ServiceBinding struct {

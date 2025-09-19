@@ -83,7 +83,7 @@ func (bdb *BindingSQLDB) CreateServiceInstance(ctx context.Context, serviceInsta
 	}
 
 	if existingInstance != nil {
-		if *existingInstance == serviceInstance {
+		if existingInstance.Equals(&serviceInstance) {
 			return db.ErrAlreadyExists
 		} else {
 			return db.ErrConflict
@@ -94,7 +94,10 @@ func (bdb *BindingSQLDB) CreateServiceInstance(ctx context.Context, serviceInsta
 		"(service_instance_id, org_id, space_id, default_policy, default_policy_guid) " +
 		" VALUES(?, ?, ?, ?, ?)")
 
-	_, err = bdb.sqldb.ExecContext(ctx, query, serviceInstance.ServiceInstanceId, serviceInstance.OrgId, serviceInstance.SpaceId, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid))
+	_, err = bdb.sqldb.ExecContext(ctx, query,
+		serviceInstance.ServiceInstanceId, serviceInstance.OrgId, serviceInstance.SpaceId,
+		nullableString(serviceInstance.DefaultPolicy),
+		nullableString(serviceInstance.DefaultPolicyGuid))
 
 	if err != nil {
 		bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "serviceinstance": serviceInstance})
