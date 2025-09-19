@@ -231,7 +231,7 @@ func (bdb *BindingSQLDB) isBindingExists(
 	bindingId string, serviceInstanceId string,
 	appId models.GUID,
 ) error {
-	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE app_id =?")
+	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE app_id = ?")
 	rows, err := bdb.sqldb.QueryContext(ctx, query, appId)
 	if err != nil {
 		bdb.logger.Error("is-binding-already-exists", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})

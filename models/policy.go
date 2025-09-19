@@ -67,28 +67,6 @@ func NewScalingPolicy(
 	return scalingPolicy
 }
 
-// 🚧 To-do: Reuse this, in case we need a constructor that parses the custom-metric-strategy.
-// var customMetricStrategy CustomMetricsStrategy // Validierung nötig!
-// switch serviceBinding.CustomMetricsStrategy {
-// case "bound_app":
-//	customMetricStrategy = CustomMetricsBoundApp
-// case "same_app", "":
-//	customMetricStrategy = CustomMetricsSameApp
-// default:
-//	{
-//		err := fmt.Errorf(
-//			"error: serviceBinding contained unsupported strategy:\n\t%s",
-//			serviceBinding)
-//		return nil, err
-//	}
-// }
-
-// bindingConfig.customMetrics = customMetricsConfig{
-//	MetricSubmissionStrategy: metricsSubmissionStrategy{
-//		AllowFrom: customMetricStrategy,
-//	},
-// }
-
 // GetCustomMetricsStrategy returns the custom metrics strategy configured for this scaling policy.
 // This determines which applications are allowed to submit custom metrics for scaling decisions.
 //

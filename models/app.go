@@ -53,6 +53,7 @@ type AppScalingResult struct {
 	CooldownExpiredAt int64         `json:"cool_down_expired_at"`
 }
 
+// 🚧 To-do: Bring this in line with the content of “models/common_typges.go”.
 // ================================================================================
 // GUIDs
 // ================================================================================
