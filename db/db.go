@@ -20,6 +20,7 @@ const (
 	AppMetricsDb       = "appmetrics_db"
 	LockDb             = "lock_db"
 	ScalingEngineDb    = "scalingengine_db"
+	SchedulerDb        = "scheduler_db"
 )
 
 type OrderType uint8

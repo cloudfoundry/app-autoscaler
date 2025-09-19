@@ -64,6 +64,7 @@ public class RestClientConfig {
             .setDefaultConnectionConfig(connectionConfig)
             .build();
     builder.setConnectionManager(ccm);
+
     RequestConfig requestConfig =
         RequestConfig.custom()
             .setConnectionRequestTimeout(Timeout.ofSeconds(httpClientTimeout))

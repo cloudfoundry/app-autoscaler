@@ -3,4 +3,8 @@ fakes/*
 mta_archives/
 api/default_catalog.json
 mta.yaml
+*.mta
 Makefile_*
+
+api/cmd/api/api
+scalingengine/cmd/scalingengine/scalingengine

@@ -1,61 +1,38 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"os"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
-
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/manager"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
-	"github.com/tedsuo/ifrit/sigmon"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/manager"
 )
 
 func main() {
-	var path string
-	var err error
-	var conf *config.Config
+	path := startup.ParseFlags()
 
-	flag.StringVar(&path, "c", "", "config file")
-	flag.Parse()
+	vcapConfiguration, _ := startup.LoadVCAPConfiguration()
 
-	vcapConfiguration, err := configutil.NewVCAPConfigurationReader()
+	conf, err := startup.LoadAndValidateConfig(path, vcapConfiguration, config.LoadConfig)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
-	}
-
-	conf, err = config.LoadConfig(path, vcapConfiguration)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to load config : %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	err = conf.Validate()
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
-		os.Exit(1)
-	}
+	startup.SetupEnvironment()
 
-	helpers.AssertFIPSMode()
-
-	helpers.SetupOpenTelemetry()
-
-	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsforwarder")
+	logger := startup.InitLogger(&conf.Logging, "metricsforwarder")
 	mfClock := clock.NewClock()
 
 	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
@@ -78,16 +55,10 @@ func main() {
 		{"custom_metrics_server", customMetricsServer},
 	}
 
-	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
-
-	logger.Info("started")
-
-	err = <-monitor.Wait()
+	err = startup.StartServices(logger, members)
 	if err != nil {
-		logger.Fatal("Exited with Error", err)
 		os.Exit(1)
 	}
-	logger.Info("exited")
 }
 
 func cacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config, policyDB *sqldb.PolicySQLDB, allowedMetricCache *cache.Cache) ifrit.RunFunc {
@@ -105,9 +76,6 @@ func cacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config,
 func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyDB *sqldb.PolicySQLDB, bindingDB *sqldb.BindingSQLDB, credentialProvider cred_helper.Credentials, allowedMetricCache *cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) ifrit.Runner {
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
 	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, bindingDB, credentialProvider, *allowedMetricCache, httpStatusCollector, rateLimiter)
-	if err != nil {
-		logger.Fatal("Failed to create client to custom metrics server", err)
-		os.Exit(1)
-	}
+	startup.ExitOnError(err, logger, "Failed to create client to custom metrics server")
 	return httpServer
 }

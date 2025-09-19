@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
@@ -101,8 +102,10 @@ var _ = Describe("Eventgenerator", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 			conf := &config.Config{
-				Logging: helpers.LoggingConfig{
-					Level: "debug",
+				BaseConfig: configutil.BaseConfig{
+					Logging: helpers.LoggingConfig{
+						Level: "debug",
+					},
 				},
 				Aggregator: &config.AggregatorConfig{
 					AggregatorExecuteInterval: 2 * time.Second,

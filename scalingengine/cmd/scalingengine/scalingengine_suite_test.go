@@ -84,19 +84,20 @@ var _ = SynchronizedBeforeSuite(
 		conf.Logging.Level = "debug"
 
 		dbUrl := GetDbUrl()
-		conf.DB.PolicyDB = db.DatabaseConfig{
+		conf.Db = make(map[string]db.DatabaseConfig)
+		conf.Db[db.PolicyDb] = db.DatabaseConfig{
 			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.DB.ScalingEngineDB = db.DatabaseConfig{
+		conf.Db[db.ScalingEngineDb] = db.DatabaseConfig{
 			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.DB.SchedulerDB = db.DatabaseConfig{
+		conf.Db[db.SchedulerDb] = db.DatabaseConfig{
 			URL:                   dbUrl,
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,

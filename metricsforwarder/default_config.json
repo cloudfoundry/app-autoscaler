@@ -1,5 +1,5 @@
 {
-  "metricsforwarder": {
+  "metricsforwarder-config": {
     "cache_cleanup_interval": "6h",
     "cache_ttl": "900s",
     "cred_helper_impl": "default",

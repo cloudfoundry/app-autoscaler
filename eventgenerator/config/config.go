@@ -1,12 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
-
-	"gopkg.in/yaml.v3"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -40,10 +37,6 @@ const (
 )
 
 var DefaultHttpClientTimeout = 5 * time.Second
-
-var defaultCFServerConfig = helpers.ServerConfig{
-	Port: 8082,
-}
 
 type PoolConfig struct {
 	TotalInstances int `yaml:"total_instances" json:"total_instances"`
@@ -84,115 +77,62 @@ type CircuitBreakerConfig struct {
 }
 
 type Config struct {
-	Logging                   helpers.LoggingConfig        `yaml:"logging" json:"logging"`
-	Server                    helpers.ServerConfig         `yaml:"server" json:"server"`
-	CFServer                  helpers.ServerConfig         `yaml:"cf_server" json:"cf_server"`
-	Pool                      *PoolConfig                  `yaml:"pool" json:"pool"`
-	Health                    helpers.HealthConfig         `yaml:"health" json:"health"`
-	Db                        map[string]db.DatabaseConfig `yaml:"db" json:"db"`
-	Aggregator                *AggregatorConfig            `yaml:"aggregator" json:"aggregator,omitempty"`
-	Evaluator                 *EvaluatorConfig             `yaml:"evaluator" json:"evaluator,omitempty"`
-	ScalingEngine             ScalingEngineConfig          `yaml:"scalingEngine" json:"scalingEngine"`
-	MetricCollector           MetricCollectorConfig        `yaml:"metricCollector" json:"metricCollector"`
-	DefaultStatWindowSecs     int                          `yaml:"defaultStatWindowSecs" json:"defaultStatWindowSecs"`
-	DefaultBreachDurationSecs int                          `yaml:"defaultBreachDurationSecs" json:"defaultBreachDurationSecs"`
-	CircuitBreaker            *CircuitBreakerConfig        `yaml:"circuitBreaker,omitempty" json:"circuitBreaker,omitempty"`
-	HttpClientTimeout         *time.Duration               `yaml:"http_client_timeout,omitempty" json:"http_client_timeout,omitempty"`
+	configutil.BaseConfig     `yaml:",inline" json:",inline"`
+	Pool                      *PoolConfig           `yaml:"pool" json:"pool"`
+	Aggregator                *AggregatorConfig     `yaml:"aggregator" json:"aggregator,omitempty"`
+	Evaluator                 *EvaluatorConfig      `yaml:"evaluator" json:"evaluator,omitempty"`
+	ScalingEngine             ScalingEngineConfig   `yaml:"scalingEngine" json:"scalingEngine"`
+	MetricCollector           MetricCollectorConfig `yaml:"metricCollector" json:"metricCollector"`
+	DefaultStatWindowSecs     int                   `yaml:"defaultStatWindowSecs" json:"defaultStatWindowSecs"`
+	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs" json:"defaultBreachDurationSecs"`
+	CircuitBreaker            *CircuitBreakerConfig `yaml:"circuitBreaker,omitempty" json:"circuitBreaker,omitempty"`
+	HttpClientTimeout         *time.Duration        `yaml:"http_client_timeout,omitempty" json:"http_client_timeout,omitempty"`
 }
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
-	conf := defaultConfig()
-
-	if err := helpers.LoadYamlFile(filepath, &conf); err != nil {
-		return nil, err
-	}
-
-	if err := loadVcapConfig(&conf, vcapReader); err != nil {
-		return nil, err
-	}
-
-	return &conf, nil
+	return configutil.GenericLoadConfig(filepath, vcapReader, defaultConfig, configutil.VCAPConfigurableFunc[Config](LoadVcapConfig))
 }
 
-func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	if !vcapReader.IsRunningOnCF() {
-		return nil
-	}
-	// enable plain text logging. See src/autoscaler/helpers/logger.go
-	conf.Logging.PlainTextSink = true
+func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
+	// EventGenerator-specific VCAP configuration
+	if vcapReader.IsRunningOnCF() {
+		if err := configutil.ApplyCommonVCAPConfiguration(conf, vcapReader, "eventgenerator-config"); err != nil {
+			return err
+		}
 
-	// Avoid port conflict: assign actual port to CF server, set BOSH server port to 0 (unused)
-	conf.CFServer.Port = vcapReader.GetPort()
-	conf.Server.Port = 0
-
-	if err := loadEventgeneratorConfig(conf, vcapReader); err != nil {
-		return err
+		if conf.Pool != nil {
+			conf.Pool.InstanceIndex = vcapReader.GetInstanceIndex()
+		}
+		conf.ScalingEngine.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
 	}
 
-	if err := vcapReader.ConfigureDatabases(&conf.Db, nil, ""); err != nil {
-		return err
-	}
-
-	if err := configureInstanceIndex(conf, vcapReader); err != nil {
-		return err
-	}
-
-	if err := configureXfccSpaceAndOrg(conf, vcapReader); err != nil {
-		return err
-	}
-
-	conf.ScalingEngine.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
-
-	return nil
-}
-
-func loadEventgeneratorConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	var raw string
-	data, err := vcapReader.GetServiceCredentialContent("eventgenerator-config", "eventgenerator-config")
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrEventgeneratorConfigNotFound, err)
-	}
-
-	// removes the first and last double quotes if they exist
-	if json.Unmarshal(data, &raw) == nil {
-		return yaml.Unmarshal([]byte(raw), conf)
-	} else {
-		return yaml.Unmarshal(data, conf)
-	}
-}
-
-func configureXfccSpaceAndOrg(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	conf.CFServer.XFCC.ValidSpaceGuid = vcapReader.GetSpaceGuid()
-	conf.CFServer.XFCC.ValidOrgGuid = vcapReader.GetOrgGuid()
-
-	return nil
-}
-
-func configureInstanceIndex(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	conf.Pool.InstanceIndex = vcapReader.GetInstanceIndex()
 	return nil
 }
 
 func defaultConfig() Config {
 	return Config{
-		Logging: helpers.LoggingConfig{
-			Level: DefaultLoggingLevel,
-		},
-		Server: helpers.ServerConfig{
-			Port: DefaultServerPort,
+		BaseConfig: configutil.BaseConfig{
+			Logging: helpers.LoggingConfig{
+				Level: DefaultLoggingLevel,
+			},
+			Server: helpers.ServerConfig{
+				Port: DefaultServerPort,
+			},
+			CFServer: helpers.ServerConfig{
+				Port: 8082,
+			},
+			Health: helpers.HealthConfig{
+				ServerConfig: helpers.ServerConfig{
+					Port: DefaultHealthServerPort,
+				},
+			},
+			Db: make(map[string]db.DatabaseConfig),
 		},
 		Pool: &PoolConfig{},
-		Db:   make(map[string]db.DatabaseConfig),
 		CircuitBreaker: &CircuitBreakerConfig{
 			BackOffInitialInterval:  DefaultBackOffInitialInterval,
 			BackOffMaxInterval:      DefaultBackOffMaxInterval,
 			ConsecutiveFailureCount: DefaultBreakerConsecutiveFailureCount,
-		},
-		CFServer: defaultCFServerConfig,
-		Health: helpers.HealthConfig{
-			ServerConfig: helpers.ServerConfig{
-				Port: DefaultHealthServerPort,
-			},
 		},
 		Aggregator: &AggregatorConfig{
 			AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,

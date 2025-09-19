@@ -54,6 +54,13 @@ modules:
           chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
           /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
             BOOT-INF/classes/operator.db.changelog.yml
+
+      - name: apply-scalingengine-changelog
+        command: |
+          chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
+          /home/vcap/app/BOOT-INF/classes/bin/apply-changelog.sh \
+            BOOT-INF/classes/scalingengine.db.changelog.yml
+
       - name: apply-scheduler-changelog
         command: |
           chmod +x ./BOOT-INF/classes/bin/apply-changelog.sh ; \
@@ -167,6 +174,21 @@ modules:
       stack: cflinuxfs4
       routes:
 
+  - name: scalingengine
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/cmd/scalingengine
+      GOFIPS140: v1.0.0
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
+    requires:
+    - name: scalingengine-config
+    - name: database
+    - name: app-autoscaler-application-logs
+    - name: app-autoscaler-dynatrace
+
   - name: scheduler
     type: java
     path: .
@@ -216,6 +238,12 @@ resources:
     service-tags:
     - operator-config
     path: operator/default_config.json
+- name: scalingengine-config
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-tags:
+    - scalingengine-config
+    path: scalingengine/default_config.json
 - name: scheduler-config
   type: org.cloudfoundry.user-provided-service
   parameters:
@@ -235,6 +263,7 @@ resources:
     - binding_db
     - appmetrics_db
     - scalingengine_db
+    - scheduler_db
     - lock_db
     - relational
 - name: syslog-client

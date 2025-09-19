@@ -2,15 +2,12 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -90,7 +87,7 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 	}
 
 	conf.Server.Port = vcapReader.GetPort()
-	if err := loadMetricsforwarderConfig(conf, vcapReader); err != nil {
+	if err := configutil.LoadConfig(&conf, vcapReader, "metricsforwarder-config"); err != nil {
 		return err
 	}
 
@@ -98,27 +95,12 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	if err := configureSyslogTLS(conf, vcapReader); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func loadMetricsforwarderConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
-	data, err := vcapReader.GetServiceCredentialContent("metricsforwarder-config", "metricsforwarder")
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrMetricsforwarderConfigNotFound, err)
-	}
-	return yaml.Unmarshal(data, conf)
-}
-
-func configureSyslogTLS(conf *Config, vcapReader configutil.VCAPConfigurationReader) error {
 	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
 	if err != nil {
 		return err
 	}
 	conf.SyslogConfig.TLS = tls
+
 	return nil
 }
 
@@ -201,4 +183,9 @@ func (c *Config) validateCredHelperImpl() error {
 
 func (c *Config) UsingSyslog() bool {
 	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
+}
+
+// GetLogging returns the logging configuration
+func (c *Config) GetLogging() *helpers.LoggingConfig {
+	return &c.Logging
 }
