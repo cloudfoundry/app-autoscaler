@@ -79,11 +79,12 @@ function run_liquibase() {
   local -r user="$2"
   local -r password="$3"
   local -r changelog="$4"
+  local -r log_level="${LOG_LEVEL:-DEBUG}"
 
   local classpath=$(readlink -f /home/vcap/app/BOOT-INF/lib/* | tr '\n' ':')
 
   "$JAVA_BIN" -cp "$classpath" liquibase.integration.commandline.Main \
-    --url "$jdbcdburl" --username="$user" --password="$password" --driver=org.postgresql.Driver --logLevel=DEBUG --changeLogFile="$changelog" update
+    --url "$jdbcdburl" --username="$user" --password="$password" --driver=org.postgresql.Driver --logLevel="$log_level" --changeLogFile="$changelog" update
 }
 
 function main() {
