@@ -164,7 +164,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	conf.CatalogPath = "../../exampleconfig/catalog-example.json"
 	conf.CatalogSchemaPath = "../../schemas/catalog.schema.json"
-	conf.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"
+	conf.PolicySchemaPath = "../policyvalidator/scaling-policy.legacy-schema.json"
 
 	schedulerServer = ghttp.NewServer()
 	conf.Scheduler.SchedulerURL = schedulerServer.URL()

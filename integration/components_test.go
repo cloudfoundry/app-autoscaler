@@ -232,7 +232,7 @@ func DefaultGolangAPITestConfig() apiConfig.Config {
 		},
 		CatalogPath:          "../servicebroker/config/catalog.json",
 		CatalogSchemaPath:    "../api/schemas/catalog.schema.json",
-		PolicySchemaPath:     "../api/policyvalidator/policy_json.schema.json",
+		PolicySchemaPath:     "../api/policyvalidator/scaling-policy.legacy-schema.json",
 		InfoFilePath:         "../api/exampleconfig/catalog-example.json",
 		DashboardRedirectURI: "",
 		CF: cf.Config{
