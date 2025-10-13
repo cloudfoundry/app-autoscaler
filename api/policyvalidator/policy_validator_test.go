@@ -63,10 +63,10 @@ var _ = Describe("PolicyValidator", func() {
 		policy, errResult = policyValidator.ParseAndValidatePolicy(json.RawMessage(policyString))
 		if policy != nil && len(errResult) <= 0 {
 			policyDefinition = policy.GetPolicyDefinition()
+			policyBytes, err := json.Marshal(policyDefinition)
+			Expect(err).ToNot(HaveOccurred())
+			policyJson = string(policyBytes)
 		}
-		policyBytes, err := json.Marshal(policyDefinition)
-		Expect(err).ToNot(HaveOccurred())
-		policyJson = string(policyBytes)
 	})
 
 	Context("Policy Schema &  Validation", func() {
@@ -222,44 +222,44 @@ var _ = Describe("PolicyValidator", func() {
 			})
 		})
 
-		// // 🚧🧐 To-do for the reviewer: Check if we can just ommit this test.
-		// Context("when additional fields are present", func() {
-		//	BeforeEach(func() {
-		//		policyString = `{
-		//			"instance_max_count":4,
-		//			"instance_min_count":1,
-		//			"scaling_rules":[
-		//			{
-		//				"metric_type":"memoryutil",
-		//				"stats_window_secs": 600,
-		//				"breach_duration_secs":600,
-		//				"threshold":90,
-		//				"operator":">=",
-		//				"cool_down_secs":300,
-		//				"adjustment":"+1"
-		//			}],
-		//			"is_admin": true,
-		//			"is_sso": true,
-		//			"role": "admin"
-		//		}`
-		//	})
-		//	It("the validation succeed and remove them", func() {
-		//		validPolicyString := `{
-		//			"instance_max_count":4,
-		//			"instance_min_count":1,
-		//			"scaling_rules":[
-		//			{
-		//				"metric_type":"memoryutil",
-		//				"breach_duration_secs":600,
-		//				"threshold":90,
-		//				"operator":">=",
-		//				"cool_down_secs":300,
-		//				"adjustment":"+1"
-		//			}]
-		//		}`
-		//		Expect(policyJson).To(MatchJSON(validPolicyString))
-		//	})
-		// })
+		// This needs to be passed for backwards-compatibility. We allowed in former times to set
+		// this parameter `stats_window_secs` via configuration. We must silently ignore this
+		// parameter today.
+		Context("when legacy-fields are present", func() {
+			BeforeEach(func() {
+				policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"stats_window_secs": 600,
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+			})
+			It("the validation succeed and remove them", func() {
+				validPolicyString := `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				Expect(errResult).To(BeNil())
+				Expect(policyJson).To(MatchJSON(validPolicyString))
+			})
+		})
 
 		Context("Scaling Rules", func() {
 
