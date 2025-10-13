@@ -19,6 +19,7 @@ var _ = Describe("PolicyValidator", func() {
 		errResult              []PolicyValidationErrors
 		policyString           string
 		policy                 *models.ScalingPolicy
+		policyDefinition       *models.PolicyDefinition
 		policyJson             string
 		lowerCPUThreshold      int
 		upperCPUThreshold      int
@@ -29,6 +30,7 @@ var _ = Describe("PolicyValidator", func() {
 		lowerDiskThreshold     int
 		upperDiskThreshold     int
 	)
+
 	BeforeEach(func() {
 		lowerCPUThreshold = 1
 		upperCPUThreshold = 15
@@ -59,10 +61,14 @@ var _ = Describe("PolicyValidator", func() {
 	})
 	JustBeforeEach(func() {
 		policy, errResult = policyValidator.ParseAndValidatePolicy(json.RawMessage(policyString))
-		policyBytes, err := json.Marshal(policy)
+		if policy != nil && len(errResult) <= 0 {
+			policyDefinition = policy.GetPolicyDefinition()
+		}
+		policyBytes, err := json.Marshal(policyDefinition)
 		Expect(err).ToNot(HaveOccurred())
 		policyJson = string(policyBytes)
 	})
+
 	Context("Policy Schema &  Validation", func() {
 		Context("when invalid json", func() {
 			BeforeEach(func() {
@@ -375,8 +381,8 @@ var _ = Describe("PolicyValidator", func() {
 				It("should fail", func() {
 					Expect(errResult).To(Equal([]PolicyValidationErrors{
 						{
-							Context:     "(root)",
-							Description: "json: cannot unmarshal number 90.55 into Go struct field ScalingRule.scaling_rules.threshold of type int64",
+							Context:     "(root).scaling_rules.0.threshold",
+							Description: "Invalid type. Expected: integer, given: number",
 						},
 					}))
 				})
@@ -985,8 +991,8 @@ var _ = Describe("PolicyValidator", func() {
 				It("should fail", func() {
 					Expect(errResult).To(Equal([]PolicyValidationErrors{
 						{
-							Context:     "(root)",
-							Description: "json: cannot unmarshal string into Go struct field ScalingRule.scaling_rules.breach_duration_secs of type int",
+							Context:     "(root).scaling_rules.0.breach_duration_secs",
+							Description: "Invalid type. Expected: integer, given: string",
 						},
 					}))
 				})
@@ -2546,7 +2552,7 @@ var _ = Describe("PolicyValidator", func() {
 								"instance_min_count":5,
 								"instance_max_count":10,
 								"initial_min_instance_count":7
-							 	}
+								}
 							]
 						 }
 					}`
@@ -2568,18 +2574,18 @@ var _ = Describe("PolicyValidator", func() {
 		When("custom_metrics is missing", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ]
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				]
+			}`
 			})
 			It("should not fail", func() {
 				Expect(errResult).To(BeNil())
@@ -2588,23 +2594,23 @@ var _ = Describe("PolicyValidator", func() {
 		When("allow_from is missing in metric_submission_strategy", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ],
-                "configuration": {
-                    "custom_metrics": {
-                        "metric_submission_strategy": {}
-                    }
-                }
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				],
+				"configuration": {
+					"custom_metrics": {
+						"metric_submission_strategy": {}
+					}
+				}
+			}`
 			})
 			It("should fail", func() {
 				Expect(errResult).To(Equal([]PolicyValidationErrors{
@@ -2618,25 +2624,25 @@ var _ = Describe("PolicyValidator", func() {
 		When("allow_from is invalid in metric_submission_strategy", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ],
-                "configuration": {
-                    "custom_metrics": {
-                        "metric_submission_strategy": {
-                            "allow_from": "invalid_value"
-                        }
-                    }
-                }
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				],
+				"configuration": {
+					"custom_metrics": {
+						"metric_submission_strategy": {
+							"allow_from": "invalid_value"
+						}
+					}
+				}
+			}`
 			})
 			It("should fail", func() {
 				Expect(errResult).To(Equal([]PolicyValidationErrors{
@@ -2650,25 +2656,25 @@ var _ = Describe("PolicyValidator", func() {
 		When("allow_from is valid in metric_submission_strategy", func() {
 			BeforeEach(func() {
 				policyString = `{
-                "instance_max_count":4,
-                "instance_min_count":1,
-                "scaling_rules":[
-                    {
-                        "metric_type":"memoryutil",
-                        "breach_duration_secs": 300,
-                        "threshold":90,
-                        "operator":">=",
-                        "adjustment": "+1"
-                    }
-                ],
-                "configuration": {
-                    "custom_metrics": {
-                        "metric_submission_strategy": {
-                            "allow_from": "bound_app"
-                        }
-                    }
-                }
-            }`
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs": 300,
+						"threshold":90,
+						"operator":">=",
+						"adjustment": "+1"
+					}
+				],
+				"configuration": {
+					"custom_metrics": {
+						"metric_submission_strategy": {
+							"allow_from": "bound_app"
+						}
+					}
+				}
+			}`
 			})
 			It("should succeed", func() {
 

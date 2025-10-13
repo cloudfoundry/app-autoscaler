@@ -133,10 +133,10 @@ check: fmt lint build test
 .PHONY: generate-fakes
 test: generate-fakes
 	@echo "Running tests"
-	APP_AUTOSCALER_TEST_RUN='true' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST} --skip-package='integration'
+	APP_AUTOSCALER_TEST_RUN='true' ginkgo -p ${GINKGO_OPTS} --skip-package='integration' ${TEST}
 
 .PHONY: testsuite
-testsuite: build-gorouterproxy
+testsuite: build-gorouterproxy generate-fakes
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST}
 

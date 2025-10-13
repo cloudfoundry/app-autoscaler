@@ -54,7 +54,7 @@ var _ = Describe("MetricPoller", func() {
 			metricFetcher, err := metric.NewLogCacheFetcherFactory(metric.StandardLogCacheFetcherCreator).CreateFetcher(logger, config.Config{
 				Aggregator: &config.AggregatorConfig{},
 				MetricCollector: config.MetricCollectorConfig{
-					MetricCollectorURL: "this.endpoint.does.not.exist:1234",
+					MetricCollectorURL: "this.endpoint.is.invalid:1234",
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -71,7 +71,11 @@ var _ = Describe("MetricPoller", func() {
 
 		It("logs an error", func() {
 			//TODO this should be a prometheus counter not a log statement check
-			Eventually(logger.Buffer, 2*time.Second).Should(Say("retrieveMetric Failed"))
+
+			// Subsequently disabling linting, because there is nothing wrong with using whitespaces
+			// to separate two multiplicands from the operation-symbol.
+			// (Actually it is more readable.)
+			Eventually(logger.Buffer, 10 * time.Second).Should(Say("retrieveMetric Failed")) //nolint
 
 		})
 

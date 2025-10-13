@@ -50,7 +50,7 @@ var _ = Describe("Scheduler Client", func() {
 		schedulerServer *ghttp.Server
 		urlPath         *url.URL
 		err             error
-		policy          *models.ScalingPolicy
+		policy          *models.PolicyDefinition
 	)
 	BeforeEach(func() {
 		schedulerServer = ghttp.NewServer()

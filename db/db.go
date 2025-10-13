@@ -53,9 +53,9 @@ type PolicyDB interface {
 	io.Closer
 
 	GetAppIds(ctx context.Context) (map[string]bool, error)
-	GetAppPolicy(ctx context.Context, appId string) (*models.ScalingPolicy, error)
-	SaveAppPolicy(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error
-	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.ScalingPolicy, newPolicyGuid string) ([]string, error)
+	GetAppPolicy(ctx context.Context, appId string) (*models.PolicyDefinition, error)
+	SaveAppPolicy(ctx context.Context, appId string, policy *models.PolicyDefinition, policyGuid string) error
+	SetOrUpdateDefaultAppPolicy(ctx context.Context, appIds []string, oldPolicyGuid string, newPolicy *models.PolicyDefinition, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(ctx context.Context, policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	DeletePolicy(ctx context.Context, appId string) error
@@ -73,7 +73,7 @@ type BindingDB interface {
 	GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error)
 	UpdateServiceInstance(ctx context.Context, serviceInstance models.ServiceInstance) error
 	DeleteServiceInstance(ctx context.Context, serviceInstanceId string) error
-	CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId string, customMetricsStrategy string) error
+	CreateServiceBinding(ctx context.Context, bindingId string, serviceInstanceId string, appId models.GUID, customMetricsStrategy models.CustomMetricsStrategy) error
 	DeleteServiceBinding(ctx context.Context, bindingId string) error
 	DeleteServiceBindingByAppId(ctx context.Context, appId string) error
 	CheckServiceBinding(appId string) bool
@@ -83,8 +83,8 @@ type BindingDB interface {
 	GetServiceBinding(ctx context.Context, serviceBindingId string) (*models.ServiceBinding, error)
 	GetBindingIdsByInstanceId(ctx context.Context, instanceId string) ([]string, error)
 	IsAppBoundToSameAutoscaler(ctx context.Context, appId string, appToScaleId string) (bool, error)
-	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (string, error)
-	SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy string, actionName string) error
+	GetCustomMetricStrategyByAppId(ctx context.Context, appId string) (models.CustomMetricsStrategy, error)
+	SetOrUpdateCustomMetricStrategy(ctx context.Context, appId string, customMetricsStrategy models.CustomMetricsStrategy, actionName string) error
 }
 
 type AppMetricDB interface {

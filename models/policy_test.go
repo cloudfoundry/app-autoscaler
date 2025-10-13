@@ -19,34 +19,34 @@ var _ = Describe("Policy", func() {
 	var testAppId = "testAppId"
 	var testAppIdAnother = "testAppIdAnother"
 	var policy *AppPolicy
-	var policyStr = `
+	var policyDefStr = `
    {
    "instance_min_count":1,
    "instance_max_count":5,
    "scaling_rules":[
-      {
-         "metric_type":"memoryused",
-         "breach_duration_secs":300,
-         "threshold":30,
-         "operator":"<",
-         "cool_down_secs":300,
-         "adjustment":"-1"
-      }
+	  {
+		 "metric_type":"memoryused",
+		 "breach_duration_secs":300,
+		 "threshold":30,
+		 "operator":"<",
+		 "cool_down_secs":300,
+		 "adjustment":"-1"
+	  }
    ]
 }`
-	var policyStrAnother = `
+	var policyDefStrAnother = `
    {
    "instance_min_count":2,
    "instance_max_count":5,
    "scaling_rules":[
-      {
-         "metric_type":"memoryused",
-         "breach_duration_secs":600,
-         "threshold":30,
-         "operator":"<",
-         "cool_down_secs":300,
-         "adjustment":"-1"
-      }
+	  {
+		 "metric_type":"memoryused",
+		 "breach_duration_secs":600,
+		 "threshold":30,
+		 "operator":"<",
+		 "cool_down_secs":300,
+		 "adjustment":"-1"
+	  }
    ]
 }`
 
@@ -65,6 +65,147 @@ var _ = Describe("Policy", func() {
 }`
 	var p1, p2, policyJson *PolicyJson
 	var err error
+
+	Context("JsonSerialisation", func() {
+		// Schreibe Tests, die Überprüfen, ob eine ScalingPolicy korrekt deserialisiert wird.
+		// Schreibe außerdem Tests, die überprüfen, dass eine ScalingPolicy, deren CustomMetricsStrategy der Standardstrategie entspricht, ohne policyCfg-Teil serialisiert wird.
+
+		var scalingPolicy *ScalingPolicy
+		var serializedData []byte
+		var deserializedPolicy *ScalingPolicy
+
+		Context("when deserializing a ScalingPolicy", func() {
+			Context("with default configuration", func() {
+				BeforeEach(func() {
+					policyDef := &PolicyDefinition{
+						InstanceMin: 1,
+						InstanceMax: 5,
+						ScalingRules: []*ScalingRule{
+							{
+								MetricType:            "memoryused",
+								BreachDurationSeconds: 300,
+								Threshold:             30,
+								Operator:              "<",
+								CoolDownSeconds:       300,
+								Adjustment:            "-1",
+							},
+						},
+					}
+					scalingPolicy = NewScalingPolicy(DefaultCustomMetricsStrategy, policyDef)
+					serializedData, err = scalingPolicy.ToRawJSON()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should deserialize correctly", func() {
+					deserializedPolicy, err = ScalingPolicyFromRawJSON(serializedData)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(deserializedPolicy).NotTo(BeNil())
+
+					originalPolicyDef := scalingPolicy.GetPolicyDefinition()
+					deserializedPolicyDef := deserializedPolicy.GetPolicyDefinition()
+
+					Expect(deserializedPolicyDef.InstanceMin).To(Equal(originalPolicyDef.InstanceMin))
+					Expect(deserializedPolicyDef.InstanceMax).To(Equal(originalPolicyDef.InstanceMax))
+					Expect(len(deserializedPolicyDef.ScalingRules)).To(Equal(len(originalPolicyDef.ScalingRules)))
+					Expect(deserializedPolicyDef.ScalingRules[0].MetricType).To(Equal(originalPolicyDef.ScalingRules[0].MetricType))
+				})
+			})
+
+			Context("with custom configuration", func() {
+				BeforeEach(func() {
+					policyDef := &PolicyDefinition{
+						InstanceMin: 2,
+						InstanceMax: 8,
+						ScalingRules: []*ScalingRule{
+							{
+								MetricType:            "cpu",
+								BreachDurationSeconds: 600,
+								Threshold:             80,
+								Operator:              ">",
+								CoolDownSeconds:       400,
+								Adjustment:            "+2",
+							},
+						},
+					}
+					scalingPolicy = NewScalingPolicy(CustomMetricsBoundApp, policyDef)
+					serializedData, err = scalingPolicy.ToRawJSON()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should deserialize correctly", func() {
+					deserializedPolicy, err = ScalingPolicyFromRawJSON(serializedData)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(deserializedPolicy).NotTo(BeNil())
+
+					originalPolicyDef := scalingPolicy.GetPolicyDefinition()
+					deserializedPolicyDef := deserializedPolicy.GetPolicyDefinition()
+
+					Expect(deserializedPolicyDef.InstanceMin).To(Equal(originalPolicyDef.InstanceMin))
+					Expect(deserializedPolicyDef.InstanceMax).To(Equal(originalPolicyDef.InstanceMax))
+					Expect(deserializedPolicyDef.ScalingRules[0].MetricType).To(Equal(originalPolicyDef.ScalingRules[0].MetricType))
+					Expect(deserializedPolicyDef.ScalingRules[0].Threshold).To(Equal(originalPolicyDef.ScalingRules[0].Threshold))
+				})
+			})
+
+			Context("with nil policy definition", func() {
+				BeforeEach(func() {
+					scalingPolicy = NewScalingPolicy(CustomMetricsBoundApp, nil)
+					serializedData, err = scalingPolicy.ToRawJSON()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should deserialize to policy with nil scaling policy", func() {
+					deserializedPolicy, err = ScalingPolicyFromRawJSON(serializedData)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(deserializedPolicy).NotTo(BeNil())
+					Expect(deserializedPolicy.GetPolicyDefinition()).To(BeNil())
+				})
+			})
+		})
+
+		Context("when serializing a ScalingPolicy with default CustomMetricsStrategy", func() {
+			BeforeEach(func() {
+				policyDef := &PolicyDefinition{
+					InstanceMin: 1,
+					InstanceMax: 3,
+				}
+				scalingPolicy = NewScalingPolicy(DefaultCustomMetricsStrategy, policyDef)
+				serializedData, err = scalingPolicy.ToRawJSON()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not include configuration section in JSON", func() {
+				jsonString := string(serializedData)
+				Expect(jsonString).NotTo(ContainSubstring("configuration"))
+				Expect(jsonString).NotTo(ContainSubstring("custom_metrics"))
+			})
+
+			It("should only contain policy definition", func() {
+				jsonString := string(serializedData)
+				Expect(jsonString).To(ContainSubstring("instance_min_count"))
+				Expect(jsonString).To(ContainSubstring("instance_max_count"))
+			})
+		})
+
+		Context("when serializing a ScalingPolicy with non-default CustomMetricsStrategy", func() {
+			BeforeEach(func() {
+				policyDef := &PolicyDefinition{
+					InstanceMin: 1,
+					InstanceMax: 3,
+				}
+				scalingPolicy = NewScalingPolicy(CustomMetricsBoundApp, policyDef)
+				serializedData, err = scalingPolicy.ToRawJSON()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should include configuration section in JSON", func() {
+				jsonString := string(serializedData)
+				Expect(jsonString).To(ContainSubstring("configuration"))
+				Expect(jsonString).To(ContainSubstring("custom_metrics"))
+				Expect(jsonString).To(ContainSubstring("bound_app"))
+			})
+		})
+	})
 
 	Context("PolicyJson.Equals", func() {
 		Context("when p1 and p2 are all nil", func() {
@@ -88,8 +229,8 @@ var _ = Describe("Policy", func() {
 		})
 		Context("when the PolicyStrs are the same", func() {
 			BeforeEach(func() {
-				p1 = &PolicyJson{PolicyStr: policyStr}
-				p2 = &PolicyJson{PolicyStr: policyStr}
+				p1 = &PolicyJson{PolicyStr: policyDefStr}
+				p2 = &PolicyJson{PolicyStr: policyDefStr}
 			})
 			It("should return false", func() {
 				Expect(p1.Equals(p2)).To(Equal(true))
@@ -106,8 +247,8 @@ var _ = Describe("Policy", func() {
 		})
 		Context("when the PolicyStrs are the different", func() {
 			BeforeEach(func() {
-				p1 = &PolicyJson{PolicyStr: policyStr}
-				p2 = &PolicyJson{PolicyStr: policyStrAnother}
+				p1 = &PolicyJson{PolicyStr: policyDefStr}
+				p2 = &PolicyJson{PolicyStr: policyDefStrAnother}
 			})
 			It("should return false", func() {
 				Expect(p1.Equals(p2)).To(Equal(false))
@@ -118,14 +259,14 @@ var _ = Describe("Policy", func() {
 	Context("GetAppPolicy", func() {
 
 		BeforeEach(func() {
-			policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}
+			policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyDefStr}
 			policy, err = policyJson.GetAppPolicy()
 		})
 		It("should return a policy", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(policy).To(Equal(&AppPolicy{
 				AppId: testAppId,
-				ScalingPolicy: &ScalingPolicy{
+				ScalingPolicy: &PolicyDefinition{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*ScalingRule{
@@ -157,7 +298,7 @@ var _ = Describe("Policy", func() {
 		Context("When scaling rule has breach_duration_secs and cool_down_secs", func() {
 			BeforeEach(func() {
 				Expect(err).NotTo(HaveOccurred())
-				policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}
+				policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyDefStr}
 			})
 			It("should return actual breach_duration_secs and cool_down_secs", func() {
 				Expect(policy.ScalingPolicy.ScalingRules[0].BreachDuration(DefaultBreachDurationSecs)).To(Equal(

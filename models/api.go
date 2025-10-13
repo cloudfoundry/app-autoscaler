@@ -2,11 +2,7 @@ package models
 
 import (
 	"encoding/json"
-)
-
-const (
-	BindingSecret   = "binding-secret"
-	X509Certificate = "x509"
+	"reflect"
 )
 
 type XFCCAuth struct {
@@ -53,6 +49,43 @@ type ServiceInstance struct {
 	DefaultPolicyGuid string `db:"default_policy_guid"`
 }
 
+func (s *ServiceInstance) Equals(other *ServiceInstance) bool {
+	if s == other {
+		return true
+	}
+	if s == nil || other == nil {
+		return false
+	}
+
+	if s.ServiceInstanceId != other.ServiceInstanceId ||
+		s.OrgId != other.OrgId ||
+		s.SpaceId != other.SpaceId ||
+		s.DefaultPolicyGuid != other.DefaultPolicyGuid {
+		return false
+	}
+
+	return s.policiesEqual(other)
+}
+
+func (s *ServiceInstance) policiesEqual(other *ServiceInstance) bool {
+	if (s.DefaultPolicy == "" || s.DefaultPolicy == "null") &&
+		(other.DefaultPolicy == "" || other.DefaultPolicy == "null") {
+		return true
+	}
+
+	var policy1, policy2 PolicyDefinition
+
+	if err := json.Unmarshal([]byte(s.DefaultPolicy), &policy1); err != nil {
+		return false
+	}
+
+	if err := json.Unmarshal([]byte(other.DefaultPolicy), &policy2); err != nil {
+		return false
+	}
+
+	return reflect.DeepEqual(policy1, policy2)
+}
+
 type ServiceBinding struct {
 	ServiceBindingID      string `db:"binding_id"`
 	ServiceInstanceID     string `db:"service_instance_id"`
@@ -60,14 +93,13 @@ type ServiceBinding struct {
 	CustomMetricsStrategy string `db:"custom_metrics_strategy"`
 }
 
-type ScalingPolicyWithBindingConfig struct {
-	ScalingPolicy
-	*BindingConfig
-}
-
 type BindingRequestBody struct {
 	BrokerCommonRequestBody
-	AppID  string          `json:"app_guid"`
+	AppID string `json:"app_guid"`
+
+	// 🚧 To-do: Support `bind_resource` as described in
+	// <https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md#request-creating-a-service-binding>;
+	// Afterwards make use of it in tests;
 	Policy json.RawMessage `json:"parameters,omitempty"`
 }
 
@@ -90,8 +122,4 @@ type AppMetricResponse struct {
 type AppScalingHistoryResponse struct {
 	PublicApiResponseBase
 	Resources []AppScalingHistory `json:"resources"`
-}
-
-type CustomMetricsBindingAuthScheme struct {
-	CredentialType string `json:"credential-type"`
 }

@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
+	"unsafe"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -68,7 +70,7 @@ var _ = Describe("BindingSqldb", func() {
 		testAppId3            = testAppId + "3"
 		testBindingId3        = testBindingId + "3"
 		testBindingId2        = testBindingId + "2"
-		customMetricsStrategy = "same_app"
+		customMetricsStrategy = models.DefaultCustomMetricsStrategy
 	)
 
 	dbUrl := testhelpers.GetDbUrl()
@@ -107,7 +109,6 @@ var _ = Describe("BindingSqldb", func() {
 	})
 
 	Describe("NewBindingSQLDB", func() {
-
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
 				if !strings.Contains(dbUrl, "postgres") {
@@ -157,12 +158,25 @@ var _ = Describe("BindingSqldb", func() {
 		)
 
 		BeforeEach(func() {
-			createdPolicyGuid = policyJsonStr
+			// 🚸 Parse first and then serialise, to eliminate whitespace-issues that only appear on
+			// this test-suite, when executed on a MySQL-DBMS.
+			policy, err := models.ScalingPolicyFromRawJSON([]byte(policyJsonStr))
+			Expect(err).NotTo(HaveOccurred())
+			p, err := policy.ToRawJSON()
+			Expect(err).NotTo(HaveOccurred())
+
+			createdPolicyJsonStr = string(p)
 			createdPolicyGuid = policyGuid
 		})
 
 		JustBeforeEach(func() {
-			err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: createdPolicyJsonStr, DefaultPolicyGuid: createdPolicyGuid})
+			err = bdb.CreateServiceInstance(context.Background(),
+				models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+					OrgId:             testOrgGuid,
+					SpaceId:           testSpaceGuid,
+					DefaultPolicy:     createdPolicyJsonStr,
+					DefaultPolicyGuid: createdPolicyGuid})
 		})
 		Context("When instance is being created first time", func() {
 			It("should succeed", func() {
@@ -172,7 +186,7 @@ var _ = Describe("BindingSqldb", func() {
 		})
 		Context("When instance is being created with an empty default policy", func() {
 			BeforeEach(func() {
-				createdPolicyGuid = ""
+				createdPolicyJsonStr = ""
 				createdPolicyGuid = ""
 			})
 			It("should save a NULL value to the database", func() {
@@ -201,7 +215,6 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).To(Equal(db.ErrConflict))
 			})
 		})
-
 	})
 
 	Describe("UpdateServiceInstance", func() {
@@ -266,7 +279,6 @@ var _ = Describe("BindingSqldb", func() {
 				})
 			})
 		})
-
 	})
 
 	Describe("DeleteServiceInstance", func() {
@@ -296,6 +308,7 @@ var _ = Describe("BindingSqldb", func() {
 		JustBeforeEach(func() {
 			retrievedServiceInstance, err = bdb.GetServiceInstance(context.Background(), testInstanceId)
 		})
+
 		Context("when the service instance does not exist", func() {
 			It("should return an error", func() {
 				Expect(err).To(HaveOccurred())
@@ -313,6 +326,7 @@ var _ = Describe("BindingSqldb", func() {
 				expectServiceInstancesToEqual(retrievedServiceInstance, &models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 			})
 		})
+
 		Context("when the service instance doesn't have a default policy", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid})
@@ -324,7 +338,6 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(retrievedServiceInstance.DefaultPolicyGuid).To(BeEmpty())
 			})
 		})
-
 	})
 
 	Describe("GetServiceInstanceByAppId", func() {
@@ -332,6 +345,7 @@ var _ = Describe("BindingSqldb", func() {
 		JustBeforeEach(func() {
 			retrievedServiceInstance, err = bdb.GetServiceInstanceByAppId(testAppId)
 		})
+
 		Context("when the app is not bound to a service instance", func() {
 			It("should return an error", func() {
 				Expect(err).To(HaveOccurred())
@@ -344,7 +358,7 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 			})
 			It("should return what was created", func() {
 				expectServiceInstancesToEqual(retrievedServiceInstance, &models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
@@ -353,10 +367,8 @@ var _ = Describe("BindingSqldb", func() {
 	})
 
 	Describe("CreateServiceBinding", func() {
-
 		JustBeforeEach(func() {
-
-			err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, customMetricsStrategy)
+			err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), customMetricsStrategy)
 		})
 		Context("When service instance doesn't exist", func() {
 			It("should error", func() {
@@ -369,7 +381,7 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				customMetricsStrategy = "same_app"
+				customMetricsStrategy = models.DefaultCustomMetricsStrategy
 			})
 
 			Context("When service binding is being created first time", func() {
@@ -380,33 +392,45 @@ var _ = Describe("BindingSqldb", func() {
 			})
 			Context("When service binding already exists", func() {
 				It("should error", func() {
-					err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+					err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.DefaultCustomMetricsStrategy)
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(Equal(db.ErrAlreadyExists))
 				})
 			})
 			Context("When service binding is created with custom metrics strategy 'bound_app'", func() {
 				BeforeEach(func() {
-					customMetricsStrategy = "bound_app"
+					customMetricsStrategy = models.CustomMetricsBoundApp
 				})
 				It("should succeed", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId, customMetricsStrategy)).To(BeTrue())
+					Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId, "bound_app")).To(BeTrue())
 				})
 			})
 			Context("When service binding is created with custom metrics strategy 'same_app'", func() {
 				BeforeEach(func() {
-					customMetricsStrategy = "same_app"
+					customMetricsStrategy = models.CustomMetricsSameApp
 				})
 				It("should succeed", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId, customMetricsStrategy)).To(BeTrue())
+					Expect(hasServiceBindingWithCustomMetricStrategy(testBindingId, testInstanceId, "same_app")).To(BeTrue())
 				})
 			})
-
 			When("service binding is created with invalid custom metrics strategy", func() {
 				BeforeEach(func() {
-					customMetricsStrategy = "invalid"
+					// 🚸 The only invalid strategy one could create without dangerous methodologies
+					// like using reflection, is this one:
+					//
+					// `customMetricsStrategy = models.CustomMetricsStrategy{}`
+					//
+					// However this is not “invalid enough” for our tests. The reason is that we
+					// generate the empty-string as a strategy which gets mapped to the value `NULL`
+					// in the database. This is perfectly legal because we allow `NULL` values in
+					// the table. Therefore we follow this violent approach here:
+					valueField := reflect.ValueOf(&customMetricsStrategy).Elem().FieldByName("value")
+					reflect.NewAt(valueField.Type(), unsafe.Pointer(valueField.UnsafeAddr())).
+						Elem().SetString("totally_invalid")
+					// 🤔 We could as well think about eliminating this test and “similar” ones as
+					// well as a benefit resulting of this re-design.
 				})
 				It("should throw an error with foreign key violation", func() {
 					Expect(err).To(HaveOccurred())
@@ -415,7 +439,8 @@ var _ = Describe("BindingSqldb", func() {
 			})
 			When("service binding is created with empty/nil custom metrics strategy", func() {
 				BeforeEach(func() {
-					customMetricsStrategy = ""
+					// This is the only way to set the customMetricsStrategy to an empty string.
+					customMetricsStrategy = models.CustomMetricsStrategy{}
 				})
 				It("should return custom metrics strategy as null", func() {
 					Expect(hasServiceBindingWithCustomMetricStrategyIsNull(testBindingId, testInstanceId)).To(BeTrue())
@@ -436,12 +461,11 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(retrievedServiceBinding).To(BeNil())
 			})
 		})
-
 		Context("when the service Binding exists", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should return what was created", func() {
@@ -456,10 +480,12 @@ var _ = Describe("BindingSqldb", func() {
 		})
 		Context("with existing custom metrics strategy is null and binding already exists", func() {
 			BeforeEach(func() {
-				customMetricsStrategy = ""
+				// This is the only way to set the customMetricsStrategy to an empty string.
+				customMetricsStrategy = models.CustomMetricsStrategy{}
+
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), customMetricsStrategy)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should get the custom metrics strategy as empty", func() {
@@ -498,7 +524,7 @@ var _ = Describe("BindingSqldb", func() {
 			})
 			Context("When service binding is present", func() {
 				BeforeEach(func() {
-					err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+					err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 					Expect(err).NotTo(HaveOccurred())
 				})
 				It("should succeed", func() {
@@ -514,7 +540,7 @@ var _ = Describe("BindingSqldb", func() {
 		BeforeEach(func() {
 			err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 			Expect(err).NotTo(HaveOccurred())
-			err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+			err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 			Expect(err).NotTo(HaveOccurred())
 			err = bdb.DeleteServiceBindingByAppId(context.Background(), testAppId)
 		})
@@ -533,7 +559,7 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should return true", func() {
@@ -559,7 +585,7 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should succeed", func() {
@@ -584,15 +610,15 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, testAppId2, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, models.GUID(testAppId2), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 
 				// other unrelated service instance with bindings
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId3, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId3, testInstanceId3, testAppId3, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId3, testInstanceId3, models.GUID(testAppId3), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should succeed", func() {
@@ -657,17 +683,17 @@ var _ = Describe("BindingSqldb", func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
 				Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("CreateServiceInstance, failed: testInstanceId %s procId %d", testInstanceId, GinkgoParallelProcess()))
 
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, testAppId2, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, models.GUID(testAppId2), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 
 				// other unrelated service instance with bindings
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{testInstanceId3, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
 				Expect(err).NotTo(HaveOccurred())
 
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId3, testInstanceId3, testAppId3, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId3, testInstanceId3, models.GUID(testAppId3), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 
 			})
@@ -694,9 +720,9 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, testAppId2, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId, models.GUID(testAppId2), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should return true", func() {
@@ -709,9 +735,9 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = bdb.CreateServiceInstance(context.Background(), models.ServiceInstance{ServiceInstanceId: testInstanceId2, OrgId: testOrgGuid, SpaceId: testSpaceGuid, DefaultPolicy: policyJsonStr, DefaultPolicyGuid: policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId2, testAppId2, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId2, testInstanceId2, models.GUID(testAppId2), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should return false", func() {
@@ -729,22 +755,22 @@ var _ = Describe("BindingSqldb", func() {
 		})
 		Context("When service instance and binding exists with custom metrics strategy 'bound_app'", func() {
 			BeforeEach(func() {
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "bound_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsBoundApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should get the custom metrics strategy from the database", func() {
 				customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-				Expect(customMetricStrategy).To(Equal("bound_app"))
+				Expect(customMetricStrategy.String()).To(Equal("bound_app"))
 			})
 		})
 		Context("When service instance and binding exists with custom metrics strategy 'same_app'", func() {
 			BeforeEach(func() {
-				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+				err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should get the custom metrics strategy from the database", func() {
 				customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-				Expect(customMetricStrategy).To(Equal("same_app"))
+				Expect(customMetricStrategy.String()).To(Equal("same_app"))
 			})
 		})
 
@@ -758,7 +784,7 @@ var _ = Describe("BindingSqldb", func() {
 		Context("Update Custom Metrics Strategy", func() {
 			Context("With binding does not exist'", func() {
 				JustBeforeEach(func() {
-					err = bdb.SetOrUpdateCustomMetricStrategy(context.Background(), testAppId, "bound_app", "update")
+					err = bdb.SetOrUpdateCustomMetricStrategy(context.Background(), testAppId, models.CustomMetricsBoundApp, "update")
 				})
 				It("should not save the custom metrics strategy and fails ", func() {
 					Expect(err).To(HaveOccurred())
@@ -770,54 +796,68 @@ var _ = Describe("BindingSqldb", func() {
 				})
 				When("custom metrics strategy is not present (already null)", func() {
 					BeforeEach(func() {
-						customMetricsStrategy = "bound_app"
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "")
+						customMetricsStrategy = models.CustomMetricsBoundApp
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.DefaultCustomMetricsStrategy)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should save the custom metrics strategy", func() {
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("bound_app"))
+						Expect(customMetricStrategy.String()).To(Equal("bound_app"))
 					})
 				})
 				When("custom metrics strategy is not present (already null)", func() {
 					BeforeEach(func() {
-						customMetricsStrategy = "same_app"
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "")
+						customMetricsStrategy = models.CustomMetricsSameApp
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.DefaultCustomMetricsStrategy)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should save the custom metrics strategy", func() {
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("same_app"))
+						Expect(customMetricStrategy.String()).To(Equal("same_app"))
 					})
 				})
 				When("custom metrics strategy is already present", func() {
 					BeforeEach(func() {
-						customMetricsStrategy = "bound_app"
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+						customMetricsStrategy = models.CustomMetricsBoundApp
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should update the custom metrics strategy to bound_app", func() {
 						Expect(err).NotTo(HaveOccurred())
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("bound_app"))
+						Expect(customMetricStrategy.String()).To(Equal("bound_app"))
 					})
 				})
 				When("custom metrics strategy is already present as same_app", func() {
 					BeforeEach(func() {
-						customMetricsStrategy = "same_app"
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+						customMetricsStrategy = models.CustomMetricsSameApp
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsSameApp)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should not update the same custom metrics strategy", func() {
 						Expect(err).NotTo(HaveOccurred())
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal("same_app"))
+						Expect(customMetricStrategy.String()).To(Equal("same_app"))
 					})
 				})
 				When("custom metrics strategy unknown value", func() {
 					BeforeEach(func() {
-						customMetricsStrategy = "invalid_value"
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "same_app")
+						// 🚸 The only invalid strategy one could create without dangerous methodologies
+						// like using reflection, is this one:
+						//
+						// `customMetricsStrategy = models.CustomMetricsStrategy{}`
+						//
+						// However this is not “invalid enough” for our tests. The reason is that we
+						// generate the empty-string as a strategy which gets mapped to the value `NULL`
+						// in the database. This is perfectly legal because we allow `NULL` values in
+						// the table. Therefore we follow this violent approach here:
+						valueField := reflect.ValueOf(&customMetricsStrategy).Elem().FieldByName("value")
+						reflect.NewAt(valueField.Type(), unsafe.Pointer(valueField.UnsafeAddr())).
+							Elem().SetString("totally_invalid")
+						// 🤔 We could as well think about eliminating this test and “similar” ones as
+						// well as a benefit resulting of this re-design.
+
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.DefaultCustomMetricsStrategy)
 						Expect(err).NotTo(HaveOccurred())
 					})
 					It("should throw an error", func() {
@@ -834,13 +874,13 @@ var _ = Describe("BindingSqldb", func() {
 				})
 				When("custom metrics strategy is already present", func() {
 					BeforeEach(func() {
-						customMetricsStrategy = ""
-						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, testAppId, "bound_app")
+						customMetricsStrategy = models.DefaultCustomMetricsStrategy
+						err = bdb.CreateServiceBinding(context.Background(), testBindingId, testInstanceId, models.GUID(testAppId), models.CustomMetricsBoundApp)
 						Expect(err).NotTo(HaveOccurred())
 					})
-					It("should update the custom metrics strategy with empty values", func() {
+					It("should update the custom metrics strategy with the value of the default one", func() {
 						customMetricStrategy, _ := bdb.GetCustomMetricStrategyByAppId(context.Background(), testAppId)
-						Expect(customMetricStrategy).To(Equal(""))
+						Expect(customMetricStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 					})
 				})
 			})

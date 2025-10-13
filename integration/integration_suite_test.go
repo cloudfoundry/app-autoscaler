@@ -476,7 +476,7 @@ func activeScheduleExists(appId string) bool {
 }
 
 func setPolicyRecurringDate(policyByte []byte) []byte {
-	var policy models.ScalingPolicy
+	var policy models.PolicyDefinition
 	err := json.Unmarshal(policyByte, &policy)
 	Expect(err).NotTo(HaveOccurred())
 

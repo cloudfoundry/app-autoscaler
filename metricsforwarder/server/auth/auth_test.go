@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/lager/v3"
@@ -191,7 +192,7 @@ var _ = Describe("Authentication", func() {
 					req = CreateRequest(body, testAppId)
 					vars["appid"] = testAppId
 					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
-					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("same_app", nil)
+					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns(models.CustomMetricsSameApp, nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						nextCalled = nextCalled + 1
@@ -211,7 +212,7 @@ var _ = Describe("Authentication", func() {
 					testAppId = "app-to-scale-id"
 					vars["appid"] = testAppId
 					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
-					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
+					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns(models.CustomMetricsBoundApp, nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						nextCalled = nextCalled + 1

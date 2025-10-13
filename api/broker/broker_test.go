@@ -21,13 +21,12 @@ import (
 
 var _ = Describe("Broker", func() {
 	var (
-		aBroker                  *broker.Broker
-		err                      error
-		fakeBindingDB            *fakes.FakeBindingDB
-		fakePolicyDB             *fakes.FakePolicyDB
-		fakeCredentials          *fakes.FakeCredentials
-		testLogger               = lagertest.NewTestLogger("test")
-		bindingConfigWithScaling *models.ScalingPolicyWithBindingConfig
+		aBroker         *broker.Broker
+		err             error
+		fakeBindingDB   *fakes.FakeBindingDB
+		fakePolicyDB    *fakes.FakePolicyDB
+		fakeCredentials *fakes.FakeCredentials
+		testLogger      = lagertest.NewTestLogger("test")
 	)
 
 	BeforeEach(func() {
@@ -49,6 +48,8 @@ var _ = Describe("Broker", func() {
 			Expect(retrievedServices).To(Equal(services))
 		})
 	})
+
+	// 🚧 To-do: Untested functions: “Provision” and “Deprovision”
 
 	Describe("GetInstance", func() {
 		var instance domain.GetInstanceDetailsSpec
@@ -175,49 +176,292 @@ var _ = Describe("Broker", func() {
 					})
 				})
 			})
-			Context("with policy", func() {
+			Context("with default policy and default custom-metrics-strategy", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId}, nil)
-					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID:      testBindingId,
+						ServiceInstanceID:     testInstanceId,
+						AppID:                 testAppId,
+						CustomMetricsStrategy: "same_app",
+					}, nil)
+					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})
-				It("returns the Binding with parameters", func() {
-					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: &models.ScalingPolicyWithBindingConfig{ScalingPolicy: *scalingPolicy, BindingConfig: nil}}))
+				It("returns the empty binding without parameters", func() {
+					By("querying the DB", func() {
+						Expect(fakePolicyDB.GetAppPolicyCallCount()).To(Equal(1))
+						ctx, appId := fakePolicyDB.GetAppPolicyArgsForCall(0)
+						Expect(ctx).NotTo(BeNil())
+						Expect(appId).To(Equal(testAppId))
+					})
+					By("returning an empty response", func() {
+						Expect(err).ShouldNot(HaveOccurred())
+						serialisedBinding, err := json.Marshal(Binding)
+						Expect(err).ShouldNot(HaveOccurred())
+						serializedDefaultBinding, err := json.Marshal(domain.GetBindingSpec{})
+						Expect(err).ShouldNot(HaveOccurred())
+						Expect(serialisedBinding).To(Equal(serializedDefaultBinding))
+					})
 				})
 			})
-			Context("with configuration and policy", func() {
+			Context("with dedicated policy and default custom-metrics-strategy", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
-					bindingBytes, err := os.ReadFile("testdata/policy-with-configs.json")
-					Expect(err).ShouldNot(HaveOccurred())
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID:      testBindingId,
+						ServiceInstanceID:     testInstanceId,
+						AppID:                 "",
+						CustomMetricsStrategy: "same_app",
+					}, nil)
+					fakePolicyDB.GetAppPolicyReturns(policyDef, nil)
+				})
+				It("returns the binding with parameters", func() {
+					stgy := models.DefaultCustomMetricsStrategy
+					responesParams := domain.GetBindingSpec{
+						Parameters: models.NewScalingPolicy(stgy, policyDef),
+					}
 
-					err = json.Unmarshal(bindingBytes, &bindingConfigWithScaling)
-					Expect(err).ShouldNot(HaveOccurred())
-					fakePolicyDB.GetAppPolicyReturns(scalingPolicy, nil)
+					Expect(err).To(BeNil())
+					Expect(Binding).To(Equal(responesParams))
+				})
+			})
+			Context("with non-default-configuration and default-policy", func() {
+				BeforeEach(func() {
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID:      testBindingId,
+						ServiceInstanceID:     testInstanceId,
+						AppID:                 testAppId,
+						CustomMetricsStrategy: models.CustomMetricsBoundApp.String(),
+					}, nil)
+
+					fakePolicyDB.GetAppPolicyReturns(policyDef, nil)
 				})
 				It("returns the Binding with configs and policy in parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: bindingConfigWithScaling}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{
+						Parameters: models.NewScalingPolicy(
+							models.CustomMetricsBoundApp, policyDef)}))
 				})
 			})
 			Context("with configuration only", func() {
 				BeforeEach(func() {
-					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{ServiceBindingID: testBindingId,
-						ServiceInstanceID: testInstanceId, AppID: testAppId, CustomMetricsStrategy: "bound_app"}, nil)
+					fakeBindingDB.GetServiceBindingReturns(&models.ServiceBinding{
+						ServiceBindingID:      testBindingId,
+						ServiceInstanceID:     testInstanceId,
+						AppID:                 testAppId,
+						CustomMetricsStrategy: models.CustomMetricsBoundApp.String(),
+					}, nil)
 					bindingBytes, err := os.ReadFile("testdata/with-configs.json")
 					Expect(err).ShouldNot(HaveOccurred())
 
-					err = json.Unmarshal(bindingBytes, &bindingConfigWithScaling)
+					_, err = models.ScalingPolicyFromRawJSON(bindingBytes)
 					Expect(err).ShouldNot(HaveOccurred())
 					fakePolicyDB.GetAppPolicyReturns(nil, nil)
 				})
 				It("returns no binding configs in parameters", func() {
 					Expect(err).To(BeNil())
-					Expect(Binding).To(Equal(domain.GetBindingSpec{Parameters: nil}))
+					Expect(Binding).To(Equal(domain.GetBindingSpec{
+						Parameters: models.NewScalingPolicy(models.CustomMetricsBoundApp, nil),
+					}))
 				})
 			})
 		})
 	})
-})
+
+	Describe("Bind", func() {
+		var ctx context.Context
+		var instanceID string
+		var bindingID string
+		var details domain.BindDetails
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			instanceID = "some_instance-id"
+			bindingID = "some_binding-id"
+		})
+		Context("Create a binding", func() {
+			//			// 🚧 To-do: Integrate and activate this test, when finishing the service-key-feature (PR #3652).
+			//			It("Fails when the additional config-parameter “app-guid” is provided", func() {
+			//				// As we don't see any case where it makes sense to provide metrics by a different
+			//				// app without using custom-metrics, we can assume that basic policy-definitions are
+			//				// present.
+			//				var bindingParams = []byte(`
+			// {
+			//   "configuration": {
+			//		"app-guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
+			//		"custom_metrics": {
+			//			"metric_submission_strategy": {
+			//				"allow_from": "bound_app"
+			//			}
+			//		}
+			//   },
+			//   "instance_min_count": 1,
+			//   "instance_max_count": 5,
+			//   "scaling_rules": [
+			//		{
+			//			"metric_type": "memoryused",
+			//			"threshold": 30,
+			//			"operator": "<",
+			//			"adjustment": "-1"
+			//		}
+			//   ]
+			// }`)
+			//				details = domain.BindDetails{
+			//					AppGUID:   "", // Deprecated field!
+			//					PlanID:    "some_plan-id",
+			//					ServiceID: "some_service-id",
+			//					BindResource: &domain.BindResource{
+			//						AppGuid: "AppGUID_for_bindings",
+			//						//	SpaceGuid          string `json:"space_guid,omitempty"`
+			//						//	Route              string `json:"route,omitempty"`
+			//						//	CredentialClientID string `json:"credential_client_id,omitempty"`
+			//						//	BackupAgent        bool   `json:"backup_agent,omitempty"`
+			//					}, //  *BindResource
+
+			//					// RawContext: json.RawMessage // `json:"context,omitempty"`
+			//					RawParameters: bindingParams, // `json:"parameters,omitempty"`
+			//				}
+
+			//				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+			//				Expect(err).NotTo(BeNil())
+			//				Expect(err).To(MatchError(ContainSubstring("app-guid is not supported in configuration")))
+			//			})
+			It("Supports provision of an Autoscaler Policy as RawParameters", func() {
+				var bindingParams = []byte(`
+{
+  "instance_min_count": 1,
+  "instance_max_count": 5,
+  "scaling_rules": [
+	{
+	  "metric_type": "memoryused",
+	  "threshold": 30,
+	  "operator": "<",
+	  "adjustment": "-1"
+	}
+  ]
+}`)
+				details = domain.BindDetails{
+					AppGUID:   "",
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+					},
+					RawParameters: bindingParams,
+				}
+
+				binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).To(BeNil())
+				Expect(binding).NotTo(BeNil())
+
+				// Check if there is a policy that is associated with the generated binding and that
+				// it corresponds to the json in `bindingParams`
+				Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+				_, appId, policy, policyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+				Expect(appId).To(Equal("AppGUID_for_bindings"))
+				Expect(policy).NotTo(BeNil())
+				Expect(policyGuid).NotTo(BeEmpty())
+
+				policyJson, err := policy.ToRawJSON()
+				Expect(err).To(BeNil())
+				Expect(policyJson).To(MatchJSON(bindingParams))
+			})
+			When("Not providing an Autoscaler Policy as RawParameters", func() {
+				It("Does not require neither that policy nor the default-policy", func() {
+					// Setup
+					details = domain.BindDetails{
+						AppGUID:   "",
+						PlanID:    "some_plan-id",
+						ServiceID: "some_service-id",
+						BindResource: &domain.BindResource{
+							AppGuid: "AppGUID_for_bindings",
+						},
+					}
+
+					noDefaultPolicy := ""
+					testServiceInstance := &models.ServiceInstance{
+						ServiceInstanceId: instanceID,
+						OrgId:             "some-org-guid",
+						SpaceId:           "some-space-guid",
+						DefaultPolicy:     noDefaultPolicy,
+						DefaultPolicyGuid: "test-policy-guid",
+					}
+					fakeBindingDB.GetServiceInstanceStub = func(ctx context.Context, instanceId string) (*models.ServiceInstance, error) {
+						if instanceId == instanceID {
+							return testServiceInstance, nil
+						}
+						return nil, db.ErrDoesNotExist
+					}
+
+					// Execution
+					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+					// Checks
+					Expect(err).To(BeNil())
+					Expect(binding).NotTo(BeNil())
+
+					// Check that no policy is saved when no parameters are provided
+					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(0))
+
+					// Check that the binding is created with default configuration
+					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+					_, bindingId, serviceInstanceId, appId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+					Expect(serviceInstanceId).To(Equal(instanceID))
+					Expect(bindingId).To(Equal(bindingID))
+					Expect(appId).To(Equal(models.GUID("AppGUID_for_bindings")))
+					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+				})
+				It("Uses the default-policy if existing", func() {
+					// Setup
+					details = domain.BindDetails{
+						AppGUID:   "",
+						PlanID:    "some_plan-id",
+						ServiceID: "some_service-id",
+						BindResource: &domain.BindResource{
+							AppGuid: "AppGUID_for_bindings",
+						},
+					}
+
+					policyJsonString, err := os.ReadFile("./testdata/policy.json")
+					Expect(err).NotTo(HaveOccurred())
+					policyString := string(policyJsonString)
+					testServiceInstance := &models.ServiceInstance{
+						ServiceInstanceId: instanceID,
+						OrgId:             "some-org-guid",
+						SpaceId:           "some-space-guid",
+						DefaultPolicy:     policyString,
+						DefaultPolicyGuid: "test-policy-guid",
+					}
+					fakeBindingDB.GetServiceInstanceStub = func(ctx context.Context, instanceId string) (*models.ServiceInstance, error) {
+						if instanceId == instanceID {
+							return testServiceInstance, nil
+						}
+						return nil, db.ErrDoesNotExist
+					}
+
+					// Execution
+					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+					// Checks
+					Expect(err).To(BeNil())
+					Expect(binding).NotTo(BeNil())
+					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1)) // For the default-policy
+
+					// Check that the binding is created with default configuration
+					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+					_, bindingId, serviceInstanceId, appId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+					Expect(serviceInstanceId).To(Equal(instanceID))
+					Expect(bindingId).To(Equal(bindingID))
+					Expect(appId).To(Equal(models.GUID("AppGUID_for_bindings")))
+					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+				})
+			})
+
+		})
+		Context("Create a service-key", func() {
+			// 🚧 To-do: Add tests here for the service-key-feature in (PR #3652).
+		})
+	})
+}) // End `Describe "Broker"`

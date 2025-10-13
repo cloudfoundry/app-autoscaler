@@ -29,7 +29,7 @@ var _ = Describe("PolicySQLDB", func() {
 		logger            lager.Logger
 		err               error
 		appIds            map[string]bool
-		scalingPolicy     *models.ScalingPolicy
+		scalingPolicy     *models.PolicyDefinition
 		policyJson        []byte
 		policies          []*models.PolicyJson
 		testMetricName    = "TestMetricName"
@@ -141,7 +141,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				scalingPolicy = &models.PolicyDefinition{InstanceMax: 1, InstanceMin: 6}
 				insertPolicy(appId, scalingPolicy, policyGuid)
 				insertPolicy(appId2, scalingPolicy, policyGuid)
 				insertPolicy(appId3, scalingPolicy, policyGuid)
@@ -158,7 +158,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 	Describe("GetAppPolicy", func() {
 		BeforeEach(func() {
-			insertPolicy(appId, &models.ScalingPolicy{
+			insertPolicy(appId, &models.PolicyDefinition{
 				InstanceMin: 1,
 				InstanceMax: 6,
 				ScalingRules: []*models.ScalingRule{{
@@ -168,7 +168,7 @@ var _ = Describe("PolicySQLDB", func() {
 					Operator:              ">",
 					CoolDownSeconds:       300,
 					Adjustment:            "+10%"}}}, policyGuid)
-			insertPolicy(appId2, &models.ScalingPolicy{
+			insertPolicy(appId2, &models.PolicyDefinition{
 				InstanceMin: 2,
 				InstanceMax: 8,
 				ScalingRules: []*models.ScalingRule{{
@@ -187,7 +187,7 @@ var _ = Describe("PolicySQLDB", func() {
 		Context("when policy table has the app", func() {
 			It("returns the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(*scalingPolicy).To(Equal(models.ScalingPolicy{
+				Expect(*scalingPolicy).To(Equal(models.PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
@@ -217,7 +217,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		JustBeforeEach(func() {
 			cleanPolicyTable()
-			scalingPolicy = &models.ScalingPolicy{}
+			scalingPolicy = &models.PolicyDefinition{}
 			insertPolicy(appId, scalingPolicy, policyGuid)
 			insertPolicy(appId2, scalingPolicy, policyGuid)
 			insertPolicy(appId3, scalingPolicy, policyGuid)
@@ -233,7 +233,7 @@ var _ = Describe("PolicySQLDB", func() {
 			It("returns all the policies", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				policyJson, err = json.Marshal(models.ScalingPolicy{})
+				policyJson, err = json.Marshal(models.PolicyDefinition{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(policies).To(ConsistOf(
@@ -257,7 +257,7 @@ var _ = Describe("PolicySQLDB", func() {
 	Describe("SavePolicy", func() {
 		var (
 			policyJsonStr string
-			policy        *models.ScalingPolicy
+			policy        *models.PolicyDefinition
 		)
 		Context("when no policy is present for the app_id", func() {
 			JustBeforeEach(func() {
@@ -287,7 +287,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when a policy is already present for the app_id", func() {
 			JustBeforeEach(func() {
-				insertPolicy(appId, &models.ScalingPolicy{
+				insertPolicy(appId, &models.PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
@@ -336,7 +336,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				scalingPolicy = &models.PolicyDefinition{InstanceMax: 1, InstanceMin: 6}
 				insertPolicy(appId, scalingPolicy, policyGuid)
 			})
 
@@ -374,7 +374,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				scalingPolicy = &models.PolicyDefinition{InstanceMax: 1, InstanceMin: 6}
 				insertPolicyWithGuid(appId, scalingPolicy, policyGuid)
 				insertPolicyWithGuid(appId2, scalingPolicy, anotherPolicyGuid)
 			})
@@ -406,7 +406,7 @@ var _ = Describe("PolicySQLDB", func() {
 		const newPolicyStr = `{"new": "policy"}`
 		var (
 			modifiedApps []string
-			newPolicy    *models.ScalingPolicy
+			newPolicy    *models.PolicyDefinition
 		)
 		BeforeEach(func() {
 			newPolicy = nil
@@ -429,7 +429,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				scalingPolicy = &models.PolicyDefinition{InstanceMax: 1, InstanceMin: 6}
 				insertPolicyWithGuid(appId, scalingPolicy, policyGuid)
 				insertPolicyWithGuid(appId2, scalingPolicy, policyGuid2)
 				insertPolicyWithGuid("unrelated-app-id", scalingPolicy, policyGuid3)

@@ -39,7 +39,7 @@ func New(conf *config.Config, logger lager.Logger) *Client {
 	}
 }
 
-func (s *Client) CreateOrUpdateSchedule(ctx context.Context, appId string, policy *models.ScalingPolicy, policyGuid string) error {
+func (s *Client) CreateOrUpdateSchedule(ctx context.Context, appId string, policy *models.PolicyDefinition, policyGuid string) error {
 	if policy.Schedules.IsEmpty() {
 		return nil
 	}
@@ -71,7 +71,7 @@ func (s *Client) CreateOrUpdateSchedule(ctx context.Context, appId string, polic
 	return nil
 }
 
-func (s *Client) putScheduleReq(ctx context.Context, logger lager.Logger, appId string, policy *models.ScalingPolicy, policyGuid string) (*http.Request, error) {
+func (s *Client) putScheduleReq(ctx context.Context, logger lager.Logger, appId string, policy *models.PolicyDefinition, policyGuid string) (*http.Request, error) {
 	var url string
 	path, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", appId)
 	parameters := path.Query()

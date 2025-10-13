@@ -24,7 +24,7 @@ var _ = Describe("PolicyManager", func() {
 		allowedMetricTypeSet     map[string]struct{}
 		policyMap                map[string]*models.AppPolicy
 		logger                   lager.Logger
-		scalingPolicy            *models.ScalingPolicy
+		scalingPolicy            *models.PolicyDefinition
 		appPolicy                *models.AppPolicy
 		testAppId                = "testAppId"
 		policyStr                = `
@@ -32,14 +32,14 @@ var _ = Describe("PolicyManager", func() {
 		   "instance_min_count":1,
 		   "instance_max_count":5,
 		   "scaling_rules":[
-		      {
-		         "metric_type":"test-metric-name",
-		         "breach_duration_secs":300,
-		         "threshold":30,
-		         "operator":"<",
-		         "cool_down_secs":300,
-		         "adjustment":"-1"
-		      }
+			  {
+				 "metric_type":"test-metric-name",
+				 "breach_duration_secs":300,
+				 "threshold":30,
+				 "operator":"<",
+				 "cool_down_secs":300,
+				 "adjustment":"-1"
+			  }
 		   ]
 		}`
 	)
@@ -95,7 +95,7 @@ var _ = Describe("PolicyManager", func() {
 		When("allowedMetricCache has already filled with metricstype details of the same appilication", func() {
 
 			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{
+				scalingPolicy = &models.PolicyDefinition{
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{

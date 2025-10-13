@@ -113,31 +113,33 @@ func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPU
 	return policyValidator
 }
 
+// 🚧 To-do: Move this validation into the ScalingPolicy-type in the package `models` itself.
 func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*models.ScalingPolicy, ValidationErrors) {
+	// ---------- JSON-schema-validation ----------
 	policyLoader := gojsonschema.NewBytesLoader(rawJson)
-	policy := &models.ScalingPolicy{}
-
-	err := json.Unmarshal(rawJson, &policy)
-	if err != nil {
-		resultErrors := []PolicyValidationErrors{
-			{Context: "(root)", Description: err.Error()},
-		}
-		return policy, resultErrors
-	}
-
 	result, err := gojsonschema.Validate(pv.policySchemaLoader, policyLoader)
 	if err != nil {
 		resultErrors := []PolicyValidationErrors{
 			{Context: "(root)", Description: err.Error()},
 		}
-		return policy, resultErrors
+		return nil, resultErrors
 	}
 
 	if !result.Valid() {
-		return policy, getErrorsObject(result.Errors())
+		return nil, getErrorsObject(result.Errors())
 	}
 
-	pv.validateAttributes(policy, result)
+	// ---------- Policy-parsing ----------
+	policy, err := models.ScalingPolicyFromRawJSON(rawJson)
+	if err != nil {
+		resultErrors := []PolicyValidationErrors{
+			{Context: "(root)", Description: err.Error()},
+		}
+		return policy, resultErrors
+	}
+
+	// ---------- Policy-attribute-validation ----------
+	pv.validateAttributes(policy.GetPolicyDefinition(), result)
 
 	if len(result.Errors()) > 0 {
 		return policy, getErrorsObject(result.Errors())
@@ -146,7 +148,9 @@ func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*mod
 	return policy, nil
 }
 
-func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, result *gojsonschema.Result) {
+// 🚧 To-do: When making the type `models.PolicyDefinition` safe, then this validation should go
+// into a functional constructor.
+func (pv *PolicyValidator) validateAttributes(policy *models.PolicyDefinition, result *gojsonschema.Result) {
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
 
 	//check InstanceMinCount and InstanceMaxCount
@@ -173,7 +177,7 @@ func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, resu
 	pv.validateSpecificDateSchedules(policy, schedulesContext, result)
 }
 
-func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPolicy, scalingRulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.PolicyDefinition, scalingRulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	shouldBeGreaterThanOrEqual := func(metric string, lower int) string {
 		return fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type %s should be greater than or equal %d", metric, lower)
 	}
@@ -248,7 +252,7 @@ func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPo
 	}
 }
 
-func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPolicy, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+func (pv *PolicyValidator) validateRecurringSchedules(policy *models.PolicyDefinition, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	recurringScheduleContext := gojsonschema.NewJsonContext("recurring_schedule", schedulesContext)
 	for scheduleIndex, recSched := range policy.Schedules.RecurringSchedules {
 		if recSched.ScheduledInstanceMin > recSched.ScheduledInstanceMax {
@@ -347,7 +351,7 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 	pv.validateOverlappingInRecurringSchedules(policy, recurringScheduleContext, result)
 }
 
-func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingPolicy, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.PolicyDefinition, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	specficDateScheduleContext := gojsonschema.NewJsonContext("specific_date", schedulesContext)
 	for scheduleIndex, specSched := range policy.Schedules.SpecificDateSchedules {
 		if specSched.ScheduledInstanceMin > specSched.ScheduledInstanceMax {
@@ -410,7 +414,7 @@ func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingP
 	pv.validateOverlappingInSpecificDateSchedules(policy, specficDateScheduleContext, result)
 }
 
-func (pv *PolicyValidator) validateOverlappingInRecurringSchedules(policy *models.ScalingPolicy, recurringScheduleContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+func (pv *PolicyValidator) validateOverlappingInRecurringSchedules(policy *models.PolicyDefinition, recurringScheduleContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	length := len(policy.Schedules.RecurringSchedules)
 	recScheds := policy.Schedules.RecurringSchedules
 	for scheduleIndexB := 0; scheduleIndexB < length-1; scheduleIndexB++ {
@@ -452,7 +456,7 @@ func (pv *PolicyValidator) validateOverlappingInRecurringSchedules(policy *model
 	}
 }
 
-func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *models.ScalingPolicy, specficDateScheduleContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *models.PolicyDefinition, specficDateScheduleContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	length := len(policy.Schedules.SpecificDateSchedules)
 	var dateTimeRangeList []*DateTimeRange
 	for _, specSched := range policy.Schedules.SpecificDateSchedules {

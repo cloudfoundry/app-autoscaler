@@ -239,7 +239,8 @@ var _ = Describe("PublicApiHandler", func() {
 		When("policy exist", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				policydb.GetAppPolicyReturns(&models.ScalingPolicy{
+				bindingdb.GetCustomMetricStrategyByAppIdReturns(models.DefaultCustomMetricsStrategy, nil)
+				policydb.GetAppPolicyReturns(&models.PolicyDefinition{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
@@ -269,7 +270,10 @@ var _ = Describe("PublicApiHandler", func() {
 			It("should succeed", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 
-				Expect(strings.TrimSpace(resp.Body.String())).To(Equal(`{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"<","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`))
+				result := strings.TrimSpace(resp.Body.String())
+
+				expectation := `{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"<","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`
+				Expect(result).To(Equal(expectation))
 			})
 		})
 		Context("and custom metric strategy", func() {
@@ -277,7 +281,8 @@ var _ = Describe("PublicApiHandler", func() {
 				BeforeEach(func() {
 					pathVariables["appId"] = TEST_APP_ID
 					setupPolicy(policydb)
-					bindingdb.GetCustomMetricStrategyByAppIdReturns("", fmt.Errorf("db error"))
+					bindingdb.GetCustomMetricStrategyByAppIdReturns(
+						models.DefaultCustomMetricsStrategy, fmt.Errorf("db error"))
 				})
 				It("should fail with 500", func() {
 					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
@@ -287,7 +292,7 @@ var _ = Describe("PublicApiHandler", func() {
 			When("custom metric strategy retrieved successfully", func() {
 				BeforeEach(func() {
 					pathVariables["appId"] = TEST_APP_ID
-					bindingdb.GetCustomMetricStrategyByAppIdReturns("bound_app", nil)
+					bindingdb.GetCustomMetricStrategyByAppIdReturns(models.CustomMetricsBoundApp, nil)
 				})
 				When("custom metric strategy and policy are present", func() {
 					BeforeEach(func() {
@@ -300,7 +305,8 @@ var _ = Describe("PublicApiHandler", func() {
 					When("policy is present only", func() {
 						BeforeEach(func() {
 							setupPolicy(policydb)
-							bindingdb.GetCustomMetricStrategyByAppIdReturns("", nil)
+							bindingdb.GetCustomMetricStrategyByAppIdReturns(
+								models.DefaultCustomMetricsStrategy, nil)
 						})
 						It("should return policy with 200", func() {
 							Expect(resp.Code).To(Equal(http.StatusOK))
@@ -1043,7 +1049,7 @@ func setupRequest(requestBody, appId string, pathVariables map[string]string) *h
 	return req
 }
 func setupPolicy(policyDb *fakes.FakePolicyDB) {
-	policyDb.GetAppPolicyReturns(&models.ScalingPolicy{
+	policyDb.GetAppPolicyReturns(&models.PolicyDefinition{
 		InstanceMax: 5,
 		InstanceMin: 1,
 		ScalingRules: []*models.ScalingRule{

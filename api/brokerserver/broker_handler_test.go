@@ -521,7 +521,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-2", "app-id-1"}, nil)
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 
-				var encodedTestDefaultPolicy models.ScalingPolicy
+				var encodedTestDefaultPolicy models.PolicyDefinition
 				err = json.Unmarshal([]byte(testDefaultPolicy), &encodedTestDefaultPolicy)
 				Expect(err).To(BeNil())
 				policydb.GetAppPolicyReturns(&encodedTestDefaultPolicy, nil)
@@ -623,7 +623,7 @@ var _ = Describe("BrokerHandler", func() {
 					DefaultPolicy:     testDefaultPolicy,
 					DefaultPolicyGuid: "default-policy-guid",
 				}, nil)
-				policydb.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+				policydb.GetAppPolicyReturns(&models.PolicyDefinition{}, nil)
 			})
 
 			It("Succeeds and leaves the old default policy in place", func() {
@@ -1028,6 +1028,7 @@ var _ = Describe("BrokerHandler", func() {
 					}]
 				}`
 					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
+					bindingRequestBody.AppID = "an-app-id"
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 

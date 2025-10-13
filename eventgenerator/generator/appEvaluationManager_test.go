@@ -34,7 +34,7 @@ var _ = Describe("AppEvaluationManager", func() {
 
 		appPolicy1 = &models.AppPolicy{
 			AppId: testAppId1,
-			ScalingPolicy: &models.ScalingPolicy{
+			ScalingPolicy: &models.PolicyDefinition{
 				InstanceMax: 5,
 				InstanceMin: 1,
 				ScalingRules: []*models.ScalingRule{
@@ -52,7 +52,7 @@ var _ = Describe("AppEvaluationManager", func() {
 
 		appPolicy2 = &models.AppPolicy{
 			AppId: testAppId2,
-			ScalingPolicy: &models.ScalingPolicy{
+			ScalingPolicy: &models.PolicyDefinition{
 				InstanceMax: 5,
 				InstanceMin: 1,
 				ScalingRules: []*models.ScalingRule{

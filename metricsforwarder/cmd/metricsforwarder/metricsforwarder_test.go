@@ -99,7 +99,9 @@ var _ = Describe("Metricsforwarder", func() {
 					body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 					Expect(err).NotTo(HaveOccurred())
 
-					req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics", cfg.Server.Port), bytes.NewReader(body))
+					reqURL := fmt.Sprintf(
+						"http://127.0.0.1:%d/v1/apps/an-app-id/metrics", cfg.Server.Port)
+					req, err = http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(body))
 					Expect(err).NotTo(HaveOccurred())
 
 					base64EncodedUsernamePassword := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
