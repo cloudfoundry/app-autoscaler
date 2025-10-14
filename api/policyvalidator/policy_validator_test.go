@@ -225,6 +225,9 @@ var _ = Describe("PolicyValidator", func() {
 		// This needs to be passed for backwards-compatibility. We allowed in former times to set
 		// this parameter `stats_window_secs` via configuration. We must silently ignore this
 		// parameter today.
+		//
+		// In general we silently ignore every parameter that is used but unknown. In the future we
+		// want to change this.
 		Context("when legacy-fields are present", func() {
 			BeforeEach(func() {
 				policyString = `{
@@ -239,7 +242,10 @@ var _ = Describe("PolicyValidator", func() {
 						"operator":">=",
 						"cool_down_secs":300,
 						"adjustment":"+1"
-					}]
+					}],
+					"is_admin": true,
+					"is_sso": true,
+					"role": "admin"
 				}`
 			})
 			It("the validation succeed and remove them", func() {

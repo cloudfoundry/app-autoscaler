@@ -926,5 +926,5 @@
       ]
     }
   ],
-  "additionalProperties": false
+  "additionalProperties": true
 }
