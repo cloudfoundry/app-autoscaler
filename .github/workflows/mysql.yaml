@@ -57,7 +57,7 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Setup Java
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
