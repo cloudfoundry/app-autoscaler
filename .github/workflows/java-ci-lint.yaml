@@ -7,7 +7,7 @@ jobs:
   code-style:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
