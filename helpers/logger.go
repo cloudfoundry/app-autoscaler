@@ -48,8 +48,9 @@ func parseLogLevel(level string) (lager.LogLevel, error) {
 }
 
 func createPlaintextSink(logLevel lager.LogLevel) lager.Sink {
-	slogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	slog.SetLogLoggerLevel(toSlogLevel(logLevel))
+	slogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: toSlogLevel(logLevel),
+	}))
 	logger := lager.NewSlogSink(slogger)
 	return logger
 }
