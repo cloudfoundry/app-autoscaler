@@ -22,7 +22,7 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 	logger := lager.NewLogger(name)
 
 	if conf.PlainTextSink {
-		plaintextFormatSink := createPlaintextSink()
+		plaintextFormatSink := createPlaintextSink(logLevel)
 		logger.RegisterSink(plaintextFormatSink)
 	} else {
 		redactedSink := createRedactedSink(logLevel)
@@ -47,9 +47,23 @@ func parseLogLevel(level string) (lager.LogLevel, error) {
 	}
 }
 
-func createPlaintextSink() lager.Sink {
+func createPlaintextSink(logLevel lager.LogLevel) lager.Sink {
 	slogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	return lager.NewSlogSink(slogger)
+	slog.SetLogLoggerLevel(toSlogLevel(logLevel))
+	logger := lager.NewSlogSink(slogger)
+	return logger
+}
+
+// toSlogLevel converts lager log levels to slog levels
+func toSlogLevel(l lager.LogLevel) slog.Level {
+	switch l {
+	case lager.DEBUG:
+		return slog.LevelDebug
+	case lager.ERROR, lager.FATAL:
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 func createRedactedSink(logLevel lager.LogLevel) lager.Sink {
