@@ -21,8 +21,8 @@ var (
 
 const (
 	DefaultLoggingLevel        string = "info"
-	DefaultRefreshInterval            = 24 * time.Hour
-	DefaultCutoffDuration             = 30 * 24 * time.Hour
+	DefaultRefreshInterval            = 1 * time.Hour
+	DefaultCutoffDuration             = 2 * 24 * time.Hour
 	DefaultSyncInterval               = 24 * time.Hour
 	DefaultDBLockRetryInterval        = 5 * time.Second
 	DefaultDBLockTTL                  = 15 * time.Second
