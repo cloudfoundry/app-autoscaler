@@ -9,7 +9,7 @@
     },
     "catalog_schema_path": "/home/vcap/app/api/schemas/catalog.schema.json",
     "info_file_path": "/home/vcap/app/api/default_info.json",
-    "policy_schema_path": "/home/vcap/app/api/policyvalidator/scaling-policy.legacy-schema.json",
+    "policy_schema_path": "/home/vcap/app/api/policyvalidator/scaling-policy.schema.json",
     "dashboard_redirect_uri": null,
     "default_credential_type": "binding-secret",
     "health": {

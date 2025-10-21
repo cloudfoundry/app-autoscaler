@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-05/schema#",
-  "title": "",
-  "description": "Schema for a scaling-policy.",
+  "title": "Autoscaler Scaling Policy Configuration Schema",
+  "description": "Schema for the configuration options of scaling policy.",
   "type": "object",
 
   "properties": {

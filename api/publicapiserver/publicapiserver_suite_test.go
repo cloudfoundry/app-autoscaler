@@ -104,7 +104,7 @@ var _ = BeforeSuite(func() {
 		CFServer: helpers.ServerConfig{
 			Port: 14000 + GinkgoParallelProcess(),
 		},
-		PolicySchemaPath: "../policyvalidator/scaling-policy.legacy-schema.json",
+		PolicySchemaPath: "../policyvalidator/scaling-policy.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},

@@ -48,7 +48,7 @@ var _ = Describe("PolicyValidator", func() {
 		upperDiskThreshold = 2 * 1024
 
 		policyValidator = NewPolicyValidator(
-			"./scaling-policy.legacy-schema.json",
+			"./scaling-policy.schema.json",
 			lowerCPUThreshold,
 			upperCPUThreshold,
 			lowerCPUUtilThreshold,

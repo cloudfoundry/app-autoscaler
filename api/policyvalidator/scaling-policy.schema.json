@@ -18,7 +18,7 @@
       ]
     },
     "configuration": {
-      "$ref": "./policy-configuration.legacy-schema.json"
+      "$ref": "./policy-configuration.schema.json"
     },
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
