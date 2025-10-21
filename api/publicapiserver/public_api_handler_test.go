@@ -94,7 +94,7 @@ var _ = Describe("PublicApiHandler", func() {
 				}]
 			},
 			"is_admin": true
-		}` // 🚧 To-do: ValidPolicyStrWithExtraFields is still not used in any test.
+		}`
 		InvalidCustomMetricsConfigurationStr = `{
 		  "configuration": {
 			"custom_metrics": {
