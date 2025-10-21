@@ -22,15 +22,12 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 	logger := lager.NewLogger(name)
 
 	if conf.PlainTextSink {
-		plaintextFormatSink := createPlaintextSink(logLevel)
+		plaintextFormatSink := newTextWriterSink(logLevel)
 		logger.RegisterSink(plaintextFormatSink)
 	} else {
 		redactedSink := createRedactedSink(logLevel)
 		logger.RegisterSink(redactedSink)
 	}
-	// ==================== 🚧 Debug ====================
-	fmt.Fprintf(os.Stderr, "🚧 Initialized sink is plaintext:  %t\n", conf.PlainTextSink)
-	// ==================================================
 
 	return logger
 }
@@ -47,34 +44,6 @@ func parseLogLevel(level string) (lager.LogLevel, error) {
 		return lager.FATAL, nil
 	default:
 		return -1, fmt.Errorf("unsupported log level: %s", level)
-	}
-}
-
-func createPlaintextSink(logLevel lager.LogLevel) lager.Sink {
-	slogLevel := toSlogLevel(logLevel)
-	slogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slogLevel,
-	}))
-	slog.SetLogLoggerLevel(slogLevel)
-	logger := lager.NewSlogSink(slogger)
-	// ==================== 🚧 Debug ====================
-	fmt.Fprintf(os.Stderr, "🚧 Demanded lager-level: %s\n", logLevel)
-	currentLevel := slog.SetLogLoggerLevel(slogLevel)
-	fmt.Fprintf(os.Stderr, "🚧 Log-level (global): %s\n", currentLevel)
-	// ==================================================
-
-	return logger
-}
-
-// toSlogLevel converts lager log levels to slog levels
-func toSlogLevel(l lager.LogLevel) slog.Level {
-	switch l {
-	case lager.DEBUG:
-		return slog.LevelDebug
-	case lager.ERROR, lager.FATAL:
-		return slog.LevelError
-	default:
-		return slog.LevelInfo
 	}
 }
 
