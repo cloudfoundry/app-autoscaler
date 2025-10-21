@@ -1,51 +1,24 @@
 {
-  "definitions": {},
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
+  "$schema": "http://json-schema.org/draft-05/schema#",
   "title": "Autoscaler Policy JSON Schema",
-  "required": [
-    "instance_min_count",
-    "instance_max_count"
-  ],
-  "anyOf": [
-    {
-      "required": [
-        "scaling_rules"
+  "description": "Schema for scaling-policies for Autoscaler",
+  "type": "object",
+
+  "properties": {
+    "schema-version": {
+      "description": "Version-identifier for the used schema of this parameters-object.",
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+)?$"
+    },
+    "credential-type": {
+      "type": "string",
+      "enum": [
+        "x509",
+        "binding-secret"
       ]
     },
-    {
-      "required": [
-        "schedules"
-      ]
-    }
-  ],
-  "properties": {
     "configuration": {
-      "type": "object",
-      "properties": {
-        "custom_metrics": {
-          "type": "object",
-          "properties": {
-            "metric_submission_strategy": {
-              "type": "object",
-              "properties": {
-                "allow_from": {
-                  "type": "string",
-                  "enum": [
-                    "bound_app"
-                  ]
-                }
-              },
-              "required": [
-                "allow_from"
-              ]
-            }
-          },
-          "required": [
-            "metric_submission_strategy"
-          ]
-        }
-      }
+      "$ref": "./policy-configuration.schema.json"
     },
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
@@ -87,6 +60,13 @@
             "description": "The length of the past period when a scaling action might be triggered based on metric usage",
             "maximum": 3600,
             "minimum": 60
+          },
+          "stats_window_secs": {
+            "$id": "#/properties/scaling_rules/items/properties/stats_window_secs",
+            "type": "integer",
+            "deprecated": true,
+            "title": "The stats_window_secs schema",
+            "description": "This is a legacy-parameter. 🏚️ It is silently ignored."
           },
           "threshold": {
             "$id": "#/properties/scaling_rules/items/properties/threshold",
@@ -928,5 +908,23 @@
         }
       }
     }
-  }
+  },
+
+  "required": [
+    "instance_min_count",
+    "instance_max_count"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "scaling_rules"
+      ]
+    },
+    {
+      "required": [
+        "schedules"
+      ]
+    }
+  ],
+  "additionalProperties": true
 }

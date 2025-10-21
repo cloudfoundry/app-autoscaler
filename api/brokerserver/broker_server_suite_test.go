@@ -129,7 +129,7 @@ var _ = BeforeSuite(func() {
 		},
 		CatalogPath:       "../exampleconfig/catalog-example.json",
 		CatalogSchemaPath: "../schemas/catalog.schema.json",
-		PolicySchemaPath:  "../policyvalidator/policy_json.schema.json",
+		PolicySchemaPath:  "../policyvalidator/scaling-policy.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},
