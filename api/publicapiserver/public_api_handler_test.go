@@ -381,18 +381,17 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 
-		// // 🚧🧐 To-do for the reviewer: Check if we can just ommit this test.
-		// When("providing extra fields", func() {
-		//	BeforeEach(func() {
-		//		pathVariables["appId"] = TEST_APP_ID
-		//		req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(ValidPolicyStrWithExtraFields))
-		//		schedulerStatus = 200
-		//	})
-		//	It("should succeed and ignore the extra fields", func() {
-		//		Expect(resp.Code).To(Equal(http.StatusOK))
-		//		Expect(resp.Body).To(MatchJSON(ValidPolicyStr))
-		//	})
-		// })
+		When("providing extra fields", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(ValidPolicyStrWithExtraFields))
+				schedulerStatus = 200
+			})
+			It("should succeed and ignore the extra fields", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(resp.Body).To(MatchJSON(ValidPolicyStr))
+			})
+		})
 
 		When("scheduler returns 204 status code", func() {
 			BeforeEach(func() {
