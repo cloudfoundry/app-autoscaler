@@ -178,7 +178,7 @@ var _ = Describe("Config", func() {
 						ConnectionMaxLifetime: 0 * time.Second,
 					}), "scalingengine_db")
 					Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-					Expect(conf.ScalingEngineDb.CutoffDuration).To(Equal(config.DefaultCutoffDuration))
+					Expect(conf.ScalingEngineDb.CutoffDuration).To(Equal(config.DefaultScalingEngineDbCutoffDuration))
 
 					Expect(conf.ScalingEngine.SyncInterval).To(Equal(config.DefaultSyncInterval))
 					Expect(conf.Scheduler.SyncInterval).To(Equal(config.DefaultSyncInterval))

@@ -20,13 +20,14 @@ var (
 )
 
 const (
-	DefaultLoggingLevel        string = "info"
-	DefaultRefreshInterval            = 1 * time.Hour
-	DefaultCutoffDuration             = 2 * 24 * time.Hour
-	DefaultSyncInterval               = 24 * time.Hour
-	DefaultDBLockRetryInterval        = 5 * time.Second
-	DefaultDBLockTTL                  = 15 * time.Second
-	DefaultHttpClientTimeout          = 5 * time.Second
+	DefaultLoggingLevel                  string = "info"
+	DefaultRefreshInterval                      = 1 * time.Hour
+	DefaultCutoffDuration                       = 2 * 24 * time.Hour
+	DefaultScalingEngineDbCutoffDuration        = 10 * 24 * time.Hour
+	DefaultSyncInterval                         = 24 * time.Hour
+	DefaultDBLockRetryInterval                  = 5 * time.Second
+	DefaultDBLockTTL                            = 15 * time.Second
+	DefaultHttpClientTimeout                    = 5 * time.Second
 )
 
 type DbPrunerConfig struct {
@@ -104,7 +105,7 @@ func defaultConfig() Config {
 		Db: make(map[string]db.DatabaseConfig),
 		ScalingEngineDb: DbPrunerConfig{
 			RefreshInterval: DefaultRefreshInterval,
-			CutoffDuration:  DefaultCutoffDuration,
+			CutoffDuration:  DefaultScalingEngineDbCutoffDuration,
 		},
 		ScalingEngine: ScalingEngineConfig{
 			SyncInterval: DefaultSyncInterval,
