@@ -28,6 +28,9 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 		redactedSink := createRedactedSink(logLevel)
 		logger.RegisterSink(redactedSink)
 	}
+	// ==================== 🚧 Debug ====================
+	fmt.Fprintf(os.Stderr, "🚧 Initialized sink is plaintext:  %t\n", conf.PlainTextSink)
+	// ==================================================
 
 	return logger
 }
@@ -48,10 +51,18 @@ func parseLogLevel(level string) (lager.LogLevel, error) {
 }
 
 func createPlaintextSink(logLevel lager.LogLevel) lager.Sink {
+	slogLevel := toSlogLevel(logLevel)
 	slogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: toSlogLevel(logLevel),
+		Level: slogLevel,
 	}))
+	slog.SetLogLoggerLevel(slogLevel)
 	logger := lager.NewSlogSink(slogger)
+	// ==================== 🚧 Debug ====================
+	fmt.Fprintf(os.Stderr, "🚧 Demanded lager-level: %s\n", logLevel)
+	currentLevel := slog.SetLogLoggerLevel(slogLevel)
+	fmt.Fprintf(os.Stderr, "🚧 Log-level (global): %s\n", currentLevel)
+	// ==================================================
+
 	return logger
 }
 
