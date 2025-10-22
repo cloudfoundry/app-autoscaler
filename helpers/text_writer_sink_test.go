@@ -18,7 +18,7 @@ var _ = Describe("TextWriterSink", func() {
 
 	var sink lager.Sink
 	var logTime time.Time
-	var buffer *bytes.Buffer = bytes.NewBuffer([]byte{})
+	buffer := bytes.NewBuffer([]byte{})
 
 	BeforeEach(func() {
 		logTime = time.Now()
