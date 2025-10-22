@@ -2,8 +2,8 @@ package helpers
 
 import (
 	"context"
+	"io"
 	"log/slog"
-	"os"
 
 	"code.cloudfoundry.org/lager/v3"
 )
@@ -14,11 +14,11 @@ type textWriterSink struct {
 
 var _ lager.Sink = &textWriterSink{}
 
-func newTextWriterSink(logLevel lager.LogLevel) lager.Sink {
+func NewTextWriterSink(writer io.Writer, logLevel lager.LogLevel) lager.Sink {
 	opts := &slog.HandlerOptions{
 		Level: toSlogLevel(logLevel),
 	}
-	slogger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+	slogger := slog.New(slog.NewTextHandler(writer, opts))
 
 	return &textWriterSink {
 		logger: *slogger,

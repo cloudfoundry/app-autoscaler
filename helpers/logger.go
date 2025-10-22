@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 
 	"code.cloudfoundry.org/lager/v3"
@@ -22,7 +21,7 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 	logger := lager.NewLogger(name)
 
 	if conf.PlainTextSink {
-		plaintextFormatSink := newTextWriterSink(logLevel)
+		plaintextFormatSink := NewTextWriterSink(os.Stdout, logLevel)
 		logger.RegisterSink(plaintextFormatSink)
 	} else {
 		redactedSink := createRedactedSink(logLevel)
