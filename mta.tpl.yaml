@@ -183,11 +183,22 @@ modules:
       GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.GO_MINOR_VERSION
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
+      ignore: [ "scheduler", "dbtasks", "eventgenerator"]
     requires:
     - name: scalingengine-config
     - name: database
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
+    parameters:
+      instances: 0 # overridden in build-extension-file.sh
+      memory: 1G
+      disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
 
   - name: scheduler
     type: java
