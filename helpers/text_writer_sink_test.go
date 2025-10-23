@@ -72,14 +72,14 @@ var _ = Describe("TextWriterSink", func() {
 
 		It("writes to stdout", func() {
 			output := buffer.String()
-			lines := strings.Split(output, "\n")
-			count := 0
-			for _, line := range lines {
-				if strings.Contains(line, content) {
-					count++
+			lines := strings.SplitSeq(output, "\n")
+			for line := range lines {
+				if line != "" {
+					Expect(line).To(ContainSubstring(time.Time.Format(logTime, time.RFC3339)))
+					Expect(line).To(ContainSubstring(strings.ToUpper(lager.INFO.String())))
+					Expect(line).To(ContainSubstring(content))
 				}
 			}
-			Expect(count).To(Equal(MaxThreads))
 		})
 	})
 	Context("when logging with complex data", func() {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"time"
 
 	"code.cloudfoundry.org/lager/v3"
 )
@@ -17,6 +18,13 @@ var _ lager.Sink = &textWriterSink{}
 func NewTextWriterSink(writer io.Writer, logLevel lager.LogLevel) lager.Sink {
 	opts := &slog.HandlerOptions{
 		Level: toSlogLevel(logLevel),
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			// Don't display nanoseconds – as for our non slog-based log-entries.
+			if a.Key == slog.TimeKey {
+				return slog.String("time", a.Value.Time().Format(time.RFC3339))
+			}
+			return a
+		},
 	}
 	slogger := slog.New(slog.NewTextHandler(writer, opts))
 
