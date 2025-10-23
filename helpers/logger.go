@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"code.cloudfoundry.org/lager/v3"
@@ -21,7 +22,7 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 	logger := lager.NewLogger(name)
 
 	if conf.PlainTextSink {
-		plaintextFormatSink := NewTextWriterSink(os.Stdout, logLevel)
+		plaintextFormatSink := createPlaintextSink()
 		logger.RegisterSink(plaintextFormatSink)
 	} else {
 		redactedSink := createRedactedSink(logLevel)
@@ -44,6 +45,11 @@ func parseLogLevel(level string) (lager.LogLevel, error) {
 	default:
 		return -1, fmt.Errorf("unsupported log level: %s", level)
 	}
+}
+
+func createPlaintextSink() lager.Sink {
+	slogger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	return lager.NewSlogSink(slogger)
 }
 
 func createRedactedSink(logLevel lager.LogLevel) lager.Sink {
