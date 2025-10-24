@@ -142,5 +142,5 @@ cfserver:
   validOrgGuid: "some-org-guid"
   validSpaceGuid: "some-space-guid"
   healthserver:
-    username: "${CFSERVER_HEALTH_USERNAME:test-user}"
-    password: "${CFSERVER_HEALTH_PASSWORD:test-password}"
+    username: "${CFSERVER_HEALTH_USERNAME:health-test-user}"
+    password: "${CFSERVER_HEALTH_PASSWORD:health-test-password}"

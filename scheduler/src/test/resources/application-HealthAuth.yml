@@ -3,3 +3,8 @@ scheduler:
     basicAuthEnabled: true
     username: prometheus
     password: "someHash"
+
+cfserver:
+  healthserver:
+    username: "health-username"
+    password: "health-password"

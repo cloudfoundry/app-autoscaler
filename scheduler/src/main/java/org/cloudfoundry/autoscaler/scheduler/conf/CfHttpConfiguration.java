@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.catalina.connector.Connector;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -8,9 +9,11 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+// TODO: may be move this to a better place e.g. CfServerConfiguration.java
 @Configuration
 @ConfigurationProperties(prefix = "server.http")
 @Setter
+@Getter
 public class CfHttpConfiguration {
 
   private int port;

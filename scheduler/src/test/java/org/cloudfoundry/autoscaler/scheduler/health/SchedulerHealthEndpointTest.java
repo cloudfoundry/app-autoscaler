@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.cloudfoundry.autoscaler.scheduler.conf.CfHttpConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +25,8 @@ public class SchedulerHealthEndpointTest {
   @Autowired private TestRestTemplate restTemplate;
 
   @Autowired private MetricsConfiguration metricsConfig;
+
+  @Autowired private CfHttpConfiguration cfHttpConfiguration;
 
   @Test
   public void givenCorrectCredentialsStandardMetricsShouldBeAvailable() {
@@ -75,5 +78,39 @@ public class SchedulerHealthEndpointTest {
     ResponseEntity<String> response =
         this.restTemplate.withBasicAuth("bad", "someHash").getForEntity(metricsUrl(), String.class);
     assertThat(response.getStatusCode().value()).isEqualTo(401);
+  }
+
+  /**
+   * /Health API Tests
+   */
+  @Test
+  public void testHealthEndpointWithValidBasicAuthReturns200() {
+    ResponseEntity<String> response =
+        restTemplate
+            .withBasicAuth("health-username", "health-password")
+            .getForEntity(getHealthUrl(), String.class);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(200);
+    assertThat(response.getBody()).contains("\"status\":\"UP\"");
+  }
+
+  @Test
+  public void testHealthEndpointWithInvalidValidBasicAuthReturns401() {
+    ResponseEntity<String> response =
+        restTemplate
+            .withBasicAuth("wrong-user", "wrong-password")
+            .getForEntity(getHealthUrl(), String.class);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(401);
+  }
+
+  @Test
+  public void testHealthEndpointWithoutBasicAuthReturns401() {
+    ResponseEntity<String> response = restTemplate.getForEntity(getHealthUrl(), String.class);
+    assertThat(response.getStatusCode().value()).isEqualTo(401);
+  }
+
+  private String getHealthUrl() {
+    return "http://localhost:" + cfHttpConfiguration.getPort() + "/health";
   }
 }

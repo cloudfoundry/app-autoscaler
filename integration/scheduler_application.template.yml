@@ -37,6 +37,9 @@ server:
 cfserver:
   validOrgGuid: some-org-guid
   validSpaceGuid: some-space-guid
+  healthserver:
+    username: health-test-user
+    password: health-test-password
 spring:
     aop:
         auto: false

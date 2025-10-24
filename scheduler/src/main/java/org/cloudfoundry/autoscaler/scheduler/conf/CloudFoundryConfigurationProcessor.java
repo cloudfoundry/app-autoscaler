@@ -52,11 +52,13 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
         allConfigs.putAll(schedulerConfig);
       }
 
-      // Process VCAP_APPLICATION for org GUID (this should override scheduler-config)
-      Map<String, Object> vcapAppConfig = extractVcapApplicationConfig(environment);
-      if (vcapAppConfig != null && !vcapAppConfig.isEmpty()) {
-        logger.info("Found VCAP_APPLICATION, applying cfserver configuration overrides");
-        allConfigs.putAll(vcapAppConfig);
+      Map<String, Object> vcapOrgAndGuid = getOrgAndSpaceGuidFromVcap(environment);
+      Map<String, Object> cfServerConfig = (Map<String, Object>) allConfigs.get("cfserver");
+      if (cfServerConfig != null && !cfServerConfig.isEmpty()) {
+        logger.info(
+            "Found org and space guid service in VCAP_APPLICATIONS, applying configuration"
+                + " overrides");
+        cfServerConfig.putAll(vcapOrgAndGuid);
       }
 
       // Process database services
@@ -90,7 +92,8 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
     }
   }
 
-  private Map<String, Object> extractVcapApplicationConfig(ConfigurableEnvironment environment) {
+  private Map<String, Object> getOrgAndSpaceGuidFromVcap(ConfigurableEnvironment environment) {
+    Map<String, Object> orgSpaceMap;
     try {
       String vcapApplication = environment.getProperty(VCAP_APPLICATION);
 
@@ -98,12 +101,10 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
         logger.debug("VCAP_APPLICATION not found or empty, skipping org GUID extraction");
         return null;
       }
-
-      TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {};
+      TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {};
       Map<String, Object> vcapApp = objectMapper.readValue(vcapApplication, typeRef);
 
-      Map<String, Object> config = new java.util.HashMap<>();
-      boolean foundConfig = false;
+      orgSpaceMap = new java.util.HashMap<>();
 
       // Extract organization_id
       Object organizationId = vcapApp.get("organization_id");
@@ -111,15 +112,8 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
         String orgGuid = (String) organizationId;
         logger.info(
             "Setting cfserver.validOrgGuid from VCAP_APPLICATION organization_id: {}", orgGuid);
+        orgSpaceMap.put("validOrgGuid", orgGuid);
 
-        // Create nested structure to match scheduler config format
-        Map<String, Object> cfserverConfig = (Map<String, Object>) config.get("cfserver");
-        if (cfserverConfig == null) {
-          cfserverConfig = new java.util.HashMap<>();
-          config.put("cfserver", cfserverConfig);
-        }
-        cfserverConfig.put("validOrgGuid", orgGuid);
-        foundConfig = true;
       } else {
         logger.warn("organization_id not found or empty in VCAP_APPLICATION");
       }
@@ -130,24 +124,15 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
         String spaceGuid = (String) spaceId;
         logger.info(
             "Setting cfserver.validSpaceGuid from VCAP_APPLICATION space_id: {}", spaceGuid);
-
-        // Create nested structure to match scheduler config format
-        Map<String, Object> cfserverConfig = (Map<String, Object>) config.get("cfserver");
-        if (cfserverConfig == null) {
-          cfserverConfig = new java.util.HashMap<>();
-          config.put("cfserver", cfserverConfig);
-        }
-        cfserverConfig.put("validSpaceGuid", spaceGuid);
-        foundConfig = true;
+        orgSpaceMap.put("validSpaceGuid", spaceGuid);
       } else {
         logger.warn("space_id not found or empty in VCAP_APPLICATION");
       }
-
-      return foundConfig ? config : null;
     } catch (Exception e) {
       logger.error("Failed to parse VCAP_APPLICATION JSON", e);
       return null;
     }
+    return orgSpaceMap;
   }
 
   private Map<String, Object> extractSchedulerConfig(String vcapServices) {
@@ -420,11 +405,9 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
 
   private Map<String, Object> flattenConfiguration(String prefix, Map<String, Object> config) {
     Map<String, Object> flattened = new java.util.HashMap<>();
-
     config.forEach(
         (key, value) -> {
           String fullKey = prefix.isEmpty() ? key : prefix + "." + key;
-
           if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> nestedMap = (Map<String, Object>) value;
@@ -450,6 +433,6 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
       Map<String, Object> credentialsMap = (Map<String, Object>) credentials;
       return credentialsMap;
     }
-    return Map.<String, Object>of();
+    return Map.of();
   }
 }

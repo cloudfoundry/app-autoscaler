@@ -6,145 +6,128 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
+import org.cloudfoundry.autoscaler.scheduler.conf.CfServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @Order(0)
-@ConfigurationProperties(prefix = "cfserver")
-@Setter
+@RequiredArgsConstructor
 public class HttpAuthFilter extends OncePerRequestFilter {
+
+  private static final String AUTHORIZATION_HEADER = "Authorization";
+  private static final String BASIC_AUTH_PREFIX = "Basic ";
+  private static final String XFCC_HEADER = "X-Forwarded-Client-Cert";
+  private static final String HEALTH_ENDPOINT = "/health";
+
   private Logger logger = LoggerFactory.getLogger(this.getClass());
-
-  private String validSpaceGuid;
-  private String validOrgGuid;
-
-  @Value("${cfserver.healthserver.username}")
-  private String healthServerUsername;
-
-  @Value("${cfserver.healthserver.password}")
-  private String healthServerPassword;
-
-  public void setHealthServerUsername(String healthServerUsername) {
-    this.healthServerUsername = healthServerUsername;
-  }
-
-  public void setHealthServerPassword(String healthServerPassword) {
-    this.healthServerPassword = healthServerPassword;
-  }
+  private final CfServerConfiguration cfServerConfiguration;
 
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
-    logger.info(
-        "Received request with request "
-            + request.getRequestURI()
-            + " method"
-            + request.getMethod());
-
-    // Debug logging
     String forwardedProto = request.getHeader("X-Forwarded-Proto");
-    boolean isHealthEndpoint = request.getRequestURI().contains("/health");
+    boolean isHealthEndpoint = request.getRequestURI().contains(HEALTH_ENDPOINT);
+
     logger.info(
-        "DEBUG: scheme={}, X-Forwarded-Proto={}, isHealthEndpoint={}, healthServerUsername={},"
-            + " healthServerPassword={}",
+        "Received {} request, scheme={},X-Forwarded-Proto={}, isHealthEndpoint={}, username={}",
+        request.getMethod(),
         request.getScheme(),
         forwardedProto,
         isHealthEndpoint,
-        healthServerUsername,
-        healthServerPassword);
+        cfServerConfiguration.getHealthserver().getUsername());
 
-    // Skip filter if X-Forwarded-Client-Cert is missing and not a health request
-    String xfccHeader = request.getHeader("X-Forwarded-Client-Cert");
-    if ((xfccHeader == null || xfccHeader.isEmpty()) && !isHealthEndpoint) {
-      logger.info(
-          "DEBUG: Skipping request without X-Forwarded-Client-Cert - URI={}",
-          request.getRequestURI());
+    if (isHealthEndpoint) {
+      handleHealthEndpoint(request, response);
+      return;
+    }
+    // Check for XFCC header
+    String xfccHeader = request.getHeader(XFCC_HEADER);
+    if (xfccHeader == null || xfccHeader.isEmpty()) {
+      logger.warn("Missing X-Forwarded-Client-Cert header, URI={}", request.getRequestURI());
       filterChain.doFilter(request, response);
       return;
     }
+    validateOrganizationAndSpace(xfccHeader, response);
+    filterChain.doFilter(request, response);
+  }
 
-    // handles /health endpoint with basic auth
-    if (request.getRequestURI().contains("/health")) {
-      logger.info("DEBUG: Processing health endpoint request");
-      // parse request basic auth header
-      String authHeader = request.getHeader("Authorization");
-      logger.info("DEBUG: Authorization header: {}", authHeader != null ? "present" : "missing");
-      if (authHeader == null || !authHeader.startsWith("Basic ")) {
-        logger.warn("Missing or invalid Authorization header for health check request");
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-        return;
-      }
-      String[] credentials =
-          new String(Base64.getDecoder().decode(authHeader.substring(6))).split(":");
-
-      if (credentials.length != 2) {
-        logger.warn("Invalid Authorization header format for health check request");
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
-        return;
-      }
-      if (!credentials[0].equals(healthServerUsername)
-          || !credentials[1].equals(healthServerPassword)) {
-        logger.warn("Invalid credentials for health check request");
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-        return;
-      } else {
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"status\":\"UP\"}");
-        response.getWriter().flush();
-      }
-
-      return;
-    }
-
-    if (xfccHeader == null || xfccHeader.isEmpty()) {
-      logger.warn("Missing X-Forwarded-Client-Cert header");
-      response.sendError(
-          HttpServletResponse.SC_BAD_REQUEST,
-          "Missing X-Forwarded-Client-Cert header in the request");
-      return;
-    }
+  private void validateOrganizationAndSpace(String xfccHeader, HttpServletResponse response)
+      throws IOException {
     logger.info(
-        "X-Forwarded-Client-Cert header received ... checking authorized org and space in OU");
-    logger.info("X-Forwarded-Client-Cert header: " + xfccHeader);
-
+        "X-Forwarded-Client-Cert header received ... checking authorized cf organization and space"
+            + " in Organizational Unit");
     try {
       String organizationalUnit = extractOrganizationalUnit(xfccHeader);
-
       // Validate both key-value pairs in OrganizationalUnit
       if (!isValidOrganizationalUnit(organizationalUnit)) {
         logger.warn("Unauthorized OrganizationalUnit: " + organizationalUnit);
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized OrganizationalUnit");
-        return;
       }
-    } catch (Exception e) {
+    } catch (CertificateException e) {
       logger.warn("Invalid certificate: " + e.getMessage());
       response.sendError(
           HttpServletResponse.SC_BAD_REQUEST, "Invalid certificate: " + e.getMessage());
-      return;
     }
-    // Proceed with the request
-    filterChain.doFilter(request, response);
   }
 
-  private String extractOrganizationalUnit(String certValue) throws Exception {
+  private void handleHealthEndpoint(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    logger.info("Handling health check request with Basic Auth");
+    String authHeader = request.getHeader(AUTHORIZATION_HEADER);
+    logger.info("Authorization header: {}", authHeader != null ? "present" : "missing");
+
+    if (authHeader == null || !authHeader.startsWith(BASIC_AUTH_PREFIX)) {
+      logger.warn("Missing or invalid Authorization header for health check request");
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+      return;
+    }
+    String[] credentials = decodeBasicAuth(authHeader);
+    if (credentials.length != 2) {
+      logger.warn("Invalid Authorization header format for health check request");
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
+      return;
+    }
+    if (!credentials[0].equals(cfServerConfiguration.getHealthserver().getUsername())
+        || !credentials[1].equals(cfServerConfiguration.getHealthserver().getPassword())) {
+      logger.warn("Invalid credentials for health check request");
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+      return;
+    }
+
+    response.setStatus(HttpServletResponse.SC_OK);
+    response.setContentType("application/json");
+    response.getWriter().write("{\"status\":\"UP\"}");
+    response.getWriter().flush();
+  }
+
+  private String[] decodeBasicAuth(String authHeader) {
+    try {
+      return new String(
+              Base64.getDecoder().decode(authHeader.substring(BASIC_AUTH_PREFIX.length())))
+          .split(":");
+    } catch (IllegalArgumentException e) {
+      logger.warn("Failed to decode Basic Auth header: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private String extractOrganizationalUnit(String certValue) throws CertificateException {
     X509Certificate certificate = parseCertificate(certValue);
     return certificate.getSubjectX500Principal().getName();
   }
 
-  private X509Certificate parseCertificate(String certValue) throws Exception {
+  private X509Certificate parseCertificate(String certValue) throws CertificateException {
     // Extract the base64-encoded certificate from the XFCC header
     String base64Cert =
         certValue
@@ -159,8 +142,10 @@ public class HttpAuthFilter extends OncePerRequestFilter {
   }
 
   private boolean isValidOrganizationalUnit(String organizationalUnit) {
-    boolean isSpaceValid = organizationalUnit.contains("space:" + validSpaceGuid);
-    boolean isOrgValid = organizationalUnit.contains("organization:" + validOrgGuid);
+    boolean isSpaceValid =
+        organizationalUnit.contains("space:" + cfServerConfiguration.getValidSpaceGuid());
+    boolean isOrgValid =
+        organizationalUnit.contains("organization:" + cfServerConfiguration.getValidOrgGuid());
     return isSpaceValid && isOrgValid;
   }
 }
