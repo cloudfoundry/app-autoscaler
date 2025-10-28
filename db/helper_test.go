@@ -52,7 +52,7 @@ var _ = Describe("Helper", func() {
 
 		Context("when need to verify mysql server, cert is provided ", func() {
 			BeforeEach(func() {
-				certPath = "../../../test-certs/api.crt"
+				certPath = "../test-certs/api.crt"
 				dbUrl = "root@tcp(localhost:3306)/autoscaler?tls=verify-ca&sslrootcert=" + certPath
 			})
 			It("returns mysql database connection", func() {

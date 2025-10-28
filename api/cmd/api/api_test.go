@@ -339,11 +339,11 @@ func getVcapServices() (result string) {
 	var dbType string
 
 	// read file
-	dbClientCert, err := os.ReadFile("../../../../../test-certs/postgres.crt")
+	dbClientCert, err := os.ReadFile("../../../test-certs/postgres.crt")
 	Expect(err).NotTo(HaveOccurred())
-	dbClientKey, err := os.ReadFile("../../../../../test-certs/postgres.key")
+	dbClientKey, err := os.ReadFile("../../../test-certs/postgres.key")
 	Expect(err).NotTo(HaveOccurred())
-	dbClientCA, err := os.ReadFile("../../../../../test-certs/autoscaler-ca.crt")
+	dbClientCA, err := os.ReadFile("../../../test-certs/autoscaler-ca.crt")
 	Expect(err).NotTo(HaveOccurred())
 
 	catalogBytes, err := os.ReadFile("../../exampleconfig/catalog-example.json")

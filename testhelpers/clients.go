@@ -1,10 +1,10 @@
 package testhelpers
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp/v2"
@@ -53,13 +53,24 @@ func CreateClient(certFileName, keyFileName, caCertFileName string) *http.Client
 func TestCertFolder() string {
 	dir, err := os.Getwd()
 	FailOnError("failed getting working directory", err)
-	splitPath := strings.Split(dir, string(os.PathSeparator))
-	certPath := "/"
-	for _, path := range splitPath {
-		if path == "autoscaler" {
+
+	// Try to find test-certs by walking up the directory tree
+	currentDir := dir
+	for {
+		testCertsPath := filepath.Join(currentDir, "test-certs")
+		if _, err := os.Stat(testCertsPath); err == nil {
+			return testCertsPath
+		}
+
+		// Move up one directory
+		parentDir := filepath.Dir(currentDir)
+		if parentDir == currentDir {
+			// Reached the root without finding test-certs
 			break
 		}
-		certPath = filepath.Join(certPath, path)
+		currentDir = parentDir
 	}
-	return filepath.Join(certPath, "../test-certs")
+
+	FailOnError("failed to find test-certs directory", fmt.Errorf("searched from: %s", dir))
+	return ""
 }

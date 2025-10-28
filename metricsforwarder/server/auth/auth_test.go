@@ -109,7 +109,7 @@ var _ = Describe("Authentication", func() {
 	})
 
 	Describe("MTLS Auth tests for publish metrics endpoint", func() {
-		const validClientCert1 = "../../../../../test-certs/validmtls_client-1.crt"
+		const validClientCert1 = "../../../test-certs/validmtls_client-1.crt"
 		Context("correct xfcc header with correct CA is supplied for cert 1", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body, testAppId)
@@ -131,7 +131,7 @@ var _ = Describe("Authentication", func() {
 		Context("correct xfcc header with correct CA is supplied for cert 2", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body, testAppId)
-				const validClientCert2 = "../../../../../test-certs/validmtls_client-2.crt"
+				const validClientCert2 = "../../../test-certs/validmtls_client-2.crt"
 				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
@@ -185,7 +185,7 @@ var _ = Describe("Authentication", func() {
 		})
 
 		Context("Request from neighbour (different) app arrives for app B", func() {
-			const validClientCert2 = "../../../../../test-certs/validmtls_client-2.crt"
+			const validClientCert2 = "../../../test-certs/validmtls_client-2.crt"
 			When("custom-metrics-submission-strategy is not set in the scaling policy", func() {
 				It("It should not call next handler and return with status code 403", func() {
 					testAppId = "app-to-scale-id"

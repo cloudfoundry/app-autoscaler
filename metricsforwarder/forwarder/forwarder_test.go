@@ -51,7 +51,7 @@ var _ = Describe("MetricForwarder", func() {
 
 		When("loggregatorConfig is present creates a metronForwarder", func() {
 			BeforeEach(func() {
-				testCertDir := "../../../../test-certs"
+				testCertDir := "../../test-certs"
 				syslogConfig = config.SyslogConfig{}
 				loggregatorConfig = config.LoggregatorConfig{
 					MetronAddress: "some-address",

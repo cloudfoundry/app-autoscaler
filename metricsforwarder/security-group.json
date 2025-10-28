@@ -1,14 +1,20 @@
-  [
-     {
-       "protocol": "tcp",
-       "destination": "10.0.1.0/24",
-       "ports": "6067",
-       "description": "Allow syslog traffic from"
-     },
-     {
-       "protocol": "tcp",
-       "destination": "10.0.1.0/24",
-       "ports": "5432",
-       "description": "Allow postgres traffic from"
-     }
-   ]
+[
+  {
+    "protocol": "tcp",
+    "destination": "10.0.1.0/24",
+    "ports": "6067",
+    "description": "Allow syslog traffic from"
+  },
+  {
+    "protocol": "tcp",
+    "destination": "10.0.1.0/24",
+    "ports": "5432",
+    "description": "Allow postgres traffic from"
+  },
+  {
+    "protocol": "tcp",
+    "destination": "10.0.255.0/24",
+    "ports": "5524",
+    "description": "Allow postgres traffic from 10.0.255.0/24"
+  }
+]

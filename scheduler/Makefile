@@ -39,12 +39,12 @@ check-format:
 
 
 
-# .PHONY: test
-# test: test-certificates
-#	@echo 'Running tests …' \
-#		'\n\t🚸 Please keep in mind that this requires a running db!'
-#	@export DB_HOST='${DB_HOST}'; \
-#	mvn test --no-transfer-progress '-Dspring.profiles.include=${db_type}'
+.PHONY: test
+test: test-certificates
+	@echo 'Running tests …' \
+		'\n\t🚸 Please keep in mind that this requires a running db!'
+	@export DB_HOST='${DB_HOST}'; \
+	mvn test --no-transfer-progress '-Dspring.profiles.include=${db_type}'
 
 test-certs-dir := src/test/resources/certs
 test-certs = $(shell find './${test-certs-dir}' -type f 2> /dev/null)

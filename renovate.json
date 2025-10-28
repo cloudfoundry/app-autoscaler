@@ -1,0 +1,81 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    "customManagers:dockerfileVersions",
+    ":label(dependencies)",
+    ":automergeAll"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "platformAutomerge": true,
+  "automergeStrategy": "squash",
+  "prConcurrentLimit": 2,
+  "packageRules": [
+    {
+      "description": "Opt-out minimum Go version updates: https://github.com/renovatebot/renovate/issues/16715",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Disable devbox Go version updates, as they are taken care by our bosh-package-golang-release-based automation",
+      "matchManagers": [
+        "devbox"
+      ],
+      "matchDepNames": [
+        "go"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Disable bosh-cli version update, due to https://github.com/cloudfoundry/bosh-utils/issues/86",
+      "matchManagers": [
+        "devbox"
+      ],
+      "matchDepNames": [
+        "bosh-cli"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Group Ginkgo CLI and library updates together",
+      "groupName": "ginkgo",
+      "matchPackageNames": [
+        "/onsi/ginkgo/"
+      ]
+    },
+    {
+      "description": "Disable OpenTelemetry-relevant updates",
+      "groupName": "opentelemetry",
+      "matchPackageNames": [
+        "/opentelemetry/",
+        "/ogen-go/ogen/"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Group Cloud Foundry Logging and Metrics updates together",
+      "groupName": "Cloud Foundry Logging and Metrics",
+      "matchPackageNames": [
+        "/loggregator/",
+        "/log-cache/",
+        "/loggregator-agent-release/"
+      ]
+    }
+  ],
+  "nix": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "timezone": "UTC",
+  "schedule": ["* 6-16 * * 1-5"]
+}

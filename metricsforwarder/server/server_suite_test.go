@@ -41,19 +41,19 @@ func TestServer(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 
-	_, err := os.ReadFile("../../../../test-certs/metron.key")
+	_, err := os.ReadFile("../../test-certs/metron.key")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = os.ReadFile("../../../../test-certs/metron.crt")
+	_, err = os.ReadFile("../../test-certs/metron.crt")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = os.ReadFile("../../../../test-certs/loggregator-ca.crt")
+	_, err = os.ReadFile("../../test-certs/loggregator-ca.crt")
 	Expect(err).NotTo(HaveOccurred())
 
 	return nil
 }, func(_ []byte) {
 
-	testCertDir := "../../../../test-certs"
+	testCertDir := "../../test-certs"
 	loggregatorConfig := config.LoggregatorConfig{
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "metron.key"),

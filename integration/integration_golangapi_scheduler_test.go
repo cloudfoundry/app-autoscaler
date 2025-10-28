@@ -511,7 +511,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 			certTmpDir := os.TempDir()
 
-			cfInstanceCertFileContent, cfInstanceKeyContent, err := testhelpers.GenerateClientCertWithCA("some-org-guid", "some-space-guid", "../../../test-certs/gorouter-ca.crt", "../../../test-certs/gorouter-ca.key")
+			cfInstanceCertFileContent, cfInstanceKeyContent, err := testhelpers.GenerateClientCertWithCA("some-org-guid", "some-space-guid", "../../../test-certs/gorouter-ca.crt", "../test-certs/gorouter-ca.key")
 			Expect(err).ToNot(HaveOccurred())
 
 			certFile, err := configutil.MaterializeContentInFile(certTmpDir, "cf.crt", string(cfInstanceCertFileContent))

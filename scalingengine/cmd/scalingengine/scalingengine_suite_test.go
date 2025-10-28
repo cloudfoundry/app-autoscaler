@@ -67,7 +67,7 @@ var _ = SynchronizedBeforeSuite(
 			Secret:   "autoscaler_client_secret",
 		}
 
-		testCertDir := "../../../../../test-certs"
+		testCertDir := "../../../test-certs"
 
 		verifyCertExistence(testCertDir)
 

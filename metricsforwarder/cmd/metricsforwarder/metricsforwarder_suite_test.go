@@ -70,7 +70,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(pathsByte []byte) {
 	mfPath = string(pathsByte)
 
-	testCertDir := "../../../../../test-certs"
+	testCertDir := "../../../test-certs"
 
 	grpcIngressTestServer, err = testhelpers.NewTestIngressServer(
 		filepath.Join(testCertDir, "metron.crt"),

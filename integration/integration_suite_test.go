@@ -65,7 +65,7 @@ var (
 	httpClientForPublicApi *http.Client
 	logger                 lager.Logger
 
-	testCertDir = "../../../test-certs"
+	testCertDir = "../test-certs"
 )
 
 func TestIntegration(t *testing.T) {
@@ -125,14 +125,14 @@ func CompileTestedExecutables() Executables {
 	var err error
 	workingDir, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
-	rootDir := path.Join(workingDir, "..", "..", "..")
+	rootDir := path.Join(workingDir, "..")
 
-	builtExecutables[Scheduler] = path.Join(rootDir, "src", "autoscaler", "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
-	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler", "build", "eventgenerator")
-	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler", "build", "scalingengine")
-	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler", "build", "operator")
-	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler", "build", "api")
-	builtExecutables[GoRouterProxy] = path.Join(rootDir, "src", "autoscaler", "build", "gorouterproxy")
+	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
+	builtExecutables[EventGenerator] = path.Join(rootDir, "build", "eventgenerator")
+	builtExecutables[ScalingEngine] = path.Join(rootDir, "build", "scalingengine")
+	builtExecutables[Operator] = path.Join(rootDir, "build", "operator")
+	builtExecutables[GolangAPIServer] = path.Join(rootDir, "build", "api")
+	builtExecutables[GoRouterProxy] = path.Join(rootDir, "build", "gorouterproxy")
 
 	return builtExecutables
 }

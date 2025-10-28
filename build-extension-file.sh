@@ -6,7 +6,8 @@ set -e
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # shellcheck source=../../ci/autoscaler/scripts/vars.source.sh
 # shellcheck disable=SC1091
-source "${script_dir}/../../ci/autoscaler/scripts/vars.source.sh"
+source "${script_dir}/scripts/vars.source.sh"
+source "${script_dir}/common.sh"
 
 if [ -z "$1" ]; then
   echo "extension file path not provided"
@@ -20,18 +21,39 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
   exit 1
 fi
 
+bosh_login "${BBL_STATE_PATH}"
+cf_login
+cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
-export POSTGRES_EXTERNAL_PORT="${PR_NUMBER:-5432}"
 
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password" --length 16 -t password
+
 cat << EOF > /tmp/extension-file-secrets.yml.tpl
-postgres_ip: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_ip))
+postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))
+
+eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
+eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
+
+syslog_client_ca: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.ca))
+syslog_client_cert: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.certificate))
+syslog_client_key: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.private_key))
+
+database_username: pgadmin
+database_password: ((/bosh-autoscaler/postgres/pgadmin_database_password))
+database_server_ca: ((/bosh-autoscaler/postgres/postgres_server.ca))
+database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
+database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
-
 operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
-
 eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
 eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
 eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
@@ -90,10 +112,11 @@ export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
-export POLICY_DB_PASSWORD="$(yq ".policy_db_password" /tmp/mtar-secrets.yml)"
-export POLICY_DB_SERVER_CA="$(yq ".policy_db_server_ca" /tmp/mtar-secrets.yml)"
-export POLICY_DB_CLIENT_CERT="$(yq ".policy_db_client_cert" /tmp/mtar-secrets.yml)"
-export POLICY_DB_CLIENT_KEY="$(yq ".policy_db_client_key" /tmp/mtar-secrets.yml)"
+export DATABASE_DB_USERNAME="$(yq ".database_username" /tmp/mtar-secrets.yml)"
+export DATABASE_DB_PASSWORD="$(yq ".database_password" /tmp/mtar-secrets.yml)"
+export DATABASE_DB_SERVER_CA="$(yq ".database_server_ca" /tmp/mtar-secrets.yml)"
+export DATABASE_DB_CLIENT_CERT="$(yq ".database_client_cert" /tmp/mtar-secrets.yml)"
+export DATABASE_DB_CLIENT_KEY="$(yq ".database_client_key" /tmp/mtar-secrets.yml)"
 
 export SYSLOG_CLIENT_CA="$(yq ".syslog_client_ca" /tmp/mtar-secrets.yml)"
 export SYSLOG_CLIENT_CERT="$(yq ".syslog_client_cert" /tmp/mtar-secrets.yml)"
@@ -105,9 +128,7 @@ export SERVICE_BROKER_PASSWORD="$(yq ".service_broker_password" /tmp/mtar-secret
 if [ -z "${POSTGRES_IP}" ]; then
   POSTGRES_URI="postgres://postgres:${POLICY_DB_PASSWORD}@${DEPLOYMENT_NAME}-postgres.tcp.${SYSTEM_DOMAIN}:${POSTGRES_EXTERNAL_PORT}/autoscaler?application_name=metricsforwarder&sslmode=verify-full"
 else
-  POSTGRES_URI="postgres://postgres:${POLICY_DB_PASSWORD}@${POSTGRES_IP}:5432/autoscaler?application_name=metricsforwarder&sslmode=verify-ca"
-
-fi
+export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
 
 cat <<EOF > "${extension_file_path}"
 ID: development
@@ -269,9 +290,9 @@ resources:
   parameters:
     config:
       uri: "${POSTGRES_URI}"
-      client_cert: "${POLICY_DB_CLIENT_CERT//$'\n'/\\n}"
-      client_key: "${POLICY_DB_CLIENT_KEY//$'\n'/\\n}"
-      server_ca: "${POLICY_DB_SERVER_CA//$'\n'/\\n}"
+      client_cert: "${DATABASE_DB_CLIENT_CERT//$'\n'/\\n}"
+      client_key: "${DATABASE_DB_CLIENT_KEY//$'\n'/\\n}"
+      server_ca: "${DATABASE_DB_SERVER_CA//$'\n'/\\n}"
 
 - name: syslog-client
   parameters:

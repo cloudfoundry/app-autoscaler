@@ -29,7 +29,7 @@ var _ = Describe("MetricForwarder", func() {
 	)
 
 	BeforeEach(func() {
-		testCertDir := "../../../../test-certs"
+		testCertDir := "../../test-certs"
 
 		grpcIngressTestServer, err = testhelpers.NewTestIngressServer(
 			filepath.Join(testCertDir, "metron.crt"),

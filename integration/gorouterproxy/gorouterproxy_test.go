@@ -59,7 +59,7 @@ var _ = Describe("Gorouterproxy", func() {
 		_, port, err := net.SplitHostPort(testserver.URL[len("http://"):])
 		Expect(err).ShouldNot(HaveOccurred())
 
-		testCertDir := "../../../../test-certs"
+		testCertDir := "../../test-certs"
 		cmd := exec.Command(cmdPath,
 			"--port", proxyPort,
 			"--forwardTo", port,
