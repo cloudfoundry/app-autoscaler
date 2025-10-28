@@ -32,7 +32,7 @@ import (
 const (
 	username    = "broker_username"
 	password    = "broker_password"
-	testCertDir = "../../../../../test-certs"
+	testCertDir = "../../../test-certs"
 )
 
 var (
@@ -164,7 +164,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	conf.CatalogPath = "../../exampleconfig/catalog-example.json"
 	conf.CatalogSchemaPath = "../../schemas/catalog.schema.json"
-	conf.PolicySchemaPath = "../policyvalidator/scaling-policy.schema.json"
+	conf.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"
 
 	schedulerServer = ghttp.NewServer()
 	conf.Scheduler.SchedulerURL = schedulerServer.URL()

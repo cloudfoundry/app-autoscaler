@@ -10,8 +10,7 @@ GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 
-AUTOSCALER_DIR ?= $(shell pwd)/../..
-CI_DIR ?= ${AUTOSCALER_DIR}/ci
+MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
 CGO_ENABLED := 0
 export GOWORK := off
@@ -61,7 +60,7 @@ test-unit:
 test:
 	bin/test $(filter-out $@,$(MAKECMDGOALS))
 
-GOLANGCI_CONF ?= ../../.golangci.yaml
+GOLANGCI_CONF ?= ../.golangci.yaml
 
 lint:
 	readonly GOVERSION='${GO_VERSION}' ;\
@@ -72,14 +71,14 @@ lint:
 
 .PHONY: acceptance-tests-config
 acceptance-tests-config:
-	ACCEPTANCE_CONFIG_PATH='./acceptance_config.json' ${CI_DIR}/autoscaler/scripts/acceptance-tests-config.sh
+	@ACCEPTANCE_CONFIG_PATH='./acceptance_config.json' ${MAKEFILE_DIR}/../scripts/acceptance-tests-config.sh
 
 
 .PHONY: run-acceptance-tests
 run-acceptance-tests:
-	${CI_DIR}/autoscaler/scripts/run-acceptance-tests.sh
+	@${MAKEFILE_DIR}/../scripts/run-acceptance-tests.sh
 
 
 .PHONY: acceptance-tests-cleanup
 acceptance-tests-cleanup:
-	${CI_DIR}/autoscaler/scripts/cleanup-acceptance.sh
+	@${MAKEFILE_DIR}/../scripts/cleanup-acceptance.sh

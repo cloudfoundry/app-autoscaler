@@ -1,0 +1,19 @@
+name: Acceptance Tests - MTA
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    types: [ opened, synchronize ]
+
+concurrency:
+  group: "${{ github.workflow }}/${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  acceptance_tests_reusable:
+    name: "${{ github.workflow }}"
+    uses: ./.github/workflows/acceptance_tests_reusable.yaml
+    with:
+      deployment_name: "autoscaler-mta-${{ github.event.pull_request.number }}"
+    secrets:
+      bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"

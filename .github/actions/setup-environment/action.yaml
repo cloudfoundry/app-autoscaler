@@ -1,0 +1,16 @@
+name: 'Acceptance Tests Common'
+description: 'Common steps for all acceptance tests'
+inputs:
+  ssh-key:  # id of input
+    description: 'The BBL ssh key'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: clone BBL repo
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      with:
+        repository: cloudfoundry/app-autoscaler-env-bbl-state
+        ref: main
+        ssh-key: ${{ inputs.ssh-key }}
+        path: bbl

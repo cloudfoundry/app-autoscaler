@@ -1,0 +1,44 @@
+name: Linters
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linters:
+    name: reviewdog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Trust my checkout
+        run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+        with:
+          enable-cache: 'true'
+      - name: Make devbox shellenv available
+        run: |
+          eval "$(devbox shellenv)"
+          printenv >> "$GITHUB_ENV"
+
+      - name: Run Go linter
+        run: |
+          make lint-go
+      - name: shellcheck
+        uses: reviewdog/action-shellcheck@4c07458293ac342d477251099501a718ae5ef86e # v1
+        with:
+          reporter: github-pr-review
+      - name: actionlint
+        uses: reviewdog/action-actionlint@95395aac8c053577d0bc67eb7b74936c660c6f66 # v1
+        with:
+          reporter: github-pr-review
+      - name: alex
+        uses: reviewdog/action-alex@6083b8ca333981fa617c6828c5d8fb21b13d916b # v1
+        with:
+          reporter: github-pr-review
+      - name: markdownlint
+        uses: reviewdog/action-markdownlint@3667398db9118d7e78f7a63d10e26ce454ba5f58 # v0
+        with:
+          reporter: github-pr-review

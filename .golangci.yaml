@@ -1,0 +1,114 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - asciicheck
+    - bodyclose
+    - depguard
+    - dogsled
+    - errcheck
+    - funlen
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - ineffassign
+    - misspell
+    - nakedret
+    - nolintlint
+    - rowserrcheck
+    - staticcheck
+    - testpackage
+    - unused
+    - whitespace
+  settings:
+    depguard:
+      rules:
+        main:
+          files:
+            - $all
+          deny:
+            - pkg: github.com/alecthomas/assert
+              desc: use github.com/stretchr/testify/assert
+            - pkg: github.com/magiconair/properties/assert
+              desc: use github.com/stretchr/testify/assert
+            - pkg: code.cloudfoundry.org/cfhttp/handlers
+              desc: use code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers
+            - pkg: code.cloudfoundry.org/cfhttp
+              desc: use code.cloudfoundry.org/cfhttp/v2 or code.cloudfoundry.org/tlsconfig
+            - pkg: github.com/lib/pq
+              desc: use github.com/jackc/pgx
+            - pkg: gopkg.in/yaml.v2
+              desc: use gopkg.in/yaml.v3
+    dupl:
+      threshold: 100
+    exhaustive:
+      default-signifies-exhaustive: false
+    funlen:
+      lines: 250
+      statements: 150
+    gocognit:
+      min-complexity: 15
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+        - wrapperFunc
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 30
+    govet:
+      enable-all: true
+    lll:
+      line-length: 140
+    nolintlint:
+      require-explanation: false
+      require-specific: false
+      allow-unused: false
+    staticcheck:
+      checks:
+        - all
+        - -ST1001
+        - -ST1003
+        - -ST1005
+      dot-import-whitelist:
+        - github.com/onsi/ginkgo/v2
+        - github.com/onsi/gomega
+        - github.com/onsi/gomega/gexec
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - mnd
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

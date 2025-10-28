@@ -6,15 +6,30 @@ aes_terminal_reset := \e[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
-AUTOSCALER_DIR ?= $(shell pwd)/../..
+CI ?= false
 CI_DIR ?= ${AUTOSCALER_DIR}/ci
 
+DEBUG := false
+MYSQL_TAG := 8
+POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_MINOR_VERSION = $(shell echo $(GO_VERSION) | cut --delimiter=. --field=2)
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
+MVN_OPTS ?= -Dmaven.test.skip=true
 
+.PHONY: db.java-libs
+db.java-libs:
+	@echo 'Fetching db.java-libs'
+	cd dbtasks && mvn --quiet package ${MVN_OPTS}
+
+.PHONY: test-certs
+test-certs: target/autoscaler_test_certs scheduler/src/test/resources/certs
+
+.PHONY: build_all build_programs build_tests
+build_all: build_programs build_tests
+build_programs: build db.java-libs scheduler.build build-test-app
 
 MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine
 
@@ -31,7 +46,7 @@ export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
 export GOFIPS140=v1.0.0
 
-binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -Ev "vendor|integration")
+binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq | grep -Ev "vendor|integration|acceptance|test-app")
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
 export GO111MODULE=on
 
@@ -48,6 +63,17 @@ openapi-specs-list = $(wildcard ${openapi-spec-path}/*.yaml)
 
 openapi-generated-clients-and-servers-api-files = $(wildcard ${openapi-generated-clients-and-servers-api-dir}/*.go)
 openapi-generated-clients-and-servers-scalingengine-files = $(wildcard ${openapi-generated-clients-and-servers-scalingengine-dir}/*.go)
+
+.PHONY:
+scheduler.build:
+	@make --directory=scheduler build
+
+.PHONY: check-type
+check-db_type:
+	@case "${db_type}" in\
+	 (mysql|postgres) echo " - using db_type:${db_type}"; ;;\
+	 (*) echo "ERROR: db_type needs to be one of mysql|postgres"; exit 1;;\
+	 esac
 
 .PHONY: generate-openapi-generated-clients-and-servers
 generate-openapi-generated-clients-and-servers: ${openapi-generated-clients-and-servers-api-dir} ${openapi-generated-clients-and-servers-api-files} ${openapi-generated-clients-and-servers-scalingengine-dir} ${openapi-generated-clients-and-servers-scalingengine-files}
@@ -130,15 +156,18 @@ build_test-%: generate-fakes
 
 check: fmt lint build test
 
-.PHONY: generate-fakes
-test: generate-fakes
-	@echo "Running tests"
-	APP_AUTOSCALER_TEST_RUN='true' ginkgo -p ${GINKGO_OPTS} --skip-package='integration' ${TEST}
+test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
-.PHONY: testsuite
-testsuite: build-gorouterproxy generate-fakes
+autoscaler.test: check-db_type init-db test-certs generate-fakes
+	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST} --skip-package='integration,acceptance'
+
+test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
-	APP_AUTOSCALER_TEST_RUN='true' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST}
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST}
+
+test-acceptance-unit:
+	@make --directory=acceptance test-unit
 
 .PHONY: build-gorouterproxy
 build-gorouterproxy:
@@ -146,9 +175,24 @@ build-gorouterproxy:
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/gorouterproxy integration/gorouterproxy/main.go
 
 .PHONY: integration
-integration: generate-fakes
+integration: generate-fakes init-db test-certs build_all build-gorouterproxy
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN='true' go run github.com/onsi/ginkgo/v2/ginkgo ${GINKGO_OPTS} integration
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
+
+.PHONY: init-db
+init-db: check-db_type start-db db.java-libs target/init-db-${db_type}
+target/init-db-${db_type}:
+	@./scripts/initialise_db.sh '${db_type}'
+	@mkdir -p target
+	@touch $@
+
+.PHONY: provision-db
+provision-db: ## Provision a database on a remote Postgres server (requires POSTGRES_IP)
+	@./scripts/provision_db.sh
+
+.PHONY: deprovision-db
+deprovision-db: ## Deprovision a database on a remote Postgres server (requires POSTGRES_IP)
+	@./scripts/deprovision_db.sh
 
 importfmt:
 	@echo "# Formatting the imports"
@@ -163,13 +207,13 @@ lint: generate-fakes
 	readonly GOVERSION='${GO_VERSION}' ;\
 	export GOVERSION ;\
 	echo "Linting with Golang $${GOVERSION}" ;\
-	golangci-lint run --config='../../.golangci.yaml' ${OPTS}
+	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
 clean-dbtasks:
 	pushd dbtasks; mvn clean; popd
 
 package-dbtasks:
-	pushd dbtasks; mvn package ; popd
+	pushd dbtasks; mvn --quiet package ${MVN_OPTS}; popd
 
 clean-scheduler:
 	pushd scheduler; mvn clean; popd
@@ -229,6 +273,161 @@ cf-login:
 	@echo '⚠️ Please note that this login only works for cf and concourse,' \
 		  'in spite of performing a login as well on bosh and credhub.' \
 		  'The necessary changes to the environment get lost when make exits its process.'
-	@${CI_DIR}/autoscaler/scripts/os-infrastructure-login.sh
+	@${MAKEFILE_DIR}/scripts/os-infrastructure-login.sh
 
-deploy-apps: cf-login mta-deploy
+
+.PHONY: start-db
+start-db: check-db_type target/start-db-${db_type}_CI_${CI} waitfor_${db_type}_CI_${CI}
+	@echo " SUCCESS"
+
+
+.PHONY: waitfor_postgres_CI_false waitfor_postgres_CI_true
+target/start-db-postgres_CI_false:
+	@if [ ! "$(shell docker ps -q -f name="^${db_type}")" ]; then \
+		if [ "$(shell docker ps -aq -f status=exited -f name="^${db_type}")" ]; then \
+			docker rm ${db_type}; \
+		fi;\
+		echo " - starting docker for ${db_type}";\
+		docker run -p 5432:5432 --name postgres \
+			-e POSTGRES_PASSWORD=postgres \
+			-e POSTGRES_USER=postgres \
+			-e POSTGRES_DB=autoscaler \
+			--health-cmd pg_isready \
+			--health-interval 1s \
+			--health-timeout 2s \
+			--health-retries 10 \
+			-d \
+			postgres:${POSTGRES_TAG} \
+			-c 'max_connections=1000' >/dev/null;\
+	else echo " - $@ already up'"; fi;
+	@mkdir -p target
+	@touch $@
+
+target/start-db-postgres_CI_true:
+	@echo " - $@ already up'"
+
+waitfor_postgres_CI_false:
+	@echo -n " - waiting for ${db_type} ."
+	@COUNTER=0; until $$(docker exec postgres pg_isready &>/dev/null) || [ $$COUNTER -gt 10 ]; do echo -n "."; sleep 1; let COUNTER+=1; done;\
+	if [ $$COUNTER -gt 10 ]; then echo; echo "Error: timed out waiting for postgres. Try \"make clean\" first." >&2 ; exit 1; fi
+waitfor_postgres_CI_true:
+	@echo " - no ci postgres checks"
+
+.PHONY: waitfor_mysql_CI_false waitfor_mysql_CI_true
+target/start-db-mysql_CI_false:
+	@if [  ! "$(shell docker ps -q -f name="^${db_type}")" ]; then \
+		if [ "$(shell docker ps -aq -f status=exited -f name="^${db_type}")" ]; then \
+			docker rm ${db_type}; \
+		fi;\
+		echo " - starting docker for ${db_type}";\
+		docker pull mysql:${MYSQL_TAG}; \
+		docker run -p 3306:3306  --name mysql \
+			-e MYSQL_ALLOW_EMPTY_PASSWORD=true \
+			-e MYSQL_DATABASE=autoscaler \
+			-d \
+			mysql:${MYSQL_TAG} \
+			>/dev/null;\
+	else echo " - $@ already up"; fi;
+	@mkdir -p target
+	@touch $@
+target/start-db-mysql_CI_true:
+	@echo " - $@ already up'"
+waitfor_mysql_CI_false:
+	@echo -n " - waiting for ${db_type} ."
+	@until docker exec mysql mysqladmin ping &>/dev/null ; do echo -n "."; sleep 1; done
+	@echo " SUCCESS"
+	@echo -n " - Waiting for table creation ."
+	@until [[ ! -z `docker exec mysql mysql -qfsBe "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'" 2> /dev/null` ]]; do echo -n "."; sleep 1; done
+waitfor_mysql_CI_true:
+	@echo -n " - Waiting for table creation (DB_HOST=${DB_HOST})"
+	@which mysql > /dev/null || { echo "ERROR: mysql client not found"; exit 1; }
+	@T=0;\
+	until mysql -u "root" -h "${DB_HOST}" --port=3306 -qfsBe "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'" 2>&1 | grep -q autoscaler \
+		|| [[ $${T} -gt 120 ]];\
+	do \
+		echo -n "."; \
+		if [[ $$((T % 10)) -eq 0 ]] && [[ $${T} -gt 0 ]]; then \
+			echo -n " [$$T/120s, trying: mysql -u root -h ${DB_HOST} --port=3306] "; \
+		fi; \
+		sleep 1; \
+		T=$$((T+1)); \
+	done; \
+	if [[ $${T} -gt 120 ]]; then \
+		echo ""; \
+		echo "ERROR: Mysql timed out creating database after 120 seconds"; \
+		echo "Attempted connection: mysql -u root -h ${DB_HOST} --port=3306"; \
+		echo "Trying one more time with verbose output:"; \
+		mysql -u "root" -h "${DB_HOST}" --port=3306 -vvv -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='autoscaler'" 2>&1 || true; \
+		exit 1; \
+	fi
+
+.PHONY: stop-db
+stop-db: check-db_type
+	@echo " - Stopping ${db_type}"
+	@rm target/start-db-${db_type} &> /dev/null || echo " - Seems the make target was deleted stopping anyway!"
+	@docker rm -f ${db_type} &> /dev/null || echo " - we could not stop and remove docker named '${db_type}'"
+
+target/autoscaler_test_certs:
+	@mkdir -p target
+	@./scripts/generate_test_certs.sh
+	@touch $@
+
+scheduler/src/test/resources/certs:
+	@./scheduler/scripts/generate_unit_test_certs.sh
+
+.PHONY: build-test-app
+build-test-app:
+	@make --directory=acceptance/assets/app/go_app build
+
+.PHONY: acceptance.build_tests
+acceptance.build_tests:
+	@make --directory=acceptance build_tests
+
+# This target is defined here rather than directly in the component “scheduler” itself, because it depends on targets outside that component. In the future, it will be moved back to that component and reference a dependency to a Makefile on the same level – the one for the component it depends on.
+.PHONY: scheduler.test
+scheduler.test: check-db_type scheduler.test-certificates init-db
+	@make --directory=scheduler test
+
+.PHONY: scheduler.test-certificates
+scheduler.test-certificates:
+	make --directory=scheduler test-certificates
+
+.PHONY: lint-go
+lint-go: lint acceptance.lint test-app.lint
+
+
+acceptance.lint:
+	@echo 'Linting acceptance-tests …'
+	make --directory='acceptance' lint
+
+test-app.lint:
+	@echo 'Linting test-app …'
+	make --directory='acceptance/assets/app/go_app' lint
+
+.PHONY: build-acceptance-tests
+build-acceptance-tests:
+	@make --directory='acceptance' build_tests
+
+.PHONY: acceptance-tests
+acceptance-tests: build-test-app acceptance-tests-config ## Run acceptance tests against OSS dev environment (requrires a previous deployment of the autoscaler)
+	@make --directory='acceptance' run-acceptance-tests
+
+.PHONY: acceptance-cleanup
+acceptance-cleanup:
+	@make --directory='acceptance' acceptance-tests-cleanup
+
+.PHONY: acceptance-tests-config
+acceptance-tests-config:
+	make --directory='acceptance' acceptance-tests-config
+
+
+.PHONY: deploy-autoscaler deploy-register-cf deploy-autoscaler-bosh deploy-cleanup
+
+deploy-register-cf:
+	DEBUG="${DEBUG}" ./scripts/register-broker.sh
+
+deploy-cleanup:
+	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
+
+deploy-apps:
+	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh

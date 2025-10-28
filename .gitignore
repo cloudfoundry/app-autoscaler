@@ -8,3 +8,17 @@ Makefile_*
 
 api/cmd/api/api
 scalingengine/cmd/scalingengine/scalingengine
+
+# Generated api-clients:
+acceptance/assets/app/go_app/internal/applicationmetric/oas*gen.go
+acceptance/assets/app/go_app/internal/custommetrics/oas*gen.go
+acceptance/assets/app/go_app/internal/policy/oas*gen.go
+api/apis/scalinghistory/oas*gen.go
+scalingengine/apis/scalinghistory/oas*gen.go
+
+test-certs
+*.out
+
+**/*.test
+
+vendor

@@ -1,0 +1,57 @@
+---
+name: Build with Postgres
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}/${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        postgres: [15, 16]
+        suite: [test, integration]
+    env:
+      DB_DATABASE: autoscaler
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    runs-on: "ubuntu-latest"
+    continue-on-error: true
+    name: Build suite=${{ matrix.suite }}, postgres=${{ matrix.postgres }}
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: autoscaler
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+         - 5432:5432
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+        with:
+          enable-cache: true
+
+      - name: make generate-openapi-generated-clients-and-servers
+        run: |
+          devbox run make generate-openapi-generated-clients-and-servers
+
+      - name: make ${{ matrix.suite }}
+        env:
+          DB_HOST: localhost
+          CI: true
+        run: |
+          devbox run make ${{ matrix.suite }} db_type=postgres DB_HOST="${DB_HOST}" CI="${CI}"
