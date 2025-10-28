@@ -1,0 +1,93 @@
+{
+  "default_policy": {
+    "instance_min_count": 1,
+    "instance_max_count": 4,
+    "scaling_rules": [
+      {
+        "metric_type": "memoryused",
+        "breach_duration_secs": 600,
+        "threshold": 30,
+        "operator": "<",
+        "cool_down_secs": 300,
+        "adjustment": "-1"
+      },
+      {
+        "metric_type": "memoryused",
+        "breach_duration_secs": 600,
+        "threshold": 90,
+        "operator": ">=",
+        "cool_down_secs": 300,
+        "adjustment": "+1"
+      }
+    ],
+    "schedules": {
+      "timezone": "Asia/Shanghai",
+      "recurring_schedule": [
+        {
+          "start_time": "10:00",
+          "end_time": "18:00",
+          "days_of_week": [
+            1,
+            2,
+            3
+          ],
+          "instance_min_count": 1,
+          "instance_max_count": 10,
+          "initial_min_instance_count": 5
+        },
+        {
+          "start_date": "2099-06-27",
+          "end_date": "2099-07-23",
+          "start_time": "11:00",
+          "end_time": "19:30",
+          "days_of_month": [
+            5,
+            15,
+            25
+          ],
+          "instance_min_count": 3,
+          "instance_max_count": 10,
+          "initial_min_instance_count": 5
+        },
+        {
+          "start_time": "10:00",
+          "end_time": "18:00",
+          "days_of_week": [
+            4,
+            5,
+            6
+          ],
+          "instance_min_count": 1,
+          "instance_max_count": 10
+        },
+        {
+          "start_time": "11:00",
+          "end_time": "19:30",
+          "days_of_month": [
+            10,
+            20,
+            30
+          ],
+          "instance_min_count": 1,
+          "instance_max_count": 10
+        }
+      ],
+      "specific_date": [
+        {
+          "start_date_time": "2099-06-02T10:00",
+          "end_date_time": "2099-06-15T13:59",
+          "instance_min_count": 1,
+          "instance_max_count": 4,
+          "initial_min_instance_count": 2
+        },
+        {
+          "start_date_time": "2099-01-04T20:00",
+          "end_date_time": "2099-02-19T23:15",
+          "instance_min_count": 2,
+          "instance_max_count": 5,
+          "initial_min_instance_count": 3
+        }
+      ]
+    }
+  }
+}

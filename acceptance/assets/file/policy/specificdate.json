@@ -1,0 +1,25 @@
+{
+  "instance_min_count": 1,
+  "instance_max_count": 4,
+  "scaling_rules": [
+    {
+      "metric_type": "memoryused",
+      "stat_window_secs": 120,
+      "breach_duration_secs": 120,
+      "threshold": 1000,
+      "operator": "<",
+      "cool_down_secs": 60,
+      "adjustment": "-1"
+    }
+  ],
+  "schedules": {
+    "timezone": "%s",
+    "specific_date": [{
+      "start_date_time": "%s",
+      "end_date_time": "%s",
+      "instance_min_count": 2,
+      "instance_max_count": 5,
+      "initial_min_instance_count": 3
+    }]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "instance_min_count": 1,
+  "instance_max_count": 2,
+  "scaling_rules": [
+    {
+      "metric_type": "review_count",
+      "breach_duration_secs": 60,
+      "threshold": 200,
+      "operator": ">=",
+      "cool_down_secs": 60,
+      "adjustment": "+1"
+    },
+    {
+      "metric_type": "review_count",
+      "breach_duration_secs": 60,
+      "threshold": 100,
+      "operator": "<=",
+      "cool_down_secs": 60,
+      "adjustment": "-1"
+    }
+  ]
+}

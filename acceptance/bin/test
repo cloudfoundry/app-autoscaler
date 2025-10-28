@@ -1,0 +1,39 @@
+#! /usr/bin/env bash
+
+set -e -o pipefail
+
+bin_dir=$(dirname "${BASH_SOURCE[0]}")
+pushd "${bin_dir}/.." > /dev/null
+	MIN_GO_VERSION="$(grep --extended-regexp '^go\s[0-9.]+$' 'go.mod' \
+										| awk '{print $2}' \
+										| sed --regexp-extended 's/[0-9]+\.([0-9]+).*/\1/')"
+
+	which go > /dev/null || {\
+		echo "ERROR: golang 1.${MIN_GO_VERSION} needs to be installed to run these tests. " 1>&2;\
+		exit 1;\
+	}
+
+	# retrieve go version outside of the context of any module to ensure that no toolchain download happens
+	pushd "$(mktemp --directory)" > /dev/null
+		minor_version="$(go version | cut --delimiter=' ' --fields='3' \
+			| sed --regexp-extended 's/go[0-9]+\.([0-9]+).*/\1/')"
+	popd
+
+	[ "${minor_version}" -lt "${MIN_GO_VERSION}" ] && { \
+		echo "ERROR: golang version 1.${MIN_GO_VERSION} or above needs to be installed to use the acceptance tests" 1>&2;\
+		exit 1;\
+	}
+
+	# compile ginkgo cli if binary path wasn't provided
+	if [[ -z "${GINKGO_BINARY}" ]]
+	then
+		echo "env var GINKGO_BINARY not specified, building ginkgo"
+		go build -o ginkgo_v2 github.com/onsi/ginkgo/v2/ginkgo
+		GINKGO_BINARY='./ginkgo_v2'
+	fi
+
+	# shellcheck disable=SC2068
+	echo "running ${GINKGO_BINARY} with: '${*}'"
+
+	"${GINKGO_BINARY}" "$@"
+popd > /dev/null

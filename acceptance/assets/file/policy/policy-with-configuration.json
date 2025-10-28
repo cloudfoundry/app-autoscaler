@@ -1,0 +1,24 @@
+{
+  "configuration": {
+    "custom_metrics": {
+      "metric_submission_strategy": {
+        "allow_from": "bound_app"
+      }
+    }
+  },
+  "instance_max_count":4,
+  "instance_min_count":1,
+  "scaling_rules":[
+    {
+      "metric_type":"test_metric",
+      "threshold":500,
+      "operator":">",
+      "adjustment":"+1"
+    }, {
+      "metric_type":"test_metric",
+      "threshold":100,
+      "operator":"<",
+      "adjustment":"-1"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "api": "api.bosh-lite.com",
+  "admin_user": "admin",
+  "admin_password": "90hl7aporvndy2l9t8rl",
+  "apps_domain": "bosh-lite.com",
+  "skip_ssl_validation": true,
+  "use_http": true,
+
+  "service_name": "autoscaler",
+  "service_plan": "autoscaler-free-plan",
+  "aggregate_interval": 40,
+
+  "autoscaler_api": "autoscaler.bosh-lite.com"
+}

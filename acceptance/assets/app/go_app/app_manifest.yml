@@ -1,0 +1,16 @@
+---
+applications:
+  - name: ((app_name))
+    stack: cflinuxfs4
+    command: ./app
+    routes:
+      - route: ((app_name)).((app_domain))
+    processes:
+      - type: web
+        instances: ((instances))
+        memory: ((memory_mb))M
+        disk_quota: 32mb
+        health-check-type: http
+        health-check-invocation-timeout: 10
+        health-check-http-endpoint: "/health"
+        timeout: 120
