@@ -1,0 +1,16 @@
+name: PR Label Check
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+
+jobs:
+  label-check:
+    name: Check PR has required label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mheap/github-action-required-labels@v5
+        with:
+          mode: exactly one
+          count: 1
+          labels: "enhancement, bug, chore, breaking-change"
