@@ -66,6 +66,20 @@ OpenAPI specifications are available in the [`openapi/`](./openapi/) directory:
 
 Refer to [`user guide`](./docs/user_guide.md) for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and command line tool.
 
+## Monitor Microservices
+
+The app-autoscaler provides a number of health endpoints that are available externally that can be used to check the
+state of each component. Each health endpoint is protected with basic auth (apart from the api server), the usernames
+are listed in the table below, but the passwords are available in credhub.
+
+| Component        | Health URL                                                   | Username         | Password Key                                 |
+|------------------|--------------------------------------------------------------|------------------|----------------------------------------------|
+| eventgenerator   | https://autoscaler-eventgenerator.((system_domain))/health   | eventgenerator   | /autoscaler_eventgenerator_health_password   |
+| metricsforwarder | https://autoscaler-metricsforwarder.((system_domain))/health | metricsforwarder | /autoscaler_metricsforwarder_health_password |
+| scalingengine    | https://autoscaler-scalingengine.((system_domain))/health    | scalingengine    | /autoscaler_scalingengine_health_password    |
+| operator         | https://autoscaler-operator.((system_domain))/health         | operator         | /autoscaler_operator_health_password         |
+| scheduler        | https://autoscaler-scheduler.((system_domain))/health        | scheduler        | /autoscaler_scheduler_health_password        |
+
 ### Running Tests
 
 ```bash
