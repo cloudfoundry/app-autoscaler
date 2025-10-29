@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: app-autoscaler custom metrics API
+  description: |
+    app-autoscaler lets you automatically increase or decrease the number of your application instances based on the policies you have defined. Your applications can call the app-autoscaler custom metrics API to submit custom metrics defined and used in a dynamic scaling policy to enable automatic scaling based on application-specific metrics.
+  version: 1.0.0
+  license:
+    name: "Apache License Version 2.0"
+    # identifier: "Apache-2.0" # Requires at least OpenAPI 3.1.0
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+tags:
+- name: Custom Metrics API V1
+  description: Work with application-specific custom metrics to scale your application.
+
+paths:
+  /v1/apps/{appGuid}/metrics:
+    parameters:
+    - in: path
+      name: appGuid
+      description: |
+        The GUID identifying the application for which the metrics are fetched.
+
+        It can be found in the `application_id` property of the JSON object stored in the
+        `VCAP_APPLICATION` environment variable.
+      example: 58d162ad-87d5-4f52-8abf-e56a63a67292
+      required: true
+      schema:
+        $ref: "./shared_definitions.yaml#/schemas/GUID"
+    post:
+      summary: Submits application-specific custom metrics to app-autoscaler.
+      description: |
+        Use to submit custom metrics to app-autoscaler which are defined and used in a dynamic
+        scaling policy to enable automatic scaling based on application-specific metrics.
+
+        We recommend submitting the custom metrics every 40 seconds from every application instance.
+      tags:
+      - Custom Metrics API V1
+      requestBody:
+        description: Custom metrics to be submitted to app-autoscaler.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Metrics'
+        required: true
+      responses:
+        '200':
+          description: Metrics were successfully submitted.
+        default:
+          $ref: "./shared_definitions.yaml#/responses/Error"
+      security:
+      - basicAuthentication: []
+      - mtls: []
+      x-codegen-request-body-name: body
+components:
+  schemas:
+    Metrics:
+      required:
+      - instance_index
+      - metrics
+      type: object
+      properties:
+        instance_index:
+          type: integer
+          format: int64
+          description: The index of the application instance the custom metrics are submitted for. Can be found in the `CF_INSTANCE_INDEX` environment variable.
+          example: 0
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metric'
+          description: The custom metrics to be submitted.
+    Metric:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the custom metric, must have been defined by using it in the scaling policy for the application before submitting.
+          example: queue_length
+        value:
+          type: number
+          description: The value of the custom metric.
+          example: 1337
+        unit:
+          type: string
+          description: An optional unit for the metric, for display purposes only.
+          example: jobs
+  securitySchemes:
+    mtls:
+      type: mutualTLS
+      description: Use the Instance Identity Credentials provided by the Cloud Foundry runtime
+    basicAuthentication:
+      type: http
+      scheme: basic

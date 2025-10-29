@@ -1,0 +1,270 @@
+openapi: 3.0.0
+info:
+  title: Policy API
+  description: This API is used to create, delete, retrieve the policy
+  version: 1.0.0
+  license:
+    name: "Apache License Version 2.0"
+    # identifier: "Apache-2.0" # Requires at least OpenAPI 3.1.0
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+security:
+- bearerAuth: []
+tags:
+- name: Policy API V1
+  description: This API is used to create, delete, retrieve the policy
+
+paths:
+  /v1/apps/{guid}/policy:
+    parameters:
+    - name: guid
+      in: path
+      required: true
+      description: |
+        The GUID identifying the application for which the scaling policy is fetched.
+
+        It can be found in the `application_id` property of the JSON object stored in the
+        `VCAP_APPLICATION` environment variable.
+      schema:
+        $ref: "./shared_definitions.yaml#/schemas/GUID"
+    put:
+      summary: Create the Policy
+      description: This API is used to create the policy
+      tags:
+        - Create Policy API V1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Policy"
+      responses:
+        "200":
+          description: "OK"
+          content:
+           application/json:
+            schema:
+              $ref: "#/components/schemas/Policy"
+        default:
+          $ref: "./shared_definitions.yaml#/responses/Error"
+      x-codegen-request-body-name: body
+    delete:
+      summary: Deletes the policy
+      description: This API is used to delete the policy
+      tags:
+        - Delete Policy API V1
+      responses:
+        "200":
+          description: "OK"
+          content:
+           application/json:
+            schema:
+              $ref: "#/components/schemas/Policy"
+        default:
+          $ref: "./shared_definitions.yaml#/responses/Error"
+      x-codegen-request-body-name: body
+    get:
+      summary: Retrieves the Policy
+      description: This API is used to retrieve the policy
+      tags:
+      - Get Policy API V1
+      responses:
+        "200":
+          description: "OK"
+          content:
+           application/json:
+            schema:
+              $ref: "#/components/schemas/Policy"
+        default:
+          $ref: "./shared_definitions.yaml#/responses/Error"
+components:
+  schemas:
+    Policy:
+      description: Object containing policy and optional configuration
+      type: object
+      required:
+        - instance_min_count
+        - instance_max_count
+      properties:
+        instance_min_count:
+          type: integer
+          format: int64
+          description: minimal number of instance count
+          example: 2
+        instance_max_count:
+          type: integer
+          format: int64
+          description: maximal number of instance count
+          example: 4
+        scaling_rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScalingRule'
+        configuration:
+          type: object
+          properties:
+            custom_metrics:
+              type: object
+              properties:
+                metric_submission_strategy:
+                  type: object
+                  properties:
+                    allow_from:
+                      type: string
+                      enum:
+                        - bound_app
+                  required:
+                    - allow_from
+              required:
+                - metric_submission_strategy
+    ScalingRule:
+      type: object
+      required:
+        - threshold
+        - operator
+        - adjustment
+      properties:
+        metric_type:
+          $ref: "./shared_definitions.yaml#/schemas/metric_type"
+        threshold:
+          description: |
+            The boundary when metric value exceeds is considered as a breach
+          type: integer
+          format: int64
+          example: 30
+        operator:
+          description: Used for standard operting signs - ">", "<", ">=", "<="
+          #required: true
+          type: string
+          enum: [">", "<", ">=", "<="]
+          example: <
+        adjustment:
+          description: |
+            The adjustment approach for instance count with each scaling.
+
+            +5 means adding 5 instances, -50% means shrinking to the half of current size.
+          # required: true
+          type: string
+          pattern: ^[-+][1-9]+[0-9]*[%]?$
+          example: -1
+        breach_duration_secs:
+          description: |
+            Time duration(in seconds) to fire scaling event if it keeps breaching
+          type: integer
+          format: int64
+          example: 600
+        cool_down_secs:
+          description: |
+            The time duration (in seconds) to wait before the next scaling kicks in
+          type: integer
+          format: int64
+          example: 300
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedules'
+    Schedules:
+      type: object
+      required:
+        - timezone
+      properties:
+        timezone:
+          description: Using timezone definition of Java
+          type: string
+          example: Asia/Shanghai
+          # TODO: Try to make use of <https://stackoverflow.com/a/71121905>
+          #- $ref: "../../src/autoscaler/schema/api/policyvalidator/policy_json.schema.json#/" # TODO:
+        recurring_schedule:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecurringSchedule"
+    RecurringSchedule:
+      type: object
+      required:
+        - start_time
+        - end_time
+        - instance_min_count
+        - instance_max_count
+      properties:
+        start_date:
+          description: the start date of the schedule. Must be a future time
+          type: string
+          format: date
+          example: 2016-06-27
+        end_date:
+          description: the end date of the schedule. Must be a future time.
+          type: string
+          format: date
+          example: 2016-07-23
+        start_time:
+          description: the start time of the schedule in HH:MM format
+          type: string
+          pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+          example: 11:00
+        end_time:
+          description: the end time of the schedule in HH:MM format
+          type: string
+          pattern: ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$
+          example: 19:30
+        end time of the schedule:
+          description: |
+            recurring days of a week or month. Use [1,2,..,7] or [1,2,...,31] to define it
+          type: array
+          items:
+            type: integer
+          example: [5, 15, 25]
+        instance_min_count:
+          description: minimal number of instance count for this schedule
+          type: integer
+          format: int64
+          example: 3
+        instance_max_count:
+          description: maximal number of instance count for this schedule
+          type: integer
+          format: int64
+          example: 10
+        instance_min_instance_count:
+          description: the initial minimal number of instance count for this schedule
+          type: integer
+          format: int64
+          example: 5
+        specific_date:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecificDate'
+    SpecificDate:
+      type: object
+      required:
+        - start_date_time
+        - end_date_time
+        - instance_min_count
+        - instance_max_count
+      properties:
+        start_date_time:
+          description: the start time of the schedule. Must be a future time
+          type: string
+          pattern: /[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]/
+          example: 2015-01-04T20:00
+        end_date_time:
+          description: the start time of the schedule. Must be a future time
+          type: string
+          pattern: /[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]/
+          example: 2015-01-04T20:00
+        instance_min_count:
+          description: minimal number of instance count for this schedule
+          type: integer
+          format: int64
+          example: 2
+        instance_max_count:
+          description: maximal number of instance count for this schedule
+          type: integer
+          format: int64
+          example: 5
+        instance_min_instance_count:
+          description: the initial minimal number of instance count for this schedule
+          type: integer
+          format: int64
+          example: 3
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

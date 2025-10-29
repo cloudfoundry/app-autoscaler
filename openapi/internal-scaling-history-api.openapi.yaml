@@ -1,0 +1,213 @@
+openapi: 3.0.0
+info:
+  title: Scaling History API
+  description: List scaling history of an application
+  version: 1.0.0
+  license:
+    name: "Apache License Version 2.0"
+    # identifier: "Apache-2.0" # Requires at least OpenAPI 3.1.0
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+tags:
+- name: Scaling History API V1
+  description: List the scaling history of an Application
+paths:
+  /v1/apps/{guid}/scaling_histories:
+    parameters:
+    - name: guid
+      in: path
+      required: true
+      description: |
+        The GUID identifying the application for which the scaling history is fetched.
+
+        It can be found in the `application_id` property of the JSON object stored in the
+        `VCAP_APPLICATION` environment variable.
+      schema:
+        $ref: "./shared_definitions.yaml#/schemas/GUID"
+    - name: start-time
+      in: query
+      description: |
+        The start time in the number of nanoseconds elapsed since January 1, 1970 UTC.
+      schema:
+        type: integer
+        default: 0
+      example: start-time=1494989539138350432
+    - name: end-time
+      in: query
+      description: |
+        The end time in the number of nanoseconds elapsed since January 1, 1970 UTC.
+      schema:
+        type: integer
+        default: -1
+      example: end-time=1494989549117047288
+    - name: order-direction
+      in: query
+      description: |
+        The sorting order. The scaling history will be order by timestamp ascending or descending.
+      schema:
+        type: string
+        enum: ["asc", "desc"]
+        default: desc
+      example: order-direction=desc
+    - name: order
+      in: query
+      description: |
+        Deprecated: Use order-direction instead.
+      schema:
+        type: string
+        enum: ["asc", "desc"]
+      deprecated: true
+      example: order=desc
+    - name: page
+      in: query
+      description: The page number to query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        example: page=1
+    - name: results-per-page
+      in: query
+      description: Number of entries shown per page.
+      schema:
+        type: integer
+        minimum: 0
+        default: 50
+      example: results-per-page=10
+    get:
+      summary: Retrieves the scaling history of an application.
+      description: |
+         Use to retrieve scaling history for an app.
+      tags:
+      - Scaling History API V1
+      responses:
+        "200":
+         description: "OK"
+         content:
+          application/json:
+           schema:
+             $ref: "#/components/schemas/History"
+        default:
+           $ref: "./shared_definitions.yaml#/responses/Error"
+      security: []
+      x-codegen-request-body-name: body
+components:
+  schemas:
+    History:
+      description: Object containing scaling history.
+      type: object
+      properties:
+        total_results:
+          type: integer
+          format: int64
+          description: Number of history entries found for the given query.
+          example: 2
+        total_pages:
+          type: integer
+          format: int64
+          description: Number of Pages from the query
+          example: 1
+        page:
+          type: integer
+          format: int64
+          description: Number of the current page.
+          example: 1
+        prev_url:
+          type: string
+          format: uri
+        next_url:
+          type: string
+          format: uri
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+    HistoryEntry:
+      description: "Properties common for each entry in the scaling history."
+      type: object
+      oneOf:
+        - $ref: "#/components/schemas/HistoryErrorEntry"
+        - $ref: "#/components/schemas/HistoryIgnoreEntry"
+        - $ref: "#/components/schemas/HistorySuccessEntry"
+#      Unfortunately, we cannot use a discriminator here, as the property MUST be a string, see also https://github.com/OAI/OpenAPI-Specification/issues/2731
+#      discriminator:
+#        propertyName: status
+#        mapping:
+#          0: "#/components/schemas/HistorySuccessEntry"
+#          1: "#/components/schemas/HistoryErrorEntry"
+#          2: "#/components/schemas/HistoryIgnoreEntry"
+      properties:
+        status:
+          type: integer
+          format: int64
+          enum: [0, 1, 2]
+          description: |
+            Following stati are possible:
+             + 0: The scaling was done successfully.
+             + 1: The scaling failed explicitly.
+             + 2: The scaling was ignored.
+            This field is as well a selector of which of the other ones are used and which not.
+          example: 0
+        app_id:
+          $ref: "./shared_definitions.yaml#/schemas/GUID"
+        timestamp:
+          type: integer
+          description: |
+            The scaling time in the number of nanoseconds elapsed since January 1, 1970 UTC.
+          example: 1494989539138350432
+        scaling_type:
+          type: integer
+          format: int64
+          enum: [0, 1]
+          description: |
+            There are two different scaling types:
+              + 0: This represents `ScalingTypeDynamic`. The scaling has been done due to a dynamic
+                  scaling rule, reacting on metrics provided by the app.
+              + 1: This represents `ScalingTypeSchedule`. The scaling has been done due to a
+                  scheduled period changing the default instance limits.
+          example: 0
+        old_instances:
+          type: integer
+          format: int64
+          minimum: -1
+          description: The number of instances before the scaling. -1 means that the value is not applicable.
+          example: 1
+        new_instances:
+          type: integer
+          format: int64
+          minimum: -1
+          description: The number of instances after the scaling. -1 means that the value is not applicable.
+          example: 2
+        reason:
+          type: string
+          description: Textual information about what triggered the scaling event.
+          example: -1 instance(s) because cpu < 20% for 60 seconds
+        message:
+          type: string
+          description: Textual information about the scaling event.
+          example: app
+    HistoryErrorEntry:
+      description: Description of a failed scaling even in history.
+      type: object
+      properties:
+        error:
+          type: string
+          description: |
+            In case the scaling failed, the reason is provided in this field.
+          example: failed to compute new app instances
+    HistoryIgnoreEntry:
+      description: Description of an ignored scaling event in history.
+      type: object
+      properties:
+        ignore_reason:
+          type: string
+          description: |
+            In case the scaling was ignored, the reason is provided in this field.
+          example: app in cooldown period
+    HistorySuccessEntry:
+      description: Description of a successful scaling event event in history.
+      type: object
+      properties: {} # No extra fields needed in this variant.
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic

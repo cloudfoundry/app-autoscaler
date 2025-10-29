@@ -1,0 +1,33 @@
+parameters: {}
+responses:
+  Error:
+    description: |
+      Error, the response body may contain further information.
+    content:
+      application/json:
+        schema:
+          $ref: "#/schemas/ErrorResponse"
+schemas:
+  ErrorResponse:
+    type: object
+    properties:
+      code:
+        type: string
+        description: The textual error code.
+      message:
+        type: string
+        description: The message describing the cause of the error.
+  GUID:
+    description: |
+      Identificator used by Cloud Foundry for entities.
+
+      Anything is an entity. Apps, services, service-bindings, …
+    type: string
+    pattern: (\d|[a-f]){8}-(\d|[a-f]){4}-(\d|[a-f]){4}-(\d|[a-f]){4}-(\d|[a-f]){12}
+    example: 8d0cee08-23ad-4813-a779-ad8118ea0b91
+  metric_type:
+    description: |
+      One user-defined custom metric type or one of the system-default metric types, which are:
+      "memoryused", "memoryutil", "responsetime", "throughput", "cpu", "cpuutil", "disk" and "diskutil"
+    type: string
+    example: memoryused

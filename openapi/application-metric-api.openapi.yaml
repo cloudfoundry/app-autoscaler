@@ -1,0 +1,161 @@
+openapi: 3.0.0
+info:
+  title: Application Metric API
+  description: |
+    List aggregated metrics of an application. AutoScaler collects the instances metrics of an
+    application, and aggregate the raw data into an accumulated value for evaluation.
+
+    This API is used to return the aggregated metric result of an application.
+  version: 1.0.0
+  license:
+    name: "Apache License Version 2.0"
+    # identifier: "Apache-2.0" # Requires at least OpenAPI 3.1.0
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+tags:
+- name: Application Metric API V1
+  description: List aggregated metrics of an application.
+
+paths:
+  /v1/apps/{guid}/aggregated_metric_histories/{metric_type}:
+    parameters:
+    - name: guid
+      in: path
+      required: true
+      description: |
+        The GUID identifying the application for which the aggregated metric histories is fetched.
+
+        It can be found in the `application_id` property of the JSON object stored in the
+        `VCAP_APPLICATION` environment variable.
+      schema:
+       $ref: "./shared_definitions.yaml#/schemas/GUID"
+    - name: metric_type
+      in: path
+      required: true
+      description: The metric type
+      schema:
+        $ref: "./shared_definitions.yaml#/schemas/metric_type"
+    - name: start-time
+      in: query
+      description: |
+        The start time in the number of nanoseconds elapsed since January 1, 1970 UTC.
+      schema:
+        type: integer
+        default: 0
+      example: start-time=1494989539138350432
+    - name: end-time
+      in: query
+      description: |
+        The end time in the number of nanoseconds elapsed since January 1, 1970 UTC.
+      schema:
+        type: integer
+        default: 0
+      example: end-time=1494989549117047288
+    - name: order-direction
+      in: query
+      description: |
+        The sorting order. The scaling history will be order by timestamp ascending or descending.
+      schema:
+        type: string
+        enum: ["asc", "desc"]
+        default: desc
+      example: order-direction=desc
+    - name: page
+      in: query
+      description: The page number to query.
+      schema:
+        type: integer
+        minimum: 1 # Or Should it be "1"?
+        default: 1
+        example: page=1
+    - name: results-per-page
+      in: query
+      description: Number of entries shown per page.
+      schema:
+        type: integer
+        minimum: 0 # Or Should it be "1"?
+        default: 50
+      example: results-per-page=10
+    get:
+      summary: Retrieves the instance metrics of an application.
+      description: |
+         Use to retrieve instance metrics of an application.
+      tags:
+      - Application Metric API V1
+      responses:
+        "200":
+         description: "OK"
+         content:
+          application/json:
+           schema:
+             $ref: "#/components/schemas/Application_Metrics"
+        default:
+           $ref: "./shared_definitions.yaml#/responses/Error"
+      security:
+      - bearerAuth: []
+      x-codegen-request-body-name: body
+components:
+  schemas:
+    Application_Metrics:
+      description: Object containing Application Metrics
+      type: object
+      properties:
+        total_results:
+          type: integer
+          format: int64
+          description: Number of history entries found for the given query
+          example: 2
+        total_pages:
+          type: integer
+          format: int64
+          description: Number of Pages from the query
+          example: 1
+        page:
+          type: integer
+          format: int64
+          description: Number of the current page
+          example: 1
+        prev_url:
+          type: string
+          format: uri
+        next_url:
+          type: string
+          format: uri
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationMetric'
+    ApplicationMetric:
+      description: Object containing metric history
+      type: object
+      properties:
+        app_guid:
+          $ref: "./shared_definitions.yaml#/schemas/GUID"
+        instanceIndex:
+          type: integer
+          description: Application Metric #TODO
+          example: 0
+        timestamp:
+          type: integer
+          description: |
+            The scaling time in the number of nanoseconds elapsed since January 1, 1970 UTC.
+          example: 1494989539138350432
+        collected_at:
+          type: integer
+          description: |
+            The time at which the metrics were collected in the number of nanoseconds
+          example: 1494989539138350000
+        metric_type:
+          $ref: "./shared_definitions.yaml#/schemas/metric_type"
+        value:
+          type: integer
+          description: |
+            The value of metric type to be returned as the aggregated metric result of an application
+          example: 400
+        unit:
+          type: string
+          example: megabytes
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
