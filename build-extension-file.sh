@@ -55,20 +55,9 @@ database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
 operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
 eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
-eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
-eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
-
 scalingengine_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password))
-
-policy_db_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/database_password))
-policy_db_server_ca: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.ca))
-policy_db_client_cert: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.certificate))
-policy_db_client_key: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/postgres_server.private_key))
 service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue))
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
-syslog_client_ca: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.ca))
-syslog_client_cert: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.certificate))
-syslog_client_key: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.private_key))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
@@ -125,9 +114,6 @@ export SYSLOG_CLIENT_KEY="$(yq ".syslog_client_key" /tmp/mtar-secrets.yml)"
 export SERVICE_BROKER_PASSWORD_BLUE="$(yq ".service_broker_password_blue" /tmp/mtar-secrets.yml)"
 export SERVICE_BROKER_PASSWORD="$(yq ".service_broker_password" /tmp/mtar-secrets.yml)"
 
-if [ -z "${POSTGRES_IP}" ]; then
-  POSTGRES_URI="postgres://postgres:${POLICY_DB_PASSWORD}@${DEPLOYMENT_NAME}-postgres.tcp.${SYSTEM_DOMAIN}:${POSTGRES_EXTERNAL_PORT}/autoscaler?application_name=metricsforwarder&sslmode=verify-full"
-else
 export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
 
 cat <<EOF > "${extension_file_path}"
