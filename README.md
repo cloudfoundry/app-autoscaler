@@ -10,7 +10,7 @@ This repository contains the core Application Autoscaler source code, extracted 
 
 ## Architecture
 
-The Application Autoscaler consists of several microservices:
+The Application Autoscaler consists of several microservices and are deployed as CF Applications
 
 | Component         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
