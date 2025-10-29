@@ -61,6 +61,20 @@ OpenAPI specifications are available in the [`openapi/`](./openapi/) directory:
 | `make mta-build`                                                      | Build MTA archive for deployment                                           |
 | `make mta-deploy`                                                     | Deploy to Cloud Foundry using MTA                                          |
 
+
+### Running Tests
+
+```bash
+# Run all unit tests
+make test
+
+# Run integration tests
+make integration
+
+# Run acceptance tests (requires deployed autoscaler)
+make acceptance-tests
+```
+
 ### Database Setup
 
 The autoscaler supports PostgreSQL.
@@ -75,19 +89,6 @@ To stop the database:
 
 ```bash
 make stop-db                     # Stop PostgreSQL
-```
-
-### Running Tests
-
-```bash
-# Run all unit tests
-make test
-
-# Run integration tests
-make integration
-
-# Run acceptance tests (requires deployed autoscaler)
-make acceptance-tests
 ```
 
 ## Documentation
