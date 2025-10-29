@@ -62,6 +62,10 @@ OpenAPI specifications are available in the [`openapi/`](./openapi/) directory:
 | `make mta-deploy`                                                     | Deploy to Cloud Foundry using MTA                                          |
 
 
+## Use Application Autoscaler Service
+
+Refer to [`user guide`](./docs/user_guide.md) for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and command line tool.
+
 ### Running Tests
 
 ```bash
