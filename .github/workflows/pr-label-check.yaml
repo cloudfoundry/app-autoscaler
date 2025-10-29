@@ -11,6 +11,6 @@ jobs:
     steps:
       - uses: mheap/github-action-required-labels@v5
         with:
-          mode: exactly one
+          mode: exactly
           count: 1
           labels: "enhancement, bug, chore, breaking-change"
