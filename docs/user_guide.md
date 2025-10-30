@@ -131,7 +131,6 @@ The following gives some policy examples for you to start with. Refer to [Policy
 * [Autoscaling policy example for custom metrics ][policy-dynamic-custom]
 * [Autoscaling policy example for both dynamic scaling rules and schedules][policy-all]
 
-## Create Autoscaling Policy JSON File
 ---
 
 ## Connect an application to App-AutoScaler
