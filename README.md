@@ -93,11 +93,13 @@ make integration
 make acceptance-tests
 ```
 
+Note: Running tests will automatically spin up the PostgreSQL database via Docker.
+
 ### Database Setup
 
 The autoscaler supports PostgreSQL.
 
-To start a local database for development:
+To manually start a local database for development:
 
 ```bash
 make start-db                    # Start PostgreSQL
