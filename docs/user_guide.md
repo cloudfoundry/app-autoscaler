@@ -44,7 +44,7 @@ Instance limits are used to define the default minimal and maximal instance numb
 
 ### Dynamic scaling rules
 
-####  Metric types
+#### Metric types
 
 The following are the built-in metrics that you can use to scale your application based on. They are averaged over all the instances of your application.
 
