@@ -101,7 +101,7 @@ For example, if you want to scale out your application by adding 2 instances whe
 
 * `breach_duration_secs` and `cool_down_secs` are both optional entries in scaling_rule definition.  The `App Autoscaler` provider will define the default value if you omit them from the policy.
 
-###  Schedules
+### Schedules
 
 `App AutoScaler` uses schedules to overwrite the default instance limits for specific time periods. During these time periods, all dynamic scaling rules are still effective.
 
