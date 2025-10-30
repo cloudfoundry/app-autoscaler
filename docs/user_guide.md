@@ -138,7 +138,7 @@ The following gives some policy examples for you to start with. Refer to [Policy
 
 `App-AutoScaler` can be offered as a Cloud Foundry service or an extension of your Cloud Foundry platform. Consult your Cloud Foundry provider for how it is offered.
 
-###  As a Cloud Foundry extension
+### As a Cloud Foundry extension
 When `App AutoScaler` is offered as Cloud Foundry platform extension,  you don't need to connect your application to autoscaler, go directly to next section to attach autoscaling policy to your application with CLI.
 
 ### As a Cloud Foundry service
