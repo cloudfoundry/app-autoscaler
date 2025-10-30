@@ -46,13 +46,9 @@ OpenAPI specifications are available in the [`openapi/`](./openapi/) directory:
 
 | Target                                                                | Description                                                                |
 |-----------------------------------------------------------------------|----------------------------------------------------------------------------|
-| `make build`                                                          | Build all components                                                       |
 | `make generate-fakes`                                                 | Generate test mocks/fakes                                                  |
-| `make generate-openapi-generated-clients-and-servers`                 | Generate clients and servers from OpenAPI specs                            |
 | `make test`                                                           | Run unit tests against PostgreSQL                                          |
-| `make clean && make test POSTGRES_TAG=x.y`                            | Run unit tests against specific PostgreSQL version                         |
 | `make integration`                                                    | Run integration tests against PostgreSQL                                   |
-| `make clean && make integration POSTGRES_TAG=x.y`                     | Run integration tests against specific PostgreSQL version                  |
 | `make acceptance-tests`                                               | Run acceptance tests (see [acceptance/README.md](acceptance/README.md))    |
 | `make lint`                                                           | Check code style                                                           |
 | `OPTS=--fix make lint`                                                | Check code style and apply auto-fixes                                      |
