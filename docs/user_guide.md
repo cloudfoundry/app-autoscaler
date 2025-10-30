@@ -122,7 +122,7 @@ For example, in the following schedule rule, `App AutoScaler` will set your appl
 }
 ```
 
-----
+---
 ## Create Autoscaling Policy JSON File
 
 The following gives some policy examples for you to start with. Refer to [Policy speficication][policy] for the detailed JSON format of the autoscaling policy.
@@ -132,7 +132,7 @@ The following gives some policy examples for you to start with. Refer to [Policy
 * [Autoscaling policy example for both dynamic scaling rules and schedules][policy-all]
 
 ## Create Autoscaling Policy JSON File
-----
+---
 
 ## Connect an application to App-AutoScaler
 
@@ -158,7 +158,7 @@ To disconnect `App AutoScaler` from your application, unbind the service instanc
 * [Delete service instance][sdeprovision]
 
 
-----
+---
 ## Command Line interface
 
 This section gives how to use the command line interface to manage autoscaling policies,  query metrics and scaling event history. Go to the [CLI user guide][cli] for the detailed CLI references.
@@ -231,7 +231,7 @@ Delete custom metric credential when unncessary.
 cf delete-autoscaling-credential <app_name>
 ```
 
-----
+---
 ## Auto-scale your application with custom metrics
 
 With custom metric support,  you can scale your application with your own metrics with below steps.
