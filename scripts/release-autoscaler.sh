@@ -1,10 +1,11 @@
 #! /usr/bin/env bash
+# shellcheck disable=SC2154,SC1091
 
 # NOTE: you can run this locally for testing !!!
 #
 # ./script/local_release_autoscaler.sh
 
-set -x 
+set -x
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source "${script_dir}/vars.source.sh"
