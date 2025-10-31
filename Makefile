@@ -270,7 +270,7 @@ mta-build-clean:
 
 .PHONY: release-draft
 release-draft: ## Create a draft GitHub release with artifacts
-	@./scripts/release-autoscaler.sh
+		GENERATE_FINAL_RELEASE=false ./scripts/release-autoscaler.sh
 
 .PHONY: cf-login
 cf-login:
