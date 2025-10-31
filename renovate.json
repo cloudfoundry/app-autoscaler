@@ -68,6 +68,17 @@
         "/log-cache/",
         "/loggregator-agent-release/"
       ]
+    },
+    {
+      "description": "Disable Liquibase updates due to Functional Source License (FSL)",
+      "groupName": "Liquibase",
+      "matchManagers": [
+        "maven"
+      ],
+      "matchPackageNames": [
+        "/^org\\.liquibase:.*/"
+      ],
+      "enabled": false
     }
   ],
   "nix": {
