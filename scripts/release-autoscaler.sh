@@ -85,9 +85,9 @@ function determine_next_version(){
     return
   fi
 
-  # Extract PR numbers from commits
+  # Extract PR numbers from commits (supports both "(#123)" and " #123 " formats)
   local pr_numbers
-  pr_numbers=$(echo "$commits_since_tag" | grep -oE '\(#[0-9]+\)' | grep -oE '[0-9]+' | sort -u)
+  pr_numbers=$(echo "$commits_since_tag" | grep -oE '(\(#[0-9]+\)| #[0-9]+ )' | grep -oE '[0-9]+' | sort -u)
 
   if [ -z "$pr_numbers" ]; then
     echo " - No PR numbers found in commits, incrementing patch version"
