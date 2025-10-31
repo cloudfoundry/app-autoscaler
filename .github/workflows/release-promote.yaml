@@ -1,0 +1,32 @@
+---
+name: Promote Draft Release to Final
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote-release:
+    runs-on: ubuntu-latest
+    name: Promote draft release to final
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0  # Fetch all history for version determination
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+        with:
+          enable-cache: true
+
+      - name: Promote draft release to final
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTOSCALER_CI_BOT_EMAIL: ${{ secrets.AUTOSCALER_CI_BOT_EMAIL }}
+          AUTOSCALER_CI_BOT_NAME: ${{ secrets.AUTOSCALER_CI_BOT_NAME }}
+          AUTOSCALER_CI_BOT_SIGNING_KEY_PUBLIC: ${{ secrets.AUTOSCALER_CI_BOT_SIGNING_KEY_PUBLIC }}
+          AUTOSCALER_CI_BOT_SIGNING_KEY_PRIVATE: ${{ secrets.AUTOSCALER_CI_BOT_SIGNING_KEY_PRIVATE }}
+        run: |
+          devbox run make release-promote

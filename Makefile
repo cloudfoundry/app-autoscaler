@@ -269,8 +269,11 @@ mta-build-clean:
 	rm -rf mta_archives
 
 .PHONY: release-draft
-release-draft: ## Create a draft GitHub release with artifacts
-		GENERATE_FINAL_RELEASE=false ./scripts/release-autoscaler.sh
+release-draft: ## Create a draft GitHub release without artifacts
+		./scripts/release-autoscaler.sh
+
+release-promote: ## Promote existing draft release to final with artifacts
+		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
 
 .PHONY: cf-login
 cf-login:
