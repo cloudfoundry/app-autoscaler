@@ -5,36 +5,36 @@
 #
 
 if [ -z "${BASH_SOURCE[0]}" ]; then
-  echo  "### Source this from inside a script only! "
-  echo  "### ======================================="
-  echo
-  return
+	echo  "### Source this from inside a script only! "
+	echo  "### ======================================="
+	echo
+	return
 fi
 
 write_error_state() {
-  echo "Error failed execution of \"$1\" at line $2"
-  local frame=0
-  while true ; do
-    caller $frame && break
-    ((frame++));
-  done
+	echo "Error failed execution of \"$1\" at line $2"
+	local frame=0
+	while true ; do
+		caller $frame && break
+		((frame++));
+	done
 }
 
 trap 'write_error_state "$BASH_COMMAND" "$LINENO"' ERR
 
 debug=${DEBUG:-}
 if [ -n "${debug}" ] && [ ! "${debug}" = "false" ]; then
-  function debug(){ echo "  -> $1"; }
+	function debug(){ echo "  -> $1"; }
 else
-  function debug(){ :; }
+	function debug(){ :; }
 fi
 
 function warn(){
-  echo " - WARN: $1"
+	echo " - WARN: $1"
 }
 
 function log(){
-  echo " - $1"
+	echo " - $1"
 }
 
 script_dir="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,7 +75,7 @@ BBL_STATE_PATH="${BBL_STATE_PATH:-$( realpath "${script_dir}/../../app-autoscale
 # We want to print out the name of the variable literally and marked as shell-variable, therefore:
 # shellcheck disable=SC2016
 BBL_STATE_PATH="$(realpath --canonicalize-existing "${BBL_STATE_PATH}" \
-                  || echo 'ERR_invalid_state_path, please set ${BBL_STATE_PATH}' )"
+									|| echo 'ERR_invalid_state_path, please set ${BBL_STATE_PATH}' )"
 export BBL_STATE_PATH
 debug "BBL_STATE_PATH: ${BBL_STATE_PATH}"
 
