@@ -16,7 +16,7 @@ mkdir -p "build"
 build_path=$(realpath build)
 mkdir -p "keys"
 keys_path="$(realpath keys)"
-GENERATE_FINAL_RELEASE=${GENERATE_FINAL_RELEASE:-"true"}
+PROMOTE_DRAFT=${PROMOTE_DRAFT:-"false"}
 REPO_OUT=${REPO_OUT:-}
 SUM_FILE="${build_path}/artifacts/files.sum.sha256"
 
@@ -145,6 +145,27 @@ function generate_changelog(){
   [ -e "${build_path}/changelog.md" ] && return
   echo " - Generating changelog using github cli..."
   mkdir -p "${build_path}"
+
+  # If promoting an existing draft, find the latest draft release
+  if [ "${PROMOTE_DRAFT}" == "true" ]; then
+    echo " - Looking for latest draft release..."
+    local draft_version
+    draft_version=$(gh release list --limit 10 --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName' | head -1)
+
+    if [ -z "$draft_version" ]; then
+      echo " - ERROR: No draft release found to promote"
+      exit 1
+    fi
+
+    # Update VERSION to match the draft we found
+    VERSION="$draft_version"
+    echo " - Found draft release ${VERSION}, will promote to final"
+    echo "${VERSION#v}" > "${build_path}/name"
+    gh release view "${VERSION}" > "${build_path}/changelog.md"
+    return
+  fi
+
+  # Otherwise, create a new draft release (or recreate if draft exists)
   # Check if release exists and is a draft before deleting
   if gh release view "${VERSION}" &>/dev/null; then
     local is_draft
@@ -184,7 +205,10 @@ function setup_git(){
 
 
 pushd "${autoscaler_dir}" > /dev/null
-  determine_next_version
+  # Skip version determination if promoting an existing draft
+  if [ "${PROMOTE_DRAFT}" != "true" ]; then
+    determine_next_version
+  fi
 
   VERSION=${VERSION:-$(cat "${build_path}/name")}
   generate_changelog
@@ -194,7 +218,8 @@ pushd "${autoscaler_dir}" > /dev/null
   git diff
   echo "v${VERSION}" > "${build_path}/tag"
 
-  if [ "${GENERATE_FINAL_RELEASE}" == "true" ]; then
+  # Build artifacts only when promoting a draft to final
+  if [ "${PROMOTE_DRAFT}" == "true" ]; then
     setup_git
     bump_version "${VERSION}"
     ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
@@ -234,6 +259,19 @@ EOF
   echo "---------- Changelog file ----------"
   cat "${build_path}/changelog.md"
   echo "---------- end file ----------"
+
+  # If promoting draft to final, upload artifacts and publish
+  if [ "${PROMOTE_DRAFT}" == "true" ]; then
+    echo " - Uploading artifacts to release ${VERSION}..."
+    gh release upload "${VERSION}" "${build_path}/artifacts/"* --clobber
+
+    echo " - Updating release notes with deployment information..."
+    gh release edit "${VERSION}" --notes-file "${build_path}/changelog.md"
+
+    echo " - Publishing release ${VERSION}..."
+    gh release edit "${VERSION}" --draft=false
+    echo " - Release ${VERSION} published successfully!"
+  fi
 
 popd > /dev/null
 echo " - Completed"
