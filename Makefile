@@ -268,6 +268,10 @@ mta-build: mta-build-clean
 mta-build-clean:
 	rm -rf mta_archives
 
+.PHONY: release-draft
+release-draft: ## Create a draft GitHub release with artifacts
+		GENERATE_FINAL_RELEASE=false ./scripts/release-autoscaler.sh
+
 .PHONY: cf-login
 cf-login:
 	@echo '⚠️ Please note that this login only works for cf and concourse,' \

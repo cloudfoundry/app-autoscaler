@@ -1,0 +1,23 @@
+changelog:
+  exclude:
+    labels:
+      - exclude-from-changelog
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking-change
+    - title: Enhancements
+      labels:
+        - enhancement
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: Dependency Updates
+      labels:
+        - dependencies
+    - title: Chores
+      labels:
+        - chore
+    - title: Other Changes
+      labels:
+        - "*"
