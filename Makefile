@@ -6,6 +6,7 @@ aes_terminal_reset := \e[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
+ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tar.gz
 CI ?= false
 CI_DIR ?= ${AUTOSCALER_DIR}/ci
 
@@ -274,6 +275,24 @@ release-draft: ## Create a draft GitHub release without artifacts
 
 release-promote: ## Promote existing draft release to final with artifacts
 		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
+
+
+.PHONY: acceptance-release
+acceptance-release: clean-acceptance go-mod-tidy go-mod-vendor build-test-app
+	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
+	@mkdir -p ${DEST}
+	./scripts/compile-acceptance-tests.sh
+	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
+
+
+.PHONY: mta-release
+mta-release: mta-build
+	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
+
+clean-acceptance:
+	@echo ' - cleaning acceptance (⚠️ This keeps the file “acceptance/acceptance_config.json” if present!)'
+	@rm acceptance/ginkgo* &> /dev/null || true
+	@rm -rf acceptance/results &> /dev/null || true
 
 .PHONY: cf-login
 cf-login:
