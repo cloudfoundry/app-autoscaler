@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 # shellcheck disable=SC2154,SC1091
 
+set -x
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source "${script_dir}/vars.source.sh"
@@ -61,6 +62,20 @@ function commit_release(){
 
 function determine_next_version(){
   echo " - Determining next version..."
+
+  # Check if there's an existing draft release
+  local draft_version
+  draft_version=$(gh release list --limit 10 --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName' | head -1)
+
+  if [ -n "$draft_version" ]; then
+    echo " - Found existing draft release: ${draft_version}"
+    echo " - Using draft version as next version"
+    echo "${draft_version#v}" > "${build_path}/name"
+    return
+  fi
+
+  # If no draft found, continue with version calculation
+  echo " - No draft release found, calculating version from commits..."
   echo " - Previous version: $previous_version"
 
   # Remove 'v' prefix if present
@@ -205,10 +220,7 @@ function setup_git(){
 
 
 pushd "${autoscaler_dir}" > /dev/null
-  # Skip version determination if promoting an existing draft
-  if [ "${PROMOTE_DRAFT}" != "true" ]; then
-    determine_next_version
-  fi
+  determine_next_version
 
   VERSION=${VERSION:-$(cat "${build_path}/name")}
   generate_changelog

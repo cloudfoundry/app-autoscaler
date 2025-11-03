@@ -273,7 +273,7 @@ mta-build-clean:
 release-draft: ## Create a draft GitHub release without artifacts
 		./scripts/release-autoscaler.sh
 
-release-promote: ## Promote existing draft release to final with artifacts
+release-promote:
 		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
 
 
@@ -286,7 +286,7 @@ acceptance-release: clean-acceptance go-mod-tidy go-mod-vendor build-test-app
 
 
 .PHONY: mta-release
-mta-release: mta-build
+mta-release: generate-fakes mta-build
 	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
 
 clean-acceptance:
