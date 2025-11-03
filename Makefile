@@ -232,7 +232,7 @@ vendor-changelogs:
 clean:
 	@echo "# cleaning autoscaler"
 	@go clean -cache -testcache
-	@rm --force --recursive 'build'
+	# @rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'vendor'
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
