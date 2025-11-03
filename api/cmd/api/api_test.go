@@ -63,11 +63,9 @@ var _ = Describe("Api", func() {
 		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
 
 	})
-
 	JustBeforeEach(func() {
 		runner.Start()
 	})
-
 	Describe("Api configuration check", func() {
 		Context("with a missing config file", func() {
 			BeforeEach(func() {
