@@ -93,7 +93,7 @@ app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 generate-fakes:
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
-	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate './...'
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
 
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
