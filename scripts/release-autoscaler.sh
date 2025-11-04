@@ -164,11 +164,11 @@ function generate_changelog(){
       exit 1
     fi
 
-    # Update VERSION to match the draft we found
-    VERSION="$draft_version"
-    echo " - Found draft release ${VERSION}, will promote to final"
-    echo "${VERSION#v}" > "${build_path}/name"
-    gh release view "${VERSION}" > "${build_path}/changelog.md"
+    # Update VERSION to match the draft we found (strip "v" prefix if present)
+    VERSION="${draft_version#v}"
+    echo " - Found draft release v${VERSION}, will promote to final"
+    echo "${VERSION}" > "${build_path}/name"
+    gh release view "v${VERSION}" > "${build_path}/changelog.md"
     return
   fi
 
