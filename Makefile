@@ -277,7 +277,7 @@ release-promote:
 
 
 .PHONY: acceptance-release
-acceptance-release: clean-acceptance go-mod-tidy go-mod-vendor build-test-app
+acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
 	./scripts/compile-acceptance-tests.sh
