@@ -168,7 +168,7 @@ function generate_changelog(){
     VERSION="${draft_version#v}"
     echo " - Found draft release v${VERSION}, will promote to final"
     echo "${VERSION}" > "${build_path}/name"
-    gh release view "v${VERSION}" --json body --jq -r '.body' > "${build_path}/changelog.md"
+    gh release view "v${VERSION}" --json body --jq '.body' > "${build_path}/changelog.md"
     return
   fi
 
@@ -187,7 +187,7 @@ function generate_changelog(){
     fi
   fi
   gh release create "v${VERSION}" --generate-notes --draft
-  gh release view "v${VERSION}" --json body --jq -r '.body' > "${build_path}/changelog.md"
+  gh release view "v${VERSION}" --json body --jq '.body' > "${build_path}/changelog.md"
 }
 
 function setup_git(){
