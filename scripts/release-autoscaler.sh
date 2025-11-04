@@ -265,15 +265,15 @@ EOF
 
   # If promoting draft to final, upload artifacts and publish
   if [ "${PROMOTE_DRAFT}" == "true" ]; then
-    echo " - Uploading artifacts to release ${VERSION}..."
-    gh release upload "${VERSION}" "${build_path}/artifacts/"* --clobber
+    echo " - Uploading artifacts to release v${VERSION}..."
+    gh release upload "v${VERSION}" "${build_path}/artifacts/"* --clobber
 
     echo " - Updating release notes with deployment information..."
-    gh release edit "${VERSION}" --notes-file "${build_path}/changelog.md"
+    gh release edit "v${VERSION}" --notes-file "${build_path}/changelog.md"
 
-    echo " - Publishing release ${VERSION}..."
-    gh release edit "${VERSION}" --draft=false
-    echo " - Release ${VERSION} published successfully!"
+    echo " - Publishing release v${VERSION}..."
+    gh release edit "v${VERSION}" --draft=false
+    echo " - Release v${VERSION} published successfully!"
   fi
 
 popd > /dev/null
