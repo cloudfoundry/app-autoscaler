@@ -8,7 +8,6 @@ DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
-CI_DIR ?= ${AUTOSCALER_DIR}/ci
 
 DEBUG := false
 MYSQL_TAG := 8
