@@ -231,7 +231,6 @@ vendor-changelogs:
 clean:
 	@echo "# cleaning autoscaler"
 	@go clean -cache -testcache
-	# @rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'vendor'
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
@@ -267,6 +266,11 @@ mta-build: mta-build-clean
 
 mta-build-clean:
 	rm -rf mta_archives
+
+.PHONY: clean-build
+clean-build: ## Clean the build directory
+	@echo ' - cleaning build directory'
+	@rm -rf build
 
 .PHONY: release-draft
 release-draft: ## Create a draft GitHub release without artifacts
