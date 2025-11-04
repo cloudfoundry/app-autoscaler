@@ -90,8 +90,7 @@ ${openapi-generated-clients-and-servers-api-dir} ${openapi-generated-clients-and
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 .PHONY: generate-fakes
-generate-fakes: ${app-fakes-dir} ${app-fakes-files} ${openapi-generated-clients-and-servers-dir}
-${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
+generate-fakes:
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate './...'

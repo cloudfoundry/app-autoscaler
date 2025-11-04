@@ -53,13 +53,6 @@ function create_tests() {
   popd > /dev/null
 }
 
-function commit_release(){
-  pushd "${autoscaler_dir}"
-  git add -A
-  git status
-  git commit -S -m "created release v${VERSION}"
-}
-
 function determine_next_version(){
   echo " - Determining next version..."
 
@@ -240,7 +233,6 @@ pushd "${autoscaler_dir}" > /dev/null
     mkdir -p "${build_path}/artifacts"
     create_tests "${VERSION}" "${build_path}"
     create_mtar "${VERSION}" "${build_path}"
-    commit_release
 
     sha256sum "${build_path}/artifacts/"* > "${build_path}/artifacts/files.sum.sha256"
     ACCEPTANCE_SHA256=$( grep "${ACCEPTANCE_TEST_TGZ}$" "${SUM_FILE}" | awk '{print $1}' )
