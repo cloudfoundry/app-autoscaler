@@ -38,7 +38,6 @@ function log(){
 }
 
 script_dir="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root_dir=$(realpath -e "${script_dir}/../../..")
 
 # This environment-variable is used as the target-name for concourse that is used to communicate
 # with the concourse-instance that manages the os-pipelines of this repository under
@@ -72,7 +71,7 @@ export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.clo
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"
 
-BBL_STATE_PATH="${BBL_STATE_PATH:-$( realpath "${root_dir}/../app-autoscaler-env-bbl-state/bbl-state" )}"
+BBL_STATE_PATH="${BBL_STATE_PATH:-$( realpath "${script_dir}/../../app-autoscaler-env-bbl-state/bbl-state" )}"
 # We want to print out the name of the variable literally and marked as shell-variable, therefore:
 # shellcheck disable=SC2016
 BBL_STATE_PATH="$(realpath --canonicalize-existing "${BBL_STATE_PATH}" \
@@ -80,7 +79,7 @@ BBL_STATE_PATH="$(realpath --canonicalize-existing "${BBL_STATE_PATH}" \
 export BBL_STATE_PATH
 debug "BBL_STATE_PATH: ${BBL_STATE_PATH}"
 
-AUTOSCALER_DIR="${AUTOSCALER_DIR:-${root_dir}}"
+AUTOSCALER_DIR="${AUTOSCALER_DIR:-${script_dir}/..}"
 export AUTOSCALER_DIR="$(realpath -e "${AUTOSCALER_DIR}" )"
 debug "AUTOSCALER_DIR: ${AUTOSCALER_DIR}"
 autoscaler_dir="${AUTOSCALER_DIR}"
