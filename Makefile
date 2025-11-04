@@ -278,7 +278,6 @@ release-draft: ## Create a draft GitHub release without artifacts
 release-promote:
 		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
 
-
 .PHONY: acceptance-release
 acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
