@@ -173,19 +173,32 @@ function generate_changelog(){
   fi
 
   # Otherwise, create a new draft release (or recreate if draft exists)
-  # Check if release exists and is a draft before deleting
-  if gh release view "${VERSION}" &>/dev/null; then
+  # First delete any existing draft releases with matching version (handles untagged drafts)
+  echo " - Checking for existing draft releases with version ${VERSION}..."
+  local existing_drafts
+  existing_drafts=$(gh release list --limit 20 --json tagName,name,isDraft --jq ".[] | select(.isDraft == true and (.tagName == \"v${VERSION}\" or .name == \"v${VERSION}\" or .name == \"${VERSION}\")) | .tagName")
+
+  if [ -n "$existing_drafts" ]; then
+    while IFS= read -r draft_tag; do
+      if [ -n "$draft_tag" ]; then
+        echo " - Deleting existing draft release: ${draft_tag}"
+        gh release delete "${draft_tag}" --yes --cleanup-tag || true
+      fi
+    done <<< "$existing_drafts"
+  fi
+
+  # Check if there's a published release with this version
+  if gh release view "v${VERSION}" &>/dev/null; then
     local is_draft
-    is_draft=$(gh release view "${VERSION}" --json isDraft --jq '.isDraft')
-    if [ "$is_draft" = "true" ]; then
-      echo " - Deleting existing draft release ${VERSION}"
-      gh release delete "${VERSION}" --yes
-    else
-      echo " - ERROR: Release ${VERSION} already exists and is published (not a draft)"
+    is_draft=$(gh release view "v${VERSION}" --json isDraft --jq '.isDraft')
+    if [ "$is_draft" = "false" ]; then
+      echo " - ERROR: Release v${VERSION} already exists and is published (not a draft)"
       echo " - Refusing to delete published release. Please check version logic."
       exit 1
     fi
   fi
+
+  echo " - Creating new draft release v${VERSION}..."
   gh release create "v${VERSION}" --generate-notes --draft
   gh release view "v${VERSION}" --json body --jq '.body' > "${build_path}/changelog.md"
 }
