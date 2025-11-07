@@ -111,13 +111,21 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 #  3. `make go-mod-tidy`
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
-go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources}
+go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.go-mod-tidy test-app.go-mod-tidy
+
+
+
 	@echo -ne '${aes_terminal_font_yellow}'
 	@echo -e '⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 					 'outdated. Please consider re-generating them, if this is relevant.'
 	@echo -ne '${aes_terminal_reset}'
 	go mod tidy
 
+acceptance.go-mod-tidy:
+	make --directory='acceptance' go-mod-tidy
+
+test-app.go-mod-tidy:
+	make --directory='acceptance/assets/app/go_app' go-mod-tidy
 
 go-vendoring-folder := ./vendor
 go-vendored-files = $(shell find '${go-vendoring-folder}' -type f -name '*.go' 2> '/dev/null')
