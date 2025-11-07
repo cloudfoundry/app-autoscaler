@@ -83,8 +83,8 @@ function run_liquibase() {
 
   local classpath=$(readlink -f /home/vcap/app/BOOT-INF/lib/* | tr '\n' ':')
 
-  "$JAVA_BIN" -cp "$classpath" liquibase.integration.commandline.Main \
-    --url "$jdbcdburl" --username="$user" --password="$password" --driver=org.postgresql.Driver --logLevel="$log_level" --changeLogFile="$changelog" update
+  "$JAVA_BIN" -cp "$classpath" liquibase.integration.commandline.LiquibaseCommandLine \
+    --url "$jdbcdburl" --username="$user" --password="$password" --driver=org.postgresql.Driver --log-level="$log_level" --changeLogFile="$changelog" update
 }
 
 function main() {
