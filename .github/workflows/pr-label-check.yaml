@@ -13,4 +13,4 @@ jobs:
         with:
           mode: exactly
           count: 1
-          labels: "enhancement, bug, chore, breaking-change"
+          labels: "enhancement, bug, chore, breaking-change, dependencies"
