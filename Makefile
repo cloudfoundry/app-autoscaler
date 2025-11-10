@@ -160,11 +160,11 @@ test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
 autoscaler.test: check-db_type init-db test-certs generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST} --skip-package='integration,acceptance'
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
 test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST}
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} ${TEST}
 
 test-acceptance-unit:
 	@make --directory=acceptance test-unit
