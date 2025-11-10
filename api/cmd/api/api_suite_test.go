@@ -32,7 +32,7 @@ import (
 const (
 	username    = "broker_username"
 	password    = "broker_password"
-	testCertDir = "../../../../../test-certs"
+	testCertDir = "../../../test-certs"
 )
 
 var (
