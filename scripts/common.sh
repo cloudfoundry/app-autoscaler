@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-# shellcheck disable=SC2154,SC2155
+# shellcheck disable=SC2154
 # This file is intended to be loaded via the `source`-command.
 
 function step(){
@@ -85,7 +85,8 @@ function delete_releases(){
 }
 
 function cleanup_db(){
-	local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+	local script_dir
+	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 	step "cleaning up db '${deployment_name}'"
 	"${script_dir}/deprovision_db.sh" || echo " - could not deprovision db '${deployment_name}'"
 }
