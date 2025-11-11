@@ -54,6 +54,7 @@ export GO111MODULE=on
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
 
+
 # ogen generated OpenAPI clients and servers
 openapi-generated-clients-and-servers-api-dir := ./api/apis/scalinghistory
 openapi-generated-clients-and-servers-scalingengine-dir := ./scalingengine/apis/scalinghistory
@@ -88,17 +89,24 @@ ${openapi-generated-clients-and-servers-api-dir} ${openapi-generated-clients-and
 # or not.
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
-.PHONY: generate-fakes
-generate-fakes: ${app-fakes-dir} ${app-fakes-files} ${openapi-generated-clients-and-servers-dir}
+
+.PHONY: generate-fakes autoscaler.generate-fakes test-app.generate-fakes
+generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
+
+autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files} ${openapi-generated-clients-and-servers-dir}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate './...'
 
 
+test-app.generate-fakes:
+	make --directory='acceptance/assets/app/go_app' generate-fakes
+
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
 																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
+
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
 # this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
