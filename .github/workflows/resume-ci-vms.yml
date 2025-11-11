@@ -1,0 +1,56 @@
+name: Resume CI VMs
+
+on:
+  schedule:
+    - cron: '0 5 * * 1-5'  # 05:00 UTC / 06:00 CET / 07:00 CEST, Monday to Friday
+  workflow_dispatch:
+
+jobs:
+  resume:
+    runs-on: ubuntu-latest
+    steps:
+      - name: auth gcloud
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          credentials_json: '${{ secrets.GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY }}'
+
+      - name: set up gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2
+
+      - name: resume VMs
+        run: |
+          gcloud compute instances list --filter="networkInterfaces.network:autoscaler-network" --format="value(name,zone)" --sort-by="~labels.deployment:bosh" | while read -r INSTANCE_NAME ZONE; do
+            if ! gcloud compute instances resume "$INSTANCE_NAME" --zone="$ZONE" --async; then
+              echo "failed to initiate resuming $INSTANCE_NAME in $ZONE, continuing with next instance"
+              continue
+            fi
+          done
+
+      - name: checkout app-autoscaler-release
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: install devbox
+        uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+        with:
+          enable-cache: true
+
+      - name: make devbox shellenv available
+        run: |
+          eval "$(devbox shellenv)"
+          printenv >> "$GITHUB_ENV"
+
+      - name: checkout app-autoscaler-env-bbl-state
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          repository: cloudfoundry/app-autoscaler-env-bbl-state
+          ssh-key: ${{ secrets.BBL_SSH_KEY }}
+          path: app-autoscaler-env-bbl-state
+
+      # after suspension and resumption, backend VMs become unreachable by the load balancer and require recreation.
+      - name: recreate router VM
+        run: |
+          pushd "${GITHUB_WORKSPACE}/app-autoscaler-env-bbl-state/bbl-state" > /dev/null
+            eval "$(bbl print-env)"
+          popd > /dev/null
+
+          bosh recreate router -d cf -n
