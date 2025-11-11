@@ -1,7 +1,7 @@
 .ONESHELL:
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c ${SHELLFLAGS}
-aes_terminal_font_yellow := \e[38;2;255;255;0m
+aes_terminal_font_yellow := \033[38;2;255;255;0m
 aes_terminal_reset := \e[0m
 
 # TODO: Do we need the next line?
@@ -51,10 +51,10 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/generate.go 
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
 go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
-	@echo -ne '${aes_terminal_font_yellow}'
-	@echo -e '⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
-					 'outdated. Please consider re-generating them, if this is relevant.'
-	@echo -ne '${aes_terminal_reset}'
+	@echo -ne '${aes_terminal_font_yellow}' \
+		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
+		'outdated. Please consider re-generating them, if this is relevant.' \
+		'${aes_terminal_reset}'
 	go mod tidy
 
 

@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 MAKEFLAGS := -s
-aes_terminal_font_yellow := \e[38;2;255;255;0m
-aes_terminal_reset := \e[0m
+aes_terminal_font_yellow := \033[38;2;255;255;0m
+aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
@@ -112,10 +112,10 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
 go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources}
-	@echo -ne '${aes_terminal_font_yellow}'
-	@echo -e '⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
-					 'outdated. Please consider re-generating them, if this is relevant.'
-	@echo -ne '${aes_terminal_reset}'
+	@echo -ne '${aes_terminal_font_yellow}' \
+		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
+		'outdated. Please consider re-generating them, if this is relevant.' \
+		'${aes_terminal_reset}'
 	go mod tidy
 
 
