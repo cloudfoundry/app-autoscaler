@@ -3,6 +3,7 @@ api/default_catalog.json
 build/
 fakes/*
 *.mta
+keys
 mta.yaml
 mta_archives/
 *.out*
