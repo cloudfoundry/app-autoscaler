@@ -53,11 +53,11 @@ type (
 	ValidationErrors []PolicyValidationErrors
 )
 
-var _ error = ValidationErrors{}
+var _ error = &ValidationErrors{}
 
-func (v ValidationErrors) Error() string {
+func (v *ValidationErrors) Error() string {
 	var errs []string
-	for _, failure := range v {
+	for _, failure := range *v {
 		errs = append(errs, fmt.Sprintf("%s-%s", failure.Context, failure.Description))
 	}
 	return strings.Join(errs, ", ")

@@ -278,67 +278,66 @@ var _ = Describe("Broker", func() {
 			bindingID = "some_binding-id"
 		})
 		Context("Create a binding", func() {
-			//			// 🚧 To-do: Integrate and activate this test, when finishing the service-key-feature (PR #3652).
-			//			It("Fails when the additional config-parameter “app-guid” is provided", func() {
-			//				// As we don't see any case where it makes sense to provide metrics by a different
-			//				// app without using custom-metrics, we can assume that basic policy-definitions are
-			//				// present.
-			//				var bindingParams = []byte(`
-			// {
-			//   "configuration": {
-			//		"app-guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
-			//		"custom_metrics": {
-			//			"metric_submission_strategy": {
-			//				"allow_from": "bound_app"
-			//			}
-			//		}
-			//   },
-			//   "instance_min_count": 1,
-			//   "instance_max_count": 5,
-			//   "scaling_rules": [
-			//		{
-			//			"metric_type": "memoryused",
-			//			"threshold": 30,
-			//			"operator": "<",
-			//			"adjustment": "-1"
-			//		}
-			//   ]
-			// }`)
-			//				details = domain.BindDetails{
-			//					AppGUID:   "", // Deprecated field!
-			//					PlanID:    "some_plan-id",
-			//					ServiceID: "some_service-id",
-			//					BindResource: &domain.BindResource{
-			//						AppGuid: "AppGUID_for_bindings",
-			//						//	SpaceGuid          string `json:"space_guid,omitempty"`
-			//						//	Route              string `json:"route,omitempty"`
-			//						//	CredentialClientID string `json:"credential_client_id,omitempty"`
-			//						//	BackupAgent        bool   `json:"backup_agent,omitempty"`
-			//					}, //  *BindResource
+			It("Fails when the additional config-parameter “app-guid” is provided", func() {
+				// As we don't see any case where it makes sense to provide metrics by a different
+				// app without using custom-metrics, we can assume that basic policy-definitions are
+				// present.
+				var bindingParams = []byte(`
+				  {
+					"configuration": {
+						  "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
+						  "custom_metrics": {
+							  "metric_submission_strategy": {
+								  "allow_from": "bound_app"
+							  }
+						  }
+					},
+					"instance_min_count": 1,
+					"instance_max_count": 5,
+					"scaling_rules": [
+						  {
+							  "metric_type": "memoryused",
+							  "threshold": 30,
+							  "operator": "<",
+							  "adjustment": "-1"
+						  }
+					]
+				  }`)
+				details = domain.BindDetails{
+					AppGUID:   "", // Deprecated field!
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+						//	SpaceGuid          string `json:"space_guid,omitempty"`
+						//	Route              string `json:"route,omitempty"`
+						//	CredentialClientID string `json:"credential_client_id,omitempty"`
+						//	BackupAgent        bool   `json:"backup_agent,omitempty"`
+					}, //  *BindResource
 
-			//					// RawContext: json.RawMessage // `json:"context,omitempty"`
-			//					RawParameters: bindingParams, // `json:"parameters,omitempty"`
-			//				}
+					// RawContext: json.RawMessage // `json:"context,omitempty"`
+					RawParameters: bindingParams, // `json:"parameters,omitempty"`
+				}
 
-			//				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
 
-			//				Expect(err).NotTo(BeNil())
-			//				Expect(err).To(MatchError(ContainSubstring("app-guid is not supported in configuration")))
-			//			})
+				Expect(err).NotTo(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("app GUID provided in both, binding resource and binding configuration")))
+			})
 			It("Supports provision of an Autoscaler Policy as RawParameters", func() {
 				var bindingParams = []byte(`
-{
-  "instance_min_count": 1,
-  "instance_max_count": 5,
-  "scaling_rules": [
-	{
-	  "metric_type": "memoryused",
-	  "threshold": 30,
-	  "operator": "<",
-	  "adjustment": "-1"
-	}
-  ]
-}`)
+					{
+					  "instance_min_count": 1,
+					  "instance_max_count": 5,
+					  "scaling_rules": [
+						{
+						  "metric_type": "memoryused",
+						  "threshold": 30,
+						  "operator": "<",
+						  "adjustment": "-1"
+						}
+					  ]
+					}`)
 				details = domain.BindDetails{
 					AppGUID:   "",
 					PlanID:    "some_plan-id",
@@ -458,7 +457,37 @@ var _ = Describe("Broker", func() {
 					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 				})
 			})
+			It("Fails, when the provided scaling-policy does not match the schema.", func() {
+				var invalidBindingParams = []byte(`
+					{
+					  "instance_min_count": 1,
+					  "instance_max_count": 5,
+					  "scaling_rules": [
+						{
+						  "metric_type": "memoryused",
+						  "threshold": 100,
+						  "operator": "<",
+						  "adjustment": "invalid_adjustment"
+						}
+					  ]
+					}`)
+				details = domain.BindDetails{
+					AppGUID:   "",
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+					},
+					RawParameters: invalidBindingParams,
+				}
 
+				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).NotTo(BeNil())
+				Expect(err).To(MatchError(ContainSubstring(
+					`[{"context":"(root).scaling_rules.0.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`,
+				)))
+			})
 		})
 		Context("Create a service-key", func() {
 			// 🚧 To-do: Add tests here for the service-key-feature in (PR #3652).
