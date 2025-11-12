@@ -34,3 +34,28 @@ jobs:
       - name: Push version bump commit
         run: |
           git push
+
+      - name: Get release information
+        id: get_release
+        run: |
+          # Get the latest release (which was just published)
+          RELEASE_INFO=$(gh release view --json tagName,name,url)
+          echo "tag_name=$(echo $RELEASE_INFO | jq -r '.tagName')" >> $GITHUB_OUTPUT
+          echo "release_name=$(echo $RELEASE_INFO | jq -r '.name')" >> $GITHUB_OUTPUT
+          echo "release_url=$(echo $RELEASE_INFO | jq -r '.url')" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Notify parent repository
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
+        with:
+          token: ${{ secrets.PARENT_REPO_DISPATCH_TOKEN }}
+          repository: cloudfoundry/app-autoscaler-release
+          event-type: autoscaler-release-published
+          client-payload: |
+            {
+              "release_tag": "${{ steps.get_release.outputs.tag_name }}",
+              "release_name": "${{ steps.get_release.outputs.release_name }}",
+              "release_url": "${{ steps.get_release.outputs.release_url }}",
+              "commit_sha": "${{ github.sha }}"
+            }
