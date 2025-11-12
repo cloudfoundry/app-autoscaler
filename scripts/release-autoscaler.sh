@@ -227,7 +227,6 @@ function setup_git(){
 
 
 pushd "${autoscaler_dir}" > /dev/null
-  setup_git
   determine_next_version
 
   VERSION=${VERSION:-$(cat "${build_path}/name")}
@@ -240,6 +239,7 @@ pushd "${autoscaler_dir}" > /dev/null
 
   # Build artifacts only when promoting a draft to final
   if [ "${PROMOTE_DRAFT}" == "true" ]; then
+		setup_git
     bump_version "${VERSION}"
     ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
     AUTOSCALER_MTAR="app-autoscaler-release-v${VERSION}.mtar"
