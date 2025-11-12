@@ -544,7 +544,7 @@ func (b *Broker) Bind(
 	result := domain.Binding{}
 
 	appScalingConfig, err := b.bindingReqParser.Parse(details)
-	var schemaErr policyvalidator.ValidationErrors
+	var schemaErr *policyvalidator.ValidationErrors;
 	var appGuidErr *brParser.BindReqNoAppGuid
 	switch {
 	case errors.As(err, &schemaErr):
@@ -555,9 +555,10 @@ func (b *Broker) Bind(
 				Value: schemaErr,
 				Msg:   "Failed to json-marshal validation results; This should never happen."}
 		}
-		apiErr := apiresponses.NewFailureResponse(
+		apiErr := apiresponses.NewFailureResponseBuilder(
 			fmt.Errorf("invalid policy provided: %s", resultsJson),
-			http.StatusUnprocessableEntity, "failed-to-validate-policy")
+			http.StatusUnprocessableEntity, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
 
 		return result, apiErr
 	case errors.As(err, &appGuidErr):

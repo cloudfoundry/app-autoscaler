@@ -457,7 +457,37 @@ var _ = Describe("Broker", func() {
 					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 				})
 			})
+			It("Fails, when the provided scaling-policy does not match the schema.", func() {
+				var invalidBindingParams = []byte(`
+					{
+					  "instance_min_count": 1,
+					  "instance_max_count": 5,
+					  "scaling_rules": [
+						{
+						  "metric_type": "memoryused",
+						  "threshold": 100,
+						  "operator": "<",
+						  "adjustment": "invalid_adjustment"
+						}
+					  ]
+					}`)
+				details = domain.BindDetails{
+					AppGUID:   "",
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+					},
+					RawParameters: invalidBindingParams,
+				}
 
+				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).NotTo(BeNil())
+				Expect(err).To(MatchError(ContainSubstring(
+					`[{"context":"(root).scaling_rules.0.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`,
+				)))
+			})
 		})
 		Context("Create a service-key", func() {
 			// 🚧 To-do: Add tests here for the service-key-feature in (PR #3652).
