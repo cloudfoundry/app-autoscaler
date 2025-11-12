@@ -71,13 +71,11 @@ export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.clo
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"
 
-BBL_STATE_PATH="${BBL_STATE_PATH:-$( realpath "${script_dir}/../../app-autoscaler-env-bbl-state/bbl-state" 2>/dev/null || echo "" )}"
+BBL_STATE_PATH="${BBL_STATE_PATH:-$( realpath "${script_dir}/../../app-autoscaler-env-bbl-state/bbl-state" )}"
 # We want to print out the name of the variable literally and marked as shell-variable, therefore:
 # shellcheck disable=SC2016
-if [ -n "${BBL_STATE_PATH}" ]; then
-	BBL_STATE_PATH="$(realpath --canonicalize-existing "${BBL_STATE_PATH}" 2>/dev/null \
-										|| echo 'ERR_invalid_state_path, please set ${BBL_STATE_PATH}' )"
-fi
+BBL_STATE_PATH="$(realpath --canonicalize-existing "${BBL_STATE_PATH}" \
+									|| echo 'ERR_invalid_state_path, please set ${BBL_STATE_PATH}' )"
 export BBL_STATE_PATH
 debug "BBL_STATE_PATH: ${BBL_STATE_PATH}"
 

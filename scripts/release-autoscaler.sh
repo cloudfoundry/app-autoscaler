@@ -3,7 +3,7 @@
 
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source "${script_dir}/vars.source.sh"
+autoscaler_dir="${script_dir}/.."
 
 previous_version=${PREV_VERSION:-$(gh release list --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null)}
 # If no previous version found, default to v15.9.0
