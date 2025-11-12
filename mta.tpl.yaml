@@ -25,6 +25,7 @@ modules:
     path: .
     properties:
       JBP_LOG_LEVEL:
+      LOG_LEVEL: INFO
       DEBUG:
     build-parameters:
       builder: custom
