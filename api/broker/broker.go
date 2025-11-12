@@ -557,7 +557,7 @@ func (b *Broker) Bind(
 		}
 		apiErr := apiresponses.NewFailureResponseBuilder(
 			fmt.Errorf("invalid policy provided: %s", resultsJson),
-			http.StatusUnprocessableEntity, "failed-to-validate-policy").
+			http.StatusBadRequest, "failed-to-validate-policy").
 			WithErrorKey("InvalidPolicy").Build()
 
 		return result, apiErr
