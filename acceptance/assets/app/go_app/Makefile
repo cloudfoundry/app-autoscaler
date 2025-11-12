@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c ${SHELLFLAGS}
 aes_terminal_font_yellow := \033[38;2;255;255;0m
-aes_terminal_reset := \e[0m
+aes_terminal_reset := \033[0m
 
 # TODO: Do we need the next line?
 MAKEFLAGS =

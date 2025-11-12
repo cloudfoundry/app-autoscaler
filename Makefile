@@ -88,12 +88,16 @@ ${openapi-generated-clients-and-servers-api-dir} ${openapi-generated-clients-and
 # or not.
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
+fake-relevant-go-files = $(shell rg --hidden --glob='!/acceptance' --glob='!/fakes'					\
+	--glob='!/integration' --glob='!/target' --glob='!/test-certs' --glob='!/testhelpers' --glob='!**/*_test.go'\
+	--type='go' --files-with-matches --regexp='')
 .PHONY: generate-fakes
-generate-fakes:
-	@echo "# Generating counterfeits"
+generate-fakes: ${app-fakes-dir} ${app-fakes-files}
+${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
+	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
-
+	touch '${app-fakes-dir}' # Update last access-time to avoid useless re-generations via make.
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
