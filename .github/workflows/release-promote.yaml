@@ -24,8 +24,8 @@ jobs:
       - name: Promote draft release to final
         env:
           GH_TOKEN: ${{ github.token }}
-          AUTOSCALER_CI_BOT_EMAIL: ${{ env.AUTOSCALER_CI_BOT_EMAIL }}
-          AUTOSCALER_CI_BOT_NAME: ${{ env.AUTOSCALER_CI_BOT_NAME }}
+          AUTOSCALER_CI_BOT_EMAIL: ${{ vars.AUTOSCALER_CI_BOT_EMAIL }}
+          AUTOSCALER_CI_BOT_NAME: ${{ vars.AUTOSCALER_CI_BOT_NAME }}
           AUTOSCALER_CI_BOT_SIGNING_KEY_PUBLIC: ${{ secrets.AUTOSCALER_CI_BOT_SIGNING_KEY_PUBLIC }}
           AUTOSCALER_CI_BOT_SIGNING_KEY_PRIVATE: ${{ secrets.AUTOSCALER_CI_BOT_SIGNING_KEY_PRIVATE }}
         run: |

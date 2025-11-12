@@ -203,11 +203,14 @@ function generate_changelog(){
 }
 
 function setup_git(){
+	echo " - Setting up git for signing commits..."
   if [[ -z $(git config --global user.email) ]]; then
+		echo " - Configuring git user email ${AUTOSCALER_CI_BOT_EMAIL}..."
     git config --global user.email "${AUTOSCALER_CI_BOT_EMAIL}"
   fi
 
   if [[ -z $(git config --global user.name) ]]; then
+		echo " - Configuring git user name ${AUTOSCALER_CI_BOT_NAME}..."
     git config --global user.name "${AUTOSCALER_CI_BOT_NAME}"
   fi
 
@@ -224,6 +227,7 @@ function setup_git(){
 
 
 pushd "${autoscaler_dir}" > /dev/null
+  setup_git
   determine_next_version
 
   VERSION=${VERSION:-$(cat "${build_path}/name")}
@@ -236,7 +240,6 @@ pushd "${autoscaler_dir}" > /dev/null
 
   # Build artifacts only when promoting a draft to final
   if [ "${PROMOTE_DRAFT}" == "true" ]; then
-    setup_git
     bump_version "${VERSION}"
     ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
     AUTOSCALER_MTAR="app-autoscaler-release-v${VERSION}.mtar"
