@@ -544,7 +544,7 @@ func (b *Broker) Bind(
 	result := domain.Binding{}
 
 	appScalingConfig, err := b.bindingReqParser.Parse(details)
-	var schemaErr *policyvalidator.ValidationErrors;
+	var schemaErr *policyvalidator.ValidationErrors
 	var appGuidErr *brParser.BindReqNoAppGuid
 	switch {
 	case errors.As(err, &schemaErr):
