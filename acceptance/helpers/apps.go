@@ -236,7 +236,10 @@ func StopCPUUsage(cfg *config.Config, appName string, instance int) {
 
 func StartDiskUsage(cfg *config.Config, appName string, spaceInMB int, minutes int) {
 	GinkgoHelper()
-	Expect(cfh.CurlAppWithTimeout(cfg, appName, fmt.Sprintf("/disk/%d/%d", spaceInMB, minutes), 10*time.Second)).Should(MatchJSON(fmt.Sprintf("{\"minutes\":%d,\"utilization\":%d}", minutes, spaceInMB)))
+	appResponse := cfh.CurlAppWithTimeout(
+		cfg, appName, fmt.Sprintf("/disk/%d/%d", spaceInMB, minutes), 10*time.Second)
+	expectedResponse := fmt.Sprintf("{\"minutes\":%d,\"utilization\":%d}", minutes, spaceInMB)
+	Expect(appResponse).Should(MatchJSON(expectedResponse))
 }
 
 func StopDiskUsage(cfg *config.Config, appName string, instance int) {
