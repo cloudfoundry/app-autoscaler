@@ -43,6 +43,8 @@ jobs:
           echo "tag_name=$(echo $RELEASE_INFO | jq -r '.tagName')" >> $GITHUB_OUTPUT
           echo "release_name=$(echo $RELEASE_INFO | jq -r '.name')" >> $GITHUB_OUTPUT
           echo "release_url=$(echo $RELEASE_INFO | jq -r '.url')" >> $GITHUB_OUTPUT
+          # Get the actual commit SHA that was just pushed (the version bump commit)
+          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -57,5 +59,5 @@ jobs:
               "release_tag": "${{ steps.get_release.outputs.tag_name }}",
               "release_name": "${{ steps.get_release.outputs.release_name }}",
               "release_url": "${{ steps.get_release.outputs.release_url }}",
-              "commit_sha": "${{ github.sha }}"
+              "commit_sha": "${{ steps.get_release.outputs.commit_sha }}"
             }
