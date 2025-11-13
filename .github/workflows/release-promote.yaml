@@ -40,11 +40,13 @@ jobs:
         run: |
           # Get the latest release (which was just published)
           RELEASE_INFO=$(gh release view --json tagName,name,url)
-          echo "tag_name=$(echo $RELEASE_INFO | jq -r '.tagName')" >> $GITHUB_OUTPUT
-          echo "release_name=$(echo $RELEASE_INFO | jq -r '.name')" >> $GITHUB_OUTPUT
-          echo "release_url=$(echo $RELEASE_INFO | jq -r '.url')" >> $GITHUB_OUTPUT
-          # Get the actual commit SHA that was just pushed (the version bump commit)
-          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          {
+            echo "tag_name=$(echo "$RELEASE_INFO" | jq -r '.tagName')"
+            echo "release_name=$(echo "$RELEASE_INFO" | jq -r '.name')"
+            echo "release_url=$(echo "$RELEASE_INFO" | jq -r '.url')"
+            # Get the actual commit SHA that was just pushed (the version bump commit)
+            echo "commit_sha=$(git rev-parse HEAD)"
+          } >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
 
