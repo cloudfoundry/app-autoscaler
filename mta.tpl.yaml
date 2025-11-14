@@ -25,6 +25,7 @@ modules:
     path: .
     properties:
       JBP_LOG_LEVEL:
+      LOG_LEVEL: INFO
       DEBUG:
     build-parameters:
       builder: custom
@@ -81,7 +82,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: [ "scheduler", "dbtasks", ".devbox", ".git", ".github" ]
+      ignore: [ "acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github" ]
     requires:
     - name: apiserver-config
     - name: broker-catalog
@@ -108,7 +109,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
-      ignore: [ "scheduler", "dbtasks" , "scalingengine", ".devbox", ".git", ".github" ]
+      ignore: [ "acceptance", "build", "scheduler", "dbtasks" , "scalingengine", ".devbox", ".git", ".github" ]
     requires:
     - name: eventgenerator-config
     - name: database
@@ -134,7 +135,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: [ "scheduler", "dbtasks", ".devbox", ".git", ".github" ]
+      ignore: [ "build", "scheduler", "dbtasks", ".devbox", ".git", ".github" ]
     requires:
     - name: metricsforwarder-config
     - name: database
@@ -161,7 +162,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: [ "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github" ]
+      ignore: [ "acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github" ]
     requires:
     - name: operator-config
     - name: database
@@ -187,7 +188,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: [ "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github" ]
+      ignore: [ "acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github" ]
     requires:
     - name: scalingengine-config
     - name: database

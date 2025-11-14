@@ -85,7 +85,8 @@ function delete_releases(){
 }
 
 function cleanup_db(){
-	local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+	local script_dir
+	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 	step "cleaning up db '${deployment_name}'"
 	"${script_dir}/deprovision_db.sh" || echo " - could not deprovision db '${deployment_name}'"
 }
@@ -136,7 +137,6 @@ function unset_vars() {
 	unset SYSTEM_DOMAIN
 	unset BBL_STATE_PATH
 	unset AUTOSCALER_DIR
-	unset CI_DIR
 	unset SERVICE_NAME
 	unset SERVICE_BROKER_NAME
 	unset NAME_PREFIX

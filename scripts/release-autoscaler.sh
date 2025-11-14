@@ -16,7 +16,7 @@ mkdir -p "build"
 build_path=$(realpath build)
 mkdir -p "keys"
 keys_path="$(realpath keys)"
-GENERATE_FINAL_RELEASE=${GENERATE_FINAL_RELEASE:-"true"}
+PROMOTE_DRAFT=${PROMOTE_DRAFT:-"false"}
 REPO_OUT=${REPO_OUT:-}
 SUM_FILE="${build_path}/artifacts/files.sum.sha256"
 
@@ -52,15 +52,22 @@ function create_tests() {
   popd > /dev/null
 }
 
-function commit_release(){
-  pushd "${autoscaler_dir}"
-  git add -A
-  git status
-  git commit -S -m "created release v${VERSION}"
-}
-
 function determine_next_version(){
   echo " - Determining next version..."
+
+  # Check if there's an existing draft release
+  local draft_version
+  draft_version=$(gh release list --limit 10 --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName' | head -1)
+
+  if [ -n "$draft_version" ]; then
+    echo " - Found existing draft release: ${draft_version}"
+    echo " - Using draft version as next version"
+    echo "${draft_version#v}" > "${build_path}/name"
+    return
+  fi
+
+  # If no draft found, continue with version calculation
+  echo " - No draft release found, calculating version from commits..."
   echo " - Previous version: $previous_version"
 
   # Remove 'v' prefix if present
@@ -145,21 +152,54 @@ function generate_changelog(){
   [ -e "${build_path}/changelog.md" ] && return
   echo " - Generating changelog using github cli..."
   mkdir -p "${build_path}"
-  # Check if release exists and is a draft before deleting
-  if gh release view "${VERSION}" &>/dev/null; then
-    local is_draft
-    is_draft=$(gh release view "${VERSION}" --json isDraft --jq '.isDraft')
-    if [ "$is_draft" = "true" ]; then
-      echo " - Deleting existing draft release ${VERSION}"
-      gh release delete "${VERSION}" --yes
-    else
-      echo " - ERROR: Release ${VERSION} already exists and is published (not a draft)"
-      echo " - Refusing to delete published release. Please check version logic."
+
+  # If promoting an existing draft, find the latest draft release
+  if [ "${PROMOTE_DRAFT}" == "true" ]; then
+    echo " - Looking for latest draft release..."
+    local draft_version
+    draft_version=$(gh release list --limit 10 --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName' | head -1)
+
+    if [ -z "$draft_version" ]; then
+      echo " - ERROR: No draft release found to promote"
       exit 1
     fi
+
+    # Update VERSION to match the draft we found (strip "v" prefix if present)
+    VERSION="${draft_version#v}"
+    echo " - Found draft release v${VERSION}, will promote to final"
+    echo "${VERSION}" > "${build_path}/name"
+    gh release view "v${VERSION}" --json body --jq '.body' > "${build_path}/changelog.md"
+  else
+    # Otherwise, create a new draft release (or recreate if draft exists)
+    # First delete any existing draft releases with matching version (handles untagged drafts)
+    echo " - Checking for existing draft releases with version ${VERSION}..."
+    local existing_drafts
+    existing_drafts=$(gh release list --limit 20 --json tagName,name,isDraft --jq ".[] | select(.isDraft == true and (.tagName == \"v${VERSION}\" or .name == \"v${VERSION}\" or .name == \"${VERSION}\")) | .tagName")
+
+    if [ -n "$existing_drafts" ]; then
+      while IFS= read -r draft_tag; do
+        if [ -n "$draft_tag" ]; then
+          echo " - Deleting existing draft release: ${draft_tag}"
+          gh release delete "${draft_tag}" --yes --cleanup-tag || true
+        fi
+      done <<< "$existing_drafts"
+    fi
+
+    # Check if there's a published release with this version
+    if gh release view "v${VERSION}" &>/dev/null; then
+      local is_draft
+      is_draft=$(gh release view "v${VERSION}" --json isDraft --jq '.isDraft')
+      if [ "$is_draft" = "false" ]; then
+        echo " - ERROR: Release v${VERSION} already exists and is published (not a draft)"
+        echo " - Refusing to delete published release. Please check version logic."
+        exit 1
+      fi
+    fi
+
+    echo " - Creating new draft release v${VERSION}..."
+    gh release create "v${VERSION}" --generate-notes --draft
+    gh release view "v${VERSION}" --json body --jq '.body' > "${build_path}/changelog.md"
   fi
-  gh release create "${VERSION}" --generate-notes --draft
-  gh release view "${VERSION}" > "${build_path}/changelog.md"
 }
 
 function setup_git(){
@@ -194,7 +234,8 @@ pushd "${autoscaler_dir}" > /dev/null
   git diff
   echo "v${VERSION}" > "${build_path}/tag"
 
-  if [ "${GENERATE_FINAL_RELEASE}" == "true" ]; then
+  # Build artifacts only when promoting a draft to final
+  if [ "${PROMOTE_DRAFT}" == "true" ]; then
     setup_git
     bump_version "${VERSION}"
     ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
@@ -203,7 +244,6 @@ pushd "${autoscaler_dir}" > /dev/null
     mkdir -p "${build_path}/artifacts"
     create_tests "${VERSION}" "${build_path}"
     create_mtar "${VERSION}" "${build_path}"
-    commit_release
 
     sha256sum "${build_path}/artifacts/"* > "${build_path}/artifacts/files.sum.sha256"
     ACCEPTANCE_SHA256=$( grep "${ACCEPTANCE_TEST_TGZ}$" "${SUM_FILE}" | awk '{print $1}' )
@@ -234,6 +274,19 @@ EOF
   echo "---------- Changelog file ----------"
   cat "${build_path}/changelog.md"
   echo "---------- end file ----------"
+
+  # If promoting draft to final, upload artifacts and publish
+  if [ "${PROMOTE_DRAFT}" == "true" ]; then
+    echo " - Uploading artifacts to release v${VERSION}..."
+    gh release upload "v${VERSION}" "${build_path}/artifacts/"* --clobber
+
+    echo " - Updating release notes with deployment information..."
+    gh release edit "v${VERSION}" --notes-file "${build_path}/changelog.md"
+
+    echo " - Publishing release v${VERSION}..."
+    gh release edit "v${VERSION}" --draft=false
+    echo " - Release v${VERSION} published successfully!"
+  fi
 
 popd > /dev/null
 echo " - Completed"

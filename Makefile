@@ -6,8 +6,8 @@ aes_terminal_reset := \e[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
+ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
-CI_DIR ?= ${AUTOSCALER_DIR}/ci
 
 DEBUG := false
 MYSQL_TAG := 8
@@ -93,12 +93,10 @@ app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 .PHONY: generate-fakes autoscaler.generate-fakes test-app.generate-fakes
 generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
 
-autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files} ${openapi-generated-clients-and-servers-dir}
-${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./generate-fakes.go
+autoscaler.generate-fakes: 
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
-	COUNTERFEITER_NO_GENERATE_WARNING='true' go generate './...'
-
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
 
 test-app.generate-fakes:
 	make --directory='acceptance/assets/app/go_app' generate-fakes
@@ -247,7 +245,6 @@ vendor-changelogs:
 clean:
 	@echo "# cleaning autoscaler"
 	@go clean -cache -testcache
-	@rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'vendor'
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
@@ -284,9 +281,34 @@ mta-build: mta-build-clean
 mta-build-clean:
 	rm -rf mta_archives
 
+.PHONY: clean-build
+clean-build: ## Clean the build directory
+	@echo ' - cleaning build directory'
+	@rm -rf build
+
 .PHONY: release-draft
-release-draft: ## Create a draft GitHub release with artifacts
-		GENERATE_FINAL_RELEASE=false ./scripts/release-autoscaler.sh
+release-draft: ## Create a draft GitHub release without artifacts
+		./scripts/release-autoscaler.sh
+
+release-promote:
+		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
+
+.PHONY: acceptance-release
+acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
+	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
+	@mkdir -p ${DEST}
+	./scripts/compile-acceptance-tests.sh
+	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
+
+
+.PHONY: mta-release
+mta-release: generate-fakes mta-build
+	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
+
+clean-acceptance:
+	@echo ' - cleaning acceptance (⚠️ This keeps the file “acceptance/acceptance_config.json” if present!)'
+	@rm acceptance/ginkgo* &> /dev/null || true
+	@rm -rf acceptance/results &> /dev/null || true
 
 .PHONY: cf-login
 cf-login:
