@@ -37,7 +37,6 @@ var _ = Describe("Broker", func() {
 	JustBeforeEach(func() {
 		aBroker = broker.New(testLogger, conf, fakeBindingDB, fakePolicyDB, services, fakeCredentials)
 	})
-
 	Describe("Services", func() {
 		var retrievedServices []domain.Service
 		JustBeforeEach(func() {
@@ -127,7 +126,6 @@ var _ = Describe("Broker", func() {
 			})
 		})
 	})
-
 	Describe("GetBinding", func() {
 		var Binding domain.GetBindingSpec
 		var fetchBindingDetails domain.FetchBindingDetails
@@ -265,7 +263,6 @@ var _ = Describe("Broker", func() {
 			})
 		})
 	})
-
 	Describe("Bind", func() {
 		var ctx context.Context
 		var instanceID string
@@ -490,7 +487,59 @@ var _ = Describe("Broker", func() {
 			})
 		})
 		Context("Create a service-key", func() {
-			// 🚧 To-do: Add tests here for the service-key-feature in (PR #3652).
+			When("Called without App-GUID from the cloudcontroller", func(){
+				It("Creates a binding with a provided App-GUID", func(){
+
+					// Setup - service key scenario (no BindResource, app_guid in configuration)
+					var bindingParams = []byte(`
+						{
+							"configuration": {
+								"app_guid": "12345678-abcd-1234-5678-123456789abc",
+								"custom_metrics": {
+									"metric_submission_strategy": {
+										"allow_from": "same_app"
+									}
+								}
+							},
+							"instance_min_count": 1,
+							"instance_max_count": 3,
+							"schedules": {
+								"timezone": "Europe/Berlin",
+								"recurring_schedule": []
+							}
+						}`)
+
+					details = domain.BindDetails{
+						AppGUID:       "", // No deprecated app GUID
+						PlanID:        "some_plan-id",
+						ServiceID:     "some_service-id",
+						BindResource:  nil, // No BindResource for service keys
+						RawParameters: bindingParams,
+					}
+
+					// Execution
+					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+					Expect(err).To(BeNil())
+					Expect(binding).NotTo(BeNil())
+
+					// Verify that fakeBindingDB creates an entry
+					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+					_, createdBindingId, createdInstanceId, createdAppId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+					Expect(createdBindingId).To(Equal(bindingID))
+					Expect(createdInstanceId).To(Equal(instanceID))
+					Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
+					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+
+					// Verify policy was saved with the correct app GUID
+					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+					_, savedAppId, savedPolicy, savedPolicyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+					Expect(savedAppId).To(Equal("12345678-abcd-1234-5678-123456789abc"))
+					Expect(savedPolicy).NotTo(BeNil())
+					Expect(savedPolicyGuid).NotTo(BeEmpty())
+				})
+			})
 		})
 	})
 }) // End `Describe "Broker"`
