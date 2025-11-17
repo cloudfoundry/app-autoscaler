@@ -482,14 +482,13 @@ var _ = Describe("Broker", func() {
 
 				Expect(err).NotTo(BeNil())
 				Expect(err).To(MatchError(ContainSubstring(
-					`[{"context":"(root).scaling_rules.0.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`,
+					`{"context":"(root).scaling_rules.0.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`,
 				)))
 			})
 		})
 		Context("Create a service-key", func() {
-			When("Called without App-GUID from the cloudcontroller", func(){
-				It("Creates a binding with a provided App-GUID", func(){
-
+			When("Called without App-GUID from the cloudcontroller", func() {
+				It("Creates a binding with a provided App-GUID", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
 					var bindingParams = []byte(`
 						{
@@ -539,6 +538,83 @@ var _ = Describe("Broker", func() {
 					Expect(savedPolicy).NotTo(BeNil())
 					Expect(savedPolicyGuid).NotTo(BeEmpty())
 				})
+				// It("Allows creation of service-keys with default policy", func() {
+				//	// Setup - service key scenario (no BindResource, app_guid in configuration)
+				//	var bindingParams = []byte(`
+				//		{
+				//			"configuration": {
+				//				"app_guid": "12345678-abcd-1234-5678-123456789abc"
+				//			}
+				//		}`)
+
+				//	details = domain.BindDetails{
+				//		AppGUID:       "", // No deprecated app GUID
+				//		PlanID:        "some_plan-id",
+				//		ServiceID:     "some_service-id",
+				//		BindResource:  nil, // No BindResource for service keys
+				//		RawParameters: bindingParams,
+				//	}
+
+				//	// Execution
+				//	binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				//	Expect(err).To(BeNil())
+				//	Expect(binding).NotTo(BeNil())
+
+				//	// Verify that fakeBindingDB creates an entry
+				//	Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+				//	_, createdBindingId, createdInstanceId, createdAppId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+				//	Expect(createdBindingId).To(Equal(bindingID))
+				//	Expect(createdInstanceId).To(Equal(instanceID))
+				//	Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
+				//	Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+
+				//	// Verify policy was saved with the correct app GUID
+				//	Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+				//	_, savedAppId, savedPolicy, savedPolicyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+				//	Expect(savedAppId).To(Equal("12345678-abcd-1234-5678-123456789abc"))
+				//	Expect(savedPolicy).NotTo(BeNil())
+				//	Expect(savedPolicyGuid).NotTo(BeEmpty())
+				// })
+				// It("Fails when no schema-version has been provided", func(){
+				//	var bindingParams = []byte(`
+				//		{
+				//			"configuration": {
+				//				"app_guid": "12345678-abcd-1234-5678-123456789abc"
+				//			}
+				//		}`)
+
+				//	details = domain.BindDetails{
+				//		AppGUID:       "", // No deprecated app GUID
+				//		PlanID:        "some_plan-id",
+				//		ServiceID:     "some_service-id",
+				//		BindResource:  nil, // No BindResource for service keys
+				//		RawParameters: bindingParams,
+				//	}
+
+				//	// Execution
+				//	binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				//	Expect(err).To(BeNil())
+				//	Expect(binding).NotTo(BeNil())
+
+				//	// Verify that fakeBindingDB creates an entry
+				//	Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+				//	_, createdBindingId, createdInstanceId, createdAppId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+				//	Expect(createdBindingId).To(Equal(bindingID))
+				//	Expect(createdInstanceId).To(Equal(instanceID))
+				//	Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
+				//	Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+
+				//	// Verify policy was saved with the correct app GUID
+				//	Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+				//	_, savedAppId, savedPolicy, savedPolicyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+				//	Expect(savedAppId).To(Equal("12345678-abcd-1234-5678-123456789abc"))
+				//	Expect(savedPolicy).NotTo(BeNil())
+				//	Expect(savedPolicyGuid).NotTo(BeEmpty())
+				// })
 			})
 		})
 	})

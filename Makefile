@@ -172,10 +172,13 @@ test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 test-acceptance-unit:
 	@make --directory=acceptance test-unit
 
+gorouter-proxy.program := ./build/gorouterproxy
+gorouter-proxy.source := integration/gorouterproxy/main.go
 .PHONY: build-gorouterproxy
-build-gorouterproxy:
+build-gorouterproxy: ${gorouter-proxy.program}
+${gorouter-proxy.program}: ./go.mod ./go.sum ${gorouter-proxy.source}
 	@echo "# building gorouterproxy"
-	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/gorouterproxy integration/gorouterproxy/main.go
+	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o '${gorouter-proxy.program}' '${gorouter-proxy.source}'
 
 .PHONY: integration
 integration: generate-fakes init-db test-certs build_all build-gorouterproxy
