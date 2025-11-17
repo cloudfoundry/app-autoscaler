@@ -980,7 +980,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("should fail with 400", func() {
 					Expect(resp.Body.String()).To(ContainSubstring(
-						`[{\"context\":\"(root).configuration.custom_metrics.metric_submission_strategy.allow_from\",\"description\":\"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \\\"bound_app\\\", \\\"same_app\\\"\"}]`,
+						`\"description\":\"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \\\"bound_app\\\", \\\"same_app\\\"\"}]`,
 					))
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				})
@@ -1182,10 +1182,7 @@ var _ = Describe("BrokerHandler", func() {
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(MatchJSON(
-						`{
-							"error": "InvalidPolicy",
-							"description": "invalid policy provided: [{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"
-						}`,
+						`{"error": "InvalidPolicy", "description": "invalid policy provided: [{\"context\":\"(root)\",\"description\":\"Must validate at least one schema (anyOf)\"},{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"}`,
 					))
 				})
 

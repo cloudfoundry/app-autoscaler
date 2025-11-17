@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-05/schema#",
+  "title": "Autoscaler Policy JSON Schema",
+  "description": "Unification of different schemas for scaling-policies for Autoscaler",
+
+  "anyOf": [{
+    "$ref": "./scaling-policy.schema.json"
+  }]
+}
