@@ -24,8 +24,8 @@ jobs:
       - name: Promote draft release to final
         env:
           GH_TOKEN: ${{ github.token }}
-          AUTOSCALER_CI_BOT_EMAIL: ${{ env.AUTOSCALER_CI_BOT_EMAIL }}
-          AUTOSCALER_CI_BOT_NAME: ${{ env.AUTOSCALER_CI_BOT_NAME }}
+          AUTOSCALER_CI_BOT_EMAIL: ${{ vars.AUTOSCALER_CI_BOT_EMAIL }}
+          AUTOSCALER_CI_BOT_NAME: ${{ vars.AUTOSCALER_CI_BOT_NAME }}
           AUTOSCALER_CI_BOT_SIGNING_KEY_PUBLIC: ${{ secrets.AUTOSCALER_CI_BOT_SIGNING_KEY_PUBLIC }}
           AUTOSCALER_CI_BOT_SIGNING_KEY_PRIVATE: ${{ secrets.AUTOSCALER_CI_BOT_SIGNING_KEY_PRIVATE }}
         run: |
@@ -34,3 +34,32 @@ jobs:
       - name: Push version bump commit
         run: |
           git push
+
+      - name: Get release information
+        id: get_release
+        run: |
+          # Get the latest release (which was just published)
+          RELEASE_INFO=$(gh release view --json tagName,name,url)
+          {
+            echo "tag_name=$(echo "$RELEASE_INFO" | jq -r '.tagName')"
+            echo "release_name=$(echo "$RELEASE_INFO" | jq -r '.name')"
+            echo "release_url=$(echo "$RELEASE_INFO" | jq -r '.url')"
+            # Get the actual commit SHA that was just pushed (the version bump commit)
+            echo "commit_sha=$(git rev-parse HEAD)"
+          } >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Notify parent repository
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
+        with:
+          token: ${{ secrets.PARENT_REPO_DISPATCH_TOKEN }}
+          repository: cloudfoundry/app-autoscaler-release
+          event-type: autoscaler-release-published
+          client-payload: |
+            {
+              "release_tag": "${{ steps.get_release.outputs.tag_name }}",
+              "release_name": "${{ steps.get_release.outputs.release_name }}",
+              "release_url": "${{ steps.get_release.outputs.release_url }}",
+              "commit_sha": "${{ steps.get_release.outputs.commit_sha }}"
+            }
