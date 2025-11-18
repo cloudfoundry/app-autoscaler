@@ -5,6 +5,7 @@
 
   "anyOf": [
     {"$ref": "./scaling-policy.schema.json"},
-    {"$ref": "./legacy.schema.json"}
+    {"$ref": "./legacy.schema.json"},
+    {"$ref": "./service-key_only.schema.json"}
   ]
 }
