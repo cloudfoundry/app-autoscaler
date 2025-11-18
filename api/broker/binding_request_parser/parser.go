@@ -121,6 +121,8 @@ func (brp *bindRequestParser) Parse(details domain.BindDetails) (models.AppScali
 }
 
 func (brp *bindRequestParser) getPolicyFromJsonRawMessage(policyJson json.RawMessage) (*models.ScalingPolicy, error) {
+	// Please don't make this check even less strict. We are at the minimum. Otherwise cases may
+	// occur where schema-violations don't get detected.
 	if isEmptyPolicy := len(policyJson) <= 0; isEmptyPolicy { // no nil-check needed: `len(nil) == 0`
 		return nil, nil
 	}

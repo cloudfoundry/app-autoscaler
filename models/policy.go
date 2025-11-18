@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -170,7 +171,10 @@ func (sp ScalingPolicy) ToRawJSON() (json.RawMessage, error) {
 
 func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
 	// If the data is nil, we return a default ScalingPolicy with default configuration.
-	if len(data) <= 0 {
+	if noPolicyData := len(data) <= 0 ||
+		// In case we have policy-data we can rely on the presence of "instance_min_count" due to
+		// the json-schema.
+		!strings.Contains(string(data), `instance_min_count`); noPolicyData {
 		return NewScalingPolicy(DefaultCustomMetricsStrategy, nil), nil
 	}
 

@@ -488,6 +488,15 @@ var _ = Describe("Broker", func() {
 		})
 		Context("Create a service-key", func() {
 			When("Called without App-GUID from the cloudcontroller", func() {
+				BeforeEach(func(){
+					fakeBindingDB.GetServiceInstanceReturns(&models.ServiceInstance{
+						ServiceInstanceId: testInstanceId,
+						OrgId:             testOrgId,
+						SpaceId:           testSpaceId,
+						DefaultPolicy:     testDefaultPolicy,
+						DefaultPolicyGuid: testDefaultGuid,
+					}, nil)
+				})
 				It("Creates a binding with a provided App-GUID", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
 					var bindingParams = []byte(`
@@ -556,13 +565,6 @@ var _ = Describe("Broker", func() {
 						BindResource:  nil, // No BindResource for service keys
 						RawParameters: bindingParams,
 					}
-					fakeBindingDB.GetServiceInstanceReturns(&models.ServiceInstance{
-						ServiceInstanceId: testInstanceId,
-						OrgId:             testOrgId,
-						SpaceId:           testSpaceId,
-						DefaultPolicy:     testDefaultPolicy,
-						DefaultPolicyGuid: testDefaultGuid,
-					}, nil)
 
 					// Execution
 					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
