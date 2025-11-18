@@ -208,7 +208,7 @@ func (c *CtxClient) requestClientCredentialGrant(ctx context.Context, formData *
 func (c *CtxClient) doRequestCredGrant(ctx context.Context, formData *url.Values, credUrl string) (Tokens, error) {
 	tokens := Tokens{}
 	tokenUrl := credUrl + PathCFAuth
-	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": tokenUrl, "form": *formData})
+	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": tokenUrl})
 
 	req, err := http.NewRequestWithContext(ctx, "POST", tokenUrl, strings.NewReader(formData.Encode()))
 	if err != nil {
