@@ -492,6 +492,7 @@ var _ = Describe("Broker", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
 					var bindingParams = []byte(`
 						{
+							"schema-version": "0.9",
 							"configuration": {
 								"app_guid": "12345678-abcd-1234-5678-123456789abc",
 								"custom_metrics": {
@@ -542,6 +543,7 @@ var _ = Describe("Broker", func() {
 				//	// Setup - service key scenario (no BindResource, app_guid in configuration)
 				//	var bindingParams = []byte(`
 				//		{
+				//          "schema-version": "0.9",
 				//			"configuration": {
 				//				"app_guid": "12345678-abcd-1234-5678-123456789abc"
 				//			}

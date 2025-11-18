@@ -3,7 +3,8 @@
   "title": "Autoscaler Policy JSON Schema",
   "description": "Unification of different schemas for scaling-policies for Autoscaler",
 
-  "anyOf": [{
-    "$ref": "./scaling-policy.schema.json"
-  }]
+  "anyOf": [
+    {"$ref": "./scaling-policy.schema.json"},
+    {"$ref": "./legacy.schema.json"}
+  ]
 }

@@ -1,14 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-05/schema#",
-  "title": "Autoscaler Policy JSON Schema",
   "description": "Schema for scaling-policies for Autoscaler",
   "type": "object",
 
   "properties": {
     "schema-version": {
-      "description": "Version-identifier for the used schema of this parameters-object.",
-      "type": "string",
-      "pattern": "^[0-9]+(\\.[0-9]+)?$"
+      "$ref": "./shared_definitions.json#/schemas/app-scaling-config-schema"
     },
     "credential-type": {
       "type": "string",
@@ -911,6 +908,7 @@
   },
 
   "required": [
+    "schema-version",
     "instance_min_count",
     "instance_max_count"
   ],
