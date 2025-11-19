@@ -488,7 +488,7 @@ var _ = Describe("Broker", func() {
 		})
 		Context("Create a service-key", func() {
 			When("Called without App-GUID from the cloudcontroller", func() {
-				BeforeEach(func(){
+				BeforeEach(func() {
 					fakeBindingDB.GetServiceInstanceReturns(&models.ServiceInstance{
 						ServiceInstanceId: testInstanceId,
 						OrgId:             testOrgId,
@@ -588,7 +588,7 @@ var _ = Describe("Broker", func() {
 					Expect(savedPolicy).NotTo(BeNil())
 					Expect(savedPolicyGuid).NotTo(BeEmpty())
 				})
-				It("Fails when no schema-version has been provided", func(){
+				It("Fails when no schema-version has been provided", func() {
 					var bindingParams = []byte(`
 						{
 							"configuration": {

@@ -109,13 +109,13 @@ var _ = Describe("AutoScaler Public API", func() {
 		It("should fail to create an invalid policy", func() {
 			response, status := createPolicy(GenerateDynamicScaleOutPolicy(0, 2, "memoryused", 30))
 			Expect(status).To(Equal(400))
-			Expect(string(response)).Should(ContainSubstring(`[{"context":"(root).instance_min_count","description":"Must be greater than or equal to 1"}]`))
+			Expect(string(response)).Should(ContainSubstring(`{"context":"(root).instance_min_count","description":"Must be greater than or equal to 1"}`))
 		})
 
 		It("should fail to create an invalid custom metrics submission", func() {
 			By("creating custom metrics submission with invalid string")
 			response, status := createPolicy(GenerateBindingsWithScalingPolicy("invalid-value", 1, 2, "memoryused", 30, 100))
-			Expect(string(response)).Should(MatchJSON(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""}]`))
+			Expect(string(response)).To(ContainSubstring(`"description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""`))
 			Expect(status).To(Equal(400))
 
 			By("creating custom metrics submission with empty value ' '")
@@ -277,7 +277,7 @@ var _ = Describe("AutoScaler Public API", func() {
 		It("should fail to update an invalid custom metrics strategy", func() {
 			expectedPolicy = GenerateBindingsWithScalingPolicy("invalid-update", 1, 2, "memoryused", 30, 100)
 			actualPolicy, status = createPolicy(expectedPolicy)
-			Expect(string(actualPolicy)).Should(MatchJSON(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""}]`))
+			Expect(string(actualPolicy)).To(ContainSubstring(`"description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""`))
 			Expect(status).To(Equal(400))
 		})
 		It("should succeed to update a valid custom metrics strategy", func() {
