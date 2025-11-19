@@ -54,6 +54,7 @@ export GO111MODULE=on
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
 
+
 # ogen generated OpenAPI clients and servers
 openapi-generated-clients-and-servers-api-dir := ./api/apis/scalinghistory
 openapi-generated-clients-and-servers-scalingengine-dir := ./scalingengine/apis/scalinghistory
@@ -84,6 +85,10 @@ ${openapi-generated-clients-and-servers-api-dir} ${openapi-generated-clients-and
 	go generate ./api/apis/generate.go || true
 	go generate ./scalingengine/apis/generate.go || true
 
+
+.PHONY: generate-fakes
+generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
+
 # The presence of the subsequent directory indicates whether the fakes still need to be generated
 # or not.
 app-fakes-dir := ./fakes
@@ -91,17 +96,21 @@ app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 fake-relevant-go-files = $(shell rg --hidden --glob='!/acceptance' --glob='!/fakes'					\
 	--glob='!/integration' --glob='!/target' --glob='!/test-certs' --glob='!/testhelpers' --glob='!**/*_test.go'\
 	--type='go' --files-with-matches --regexp='')
-.PHONY: generate-fakes
-generate-fakes: ${app-fakes-dir} ${app-fakes-files}
+.PHONY: autoscaler.generate-fakes
+autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
-	touch '${app-fakes-dir}' # Update last access-time to avoid useless re-generations via make.
+
+.PHONY: test-app.generate-fakes
+test-app.generate-fakes:
+	make --directory='acceptance/assets/app/go_app' generate-fakes
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
 																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
+
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
 # this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
@@ -114,13 +123,20 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 #  3. `make go-mod-tidy`
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
-go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources}
+go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.go-mod-tidy test-app.go-mod-tidy
 	@echo -ne '${aes_terminal_font_yellow}' \
 		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 		'outdated. Please consider re-generating them, if this is relevant.' \
 		'${aes_terminal_reset}'
 	go mod tidy
 
+.PHONY: acceptance.go-mod-tidy
+acceptance.go-mod-tidy:
+	make --directory='acceptance' go-mod-tidy
+
+.PHONY: test-app.go-mod-tidy
+test-app.go-mod-tidy:
+	make --directory='acceptance/assets/app/go_app' go-mod-tidy
 
 go-vendoring-folder := ./vendor
 go-vendored-files = $(shell find '${go-vendoring-folder}' -type f -name '*.go' 2> '/dev/null')

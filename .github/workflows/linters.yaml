@@ -15,7 +15,7 @@ jobs:
       - name: Trust my checkout
         run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+        uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
         with:
           enable-cache: 'true'
       - name: Make devbox shellenv available
@@ -31,7 +31,7 @@ jobs:
         with:
           reporter: github-pr-review
       - name: actionlint
-        uses: reviewdog/action-actionlint@95395aac8c053577d0bc67eb7b74936c660c6f66 # v1
+        uses: reviewdog/action-actionlint@f00ad0691526c10be4021a91b2510f0a769b14d0 # v1
         with:
           reporter: github-pr-review
       - name: alex
