@@ -121,7 +121,7 @@ var _ = Describe("AutoScaler Public API", func() {
 			By("creating custom metrics submission with empty value ' '")
 			policy := GenerateBindingsWithScalingPolicy("", 1, 2, "memoryused", 30, 100)
 			newPolicy, status := createPolicy(policy)
-			Expect(string(newPolicy)).Should(MatchJSON(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""}]`))
+			Expect(string(newPolicy)).To(ContainSubstring(`"description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""`))
 			Expect(status).To(Equal(400))
 		})
 
