@@ -93,7 +93,7 @@ app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 .PHONY: generate-fakes autoscaler.generate-fakes test-app.generate-fakes
 generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
 
-autoscaler.generate-fakes: 
+autoscaler.generate-fakes:
 	@echo "# Generating counterfeits"
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
@@ -138,8 +138,7 @@ go-vendored-files = $(shell find '${go-vendoring-folder}' -type f -name '*.go' 2
 ## This does not work: go-vendored-files = $(wildcard ${go-vendoring-folder}/**/*.go)
 
 .PHONY: go-mod-vendor
-go-mod-vendor: ${go-vendoring-folder} ${go-vendored-files}
-${go-vendoring-folder} ${go-vendored-files} &: ${app-fakes-dir} ${app-fakes-files}
+go-mod-vendor:
 	go mod vendor
 
 .PHONY: go-mod-vendor-mta
