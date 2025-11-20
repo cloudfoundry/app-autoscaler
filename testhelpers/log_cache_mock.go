@@ -79,7 +79,7 @@ func (m *MockLogCache) Stop() {
 	m.lis.Close()
 }
 
-func (m *MockLogCache) Read(ctx context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
+func (m *MockLogCache) Read(_ context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -113,7 +113,7 @@ func (m *MockLogCache) ReadReturns(sourceId string, response *rpc.ReadResponse, 
 	m.readErrors[sourceId] = err
 }
 
-func (m *MockLogCache) InstantQuery(ctx context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
+func (m *MockLogCache) InstantQuery(_ context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
