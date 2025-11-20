@@ -138,7 +138,7 @@ go-vendored-files = $(shell find '${go-vendoring-folder}' -type f -name '*.go' 2
 ## This does not work: go-vendored-files = $(wildcard ${go-vendoring-folder}/**/*.go)
 
 .PHONY: go-mod-vendor
-go-mod-vendor:
+go-mod-vendor: generate-fakes
 	go mod vendor
 
 .PHONY: go-mod-vendor-mta
