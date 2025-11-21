@@ -67,11 +67,6 @@ func (brp *bindRequestParser) Parse(details domain.BindDetails) (models.AppScali
 	if err != nil {
 		err := fmt.Errorf("could not parse scaling policy from request:\n\t%w", err)
 		return models.AppScalingConfig{}, err
-		// // 🚧 ⚠️ I need to be run on the receiver-side.
-		// return nil, apiresponses.NewFailureResponseBuilder(
-		//	ErrInvalidConfigurations, http.StatusBadRequest, actionReadScalingPolicy).
-		//	WithErrorKey(actionReadScalingPolicy).
-		//	Build()
 	}
 
 	// 🏚️ Subsequently we assume that this credential-type-configuration is part of the
