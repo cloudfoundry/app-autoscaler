@@ -102,6 +102,7 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-file
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
 test-app.generate-fakes:

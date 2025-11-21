@@ -588,35 +588,77 @@ var _ = Describe("Broker", func() {
 					Expect(savedPolicy).NotTo(BeNil())
 					Expect(savedPolicyGuid).NotTo(BeEmpty())
 				})
-				It("Fails when no schema-version has been provided", func() {
-					var bindingParams = []byte(`
+				When("No schema-version has been provided", func() {
+					It("Fails when doing a minimal bind-request", func() {
+						var bindingParams = []byte(`
 						{
 							"configuration": {
 								"app_guid": "12345678-abcd-1234-5678-123456789abc"
 							}
 						}`)
 
-					details = domain.BindDetails{
-						AppGUID:       "", // No deprecated app GUID
-						PlanID:        "some_plan-id",
-						ServiceID:     "some_service-id",
-						BindResource:  nil, // No BindResource for service keys
-						RawParameters: bindingParams,
-					}
+						details = domain.BindDetails{
+							AppGUID:       "", // No deprecated app GUID
+							PlanID:        "some_plan-id",
+							ServiceID:     "some_service-id",
+							BindResource:  nil, // No BindResource for service keys
+							RawParameters: bindingParams,
+						}
 
-					// Execution
-					_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+						// Execution
+						_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
 
-					Expect(err).NotTo(BeNil())
-					Expect(err).To(MatchError(ContainSubstring(
-						`{"context":"(root)","description":"schema-version is required"}`,
-					)))
+						Expect(err).NotTo(BeNil())
+						Expect(err).To(MatchError(ContainSubstring(
+							`{"context":"(root)","description":"schema-version is required"}`,
+						)))
 
-					// Verify that fakeBindingDB does not create an entry
-					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(0))
+						// Verify that fakeBindingDB does not create an entry
+						Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(0))
 
-					// Verify that no policy was saved with the correct app GUID
-					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(0))
+						// Verify that no policy was saved with the correct app GUID
+						Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(0))
+					})
+					It("Fails when smuggling into a legacy bind-request", func() {
+						var bindingParams = []byte(`
+						{
+						  "special_field": "I am here to enforce matching against the legacy-schema.",
+						  "configuration": {
+							  "app_guid": "12345678-abcd-1234-5678-123456789abc",
+							   "custom_metrics": {
+								   "metric_submission_strategy": {
+									   "allow_from": "bound_app"
+								   }
+							   }
+						  },
+						  "instance_min_count": 1,
+						  "instance_max_count": 5,
+						  "scaling_rules": [
+							{
+							  "metric_type": "memoryused",
+							  "threshold": 100,
+							  "operator": "<",
+							  "adjustment": "+1"
+							}
+						  ]
+						}`)
+
+						details = domain.BindDetails{
+							AppGUID:       "", // No deprecated app GUID
+							PlanID:        "some_plan-id",
+							ServiceID:     "some_service-id",
+							BindResource:  nil, // No BindResource for service keys
+							RawParameters: bindingParams,
+						}
+
+						// Execution
+						_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+						Expect(err).NotTo(BeNil())
+						Expect(err).To(MatchError(ContainSubstring(
+							`{"context":"(root)","description":"schema-version is required"}`,
+						)))
+					})
 				})
 			})
 		})
