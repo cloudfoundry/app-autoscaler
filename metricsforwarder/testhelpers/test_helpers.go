@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"net"
@@ -8,7 +9,6 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"google.golang.org/grpc/credentials"

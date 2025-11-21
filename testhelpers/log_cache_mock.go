@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -12,7 +13,6 @@ import (
 
 	rpc "code.cloudfoundry.org/go-log-cache/v3/rpc/logcache_v1"
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -79,7 +79,7 @@ func (m *MockLogCache) Stop() {
 	m.lis.Close()
 }
 
-func (m *MockLogCache) Read(ctx context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
+func (m *MockLogCache) Read(_ context.Context, r *rpc.ReadRequest) (*rpc.ReadResponse, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -113,7 +113,7 @@ func (m *MockLogCache) ReadReturns(sourceId string, response *rpc.ReadResponse, 
 	m.readErrors[sourceId] = err
 }
 
-func (m *MockLogCache) InstantQuery(ctx context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
+func (m *MockLogCache) InstantQuery(_ context.Context, r *rpc.PromQL_InstantQueryRequest) (*rpc.PromQL_InstantQueryResult, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
