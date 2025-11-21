@@ -281,6 +281,7 @@ var _ = Describe("Broker", func() {
 				// present.
 				var bindingParams = []byte(`
 				  {
+					"schema-version": "0.9",
 					"configuration": {
 						  "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
 						  "custom_metrics": {
