@@ -4,6 +4,9 @@
   "type": "object",
 
   "properties": {
+    "schema-version": {
+      "type": "null"
+    },
     "credential-type": {
       "type": "string",
       "enum": [
@@ -945,6 +948,5 @@
         "schedules"
       ]
     }
-  ],
-  "additionalProperties": true
+  ]
 }
