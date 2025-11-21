@@ -337,7 +337,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`[{"context":"(root)","description":"instance_min_count is required"}]`))
+				Expect(resp.Body.String()).To(ContainSubstring(`{"context":"(root)","description":"instance_min_count is required"}]`))
 			})
 		})
 
@@ -421,7 +421,8 @@ var _ = Describe("PublicApiHandler", func() {
 					schedulerStatus = 200
 				})
 				It("should not succeed and fail with 400", func() {
-					Expect(resp.Body.String()).To(MatchJSON(`[{"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from","description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""}]`))
+					Expect(resp.Body.String()).To(ContainSubstring(`"context":"(root).configuration.custom_metrics.metric_submission_strategy.allow_from"`))
+					Expect(resp.Body.String()).To(ContainSubstring(`"description":"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\""`))
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				})
 			})

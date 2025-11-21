@@ -5,7 +5,7 @@
 
   "properties": {
     "schema-version": {
-      "$ref": "./shared_definitions.json#/schemas/app-scaling-config-schema"
+      "type": "null"
     },
     "credential-type": {
       "type": "string",
@@ -15,7 +15,34 @@
       ]
     },
     "configuration": {
-      "$ref": "./policy-configuration.schema.json"
+      "type": "object",
+      "properties": {
+        "custom_metrics": {
+          "type": "object",
+          "properties": {
+            "metric_submission_strategy": {
+              "type": "object",
+              "properties": {
+                "allow_from": {
+                  "type": "string",
+                  "enum": [
+                    "bound_app"
+                  ]
+                }
+              },
+              "required": [
+                "allow_from"
+              ]
+            }
+          },
+          "required": [
+            "metric_submission_strategy"
+          ]
+        }
+      },
+      "not": {
+        "required": ["app_guid"]
+      }
     },
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
@@ -906,9 +933,7 @@
       }
     }
   },
-
   "required": [
-    "schema-version",
     "instance_min_count",
     "instance_max_count"
   ],
@@ -923,6 +948,5 @@
         "schedules"
       ]
     }
-  ],
-  "additionalProperties": true
+  ]
 }

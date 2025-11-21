@@ -90,7 +90,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			bindService := cf.Cf("bind-service", appName, instance.name(), "-c", "../assets/file/policy/invalid.json").Wait(cfg.DefaultTimeoutDuration())
 			Expect(bindService).To(Exit(1))
 			combinedBuffer := gbytes.BufferWithBytes(append(bindService.Out.Contents(), bindService.Err.Contents()...))
-			Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(`[{"context":"(root).scaling_rules.1.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`))
+			Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(`{"context":"(root).scaling_rules.1.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}`))
 		})
 
 		It("binds&unbinds with policy", func() {

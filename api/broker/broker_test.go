@@ -37,7 +37,6 @@ var _ = Describe("Broker", func() {
 	JustBeforeEach(func() {
 		aBroker = broker.New(testLogger, conf, fakeBindingDB, fakePolicyDB, services, fakeCredentials)
 	})
-
 	Describe("Services", func() {
 		var retrievedServices []domain.Service
 		JustBeforeEach(func() {
@@ -127,7 +126,6 @@ var _ = Describe("Broker", func() {
 			})
 		})
 	})
-
 	Describe("GetBinding", func() {
 		var Binding domain.GetBindingSpec
 		var fetchBindingDetails domain.FetchBindingDetails
@@ -265,7 +263,6 @@ var _ = Describe("Broker", func() {
 			})
 		})
 	})
-
 	Describe("Bind", func() {
 		var ctx context.Context
 		var instanceID string
@@ -278,67 +275,67 @@ var _ = Describe("Broker", func() {
 			bindingID = "some_binding-id"
 		})
 		Context("Create a binding", func() {
-			//			// 🚧 To-do: Integrate and activate this test, when finishing the service-key-feature (PR #3652).
-			//			It("Fails when the additional config-parameter “app-guid” is provided", func() {
-			//				// As we don't see any case where it makes sense to provide metrics by a different
-			//				// app without using custom-metrics, we can assume that basic policy-definitions are
-			//				// present.
-			//				var bindingParams = []byte(`
-			// {
-			//   "configuration": {
-			//		"app-guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
-			//		"custom_metrics": {
-			//			"metric_submission_strategy": {
-			//				"allow_from": "bound_app"
-			//			}
-			//		}
-			//   },
-			//   "instance_min_count": 1,
-			//   "instance_max_count": 5,
-			//   "scaling_rules": [
-			//		{
-			//			"metric_type": "memoryused",
-			//			"threshold": 30,
-			//			"operator": "<",
-			//			"adjustment": "-1"
-			//		}
-			//   ]
-			// }`)
-			//				details = domain.BindDetails{
-			//					AppGUID:   "", // Deprecated field!
-			//					PlanID:    "some_plan-id",
-			//					ServiceID: "some_service-id",
-			//					BindResource: &domain.BindResource{
-			//						AppGuid: "AppGUID_for_bindings",
-			//						//	SpaceGuid          string `json:"space_guid,omitempty"`
-			//						//	Route              string `json:"route,omitempty"`
-			//						//	CredentialClientID string `json:"credential_client_id,omitempty"`
-			//						//	BackupAgent        bool   `json:"backup_agent,omitempty"`
-			//					}, //  *BindResource
+			It("Fails when the additional config-parameter “app-guid” is provided", func() {
+				// As we don't see any case where it makes sense to provide metrics by a different
+				// app without using custom-metrics, we can assume that basic policy-definitions are
+				// present.
+				var bindingParams = []byte(`
+				  {
+					"schema-version": "0.9",
+					"configuration": {
+						  "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
+						  "custom_metrics": {
+							  "metric_submission_strategy": {
+								  "allow_from": "bound_app"
+							  }
+						  }
+					},
+					"instance_min_count": 1,
+					"instance_max_count": 5,
+					"scaling_rules": [
+						  {
+							  "metric_type": "memoryused",
+							  "threshold": 30,
+							  "operator": "<",
+							  "adjustment": "-1"
+						  }
+					]
+				  }`)
+				details = domain.BindDetails{
+					AppGUID:   "", // Deprecated field!
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+						//	SpaceGuid          string `json:"space_guid,omitempty"`
+						//	Route              string `json:"route,omitempty"`
+						//	CredentialClientID string `json:"credential_client_id,omitempty"`
+						//	BackupAgent        bool   `json:"backup_agent,omitempty"`
+					}, //  *BindResource
 
-			//					// RawContext: json.RawMessage // `json:"context,omitempty"`
-			//					RawParameters: bindingParams, // `json:"parameters,omitempty"`
-			//				}
+					// RawContext: json.RawMessage // `json:"context,omitempty"`
+					RawParameters: bindingParams, // `json:"parameters,omitempty"`
+				}
 
-			//				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
 
-			//				Expect(err).NotTo(BeNil())
-			//				Expect(err).To(MatchError(ContainSubstring("app-guid is not supported in configuration")))
-			//			})
+				Expect(err).NotTo(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("app GUID provided in both, binding resource and binding configuration")))
+			})
 			It("Supports provision of an Autoscaler Policy as RawParameters", func() {
 				var bindingParams = []byte(`
-{
-  "instance_min_count": 1,
-  "instance_max_count": 5,
-  "scaling_rules": [
-	{
-	  "metric_type": "memoryused",
-	  "threshold": 30,
-	  "operator": "<",
-	  "adjustment": "-1"
-	}
-  ]
-}`)
+					{
+					  "instance_min_count": 1,
+					  "instance_max_count": 5,
+					  "scaling_rules": [
+						{
+						  "metric_type": "memoryused",
+						  "threshold": 30,
+						  "operator": "<",
+						  "adjustment": "-1"
+						}
+					  ]
+					}`)
 				details = domain.BindDetails{
 					AppGUID:   "",
 					PlanID:    "some_plan-id",
@@ -458,10 +455,213 @@ var _ = Describe("Broker", func() {
 					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 				})
 			})
+			It("Fails, when the provided scaling-policy does not match the schema.", func() {
+				var invalidBindingParams = []byte(`
+					{
+					  "instance_min_count": 1,
+					  "instance_max_count": 5,
+					  "scaling_rules": [
+						{
+						  "metric_type": "memoryused",
+						  "threshold": 100,
+						  "operator": "<",
+						  "adjustment": "invalid_adjustment"
+						}
+					  ]
+					}`)
+				details = domain.BindDetails{
+					AppGUID:   "",
+					PlanID:    "some_plan-id",
+					ServiceID: "some_service-id",
+					BindResource: &domain.BindResource{
+						AppGuid: "AppGUID_for_bindings",
+					},
+					RawParameters: invalidBindingParams,
+				}
 
+				_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+				Expect(err).NotTo(BeNil())
+				Expect(err).To(MatchError(ContainSubstring(
+					`{"context":"(root).scaling_rules.0.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`,
+				)))
+			})
 		})
 		Context("Create a service-key", func() {
-			// 🚧 To-do: Add tests here for the service-key-feature in (PR #3652).
+			When("Called without App-GUID from the cloudcontroller", func() {
+				BeforeEach(func() {
+					fakeBindingDB.GetServiceInstanceReturns(&models.ServiceInstance{
+						ServiceInstanceId: testInstanceId,
+						OrgId:             testOrgId,
+						SpaceId:           testSpaceId,
+						DefaultPolicy:     testDefaultPolicy,
+						DefaultPolicyGuid: testDefaultGuid,
+					}, nil)
+				})
+				It("Creates a binding with a provided App-GUID", func() {
+					// Setup - service key scenario (no BindResource, app_guid in configuration)
+					var bindingParams = []byte(`
+						{
+							"schema-version": "0.9",
+							"configuration": {
+								"app_guid": "12345678-abcd-1234-5678-123456789abc",
+								"custom_metrics": {
+									"metric_submission_strategy": {
+										"allow_from": "same_app"
+									}
+								}
+							},
+							"instance_min_count": 1,
+							"instance_max_count": 3,
+							"schedules": {
+								"timezone": "Europe/Berlin",
+								"recurring_schedule": []
+							}
+						}`)
+
+					details = domain.BindDetails{
+						AppGUID:       "", // No deprecated app GUID
+						PlanID:        "some_plan-id",
+						ServiceID:     "some_service-id",
+						BindResource:  nil, // No BindResource for service keys
+						RawParameters: bindingParams,
+					}
+
+					// Execution
+					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+					Expect(err).To(BeNil())
+					Expect(binding).NotTo(BeNil())
+
+					// Verify that fakeBindingDB creates an entry
+					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+					_, createdBindingId, createdInstanceId, createdAppId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+					Expect(createdBindingId).To(Equal(bindingID))
+					Expect(createdInstanceId).To(Equal(instanceID))
+					Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
+					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+
+					// Verify policy was saved with the correct app GUID
+					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+					_, savedAppId, savedPolicy, savedPolicyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+					Expect(savedAppId).To(Equal("12345678-abcd-1234-5678-123456789abc"))
+					Expect(savedPolicy).NotTo(BeNil())
+					Expect(savedPolicyGuid).NotTo(BeEmpty())
+				})
+				It("Allows creation of service-keys with default policy", func() {
+					// Setup - service key scenario (no BindResource, app_guid in configuration)
+					var bindingParams = []byte(`
+						{
+						 "schema-version": "0.9",
+							"configuration": {
+								"app_guid": "12345678-abcd-1234-5678-123456789abc"
+							}
+						}`)
+
+					details = domain.BindDetails{
+						AppGUID:       "", // No deprecated app GUID
+						PlanID:        "some_plan-id",
+						ServiceID:     "some_service-id",
+						BindResource:  nil, // No BindResource for service keys
+						RawParameters: bindingParams,
+					}
+
+					// Execution
+					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+					Expect(err).To(BeNil())
+					Expect(binding).NotTo(BeNil())
+
+					// Verify that fakeBindingDB creates an entry
+					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
+					_, createdBindingId, createdInstanceId, createdAppId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
+
+					Expect(createdBindingId).To(Equal(bindingID))
+					Expect(createdInstanceId).To(Equal(instanceID))
+					Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
+					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
+
+					// Verify policy was saved with the correct app GUID
+					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
+					_, savedAppId, savedPolicy, savedPolicyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
+					Expect(savedAppId).To(Equal("12345678-abcd-1234-5678-123456789abc"))
+					Expect(savedPolicy).NotTo(BeNil())
+					Expect(savedPolicyGuid).NotTo(BeEmpty())
+				})
+				When("No schema-version has been provided", func() {
+					It("Fails when doing a minimal bind-request", func() {
+						var bindingParams = []byte(`
+						{
+							"configuration": {
+								"app_guid": "12345678-abcd-1234-5678-123456789abc"
+							}
+						}`)
+
+						details = domain.BindDetails{
+							AppGUID:       "", // No deprecated app GUID
+							PlanID:        "some_plan-id",
+							ServiceID:     "some_service-id",
+							BindResource:  nil, // No BindResource for service keys
+							RawParameters: bindingParams,
+						}
+
+						// Execution
+						_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+						Expect(err).NotTo(BeNil())
+						Expect(err).To(MatchError(ContainSubstring(
+							`{"context":"(root)","description":"schema-version is required"}`,
+						)))
+
+						// Verify that fakeBindingDB does not create an entry
+						Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(0))
+
+						// Verify that no policy was saved with the correct app GUID
+						Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(0))
+					})
+					It("Fails when smuggling into a legacy bind-request", func() {
+						var bindingParams = []byte(`
+						{
+						  "special_field": "I am here to enforce matching against the legacy-schema.",
+						  "configuration": {
+							  "app_guid": "12345678-abcd-1234-5678-123456789abc",
+							   "custom_metrics": {
+								   "metric_submission_strategy": {
+									   "allow_from": "bound_app"
+								   }
+							   }
+						  },
+						  "instance_min_count": 1,
+						  "instance_max_count": 5,
+						  "scaling_rules": [
+							{
+							  "metric_type": "memoryused",
+							  "threshold": 100,
+							  "operator": "<",
+							  "adjustment": "+1"
+							}
+						  ]
+						}`)
+
+						details = domain.BindDetails{
+							AppGUID:       "", // No deprecated app GUID
+							PlanID:        "some_plan-id",
+							ServiceID:     "some_service-id",
+							BindResource:  nil, // No BindResource for service keys
+							RawParameters: bindingParams,
+						}
+
+						// Execution
+						_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+						Expect(err).NotTo(BeNil())
+						Expect(err).To(MatchError(ContainSubstring(
+							`{"context":"(root)","description":"schema-version is required"}`,
+						)))
+					})
+				})
+			})
 		})
 	})
 }) // End `Describe "Broker"`
