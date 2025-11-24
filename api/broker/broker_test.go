@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
@@ -502,7 +503,7 @@ var _ = Describe("Broker", func() {
 				}, nil)
 			})
 			When("Called with App-GUID from the cloudcontroller", func() {
-				It("fails", func(){
+				It("fails", func() {
 					// As we don't see any case where it makes sense to provide metrics by a different
 					// app without using custom-metrics, we can assume that basic policy-definitions are
 					// present.
@@ -550,9 +551,46 @@ var _ = Describe("Broker", func() {
 					Expect(err).To(MatchError(ContainSubstring("app GUID provided in both, binding resource and binding configuration")))
 				})
 			})
-			When("Created for an App outside the selected space", func(){
-				It("fails", func(){
-					// 🚧 To-do
+			When("Created for an App outside the selected space", func() {
+				BeforeEach(func() {
+					fakeCfCtxClient.GetAppReturns(&cf.App{
+						Guid: "12345678-abcd-1234-5678-123456789abc",
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: "some-other-space-guid",
+								},
+							},
+						},
+					}, nil)
+				})
+				It("fails", func() {
+					// Setup - service key scenario (no BindResource, app_guid in configuration)
+					var bindingParams = []byte(`
+						{
+						 "schema-version": "0.9",
+							"configuration": {
+								"app_guid": "12345678-abcd-1234-5678-123456789abc"
+							}
+						}`)
+
+					details = domain.BindDetails{
+						AppGUID:       "", // No deprecated app GUID
+						PlanID:        "some_plan-id",
+						ServiceID:     "some_service-id",
+						BindResource:  &domain.BindResource{
+							AppGuid: "",  // No app GUID for service-keys
+							SpaceGuid: "some-space-guid",
+						},
+						RawParameters: bindingParams,
+					}
+
+					// Execution
+					_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+					// Validation
+					Expect(err).NotTo(BeNil())
+					Expect(err).To(MatchError(ContainSubstring("🚧 To-do: Define expectation")))
 				})
 			})
 			When("No schema-version has been provided", func() {
@@ -674,7 +712,7 @@ var _ = Describe("Broker", func() {
 					Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
 					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
 				})
-				It("Attachs the provided policy to that app.", func(){
+				It("Attachs the provided policy to that app.", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
 
 					// Execution
