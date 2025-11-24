@@ -915,67 +915,67 @@ var _ = Describe("BrokerHandler", func() {
 			When("invalid custom strategy provided in the binding parameters", func() {
 				BeforeEach(func() {
 					bindingPolicy = `{
-				  "configuration": {
-					"custom_metrics": {
-					  "metric_submission_strategy": {
-						"allow_from": "different_app"
-					  }
-					}
-				  },
-				  "instance_max_count":4,
-				  "instance_min_count":1,
-				  "schedules": {
-					"timezone": "Asia/Shanghai",
-					"recurring_schedule": [{
-					  "start_time": "10:00",
-					  "end_time": "18:00",
-					  "days_of_week": [
-						1,
-						2,
-						3
-					  ],
-					  "instance_min_count": 1,
-					  "instance_max_count": 10,
-					  "initial_min_instance_count": 5
-					}]
-				  },
-				  "scaling_rules":[
-					{
-					  "metric_type":"memoryused",
-					  "threshold":30,
-					  "operator":"<",
-					  "adjustment":"-1"
-					}]
-				}`
+					  "configuration": {
+						"custom_metrics": {
+						  "metric_submission_strategy": {
+							"allow_from": "different_app"
+						  }
+						}
+					  },
+					  "instance_max_count":4,
+					  "instance_min_count":1,
+					  "schedules": {
+						"timezone": "Asia/Shanghai",
+						"recurring_schedule": [{
+						  "start_time": "10:00",
+						  "end_time": "18:00",
+						  "days_of_week": [
+							1,
+							2,
+							3
+						  ],
+						  "instance_min_count": 1,
+						  "instance_max_count": 10,
+						  "initial_min_instance_count": 5
+						}]
+					  },
+					  "scaling_rules":[
+						{
+						  "metric_type":"memoryused",
+						  "threshold":30,
+						  "operator":"<",
+						  "adjustment":"-1"
+						}]
+					}`
 					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 					bindingPolicy = `{
-				  "instance_max_count":4,
-				  "instance_min_count":1,
-				  "schedules": {
-					"timezone": "Asia/Shanghai",
-					"recurring_schedule": [{
-					  "start_time": "10:00",
-					  "end_time": "18:00",
-					  "days_of_week": [
-						1,
-						2,
-						3
-					  ],
-					  "instance_min_count": 1,
-					  "instance_max_count": 10,
-					  "initial_min_instance_count": 5
-					}]
-				  },
-				  "scaling_rules":[
-					{
-					  "metric_type":"memoryused",
-					  "threshold":30,
-					  "operator":"<",
-					  "adjustment":"-1"
-					}]
-				}`
+					  "instance_max_count":4,
+					  "instance_min_count":1,
+					  "schedules": {
+						"timezone": "Asia/Shanghai",
+						"recurring_schedule": [{
+						  "start_time": "10:00",
+						  "end_time": "18:00",
+						  "days_of_week": [
+							1,
+							2,
+							3
+						  ],
+						  "instance_min_count": 1,
+						  "instance_max_count": 10,
+						  "initial_min_instance_count": 5
+						}]
+					  },
+					  "scaling_rules":[
+						{
+						  "metric_type":"memoryused",
+						  "threshold":30,
+						  "operator":"<",
+						  "adjustment":"-1"
+						}]
+					}`
 					verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 				})
 				It("should fail with 400", func() {

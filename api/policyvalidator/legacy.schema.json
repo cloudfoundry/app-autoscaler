@@ -26,7 +26,8 @@
                 "allow_from": {
                   "type": "string",
                   "enum": [
-                    "bound_app"
+                    "bound_app",
+                    "same_app"
                   ]
                 }
               },
