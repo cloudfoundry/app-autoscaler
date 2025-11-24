@@ -628,7 +628,8 @@ var _ = Describe("Broker", func() {
 				})
 			})
 			When("A policy is provided", func() {
-				var bindingParams = []byte(`
+				BeforeEach(func() {
+					var bindingParams = []byte(`
 					{
 						"schema-version": "0.9",
 						"configuration": {
@@ -647,14 +648,14 @@ var _ = Describe("Broker", func() {
 						}
 					}`)
 
-				details = domain.BindDetails{
-					AppGUID:       "", // No deprecated app GUID
-					PlanID:        "some_plan-id",
-					ServiceID:     "some_service-id",
-					BindResource:  nil, // No BindResource for service keys
-					RawParameters: bindingParams,
-				}
-
+					details = domain.BindDetails{
+						AppGUID:       "", // No deprecated app GUID
+						PlanID:        "some_plan-id",
+						ServiceID:     "some_service-id",
+						BindResource:  nil, // No BindResource for service keys
+						RawParameters: bindingParams,
+					}
+				})
 				It("Creates a binding with a provided App-GUID and CM-strategy", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
 
