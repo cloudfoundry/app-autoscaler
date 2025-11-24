@@ -109,6 +109,7 @@ jobs:
 
           # ⚠️ For this workflow to be successful, the subsequent line must not
           # trigger again the creation of the generated files.
+          make go-mod-tidy
           make update-uaac-nix-package
 
           declare -i num_changed_files
