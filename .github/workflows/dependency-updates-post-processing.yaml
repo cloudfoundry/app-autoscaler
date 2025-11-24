@@ -74,13 +74,13 @@ jobs:
           # change anything and we exit early.
           # An alternative would be to use a tag for this. But this does affect the whole
           # PR instead of just the latest commit.
-          declare -r tidy_message='🤖🦾🛠️ go mod tidy & make package-specs'
+          declare -r tidy_message='🤖🦾🛠️ go mod tidy'
           declare -r commit_message='${{steps.configure_git.outputs.commit_subject}}'
 
           if [[ "${commit_message}" == "${tidy_message}" ]]
           then
             # shellcheck disable=SC2016
-            echo 'This commit is already an automatic `go-mod-tidy and make package-specs`! Exiting …'
+            echo 'This commit is already an automatic `go-mod-tidy`! Exiting …'
             exit 0
           fi
 
@@ -94,46 +94,31 @@ jobs:
                " on revision \`$(git rev-parse 'HEAD')\`."
 
           echo "Generating clients, servers and fakes on \`${current_branch_head}~1\`"
-          # Clean up any untracked files in submodule before switching branches
-          if [ -d "src/autoscaler" ]; then
-            git -C src/autoscaler clean -fd
-          fi
-          # Deinitialize submodules to prevent checkout conflicts
-          git submodule deinit -f --all
           # Sometimes just loading an env may trigger a change regarding the `plugin_version` of
           # the derivation python.
           git restore devbox.lock
           git checkout 'HEAD~1'
-          git submodule update --init --recursive
 
           make generate-fakes
           make generate-openapi-generated-clients-and-servers
 
-          echo "Successfully generated the code. Switching back to \`${current_branch_head}\`!"
-          # Clean up generated files in submodule before switching branches
-          if [ -d "src/autoscaler" ]; then
-            git -C src/autoscaler clean -fd
-          fi
-          # Deinitialize submodules to prevent checkout conflicts
-          git submodule deinit -f --all
           # Sometimes just loading an env may trigger a change regarding the `plugin_version` of
           # the derivation python.
           git restore devbox.lock
           git checkout "${current_branch_head}"
-          git submodule update --init --recursive
 
           # ⚠️ For this workflow to be successful, the subsequent line must not
           # trigger again the creation of the generated files.
           make update-uaac-nix-package
 
           declare -i num_changed_files
-          num_changed_files="$(git status --porcelain packages/ nix/ | wc --lines)"
+          num_changed_files="$(git status --porcelain | wc --lines)"
           readonly num_changed_files
 
           if ((num_changed_files > 0))
           then
             echo 'Changes to some files were necessary!'
-            git add packages/ nix/
+            git add .
             git commit --message="${tidy_message}"
             git pull --rebase=true
             git push
