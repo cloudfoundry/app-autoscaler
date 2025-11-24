@@ -140,11 +140,15 @@ var _ = BeforeSuite(func() {
 		},
 		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
+	fakeCfClient := &fakes.FakeCFClient{}
+	fakeCfCtxClient := &fakes.FakeContextClient{}
+	fakeCfClient.GetCtxClientReturns(fakeCfCtxClient)
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	fakeCredentials := &fakes.FakeCredentials{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	bs := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil, fakeCredentials)
+	bs := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf,
+		fakeBindingDB, fakePolicyDB, httpStatusCollector, fakeCfClient, fakeCredentials)
 	httpServer, err := bs.CreateServer()
 	Expect(err).NotTo(HaveOccurred())
 

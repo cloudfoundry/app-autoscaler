@@ -23,6 +23,7 @@ var _ = Describe("Broker", func() {
 	var (
 		aBroker         *broker.Broker
 		err             error
+		fakeCfCtxClient *fakes.FakeContextClient
 		fakeBindingDB   *fakes.FakeBindingDB
 		fakePolicyDB    *fakes.FakePolicyDB
 		fakeCredentials *fakes.FakeCredentials
@@ -30,12 +31,15 @@ var _ = Describe("Broker", func() {
 	)
 
 	BeforeEach(func() {
+		fakeCfCtxClient = &fakes.FakeContextClient{}
 		fakeBindingDB = &fakes.FakeBindingDB{}
 		fakePolicyDB = &fakes.FakePolicyDB{}
 		fakeCredentials = &fakes.FakeCredentials{}
 	})
 	JustBeforeEach(func() {
-		aBroker = broker.New(testLogger, conf, fakeBindingDB, fakePolicyDB, services, fakeCredentials)
+		aBroker = broker.New(testLogger, conf,
+			fakeCfCtxClient, fakeBindingDB, fakePolicyDB,
+			services, fakeCredentials)
 	})
 	Describe("Services", func() {
 		var retrievedServices []domain.Service

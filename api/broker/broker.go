@@ -15,6 +15,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/schedulerclient"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -30,9 +31,10 @@ var _ domain.ServiceBroker = &Broker{}
 type Broker struct {
 	logger           lager.Logger
 	conf             *config.Config
+	cfClient         cf.ApiContextClient
 	bindingdb        db.BindingDB
 	policydb         db.PolicyDB
-	policyValidator  *policyvalidator.PolicyValidator // 🚧 To-do: Probably not needed anymore!
+	policyValidator  *policyvalidator.PolicyValidator
 	bindingReqParser brParser.BindRequestParser
 	schedulerUtil    *schedulerclient.Client
 	catalog          []domain.Service
@@ -66,7 +68,11 @@ func (e Errors) Error() string {
 
 var _ error = Errors{}
 
-func New(logger lager.Logger, conf *config.Config, bindingDb db.BindingDB, policyDb db.PolicyDB, catalog []domain.Service, credentials cred_helper.Credentials) *Broker {
+func New(
+	logger lager.Logger, conf *config.Config,
+	cfClient cf.ApiContextClient, bindingDb db.BindingDB, policyDb db.PolicyDB,
+	catalog []domain.Service, credentials cred_helper.Credentials,
+) *Broker {
 	policyValidator := policyvalidator.NewPolicyValidator(
 		conf.PolicySchemaPath,
 		conf.ScalingRules.CPU.LowerThreshold,
@@ -97,6 +103,7 @@ func New(logger lager.Logger, conf *config.Config, bindingDb db.BindingDB, polic
 	broker := &Broker{
 		logger:           logger,
 		conf:             conf,
+		cfClient:         cfClient,
 		bindingdb:        bindingDb,
 		policydb:         policyDb,
 		catalog:          catalog,

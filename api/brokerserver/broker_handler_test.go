@@ -32,6 +32,7 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
+		cfClient        *fakes.FakeContextClient
 		bindingdb       *fakes.FakeBindingDB
 		policydb        *fakes.FakePolicyDB
 		fakeCredentials *fakes.FakeCredentials
@@ -44,6 +45,7 @@ var _ = Describe("BrokerHandler", func() {
 	)
 
 	BeforeEach(func() {
+		cfClient = &fakes.FakeContextClient{}
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
@@ -52,7 +54,9 @@ var _ = Describe("BrokerHandler", func() {
 	})
 
 	JustBeforeEach(func() {
-		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf, bindingdb, policydb, services, fakeCredentials)
+		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf,
+			cfClient, bindingdb, policydb,
+			services, fakeCredentials)
 		handler = handlers.NewApiHandler(autoscalerBroker, slog.New(logr.ToSlogHandler(GinkgoLogr)))
 		if fakePlanChecker != nil {
 			autoscalerBroker.PlanChecker = fakePlanChecker
