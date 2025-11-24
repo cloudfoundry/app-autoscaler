@@ -575,11 +575,11 @@ var _ = Describe("Broker", func() {
 						}`)
 
 					details = domain.BindDetails{
-						AppGUID:       "", // No deprecated app GUID
-						PlanID:        "some_plan-id",
-						ServiceID:     "some_service-id",
-						BindResource:  &domain.BindResource{
-							AppGuid: "",  // No app GUID for service-keys
+						AppGUID:   "", // No deprecated app GUID
+						PlanID:    "some_plan-id",
+						ServiceID: "some_service-id",
+						BindResource: &domain.BindResource{
+							AppGuid:   "", // No app GUID for service-keys
 							SpaceGuid: "some-space-guid",
 						},
 						RawParameters: bindingParams,
@@ -590,7 +590,7 @@ var _ = Describe("Broker", func() {
 
 					// Validation
 					Expect(err).NotTo(BeNil())
-					Expect(err).To(MatchError(ContainSubstring("🚧 To-do: Define expectation")))
+					Expect(err).To(MatchError(ContainSubstring("app 12345678-abcd-1234-5678-123456789abc not found in space some-space-guid")))
 				})
 			})
 			When("No schema-version has been provided", func() {

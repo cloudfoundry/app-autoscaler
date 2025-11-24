@@ -579,6 +579,27 @@ func (b *Broker) Bind(
 			err, http.StatusBadRequest, "parse-binding-request")
 	}
 
+	isServiceKeyRequest := (details.BindResource == nil || details.BindResource.AppGuid == "") && details.AppGUID == ""
+	if isServiceKeyRequest {
+		appGUID := appScalingConfig.GetConfiguration().GetAppGUID()
+		instanceSpaceGuid := details.BindResource.SpaceGuid
+		appData, err := b.cfClient.GetApp(ctx, appGUID)
+		if err != nil {
+			logger.Error("cf-client-get-app", err, lager.Data{"appGUID": appGUID})
+			return result, apiresponses.NewFailureResponseBuilder(
+				fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key").
+				WithErrorKey("CcCommunication").Build()
+		}
+		appInSpace := string(appData.Relationships.Space.Data.Guid) == instanceSpaceGuid
+		if !appInSpace {
+			err := fmt.Errorf("app %s not found in space %s", appGUID, details.BindResource.SpaceGuid)
+			logger.Error("app-not-in-service-instance-space", err, lager.Data{"appGUID": appGUID, "instanceSpaceGuid": instanceSpaceGuid})
+			return result, apiresponses.NewFailureResponseBuilder(
+				err, http.StatusUnprocessableEntity, "app-not-in-service-instance-space").
+				WithErrorKey("AppNotInSpace").Build()
+		}
+	}
+
 	if err := b.planDefinitionExceeded(appScalingConfig.GetScalingPolicy().GetPolicyDefinition(), details.PlanID, instanceID); err != nil {
 		return result, err
 	}

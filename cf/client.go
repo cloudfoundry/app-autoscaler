@@ -15,6 +15,7 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/cfhttp/v2"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
@@ -29,7 +30,7 @@ const (
 )
 
 type (
-	Guid   string
+	Guid = models.GUID
 	Tokens struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int64  `json:"expires_in"`
@@ -120,12 +121,6 @@ type (
 
 func (c *Client) GetCtxClient() ContextClient {
 	return c.CtxClient
-}
-
-var _ fmt.Stringer = Guid("some_guid")
-
-func (g Guid) String() string {
-	return string(g)
 }
 
 var _ CFClient = &Client{}
