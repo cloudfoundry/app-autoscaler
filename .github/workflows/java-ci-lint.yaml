@@ -38,7 +38,7 @@ jobs:
 
       - name: Checkstyle
         run: |
-          pushd src/autoscaler/scheduler
+          pushd scheduler
             mvn --no-transfer-progress jxr:jxr
             mvn --no-transfer-progress checkstyle:checkstyle
           popd
