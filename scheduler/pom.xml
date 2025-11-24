@@ -170,8 +170,8 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-                  <propertyExpansion>checkstyle.config.path=${basedir}/../../../style-guide</propertyExpansion>
-                  <configLocation>${basedir}/../../../style-guide/google_checks.xml</configLocation>
+                  <propertyExpansion>checkstyle.config.path=${basedir}/../style-guide</propertyExpansion>
+                  <configLocation>${basedir}/../style-guide/google_checks.xml</configLocation>
                   <failOnViolation>true</failOnViolation>
                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
