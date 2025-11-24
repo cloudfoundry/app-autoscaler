@@ -45,4 +45,4 @@ jobs:
 
       - name: Publish Results on Pull Request
         run: |
-          go run src/fmt_chkstyle/format_checkstyle.go
+          go run fmt_chkstyle/format_checkstyle.go
