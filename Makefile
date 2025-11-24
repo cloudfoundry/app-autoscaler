@@ -472,3 +472,7 @@ deploy-cleanup:
 
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh
+
+.PHONY: update-uaac-nix-package
+update-uaac-nix-package:
+	make --directory='./nix/packages/uaac' gemset.nix

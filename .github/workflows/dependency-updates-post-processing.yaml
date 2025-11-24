@@ -3,8 +3,10 @@ on:
   pull_request:
     paths:
       - ".github/workflows/dependency-updates-post-processing.yaml"
-      - "src/**/go.mod"
-      - "src/**/go.sum"
+      - "go.mod"
+      - "go.sum"
+      - "**/go.mod"
+      - "**/go.sum"
       - "devbox.json"
       - "nix/packages/uaac/Gemfile*"
   workflow_dispatch: {}
@@ -122,7 +124,6 @@ jobs:
 
           # ⚠️ For this workflow to be successful, the subsequent line must not
           # trigger again the creation of the generated files.
-          make package-specs
           make update-uaac-nix-package
 
           declare -i num_changed_files
