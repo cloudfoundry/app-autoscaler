@@ -837,8 +837,8 @@ var _ = Describe("BrokerHandler", func() {
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 				})
-				It("fails with 422", func() {
-					Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity))
+				It("fails with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(MatchJSON(`{"error": "RequiresApp", "description": "error: service must be bound to an application; Please provide a GUID of an app!"}`))
 				})
 			})
