@@ -688,11 +688,11 @@ var _ = Describe("Broker", func() {
 					}`)
 
 					details = domain.BindDetails{
-						AppGUID:       "", // No deprecated app GUID
-						PlanID:        "some_plan-id",
-						ServiceID:     "some_service-id",
-						BindResource:  &domain.BindResource{
-							AppGuid: "", // No app GUID for service-keys
+						AppGUID:   "", // No deprecated app GUID
+						PlanID:    "some_plan-id",
+						ServiceID: "some_service-id",
+						BindResource: &domain.BindResource{
+							AppGuid:   "", // No app GUID for service-keys
 							SpaceGuid: appSpaceGuid,
 						},
 						RawParameters: bindingParams,
@@ -759,11 +759,11 @@ var _ = Describe("Broker", func() {
 							}
 						}`)
 					details = domain.BindDetails{
-						AppGUID:       "", // No deprecated app GUID
-						PlanID:        "some_plan-id",
-						ServiceID:     "some_service-id",
-						BindResource:  &domain.BindResource{
-							AppGuid: "", // No app GUID for service-keys
+						AppGUID:   "", // No deprecated app GUID
+						PlanID:    "some_plan-id",
+						ServiceID: "some_service-id",
+						BindResource: &domain.BindResource{
+							AppGuid:   "", // No app GUID for service-keys
 							SpaceGuid: appSpaceGuid,
 						},
 						RawParameters: bindingParams,
@@ -778,7 +778,6 @@ var _ = Describe("Broker", func() {
 							},
 						},
 					}, nil)
-
 
 					// Execution
 					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)

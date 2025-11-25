@@ -30,7 +30,7 @@ const (
 )
 
 type (
-	Guid = models.GUID
+	Guid   = models.GUID
 	Tokens struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int64  `json:"expires_in"`
