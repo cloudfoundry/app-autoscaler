@@ -583,7 +583,7 @@ func (b *Broker) Bind(
 	if isServiceKeyRequest {
 		err := b.checkAppInSpace(logger, ctx, instanceID, details, appScalingConfig)
 		if err != nil {
-			return domain.Binding{}, err
+			return result, err
 		}
 	}
 

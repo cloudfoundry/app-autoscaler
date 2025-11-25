@@ -546,21 +546,9 @@ var _ = Describe("Broker", func() {
 				})
 			})
 			When("Created for an App outside the selected space", func() {
+				var bindingParams []byte
 				BeforeEach(func() {
-					fakeCfCtxClient.GetAppReturns(&cf.App{
-						Guid: "12345678-abcd-1234-5678-123456789abc",
-						Relationships: cf.Relationships{
-							Space: &cf.Space{
-								Data: cf.SpaceData{
-									Guid: "some-other-space-guid",
-								},
-							},
-						},
-					}, nil)
-				})
-				It("fails", func() {
-					// Setup - service key scenario (no BindResource, app_guid in configuration)
-					var bindingParams = []byte(`
+					bindingParams = []byte(`
 						{
 						 "schema-version": "0.9",
 							"configuration": {
@@ -568,6 +556,78 @@ var _ = Describe("Broker", func() {
 							}
 						}`)
 
+					const otherSpaceGuid = "some-other-space-guid"
+					fakeCfCtxClient.GetAppReturns(&cf.App{
+						Guid: "12345678-abcd-1234-5678-123456789abc",
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: otherSpaceGuid,
+								},
+							},
+						},
+					}, nil)
+
+					fakeBindingDB.GetServiceInstanceReturns(&models.ServiceInstance{
+						ServiceInstanceId: instanceID,
+						OrgId:             "some-org-guid",
+						SpaceId:           "some-space-guid",
+						DefaultPolicy:     "",
+						DefaultPolicyGuid: "test-policy-guid",
+					}, nil)
+				})
+				When("The cloudcontroller provides a space-guid in the bind-request", func() {
+					BeforeEach(func() {
+						details = domain.BindDetails{
+							AppGUID:   "", // No deprecated app GUID
+							PlanID:    "some_plan-id",
+							ServiceID: "some_service-id",
+							BindResource: &domain.BindResource{
+								AppGuid:   "", // No app GUID for service-keys
+								SpaceGuid: "some-space-guid",
+							},
+							RawParameters: bindingParams,
+						}
+					})
+					It("fails", func() {
+						// Execution
+						_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+						// Validation
+						Expect(err).NotTo(BeNil())
+						Expect(err).To(MatchError(ContainSubstring("app 12345678-abcd-1234-5678-123456789abc not found in space some-space-guid")))
+					})
+				})
+				When("The cloudcontroller doesn't provide a space-guid in the bind-request", func() {
+					BeforeEach(func() {
+						details = domain.BindDetails{
+							AppGUID:   "", // No deprecated app GUID
+							PlanID:    "some_plan-id",
+							ServiceID: "some_service-id",
+							BindResource: &domain.BindResource{
+								AppGuid: "", // No app GUID for service-keys
+							},
+							RawParameters: bindingParams,
+						}
+					})
+					It("fails", func() {
+						// Execution
+						_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+						// Validation
+						Expect(err).NotTo(BeNil())
+						Expect(err).To(MatchError(ContainSubstring("app 12345678-abcd-1234-5678-123456789abc not found in space some-space-guid")))
+					})
+					It("calls the database to get the instance's space-guid", func() {
+						// Execution
+						_, _ = aBroker.Bind(ctx, instanceID, bindingID, details, false)
+
+						//Validation
+						Expect(fakeBindingDB.GetServiceInstanceCallCount()).To(Equal(1))
+					})
+				})
+				It("calls the cloudcontroller to ask for the app's space-guid", func() {
+					// Setup
 					details = domain.BindDetails{
 						AppGUID:   "", // No deprecated app GUID
 						PlanID:    "some_plan-id",
@@ -580,11 +640,10 @@ var _ = Describe("Broker", func() {
 					}
 
 					// Execution
-					_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
+					_, _ = aBroker.Bind(ctx, instanceID, bindingID, details, false)
 
-					// Validation
-					Expect(err).NotTo(BeNil())
-					Expect(err).To(MatchError(ContainSubstring("app 12345678-abcd-1234-5678-123456789abc not found in space some-space-guid")))
+					//Validation
+					Expect(fakeCfCtxClient.GetAppCallCount()).To(Equal(1))
 				})
 			})
 			When("No schema-version has been provided", func() {
