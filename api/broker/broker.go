@@ -581,32 +581,9 @@ func (b *Broker) Bind(
 
 	isServiceKeyRequest := (details.BindResource == nil || details.BindResource.AppGuid == "") && details.AppGUID == ""
 	if isServiceKeyRequest {
-		appGUID := appScalingConfig.GetConfiguration().GetAppGUID()
-		var instanceSpaceGuid models.GUID
-		if details.BindResource != nil {
-			instanceSpaceGuid = models.GUID(details.BindResource.SpaceGuid)
-		} else {
-			serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
-			if err != nil {
-				logger.Error("get-service-instance-for-service-key-bind", err, lager.Data{"instanceID": instanceID})
-				return result, apiresponses.NewFailureResponse(
-					fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key")
-			}
-			instanceSpaceGuid = models.GUID(serviceInstance.SpaceId)
-		}
-		appData, err := b.cfClient.GetApp(ctx, appGUID)
+		err := b.checkAppInSpace(logger, ctx, instanceID, details, appScalingConfig)
 		if err != nil {
-			logger.Error("cf-client-get-app", err, lager.Data{"appGUID": appGUID})
-			return result, apiresponses.NewFailureResponse(
-				fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key")
-		}
-		appInSpace := models.GUID(appData.Relationships.Space.Data.Guid) == instanceSpaceGuid
-		if !appInSpace {
-			err := fmt.Errorf("app %s not found in space %s", appGUID, instanceSpaceGuid)
-			logger.Error("app-not-in-service-instance-space", err, lager.Data{"appGUID": appGUID, "instanceSpaceGuid": instanceSpaceGuid})
-			return result, apiresponses.NewFailureResponseBuilder(
-				err, http.StatusUnprocessableEntity, "app-not-in-service-instance-space").
-				WithErrorKey("AppNotInSpace").Build()
+			return domain.Binding{}, err
 		}
 	}
 
@@ -679,6 +656,42 @@ func (b *Broker) Bind(
 		CustomMetrics: *customMetricsCredentials,
 	}
 	return result, nil
+}
+
+// ☢️ This is an important check! Without doing it, users may define scaling-policies to apps of
+// other users and orgs!
+func (b *Broker) checkAppInSpace(
+	logger lager.Logger, ctx context.Context,
+	instanceID string, details domain.BindDetails, appScalingConfig models.AppScalingConfig,
+) error {
+	appGUID := appScalingConfig.GetConfiguration().GetAppGUID()
+	var instanceSpaceGuid models.GUID
+	if details.BindResource != nil {
+		instanceSpaceGuid = models.GUID(details.BindResource.SpaceGuid)
+	} else {
+		serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
+		if err != nil {
+			logger.Error("get-service-instance-for-service-key-bind", err, lager.Data{"instanceID": instanceID})
+			return apiresponses.NewFailureResponse(
+				fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key")
+		}
+		instanceSpaceGuid = models.GUID(serviceInstance.SpaceId)
+	}
+	appData, err := b.cfClient.GetApp(ctx, appGUID)
+	if err != nil {
+		logger.Error("cf-client-get-app", err, lager.Data{"appGUID": appGUID})
+		return apiresponses.NewFailureResponse(
+			fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key")
+	}
+	appInSpace := models.GUID(appData.Relationships.Space.Data.Guid) == instanceSpaceGuid
+	if !appInSpace {
+		err := fmt.Errorf("app %s not found in space %s", appGUID, instanceSpaceGuid)
+		logger.Error("app-not-in-service-instance-space", err, lager.Data{"appGUID": appGUID, "instanceSpaceGuid": instanceSpaceGuid})
+		return apiresponses.NewFailureResponseBuilder(
+			err, http.StatusUnprocessableEntity, "app-not-in-service-instance-space").
+			WithErrorKey("AppNotInSpace").Build()
+	}
+	return nil
 }
 
 func (b *Broker) attachPolicyOrDefaultPolicyToApp(
