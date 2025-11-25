@@ -667,6 +667,7 @@ var _ = Describe("Broker", func() {
 			})
 			When("A policy is provided", func() {
 				BeforeEach(func() {
+					const appSpaceGuid = "some-space-guid"
 					var bindingParams = []byte(`
 					{
 						"schema-version": "0.9",
@@ -690,9 +691,23 @@ var _ = Describe("Broker", func() {
 						AppGUID:       "", // No deprecated app GUID
 						PlanID:        "some_plan-id",
 						ServiceID:     "some_service-id",
-						BindResource:  nil, // No BindResource for service keys
+						BindResource:  &domain.BindResource{
+							AppGuid: "", // No app GUID for service-keys
+							SpaceGuid: appSpaceGuid,
+						},
 						RawParameters: bindingParams,
 					}
+
+					fakeCfCtxClient.GetAppReturns(&cf.App{
+						Guid: "12345678-abcd-1234-5678-123456789abc",
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: appSpaceGuid,
+								},
+							},
+						},
+					}, nil)
 				})
 				It("Creates a binding with a provided App-GUID and CM-strategy", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
@@ -735,6 +750,7 @@ var _ = Describe("Broker", func() {
 			When("No policy is provided", func() {
 				It("Allows creation of service-keys with default policy", func() {
 					// Setup - service key scenario (no BindResource, app_guid in configuration)
+					const appSpaceGuid = "some-space-guid"
 					var bindingParams = []byte(`
 						{
 						 "schema-version": "0.9",
@@ -742,14 +758,27 @@ var _ = Describe("Broker", func() {
 								"app_guid": "12345678-abcd-1234-5678-123456789abc"
 							}
 						}`)
-
 					details = domain.BindDetails{
 						AppGUID:       "", // No deprecated app GUID
 						PlanID:        "some_plan-id",
 						ServiceID:     "some_service-id",
-						BindResource:  nil, // No BindResource for service keys
+						BindResource:  &domain.BindResource{
+							AppGuid: "", // No app GUID for service-keys
+							SpaceGuid: appSpaceGuid,
+						},
 						RawParameters: bindingParams,
 					}
+					fakeCfCtxClient.GetAppReturns(&cf.App{
+						Guid: "12345678-abcd-1234-5678-123456789abc",
+						Relationships: cf.Relationships{
+							Space: &cf.Space{
+								Data: cf.SpaceData{
+									Guid: appSpaceGuid,
+								},
+							},
+						},
+					}, nil)
+
 
 					// Execution
 					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
