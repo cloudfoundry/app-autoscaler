@@ -683,7 +683,18 @@ func (b *Broker) checkAppInSpace(
 		return apiresponses.NewFailureResponse(
 			fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key")
 	}
-	appInSpace := models.GUID(appData.Relationships.Space.Data.Guid) == instanceSpaceGuid
+
+	var appInSpace bool
+	if appData.Relationships.Space != nil {
+		appInSpace = models.GUID(appData.Relationships.Space.Data.Guid) == instanceSpaceGuid
+	} else {
+		err := fmt.Errorf("cloudcontroller has no space-relationship for app %s", appGUID)
+		logger.Error("app-has-no-space-relationship", err, lager.Data{"appGUID": appGUID})
+		return apiresponses.NewFailureResponseBuilder(
+			err, http.StatusInternalServerError, "app-has-no-space-relationship").
+			WithErrorKey("AppNoSpaceRelationship").Build()
+	}
+
 	if !appInSpace {
 		err := fmt.Errorf("app %s not found in space %s", appGUID, instanceSpaceGuid)
 		logger.Error("app-not-in-service-instance-space", err, lager.Data{"appGUID": appGUID, "instanceSpaceGuid": instanceSpaceGuid})
