@@ -6,6 +6,6 @@
   "anyOf": [
     {"$ref": "./scaling-policy.v0_9.schema.json"},
     {"$ref": "./legacy.schema.json"},
-    {"$ref": "./service-key_only.schema.json"}
+    {"$ref": "./service-key_only.v0_9.schema.json"}
   ]
 }
