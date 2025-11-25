@@ -18,7 +18,7 @@ type BindRequestParser = interface {
 }
 
 // This error type is used, when the passed binding-request fails to validate against the schema.
-type BindReqNoAppGuid struct{} // 🚧 To-do: Generalise for every appGuidError (as well if two are provided)
+type BindReqNoAppGuid struct{}
 
 func (e BindReqNoAppGuid) Error() string {
 	return "error: service must be bound to an application; Please provide a GUID of an app!"

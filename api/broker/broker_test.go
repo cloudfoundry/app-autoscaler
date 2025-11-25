@@ -535,14 +535,8 @@ var _ = Describe("Broker", func() {
 						ServiceID: "some_service-id",
 						BindResource: &domain.BindResource{
 							AppGuid: "AppGUID_for_bindings",
-							//	SpaceGuid          string `json:"space_guid,omitempty"`
-							//	Route              string `json:"route,omitempty"`
-							//	CredentialClientID string `json:"credential_client_id,omitempty"`
-							//	BackupAgent        bool   `json:"backup_agent,omitempty"`
-						}, //  *BindResource
-
-						// RawContext: json.RawMessage // `json:"context,omitempty"`
-						RawParameters: bindingParams, // `json:"parameters,omitempty"`
+						},
+						RawParameters: bindingParams,
 					}
 
 					_, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
@@ -606,7 +600,9 @@ var _ = Describe("Broker", func() {
 						AppGUID:       "", // No deprecated app GUID
 						PlanID:        "some_plan-id",
 						ServiceID:     "some_service-id",
-						BindResource:  nil, // No BindResource for service keys
+						BindResource:  &domain.BindResource{
+							AppGuid:   "", // No app GUID for service-keys
+						},
 						RawParameters: bindingParams,
 					}
 

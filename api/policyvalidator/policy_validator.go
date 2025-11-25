@@ -113,7 +113,6 @@ func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPU
 	return policyValidator
 }
 
-// 🚧 To-do: Move this validation into the ScalingPolicy-type in the package `models` itself.
 func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*models.ScalingPolicy, ValidationErrors) {
 	// ---------- JSON-schema-validation ----------
 	policyLoader := gojsonschema.NewBytesLoader(rawJson)

@@ -632,7 +632,13 @@ func (b *Broker) Bind(
 				errors.New("error: an autoscaler service instance is already bound to the application and multiple bindings are not supported"),
 				http.StatusConflict, actionCreateServiceBinding)
 		}
-		if errors.Is(err, ErrInvalidCustomMetricsStrategy) { // 🚧 To-do: Can not happen anymore!
+		if errors.Is(err, ErrInvalidCustomMetricsStrategy) {
+			// This case must not happen anymore here because:
+			//  1. the function `createServiceBinding` only accepts values of the type
+			//     `models.CustomMetricsStrategy` which are already validated via smart-constructor
+			//     and can only be false by abusing zero-values.
+			//  2. We pass to it the custom-metrics-strategy that has already been validate when
+			//     parsing the app-scaling-configuration.
 			return result, apiresponses.NewFailureResponse(
 				err, http.StatusBadRequest, actionCreateServiceBinding)
 		}
