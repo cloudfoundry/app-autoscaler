@@ -571,7 +571,7 @@ func (b *Broker) Bind(
 	case errors.As(err, &appGuidErr):
 		logger.Error("bind-no-app-guid-provided", err)
 		return result, apiresponses.NewFailureResponseBuilder(
-			err, http.StatusUnprocessableEntity, "bind-no-app-guid-provided").
+			err, http.StatusBadRequest, "bind-no-app-guid-provided").
 			WithErrorKey("RequiresApp").Build()
 	case err != nil:
 		logger.Error("parse-binding-request", err)
@@ -666,7 +666,7 @@ func (b *Broker) checkAppInSpace(
 ) error {
 	appGUID := appScalingConfig.GetConfiguration().GetAppGUID()
 	var instanceSpaceGuid models.GUID
-	if details.BindResource != nil {
+	if details.BindResource != nil && details.BindResource.SpaceGuid != "" {
 		instanceSpaceGuid = models.GUID(details.BindResource.SpaceGuid)
 	} else {
 		serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)

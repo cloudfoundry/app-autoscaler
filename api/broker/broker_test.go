@@ -597,11 +597,11 @@ var _ = Describe("Broker", func() {
 						}`)
 
 					details = domain.BindDetails{
-						AppGUID:       "", // No deprecated app GUID
-						PlanID:        "some_plan-id",
-						ServiceID:     "some_service-id",
-						BindResource:  &domain.BindResource{
-							AppGuid:   "", // No app GUID for service-keys
+						AppGUID:   "", // No deprecated app GUID
+						PlanID:    "some_plan-id",
+						ServiceID: "some_service-id",
+						BindResource: &domain.BindResource{
+							AppGuid: "", // No app GUID for service-keys
 						},
 						RawParameters: bindingParams,
 					}
