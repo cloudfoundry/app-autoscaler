@@ -670,7 +670,9 @@ func (b *Broker) checkAppInSpace(
 ) error {
 	appGUID := appScalingConfig.GetConfiguration().GetAppGUID()
 	var instanceSpaceGuid models.GUID
-	if details.BindResource != nil && details.BindResource.SpaceGuid != "" {
+
+	cloudcontrollerProvidesSpaceGuid := details.BindResource != nil && details.BindResource.SpaceGuid != ""
+	if cloudcontrollerProvidesSpaceGuid {
 		instanceSpaceGuid = models.GUID(details.BindResource.SpaceGuid)
 	} else {
 		serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
@@ -681,6 +683,7 @@ func (b *Broker) checkAppInSpace(
 		}
 		instanceSpaceGuid = models.GUID(serviceInstance.SpaceId)
 	}
+
 	appData, err := b.cfClient.GetApp(ctx, appGUID)
 	if err != nil {
 		logger.Error("cf-client-get-app", err, lager.Data{"appGUID": appGUID})
@@ -688,18 +691,18 @@ func (b *Broker) checkAppInSpace(
 			fmt.Errorf("internal error"), http.StatusInternalServerError, "create-service-key")
 	}
 
-	var appInSpace bool
-	if appData.Relationships.Space != nil {
-		appInSpace = models.GUID(appData.Relationships.Space.Data.Guid) == instanceSpaceGuid
-	} else {
+	cloudcontrollerKnowsSpaceOfApp := appData.Relationships.Space != nil
+	if !cloudcontrollerKnowsSpaceOfApp {
 		err := fmt.Errorf("cloudcontroller has no space-relationship for app %s", appGUID)
 		logger.Error("app-has-no-space-relationship", err, lager.Data{"appGUID": appGUID})
 		return apiresponses.NewFailureResponseBuilder(
 			err, http.StatusInternalServerError, "app-has-no-space-relationship").
 			WithErrorKey("AppNoSpaceRelationship").Build()
 	}
+	appSpaceGuid := models.GUID(appData.Relationships.Space.Data.Guid)
 
-	if !appInSpace {
+	appIsInSpace := appSpaceGuid == instanceSpaceGuid
+	if !appIsInSpace {
 		err := fmt.Errorf("app %s not found in space %s", appGUID, instanceSpaceGuid)
 		logger.Error("app-not-in-service-instance-space", err, lager.Data{"appGUID": appGUID, "instanceSpaceGuid": instanceSpaceGuid})
 		return apiresponses.NewFailureResponseBuilder(
