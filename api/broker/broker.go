@@ -557,10 +557,14 @@ func (b *Broker) Bind(
 	case errors.As(err, &schemaErr):
 		resultsJson, err := json.Marshal(schemaErr)
 		if err != nil {
-			return result, &models.InvalidArgumentError{
+			serialisationErr := &models.InvalidArgumentError{
 				Param: "errResults",
 				Value: schemaErr,
-				Msg:   "Failed to json-marshal validation results; This should never happen."}
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return result, apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
 		}
 		apiErr := apiresponses.NewFailureResponseBuilder(
 			fmt.Errorf("invalid policy provided: %s", resultsJson),
