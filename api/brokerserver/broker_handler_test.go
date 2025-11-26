@@ -1186,7 +1186,7 @@ var _ = Describe("BrokerHandler", func() {
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					Expect(resp.Body.String()).To(MatchJSON(
-						`{"error": "InvalidPolicy", "description": "invalid policy provided: [{\"context\":\"(root)\",\"description\":\"Must validate at least one schema (anyOf)\"},{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"}`,
+						`{"error": "InvalidPolicy", "description": "invalid policy provided: [{\"context\":\"(root)\",\"description\":\"Must validate one and only one schema (oneOf)\"},{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"}`,
 					))
 				})
 
