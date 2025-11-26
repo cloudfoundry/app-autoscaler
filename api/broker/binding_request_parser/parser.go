@@ -53,19 +53,13 @@ func (brp *bindRequestParser) Parse(details domain.BindDetails) (models.AppScali
 		scalingPolicyRaw = details.RawParameters
 	}
 
-	var err error
-
-	// This just gets used for legacy-reasons. The actually parsing happens in the step
-	// afterwards. But it still does not validate against the schema, which is done here.
-	_, err = brp.getPolicyFromJsonRawMessage(scalingPolicyRaw)
+	// 🏚️ This parser currently uses a module that originally was written to do the validation
+	// against a json-schema. This validation however needs to be performed in the future within
+	// this parser, because we want to support several parsers where each one may work with a
+	// different json-schema.
+	scalingPolicy, err := brp.getPolicyFromJsonRawMessage(scalingPolicyRaw)
 	if err != nil {
 		err := fmt.Errorf("validation-error against the json-schema:\n\t%w", err)
-		return models.AppScalingConfig{}, err
-	}
-
-	scalingPolicy, err := models.ScalingPolicyFromRawJSON(scalingPolicyRaw)
-	if err != nil {
-		err := fmt.Errorf("could not parse scaling policy from request:\n\t%w", err)
 		return models.AppScalingConfig{}, err
 	}
 
@@ -119,7 +113,7 @@ func (brp *bindRequestParser) getPolicyFromJsonRawMessage(policyJson json.RawMes
 	// Please don't make this check even less strict. We are at the minimum. Otherwise cases may
 	// occur where schema-violations don't get detected.
 	if isEmptyPolicy := len(policyJson) <= 0; isEmptyPolicy { // no nil-check needed: `len(nil) == 0`
-		return nil, nil
+		return models.NewScalingPolicy(models.DefaultCustomMetricsStrategy, nil), nil
 	}
 
 	policy, errResults := brp.policyValidator.ParseAndValidatePolicy(policyJson)
