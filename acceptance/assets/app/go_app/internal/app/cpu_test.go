@@ -60,7 +60,7 @@ var _ = Describe("CPU tests", func() {
 		Context("UseCPU", FlakeAttempts(3), func() {
 			DescribeTable("should use cpu",
 				func(utilisation int64, duration time.Duration) {
-					oldCpu := getTotalCPUUsage("before test")
+					oldCpu := totalCPUUsage("before test")
 
 					By("wasting cpu time")
 					cpuWaster := &app.ConcurrentBusyLoopCPUWaster{}
@@ -70,7 +70,7 @@ var _ = Describe("CPU tests", func() {
 					Expect(cpuWaster.IsRunning()).To(Equal(true))
 					Eventually(cpuWaster.IsRunning).WithTimeout(duration + time.Second).WithPolling(time.Second).Should(Equal(false))
 
-					newCpu := getTotalCPUUsage("after test")
+					newCpu := totalCPUUsage("after test")
 
 					expectedCPUUsage := multiplyDurationByPercentage(duration, utilisation)
 
@@ -94,7 +94,7 @@ var _ = Describe("CPU tests", func() {
 	})
 })
 
-func getTotalCPUUsage(action string) time.Duration {
+func totalCPUUsage(action string) time.Duration {
 	GinkgoHelper()
 
 	cpuTotalUsage := app.Clock()
