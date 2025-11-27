@@ -12,11 +12,11 @@ type Result struct {
 }
 
 type File struct {
-	Name   string  `xml:"name,attr"`
-	Errors []Error `xml:"error"`
+	Name           string          `xml:"name,attr"`
+	Errors         []CheckstyleErr `xml:"error"`
 }
 
-type Error struct {
+type CheckstyleErr struct {
 	Line     string `xml:"line,attr"`
 	Column   string `xml:"column,attr"`
 	Severity string `xml:"severity,attr"`
@@ -24,10 +24,10 @@ type Error struct {
 	Source   string `xml:"source,attr"`
 }
 
-func main() {
+func run() error {
 	xmlFile, err := os.Open("scheduler/target/checkstyle-result.xml")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to open checkstyle result file: %w", err)
 	}
 
 	fmt.Println("Successfully Opened file")
@@ -35,13 +35,13 @@ func main() {
 
 	byteValue, err := io.ReadAll(xmlFile)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to read checkstyle result file: %w", err)
 	}
 
 	var result Result
 	err = xml.Unmarshal(byteValue, &result)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to unmarshal XML: %w", err)
 	}
 
 	count := 0
@@ -54,6 +54,14 @@ func main() {
 
 	fmt.Printf("Total %d Issues\n", count)
 	if count > 0 {
+		os.Exit(1)
+	}
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
