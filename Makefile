@@ -216,11 +216,6 @@ fmt: importfmt
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
 # This target depends on the fakes, because the tests are linted as well.
-lint: generate-fakes
-	readonly GOVERSION='${GO_VERSION}' ;\
-	export GOVERSION ;\
-	echo "Linting with Golang $${GOVERSION}" ;\
-	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
 clean-dbtasks:
 	pushd dbtasks; mvn clean; popd
@@ -433,9 +428,18 @@ scheduler.test: check-db_type scheduler.test-certificates init-db
 scheduler.test-certificates:
 	make --directory=scheduler test-certificates
 
+lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: lint acceptance.lint test-app.lint
+lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+	readonly GOVERSION='${GO_VERSION}' ;\
+	export GOVERSION ;\
+	echo "Linting with Golang $${GOVERSION}" ;\
+	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
+.PHONY: lint-actions
+lint-actions:
+	@echo " - linting GitHub actions"
+	actionlint
 
 acceptance.lint:
 	@echo 'Linting acceptance-tests …'
@@ -476,3 +480,17 @@ deploy-apps:
 .PHONY: update-uaac-nix-package
 update-uaac-nix-package:
 	make --directory='./nix/packages/uaac' gemset.nix
+
+.PHONY: lint-markdown
+lint-markdown:
+	@echo " - linting markdown files"
+	@markdownlint-cli2 .
+
+gorouterproxy.lint:
+	@echo " - linting: gorouterproxy"
+	@pushd integration/gorouterproxy >/dev/null && golangci-lint run --config='${lint_config}' $(OPTS)
+
+validate-openapi-specs: $(wildcard ./openapi/*.openapi.yaml)
+	for file in $^ ; do \
+		redocly lint --extends=minimal --format=$(if $(GITHUB_ACTIONS),github-actions,codeframe) "$${file}" ; \
+	done
