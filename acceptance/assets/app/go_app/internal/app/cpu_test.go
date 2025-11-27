@@ -78,13 +78,11 @@ var _ = Describe("CPU tests", func() {
 					// If the environment variable CI is set to true, as is by default in GitHub Actions
 					// (see https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables)
 					// give 50% tolerance. This is due to the fact that on CI workers the available CPU time is not guaranteed.
-					var tolerance time.Duration
-					if ci := os.Getenv("CI"); ci == "true" {
-						tolerance = max(multiplyDurationByPercentage(expectedCPUUsage, 50), time.Second)
-					} else {
-						tolerance = max(multiplyDurationByPercentage(expectedCPUUsage, 10), time.Second)
+					tolerancePercent := int64(10)
+					if os.Getenv("CI") == "true" {
+						tolerancePercent = 50
 					}
-					Expect(newCpu - oldCpu).To(BeNumerically("~", expectedCPUUsage, tolerance))
+					Expect(newCpu - oldCpu).To(BeNumerically("~", expectedCPUUsage, max(multiplyDurationByPercentage(expectedCPUUsage, tolerancePercent), time.Second)))
 				},
 				Entry("25% for 10 seconds", int64(25), time.Second*10),
 				Entry("50% for 10 seconds", int64(50), time.Second*10),
