@@ -103,7 +103,7 @@ test-app.generate-fakes:
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
-																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
+																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
 
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
