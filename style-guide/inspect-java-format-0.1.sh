@@ -17,18 +17,20 @@ CHECKSTYLE_CONFIG_PATH="$REPO_PATH"/style-guide
 
 function download_google_formatter {
     cd "$DOWNLOAD_PATH"
-    if [ ! -f "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" ] ; then
+    if [[ ! -f "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" ]] ; then
         curl -LJO "https://github.com/google/google-java-format/releases/download/v$GOOGLE_JAR_VERSION/$GOOGLE_JAR_NAME" -o "$GOOGLE_JAR_NAME"
         chmod 755 "$GOOGLE_JAR_NAME"
     fi
+    return 0
 }
 
 function download_checkstyle {
     cd "$DOWNLOAD_PATH"
-    if [ ! -f "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" ] ; then
+    if [[ ! -f "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" ]] ; then
         curl -LJO "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-8.44/checkstyle-8.44-all.jar"
         chmod 755 "$CHECKSTYLE_JAR_NAME"
     fi
+    return 0
 }
 
 # grep only stage java files
