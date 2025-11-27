@@ -49,8 +49,8 @@ fi
 #   Checkstyle                                                      #
 #####################################################################
 echo "Running Checkstyle using $DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME..."
-trap "rm ${result_log} || echo " EXIT
-CHECKSTYLE_OUTPUT=$(java \
+trap "rm -f ${result_log}" EXIT
+java \
   --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
@@ -59,9 +59,9 @@ CHECKSTYLE_OUTPUT=$(java \
   -jar "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" \
   -p "${CHECKSTYLE_CONFIG_PATH}"/checkstyle.properties \
   -c "${CHECKSTYLE_CONFIG_PATH}"/"${CHECKSTYLE_CONFIG_FILE_NAME}" \
-  -o "${result_log}" $changed_java_files)
+  -o "${result_log}" $changed_java_files
 
-FILES_NEEDS_CORRECTION=$(cat "${result_log}" | grep -v "Starting audit..." | { grep -v "Audit done" || true; } )
+FILES_NEEDS_CORRECTION=$(grep -v "Starting audit..." "${result_log}" | { grep -v "Audit done" || true; } )
 
 if  [[ -n "$FILES_NEEDS_CORRECTION" ]]; then
   echo "$FILES_NEEDS_CORRECTION"
