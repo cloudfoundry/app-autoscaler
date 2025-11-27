@@ -10,7 +10,7 @@
       "description": "Version-identifier for the used schema of this parameters-object.",
       "type": "string",
       "pattern": "^[0-9]+(\\.[0-9]+)?$",
-      "enum": ["0.9"]
+      "enum": ["0.1"]
     }
   }
 }

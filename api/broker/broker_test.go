@@ -286,7 +286,7 @@ var _ = Describe("Broker", func() {
 				// present.
 				var bindingParams = []byte(`
 				  {
-					"schema-version": "0.9",
+					"schema-version": "0.1",
 					"configuration": {
 						  "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
 						  "custom_metrics": {
@@ -509,7 +509,7 @@ var _ = Describe("Broker", func() {
 					// present.
 					var bindingParams = []byte(`
 						{
-						  "schema-version": "0.9",
+						  "schema-version": "0.1",
 						  "configuration": {
 								"app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
 								"custom_metrics": {
@@ -550,7 +550,7 @@ var _ = Describe("Broker", func() {
 				BeforeEach(func() {
 					bindingParams = []byte(`
 						{
-						 "schema-version": "0.9",
+						 "schema-version": "0.1",
 							"configuration": {
 								"app_guid": "12345678-abcd-1234-5678-123456789abc"
 							}
@@ -725,7 +725,7 @@ var _ = Describe("Broker", func() {
 					const appSpaceGuid = "some-space-guid"
 					var bindingParams = []byte(`
 					{
-						"schema-version": "0.9",
+						"schema-version": "0.1",
 						"configuration": {
 							"app_guid": "12345678-abcd-1234-5678-123456789abc",
 							"custom_metrics": {
@@ -808,7 +808,7 @@ var _ = Describe("Broker", func() {
 					const appSpaceGuid = "some-space-guid"
 					var bindingParams = []byte(`
 						{
-						 "schema-version": "0.9",
+						 "schema-version": "0.1",
 							"configuration": {
 								"app_guid": "12345678-abcd-1234-5678-123456789abc"
 							}
