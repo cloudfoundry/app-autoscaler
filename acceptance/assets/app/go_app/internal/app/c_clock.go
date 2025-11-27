@@ -1,6 +1,6 @@
 package app
 
-//#include <time.h>
+// #include <time.h>
 import "C"
 
 const ClocksPerSec = C.CLOCKS_PER_SEC
