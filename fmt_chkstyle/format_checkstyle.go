@@ -54,7 +54,7 @@ func run() error {
 
 	fmt.Printf("Total %d Issues\n", count)
 	if count > 0 {
-		os.Exit(1)
+		return fmt.Errorf("found %d checkstyle issues", count)
 	}
 	return nil
 }
