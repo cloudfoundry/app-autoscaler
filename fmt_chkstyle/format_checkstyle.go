@@ -24,6 +24,10 @@ type CheckstyleErr struct {
 	Source   string `xml:"source,attr"`
 }
 
+func (e CheckstyleErr) Error() string {
+	return fmt.Sprintf("[%s] line %s, column %s: %s", e.Severity, e.Line, e.Column, e.Message)
+}
+
 func run() error {
 	xmlFile, err := os.Open("scheduler/target/checkstyle-result.xml")
 	if err != nil {
