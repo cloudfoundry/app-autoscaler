@@ -161,7 +161,7 @@ public class CloudFoundryConfigurationProcessorTest {
     }
   ]
 }
-""";
+        """;
 
     environment
         .getPropertySources()
