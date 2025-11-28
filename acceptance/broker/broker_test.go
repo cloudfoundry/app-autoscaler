@@ -211,23 +211,23 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		var serviceInstanceName string
 
 		When("providing a valid app-guid", func() {
-			// When("the corresponding app isn't in the same space than the service-instance", func(){
-			//	// 🚧 Random other space-name
-			//	var appGuid string
-			//	BeforeEach(func() {
+			When("the corresponding app isn't in the same space than the service-instance", func() {
+				// // 🚧 Random other space-name
+				// var appGuid string
+				// BeforeEach(func() {
 
-			//		createServiceInOtherSpace(cfg.ExistingSpace, , cfg.ServicePlan)
-			//		serviceInstanceName = string(createService(cfg.ServicePlan))
+				//	createServiceInOtherSpace(cfg.ExistingSpace, , cfg.ServicePlan)
+				//	serviceInstanceName = string(createService(cfg.ServicePlan))
 
-			//		var err error
-			//		appGuid, err = helpers.GetAppGuid(cfg, appName)
-			//		Expect(err).ToNot(HaveOccurred())
-			//	})
+				//	var err error
+				//	appGuid, err = helpers.GetAppGuid(cfg, appName)
+				//	Expect(err).ToNot(HaveOccurred())
+				// })
 
-			//	It("fails", func(){
-			//		Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
-			//	})
-			// })
+				It("fails", func() {
+					Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
+				})
+			})
 			When("the corresponding app is in the same space than the service-instance", func() {
 				var appGuid string
 				BeforeEach(func() {
