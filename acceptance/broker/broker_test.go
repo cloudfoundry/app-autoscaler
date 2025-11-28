@@ -9,6 +9,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry/cf-test-helpers/v2/generator"
 	"github.com/cloudfoundry/cf-test-helpers/v2/workflowhelpers"
@@ -208,37 +209,42 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		})
 	})
 	Context("Create a service-key", func() {
+		var serviceInstance serviceInstance
 		var serviceInstanceName string
 
 		When("providing a valid app-guid", func() {
-			When("the corresponding app isn't in the same space than the service-instance", func() {
-				// // 🚧 Random other space-name
-				// var appGuid string
-				// BeforeEach(func() {
+			// When("the corresponding app isn't in the same space than the service-instance", func() {
+			// // 🚧 Random other space-name
+			// var appGuid string
+			// BeforeEach(func() {
 
-				//	createServiceInOtherSpace(cfg.ExistingSpace, , cfg.ServicePlan)
-				//	serviceInstanceName = string(createService(cfg.ServicePlan))
+			//	createServiceInOtherSpace(cfg.ExistingSpace, , cfg.ServicePlan)
+			//	serviceInstanceName = string(createService(cfg.ServicePlan))
 
-				//	var err error
-				//	appGuid, err = helpers.GetAppGuid(cfg, appName)
-				//	Expect(err).ToNot(HaveOccurred())
-				// })
+			//	var err error
+			//	appGuid, err = helpers.GetAppGuid(cfg, appName)
+			//	Expect(err).ToNot(HaveOccurred())
+			// })
 
-				It("fails", func() {
-					Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
-				})
-			})
+			// It("fails", func() {
+			//	Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
+			// })
+			// })
 			When("the corresponding app is in the same space than the service-instance", func() {
 				var appGuid string
 				BeforeEach(func() {
-					serviceInstanceName = string(createService(cfg.ServicePlan))
+					serviceInstance = createService(cfg.ServicePlan)
+					serviceInstanceName = string(serviceInstance)
 
 					var err error
 					appGuid, err = helpers.GetAppGuid(cfg, appName)
 					Expect(err).ToNot(HaveOccurred())
 				})
+				AfterEach(func() {
+					serviceInstance.delete()
+				})
 
-				It("succeeds", func() {
+				It("succeeds on simple service-key creation", func() {
 					// Preparation
 					paramsTemplate := `
 {
@@ -257,6 +263,67 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 					// Validation
 					Expect(session).To(Exit(0))
+				})
+				When("providing a valid app-guid together with a policy", func() {
+					var session *Session
+					BeforeEach(func() {
+						paramsTemplate := `
+{
+	"schema-version": "0.1",
+	"configuration": {
+		"app_guid": "%s"
+	},
+	"instance_min_count": 1,
+	"instance_max_count": 2,
+	"scaling_rules": [
+		{
+			"metric_type": "cpuutil",
+			"threshold": 50,
+			"operator": ">=",
+			"adjustment": "+1"
+		},
+		{
+			"metric_type": "cpuutil",
+			"threshold": 30,
+			"operator": "<",
+			"adjustment": "-1"
+		}
+
+	]
+}
+`
+						params := fmt.Sprintf(paramsTemplate, appGuid)
+
+						// Execution
+						serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+						session = cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+							Wait(cfg.DefaultTimeoutDuration())
+					})
+
+					It("succeeds", func() {
+						// Validation
+						Expect(session).To(Exit(0))
+					})
+
+					It("scales up and down", func() {
+						// Part-validation setup
+						By("Starting CPU usage to trigger scale out")
+						helpers.StartCPUUsage(cfg, appName, 60, 5)
+
+						// Validation
+						By("Waiting for scale out to 2 instances")
+						totalTime := time.Duration(cfg.AggregateInterval*2)*time.Second + 3*time.Minute
+						helpers.WaitForNInstancesRunning(appGuid, 2, totalTime)
+
+						// Part-validation setup
+						By("Stopping CPU usage to trigger scale in")
+						helpers.StopCPUUsage(cfg, appName, 0)
+						helpers.StopCPUUsage(cfg, appName, 1)
+
+						// Validation
+						By("Waiting for scale in to 1 instance")
+						helpers.WaitForNInstancesRunning(appGuid, 1, totalTime)
+					})
 				})
 			})
 		})
