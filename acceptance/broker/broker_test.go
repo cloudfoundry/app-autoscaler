@@ -67,7 +67,6 @@ var _ = Describe("AutoScaler Service Broker", func() {
 	BeforeEach(func() {
 		appName = helpers.CreateTestApp(cfg, "broker-test", 1)
 	})
-
 	AfterEach(func() {
 		if os.Getenv("SKIP_TEARDOWN") == "true" {
 			fmt.Println("Skipping Teardown...")
@@ -77,22 +76,18 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
 		}
 	})
-
 	Context("performs lifecycle operations", func() {
-
 		var instance serviceInstance
 
 		BeforeEach(func() {
 			instance = createService(cfg.ServicePlan)
 		})
-
 		It("fails to bind with invalid policies", func() {
 			bindService := cf.Cf("bind-service", appName, instance.name(), "-c", "../assets/file/policy/invalid.json").Wait(cfg.DefaultTimeoutDuration())
 			Expect(bindService).To(Exit(1))
 			combinedBuffer := gbytes.BufferWithBytes(append(bindService.Out.Contents(), bindService.Err.Contents()...))
 			Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(`{"context":"(root).scaling_rules.1.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}`))
 		})
-
 		It("binds&unbinds with policy", func() {
 			policyFile := "../assets/file/policy/all.json"
 			policy, err := os.ReadFile(policyFile)
@@ -106,7 +101,6 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 			instance.unbind(appName)
 		})
-
 		It("binds&unbinds with policy having credential-type as x509", func() {
 			policyFile := "../assets/file/policy/policy-with-credential-type.json"
 			_, err := os.ReadFile(policyFile)
@@ -153,7 +147,6 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			instance.delete()
 		})
 	})
-
 	Describe("allows setting default policies", func() {
 		var instance serviceInstance
 		var defaultPolicy []byte
@@ -167,7 +160,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			var serviceParameters = struct {
-				DefaultPolicy interface{} `json:"default_policy"`
+				DefaultPolicy any `json:"default_policy"`
 			}{}
 
 			err = json.Unmarshal(defaultPolicy, &serviceParameters)
@@ -201,7 +194,6 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			}
 		})
 	})
-
 	Describe("allows updating service plans", func() {
 		var instance serviceInstance
 		It("should update a service instance from one plan to another plan", func() {
@@ -211,9 +203,45 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			instance = createService(source.Name)
 			instance.updatePlan(target.Name)
 		})
-
 		AfterEach(func() {
 			instance.delete()
+		})
+	})
+	Context("Create a service-key", func(){
+		var serviceInstanceName string
+
+		When("providing a valid app-guid", func(){
+			When("the corresponding app is in the same space than the service-instance", func(){
+				var appGuid string
+				BeforeEach(func() {
+					serviceInstanceName = string(createService(cfg.ServicePlan))
+
+					var err error
+					appGuid, err = helpers.GetAppGuid(cfg, appName)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("succeeds", func(){
+					// Preparation
+					paramsTemplate := `
+{
+  "schema-version": "0.1",
+  "configuration": {
+	"app_guid": "%s"
+  }
+}
+`
+					params := fmt.Sprintf(paramsTemplate, appGuid)
+
+					// Execution
+					serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+					session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+						Wait(cfg.DefaultTimeoutDuration())
+
+					// Validation
+					Expect(session).To(Exit(0))
+				})
+			})
 		})
 	})
 })
