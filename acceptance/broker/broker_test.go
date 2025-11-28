@@ -212,39 +212,27 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		var serviceInstanceName string
 
 		When("providing a valid app-guid", func() {
-			// When("the corresponding app isn't in the same space than the service-instance", func() {
-			//	// 🚧 Random other space-name
-			//	var appGuid string
-			//	BeforeEach(func() {
-			//		createServiceInOtherSpace(cfg.ExistingSpace, cfg.ServicePlan)
-			//		serviceInstanceName = string(createService(cfg.ServicePlan))
+			When("the corresponding app isn't in the same space than the service-instance", func() {
+				var otherSpaceName string = setup.TestSpace.SpaceName() + "_other"
+				var appGuid string
+				BeforeEach(func() {
+					serviceInstanceName = helpers.CreateServiceInOtherSpace(cfg, setup.TestSpace.SpaceName(), otherSpaceName)
 
-			//		var err error
-			//		appGuid, err = helpers.GetAppGuid(cfg, appName)
-			//		Expect(err).ToNot(HaveOccurred())
-			//	})
+					var err error
+					appGuid, err = helpers.GetAppGuid(cfg, appName)
+					Expect(err).ToNot(HaveOccurred())
+				})
+				AfterEach(func() {
+					helpers.TargetSpace(cfg, otherSpaceName)
+					helpers.DeleteServiceInstance(cfg, serviceInstanceName)
+					helpers.TargetSpace(cfg, setup.TestSpace.SpaceName())
 
-			//	It("fails", func() {
-			//		Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
-			//	})
-		})
-		When("the corresponding app is in the same space than the service-instance", func() {
-			var appGuid string
-			BeforeEach(func() {
-				serviceInstance = createService(cfg.ServicePlan)
-				serviceInstanceName = string(serviceInstance)
+					helpers.DeleteSpace(cfg, otherSpaceName)
+				})
 
-				var err error
-				appGuid, err = helpers.GetAppGuid(cfg, appName)
-				Expect(err).ToNot(HaveOccurred())
-			})
-			AfterEach(func() {
-				serviceInstance.delete()
-			})
-
-			It("succeeds on simple service-key creation", func() {
-				// Preparation
-				paramsTemplate := `
+				It("fails", func() {
+					// Preparation
+					paramsTemplate := `
 {
   "schema-version": "0.1",
   "configuration": {
@@ -252,15 +240,51 @@ var _ = Describe("AutoScaler Service Broker", func() {
   }
 }
 `
-				params := fmt.Sprintf(paramsTemplate, appGuid)
+					params := fmt.Sprintf(paramsTemplate, appGuid)
 
-				// Execution
-				serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
-				session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
-					Wait(cfg.DefaultTimeoutDuration())
+					// Execution
+					serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+					session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+						Wait(cfg.DefaultTimeoutDuration())
 
-				// Validation
-				Expect(session).To(Exit(0))
+					// Validation
+					Expect(session).To(Exit(1))
+				})
+			})
+			When("the corresponding app is in the same space than the service-instance", func() {
+				var appGuid string
+				BeforeEach(func() {
+					serviceInstance = createService(cfg.ServicePlan)
+					serviceInstanceName = string(serviceInstance)
+
+					var err error
+					appGuid, err = helpers.GetAppGuid(cfg, appName)
+					Expect(err).ToNot(HaveOccurred())
+				})
+				AfterEach(func() {
+					serviceInstance.delete()
+				})
+
+				It("succeeds on simple service-key creation", func() {
+					// Preparation
+					paramsTemplate := `
+{
+  "schema-version": "0.1",
+  "configuration": {
+	"app_guid": "%s"
+  }
+}
+`
+					params := fmt.Sprintf(paramsTemplate, appGuid)
+
+					// Execution
+					serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+					session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+						Wait(cfg.DefaultTimeoutDuration())
+
+					// Validation
+					Expect(session).To(Exit(0))
+				})
 			})
 		})
 	})

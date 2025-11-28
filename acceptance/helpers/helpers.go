@@ -547,6 +547,18 @@ func CreateServiceKeyWithParams(serviceInstanceName, serviceKeyName string, para
 	return session
 }
 
+func CreateServiceInOtherSpace(cfg *config.Config, originalSpace, otherSpace string) string {
+	cf.Cf("create-space", otherSpace).Wait(cfg.DefaultTimeoutDuration())
+	cf.Cf("target", "-s", otherSpace).Wait(cfg.DefaultTimeoutDuration())
+	defer func() {
+		cf.Cf("target", "-s", originalSpace).Wait(cfg.DefaultTimeoutDuration())
+	}()
+
+	instance := CreateService(cfg)
+
+	return instance
+}
+
 func CreateService(cfg *config.Config) string {
 	instanceName := generator.PrefixedRandomName(cfg.Prefix, cfg.InstancePrefix)
 	FailOnError(CreateServiceWithPlan(cfg, cfg.ServicePlan, instanceName))
