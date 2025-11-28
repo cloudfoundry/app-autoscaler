@@ -207,11 +207,28 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			instance.delete()
 		})
 	})
-	Context("Create a service-key", func(){
+	Context("Create a service-key", func() {
 		var serviceInstanceName string
 
-		When("providing a valid app-guid", func(){
-			When("the corresponding app is in the same space than the service-instance", func(){
+		When("providing a valid app-guid", func() {
+			// When("the corresponding app isn't in the same space than the service-instance", func(){
+			//	// 🚧 Random other space-name
+			//	var appGuid string
+			//	BeforeEach(func() {
+
+			//		createServiceInOtherSpace(cfg.ExistingSpace, , cfg.ServicePlan)
+			//		serviceInstanceName = string(createService(cfg.ServicePlan))
+
+			//		var err error
+			//		appGuid, err = helpers.GetAppGuid(cfg, appName)
+			//		Expect(err).ToNot(HaveOccurred())
+			//	})
+
+			//	It("fails", func(){
+			//		Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
+			//	})
+			// })
+			When("the corresponding app is in the same space than the service-instance", func() {
 				var appGuid string
 				BeforeEach(func() {
 					serviceInstanceName = string(createService(cfg.ServicePlan))
@@ -221,7 +238,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("succeeds", func(){
+				It("succeeds", func() {
 					// Preparation
 					paramsTemplate := `
 {
