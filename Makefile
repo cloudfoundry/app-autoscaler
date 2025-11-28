@@ -477,14 +477,17 @@ acceptance-cleanup:
 acceptance-tests-config:
 	make --directory='acceptance' acceptance-tests-config
 
+# 🚧 To-do: These targets don't exist here!
+.PHONY: deploy-autoscaler deploy-autoscaler-bosh
 
-.PHONY: deploy-autoscaler deploy-register-cf deploy-autoscaler-bosh deploy-cleanup
-
+.PHONY: deploy-register-cf
 deploy-register-cf:
 	DEBUG="${DEBUG}" ./scripts/register-broker.sh
 
+.PHONY: deploy-cleanup
 deploy-cleanup:
 	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
 
+.PHONY: deploy-apps
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh

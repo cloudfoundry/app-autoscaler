@@ -66,6 +66,9 @@ build: ./build/app ./build/manifest.yml
 	mkdir -p build
 	CGO_ENABLED='${CGO_ENABLED}' GOOS='linux' GOARCH='amd64' go build -o './build/app'
 	cp './app_manifest.yml' './build/manifest.yml'
+	echo "🔨 App build as $(realpath ./build/app)."
+	echo '🚸 Manual deployment possible via: ' \
+		"`cf push test-app --buildpack 'binary_buildpack' --path \"./$(realpath --relative-to='.' '.build/app')\" -c './app'`"
 
 .PHONY: build_tests
 build_tests: $(addprefix build_test-,$(test_dirs))
