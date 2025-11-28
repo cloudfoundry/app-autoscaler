@@ -461,7 +461,7 @@ func RunningInstances(appGUID string, timeout time.Duration) (int, error) {
 	return webInstances, nil
 }
 
-func WaitForNInstancesRunning(appGUID string, instances int, timeout time.Duration, optionalDescription ...interface{}) {
+func WaitForNInstancesRunning(appGUID string, instances int, timeout time.Duration, optionalDescription ...any) {
 	GinkgoHelper()
 	By(fmt.Sprintf("Waiting for %d instances of app: %s", instances, appGUID))
 	Eventually(getAppInstances(appGUID, 8*time.Second)).
@@ -480,7 +480,7 @@ func getAppInstances(appGUID string, timeout time.Duration) func() int {
 	}
 }
 
-func MarshalWithoutHTMLEscape(v interface{}) ([]byte, error) {
+func MarshalWithoutHTMLEscape(v any) ([]byte, error) {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
 	enc.SetEscapeHTML(false)

@@ -228,24 +228,24 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			//	It("fails", func() {
 			//		Expect(fmt.Errorf("🚧 Unimplemented!")).NotTo(HaveOccurred())
 			//	})
+		})
+		When("the corresponding app is in the same space than the service-instance", func() {
+			var appGuid string
+			BeforeEach(func() {
+				serviceInstance = createService(cfg.ServicePlan)
+				serviceInstanceName = string(serviceInstance)
+
+				var err error
+				appGuid, err = helpers.GetAppGuid(cfg, appName)
+				Expect(err).ToNot(HaveOccurred())
 			})
-			When("the corresponding app is in the same space than the service-instance", func() {
-				var appGuid string
-				BeforeEach(func() {
-					serviceInstance = createService(cfg.ServicePlan)
-					serviceInstanceName = string(serviceInstance)
+			AfterEach(func() {
+				serviceInstance.delete()
+			})
 
-					var err error
-					appGuid, err = helpers.GetAppGuid(cfg, appName)
-					Expect(err).ToNot(HaveOccurred())
-				})
-				AfterEach(func() {
-					serviceInstance.delete()
-				})
-
-				It("succeeds on simple service-key creation", func() {
-					// Preparation
-					paramsTemplate := `
+			It("succeeds on simple service-key creation", func() {
+				// Preparation
+				paramsTemplate := `
 {
   "schema-version": "0.1",
   "configuration": {
@@ -253,16 +253,15 @@ var _ = Describe("AutoScaler Service Broker", func() {
   }
 }
 `
-					params := fmt.Sprintf(paramsTemplate, appGuid)
+				params := fmt.Sprintf(paramsTemplate, appGuid)
 
-					// Execution
-					serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
-					session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
-						Wait(cfg.DefaultTimeoutDuration())
+				// Execution
+				serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+				session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+					Wait(cfg.DefaultTimeoutDuration())
 
-					// Validation
-					Expect(session).To(Exit(0))
-				})
+				// Validation
+				Expect(session).To(Exit(0))
 			})
 		})
 	})

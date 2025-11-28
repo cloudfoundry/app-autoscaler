@@ -9,11 +9,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cloudfoundry/cf-test-helpers/v2/generator"
 	cfh "github.com/cloudfoundry/cf-test-helpers/v2/helpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/gexec"
+	. "github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("AutoScaler dynamic policy", func() {
@@ -359,7 +360,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	]
 }
 `
-				serviceInstanceName = cfg.ServiceName
+				serviceInstanceName = generator.PrefixedRandomName(cfg.Prefix, cfg.InstancePrefix)
 				serviceKeyName := fmt.Sprintf("%s@%s", appToScaleName, serviceInstanceName)
 				params := fmt.Sprintf(paramsTemplate, appToScaleGUID)
 
