@@ -540,6 +540,13 @@ func UnbindServiceFromApp(cfg *config.Config, appName string, instanceName strin
 	Expect(unbindService).To(Exit(0), fmt.Sprintf("Failed to unbind service %s from app %s \n CLI Output:\n %s %s", instanceName, appName, unbindService.Buffer().Contents(), unbindService.Err.Contents()))
 }
 
+func CreateServiceKeyWithParams(serviceInstanceName, serviceKeyName string, params string, timeout time.Duration) *Session {
+	session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+		Wait(timeout)
+
+	return session
+}
+
 func CreateService(cfg *config.Config) string {
 	instanceName := generator.PrefixedRandomName(cfg.Prefix, cfg.InstancePrefix)
 	FailOnError(CreateServiceWithPlan(cfg, cfg.ServicePlan, instanceName))
