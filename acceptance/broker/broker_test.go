@@ -9,7 +9,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/cloudfoundry/cf-test-helpers/v2/generator"
 	"github.com/cloudfoundry/cf-test-helpers/v2/workflowhelpers"

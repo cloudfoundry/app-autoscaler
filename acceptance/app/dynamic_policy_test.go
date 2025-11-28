@@ -361,7 +361,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 }
 `
 				serviceInstanceName = generator.PrefixedRandomName(cfg.Prefix, cfg.InstancePrefix)
-				serviceKeyName := fmt.Sprintf("%s@%s", appToScaleName, serviceInstanceName)
+				serviceKeyName := fmt.Sprintf("aas-key_for%s", appToScaleName)
 				params := fmt.Sprintf(paramsTemplate, appToScaleGUID)
 
 				// Execution
