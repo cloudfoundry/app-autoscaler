@@ -33,7 +33,7 @@ jobs:
 
       - name: Push version bump commit
         run: |
-          git push
+          git push --force-with-lease
 
       - name: Get release information
         id: get_release
