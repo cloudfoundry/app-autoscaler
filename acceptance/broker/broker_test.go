@@ -63,23 +63,12 @@ func (s serviceInstance) name() string {
 
 var _ = Describe("AutoScaler Service Broker", func() {
 	var appName string
-
-	BeforeEach(func() {
-		appName = helpers.CreateTestApp(cfg, "broker-test", 1)
-	})
-	AfterEach(func() {
-		if os.Getenv("SKIP_TEARDOWN") == "true" {
-			fmt.Println("Skipping Teardown...")
-		} else {
-			Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
-			Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
-			Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
-		}
-	})
 	Context("performs lifecycle operations", func() {
 		var instance serviceInstance
 
 		BeforeEach(func() {
+			appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+
 			instance = createService(cfg.ServicePlan)
 		})
 		It("fails to bind with invalid policies", func() {
@@ -144,7 +133,15 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		})
 
 		AfterEach(func() {
-			instance.delete()
+			if os.Getenv("SKIP_TEARDOWN") == "true" {
+				fmt.Println("Skipping Teardown...")
+			} else {
+				Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+				instance.delete()
+			}
 		})
 	})
 	Describe("allows setting default policies", func() {
@@ -153,6 +150,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		var policy []byte
 
 		BeforeEach(func() {
+			appName = helpers.CreateTestApp(cfg, "broker-test", 1)
 			instance = createServiceWithParameters(cfg.ServicePlan, "../assets/file/policy/default_policy.json")
 			Expect(instance).NotTo(BeEmpty())
 			var err error
@@ -190,12 +188,18 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			if os.Getenv("SKIP_TEARDOWN") == "true" {
 				fmt.Println("Skipping Teardown...")
 			} else {
+				Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
 				instance.delete()
 			}
 		})
 	})
 	Describe("allows updating service plans", func() {
 		var instance serviceInstance
+		BeforeEach(func() {
+			appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+		})
 		It("should update a service instance from one plan to another plan", func() {
 			servicePlans := GetServicePlans(cfg)
 			source, target, err := servicePlans.getSourceAndTargetForPlanUpdate()
@@ -204,7 +208,15 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			instance.updatePlan(target.Name)
 		})
 		AfterEach(func() {
-			instance.delete()
+			if os.Getenv("SKIP_TEARDOWN") == "true" {
+				fmt.Println("Skipping Teardown...")
+			} else {
+				Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+				instance.delete()
+			}
 		})
 	})
 	Context("Create a service-key", func() {
@@ -212,35 +224,53 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		var serviceInstanceName string
 		When("providing a valid app-guid", func() {
 			When("the corresponding app isn't in the same space than the service-instance", func() {
+				var currentOrgName string
 				var currentSpaceName string
 				var otherSpaceName string
 				var appGuid string
 				BeforeEach(func() {
-					// otherSpace, ok := (setup.TestSpace).(internal.TestSpace)
-					// Expect(ok).To(BeTrue(), "failed to assert TestSpace to internal.TestSpace")
+					serviceInstance = createService(cfg.ServicePlan)
+					serviceInstanceName = string(serviceInstance)
 
 					currentSpaceName = setup.TestSpace.SpaceName()
 					otherSpaceName = currentSpaceName + "_other"
-					serviceInstanceName = helpers.CreateServiceInOtherSpace(setup, cfg, otherSpaceName)
+					currentOrgName = setup.TestSpace.OrganizationName()
+					adminCtx := setup.AdminUserContext()
+					adminCtx.Org = currentOrgName
+					workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
+						cf.Cf("create-space", otherSpaceName, "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
+						cf.Cf("target", "-o", currentOrgName, "-s", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
 
-					var err error
-					appGuid, err = helpers.GetAppGuid(cfg, appName)
-					Expect(err).ToNot(HaveOccurred())
+						appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+						var err error
+						appGuid, err = helpers.GetAppGuid(cfg, appName)
+						Expect(err).ToNot(HaveOccurred())
+					})
 				})
 				AfterEach(func() {
-					fmt.Printf("Deleting service instance %s from space %s\n", serviceInstanceName, otherSpaceName)
-					s := cf.Cf("target", "-s", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
-					Expect(s).To(Exit(0), "failed targeting space %s", otherSpaceName)
-					helpers.DeleteServiceInstance(cfg, serviceInstanceName)
-					fmt.Printf("Switching back to original space %s\n", currentSpaceName)
-					s = cf.Cf("target", "-s", currentSpaceName).Wait(cfg.DefaultTimeoutDuration())
-					Expect(s).To(Exit(0), "failed targeting space %s", currentSpaceName)
+					if os.Getenv("SKIP_TEARDOWN") == "true" {
+						fmt.Println("Skipping Teardown...")
+					} else {
+						serviceInstance.delete()
 
-					s = cf.Cf("cf delete-space", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
-					Expect(s).To(Exit(0), "failed deleting space %s", otherSpaceName)
+						adminCtx := setup.AdminUserContext()
+						adminCtx.Org = currentOrgName
+						adminCtx.Space = otherSpaceName
+						workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
+							s := cf.Cf("target", "-o", currentOrgName, "-s", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
+							Expect(s).To(Exit(0), "failed targeting org %s and space %s", currentOrgName, otherSpaceName)
+
+							Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+							Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+							Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+							s = cf.Cf("delete-space", otherSpaceName, "-f", "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
+							Expect(s).To(Exit(0), "failed deleting space %s", otherSpaceName)
+						})
+					}
 				})
 
-				FIt("fails", func() {
+				It("fails", func() {
 					// Preparation
 					paramsTemplate := `
 {
@@ -259,11 +289,16 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 					// Validation
 					Expect(session).To(Exit(1))
+
+					combinedBuffer := gbytes.BufferWithBytes(append(session.Out.Contents(), session.Err.Contents()...))
+					expectedErrMsg := fmt.Sprintf("app %s not found in space", appGuid)
+					Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(expectedErrMsg))
 				})
 			})
 			When("the corresponding app is in the same space than the service-instance", func() {
 				var appGuid string
 				BeforeEach(func() {
+					appName = helpers.CreateTestApp(cfg, "broker-test", 1)
 					serviceInstance = createService(cfg.ServicePlan)
 					serviceInstanceName = string(serviceInstance)
 
@@ -272,7 +307,15 @@ var _ = Describe("AutoScaler Service Broker", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 				AfterEach(func() {
-					serviceInstance.delete()
+					if os.Getenv("SKIP_TEARDOWN") == "true" {
+						fmt.Println("Skipping Teardown...")
+					} else {
+						Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+						Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+						Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+						serviceInstance.delete()
+					}
 				})
 
 				It("succeeds on simple service-key creation", func() {

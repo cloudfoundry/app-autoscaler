@@ -553,20 +553,16 @@ func CreateServiceInOtherSpace(
 	otherSpace string,
 ) string {
 	currentOrgName := setup.TestSpace.OrganizationName()
-	currentSpace := setup.TestSpace.SpaceName()
 	adminCtx := setup.AdminUserContext()
 	adminCtx.Org = currentOrgName
 
+	var instance string
 	workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
 		cf.Cf("create-space", otherSpace, "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
+		cf.Cf("target", "-o", currentOrgName, "-s", otherSpace).Wait(cfg.DefaultTimeoutDuration())
+
+		instance = CreateService(cfg)
 	})
-
-	cf.Cf("target", "-o", currentOrgName, "-s", otherSpace).Wait(cfg.DefaultTimeoutDuration())
-	defer func() {
-		cf.Cf("target", "-o", currentOrgName, "-s", currentSpace).Wait(cfg.DefaultTimeoutDuration())
-	}()
-
-	instance := CreateService(cfg)
 
 	return instance
 }
