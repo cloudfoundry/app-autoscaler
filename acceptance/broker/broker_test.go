@@ -210,27 +210,37 @@ var _ = Describe("AutoScaler Service Broker", func() {
 	Context("Create a service-key", func() {
 		var serviceInstance serviceInstance
 		var serviceInstanceName string
-
 		When("providing a valid app-guid", func() {
 			When("the corresponding app isn't in the same space than the service-instance", func() {
-				var otherSpaceName string = setup.TestSpace.SpaceName() + "_other"
+				var currentSpaceName string
+				var otherSpaceName string
 				var appGuid string
 				BeforeEach(func() {
-					serviceInstanceName = helpers.CreateServiceInOtherSpace(cfg, setup.TestSpace.SpaceName(), otherSpaceName)
+					// otherSpace, ok := (setup.TestSpace).(internal.TestSpace)
+					// Expect(ok).To(BeTrue(), "failed to assert TestSpace to internal.TestSpace")
+
+					currentSpaceName = setup.TestSpace.SpaceName()
+					otherSpaceName = currentSpaceName + "_other"
+					serviceInstanceName = helpers.CreateServiceInOtherSpace(setup, cfg, otherSpaceName)
 
 					var err error
 					appGuid, err = helpers.GetAppGuid(cfg, appName)
 					Expect(err).ToNot(HaveOccurred())
 				})
 				AfterEach(func() {
-					// helpers.TargetSpace(cfg, otherSpaceName)
-					// helpers.DeleteServiceInstance(cfg, serviceInstanceName)
-					// helpers.TargetSpace(cfg, setup.TestSpace.SpaceName())
+					fmt.Printf("Deleting service instance %s from space %s\n", serviceInstanceName, otherSpaceName)
+					s := cf.Cf("target", "-s", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
+					Expect(s).To(Exit(0), "failed targeting space %s", otherSpaceName)
+					helpers.DeleteServiceInstance(cfg, serviceInstanceName)
+					fmt.Printf("Switching back to original space %s\n", currentSpaceName)
+					s = cf.Cf("target", "-s", currentSpaceName).Wait(cfg.DefaultTimeoutDuration())
+					Expect(s).To(Exit(0), "failed targeting space %s", currentSpaceName)
 
-					// helpers.DeleteSpace(cfg, otherSpaceName)
+					s = cf.Cf("cf delete-space", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
+					Expect(s).To(Exit(0), "failed deleting space %s", otherSpaceName)
 				})
 
-				It("fails", func() {
+				FIt("fails", func() {
 					// Preparation
 					paramsTemplate := `
 {

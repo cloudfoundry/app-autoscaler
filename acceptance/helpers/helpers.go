@@ -38,6 +38,7 @@ type BindingConfig struct {
 	Configuration Configuration `json:"configuration"`
 	ScalingPolicy
 }
+
 type Configuration struct {
 	CustomMetrics CustomMetricsConfig `json:"custom_metrics"`
 }
@@ -547,11 +548,22 @@ func CreateServiceKeyWithParams(serviceInstanceName, serviceKeyName string, para
 	return session
 }
 
-func CreateServiceInOtherSpace(cfg *config.Config, originalSpace, otherSpace string) string {
-	cf.Cf("create-space", otherSpace).Wait(cfg.DefaultTimeoutDuration())
-	cf.Cf("target", "-s", otherSpace).Wait(cfg.DefaultTimeoutDuration())
+func CreateServiceInOtherSpace(
+	setup *workflowhelpers.ReproducibleTestSuiteSetup, cfg *config.Config,
+	otherSpace string,
+) string {
+	currentOrgName := setup.TestSpace.OrganizationName()
+	currentSpace := setup.TestSpace.SpaceName()
+	adminCtx := setup.AdminUserContext()
+	adminCtx.Org = currentOrgName
+
+	workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
+		cf.Cf("create-space", otherSpace, "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
+	})
+
+	cf.Cf("target", "-o", currentOrgName, "-s", otherSpace).Wait(cfg.DefaultTimeoutDuration())
 	defer func() {
-		cf.Cf("target", "-s", originalSpace).Wait(cfg.DefaultTimeoutDuration())
+		cf.Cf("target", "-o", currentOrgName, "-s", currentSpace).Wait(cfg.DefaultTimeoutDuration())
 	}()
 
 	instance := CreateService(cfg)

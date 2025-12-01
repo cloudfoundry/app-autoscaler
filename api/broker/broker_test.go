@@ -727,12 +727,7 @@ var _ = Describe("Broker", func() {
 					{
 						"schema-version": "0.1",
 						"configuration": {
-							"app_guid": "12345678-abcd-1234-5678-123456789abc",
-							"custom_metrics": {
-								"metric_submission_strategy": {
-									"allow_from": "same_app"
-								}
-							}
+							"app_guid": "12345678-abcd-1234-5678-123456789abc"
 						},
 						"instance_min_count": 1,
 						"instance_max_count": 3,
@@ -764,16 +759,15 @@ var _ = Describe("Broker", func() {
 						},
 					}, nil)
 				})
-				It("Creates a binding with a provided App-GUID and CM-strategy", func() {
-					// Setup - service key scenario (no BindResource, app_guid in configuration)
-
+				It("works", func() {
 					// Execution
 					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
 
+					By("verifying no error is returned and the binding has been created.")
 					Expect(err).To(BeNil())
 					Expect(binding).NotTo(BeNil())
 
-					// Verify that fakeBindingDB creates an entry
+					By("verifying that fakeBindingDB creates an entry with properly set attributes.")
 					Expect(fakeBindingDB.CreateServiceBindingCallCount()).To(Equal(1))
 					_, createdBindingId, createdInstanceId, createdAppId, customMetricsStrategy := fakeBindingDB.CreateServiceBindingArgsForCall(0)
 
@@ -781,17 +775,8 @@ var _ = Describe("Broker", func() {
 					Expect(createdInstanceId).To(Equal(instanceID))
 					Expect(createdAppId).To(Equal(models.GUID("12345678-abcd-1234-5678-123456789abc")))
 					Expect(customMetricsStrategy.String()).To(Equal(models.DefaultCustomMetricsStrategy.String()))
-				})
-				It("Attachs the provided policy to that app.", func() {
-					// Setup - service key scenario (no BindResource, app_guid in configuration)
 
-					// Execution
-					binding, err := aBroker.Bind(ctx, instanceID, bindingID, details, false)
-
-					Expect(err).To(BeNil())
-					Expect(binding).NotTo(BeNil())
-
-					// Verify policy was saved with the correct app GUID
+					By("verifying that the policy was saved with the correct app GUID and attributes.")
 					Expect(fakePolicyDB.SaveAppPolicyCallCount()).To(Equal(1))
 					_, savedAppId, savedPolicy, savedPolicyGuid := fakePolicyDB.SaveAppPolicyArgsForCall(0)
 					Expect(savedAppId).To(Equal("12345678-abcd-1234-5678-123456789abc"))

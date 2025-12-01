@@ -184,7 +184,8 @@ func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
 	}
 
 	var cms CustomMetricsStrategy
-	if spRaw.PolicyConfiguration == nil {
+	if spRaw.PolicyConfiguration == nil ||
+		spRaw.PolicyConfiguration.CustomMetricsCfg.MetricSubmissionStrategy.AllowFrom.value == "" {
 		cms = DefaultCustomMetricsStrategy // Default strategy if not set.
 	} else {
 		cms = spRaw.PolicyConfiguration.CustomMetricsCfg.MetricSubmissionStrategy.AllowFrom
