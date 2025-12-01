@@ -12,7 +12,6 @@ import (
 	cfh "github.com/cloudfoundry/cf-test-helpers/v2/helpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	. "github.com/onsi/gomega/gexec"
 )
 
@@ -329,9 +328,19 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		})
 	})
 	When("a service-key is used", func() {
+		BeforeEach(func() {
+			maxHeapLimitMb = cfg.NodeMemoryLimit - minimalMemoryUsage
+
+			appToScaleName = helpers.CreateTestApp(cfg, "dynamic-policy", initialInstanceCount)
+			appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
+			Expect(err).NotTo(HaveOccurred())
+			helpers.StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
+		})
+		AfterEach(AppAfterEach)
 		When("providing a valid app-guid together with a policy", func() {
+			var params string
 			var serviceInstanceName string
-			var session *gexec.Session
+			var session *Session
 			BeforeEach(func() {
 				// Setup
 				serviceInstanceName = helpers.CreateService(cfg)
@@ -359,19 +368,19 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	]
 }
 `
-				serviceKeyName := fmt.Sprintf("aas-key_for%s", appToScaleName)
-				params := fmt.Sprintf(paramsTemplate, appToScaleGUID)
+				params = fmt.Sprintf(paramsTemplate, appToScaleGUID)
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
-
-				// Execution
-				session = helpers.CreateServiceKeyWithParams(
-					serviceInstanceName, serviceKeyName, params, cfg.DefaultTimeoutDuration())
 			})
 			AfterEach(func() {
 				helpers.DeleteServiceInstance(cfg, serviceInstanceName)
 			})
 
 			It("succeeds and scales both, up and down", func() {
+				// Execution
+				serviceKeyName := fmt.Sprintf("aas-key_for%s", appToScaleName)
+				session = helpers.CreateServiceKeyWithParams(
+					serviceInstanceName, serviceKeyName, params, cfg.DefaultTimeoutDuration())
+
 				// Validation
 				By("Creating the service-key successfully")
 				Expect(session).To(Exit(0))
