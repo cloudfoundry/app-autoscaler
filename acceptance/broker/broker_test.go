@@ -223,11 +223,11 @@ var _ = Describe("AutoScaler Service Broker", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 				AfterEach(func() {
-					helpers.TargetSpace(cfg, otherSpaceName)
-					helpers.DeleteServiceInstance(cfg, serviceInstanceName)
-					helpers.TargetSpace(cfg, setup.TestSpace.SpaceName())
+					// helpers.TargetSpace(cfg, otherSpaceName)
+					// helpers.DeleteServiceInstance(cfg, serviceInstanceName)
+					// helpers.TargetSpace(cfg, setup.TestSpace.SpaceName())
 
-					helpers.DeleteSpace(cfg, otherSpaceName)
+					// helpers.DeleteSpace(cfg, otherSpaceName)
 				})
 
 				It("fails", func() {

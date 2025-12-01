@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloudfoundry/cf-test-helpers/v2/generator"
 	cfh "github.com/cloudfoundry/cf-test-helpers/v2/helpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -334,8 +333,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			var serviceInstanceName string
 			var session *gexec.Session
 			BeforeEach(func() {
+				// Setup
 				serviceInstanceName = helpers.CreateService(cfg)
-
 				paramsTemplate := `
 {
 	"schema-version": "0.1",
@@ -346,14 +345,14 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	"instance_max_count": 2,
 	"scaling_rules": [
 		{
-			"metric_type": "cpuutil",
-			"threshold": 50,
+			"metric_type": "memoryused",
+			"threshold":800,
 			"operator": ">=",
 			"adjustment": "+1"
 		},
 		{
-			"metric_type": "cpuutil",
-			"threshold": 30,
+			"metric_type": "memoryused",
+			"threshold": 300,
 			"operator": "<",
 			"adjustment": "-1"
 		}
@@ -362,6 +361,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 `
 				serviceKeyName := fmt.Sprintf("aas-key_for%s", appToScaleName)
 				params := fmt.Sprintf(paramsTemplate, appToScaleGUID)
+				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
 				// Execution
 				session = helpers.CreateServiceKeyWithParams(
@@ -377,22 +377,19 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				Expect(session).To(Exit(0))
 
 				// Part-validation setup
-				By("Starting CPU usage to trigger scale out")
-				helpers.StartCPUUsage(cfg, appToScaleName, 60, 5)
+				By("Starting disk usage to trigger scale out")
+				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
 
 				// Validation
-				By("Waiting for scale out to 2 instances")
-				totalTime := time.Duration(cfg.AggregateInterval*2)*time.Second + 3*time.Minute
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, totalTime)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
 
 				// Part-validation setup
-				By("Stopping CPU usage to trigger scale in")
-				helpers.StopCPUUsage(cfg, appToScaleName, 0)
-				helpers.StopCPUUsage(cfg, appToScaleName, 1)
+				By("Stopping disk usage to trigger scale in")
+				// only hit the one instance that was asked to occupy disk space
+				helpers.StopDiskUsage(cfg, appToScaleName, 0)
 
 				// Validation
-				By("Waiting for scale in to 1 instance")
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, totalTime)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
 			})
 		})
 	})
