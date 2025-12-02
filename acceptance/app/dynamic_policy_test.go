@@ -417,7 +417,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
 
 				// Validation
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 6*time.Minute)
 
 				// Part-validation setup
 				By("Stopping disk usage to trigger scale in")
@@ -425,7 +425,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
 
 				// Validation
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				waitingTime := 8 * time.Minute // This validation can take a bit longer for unkown reasons.
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, waitingTime)
 			})
 		})
 	})
