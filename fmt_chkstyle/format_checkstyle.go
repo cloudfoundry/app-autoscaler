@@ -12,8 +12,8 @@ type Result struct {
 }
 
 type File struct {
-	Name           string          `xml:"name,attr"`
-	Errors         []CheckstyleErr `xml:"error"`
+	Name   string          `xml:"name,attr"`
+	Errors []CheckstyleErr `xml:"error"`
 }
 
 type CheckstyleErr struct {
