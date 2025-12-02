@@ -3,6 +3,7 @@ package app_test
 import (
 	"acceptance"
 	"acceptance/helpers"
+	"os"
 
 	"crypto/tls"
 	"fmt"
@@ -39,7 +40,14 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		BeforeEach(func() {
 			maxHeapLimitMb = cfg.NodeMemoryLimit - minimalMemoryUsage
 		})
-		AfterEach(AppAfterEach)
+
+		AfterEach(func() {
+			if os.Getenv("SKIP_TEARDOWN") == "true" {
+				fmt.Println("Skipping Teardown...")
+			} else {
+				AppAfterEach()
+			}
+		})
 		Context("when scaling by memoryused", func() {
 
 			Context("There is a scale out and scale in policy", func() {
@@ -98,8 +106,12 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			})
 
 			AfterEach(func() {
-				close(doneChan)
-				Eventually(doneAcceptChan, 10*time.Second).Should(Receive())
+				if os.Getenv("SKIP_TEARDOWN") == "true" {
+					fmt.Println("Skipping Teardown...")
+				} else {
+					close(doneChan)
+					Eventually(doneAcceptChan, 10*time.Second).Should(Receive())
+				}
 			})
 
 			Context("when responsetime is greater than scaling out threshold", func() {
@@ -172,8 +184,12 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			})
 
 			AfterEach(func() {
-				close(doneChan)
-				Eventually(doneAcceptChan, 10*time.Second).Should(Receive())
+				if os.Getenv("SKIP_TEARDOWN") == "true" {
+					fmt.Println("Skipping Teardown...")
+				} else {
+					close(doneChan)
+					Eventually(doneAcceptChan, 10*time.Second).Should(Receive())
+				}
 			})
 
 			Context("when throughput is greater than scaling out threshold", func() {
@@ -330,13 +346,20 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	When("a service-key is used", func() {
 		BeforeEach(func() {
 			maxHeapLimitMb = cfg.NodeMemoryLimit - minimalMemoryUsage
+			initialInstanceCount = 1
 
-			appToScaleName = helpers.CreateTestApp(cfg, "dynamic-policy", initialInstanceCount)
+			appToScaleName = helpers.CreateTestApp(cfg, "dyn_policy_with_sk", initialInstanceCount)
 			appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
 			Expect(err).NotTo(HaveOccurred())
 			helpers.StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
 		})
-		AfterEach(AppAfterEach)
+		AfterEach(func() {
+			if os.Getenv("SKIP_TEARDOWN") == "true" {
+				fmt.Println("Skipping Teardown...")
+			} else {
+				AppAfterEach()
+			}
+		})
 		When("providing a valid app-guid together with a policy", func() {
 			var params string
 			var serviceInstanceName string
@@ -354,13 +377,13 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	"instance_max_count": 2,
 	"scaling_rules": [
 		{
-			"metric_type": "memoryused",
-			"threshold":800,
+			"metric_type": "disk",
+			"threshold":500,
 			"operator": ">=",
 			"adjustment": "+1"
 		},
 		{
-			"metric_type": "memoryused",
+			"metric_type": "disk",
 			"threshold": 300,
 			"operator": "<",
 			"adjustment": "-1"
@@ -372,7 +395,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 			})
 			AfterEach(func() {
-				helpers.DeleteServiceInstance(cfg, serviceInstanceName)
+				if os.Getenv("SKIP_TEARDOWN") == "true" {
+					fmt.Println("Skipping Teardown...")
+				} else {
+					helpers.DeleteServiceInstance(cfg, serviceInstanceName)
+				}
 			})
 
 			It("succeeds and scales both, up and down", func() {

@@ -548,25 +548,6 @@ func CreateServiceKeyWithParams(serviceInstanceName, serviceKeyName string, para
 	return session
 }
 
-func CreateServiceInOtherSpace(
-	setup *workflowhelpers.ReproducibleTestSuiteSetup, cfg *config.Config,
-	otherSpace string,
-) string {
-	currentOrgName := setup.TestSpace.OrganizationName()
-	adminCtx := setup.AdminUserContext()
-	adminCtx.Org = currentOrgName
-
-	var instance string
-	workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
-		cf.Cf("create-space", otherSpace, "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
-		cf.Cf("target", "-o", currentOrgName, "-s", otherSpace).Wait(cfg.DefaultTimeoutDuration())
-
-		instance = CreateService(cfg)
-	})
-
-	return instance
-}
-
 func CreateService(cfg *config.Config) string {
 	instanceName := generator.PrefixedRandomName(cfg.Prefix, cfg.InstancePrefix)
 	FailOnError(CreateServiceWithPlan(cfg, cfg.ServicePlan, instanceName))

@@ -272,6 +272,11 @@ func (c *Config) Protocol() string {
 	}
 }
 
+func (c *Config) Clone() *Config {
+	copy := *c
+	return &copy
+}
+
 func (c *Config) DefaultTimeoutDuration() time.Duration {
 	return time.Duration(c.DefaultTimeout) * time.Second
 }
