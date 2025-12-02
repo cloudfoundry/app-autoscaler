@@ -287,10 +287,10 @@ clean-build: ## Clean the build directory
 
 .PHONY: release-draft
 release-draft: ## Create a draft GitHub release without artifacts
-		./scripts/release-autoscaler.sh
+		./scripts/release.sh
 
 release-promote:
-		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
+		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
 acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app

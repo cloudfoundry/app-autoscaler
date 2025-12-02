@@ -31,9 +31,9 @@ jobs:
         run: |
           devbox run make release-promote
 
-      - name: Push version bump commit
+      - name: Push version bump commit and updated tag
         run: |
-          git push
+          git push --force-with-lease origin --tags
 
       - name: Get release information
         id: get_release
