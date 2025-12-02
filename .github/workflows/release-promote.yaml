@@ -33,7 +33,8 @@ jobs:
 
       - name: Push version bump commit and updated tag
         run: |
-          git push --force-with-lease origin --tags
+          git push --force-with-lease
+          git push -f origin --tags
 
       - name: Get release information
         id: get_release
