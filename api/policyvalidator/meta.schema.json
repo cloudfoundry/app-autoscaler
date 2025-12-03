@@ -4,8 +4,8 @@
   "description": "Unification of different schemas for scaling-policies for Autoscaler",
 
   "oneOf": [
-    {"$ref": "./scaling-policy.v0_9.schema.json"},
+    {"$ref": "./scaling-policy.v0_1.schema.json"},
     {"$ref": "./legacy.schema.json"},
-    {"$ref": "./service-key_only.v0_9.schema.json"}
+    {"$ref": "./service-key_only.v0_1.schema.json"}
   ]
 }
