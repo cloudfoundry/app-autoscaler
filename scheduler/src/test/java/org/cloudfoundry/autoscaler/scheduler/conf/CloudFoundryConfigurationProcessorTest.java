@@ -142,25 +142,25 @@ public class CloudFoundryConfigurationProcessorTest {
   public void testVcapServicesWithDatabaseService() {
     String vcapServices =
         """
-{
-  "postgresql-db": [
-    {
-      "label": "postgresql-db",
-      "name": "autoscaler-db",
-      "tags": ["relational", "binding_db", "policy_db"],
-      "credentials": {
-        "username": "dbuser",
-        "password": "dbpass",
-        "hostname": "db-host.example.com",
-        "dbname": "autoscaler_db",
-        "port": "5432",
-        "uri": "postgres://dbuser:dbpass@db-host.example.com:5432/autoscaler_db",
-        "sslcert": "-----BEGIN CERTIFICATE-----\\nMIICert...\\n-----END CERTIFICATE-----",
-        "sslrootcert": "-----BEGIN CERTIFICATE-----\\nMIIRoot...\\n-----END CERTIFICATE-----"
-      }
-    }
-  ]
-}
+        {
+          "postgresql-db": [
+            {
+              "label": "postgresql-db",
+              "name": "autoscaler-db",
+              "tags": ["relational", "binding_db", "policy_db"],
+              "credentials": {
+                "username": "dbuser",
+                "password": "dbpass",
+                "hostname": "db-host.example.com",
+                "dbname": "autoscaler_db",
+                "port": "5432",
+                "uri": "postgres://dbuser:dbpass@db-host.example.com:5432/autoscaler_db",
+                "sslcert": "-----BEGIN CERTIFICATE-----\\nMIICert...\\n-----END CERTIFICATE-----",
+                "sslrootcert": "-----BEGIN CERTIFICATE-----\\nMIIRoot...\\n-----END CERTIFICATE-----"
+              }
+            }
+          ]
+        }
         """;
 
     environment

@@ -129,7 +129,7 @@ var _ = BeforeSuite(func() {
 		},
 		CatalogPath:       "../exampleconfig/catalog-example.json",
 		CatalogSchemaPath: "../schemas/catalog.schema.json",
-		PolicySchemaPath:  "../policyvalidator/scaling-policy.schema.json",
+		PolicySchemaPath:  "../policyvalidator/meta.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},
@@ -140,11 +140,15 @@ var _ = BeforeSuite(func() {
 		},
 		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
+	fakeCfClient := &fakes.FakeCFClient{}
+	fakeCfCtxClient := &fakes.FakeContextClient{}
+	fakeCfClient.GetCtxClientReturns(fakeCfCtxClient)
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	fakeCredentials := &fakes.FakeCredentials{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	bs := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil, fakeCredentials)
+	bs := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf,
+		fakeBindingDB, fakePolicyDB, httpStatusCollector, fakeCfClient, fakeCredentials)
 	httpServer, err := bs.CreateServer()
 	Expect(err).NotTo(HaveOccurred())
 

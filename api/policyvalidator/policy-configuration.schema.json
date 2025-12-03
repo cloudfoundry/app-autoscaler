@@ -33,8 +33,9 @@
       "$ref": "./shared_definitions.json#/schemas/guid"
     }
   },
-  "required": [
-    "custom_metrics"
+  "anyOf": [
+    { "required": ["custom_metrics"] },
+    { "required": ["app_guid"] }
   ],
   "additionalProperties": false
 }

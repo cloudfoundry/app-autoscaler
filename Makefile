@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 MAKEFLAGS := -s
-aes_terminal_font_yellow := \e[38;2;255;255;0m
-aes_terminal_reset := \e[0m
+aes_terminal_font_yellow := \033[38;2;255;255;0m
+aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
@@ -50,7 +50,7 @@ binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sor
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
 export GO111MODULE=on
 
-.PHONY: clean-dbtasks package-dbtasks vendor-changelogs clean-scheduler package-scheduler clean mta-deploy mta-undeploy mta-build mta-logs
+.PHONY: dbtasks.clean package-dbtasks vendor-changelogs scheduler.clean package-scheduler clean mta-deploy mta-undeploy mta-build mta-logs
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
 
@@ -85,19 +85,26 @@ ${openapi-generated-clients-and-servers-api-dir} ${openapi-generated-clients-and
 	go generate ./api/apis/generate.go || true
 	go generate ./scalingengine/apis/generate.go || true
 
+
+.PHONY: generate-fakes
+generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
+
 # The presence of the subsequent directory indicates whether the fakes still need to be generated
 # or not.
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
-
-.PHONY: generate-fakes autoscaler.generate-fakes test-app.generate-fakes
-generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
-
-autoscaler.generate-fakes:
-	@echo "# Generating counterfeits"
+fake-relevant-go-files = $(shell rg --hidden --glob='!/acceptance' --glob='!/fakes'					\
+	--glob='!/integration' --glob='!/target' --glob='!/test-certs' --glob='!/testhelpers' --glob='!**/*_test.go'\
+	--type='go' --files-with-matches --regexp='')
+.PHONY: autoscaler.generate-fakes
+autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
+${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
+	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
+.PHONY: test-app.generate-fakes
 test-app.generate-fakes:
 	make --directory='acceptance/assets/app/go_app' generate-fakes
 
@@ -118,18 +125,17 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
 go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.go-mod-tidy test-app.go-mod-tidy
-
-
-
-	@echo -ne '${aes_terminal_font_yellow}'
-	@echo -e '⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
-					 'outdated. Please consider re-generating them, if this is relevant.'
-	@echo -ne '${aes_terminal_reset}'
+	@echo -ne '${aes_terminal_font_yellow}' \
+		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
+		'outdated. Please consider re-generating them, if this is relevant.' \
+		'${aes_terminal_reset}'
 	go mod tidy
 
+.PHONY: acceptance.go-mod-tidy
 acceptance.go-mod-tidy:
 	make --directory='acceptance' go-mod-tidy
 
+.PHONY: test-app.go-mod-tidy
 test-app.go-mod-tidy:
 	make --directory='acceptance/assets/app/go_app' go-mod-tidy
 
@@ -171,21 +177,24 @@ check: fmt lint build test
 
 test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
-autoscaler.test: check-db_type init-db test-certs generate-fakes
+autoscaler.test: check-db_type init-db test-certs generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST} --skip-package='integration,acceptance'
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
 test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo -p ${GINKGO_OPTS} ${TEST}
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} ${TEST}
 
 test-acceptance-unit:
 	@make --directory=acceptance test-unit
 
+gorouter-proxy.program := ./build/gorouterproxy
+gorouter-proxy.source := integration/gorouterproxy/main.go
 .PHONY: build-gorouterproxy
-build-gorouterproxy:
+build-gorouterproxy: ${gorouter-proxy.program}
+${gorouter-proxy.program}: ./go.mod ./go.sum ${gorouter-proxy.source}
 	@echo "# building gorouterproxy"
-	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/gorouterproxy integration/gorouterproxy/main.go
+	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o '${gorouter-proxy.program}' '${gorouter-proxy.source}'
 
 .PHONY: integration
 integration: generate-fakes init-db test-certs build_all build-gorouterproxy
@@ -217,14 +226,8 @@ fmt: importfmt
 
 # This target depends on the fakes, because the tests are linted as well.
 
-clean-dbtasks:
-	pushd dbtasks; mvn clean; popd
-
 package-dbtasks:
 	pushd dbtasks; mvn --quiet package ${MVN_OPTS}; popd
-
-clean-scheduler:
-	pushd scheduler; mvn clean; popd
 
 build-scheduler:
 	pushd scheduler; mvn package -Dmaven.test.skip=true; popd
@@ -236,13 +239,21 @@ vendor-changelogs:
 	cp $(MAKEFILE_DIR)/scalingengine/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/scheduler/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
-clean:
+clean: dbtasks.clean scheduler.clean
 	@echo "# cleaning autoscaler"
-	@go clean -cache -testcache
-	@rm --force --recursive 'fakes'
-	@rm --force --recursive 'vendor'
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
+	@go clean -cache -testcache
+	@rm --force --recursive 'fakes'
+	@rm --force --recursive 'test-certs'
+	@rm --force --recursive 'target'
+	@rm --force --recursive 'vendor'
+
+dbtasks.clean:
+	pushd dbtasks; mvn clean; popd
+
+scheduler.clean:
+	pushd scheduler; mvn clean; popd
 
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
@@ -282,10 +293,10 @@ clean-build: ## Clean the build directory
 
 .PHONY: release-draft
 release-draft: ## Create a draft GitHub release without artifacts
-		./scripts/release-autoscaler.sh
+		./scripts/release.sh
 
 release-promote:
-		PROMOTE_DRAFT=true ./scripts/release-autoscaler.sh
+		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
 acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
@@ -319,8 +330,10 @@ start-db: check-db_type target/start-db-${db_type}_CI_${CI} waitfor_${db_type}_C
 
 .PHONY: waitfor_postgres_CI_false waitfor_postgres_CI_true
 target/start-db-postgres_CI_false:
-	@if [ ! "$(shell docker ps -q -f name="^${db_type}")" ]; then \
-		if [ "$(shell docker ps -aq -f status=exited -f name="^${db_type}")" ]; then \
+	if [ ! "$(shell docker ps -q -f name="^${db_type}")" ] ;\
+	then \
+		if [ "$(shell docker ps -aq -f status=exited -f name="^${db_type}")" ]; \
+		then \
 			docker rm ${db_type}; \
 		fi;\
 		echo " - starting docker for ${db_type}";\
@@ -335,7 +348,9 @@ target/start-db-postgres_CI_false:
 			-d \
 			postgres:${POSTGRES_TAG} \
 			-c 'max_connections=1000' >/dev/null;\
-	else echo " - $@ already up'"; fi;
+	else \
+		echo " - $@ already up'";\
+	fi;
 	@mkdir -p target
 	@touch $@
 
@@ -346,6 +361,7 @@ waitfor_postgres_CI_false:
 	@echo -n " - waiting for ${db_type} ."
 	@COUNTER=0; until $$(docker exec postgres pg_isready &>/dev/null) || [ $$COUNTER -gt 10 ]; do echo -n "."; sleep 1; let COUNTER+=1; done;\
 	if [ $$COUNTER -gt 10 ]; then echo; echo "Error: timed out waiting for postgres. Try \"make clean\" first." >&2 ; exit 1; fi
+
 waitfor_postgres_CI_true:
 	@echo " - no ci postgres checks"
 
@@ -465,15 +481,18 @@ acceptance-cleanup:
 acceptance-tests-config:
 	make --directory='acceptance' acceptance-tests-config
 
+# 🚧 To-do: These targets don't exist here!
+.PHONY: deploy-autoscaler deploy-autoscaler-bosh
 
-.PHONY: deploy-autoscaler deploy-register-cf deploy-autoscaler-bosh deploy-cleanup
-
+.PHONY: deploy-register-cf
 deploy-register-cf:
 	DEBUG="${DEBUG}" ./scripts/register-broker.sh
 
+.PHONY: deploy-cleanup
 deploy-cleanup:
 	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
 
+.PHONY: deploy-apps
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh
 

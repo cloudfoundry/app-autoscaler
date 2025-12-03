@@ -241,6 +241,11 @@ pushd "${autoscaler_dir}" > /dev/null
   if [ "${PROMOTE_DRAFT}" == "true" ]; then
 		setup_git
     bump_version "${VERSION}"
+
+    # Update the tag to point to the new commit created by bump_version
+    echo " - Updating tag v${VERSION} to point to current commit $(git rev-parse HEAD)"
+    git tag -f "v${VERSION}"
+
     ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
     AUTOSCALER_MTAR="app-autoscaler-release-v${VERSION}.mtar"
 
@@ -265,18 +270,13 @@ pushd "${autoscaler_dir}" > /dev/null
 \`\`\`yaml
 releases:
 - name: app-autoscaler-acceptance-tests
-  version: ${VERSION}
-  url: https://storage.googleapis.com/app-autoscaler-releases/releases/app-autoscaler-acceptance-tests-v${VERSION}.tgz
   sha1: sha256:${ACCEPTANCE_SHA256}
 - name: app-autoscaler-mtar
-  version: ${VERSION}
-  url: https://storage.googleapis.com/app-autoscaler-releases/releases/app-autoscaler-release-v${VERSION}.mtar
   sha1: sha256:${MTAR_SHA256}
 \`\`\`
 EOF
-  echo "---------- Changelog file ----------"
-  cat "${build_path}/changelog.md"
-  echo "---------- end file ----------"
+
+	echo "find changelog at https://github.com/cloudfoundry/app-autoscaler-release/releases/tag/v${VERSION}"
 
   # If promoting draft to final, upload artifacts and publish
   if [ "${PROMOTE_DRAFT}" == "true" ]; then

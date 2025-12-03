@@ -32,6 +32,7 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
+		cfClient        *fakes.FakeContextClient
 		bindingdb       *fakes.FakeBindingDB
 		policydb        *fakes.FakePolicyDB
 		fakeCredentials *fakes.FakeCredentials
@@ -44,6 +45,7 @@ var _ = Describe("BrokerHandler", func() {
 	)
 
 	BeforeEach(func() {
+		cfClient = &fakes.FakeContextClient{}
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
@@ -52,7 +54,9 @@ var _ = Describe("BrokerHandler", func() {
 	})
 
 	JustBeforeEach(func() {
-		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf, bindingdb, policydb, services, fakeCredentials)
+		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf,
+			cfClient, bindingdb, policydb,
+			services, fakeCredentials)
 		handler = handlers.NewApiHandler(autoscalerBroker, slog.New(logr.ToSlogHandler(GinkgoLogr)))
 		if fakePlanChecker != nil {
 			autoscalerBroker.PlanChecker = fakePlanChecker
@@ -146,7 +150,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 
 		})
-
 		Context("When all parameters are present", func() {
 			Context("When database CreateServiceInstance call returns ErrAlreadyExists", func() {
 				BeforeEach(func() {
@@ -160,7 +163,6 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Body.String()).To(MatchJSON(`{}`))
 				})
 			})
-
 			Context("When dashboard redirect uri is present in config and database CreateServiceInstance call returns ErrAlreadyExists", func() {
 				BeforeEach(func() {
 					body, err = json.Marshal(instanceCreationReqBody)
@@ -173,7 +175,6 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Body.Bytes()).To(MatchJSON("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}"))
 				})
 			})
-
 			Context("When database CreateServiceInstance call returns ErrConflict", func() {
 				BeforeEach(func() {
 					body, err = json.Marshal(instanceCreationReqBody)
@@ -184,7 +185,6 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusConflict))
 				})
 			})
-
 			Context("When database CreateServiceInstance call returns error other than ErrAlreadyExists", func() {
 				BeforeEach(func() {
 					body, err = json.Marshal(instanceCreationReqBody)
@@ -196,7 +196,6 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Body.String()).To(MatchJSON(`{"description":"error creating service instance"}`))
 				})
 			})
-
 			Context("When dashboard redirect uri is present in config", func() {
 				BeforeEach(func() {
 					body, err = json.Marshal(instanceCreationReqBody)
@@ -335,7 +334,6 @@ var _ = Describe("BrokerHandler", func() {
 		}
 
 		JustBeforeEach(callUpdateServiceInstance)
-
 		Context("When request body is not a valid json", func() {
 			BeforeEach(func() {
 				body = []byte("")
@@ -416,7 +414,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 		Context("When a default policy is present and there was previously not a default policy", func() {
-
 			BeforeEach(func() {
 				d := json.RawMessage(testDefaultPolicy)
 				updateDefaultPolicy(d)
@@ -549,7 +546,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
-
 		Context("When a default policy with too many rules is present", func() {
 			BeforeEach(func() {
 				invalidDefaultPolicy := `
@@ -583,7 +579,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(string(bodyBytes)).To(MatchJSON(`{"description":"error: policy did not adhere to plan: Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
 			})
 		})
-
 		Context("When the service plan is updatable", func() {
 
 			Context("and the target plan is available", func() {
@@ -611,7 +606,6 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 		})
-
 		Context("The service plan is updated and a default policy was present previously", func() {
 			BeforeEach(func() {
 				updatePlan("autoscaler-free-plan-id", "a-plan-id-not-updatable")
@@ -635,7 +629,6 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 		})
-
 		Context("When the service plan is not updatable", func() {
 			BeforeEach(func() {
 				updatePlan("a-plan-id-not-updatable", "autoscaler-free-plan-id")
@@ -695,7 +688,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
-
 	Describe("DeleteServiceInstance", func() {
 		JustBeforeEach(func() {
 			req, _ = http.NewRequest(http.MethodDelete, "", nil)
@@ -782,7 +774,6 @@ var _ = Describe("BrokerHandler", func() {
 		})
 
 	})
-
 	Describe("BindServiceInstance", func() {
 		var (
 			err                   error
@@ -846,12 +837,11 @@ var _ = Describe("BrokerHandler", func() {
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 				})
-				It("fails with 422", func() {
-					Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity))
-					Expect(resp.Body.String()).To(MatchJSON(`{"error": "RequiresApp", "description": "error: service must be bound to an application - service key creation is not supported"}`))
+				It("fails with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(MatchJSON(`{"error": "RequiresApp", "description": "error: service must be bound to an application; Please provide a GUID of an app!"}`))
 				})
 			})
-
 			Context("When ServiceID is not provided", func() {
 				BeforeEach(func() {
 					bindingRequestBody.ServiceID = ""
@@ -862,7 +852,6 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				})
 			})
-
 			Context("When PlanID is not provided", func() {
 				BeforeEach(func() {
 					bindingRequestBody.PlanID = ""
@@ -873,7 +862,6 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				})
 			})
-
 		})
 		Context("When a policy with too many rules is provided", func() {
 			BeforeEach(func() {
@@ -931,71 +919,73 @@ var _ = Describe("BrokerHandler", func() {
 			When("invalid custom strategy provided in the binding parameters", func() {
 				BeforeEach(func() {
 					bindingPolicy = `{
-				  "configuration": {
-					"custom_metrics": {
-					  "metric_submission_strategy": {
-						"allow_from": "different_app"
-					  }
-					}
-				  },
-				  "instance_max_count":4,
-				  "instance_min_count":1,
-				  "schedules": {
-					"timezone": "Asia/Shanghai",
-					"recurring_schedule": [{
-					  "start_time": "10:00",
-					  "end_time": "18:00",
-					  "days_of_week": [
-						1,
-						2,
-						3
-					  ],
-					  "instance_min_count": 1,
-					  "instance_max_count": 10,
-					  "initial_min_instance_count": 5
-					}]
-				  },
-				  "scaling_rules":[
-					{
-					  "metric_type":"memoryused",
-					  "threshold":30,
-					  "operator":"<",
-					  "adjustment":"-1"
-					}]
-				}`
+					  "configuration": {
+						"custom_metrics": {
+						  "metric_submission_strategy": {
+							"allow_from": "different_app"
+						  }
+						}
+					  },
+					  "instance_max_count":4,
+					  "instance_min_count":1,
+					  "schedules": {
+						"timezone": "Asia/Shanghai",
+						"recurring_schedule": [{
+						  "start_time": "10:00",
+						  "end_time": "18:00",
+						  "days_of_week": [
+							1,
+							2,
+							3
+						  ],
+						  "instance_min_count": 1,
+						  "instance_max_count": 10,
+						  "initial_min_instance_count": 5
+						}]
+					  },
+					  "scaling_rules":[
+						{
+						  "metric_type":"memoryused",
+						  "threshold":30,
+						  "operator":"<",
+						  "adjustment":"-1"
+						}]
+					}`
 					bindingRequestBody.Policy = json.RawMessage(bindingPolicy)
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 					bindingPolicy = `{
-				  "instance_max_count":4,
-				  "instance_min_count":1,
-				  "schedules": {
-					"timezone": "Asia/Shanghai",
-					"recurring_schedule": [{
-					  "start_time": "10:00",
-					  "end_time": "18:00",
-					  "days_of_week": [
-						1,
-						2,
-						3
-					  ],
-					  "instance_min_count": 1,
-					  "instance_max_count": 10,
-					  "initial_min_instance_count": 5
-					}]
-				  },
-				  "scaling_rules":[
-					{
-					  "metric_type":"memoryused",
-					  "threshold":30,
-					  "operator":"<",
-					  "adjustment":"-1"
-					}]
-				}`
+					  "instance_max_count":4,
+					  "instance_min_count":1,
+					  "schedules": {
+						"timezone": "Asia/Shanghai",
+						"recurring_schedule": [{
+						  "start_time": "10:00",
+						  "end_time": "18:00",
+						  "days_of_week": [
+							1,
+							2,
+							3
+						  ],
+						  "instance_min_count": 1,
+						  "instance_max_count": 10,
+						  "initial_min_instance_count": 5
+						}]
+					  },
+					  "scaling_rules":[
+						{
+						  "metric_type":"memoryused",
+						  "threshold":30,
+						  "operator":"<",
+						  "adjustment":"-1"
+						}]
+					}`
 					verifyScheduleIsUpdatedInScheduler(testAppId, bindingPolicy)
 				})
 				It("should fail with 400", func() {
-					Expect(resp.Body.String()).To(ContainSubstring("{\"description\":\"invalid policy provided: [{\\\"context\\\":\\\"(root).configuration.custom_metrics.metric_submission_strategy.allow_from\\\",\\\"description\\\":\\\"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \\\\\\\"bound_app\\\\\\\", \\\\\\\"same_app\\\\\\\"\\\"}]\"}"))
+					Expect(resp.Body.String()).To(ContainSubstring(
+						`\"description\":\"configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \\\"bound_app\\\", \\\"same_app\\\"\"}]`,
+					))
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				})
 			})
@@ -1122,7 +1112,6 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 		})
-
 		Context("credential-type is provided while binding", func() {
 			BeforeEach(func() {
 				schedulerExpectedJSON = `{
@@ -1196,7 +1185,9 @@ var _ = Describe("BrokerHandler", func() {
 				})
 				It("fails with 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-					Expect(resp.Body.String()).To(MatchJSON(`{"description": "invalid policy provided: [{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"}`))
+					Expect(resp.Body.String()).To(MatchJSON(
+						`{"error": "InvalidPolicy", "description": "invalid policy provided: [{\"context\":\"(root)\",\"description\":\"Must validate one and only one schema (oneOf)\"},{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"}`,
+					))
 				})
 
 			})
@@ -1382,7 +1373,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
 			})
 		})
-
 		Context("When a default policy was provided when creating the service instance", func() {
 			BeforeEach(func() {
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{testInstanceId, testOrgId, testSpaceId, testDefaultPolicy, testDefaultGuid}, nil)
@@ -1469,7 +1459,6 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 		})
-
 		Context("When database CreateServiceBinding call returns ErrAlreadyExists", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
@@ -1481,7 +1470,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error: an autoscaler service instance is already bound to the application and multiple bindings are not supported"}`))
 			})
 		})
-
 		Context("When database CreateServiceBinding call returns error other than ErrAlreadyExists", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)
@@ -1507,7 +1495,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error creating service binding"}`))
 			})
 		})
-
 		Context("When called with invalid policy json", func() {
 			BeforeEach(func() {
 				bindingRequestBody.Policy = json.RawMessage(`{
@@ -1530,7 +1517,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(string(bodyBytes)).To(ContainSubstring(`instance_min_count is required`))
 			})
 		})
-
 		Context("When service bindings are present", func() {
 			bindingIds := []string{testBindingId}
 			BeforeEach(func() {
@@ -1553,7 +1539,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
-
 	Describe("UnBindServiceInstance", func() {
 		BeforeEach(func() {
 			req, _ = http.NewRequest(http.MethodDelete, "", nil)
@@ -1624,7 +1609,6 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
-
 	Describe("GetBinding", func() {
 		var (
 			err           error
