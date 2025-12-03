@@ -53,11 +53,11 @@ type (
 	ValidationErrors []PolicyValidationErrors
 )
 
-var _ error = ValidationErrors{}
+var _ error = &ValidationErrors{}
 
-func (v ValidationErrors) Error() string {
+func (v *ValidationErrors) Error() string {
 	var errs []string
-	for _, failure := range v {
+	for _, failure := range *v {
 		errs = append(errs, fmt.Sprintf("%s-%s", failure.Context, failure.Description))
 	}
 	return strings.Join(errs, ", ")
@@ -113,7 +113,6 @@ func NewPolicyValidator(policySchemaPath string, lowerCPUThreshold int, upperCPU
 	return policyValidator
 }
 
-// 🚧 To-do: Move this validation into the ScalingPolicy-type in the package `models` itself.
 func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*models.ScalingPolicy, ValidationErrors) {
 	// ---------- JSON-schema-validation ----------
 	policyLoader := gojsonschema.NewBytesLoader(rawJson)
@@ -151,6 +150,10 @@ func (pv *PolicyValidator) ParseAndValidatePolicy(rawJson json.RawMessage) (*mod
 // 🚧 To-do: When making the type `models.PolicyDefinition` safe, then this validation should go
 // into a functional constructor.
 func (pv *PolicyValidator) validateAttributes(policy *models.PolicyDefinition, result *gojsonschema.Result) {
+	if policy == nil {
+		return // nothing to validate
+	}
+
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
 
 	//check InstanceMinCount and InstanceMaxCount
@@ -168,13 +171,11 @@ func (pv *PolicyValidator) validateAttributes(policy *models.PolicyDefinition, r
 	scalingRulesContext := gojsonschema.NewJsonContext("scaling_rules", rootContext)
 	pv.validateScalingRuleThreshold(policy, scalingRulesContext, result)
 
-	if policy.Schedules == nil {
-		return
+	if policy.Schedules != nil {
+		schedulesContext := gojsonschema.NewJsonContext("schedules", rootContext)
+		pv.validateRecurringSchedules(policy, schedulesContext, result)
+		pv.validateSpecificDateSchedules(policy, schedulesContext, result)
 	}
-	schedulesContext := gojsonschema.NewJsonContext("schedules", rootContext)
-
-	pv.validateRecurringSchedules(policy, schedulesContext, result)
-	pv.validateSpecificDateSchedules(policy, schedulesContext, result)
 }
 
 func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.PolicyDefinition, scalingRulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {

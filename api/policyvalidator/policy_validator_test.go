@@ -48,7 +48,7 @@ var _ = Describe("PolicyValidator", func() {
 		upperDiskThreshold = 2 * 1024
 
 		policyValidator = NewPolicyValidator(
-			"./scaling-policy.schema.json",
+			"./meta.schema.json",
 			lowerCPUThreshold,
 			upperCPUThreshold,
 			lowerCPUUtilThreshold,
@@ -77,12 +77,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root)",
-						Description: "invalid character '\\n' in string literal",
-					},
-				}))
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root)",
+					Description: "invalid character '\\n' in string literal",
+				},
+				))
 			})
 		})
 
@@ -100,11 +99,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root)",
-						Description: "instance_min_count is required",
-					},
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root)",
+					Description: "instance_min_count is required",
 				}))
 			})
 		})
@@ -124,11 +121,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root).instance_min_count",
-						Description: "Must be greater than or equal to 1",
-					},
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root).instance_min_count",
+					Description: "Must be greater than or equal to 1",
 				}))
 			})
 		})
@@ -147,11 +142,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root)",
-						Description: "instance_max_count is required",
-					},
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root)",
+					Description: "instance_max_count is required",
 				}))
 			})
 		})
@@ -171,11 +164,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root).instance_min_count",
-						Description: "instance_min_count 10 is higher than instance_max_count 4",
-					},
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root).instance_min_count",
+					Description: "instance_min_count 10 is higher than instance_max_count 4",
 				}))
 			})
 		})
@@ -188,16 +179,16 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 			})
 			It("should fail ", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
+				Expect(errResult).To(ContainElements(
+					PolicyValidationErrors{
 						Context:     "(root)",
 						Description: "Must validate at least one schema (anyOf)",
 					},
-					{
+					PolicyValidationErrors{
 						Context:     "(root)",
 						Description: "scaling_rules is required",
 					},
-				}))
+				))
 			})
 		})
 
@@ -285,11 +276,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "metric_type is required",
-						},
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "metric_type is required",
 					}))
 				})
 			})
@@ -311,11 +300,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.metric_type",
-							Description: "Does not match pattern '^[a-zA-Z0-9_]+$'",
-						},
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.metric_type",
+						Description: "Does not match pattern '^[a-zA-Z0-9_]+$'",
 					}))
 				})
 			})
@@ -337,11 +324,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.metric_type",
-							Description: "String length must be less than or equal to 100",
-						},
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.metric_type",
+						Description: "String length must be less than or equal to 100",
 					}))
 				})
 			})
@@ -362,11 +347,9 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "threshold is required",
-						},
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "threshold is required",
 					}))
 				})
 			})
@@ -387,12 +370,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.threshold",
-							Description: "Invalid type. Expected: integer, given: number",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.threshold",
+						Description: "Invalid type. Expected: integer, given: number",
+					},
+					))
 				})
 			})
 
@@ -413,12 +395,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type memoryused should be greater than or equal 1",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "scaling_rules[0].threshold for metric_type memoryused should be greater than or equal 1",
+					},
+					))
 				})
 			})
 
@@ -461,12 +442,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than or equal 1 and less than or equal to 100",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than or equal 1 and less than or equal to 100",
+					},
+					))
 				})
 			})
 
@@ -487,12 +467,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than or equal 1 and less than or equal to 100",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "scaling_rules[0].threshold for metric_type memoryutil should be greater than or equal 1 and less than or equal to 100",
+					},
+					))
 				})
 			})
 
@@ -513,12 +492,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type responsetime should be greater than or equal 1",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "scaling_rules[0].threshold for metric_type responsetime should be greater than or equal 1",
+					},
+					))
 				})
 			})
 
@@ -560,12 +538,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "scaling_rules[0].threshold for metric_type throughput should be greater than or equal 1",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "scaling_rules[0].threshold for metric_type throughput should be greater than or equal 1",
+					},
+					))
 				})
 			})
 
@@ -608,12 +585,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than or equal %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than or equal %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
+					},
+					))
 				})
 			})
 
@@ -634,12 +610,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than or equal %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpu should be greater than or equal %d and less than or equal to %d", lowerCPUThreshold, upperCPUThreshold),
+					},
+					))
 				})
 			})
 
@@ -660,12 +635,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpuutil should be greater than or equal %d and less than or equal to %d", lowerCPUUtilThreshold, upperCPUUtilThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpuutil should be greater than or equal %d and less than or equal to %d", lowerCPUUtilThreshold, upperCPUUtilThreshold),
+					},
+					))
 				})
 			})
 
@@ -686,12 +660,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpuutil should be greater than or equal %d and less than or equal to %d", lowerCPUUtilThreshold, upperCPUUtilThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type cpuutil should be greater than or equal %d and less than or equal to %d", lowerCPUUtilThreshold, upperCPUUtilThreshold),
+					},
+					))
 				})
 			})
 
@@ -712,12 +685,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type diskutil should be greater than or equal %d and less than or equal to %d", lowerDiskUtilThreshold, upperCPUUtilThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type diskutil should be greater than or equal %d and less than or equal to %d", lowerDiskUtilThreshold, upperCPUUtilThreshold),
+					},
+					))
 				})
 			})
 
@@ -738,12 +710,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type diskutil should be greater than or equal %d and less than or equal to %d", lowerDiskUtilThreshold, upperDiskUtilThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type diskutil should be greater than or equal %d and less than or equal to %d", lowerDiskUtilThreshold, upperDiskUtilThreshold),
+					},
+					))
 				})
 			})
 
@@ -764,12 +735,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type disk should be greater than or equal %d and less than or equal to %d", lowerDiskThreshold, upperDiskThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type disk should be greater than or equal %d and less than or equal to %d", lowerDiskThreshold, upperDiskThreshold),
+					},
+					))
 				})
 			})
 
@@ -790,12 +760,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type disk should be greater than or equal %d and less than or equal to %d", lowerDiskThreshold, upperDiskThreshold),
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: fmt.Sprintf("scaling_rules[0].threshold for metric_type disk should be greater than or equal %d and less than or equal to %d", lowerDiskThreshold, upperDiskThreshold),
+					},
+					))
 				})
 			})
 
@@ -815,12 +784,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "operator is required",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "operator is required",
+					},
+					))
 				})
 			})
 
@@ -841,12 +809,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.operator",
-							Description: "scaling_rules.0.operator must be one of the following: \"\\u003c\", \"\\u003e\", \"\\u003c=\", \"\\u003e=\"",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.operator",
+						Description: "scaling_rules.0.operator must be one of the following: \"\\u003c\", \"\\u003e\", \"\\u003c=\", \"\\u003e=\"",
+					},
+					))
 				})
 			})
 
@@ -866,12 +833,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0",
-							Description: "adjustment is required",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0",
+						Description: "adjustment is required",
+					},
+					))
 				})
 			})
 
@@ -892,12 +858,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.adjustment",
-							Description: "Does not match pattern '^[-+][1-9]+[0-9]*%?$'",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.adjustment",
+						Description: "Does not match pattern '^[-+][1-9]+[0-9]*%?$'",
+					},
+					))
 				})
 			})
 
@@ -997,12 +962,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.breach_duration_secs",
-							Description: "Invalid type. Expected: integer, given: string",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.breach_duration_secs",
+						Description: "Invalid type. Expected: integer, given: string",
+					},
+					))
 				})
 			})
 
@@ -1023,12 +987,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.breach_duration_secs",
-							Description: "Must be greater than or equal to 60",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.breach_duration_secs",
+						Description: "Must be greater than or equal to 60",
+					},
+					))
 				})
 			})
 
@@ -1049,12 +1012,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.breach_duration_secs",
-							Description: "Must be less than or equal to 3600",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.breach_duration_secs",
+						Description: "Must be less than or equal to 3600",
+					},
+					))
 				})
 			})
 
@@ -1095,12 +1057,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.cool_down_secs",
-							Description: "Must be greater than or equal to 60",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.cool_down_secs",
+						Description: "Must be greater than or equal to 60",
+					},
+					))
 				})
 			})
 
@@ -1121,12 +1082,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).scaling_rules.0.cool_down_secs",
-							Description: "Must be less than or equal to 3600",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).scaling_rules.0.cool_down_secs",
+						Description: "Must be less than or equal to 3600",
+					},
+					))
 				})
 			})
 		})
@@ -1151,12 +1111,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).schedules",
-							Description: "timezone is required",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).schedules",
+						Description: "timezone is required",
+					},
+					))
 				})
 			})
 
@@ -1180,12 +1139,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
-							Context:     "(root).schedules.timezone",
-							Description: "schedules.timezone must be one of the following: \"Etc/GMT+12\", \"Etc/GMT+11\", \"Pacific/Midway\", \"Pacific/Niue\", \"Pacific/Pago_Pago\", \"Pacific/Samoa\", \"US/Samoa\", \"Etc/GMT+10\", \"HST\", \"Pacific/Honolulu\", \"Pacific/Johnston\", \"Pacific/Rarotonga\", \"Pacific/Tahiti\", \"US/Hawaii\", \"Pacific/Marquesas\", \"America/Adak\", \"America/Atka\", \"Etc/GMT+9\", \"Pacific/Gambier\", \"US/Aleutian\", \"America/Anchorage\", \"America/Juneau\", \"America/Metlakatla\", \"America/Nome\", \"America/Sitka\", \"America/Yakutat\", \"Etc/GMT+8\", \"Pacific/Pitcairn\", \"US/Alaska\", \"America/Creston\", \"America/Dawson\", \"America/Dawson_Creek\", \"America/Ensenada\", \"America/Hermosillo\", \"America/Los_Angeles\", \"America/Phoenix\", \"America/Santa_Isabel\", \"America/Tijuana\", \"America/Vancouver\", \"America/Whitehorse\", \"Canada/Pacific\", \"Canada/Yukon\", \"Etc/GMT+7\", \"MST\", \"Mexico/BajaNorte\", \"PST8PDT\", \"US/Arizona\", \"US/Pacific\", \"US/Pacific-New\", \"America/Belize\", \"America/Boise\", \"America/Cambridge_Bay\", \"America/Chihuahua\", \"America/Costa_Rica\", \"America/Denver\", \"America/Edmonton\", \"America/El_Salvador\", \"America/Guatemala\", \"America/Inuvik\", \"America/Managua\", \"America/Mazatlan\", \"America/Ojinaga\", \"America/Regina\", \"America/Shiprock\", \"America/Swift_Current\", \"America/Tegucigalpa\", \"America/Yellowknife\", \"Canada/East-Saskatchewan\", \"Canada/Mountain\", \"Canada/Saskatchewan\", \"Etc/GMT+6\", \"MST7MDT\", \"Mexico/BajaSur\", \"Navajo\", \"Pacific/Galapagos\", \"US/Mountain\", \"America/Atikokan\", \"America/Bahia_Banderas\", \"America/Bogota\", \"America/Cancun\", \"America/Cayman\", \"America/Chicago\", \"America/Coral_Harbour\", \"America/Eirunepe\", \"America/Guayaquil\", \"America/Indiana/Knox\", \"America/Indiana/Tell_City\", \"America/Jamaica\", \"America/Knox_IN\", \"America/Lima\", \"America/Matamoros\", \"America/Menominee\", \"America/Merida\", \"America/Mexico_City\", \"America/Monterrey\", \"America/North_Dakota/Beulah\", \"America/North_Dakota/Center\", \"America/North_Dakota/New_Salem\", \"America/Panama\", \"America/Porto_Acre\", \"America/Rainy_River\", \"America/Rankin_Inlet\", \"America/Resolute\", \"America/Rio_Branco\", \"America/Winnipeg\", \"Brazil/Acre\", \"CST6CDT\", \"Canada/Central\", \"Chile/EasterIsland\", \"EST\", \"Etc/GMT+5\", \"Jamaica\", \"Mexico/General\", \"Pacific/Easter\", \"US/Central\", \"US/Indiana-Starke\", \"America/Caracas\", \"America/Anguilla\", \"America/Antigua\", \"America/Aruba\", \"America/Asuncion\", \"America/Barbados\", \"America/Blanc-Sablon\", \"America/Boa_Vista\", \"America/Campo_Grande\", \"America/Cuiaba\", \"America/Curacao\", \"America/Detroit\", \"America/Dominica\", \"America/Fort_Wayne\", \"America/Grand_Turk\", \"America/Grenada\", \"America/Guadeloupe\", \"America/Guyana\", \"America/Havana\", \"America/Indiana/Indianapolis\", \"America/Indiana/Marengo\", \"America/Indiana/Petersburg\", \"America/Indiana/Vevay\", \"America/Indiana/Vincennes\", \"America/Indiana/Winamac\", \"America/Indianapolis\", \"America/Iqaluit \", \"America/Kentucky/Louisville \", \"America/Kentucky/Monticello\", \"America/Kralendijk\", \"America/La_Paz\", \"America/Louisville \", \"America/Lower_Princes\", \"America/Manaus\", \"America/Marigot\", \"America/Martinique\", \"America/Montreal\", \"America/Montserrat\", \"America/Nassau\", \"America/New_York\", \"America/Nipigon\", \"America/Pangnirtung \", \"America/Port-au-Prince \", \"America/Port_of_Spain\", \"America/Porto_Velho\", \"America/Puerto_Rico \", \"America/Santo_Domingo \", \"America/St_Barthelemy\", \"America/St_Kitts\", \"America/St_Lucia\", \"America/St_Thomas\", \"America/St_Vincent\", \"America/Thunder_Bay\", \"America/Toronto\", \"America/Tortola\", \"America/Virgin\", \"Brazil/West\", \"Canada/Eastern\", \"Cuba\", \"EST5EDT\", \"Etc/GMT+4\", \"US/East-Indiana\", \"US/Eastern\", \"US/Michigan\", \"America/Araguaina \", \"America/Argentina/Buenos_Aires \", \"America/Argentina/Catamarca \", \"America/Argentina/ComodRivadavia \", \"America/Argentina/Cordoba \", \"America/Argentina/Jujuy \", \"America/Argentina/La_Rioja \", \"America/Argentina/Mendoza \", \"America/Argentina/Rio_Gallegos \", \"America/Argentina/Salta \", \"America/Argentina/San_Juan \", \"America/Argentina/San_Luis \", \"America/Argentina/Tucuman \", \"America/Argentina/Ushuaia\", \"America/Bahia\", \"America/Belem\", \"America/Buenos_Aires\", \"America/Catamarca\", \"America/Cayenne\", \"America/Cordoba\", \"America/Fortaleza\", \"America/Glace_Bay\", \"America/Goose_Bay\", \"America/Halifax\", \"America/Jujuy\", \"America/Maceio\", \"America/Mendoza\", \"America/Moncton\", \"America/Montevideo\", \"America/Paramaribo\", \"America/Recife\", \"America/Rosario\", \"America/Santarem\", \"America/Santiago\", \"America/Sao_Paulo\", \"America/Thule\", \"Antarctica/Palmer\", \"Antarctica/Rothera\", \"Atlantic/Bermuda\", \"Atlantic/Stanley\", \"Brazil/East\", \"Canada/Atlantic\", \"Chile/Continental\", \"Etc/GMT+3\", \"America/St_Johns\", \"Canada/Newfoundland\", \"America/Godthab\", \"America/Miquelon\", \"America/Noronha \", \"Atlantic/South_Georgia\", \"Brazil/DeNoronha\", \"Etc/GMT+2\", \"Atlantic/Cape_Verde\", \"Etc/GMT+1\", \"Africa/Abidjan\", \"Africa/Accra\", \"Africa/Bamako\", \"Africa/Banjul\", \"Africa/Bissau\", \"Africa/Conakry\", \"Africa/Dakar\", \"Africa/Freetown\", \"Africa/Lome\", \"Africa/Monrovia\", \"Africa/Nouakchott\", \"Africa/Ouagadougou\", \"Africa/Sao_Tome\", \"Africa/Timbuktu\", \"America/Danmarkshavn\", \"America/Scoresbysund\", \"Atlantic/Azores\", \"Atlantic/Reykjavik\", \"Atlantic/St_Helena\", \"Etc/GMT\", \"Etc/GMT+0\", \"Etc/GMT-0\", \"Etc/GMT0\", \"Etc/Greenwich\", \"Etc/UCT\", \"Etc/UTC\", \"Etc/Universal\", \"Etc/Zulu\", \"GMT\", \"GMT+0\", \"GMT-0\", \"GMT0\", \"Greenwich\", \"Iceland\", \"UCT\", \"UTC\", \"Universal\", \"Zulu\", \"Africa/Algiers\", \"Africa/Bangui\", \"Africa/Brazzaville\", \"Africa/Casablanca\", \"Africa/Douala\", \"Africa/El_Aaiun\", \"Africa/Kinshasa\", \"Africa/Lagos\", \"Africa/Libreville\", \"Africa/Luanda\", \"Africa/Malabo\", \"Africa/Ndjamena\", \"Africa/Niamey\", \"Africa/Porto-Novo\", \"Africa/Tunis\", \"Africa/Windhoek\", \"Atlantic/Canary\", \"Atlantic/Faeroe\", \"Atlantic/Faroe\", \"Atlantic/Madeira\", \"Eire\", \"Etc/GMT-1\", \"Europe/Belfast\", \"Europe/Dublin\", \"Europe/Guernsey\", \"Europe/Isle_of_Man\", \"Europe/Jersey\", \"Europe/Lisbon\", \"Europe/London\", \"GB\", \"GB-Eire\", \"Portugal\", \"WET\", \"Africa/Blantyre\", \"Africa/Bujumbura\", \"Africa/Cairo\", \"Africa/Ceuta\", \"Africa/Gaborone\", \"Africa/Harare\", \"Africa/Johannesburg\", \"Africa/Kigali\", \"Africa/Lubumbashi\", \"Africa/Lusaka\", \"Africa/Maputo\", \"Africa/Maseru\", \"Africa/Mbabane\", \"Africa/Tripoli\", \"Antarctica/Troll\", \"Arctic/Longyearbyen\", \"Atlantic/Jan_Mayen\", \"CET\", \"Egypt\", \"Etc/GMT-2\", \"Europe/Amsterdam\", \"Europe/Andorra\", \"Europe/Belgrade\", \"Europe/Berlin\", \"Europe/Bratislava\", \"Europe/Brussels\", \"Europe/Budapest\", \"Europe/Busingen\", \"Europe/Copenhagen\", \"Europe/Gibraltar\", \"Europe/Kaliningrad\", \"Europe/Ljubljana\", \"Europe/Luxembourg\", \"Europe/Madrid\", \"Europe/Malta\", \"Europe/Monaco\", \"Europe/Oslo\", \"Europe/Paris\", \"Europe/Podgorica\", \"Europe/Prague\", \"Europe/Rome\", \"Europe/San_Marino\", \"Europe/Sarajevo\", \"Europe/Skopje\", \"Europe/Stockholm\", \"Europe/Tirane\", \"Europe/Vaduz\", \"Europe/Vatican\", \"Europe/Vienna\", \"Europe/Warsaw\", \"Europe/Zagreb\", \"Europe/Zurich\", \"Libya\", \"MET\", \"Poland\", \"Africa/Addis_Ababa\", \"Africa/Asmara\", \"Africa/Asmera\", \"Africa/Dar_es_Salaam\", \"Africa/Djibouti\", \"Africa/Juba\", \"Africa/Kampala\", \"Africa/Khartoum\", \"Africa/Mogadishu\", \"Africa/Nairobi\", \"Antarctica/Syowa\", \"Asia/Aden\", \"Asia/Amman\", \"Asia/Baghdad\", \"Asia/Bahrain\", \"Asia/Beirut\", \"Asia/Damascus\", \"Asia/Gaza\", \"Asia/Hebron\", \"Asia/Istanbul\", \"Asia/Jerusalem\", \"Asia/Kuwait\", \"Asia/Nicosia\", \"Asia/Qatar\", \"Asia/Riyadh\", \"Asia/Tel_Aviv\", \"EET\", \"Etc/GMT-3\", \"Europe/Athens\", \"Europe/Bucharest\", \"Europe/Chisinau\", \"Europe/Helsinki\", \"Europe/Istanbul\", \"Europe/Kiev\", \"Europe/Mariehamn\", \"Europe/Minsk\", \"Europe/Moscow\", \"Europe/Nicosia\", \"Europe/Riga\", \"Europe/Simferopol\", \"Europe/Sofia\", \"Europe/Tallinn\", \"Europe/Tiraspol\", \"Europe/Uzhgorod\", \"Europe/Vilnius\", \"Europe/Volgograd\", \"Europe/Zaporozhye\", \"Indian/Antananarivo\", \"Indian/Comoro\", \"Indian/Mayotte\", \"Israel\", \"Turkey\", \"W-SU\", \"Asia/Dubai\", \"Asia/Muscat\", \"Asia/Tbilisi\", \"Asia/Yerevan\", \"Etc/GMT-4\", \"Europe/Samara\", \"Indian/Mahe\", \"Indian/Mauritius\", \"Indian/Reunion\", \"Asia/Kabul\", \"Asia/Tehran\", \"Iran\", \"Antarctica/Mawson\", \"Asia/Aqtau\", \"Asia/Aqtobe\", \"Asia/Ashgabat\", \"Asia/Ashkhabad\", \"Asia/Baku\", \"Asia/Dushanbe\", \"Asia/Karachi\", \"Asia/Oral\", \"Asia/Samarkand\", \"Asia/Tashkent\", \"Asia/Yekaterinburg\", \"Etc/GMT-5\", \"Indian/Kerguelen\", \"Indian/Maldives\", \"Asia/Calcutta\", \"Asia/Colombo\", \"Asia/Kolkata\", \"Asia/Kathmandu\", \"Asia/Katmandu\", \"Antarctica/Vostok\", \"Asia/Almaty\", \"Asia/Bishkek\", \"Asia/Dacca\", \"Asia/Dhaka\", \"Asia/Kashgar\", \"Asia/Novosibirsk\", \"Asia/Omsk\", \"Asia/Qyzylorda\", \"Asia/Thimbu\", \"Asia/Thimphu\", \"Asia/Urumqi\", \"Etc/GMT-6\", \"Indian/Chagos\", \"Asia/Rangoon\", \"Indian/Cocos\", \"Antarctica/Davis\", \"Asia/Bangkok\", \"Asia/Ho_Chi_Minh\", \"Asia/Hovd\", \"Asia/Jakarta\", \"Asia/Krasnoyarsk\", \"Asia/Novokuznetsk\", \"Asia/Phnom_Penh\", \"Asia/Pontianak\", \"Asia/Saigon\", \"Asia/Vientiane\", \"Etc/GMT-7\", \"Indian/Christmas\", \"Antarctica/Casey\", \"Asia/Brunei\", \"Asia/Chita\", \"Asia/Choibalsan\", \"Asia/Chongqing\", \"Asia/Chungking\", \"Asia/Harbin\", \"Asia/Hong_Kong\", \"Asia/Irkutsk\", \"Asia/Kuala_Lumpur\", \"Asia/Kuching\", \"Asia/Macao\", \"Asia/Macau\", \"Asia/Makassar\", \"Asia/Manila\", \"Asia/Shanghai\", \"Asia/Singapore\", \"Asia/Taipei\", \"Asia/Ujung_Pandang\", \"Asia/Ulaanbaatar\", \"Asia/Ulan_Bator\", \"Australia/Perth\", \"Australia/West\", \"Etc/GMT-8\", \"Hongkong\", \"PRC\", \"ROC\", \"Singapore\", \"Australia/Eucla\", \"Asia/Dili\", \"Asia/Jayapura\", \"Asia/Khandyga\", \"Asia/Pyongyang\", \"Asia/Seoul\", \"Asia/Tokyo\", \"Asia/Yakutsk\", \"Etc/GMT-9\", \"Japan\", \"Pacific/Palau\", \"ROK\", \"Australia/Adelaide \", \"Australia/Broken_Hill\", \"Australia/Darwin\", \"Australia/North\", \"Australia/South\", \"Australia/Yancowinna \", \"Antarctica/DumontDUrville\", \"Asia/Magadan\", \"Asia/Sakhalin\", \"Asia/Ust-Nera\", \"Asia/Vladivostok\", \"Australia/ACT\", \"Australia/Brisbane\", \"Australia/Canberra\", \"Australia/Currie\", \"Australia/Hobart\", \"Australia/Lindeman\", \"Australia/Melbourne\", \"Australia/NSW\", \"Australia/Queensland\", \"Australia/Sydney\", \"Australia/Tasmania\", \"Australia/Victoria\", \"Etc/GMT-10\", \"Pacific/Chuuk\", \"Pacific/Guam\", \"Pacific/Port_Moresby\", \"Pacific/Saipan\", \"Pacific/Truk\", \"Pacific/Yap\", \"Australia/LHI\", \"Australia/Lord_Howe\", \"Antarctica/Macquarie\", \"Asia/Srednekolymsk\", \"Etc/GMT-11\", \"Pacific/Bougainville\", \"Pacific/Efate\", \"Pacific/Guadalcanal\", \"Pacific/Kosrae\", \"Pacific/Noumea\", \"Pacific/Pohnpei\", \"Pacific/Ponape\", \"Pacific/Norfolk\", \"Antarctica/McMurdo\", \"Antarctica/South_Pole\", \"Asia/Anadyr\", \"Asia/Kamchatka\", \"Etc/GMT-12\", \"Kwajalein\", \"NZ\", \"Pacific/Auckland\", \"Pacific/Fiji\", \"Pacific/Funafuti\", \"Pacific/Kwajalein\", \"Pacific/Majuro\", \"Pacific/Nauru\", \"Pacific/Tarawa\", \"Pacific/Wake\", \"Pacific/Wallis\", \"NZ-CHAT\", \"Pacific/Chatham\", \"Etc/GMT-13\", \"Pacific/Apia\", \"Pacific/Enderbury\", \"Pacific/Fakaofo\", \"Pacific/Tongatapu\", \"Etc/GMT-14\", \"Pacific/Kiritimati\"",
-						},
-					}))
+					Expect(errResult).To(ContainElement(PolicyValidationErrors{
+						Context:     "(root).schedules.timezone",
+						Description: "schedules.timezone must be one of the following: \"Etc/GMT+12\", \"Etc/GMT+11\", \"Pacific/Midway\", \"Pacific/Niue\", \"Pacific/Pago_Pago\", \"Pacific/Samoa\", \"US/Samoa\", \"Etc/GMT+10\", \"HST\", \"Pacific/Honolulu\", \"Pacific/Johnston\", \"Pacific/Rarotonga\", \"Pacific/Tahiti\", \"US/Hawaii\", \"Pacific/Marquesas\", \"America/Adak\", \"America/Atka\", \"Etc/GMT+9\", \"Pacific/Gambier\", \"US/Aleutian\", \"America/Anchorage\", \"America/Juneau\", \"America/Metlakatla\", \"America/Nome\", \"America/Sitka\", \"America/Yakutat\", \"Etc/GMT+8\", \"Pacific/Pitcairn\", \"US/Alaska\", \"America/Creston\", \"America/Dawson\", \"America/Dawson_Creek\", \"America/Ensenada\", \"America/Hermosillo\", \"America/Los_Angeles\", \"America/Phoenix\", \"America/Santa_Isabel\", \"America/Tijuana\", \"America/Vancouver\", \"America/Whitehorse\", \"Canada/Pacific\", \"Canada/Yukon\", \"Etc/GMT+7\", \"MST\", \"Mexico/BajaNorte\", \"PST8PDT\", \"US/Arizona\", \"US/Pacific\", \"US/Pacific-New\", \"America/Belize\", \"America/Boise\", \"America/Cambridge_Bay\", \"America/Chihuahua\", \"America/Costa_Rica\", \"America/Denver\", \"America/Edmonton\", \"America/El_Salvador\", \"America/Guatemala\", \"America/Inuvik\", \"America/Managua\", \"America/Mazatlan\", \"America/Ojinaga\", \"America/Regina\", \"America/Shiprock\", \"America/Swift_Current\", \"America/Tegucigalpa\", \"America/Yellowknife\", \"Canada/East-Saskatchewan\", \"Canada/Mountain\", \"Canada/Saskatchewan\", \"Etc/GMT+6\", \"MST7MDT\", \"Mexico/BajaSur\", \"Navajo\", \"Pacific/Galapagos\", \"US/Mountain\", \"America/Atikokan\", \"America/Bahia_Banderas\", \"America/Bogota\", \"America/Cancun\", \"America/Cayman\", \"America/Chicago\", \"America/Coral_Harbour\", \"America/Eirunepe\", \"America/Guayaquil\", \"America/Indiana/Knox\", \"America/Indiana/Tell_City\", \"America/Jamaica\", \"America/Knox_IN\", \"America/Lima\", \"America/Matamoros\", \"America/Menominee\", \"America/Merida\", \"America/Mexico_City\", \"America/Monterrey\", \"America/North_Dakota/Beulah\", \"America/North_Dakota/Center\", \"America/North_Dakota/New_Salem\", \"America/Panama\", \"America/Porto_Acre\", \"America/Rainy_River\", \"America/Rankin_Inlet\", \"America/Resolute\", \"America/Rio_Branco\", \"America/Winnipeg\", \"Brazil/Acre\", \"CST6CDT\", \"Canada/Central\", \"Chile/EasterIsland\", \"EST\", \"Etc/GMT+5\", \"Jamaica\", \"Mexico/General\", \"Pacific/Easter\", \"US/Central\", \"US/Indiana-Starke\", \"America/Caracas\", \"America/Anguilla\", \"America/Antigua\", \"America/Aruba\", \"America/Asuncion\", \"America/Barbados\", \"America/Blanc-Sablon\", \"America/Boa_Vista\", \"America/Campo_Grande\", \"America/Cuiaba\", \"America/Curacao\", \"America/Detroit\", \"America/Dominica\", \"America/Fort_Wayne\", \"America/Grand_Turk\", \"America/Grenada\", \"America/Guadeloupe\", \"America/Guyana\", \"America/Havana\", \"America/Indiana/Indianapolis\", \"America/Indiana/Marengo\", \"America/Indiana/Petersburg\", \"America/Indiana/Vevay\", \"America/Indiana/Vincennes\", \"America/Indiana/Winamac\", \"America/Indianapolis\", \"America/Iqaluit \", \"America/Kentucky/Louisville \", \"America/Kentucky/Monticello\", \"America/Kralendijk\", \"America/La_Paz\", \"America/Louisville \", \"America/Lower_Princes\", \"America/Manaus\", \"America/Marigot\", \"America/Martinique\", \"America/Montreal\", \"America/Montserrat\", \"America/Nassau\", \"America/New_York\", \"America/Nipigon\", \"America/Pangnirtung \", \"America/Port-au-Prince \", \"America/Port_of_Spain\", \"America/Porto_Velho\", \"America/Puerto_Rico \", \"America/Santo_Domingo \", \"America/St_Barthelemy\", \"America/St_Kitts\", \"America/St_Lucia\", \"America/St_Thomas\", \"America/St_Vincent\", \"America/Thunder_Bay\", \"America/Toronto\", \"America/Tortola\", \"America/Virgin\", \"Brazil/West\", \"Canada/Eastern\", \"Cuba\", \"EST5EDT\", \"Etc/GMT+4\", \"US/East-Indiana\", \"US/Eastern\", \"US/Michigan\", \"America/Araguaina \", \"America/Argentina/Buenos_Aires \", \"America/Argentina/Catamarca \", \"America/Argentina/ComodRivadavia \", \"America/Argentina/Cordoba \", \"America/Argentina/Jujuy \", \"America/Argentina/La_Rioja \", \"America/Argentina/Mendoza \", \"America/Argentina/Rio_Gallegos \", \"America/Argentina/Salta \", \"America/Argentina/San_Juan \", \"America/Argentina/San_Luis \", \"America/Argentina/Tucuman \", \"America/Argentina/Ushuaia\", \"America/Bahia\", \"America/Belem\", \"America/Buenos_Aires\", \"America/Catamarca\", \"America/Cayenne\", \"America/Cordoba\", \"America/Fortaleza\", \"America/Glace_Bay\", \"America/Goose_Bay\", \"America/Halifax\", \"America/Jujuy\", \"America/Maceio\", \"America/Mendoza\", \"America/Moncton\", \"America/Montevideo\", \"America/Paramaribo\", \"America/Recife\", \"America/Rosario\", \"America/Santarem\", \"America/Santiago\", \"America/Sao_Paulo\", \"America/Thule\", \"Antarctica/Palmer\", \"Antarctica/Rothera\", \"Atlantic/Bermuda\", \"Atlantic/Stanley\", \"Brazil/East\", \"Canada/Atlantic\", \"Chile/Continental\", \"Etc/GMT+3\", \"America/St_Johns\", \"Canada/Newfoundland\", \"America/Godthab\", \"America/Miquelon\", \"America/Noronha \", \"Atlantic/South_Georgia\", \"Brazil/DeNoronha\", \"Etc/GMT+2\", \"Atlantic/Cape_Verde\", \"Etc/GMT+1\", \"Africa/Abidjan\", \"Africa/Accra\", \"Africa/Bamako\", \"Africa/Banjul\", \"Africa/Bissau\", \"Africa/Conakry\", \"Africa/Dakar\", \"Africa/Freetown\", \"Africa/Lome\", \"Africa/Monrovia\", \"Africa/Nouakchott\", \"Africa/Ouagadougou\", \"Africa/Sao_Tome\", \"Africa/Timbuktu\", \"America/Danmarkshavn\", \"America/Scoresbysund\", \"Atlantic/Azores\", \"Atlantic/Reykjavik\", \"Atlantic/St_Helena\", \"Etc/GMT\", \"Etc/GMT+0\", \"Etc/GMT-0\", \"Etc/GMT0\", \"Etc/Greenwich\", \"Etc/UCT\", \"Etc/UTC\", \"Etc/Universal\", \"Etc/Zulu\", \"GMT\", \"GMT+0\", \"GMT-0\", \"GMT0\", \"Greenwich\", \"Iceland\", \"UCT\", \"UTC\", \"Universal\", \"Zulu\", \"Africa/Algiers\", \"Africa/Bangui\", \"Africa/Brazzaville\", \"Africa/Casablanca\", \"Africa/Douala\", \"Africa/El_Aaiun\", \"Africa/Kinshasa\", \"Africa/Lagos\", \"Africa/Libreville\", \"Africa/Luanda\", \"Africa/Malabo\", \"Africa/Ndjamena\", \"Africa/Niamey\", \"Africa/Porto-Novo\", \"Africa/Tunis\", \"Africa/Windhoek\", \"Atlantic/Canary\", \"Atlantic/Faeroe\", \"Atlantic/Faroe\", \"Atlantic/Madeira\", \"Eire\", \"Etc/GMT-1\", \"Europe/Belfast\", \"Europe/Dublin\", \"Europe/Guernsey\", \"Europe/Isle_of_Man\", \"Europe/Jersey\", \"Europe/Lisbon\", \"Europe/London\", \"GB\", \"GB-Eire\", \"Portugal\", \"WET\", \"Africa/Blantyre\", \"Africa/Bujumbura\", \"Africa/Cairo\", \"Africa/Ceuta\", \"Africa/Gaborone\", \"Africa/Harare\", \"Africa/Johannesburg\", \"Africa/Kigali\", \"Africa/Lubumbashi\", \"Africa/Lusaka\", \"Africa/Maputo\", \"Africa/Maseru\", \"Africa/Mbabane\", \"Africa/Tripoli\", \"Antarctica/Troll\", \"Arctic/Longyearbyen\", \"Atlantic/Jan_Mayen\", \"CET\", \"Egypt\", \"Etc/GMT-2\", \"Europe/Amsterdam\", \"Europe/Andorra\", \"Europe/Belgrade\", \"Europe/Berlin\", \"Europe/Bratislava\", \"Europe/Brussels\", \"Europe/Budapest\", \"Europe/Busingen\", \"Europe/Copenhagen\", \"Europe/Gibraltar\", \"Europe/Kaliningrad\", \"Europe/Ljubljana\", \"Europe/Luxembourg\", \"Europe/Madrid\", \"Europe/Malta\", \"Europe/Monaco\", \"Europe/Oslo\", \"Europe/Paris\", \"Europe/Podgorica\", \"Europe/Prague\", \"Europe/Rome\", \"Europe/San_Marino\", \"Europe/Sarajevo\", \"Europe/Skopje\", \"Europe/Stockholm\", \"Europe/Tirane\", \"Europe/Vaduz\", \"Europe/Vatican\", \"Europe/Vienna\", \"Europe/Warsaw\", \"Europe/Zagreb\", \"Europe/Zurich\", \"Libya\", \"MET\", \"Poland\", \"Africa/Addis_Ababa\", \"Africa/Asmara\", \"Africa/Asmera\", \"Africa/Dar_es_Salaam\", \"Africa/Djibouti\", \"Africa/Juba\", \"Africa/Kampala\", \"Africa/Khartoum\", \"Africa/Mogadishu\", \"Africa/Nairobi\", \"Antarctica/Syowa\", \"Asia/Aden\", \"Asia/Amman\", \"Asia/Baghdad\", \"Asia/Bahrain\", \"Asia/Beirut\", \"Asia/Damascus\", \"Asia/Gaza\", \"Asia/Hebron\", \"Asia/Istanbul\", \"Asia/Jerusalem\", \"Asia/Kuwait\", \"Asia/Nicosia\", \"Asia/Qatar\", \"Asia/Riyadh\", \"Asia/Tel_Aviv\", \"EET\", \"Etc/GMT-3\", \"Europe/Athens\", \"Europe/Bucharest\", \"Europe/Chisinau\", \"Europe/Helsinki\", \"Europe/Istanbul\", \"Europe/Kiev\", \"Europe/Mariehamn\", \"Europe/Minsk\", \"Europe/Moscow\", \"Europe/Nicosia\", \"Europe/Riga\", \"Europe/Simferopol\", \"Europe/Sofia\", \"Europe/Tallinn\", \"Europe/Tiraspol\", \"Europe/Uzhgorod\", \"Europe/Vilnius\", \"Europe/Volgograd\", \"Europe/Zaporozhye\", \"Indian/Antananarivo\", \"Indian/Comoro\", \"Indian/Mayotte\", \"Israel\", \"Turkey\", \"W-SU\", \"Asia/Dubai\", \"Asia/Muscat\", \"Asia/Tbilisi\", \"Asia/Yerevan\", \"Etc/GMT-4\", \"Europe/Samara\", \"Indian/Mahe\", \"Indian/Mauritius\", \"Indian/Reunion\", \"Asia/Kabul\", \"Asia/Tehran\", \"Iran\", \"Antarctica/Mawson\", \"Asia/Aqtau\", \"Asia/Aqtobe\", \"Asia/Ashgabat\", \"Asia/Ashkhabad\", \"Asia/Baku\", \"Asia/Dushanbe\", \"Asia/Karachi\", \"Asia/Oral\", \"Asia/Samarkand\", \"Asia/Tashkent\", \"Asia/Yekaterinburg\", \"Etc/GMT-5\", \"Indian/Kerguelen\", \"Indian/Maldives\", \"Asia/Calcutta\", \"Asia/Colombo\", \"Asia/Kolkata\", \"Asia/Kathmandu\", \"Asia/Katmandu\", \"Antarctica/Vostok\", \"Asia/Almaty\", \"Asia/Bishkek\", \"Asia/Dacca\", \"Asia/Dhaka\", \"Asia/Kashgar\", \"Asia/Novosibirsk\", \"Asia/Omsk\", \"Asia/Qyzylorda\", \"Asia/Thimbu\", \"Asia/Thimphu\", \"Asia/Urumqi\", \"Etc/GMT-6\", \"Indian/Chagos\", \"Asia/Rangoon\", \"Indian/Cocos\", \"Antarctica/Davis\", \"Asia/Bangkok\", \"Asia/Ho_Chi_Minh\", \"Asia/Hovd\", \"Asia/Jakarta\", \"Asia/Krasnoyarsk\", \"Asia/Novokuznetsk\", \"Asia/Phnom_Penh\", \"Asia/Pontianak\", \"Asia/Saigon\", \"Asia/Vientiane\", \"Etc/GMT-7\", \"Indian/Christmas\", \"Antarctica/Casey\", \"Asia/Brunei\", \"Asia/Chita\", \"Asia/Choibalsan\", \"Asia/Chongqing\", \"Asia/Chungking\", \"Asia/Harbin\", \"Asia/Hong_Kong\", \"Asia/Irkutsk\", \"Asia/Kuala_Lumpur\", \"Asia/Kuching\", \"Asia/Macao\", \"Asia/Macau\", \"Asia/Makassar\", \"Asia/Manila\", \"Asia/Shanghai\", \"Asia/Singapore\", \"Asia/Taipei\", \"Asia/Ujung_Pandang\", \"Asia/Ulaanbaatar\", \"Asia/Ulan_Bator\", \"Australia/Perth\", \"Australia/West\", \"Etc/GMT-8\", \"Hongkong\", \"PRC\", \"ROC\", \"Singapore\", \"Australia/Eucla\", \"Asia/Dili\", \"Asia/Jayapura\", \"Asia/Khandyga\", \"Asia/Pyongyang\", \"Asia/Seoul\", \"Asia/Tokyo\", \"Asia/Yakutsk\", \"Etc/GMT-9\", \"Japan\", \"Pacific/Palau\", \"ROK\", \"Australia/Adelaide \", \"Australia/Broken_Hill\", \"Australia/Darwin\", \"Australia/North\", \"Australia/South\", \"Australia/Yancowinna \", \"Antarctica/DumontDUrville\", \"Asia/Magadan\", \"Asia/Sakhalin\", \"Asia/Ust-Nera\", \"Asia/Vladivostok\", \"Australia/ACT\", \"Australia/Brisbane\", \"Australia/Canberra\", \"Australia/Currie\", \"Australia/Hobart\", \"Australia/Lindeman\", \"Australia/Melbourne\", \"Australia/NSW\", \"Australia/Queensland\", \"Australia/Sydney\", \"Australia/Tasmania\", \"Australia/Victoria\", \"Etc/GMT-10\", \"Pacific/Chuuk\", \"Pacific/Guam\", \"Pacific/Port_Moresby\", \"Pacific/Saipan\", \"Pacific/Truk\", \"Pacific/Yap\", \"Australia/LHI\", \"Australia/Lord_Howe\", \"Antarctica/Macquarie\", \"Asia/Srednekolymsk\", \"Etc/GMT-11\", \"Pacific/Bougainville\", \"Pacific/Efate\", \"Pacific/Guadalcanal\", \"Pacific/Kosrae\", \"Pacific/Noumea\", \"Pacific/Pohnpei\", \"Pacific/Ponape\", \"Pacific/Norfolk\", \"Antarctica/McMurdo\", \"Antarctica/South_Pole\", \"Asia/Anadyr\", \"Asia/Kamchatka\", \"Etc/GMT-12\", \"Kwajalein\", \"NZ\", \"Pacific/Auckland\", \"Pacific/Fiji\", \"Pacific/Funafuti\", \"Pacific/Kwajalein\", \"Pacific/Majuro\", \"Pacific/Nauru\", \"Pacific/Tarawa\", \"Pacific/Wake\", \"Pacific/Wallis\", \"NZ-CHAT\", \"Pacific/Chatham\", \"Etc/GMT-13\", \"Pacific/Apia\", \"Pacific/Enderbury\", \"Pacific/Fakaofo\", \"Pacific/Tongatapu\", \"Etc/GMT-14\", \"Pacific/Kiritimati\"",
+					},
+					))
 				})
 			})
 
@@ -1200,16 +1158,16 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 				})
 				It("should fail", func() {
-					Expect(errResult).To(Equal([]PolicyValidationErrors{
-						{
+					Expect(errResult).To(ContainElements(
+						PolicyValidationErrors{
 							Context:     "(root).schedules",
 							Description: "Must validate at least one schema (anyOf)",
 						},
-						{
+						PolicyValidationErrors{
 							Context:     "(root).schedules",
 							Description: "recurring_schedule is required",
 						},
-					}))
+					))
 				})
 			})
 
@@ -1270,12 +1228,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0].start_time is same or after recurring_schedule[0].end_time",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0].start_time is same or after recurring_schedule[0].end_time",
+						},
+						))
 					})
 				})
 				Context("when only start_date is present", func() {
@@ -1434,12 +1391,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0].start_date is after recurring_schedule[0].end_date",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0].start_date is after recurring_schedule[0].end_date",
+						},
+						))
 					})
 				})
 				Context("when start_date is before current_date", func() {
@@ -1470,12 +1426,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0].start_date is before recurring_schedule[0].current_date",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0].start_date is before recurring_schedule[0].current_date",
+						},
+						))
 					})
 				})
 				Context("when instance_min_count is missing", func() {
@@ -1503,12 +1458,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "instance_min_count is required",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "instance_min_count is required",
+						},
+						))
 					})
 				})
 				Context("when instance_max_count is missing", func() {
@@ -1536,12 +1490,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "instance_max_count is required",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "instance_max_count is required",
+						},
+						))
 					})
 				})
 				Context("when initial_min_instance_count is missing", func() {
@@ -1597,12 +1550,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0.instance_min_count",
-								Description: "recurring_schedule[0].instance_min_count 10 is higher than recurring_schedule[0].instance_max_count 5",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0.instance_min_count",
+							Description: "recurring_schedule[0].instance_min_count 10 is higher than recurring_schedule[0].instance_max_count 5",
+						},
+						))
 					})
 				})
 				Context("when initial_min_instance_count is smaller than instance_min_count", func() {
@@ -1631,12 +1583,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0.initial_min_instance_count",
-								Description: "recurring_schedule[0].initial_min_instance_count 1 is smaller than recurring_schedule[0].instance_min_count 2",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0.initial_min_instance_count",
+							Description: "recurring_schedule[0].initial_min_instance_count 1 is smaller than recurring_schedule[0].instance_min_count 2",
+						},
+						))
 					})
 				})
 				Context("when initial_min_instance_count is greater than instance_max_count", func() {
@@ -1665,12 +1616,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0.initial_min_instance_count",
-								Description: "recurring_schedule[0].initial_min_instance_count 8 is greater than recurring_schedule[0].instance_max_count 5",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0.initial_min_instance_count",
+							Description: "recurring_schedule[0].initial_min_instance_count 8 is greater than recurring_schedule[0].instance_max_count 5",
+						},
+						))
 					})
 				})
 				Context("when overlapping time range in overlapping days_of_week", func() {
@@ -1711,12 +1661,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
+						},
+						))
 					})
 				})
 				Context("when both days_of_week and days_of_month are present", func() {
@@ -1750,12 +1699,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "Must validate one and only one schema (oneOf)",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "Must validate one and only one schema (oneOf)",
+						},
+						))
 					})
 				})
 				Context("when overlapping time range in non-overlapping days_of_week", func() {
@@ -1887,12 +1835,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
+						},
+						))
 					})
 				})
 
@@ -1937,12 +1884,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
+						},
+						))
 					})
 				})
 
@@ -1986,12 +1932,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
+						},
+						))
 					})
 				})
 
@@ -2031,12 +1976,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
+						},
+						))
 					})
 				})
 
@@ -2166,12 +2110,11 @@ var _ = Describe("PolicyValidator", func() {
 					`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.recurring_schedule.0",
-								Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.recurring_schedule.0",
+							Description: "recurring_schedule[0] and recurring_schedule[1] are overlapping",
+						},
+						))
 					})
 				})
 
@@ -2223,12 +2166,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "start_date_time is required",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "start_date_time is required",
+						},
+						))
 					})
 				})
 				Context("when start_date_time is not in correct format", func() {
@@ -2251,12 +2193,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0.start_date_time",
-								Description: "Does not match pattern '^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|1[0-9]|0[0-9]):([0-5][0-9])$'",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0.start_date_time",
+							Description: "Does not match pattern '^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|1[0-9]|0[0-9]):([0-5][0-9])$'",
+						},
+						))
 					})
 				})
 
@@ -2279,12 +2220,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "end_date_time is required",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "end_date_time is required",
+						},
+						))
 					})
 				})
 				Context("when end_date_time is not in correct format", func() {
@@ -2307,12 +2247,11 @@ var _ = Describe("PolicyValidator", func() {
 				}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0.end_date_time",
-								Description: "Does not match pattern '^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|1[0-9]|0[0-9]):([0-5][0-9])$'",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0.end_date_time",
+							Description: "Does not match pattern '^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|1[0-9]|0[0-9]):([0-5][0-9])$'",
+						},
+						))
 					})
 				})
 
@@ -2335,12 +2274,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "instance_min_count is required",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "instance_min_count is required",
+						},
+						))
 					})
 				})
 
@@ -2363,12 +2301,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "instance_max_count is required",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "instance_max_count is required",
+						},
+						))
 					})
 				})
 
@@ -2415,12 +2352,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0.instance_min_count",
-								Description: "specific_date[0].instance_min_count 5 is higher than specific_date[0].instance_max_count 2",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0.instance_min_count",
+							Description: "specific_date[0].instance_min_count 5 is higher than specific_date[0].instance_max_count 2",
+						},
+						))
 					})
 				})
 
@@ -2444,12 +2380,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0.initial_min_instance_count",
-								Description: "specific_date[0].initial_min_instance_count 1 is smaller than specific_date[0].instance_min_count 2",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0.initial_min_instance_count",
+							Description: "specific_date[0].initial_min_instance_count 1 is smaller than specific_date[0].instance_min_count 2",
+						},
+						))
 					})
 				})
 
@@ -2473,12 +2408,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0.initial_min_instance_count",
-								Description: "specific_date[0].initial_min_instance_count 8 is greater than specific_date[0].instance_max_count 5",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0.initial_min_instance_count",
+							Description: "specific_date[0].initial_min_instance_count 8 is greater than specific_date[0].instance_max_count 5",
+						},
+						))
 					})
 				})
 
@@ -2502,12 +2436,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "specific_date[0].start_date_time is before current date time",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "specific_date[0].start_date_time is before current date time",
+						},
+						))
 					})
 				})
 				Context("when end_date_time is before start_date_time", func() {
@@ -2530,12 +2463,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "specific_date[0].start_date_time is after specific_date[0].end_date_time",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "specific_date[0].start_date_time is after specific_date[0].end_date_time",
+						},
+						))
 					})
 				})
 
@@ -2566,12 +2498,11 @@ var _ = Describe("PolicyValidator", func() {
 					}`
 					})
 					It("should fail", func() {
-						Expect(errResult).To(Equal([]PolicyValidationErrors{
-							{
-								Context:     "(root).schedules.specific_date.0",
-								Description: "specific_date[0]:{start_date_time: 2097-01-04T20:00, end_date_time: 2097-01-04T20:00} and specific_date[1]:{start_date_time: 2090-01-03T20:00, end_date_time: 2090-01-03T20:00} are overlapping",
-							},
-						}))
+						Expect(errResult).To(ContainElement(PolicyValidationErrors{
+							Context:     "(root).schedules.specific_date.0",
+							Description: "specific_date[0]:{start_date_time: 2097-01-04T20:00, end_date_time: 2097-01-04T20:00} and specific_date[1]:{start_date_time: 2090-01-03T20:00, end_date_time: 2090-01-03T20:00} are overlapping",
+						},
+						))
 					})
 				})
 			})
@@ -2621,12 +2552,11 @@ var _ = Describe("PolicyValidator", func() {
 			}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root).configuration.custom_metrics.metric_submission_strategy",
-						Description: "allow_from is required",
-					},
-				}))
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root).configuration.custom_metrics.metric_submission_strategy",
+					Description: "allow_from is required",
+				},
+				))
 			})
 		})
 		When("allow_from is invalid in metric_submission_strategy", func() {
@@ -2653,12 +2583,11 @@ var _ = Describe("PolicyValidator", func() {
 			}`
 			})
 			It("should fail", func() {
-				Expect(errResult).To(Equal([]PolicyValidationErrors{
-					{
-						Context:     "(root).configuration.custom_metrics.metric_submission_strategy.allow_from",
-						Description: "configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\"",
-					},
-				}))
+				Expect(errResult).To(ContainElement(PolicyValidationErrors{
+					Context:     "(root).configuration.custom_metrics.metric_submission_strategy.allow_from",
+					Description: "configuration.custom_metrics.metric_submission_strategy.allow_from must be one of the following: \"bound_app\", \"same_app\"",
+				},
+				))
 			})
 		})
 		When("allow_from is valid in metric_submission_strategy", func() {

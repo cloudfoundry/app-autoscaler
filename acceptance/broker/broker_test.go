@@ -63,36 +63,20 @@ func (s serviceInstance) name() string {
 
 var _ = Describe("AutoScaler Service Broker", func() {
 	var appName string
-
-	BeforeEach(func() {
-		appName = helpers.CreateTestApp(cfg, "broker-test", 1)
-	})
-
-	AfterEach(func() {
-		if os.Getenv("SKIP_TEARDOWN") == "true" {
-			fmt.Println("Skipping Teardown...")
-		} else {
-			Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
-			Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
-			Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
-		}
-	})
-
 	Context("performs lifecycle operations", func() {
-
 		var instance serviceInstance
 
 		BeforeEach(func() {
+			appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+
 			instance = createService(cfg.ServicePlan)
 		})
-
 		It("fails to bind with invalid policies", func() {
 			bindService := cf.Cf("bind-service", appName, instance.name(), "-c", "../assets/file/policy/invalid.json").Wait(cfg.DefaultTimeoutDuration())
 			Expect(bindService).To(Exit(1))
 			combinedBuffer := gbytes.BufferWithBytes(append(bindService.Out.Contents(), bindService.Err.Contents()...))
-			Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(`[{"context":"(root).scaling_rules.1.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}]`))
+			Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(`{"context":"(root).scaling_rules.1.adjustment","description":"Does not match pattern '^[-+][1-9]+[0-9]*%?$'"}`))
 		})
-
 		It("binds&unbinds with policy", func() {
 			policyFile := "../assets/file/policy/all.json"
 			policy, err := os.ReadFile(policyFile)
@@ -106,7 +90,6 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 			instance.unbind(appName)
 		})
-
 		It("binds&unbinds with policy having credential-type as x509", func() {
 			policyFile := "../assets/file/policy/policy-with-credential-type.json"
 			_, err := os.ReadFile(policyFile)
@@ -150,16 +133,24 @@ var _ = Describe("AutoScaler Service Broker", func() {
 		})
 
 		AfterEach(func() {
-			instance.delete()
+			if os.Getenv("SKIP_TEARDOWN") == "true" {
+				fmt.Println("Skipping Teardown...")
+			} else {
+				Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+				instance.delete()
+			}
 		})
 	})
-
 	Describe("allows setting default policies", func() {
 		var instance serviceInstance
 		var defaultPolicy []byte
 		var policy []byte
 
 		BeforeEach(func() {
+			appName = helpers.CreateTestApp(cfg, "broker-test", 1)
 			instance = createServiceWithParameters(cfg.ServicePlan, "../assets/file/policy/default_policy.json")
 			Expect(instance).NotTo(BeEmpty())
 			var err error
@@ -167,7 +158,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			var serviceParameters = struct {
-				DefaultPolicy interface{} `json:"default_policy"`
+				DefaultPolicy any `json:"default_policy"`
 			}{}
 
 			err = json.Unmarshal(defaultPolicy, &serviceParameters)
@@ -197,13 +188,18 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			if os.Getenv("SKIP_TEARDOWN") == "true" {
 				fmt.Println("Skipping Teardown...")
 			} else {
+				Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
 				instance.delete()
 			}
 		})
 	})
-
 	Describe("allows updating service plans", func() {
 		var instance serviceInstance
+		BeforeEach(func() {
+			appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+		})
 		It("should update a service instance from one plan to another plan", func() {
 			servicePlans := GetServicePlans(cfg)
 			source, target, err := servicePlans.getSourceAndTargetForPlanUpdate()
@@ -211,9 +207,138 @@ var _ = Describe("AutoScaler Service Broker", func() {
 			instance = createService(source.Name)
 			instance.updatePlan(target.Name)
 		})
-
 		AfterEach(func() {
-			instance.delete()
+			if os.Getenv("SKIP_TEARDOWN") == "true" {
+				fmt.Println("Skipping Teardown...")
+			} else {
+				Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+				Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+				instance.delete()
+			}
+		})
+	})
+	Context("Create a service-key", func() {
+		var serviceInstance serviceInstance
+		var serviceInstanceName string
+		When("providing a valid app-guid", func() {
+			When("the corresponding app isn't in the same space than the service-instance", func() {
+				var currentOrgName string
+				var currentSpaceName string
+				var otherSpaceName string
+				var appGuid string
+				BeforeEach(func() {
+					serviceInstance = createService(cfg.ServicePlan)
+					serviceInstanceName = string(serviceInstance)
+
+					currentSpaceName = setup.TestSpace.SpaceName()
+					otherSpaceName = currentSpaceName + "_other"
+					currentOrgName = setup.TestSpace.OrganizationName()
+					adminCtx := setup.AdminUserContext()
+					adminCtx.Org = currentOrgName
+					workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
+						cf.Cf("create-space", otherSpaceName, "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
+						cf.Cf("target", "-o", currentOrgName, "-s", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
+
+						appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+						var err error
+						appGuid, err = helpers.GetAppGuid(cfg, appName)
+						Expect(err).ToNot(HaveOccurred())
+					})
+				})
+				AfterEach(func() {
+					if os.Getenv("SKIP_TEARDOWN") == "true" {
+						fmt.Println("Skipping Teardown...")
+					} else {
+						serviceInstance.delete()
+
+						adminCtx := setup.AdminUserContext()
+						adminCtx.Org = currentOrgName
+						adminCtx.Space = otherSpaceName
+						workflowhelpers.AsUser(adminCtx, cfg.DefaultTimeoutDuration(), func() {
+							s := cf.Cf("target", "-o", currentOrgName, "-s", otherSpaceName).Wait(cfg.DefaultTimeoutDuration())
+							Expect(s).To(Exit(0), "failed targeting org %s and space %s", currentOrgName, otherSpaceName)
+
+							Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+							Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+							Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+							s = cf.Cf("delete-space", otherSpaceName, "-f", "-o", currentOrgName).Wait(cfg.DefaultTimeoutDuration())
+							Expect(s).To(Exit(0), "failed deleting space %s", otherSpaceName)
+						})
+					}
+				})
+
+				It("fails", func() {
+					// Preparation
+					paramsTemplate := `
+{
+  "schema-version": "0.1",
+  "configuration": {
+	"app_guid": "%s"
+  }
+}
+`
+					params := fmt.Sprintf(paramsTemplate, appGuid)
+
+					// Execution
+					serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+					session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+						Wait(cfg.DefaultTimeoutDuration())
+
+					// Validation
+					Expect(session).To(Exit(1))
+
+					combinedBuffer := gbytes.BufferWithBytes(append(session.Out.Contents(), session.Err.Contents()...))
+					expectedErrMsg := fmt.Sprintf("app %s not found in space", appGuid)
+					Eventually(string(combinedBuffer.Contents())).Should(ContainSubstring(expectedErrMsg))
+				})
+			})
+			When("the corresponding app is in the same space than the service-instance", func() {
+				var appGuid string
+				BeforeEach(func() {
+					appName = helpers.CreateTestApp(cfg, "broker-test", 1)
+					serviceInstance = createService(cfg.ServicePlan)
+					serviceInstanceName = string(serviceInstance)
+
+					var err error
+					appGuid, err = helpers.GetAppGuid(cfg, appName)
+					Expect(err).ToNot(HaveOccurred())
+				})
+				AfterEach(func() {
+					if os.Getenv("SKIP_TEARDOWN") == "true" {
+						fmt.Println("Skipping Teardown...")
+					} else {
+						Eventually(cf.Cf("app", appName, "--guid"), cfg.DefaultTimeoutDuration()).Should(Exit())
+						Eventually(cf.Cf("logs", appName, "--recent"), cfg.DefaultTimeoutDuration()).Should(Exit())
+						Expect(cf.Cf("delete", appName, "-f", "-r").Wait(cfg.CfPushTimeoutDuration())).To(Exit(0))
+
+						serviceInstance.delete()
+					}
+				})
+
+				It("succeeds on simple service-key creation", func() {
+					// Preparation
+					paramsTemplate := `
+{
+  "schema-version": "0.1",
+  "configuration": {
+	"app_guid": "%s"
+  }
+}
+`
+					params := fmt.Sprintf(paramsTemplate, appGuid)
+
+					// Execution
+					serviceKeyName := fmt.Sprintf("%s@%s", appName, serviceInstanceName)
+					session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+						Wait(cfg.DefaultTimeoutDuration())
+
+					// Validation
+					Expect(session).To(Exit(0))
+				})
+			})
 		})
 	})
 })

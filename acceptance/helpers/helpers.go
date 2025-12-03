@@ -38,6 +38,7 @@ type BindingConfig struct {
 	Configuration Configuration `json:"configuration"`
 	ScalingPolicy
 }
+
 type Configuration struct {
 	CustomMetrics CustomMetricsConfig `json:"custom_metrics"`
 }
@@ -461,7 +462,7 @@ func RunningInstances(appGUID string, timeout time.Duration) (int, error) {
 	return webInstances, nil
 }
 
-func WaitForNInstancesRunning(appGUID string, instances int, timeout time.Duration, optionalDescription ...interface{}) {
+func WaitForNInstancesRunning(appGUID string, instances int, timeout time.Duration, optionalDescription ...any) {
 	GinkgoHelper()
 	By(fmt.Sprintf("Waiting for %d instances of app: %s", instances, appGUID))
 	Eventually(getAppInstances(appGUID, 8*time.Second)).
@@ -480,7 +481,7 @@ func getAppInstances(appGUID string, timeout time.Duration) func() int {
 	}
 }
 
-func MarshalWithoutHTMLEscape(v interface{}) ([]byte, error) {
+func MarshalWithoutHTMLEscape(v any) ([]byte, error) {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
 	enc.SetEscapeHTML(false)
@@ -538,6 +539,13 @@ func BindServiceToAppWithPolicy(cfg *config.Config, appName string, instanceName
 func UnbindServiceFromApp(cfg *config.Config, appName string, instanceName string) {
 	unbindService := cf.Cf("unbind-service", appName, instanceName).Wait(cfg.DefaultTimeoutDuration())
 	Expect(unbindService).To(Exit(0), fmt.Sprintf("Failed to unbind service %s from app %s \n CLI Output:\n %s %s", instanceName, appName, unbindService.Buffer().Contents(), unbindService.Err.Contents()))
+}
+
+func CreateServiceKeyWithParams(serviceInstanceName, serviceKeyName string, params string, timeout time.Duration) *Session {
+	session := cf.Cf("create-service-key", serviceInstanceName, serviceKeyName, "-c", params).
+		Wait(timeout)
+
+	return session
 }
 
 func CreateService(cfg *config.Config) string {

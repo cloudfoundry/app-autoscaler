@@ -56,12 +56,12 @@ var _ = BeforeSuite(func() {
 		helpers.EnableCFTrace(cfg, componentName)
 	}
 
-	otherConfig := *cfg
+	otherConfig := cfg.Clone()
 	otherConfig.NamePrefix = otherConfig.NamePrefix + "_other"
 
 	By("Setup test environment")
 	setup = workflowhelpers.NewTestSuiteSetup(cfg)
-	otherSetup = workflowhelpers.NewTestSuiteSetup(&otherConfig)
+	otherSetup = workflowhelpers.NewTestSuiteSetup(otherConfig)
 
 	otherSetup.Setup()
 	setup.Setup()
