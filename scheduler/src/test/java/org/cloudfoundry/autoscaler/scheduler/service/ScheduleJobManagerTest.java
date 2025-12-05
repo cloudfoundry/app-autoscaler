@@ -11,9 +11,10 @@ import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.SCHED
 import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.TIMEZONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,8 +40,8 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -55,16 +56,16 @@ import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class ScheduleJobManagerTest {
 
-  @MockitoBean private Scheduler scheduler;
+  @MockBean private Scheduler scheduler;
 
-  @MockitoBean private ActiveScheduleDao activeScheduleDao;
+  @MockBean private ActiveScheduleDao activeScheduleDao;
 
   @Autowired private ScheduleJobManager scheduleJobManager;
 
@@ -74,7 +75,7 @@ public class ScheduleJobManagerTest {
 
   @Autowired private TestDataDbUtil testDataDbUtil;
 
-  @Before
+  @BeforeEach
   public void before() throws SchedulerException {
     testDataDbUtil.cleanupData();
 
@@ -321,8 +322,8 @@ public class ScheduleJobManagerTest {
         new JobKey(
             scheduleId + JobActionEnum.END.getJobIdSuffix() + "_" + startJobIdentifier, "Schedule");
 
-    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(startJobKey);
-    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(endJobKey);
+    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(startJobKey));
+    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(endJobKey));
   }
 
   @Test
@@ -348,8 +349,8 @@ public class ScheduleJobManagerTest {
         new JobKey(
             scheduleId + JobActionEnum.END.getJobIdSuffix() + "_" + startJobIdentifier, "Schedule");
 
-    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(startJobKey);
-    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(endJobKey);
+    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(startJobKey));
+    Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(endJobKey));
   }
 
   @Test
@@ -382,11 +383,11 @@ public class ScheduleJobManagerTest {
     // Set mock object for Quartz.
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .scheduleJob(any(), any());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     scheduleJobManager.createSimpleJob(specificDateScheduleEntity);
 
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
 
     List<String> errors = validationErrorResult.getAllErrorMessages();
     assertEquals(1, errors.size());
@@ -416,7 +417,7 @@ public class ScheduleJobManagerTest {
     // Set mock object for Quartz.
     Mockito.doThrow(new SchedulerException("test exception"))
         .when(scheduler)
-        .scheduleJob(any(), any());
+        .scheduleJob(Mockito.any(), Mockito.any());
 
     scheduleJobManager.createCronJob(recurringScheduleEntity);
 
@@ -427,7 +428,7 @@ public class ScheduleJobManagerTest {
             "scheduler.error.create.failed", "app_id=" + appId, "test exception");
     assertEquals(errorMessage, errors.get(0));
     assertEquals(1, errors.size());
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
   }
 
   @Test
@@ -437,7 +438,9 @@ public class ScheduleJobManagerTest {
     Long scheduleId = 1L;
     ScheduleTypeEnum type = ScheduleTypeEnum.SPECIFIC_DATE;
 
-    Mockito.doThrow(new SchedulerException("test exception")).when(scheduler).deleteJob(any());
+    Mockito.doThrow(new SchedulerException("test exception"))
+        .when(scheduler)
+        .deleteJob(Mockito.any());
 
     scheduleJobManager.deleteJob(appId, scheduleId, type);
 
@@ -448,7 +451,7 @@ public class ScheduleJobManagerTest {
             "scheduler.error.delete.failed", "app_id=" + appId, "test exception");
     assertEquals(errorMessage, errors.get(0));
     assertEquals(1, errors.size());
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
   }
 
   @Test
@@ -458,7 +461,9 @@ public class ScheduleJobManagerTest {
     Long scheduleId = 1L;
     ScheduleTypeEnum type = ScheduleTypeEnum.RECURRING;
 
-    Mockito.doThrow(new SchedulerException("test exception")).when(scheduler).deleteJob(any());
+    Mockito.doThrow(new SchedulerException("test exception"))
+        .when(scheduler)
+        .deleteJob(Mockito.any());
 
     scheduleJobManager.deleteJob(appId, scheduleId, type);
 
@@ -469,7 +474,7 @@ public class ScheduleJobManagerTest {
             "scheduler.error.delete.failed", "app_id=" + appId, "test exception");
     assertEquals(errorMessage, errors.get(0));
     assertEquals(1, errors.size());
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
   }
 
   private RecurringScheduleEntity createRecurringScheduleWithDaysOfMonth(

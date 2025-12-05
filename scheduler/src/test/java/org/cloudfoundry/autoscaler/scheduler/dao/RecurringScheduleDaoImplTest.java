@@ -1,22 +1,21 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import jakarta.transaction.Transactional;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import javax.transaction.Transactional;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +34,7 @@ public class RecurringScheduleDaoImplTest {
   private String guid1;
   private String guid2;
 
-  @Before
+  @BeforeEach
   public void before() throws SQLException {
     // Remove All ActiveSchedules
     testDataDbUtil.cleanupData();
@@ -112,16 +111,20 @@ public class RecurringScheduleDaoImplTest {
     ;
     testDataDbUtil.insertRecurringSchedule(entities);
 
-    Map<String, String> foundEntityList = recurringScheduleDao.getDistinctAppIdAndGuidList();
+    List foundEntityList = recurringScheduleDao.getDistinctAppIdAndGuidList();
 
     assertThat("It should have two record", foundEntityList.size(), is(2));
-
-    Set<String> appIdSet = foundEntityList.keySet();
-
+    Set<String> appIdSet =
+        new HashSet<String>() {
+          {
+            add((String) ((Object[]) (foundEntityList.get(0)))[0]);
+            add((String) ((Object[]) (foundEntityList.get(1)))[0]);
+          }
+        };
     assertThat(
         "It should contains the two inserted entities",
-        appIdSet,
-        containsInAnyOrder(appId1, appId2));
+        appIdSet.contains(appId1) && appIdSet.contains(appId2),
+        is(true));
   }
 
   @Test

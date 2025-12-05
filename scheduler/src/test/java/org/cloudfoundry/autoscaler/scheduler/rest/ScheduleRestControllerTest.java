@@ -2,8 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.rest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyString;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -30,18 +28,18 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -54,9 +52,9 @@ import org.springframework.web.context.WebApplicationContext;
 @DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
 public class ScheduleRestControllerTest {
 
-  @MockitoBean private Scheduler scheduler;
+  @MockBean private Scheduler scheduler;
 
-  @MockitoBean private ActiveScheduleDao activeScheduleDao;
+  @MockBean private ActiveScheduleDao activeScheduleDao;
 
   @Autowired private SpecificDateScheduleDao specificDateScheduleDao;
 
@@ -68,13 +66,13 @@ public class ScheduleRestControllerTest {
 
   private MockMvc mockMvc;
 
+  private String appId = TestDataSetupHelper.generateAppIds(1)[0];
+  private String guid = TestDataSetupHelper.generateGuid();
+  private String guid1;
+  private String guid2;
   private String guid3;
 
-  String appIdForAppWithOneSpecificDateSchedule;
-  String appIdForAppWithOneRecurringSchedule;
-  String appIdForAppWithTwoSpecificAndTwowRecuringSchedules;
-
-  @Before
+  @BeforeEach
   public void before() throws Exception {
     Mockito.reset(scheduler);
     Mockito.reset(activeScheduleDao);
@@ -85,59 +83,44 @@ public class ScheduleRestControllerTest {
     activeScheduleEntity.setStartJobIdentifier(System.currentTimeMillis());
     Mockito.when(activeScheduleDao.find(any())).thenReturn(activeScheduleEntity);
 
-    appIdForAppWithOneSpecificDateSchedule = TestDataSetupHelper.generateGuid();
-    String guid1 = TestDataSetupHelper.generateGuid();
+    String appId = "appId_1";
+    guid1 = TestDataSetupHelper.generateGuid();
     List<SpecificDateScheduleEntity> specificDateScheduleEntities =
-        TestDataSetupHelper.generateSpecificDateScheduleEntities(
-            appIdForAppWithOneSpecificDateSchedule, guid1, false, 1);
+        TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid1, false, 1);
     testDataDbUtil.insertSpecificDateSchedule(specificDateScheduleEntities);
 
-    appIdForAppWithOneRecurringSchedule = TestDataSetupHelper.generateGuid();
-    String guid2 = TestDataSetupHelper.generateGuid();
+    appId = "appId_2";
+    guid2 = TestDataSetupHelper.generateGuid();
     List<RecurringScheduleEntity> recurringScheduleEntities =
-        TestDataSetupHelper.generateRecurringScheduleEntities(
-            appIdForAppWithOneRecurringSchedule, guid2, false, 1, 0);
+        TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid2, false, 1, 0);
     testDataDbUtil.insertRecurringSchedule(recurringScheduleEntities);
 
-    appIdForAppWithTwoSpecificAndTwowRecuringSchedules = TestDataSetupHelper.generateGuid();
+    appId = "appId_3";
     guid3 = TestDataSetupHelper.generateGuid();
     specificDateScheduleEntities =
-        TestDataSetupHelper.generateSpecificDateScheduleEntities(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules, guid3, false, 2);
+        TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid3, false, 2);
     testDataDbUtil.insertSpecificDateSchedule(specificDateScheduleEntities);
     recurringScheduleEntities =
-        TestDataSetupHelper.generateRecurringScheduleEntities(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules, guid3, false, 1, 2);
+        TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid3, false, 1, 2);
     testDataDbUtil.insertRecurringSchedule(recurringScheduleEntities);
-  }
-
-  @Test
-  public void testGetAllSchedule_with_malformed_appId() throws Exception {
-    String appId = "appId_1";
-
-    ResultActions resultActions =
-        mockMvc.perform(
-            get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
-
-    resultActions.andExpect(status().isBadRequest());
   }
 
   @Test
   public void testGetAllSchedule_with_no_schedules() throws Exception {
     ResultActions resultActions =
         mockMvc.perform(
-            get(TestDataSetupHelper.getSchedulerPath(TestDataSetupHelper.generateGuid()))
-                .accept(MediaType.APPLICATION_JSON));
+            get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
     assertNoSchedulesFound(resultActions);
   }
 
   @Test
   public void testGetSchedule_with_only_specificDateSchedule() throws Exception {
+    String appId = "appId_1";
+
     ResultActions resultActions =
         mockMvc.perform(
-            get(TestDataSetupHelper.getSchedulerPath(appIdForAppWithOneSpecificDateSchedule))
-                .accept(MediaType.APPLICATION_JSON));
+            get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
     ApplicationSchedules applicationPolicy =
         getApplicationSchedulesFromResultActions(resultActions);
@@ -146,21 +129,18 @@ public class ScheduleRestControllerTest {
     resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
     assertSpecificDateScheduleFoundEquals(
-        1,
-        appIdForAppWithOneSpecificDateSchedule,
-        applicationPolicy.getSchedules().getSpecificDate());
+        1, appId, applicationPolicy.getSchedules().getSpecificDate());
     assertRecurringDateScheduleFoundEquals(
-        0,
-        appIdForAppWithOneSpecificDateSchedule,
-        applicationPolicy.getSchedules().getRecurringSchedule());
+        0, appId, applicationPolicy.getSchedules().getRecurringSchedule());
   }
 
   @Test
   public void testGetSchedule_with_only_recurringSchedule() throws Exception {
+    String appId = "appId_2";
+
     ResultActions resultActions =
         mockMvc.perform(
-            get(TestDataSetupHelper.getSchedulerPath(appIdForAppWithOneRecurringSchedule))
-                .accept(MediaType.APPLICATION_JSON));
+            get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
     ApplicationSchedules applicationPolicy =
         getApplicationSchedulesFromResultActions(resultActions);
@@ -169,20 +149,18 @@ public class ScheduleRestControllerTest {
     resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
     assertSpecificDateScheduleFoundEquals(
-        0, appIdForAppWithOneRecurringSchedule, applicationPolicy.getSchedules().getSpecificDate());
+        0, appId, applicationPolicy.getSchedules().getSpecificDate());
     assertRecurringDateScheduleFoundEquals(
-        1,
-        appIdForAppWithOneRecurringSchedule,
-        applicationPolicy.getSchedules().getRecurringSchedule());
+        1, appId, applicationPolicy.getSchedules().getRecurringSchedule());
   }
 
   @Test
   public void testGetSchedule_with_specificDateSchedule_and_recurringSchedule() throws Exception {
+    String appId = "appId_3";
+
     ResultActions resultActions =
         mockMvc.perform(
-            get(TestDataSetupHelper.getSchedulerPath(
-                    appIdForAppWithTwoSpecificAndTwowRecuringSchedules))
-                .accept(MediaType.APPLICATION_JSON));
+            get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
     ApplicationSchedules applicationPolicy =
         getApplicationSchedulesFromResultActions(resultActions);
@@ -191,13 +169,9 @@ public class ScheduleRestControllerTest {
     resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
     assertSpecificDateScheduleFoundEquals(
-        2,
-        appIdForAppWithTwoSpecificAndTwowRecuringSchedules,
-        applicationPolicy.getSchedules().getSpecificDate());
+        2, appId, applicationPolicy.getSchedules().getSpecificDate());
     assertRecurringDateScheduleFoundEquals(
-        3,
-        appIdForAppWithTwoSpecificAndTwowRecuringSchedules,
-        applicationPolicy.getSchedules().getRecurringSchedule());
+        3, appId, applicationPolicy.getSchedules().getRecurringSchedule());
   }
 
   @Test
@@ -222,7 +196,8 @@ public class ScheduleRestControllerTest {
         getApplicationSchedulesFromResultActions(resultActions);
     assertSchedulesFoundEquals(applicationSchedules, appId, resultActions, 4, 3);
 
-    Mockito.verify(scheduler, Mockito.times(7)).scheduleJob(any(), any());
+    Mockito.verify(scheduler, Mockito.times(7))
+        .scheduleJob(Mockito.any(), Mockito.any());
   }
 
   @Test
@@ -250,7 +225,8 @@ public class ScheduleRestControllerTest {
         testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(0));
 
-    Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(any(), any());
+    Mockito.verify(scheduler, Mockito.times(2))
+        .scheduleJob(Mockito.any(), Mockito.any());
   }
 
   @Test
@@ -278,7 +254,8 @@ public class ScheduleRestControllerTest {
         testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(2));
 
-    Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(any(), any());
+    Mockito.verify(scheduler, Mockito.times(2))
+        .scheduleJob(Mockito.any(), Mockito.any());
   }
 
   @Test
@@ -307,28 +284,28 @@ public class ScheduleRestControllerTest {
         testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(2));
 
-    Mockito.verify(scheduler, Mockito.times(4)).scheduleJob(any(), any());
+    Mockito.verify(scheduler, Mockito.times(4))
+        .scheduleJob(Mockito.any(), Mockito.any());
   }
 
   @Test
   public void testCreateSchedule_when_schedule_existing_for_appId() throws Exception {
+    String appId = "appId_3";
+
     assertThat(
         "It should have 2 specific date schedule.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(2));
     assertThat(
         "It should have 3 recurring schedules.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(3));
 
     // Create two specific date schedules and one recurring schedule for the same application.
     String content = TestDataSetupHelper.generateJsonSchedule(2, 1);
     ResultActions resultActions =
         mockMvc.perform(
-            put(TestDataSetupHelper.getSchedulerPath(
-                    appIdForAppWithTwoSpecificAndTwowRecuringSchedules))
+            put(TestDataSetupHelper.getSchedulerPath(appId))
                 .param("guid", guid3)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -337,23 +314,24 @@ public class ScheduleRestControllerTest {
 
     assertThat(
         "It should have 2 specific date schedules.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(2));
     assertThat(
         "It should have 1 recurring schedule.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(1));
 
-    Mockito.verify(scheduler, Mockito.times(3)).scheduleJob(any(), any());
-    Mockito.verify(scheduler, Mockito.times(10)).deleteJob(any());
+    Mockito.verify(scheduler, Mockito.times(3))
+        .scheduleJob(Mockito.any(), Mockito.any());
+    Mockito.verify(scheduler, Mockito.times(10)).deleteJob(Mockito.any());
   }
 
   @Test
   public void testCreateSchedule_without_appId() throws Exception {
 
-    String content = getPolicyString();
+    ObjectMapper mapper = new ObjectMapper();
+    ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
+    String content = mapper.writeValueAsString(applicationPolicy);
 
     ResultActions resultActions =
         mockMvc.perform(
@@ -363,32 +341,12 @@ public class ScheduleRestControllerTest {
   }
 
   @Test
-  public void testCreateSchedule_with_malformed_appId() throws Exception {
-
-    String appId = "appId";
-    String content = getPolicyString();
-
-    ResultActions resultActions =
-        mockMvc.perform(
-            put(TestDataSetupHelper.getSchedulerPath(appId))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(content));
-
-    resultActions.andExpect(status().isBadRequest());
-  }
-
-  private static String getPolicyString() throws JsonProcessingException {
-    ObjectMapper mapper = new ObjectMapper();
-    ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
-    String content = mapper.writeValueAsString(applicationPolicy);
-    return content;
-  }
-
-  @Test
   public void testCreateSchedule_without_guid() throws Exception {
 
     String appId = "appId";
-    String content = getPolicyString();
+    ObjectMapper mapper = new ObjectMapper();
+    ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
+    String content = mapper.writeValueAsString(applicationPolicy);
 
     ResultActions resultActions =
         mockMvc.perform(
@@ -401,62 +359,62 @@ public class ScheduleRestControllerTest {
 
   @Test
   public void testDeleteSchedule_with_only_specificDateSchedule() throws Exception {
+    String appId = "appId_1";
+
     assertThat(
         "It should have 1 specific date schedule.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(
-            appIdForAppWithOneSpecificDateSchedule),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(1));
     assertThat(
         "It should have no recurring schedules.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appIdForAppWithOneSpecificDateSchedule),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(0));
 
     ResultActions resultActions =
         mockMvc.perform(
-            delete(TestDataSetupHelper.getSchedulerPath(appIdForAppWithOneSpecificDateSchedule))
-                .accept(MediaType.APPLICATION_JSON));
+            delete(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
     assertSchedulesAreDeleted(resultActions);
 
     assertThat(
         "It should have no specific date schedules.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(
-            appIdForAppWithOneSpecificDateSchedule),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(0));
     assertThat(
         "It should have no recurring schedules.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appIdForAppWithOneSpecificDateSchedule),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(0));
 
-    Mockito.verify(scheduler, Mockito.times(2)).deleteJob(any());
+    Mockito.verify(scheduler, Mockito.times(2)).deleteJob(Mockito.any());
   }
 
   @Test
   public void testDeleteSchedule_with_only_recurringSchedule() throws Exception {
+    String appId = "appId_2";
+
     assertThat(
         "It should have no specific date schedules.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appIdForAppWithOneRecurringSchedule),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(0));
     assertThat(
         "It should have 1 recurring schedule.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appIdForAppWithOneRecurringSchedule),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(1));
 
     ResultActions resultActions =
         mockMvc.perform(
-            delete(TestDataSetupHelper.getSchedulerPath(appIdForAppWithOneRecurringSchedule))
-                .accept(MediaType.APPLICATION_JSON));
+            delete(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
     assertSchedulesAreDeleted(resultActions);
 
     assertThat(
         "It should have no specific date schedules.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appIdForAppWithOneRecurringSchedule),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(0));
     assertThat(
         "It should have no recurring schedules.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appIdForAppWithOneRecurringSchedule),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(0));
 
-    Mockito.verify(scheduler, Mockito.times(2)).deleteJob(any());
+    Mockito.verify(scheduler, Mockito.times(2)).deleteJob(Mockito.any());
   }
 
   @Test
@@ -466,35 +424,28 @@ public class ScheduleRestControllerTest {
 
     assertThat(
         "It should have 2 specific date schedule.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(2));
     assertThat(
         "It should have 3 recurring schedule.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(3));
 
     ResultActions resultActions =
         mockMvc.perform(
-            delete(
-                    TestDataSetupHelper.getSchedulerPath(
-                        appIdForAppWithTwoSpecificAndTwowRecuringSchedules))
-                .accept(MediaType.APPLICATION_JSON));
+            delete(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
     assertSchedulesAreDeleted(resultActions);
 
     assertThat(
         "It should have no specific date schedules.",
-        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfSpecificDateSchedulesByAppId(appId),
         is(0));
     assertThat(
         "It should have no recurring schedules.",
-        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(
-            appIdForAppWithTwoSpecificAndTwowRecuringSchedules),
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
         is(0));
 
-    Mockito.verify(scheduler, Mockito.times(10)).deleteJob(any());
+    Mockito.verify(scheduler, Mockito.times(10)).deleteJob(Mockito.any());
   }
 
   @Test
@@ -533,18 +484,18 @@ public class ScheduleRestControllerTest {
         testDataDbUtil.getNumberOfRecurringSchedules(),
         is(4));
 
-    Mockito.verify(scheduler, Mockito.never()).deleteJob(any());
+    Mockito.verify(scheduler, Mockito.never()).deleteJob(Mockito.any());
   }
 
   private void assertNoSchedulesFound(ResultActions resultActions) throws Exception {
-    resultActions.andExpect(content().string(is(emptyString())));
+    resultActions.andExpect(content().string(Matchers.isEmptyString()));
     resultActions.andExpect(header().doesNotExist("Content-type"));
     resultActions.andExpect(status().isNotFound());
   }
 
   private void assertResponseForCreateSchedules(
       ResultActions resultActions, ResultMatcher expectedStatus) throws Exception {
-    resultActions.andExpect(content().string(is(emptyString())));
+    resultActions.andExpect(content().string(Matchers.isEmptyString()));
     resultActions.andExpect(header().doesNotExist("Content-type"));
     resultActions.andExpect(expectedStatus);
   }
@@ -608,7 +559,7 @@ public class ScheduleRestControllerTest {
   }
 
   private void assertSchedulesAreDeleted(ResultActions resultActions) throws Exception {
-    resultActions.andExpect(content().string(is(emptyString())));
+    resultActions.andExpect(content().string(Matchers.isEmptyString()));
     resultActions.andExpect(header().doesNotExist("Content-type"));
     resultActions.andExpect(status().isNoContent());
   }

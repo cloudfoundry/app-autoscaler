@@ -14,6 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
@@ -24,11 +31,17 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -52,8 +65,13 @@ import org.springframework.web.context.WebApplicationContext;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+@ExtendWith(MockitoExtension.class)
 @Commit
 public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
+
+  @Mock private Appender mockAppender;
+
+  @Captor private ArgumentCaptor<LogEvent> logCaptor;
 
   @Autowired private MessageBundleResourceHelper messageBundleResourceHelper;
 
@@ -69,13 +87,13 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
 
   private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() throws IOException {
     embeddedTomcatUtil = new EmbeddedTomcatUtil();
     embeddedTomcatUtil.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws IOException, InterruptedException {
     embeddedTomcatUtil.stop();
   }
@@ -87,13 +105,20 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
 
   private TestJobListener endJobListener;
 
-  @Before
+  @BeforeEach
   @Transactional
   public void before() throws Exception {
     // Clean up data
     testDataDbUtil.cleanupData(scheduler);
+    Mockito.reset(mockAppender);
+
+    Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
+    Mockito.when(mockAppender.isStarted()).thenReturn(true);
+    Mockito.when(mockAppender.isStopped()).thenReturn(false);
 
     mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+
+    setLogLevel(Level.INFO);
 
     appId = TestDataSetupHelper.generateAppIds(1)[0];
     guid = TestDataSetupHelper.generateGuid();
@@ -109,10 +134,24 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
     startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
     Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSpecificDateSchedulerId();
+    Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+    String expectedMessage =
+        messageBundleResourceHelper.lookupMessage(
+            "scalingengine.notification.activeschedule.start", appId, currentSequenceSchedulerId);
+
+    assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+    assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
     // Assert END Job successful message
     endJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
+    Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+    expectedMessage =
+        messageBundleResourceHelper.lookupMessage(
+            "scalingengine.notification.activeschedule.remove", appId, currentSequenceSchedulerId);
+
+    assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+    assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
     assertThat(
         "It should have no active schedule",
         testDataDbUtil.getNumberOfActiveSchedulesByAppId(appId),
@@ -127,6 +166,13 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
     startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
     Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSpecificDateSchedulerId();
+    Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+    String expectedMessage =
+        messageBundleResourceHelper.lookupMessage(
+            "scalingengine.notification.activeschedule.start", appId, currentSequenceSchedulerId);
+
+    assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+    assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
     // Delete End job.
     ResultActions resultActions =
@@ -157,7 +203,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
     specificDateScheduleEntity.setStartDateTime(startTime);
     specificDateScheduleEntity.setEndDateTime(endTime);
 
-    embeddedTomcatUtil.addScalingEngineMockForAppId(appId, 200, null);
+    embeddedTomcatUtil.setup(appId, 200, null);
 
     scheduler
         .getListenerManager()
@@ -190,5 +236,17 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
     }
 
     return jobKeys;
+  }
+
+  private void setLogLevel(Level level) {
+    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    Configuration config = ctx.getConfiguration();
+
+    LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+    loggerConfig.removeAppender("MockAppender");
+
+    loggerConfig.setLevel(level);
+    loggerConfig.addAppender(mockAppender, level, null);
+    ctx.updateLoggers();
   }
 }

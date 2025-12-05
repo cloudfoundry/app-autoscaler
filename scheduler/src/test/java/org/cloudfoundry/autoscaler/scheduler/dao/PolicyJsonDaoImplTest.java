@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.UUID;
 import org.cloudfoundry.autoscaler.scheduler.entity.PolicyJsonEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,7 +22,7 @@ public class PolicyJsonDaoImplTest {
 
   @Autowired private TestDataDbUtil testDataDbUtil;
 
-  @Before
+  @BeforeEach
   public void before() throws Exception {
     String appId = "the_app_id";
     String guid = UUID.randomUUID().toString();
