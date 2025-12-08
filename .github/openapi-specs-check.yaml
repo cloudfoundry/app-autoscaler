@@ -1,0 +1,24 @@
+name: "Validate OpenAPI-Specifications"
+on:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get Repository content
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+    - name: Install devbox
+      uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+      with:
+        enable-cache: 'true'
+    - name: Make devbox shellenv available
+      run: |
+        eval "$(devbox shellenv)"
+        printenv >> "$GITHUB_ENV"
+    - name: Validating OpenAPI Specifications
+      shell: bash
+      run: |
+        #! /usr/bin/env bash
+
+        set -eu -o pipefail
+        make validate-openapi-specs
