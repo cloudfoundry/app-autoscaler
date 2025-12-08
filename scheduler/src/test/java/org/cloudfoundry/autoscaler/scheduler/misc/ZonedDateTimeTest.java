@@ -11,23 +11,19 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.TimeZone;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
-import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneTestRule;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
-import org.junit.rules.TestRule;
+import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneExtension;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * This test class tests the DateHelper class's getZonedDateTime methods. The rule changes the
  * system time zone to specified ones and the tests are run for different policy timezones, so as to
  * make sure that system time zone does not interfere with the date/ date time of the policy.
  */
+@ExtendWith(TimeZoneExtension.class)
 public class ZonedDateTimeTest {
 
-  @Rule
-  public TestRule systemTimeZoneRule =
-      new TimeZoneTestRule(new String[] {"GMT", "America/Montreal", "Australia/Sydney"});
-
-  @Test
+  @TestTemplate
   public void testDateTimeForDifferentPolicyTimeZones() {
     // The following methods are called with specified policy timezones. Idea is to check
     // when the system time zone is different from the policy's time zone, then it does not
@@ -37,7 +33,7 @@ public class ZonedDateTimeTest {
     checkDateHelper_getZonedDateTimeForDateTime("Australia/Sydney");
   }
 
-  @Test
+  @TestTemplate
   public void testDateForDifferentPolicyTimeZones() {
     // The following methods are called with specified policy timezones. Idea is to check
     // when the system time zone is different from the policy's time zone, then it does not
