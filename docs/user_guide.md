@@ -37,7 +37,6 @@ The default policy can be removed, by setting it to an empty JSON object when
 calling `cf update-service`.
 
 
-
 ### Instance limits
 
 Instance limits are used to define the default minimal and maximal instance number of your application.
@@ -125,7 +124,7 @@ For example, in the following schedule rule, `App AutoScaler` will set your appl
 ---
 ## Create Autoscaling Policy JSON File
 
-The following gives some policy examples for you to start with. Refer to [Policy speficication][policy] for the detailed JSON format of the autoscaling policy.
+The following gives some policy examples for you to start with. Refer to [Policy specification][policy] for the detailed JSON format of the autoscaling policy.
 
 * [Autoscaling policy example for dynamic scaling rules][policy-dynamic]
 * [Autoscaling policy example for custom metrics ][policy-dynamic-custom]
@@ -133,9 +132,9 @@ The following gives some policy examples for you to start with. Refer to [Policy
 
 ---
 
-## Connect an application to App-AutoScaler
+## Connect an application to App AutoScaler
 
-`App-AutoScaler` can be offered as a Cloud Foundry service or an extension of your Cloud Foundry platform. Consult your Cloud Foundry provider for how it is offered.
+`App AutoScaler` can be offered as a Cloud Foundry service or an extension of your Cloud Foundry platform. Consult your Cloud Foundry provider for how it is offered.
 
 ### As a Cloud Foundry extension
 When `App AutoScaler` is offered as Cloud Foundry platform extension,  you don't need to connect your application to autoscaler, go directly to next section to attach autoscaling policy to your application with CLI.
@@ -165,7 +164,7 @@ This section gives how to use the command line interface to manage autoscaling p
 ### Getting started with AutoScaler CLI
 
 * Install [AutoScaler CLI plugin][cli]
-* Set App AutoScaler API endpoint （Optional)
+* Set App AutoScaler API endpoint (Optional)
 
     AutoScaler CLI plugin interacts with `App AutoScaler`  through its [public API][api].
 
@@ -225,7 +224,7 @@ cf create-autoscaling-credential <app_name>
 Refer to  [AutoScaler CLI user guide][cli] for more details.
 
 ### Delete autoscaling credential
-Delete custom metric credential when unncessary.
+Delete custom metric credential when unnecessary.
 ```
 cf delete-autoscaling-credential <app_name>
 ```
@@ -270,7 +269,7 @@ or through user-provided-service approach as below:
 ...
 TIP: Use 'cf restage <app-name>' to ensure your env variable changes take effect
 ```
-With the user-provided-service aproach, you can consume the credential from VCAP_SERVICES environments.
+With the user-provided-service approach, you can consume the credential from VCAP_SERVICES environments.
 
 * Emit your own metrics to autoscaler
 
