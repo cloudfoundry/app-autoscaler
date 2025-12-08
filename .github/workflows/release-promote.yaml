@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0  # Fetch all history for version determination
-          token: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
+          ssh-key: ${{ secrets.AUTOSCALER_DEPLOY_KEY_PRIVATE }}
 
       - name: Install devbox
         uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
