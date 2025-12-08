@@ -305,6 +305,7 @@ A JSON payload is required with above API to submit metric name, value and the c
 
 Please refer to [Emit metric API Spec][emit-metric-api] for more information.
 
+## References 
 
 [git]:https://github.com/cloudfoundry/app-autoscaler
 [cli]: https://github.com/cloudfoundry/app-autoscaler-cli-plugin#install-plugin
