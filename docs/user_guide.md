@@ -50,29 +50,29 @@ The following are the built-in metrics that you can use to scale your applicatio
 
 * **memoryused**
 
-	"memoryused" represents the absolute value of the used memory of your application. The unit of "memoryused" metric is "MB".
+    "memoryused" represents the absolute value of the used memory of your application. The unit of "memoryused" metric is "MB".
 
 * **memoryutil**
 
-	"memoryutil", a short name of "memory utilization", is the used memory of the total memory allocated to the application in percentage.
+    "memoryutil", a short name of "memory utilization", is the used memory of the total memory allocated to the application in percentage.
 
-	For example, if the memory usage of the application is 100MB  and memory quota is 200MB, the value of "memoryutil" is 50%.
+    For example, if the memory usage of the application is 100MB  and memory quota is 200MB, the value of "memoryutil" is 50%.
 
 * **cpu**
 
-	"cpu", a short name of "cpu utilization", is the cpu usage of your application in percentage.
+    "cpu", a short name of "cpu utilization", is the cpu usage of your application in percentage.
 
 * **responsetime**
 
-	"responsetime" represents the average amount of time the application takes to respond to a request in a given time period.  The unit of "responsetime" is "ms" (milliseconds).
+    "responsetime" represents the average amount of time the application takes to respond to a request in a given time period.  The unit of "responsetime" is "ms" (milliseconds).
 
 * **throughput**
 
-	"throughput" is the total number of the processed requests  in a given time period. The  unit of "throughput" is "rps" (requests per second).
+    "throughput" is the total number of the processed requests  in a given time period. The  unit of "throughput" is "rps" (requests per second).
 
 * **custom metric**
 
-	Custom metric is supported since [app-autoscaler v3.0.0 release][app-autoscaler-v3.0.0]. You can define your own metric name and emit your own metric to `App Autoscaler` to trigger further dynamic scaling. Only alphabet letters, numbers and "_" are allowed for a valid metric name, and the maximum length of the metric name is limited up to 100 characters.
+    Custom metric is supported since [app-autoscaler v3.0.0 release][app-autoscaler-v3.0.0]. You can define your own metric name and emit your own metric to `App Autoscaler` to trigger further dynamic scaling. Only alphabet letters, numbers and "_" are allowed for a valid metric name, and the maximum length of the metric name is limited up to 100 characters.
 
 
 #### Threshold and Adjustment
@@ -146,10 +146,10 @@ When `App AutoScaler` is offered as a Cloud Foundry service via [open service br
 * [Create an instance of the service][sprovision]
 * [Bind the service instance to your application][sbind]
 
-	Note you can attach scaling policy together with service binding by providing the policy file name as a parameter of the service binding command.
-	```
-	cf bind-service <app_name> <service_instance_name> -c <policy_file_name>
-	```
+    Note you can attach scaling policy together with service binding by providing the policy file name as a parameter of the service binding command.
+    ```
+    cf bind-service <app_name> <service_instance_name> -c <policy_file_name>
+    ```
 
 To disconnect `App AutoScaler` from your application, unbind the service instance. This will remove the  autoscaling policy as well. Furthermore, you can deprovision the service instance if no application is bound.
 
@@ -169,37 +169,37 @@ This section gives how to use the command line interface to manage autoscaling p
 
     AutoScaler CLI plugin interacts with `App AutoScaler`  through its [public API][api].
 
-	By default, `App AutoScaler` API endpoint is set to `https://autoscaler.<cf-domain>` automatically.  You can change to others like the example below
+    By default, `App AutoScaler` API endpoint is set to `https://autoscaler.<cf-domain>` automatically.  You can change to others like the example below
     ```
-	 cf asa https://example-autoscaler.<cf-domain>
+     cf asa https://example-autoscaler.<cf-domain>
     ```
 
 ### Attach policy
 
 Create or update autoscaling policy for your application with command.
 ```
-	 cf aasp <app_name> <policy_file_name>
+     cf aasp <app_name> <policy_file_name>
 ```
 
 ### Detach policy
 
 Remove autoscaling policy to disable `App Autoscaler` with command
 ```
-	 cf dasp <app_name>
+     cf dasp <app_name>
 ```
 
 ### View policy
 
 To retrieve the current autoscaling policy, use command below
 ```
-	 cf asp <app_name>
+     cf asp <app_name>
 ```
 
 ### Query metrics
 
 Query the most recent metrics with command
 ```
-	 cf asm <app_name> <metric_type>
+     cf asm <app_name> <metric_type>
 ```
 
 Note the output of the `cf asm` command shows aggregated metrics instead of the raw data of instance metrics.
@@ -211,7 +211,7 @@ Refer to  [AutoScaler CLI user guide][cli] for the advanced options to specify t
 
 To query your application's scaling events, use command below
 ```
-	 cf ash <app_name>
+     cf ash <app_name>
 ```
 
 Refer to  [AutoScaler CLI user guide][cli] for advanced options to specify the time range, the number of events to return and display order.
