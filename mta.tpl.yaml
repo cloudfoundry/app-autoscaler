@@ -35,6 +35,7 @@ modules:
     requires:
     - name: database
     parameters:
+      buildpacks: [ https://github.com/cloudfoundry/java-buildpack.git#feature/go-migration ]
       no-route: true
       no-start: true
       tasks:
@@ -219,6 +220,7 @@ modules:
     - name: app-autoscaler-application-logs
     - name: app-autoscaler-dynatrace
     parameters:
+      buildpacks: [ https://github.com/cloudfoundry/java-buildpack.git#feature/go-migration ]
       instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
