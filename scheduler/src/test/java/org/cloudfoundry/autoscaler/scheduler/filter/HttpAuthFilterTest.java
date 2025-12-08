@@ -4,8 +4,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import jakarta.servlet.FilterChain;
 import org.cloudfoundry.autoscaler.scheduler.conf.CfServerConfiguration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -21,7 +21,7 @@ public class HttpAuthFilterTest {
 
   private CfServerConfiguration cfServerConfiguration;
 
-  @Before
+  @BeforeEach
   public void setup() {
     request = new MockHttpServletRequest();
     response = new MockHttpServletResponse();

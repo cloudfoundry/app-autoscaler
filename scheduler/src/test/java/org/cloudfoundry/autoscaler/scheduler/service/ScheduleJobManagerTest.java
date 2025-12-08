@@ -11,8 +11,8 @@ import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.SCHED
 import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.TIMEZONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 
 import java.time.LocalDate;
@@ -39,8 +39,8 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -74,7 +74,7 @@ public class ScheduleJobManagerTest {
 
   @Autowired private TestDataDbUtil testDataDbUtil;
 
-  @Before
+  @BeforeEach
   public void before() throws SchedulerException {
     testDataDbUtil.cleanupData();
 
@@ -386,7 +386,7 @@ public class ScheduleJobManagerTest {
 
     scheduleJobManager.createSimpleJob(specificDateScheduleEntity);
 
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
 
     List<String> errors = validationErrorResult.getAllErrorMessages();
     assertEquals(1, errors.size());
@@ -427,7 +427,7 @@ public class ScheduleJobManagerTest {
             "scheduler.error.create.failed", "app_id=" + appId, "test exception");
     assertEquals(errorMessage, errors.get(0));
     assertEquals(1, errors.size());
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
   }
 
   @Test
@@ -448,7 +448,7 @@ public class ScheduleJobManagerTest {
             "scheduler.error.delete.failed", "app_id=" + appId, "test exception");
     assertEquals(errorMessage, errors.get(0));
     assertEquals(1, errors.size());
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
   }
 
   @Test
@@ -469,7 +469,7 @@ public class ScheduleJobManagerTest {
             "scheduler.error.delete.failed", "app_id=" + appId, "test exception");
     assertEquals(errorMessage, errors.get(0));
     assertEquals(1, errors.size());
-    assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+    assertTrue(validationErrorResult.hasErrors(), "This test should have an Error.");
   }
 
   private RecurringScheduleEntity createRecurringScheduleWithDaysOfMonth(
