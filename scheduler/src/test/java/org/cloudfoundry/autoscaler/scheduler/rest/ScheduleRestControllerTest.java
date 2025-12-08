@@ -3,7 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.rest;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,8 +30,8 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
@@ -74,7 +74,7 @@ public class ScheduleRestControllerTest {
   String appIdForAppWithOneRecurringSchedule;
   String appIdForAppWithTwoSpecificAndTwowRecuringSchedules;
 
-  @BeforeEach
+  @Before
   public void before() throws Exception {
     Mockito.reset(scheduler);
     Mockito.reset(activeScheduleDao);

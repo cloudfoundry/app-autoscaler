@@ -13,14 +13,17 @@ import java.util.TimeZone;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneTestRule;
 import org.junit.Rule;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * This test class tests the DateHelper class's getZonedDateTime methods. The rule changes the
  * system time zone to specified ones and the tests are run for different policy timezones, so as to
  * make sure that system time zone does not interfere with the date/ date time of the policy.
  */
+@RunWith(JUnit4.class)
 public class ZonedDateTimeTest {
 
   @Rule

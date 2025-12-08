@@ -3,7 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.dao;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.fail;
 
 import jakarta.transaction.Transactional;
 import java.sql.SQLException;
@@ -15,8 +15,8 @@ import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuild
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +35,7 @@ public class RecurringScheduleDaoImplTest {
   private String guid1;
   private String guid2;
 
-  @BeforeEach
+  @Before
   public void before() throws SQLException {
     // Remove All ActiveSchedules
     testDataDbUtil.cleanupData();
