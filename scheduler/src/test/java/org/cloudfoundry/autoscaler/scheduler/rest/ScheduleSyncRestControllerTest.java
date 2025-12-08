@@ -13,8 +13,8 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.SynchronizeResult;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
@@ -45,7 +45,7 @@ public class ScheduleSyncRestControllerTest {
 
   private MockMvc mockMvc;
 
-  @Before
+  @BeforeEach
   public void before() throws Exception {
     Mockito.reset(scheduler);
     Mockito.reset(activeScheduleDao);

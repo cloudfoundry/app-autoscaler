@@ -24,10 +24,10 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -69,13 +69,13 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
 
   private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() throws IOException {
     embeddedTomcatUtil = new EmbeddedTomcatUtil();
     embeddedTomcatUtil.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws IOException, InterruptedException {
     embeddedTomcatUtil.stop();
   }
@@ -87,7 +87,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
 
   private TestJobListener endJobListener;
 
-  @Before
+  @BeforeEach
   @Transactional
   public void before() throws Exception {
     // Clean up data
