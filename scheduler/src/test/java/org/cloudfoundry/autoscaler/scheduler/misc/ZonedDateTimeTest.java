@@ -9,38 +9,75 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
-import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneExtension;
-import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * This test class tests the DateHelper class's getZonedDateTime methods. The rule changes the
- * system time zone to specified ones and the tests are run for different policy timezones, so as to
- * make sure that system time zone does not interfere with the date/ date time of the policy.
+ * This test class tests the DateHelper class's getZonedDateTime methods.
+ * The tests run with different system time zones and policy timezones in a matrix,
+ * to make sure that system time zone does not interfere with the date/date time of the policy.
+ * <p/>
+ * Test Matrix:
+ * - System TimeZones: GMT, America/Montreal, Australia/Sydney
+ * - Policy TimeZones: GMT, America/Montreal, Australia/Sydney
+ * Each test runs for all 9 combinations (3x3 matrix).
  */
-@ExtendWith(TimeZoneExtension.class)
-public class ZonedDateTimeTest {
+class ZonedDateTimeTest {
 
-  @TestTemplate
-  public void testDateTimeForDifferentPolicyTimeZones() {
-    // The following methods are called with specified policy timezones. Idea is to check
-    // when the system time zone is different from the policy's time zone, then it does not
-    // impact the schedule's datetime.
-    checkDateHelper_getZonedDateTimeForDateTime("GMT");
-    checkDateHelper_getZonedDateTimeForDateTime("America/Montreal");
-    checkDateHelper_getZonedDateTimeForDateTime("Australia/Sydney");
+  private static final String[] SYSTEM_TIME_ZONES = {"GMT", "America/Montreal", "Australia/Sydney"};
+  private static final String[] POLICY_TIME_ZONES = {"GMT", "America/Montreal", "Australia/Sydney"};
+
+  private TimeZone originalTimeZone;
+
+  @BeforeEach
+  void setUp() {
+    originalTimeZone = TimeZone.getDefault();
   }
 
-  @TestTemplate
-  public void testDateForDifferentPolicyTimeZones() {
-    // The following methods are called with specified policy timezones. Idea is to check
-    // when the system time zone is different from the policy's time zone, then it does not
-    // impact the schedule's date.
-    checkDateHelper_getZonedDateTimeForDate("GMT");
-    checkDateHelper_getZonedDateTimeForDate("America/Montreal");
-    checkDateHelper_getZonedDateTimeForDate("Australia/Sydney");
+  @AfterEach
+  void tearDown() {
+    TimeZone.setDefault(originalTimeZone);
+  }
+
+  /**
+   * Provides a matrix of system timezone and policy timezone combinations.
+   */
+  private static Stream<Arguments> provideTimeZoneMatrix() {
+    List<Arguments> arguments = new ArrayList<>();
+    for (String systemTimeZone : SYSTEM_TIME_ZONES) {
+      for (String policyTimeZone : POLICY_TIME_ZONES) {
+        arguments.add(Arguments.of(systemTimeZone, policyTimeZone));
+      }
+    }
+    return arguments.stream();
+  }
+
+  @ParameterizedTest(name = "When system timezone is {0} a DateTime in timezone {1} in the policy is correctly read")
+  @MethodSource("provideTimeZoneMatrix")
+  void testDateTimeForDifferentPolicyTimeZones(String systemTimeZone, String policyTimeZone) {
+    // Set the system timezone for this test invocation
+    TimeZone.setDefault(TimeZone.getTimeZone(systemTimeZone));
+
+    // Verify that the policy timezone is respected regardless of system timezone
+    checkDateHelper_getZonedDateTimeForDateTime(policyTimeZone);
+  }
+
+  @ParameterizedTest(name = "When system timezone is {0} a Date in timezone {1} in the policy is correctly read")
+  @MethodSource("provideTimeZoneMatrix")
+  void testDateForDifferentPolicyTimeZones(String systemTimeZone, String policyTimeZone) {
+    // Set the system timezone for this test invocation
+    TimeZone.setDefault(TimeZone.getTimeZone(systemTimeZone));
+
+    // Verify that the policy timezone is respected regardless of system timezone
+    checkDateHelper_getZonedDateTimeForDate(policyTimeZone);
   }
 
   private void checkDateHelper_getZonedDateTimeForDateTime(String policyTimeZone) {
