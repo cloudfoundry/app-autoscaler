@@ -199,7 +199,7 @@ ${gorouter-proxy.program}: ./go.mod ./go.sum ${gorouter-proxy.source}
 .PHONY: integration
 integration: generate-fakes init-db test-certs build_all build-gorouterproxy
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
 
 .PHONY: init-db
 init-db: check-db_type start-db db.java-libs target/init-db-${db_type}
