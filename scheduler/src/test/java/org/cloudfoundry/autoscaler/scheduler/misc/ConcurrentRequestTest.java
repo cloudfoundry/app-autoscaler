@@ -13,17 +13,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestOperations;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class ConcurrentRequestTest {
 
@@ -34,13 +31,13 @@ public class ConcurrentRequestTest {
 
   private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() throws IOException {
     embeddedTomcatUtil = new EmbeddedTomcatUtil();
     embeddedTomcatUtil.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws IOException, InterruptedException {
     embeddedTomcatUtil.stop();
   }

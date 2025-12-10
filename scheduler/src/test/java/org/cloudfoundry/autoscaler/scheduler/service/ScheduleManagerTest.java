@@ -3,9 +3,9 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -48,12 +48,13 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationExcept
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,14 +63,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(MockitoExtension.class)
 @SpringBootTest
 public class ScheduleManagerTest {
 
@@ -98,7 +98,7 @@ public class ScheduleManagerTest {
 
   private MockRestServiceServer mockServer;
 
-  @Before
+  @BeforeEach
   public void before() throws SchedulerException {
     testDataDbUtil.cleanupData();
 
@@ -853,7 +853,7 @@ public class ScheduleManagerTest {
 
     SynchronizeResult result = scheduleManager.synchronizeSchedules();
 
-    assertEquals("It should create schedules", result, new SynchronizeResult(1, 0, 0));
+    assertEquals(result, new SynchronizeResult(1, 0, 0), "It should create schedules");
 
     this.assertCreateSchedules(
         schedules,
