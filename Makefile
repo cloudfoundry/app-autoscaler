@@ -7,6 +7,7 @@ VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 MTA_ID ?= com.github.cloudfoundry.app-autoscaler-release
+NAMESPACE ?=
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
 
@@ -264,11 +265,13 @@ scheduler.clean:
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES)
+	$(if $(NAMESPACE),@echo "Using namespace: $(NAMESPACE)",)
+	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES) $(if $(NAMESPACE),--namespace $(NAMESPACE),)
 
 mta-undeploy:
 	@echo "Undeploying MTA with ID: $(MTA_ID)"
-	@cf undeploy $(MTA_ID) -f
+	$(if $(NAMESPACE),@echo "Using namespace: $(NAMESPACE)",)
+	@cf undeploy $(MTA_ID) -f $(if $(NAMESPACE),--namespace $(NAMESPACE),)
 
 build-extension-file:
 	echo "extension file at: $(EXTENSION_FILE)"
@@ -277,7 +280,8 @@ build-extension-file:
 mta-logs:
 	rm -rf mta-*
 	@echo "Fetching logs for MTA ID: $(MTA_ID)"
-	cf dmol --mta $(MTA_ID) --last 1
+	$(if $(NAMESPACE),@echo "Using namespace: $(NAMESPACE)",)
+	cf dmol --mta $(MTA_ID) --last 1 $(if $(NAMESPACE),--namespace $(NAMESPACE),)
 	vim mta-*
 
 mta-build: mta-build-clean
