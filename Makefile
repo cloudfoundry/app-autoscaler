@@ -249,6 +249,7 @@ clean: dbtasks.clean scheduler.clean
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
 	@go clean -cache -testcache
+	@rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'test-certs'
 	@rm --force --recursive 'target'
@@ -259,6 +260,15 @@ dbtasks.clean:
 
 scheduler.clean:
 	pushd scheduler; mvn clean; popd
+
+schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
+flattened-schema-file := build/bind-request.schema.json
+BIND_REQ_SCHEMA_VERSION ?= v0.1
+bind-request-schema: ${flattened-schema-file}
+${flattened-schema-file}: ${schema-files}
+	mkdir -p "$$(dirname ${flattened-schema-file})"
+	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+	> '${flattened-schema-file}'
 
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
