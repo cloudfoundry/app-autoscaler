@@ -13,7 +13,7 @@ function deploy() {
 		bosh_login "${BBL_STATE_PATH}"
 		cf_login
 		cf_target "${autoscaler_org}" "${autoscaler_space}"
-		VERSION="0.0.0-rc.${PR_NUMBER:-0}" make mta-deploy
+		MTA_ID="${DEPLOYMENT_NAME}" VERSION="0.0.0-rc.${PR_NUMBER:-0}" make mta-deploy
 	popd > /dev/null
 }
 

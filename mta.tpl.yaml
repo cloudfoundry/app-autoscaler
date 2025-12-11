@@ -3,7 +3,7 @@
 # The custom logic is used to replace the placeholders with the actual values specially, `version: MTA_VERSION`
 # - version: MTA_VERSION: is replaced once the mta artifact are build and the version is known.
 
-ID: com.github.cloudfoundry.app-autoscaler-release
+ID: MTA_ID_PLACEHOLDER
 description: Application Autoscaler Release for Cloud Foundry
 _schema-version: "3.3.0"
 provider: Cloud Foundry Foundation

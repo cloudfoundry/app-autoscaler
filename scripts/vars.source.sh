@@ -67,6 +67,11 @@ debug "AUTOSCALER_SPACE: ${AUTOSCALER_SPACE}"
 log "set up vars: AUTOSCALER_SPACE=${AUTOSCALER_SPACE}"
 autoscaler_space="${AUTOSCALER_SPACE}"
 
+# MTA ID for deployment - defaults to production release name, can override for testing
+export MTA_ID="${MTA_ID:-com.github.cloudfoundry.app-autoscaler-release}"
+debug "MTA_ID: ${MTA_ID}"
+log "set up vars: MTA_ID=${MTA_ID}"
+
 export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"}"
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"

@@ -6,6 +6,7 @@ aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
+MTA_ID ?= com.github.cloudfoundry.app-autoscaler-release
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
 
@@ -266,7 +267,8 @@ mta-deploy: mta-build build-extension-file
 	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES)
 
 mta-undeploy:
-	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
+	@echo "Undeploying MTA with ID: $(MTA_ID)"
+	@cf undeploy $(MTA_ID) -f
 
 build-extension-file:
 	echo "extension file at: $(EXTENSION_FILE)"
@@ -274,18 +276,21 @@ build-extension-file:
 
 mta-logs:
 	rm -rf mta-*
-	cf dmol --mta com.github.cloudfoundry.app-autoscaler-release --last 1
+	@echo "Fetching logs for MTA ID: $(MTA_ID)"
+	cf dmol --mta $(MTA_ID) --last 1
 	vim mta-*
 
 mta-build: mta-build-clean
-	@echo "building mtar file for version: $(VERSION)"
+	@echo "building mtar file for version: $(VERSION) with MTA_ID: $(MTA_ID)"
 	cp mta.tpl.yaml mta.yaml
+	sed --in-place 's/MTA_ID_PLACEHOLDER/$(MTA_ID)/g' mta.yaml
 	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
 	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
 	mkdir -p $(DEST)
 	mbt build -t /tmp --mtar $(MTAR_FILENAME)
 	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)
 	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
+	@echo '⚠️ MTA ID: $(MTA_ID)'
 	du -h $(DEST)/$(MTAR_FILENAME)
 
 mta-build-clean:
