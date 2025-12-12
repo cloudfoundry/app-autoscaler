@@ -5,16 +5,22 @@ set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 autoscaler_dir="${script_dir}/.."
 
+# Source common functions
+source "${script_dir}/common.sh"
+
 build_path="${BUILD_PATH:-$(realpath build)}"
 VERSION="${VERSION:-}"
 SUM_FILE="${build_path}/artifacts/files.sum.sha256"
 
+# Determine version if not set
 if [ -z "${VERSION}" ]; then
   if [ -f "${build_path}/name" ]; then
     VERSION=$(cat "${build_path}/name")
   else
-    echo "ERROR: VERSION not set and ${build_path}/name does not exist"
-    exit 1
+    echo " - VERSION not set, determining version..."
+    mkdir -p "${build_path}"
+    determine_next_version
+    VERSION=$(cat "${build_path}/name")
   fi
 fi
 
