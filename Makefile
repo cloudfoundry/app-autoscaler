@@ -300,7 +300,12 @@ clean-build: ## Clean the build directory
 release-draft: ## Create a draft GitHub release without artifacts
 		./scripts/release.sh
 
-release-promote:
+.PHONY: create-assets
+create-assets: ## Create release assets (mtar and acceptance tests)
+		./scripts/create-assets.sh
+
+.PHONY: release-promote
+release-promote: create-assets ## Promote draft release to final and upload assets
 		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
