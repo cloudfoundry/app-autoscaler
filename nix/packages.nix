@@ -1,8 +1,10 @@
-{ buildGoModule
-, callPackage
-, fetchFromGitHub
-, fetchgit
-, lib
+{ buildGoModule,
+  callPackage,
+  fetchFromGitHub,
+  fetchgit,
+  lib,
+  python3Packages,
+  writers
 }: {
   app-autoscaler-cli-plugin = buildGoModule rec {
     pname = "app-autoscaler-cli-plugin";
@@ -29,9 +31,9 @@
 
     meta = {
       longDescription = ''
-      App-AutoScaler plug-in provides the command line interface to manage
-      [App AutoScaler](<https://github.com/cloudfoundry/app-autoscaler-release>)
-      policies, retrieve metrics and scaling event history.
+        App-AutoScaler plug-in provides the command line interface to manage
+        [App AutoScaler](<https://github.com/cloudfoundry/app-autoscaler-release>)
+        policies, retrieve metrics and scaling event history.
       '';
       homepage = "https://github.com/cloudfoundry/app-autoscaler-cli-plugin";
       license = [lib.licenses.asl20];
@@ -67,6 +69,38 @@
     };
   };
 
+  cf-deploy-plugin = buildGoModule rec {
+    pname = "CF Deploy Plugin";
+    version = "3.5.0";
+
+    src = fetchFromGitHub {
+      owner = "cloudfoundry";
+      repo = "multiapps-cli-plugin";
+      rev = "v${version}";
+      hash = "sha256-SVPVPJJWOk08ivZWu9UwD9sIISajIukQpcFpc0tU1zg=";
+    };
+    vendorHash = "sha256-S066sNHhKxL4anH5qSSBngtOcAswopiYBXgKAvHyfAM=";
+
+    env.CGO_ENABLED = 0;
+    ldflags = ["-w -X main.Version=${version}"];
+
+    meta = with lib; {
+      description = "";
+      longDescription = ''
+        This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing
+        operations on
+        [Multitarget Applications (MTAs)](<https://www.sap.com/documents/2021/09/66d96898-fa7d-0010-bca6-c68f7e60039b.html>)
+        in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the
+        [CF MultiApps Controller](<https://github.com/cloudfoundry-incubator/multiapps-controller>)
+        (known also as CF MTA Deploy Service), which is an MTA deployer implementation for Cloud
+        Foundry. The business logic and actual processing of MTAs happens into
+        CF MultiApps Controller backend.
+      '';
+      homepage = "https://github.com/cloudfoundry/multiapps-cli-plugin";
+      license = licenses.asl20;
+    };
+  };
+
   cloud-mta-build-tool = buildGoModule rec {
     pname = "Cloud MTA Build Tool";
     version = "1.2.30";
@@ -85,7 +119,7 @@
 
     postInstall = ''
       pushd "''${out}/bin" &> /dev/null
-        ln --symbolic 'cloud-mta-build-tool' 'mbt'
+      ln --symbolic 'cloud-mta-build-tool' 'mbt'
       popd
     '';
 
@@ -118,37 +152,16 @@
     };
   };
 
-  cf-deploy-plugin = buildGoModule rec {
-    pname = "CF Deploy Plugin";
-    version = "3.5.0";
-
-    src = fetchFromGitHub {
-      owner = "cloudfoundry";
-      repo = "multiapps-cli-plugin";
-      rev = "v${version}";
-      hash = "sha256-SVPVPJJWOk08ivZWu9UwD9sIISajIukQpcFpc0tU1zg=";
-    };
-    vendorHash = "sha256-S066sNHhKxL4anH5qSSBngtOcAswopiYBXgKAvHyfAM=";
-
-    env.CGO_ENABLED = 0;
-    ldflags = ["-w -X main.Version=${version}"];
-
-    meta = with lib; {
-      description = "";
-      longDescription = ''
-        This is a Cloud Foundry CLI plugin (formerly known as CF MTA Plugin) for performing
-        operations on
-        [Multitarget Applications (MTAs)](<https://www.sap.com/documents/2021/09/66d96898-fa7d-0010-bca6-c68f7e60039b.html>)
-        in Cloud Foundry, such as deploying, removing, viewing, etc. It is a client for the
-        [CF MultiApps Controller](<https://github.com/cloudfoundry-incubator/multiapps-controller>)
-        (known also as CF MTA Deploy Service), which is an MTA deployer implementation for Cloud
-        Foundry. The business logic and actual processing of MTAs happens into
-        CF MultiApps Controller backend.
-      '';
-      homepage = "https://github.com/cloudfoundry/multiapps-cli-plugin";
-      license = licenses.asl20;
-    };
-  };
+  flatten_json-schema =
+    let
+      programName = "flatten_json-schema";
+      programSourceCode = (builtins.readFile ../scripts/flatten_json-schema.py);
+    in writers.writePython3Bin programName {
+      libraries = [
+        python3Packages.jsonref
+      ];
+      flakeIgnore = [ "E265" "E501" ];
+    } programSourceCode;
 
   uaac = callPackage ./packages/uaac {};
 }

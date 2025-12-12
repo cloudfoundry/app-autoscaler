@@ -19,7 +19,7 @@
         let
           nixpkgs = nixpkgsFor.${system};
           callPackages = nixpkgs.lib.customisation.callPackagesWith nixpkgs;
-        in callPackages ./packages.nix {}
+        in callPackages ./nix/packages.nix {}
       );
 
       # 🚸 Having flake.nix on top-level makes this definition easily consumable with Nix, e.g. for
@@ -32,5 +32,5 @@
             (path: type: builtins.match ".*\.ya?ml" (baseNameOf path) != null && type == "regular")
             apiPath;
       };
-  };
+    };
 }

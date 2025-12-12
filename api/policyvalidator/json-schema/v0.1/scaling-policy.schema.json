@@ -5,7 +5,7 @@
 
   "properties": {
     "schema-version": {
-      "$ref": "./shared_definitions.json#/schemas/app-scaling-config-schema"
+      "$ref": "../shared_definitions.json#/schemas/app-scaling-config-schema"
     },
     "credential-type": {
       "type": "string",

@@ -30,7 +30,7 @@
       "additionalProperties": false
     },
     "app_guid": {
-      "$ref": "./shared_definitions.json#/schemas/guid"
+      "$ref": "../shared_definitions.json#/schemas/guid"
     }
   },
   "anyOf": [
