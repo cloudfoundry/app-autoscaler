@@ -30,28 +30,6 @@ function bump_version() {
    git commit -S -m "Updated release version to ${version} in golangapiserver"
 }
 
-function create_mtar() {
-  set -e
-  mkdir -p "${build_path}/artifacts"
-  local version=$1
-  local build_path=$2
-  echo " - creating autorscaler mtar artifact"
-  pushd "${autoscaler_dir}" > /dev/null
-    make mta-release VERSION="${version}" DEST="${build_path}/artifacts/"
-  popd > /dev/null
-}
-
-function create_tests() {
-  set -e
-  mkdir -p "${build_path}/artifacts"
-  local version=$1
-  local build_path=$2
-  echo " - creating acceptance test artifact"
-  pushd "${autoscaler_dir}" > /dev/null
-    make acceptance-release VERSION="${version}" DEST="${build_path}/artifacts/"
-  popd > /dev/null
-}
-
 function determine_next_version(){
   echo " - Determining next version..."
 
@@ -249,11 +227,7 @@ pushd "${autoscaler_dir}" > /dev/null
     ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
     AUTOSCALER_MTAR="app-autoscaler-release-v${VERSION}.mtar"
 
-    mkdir -p "${build_path}/artifacts"
-    create_tests "${VERSION}" "${build_path}"
-    create_mtar "${VERSION}" "${build_path}"
-
-    sha256sum "${build_path}/artifacts/"* > "${build_path}/artifacts/files.sum.sha256"
+    # Extract SHA256 checksums from files created by create-assets target
     ACCEPTANCE_SHA256=$( grep "${ACCEPTANCE_TEST_TGZ}$" "${SUM_FILE}" | awk '{print $1}' )
     MTAR_SHA256=$( grep "${AUTOSCALER_MTAR}$" "${SUM_FILE}" | awk '{print $1}')
   else

@@ -4,14 +4,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class SchedulerApplicationTest {
   @Autowired private HikariDataSource dataSource;
@@ -24,7 +21,7 @@ public class SchedulerApplicationTest {
 
   @Test
   public void testApplicationExitsWhenSchedulerDbUnreachable() {
-    Assert.assertThrows(
+    Assertions.assertThrows(
         org.springframework.beans.factory.BeanCreationException.class,
         () ->
             SchedulerApplication.main(
@@ -38,7 +35,7 @@ public class SchedulerApplicationTest {
 
   @Test
   public void testApplicationExitsWhenPolicyDbUnreachable() {
-    Assert.assertThrows(
+    Assertions.assertThrows(
         org.springframework.beans.factory.BeanCreationException.class,
         () ->
             SchedulerApplication.main(

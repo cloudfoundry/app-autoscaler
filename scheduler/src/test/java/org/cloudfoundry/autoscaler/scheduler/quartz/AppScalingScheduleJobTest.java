@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.quartz;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -25,12 +25,11 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper.JobInforma
 import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -51,11 +50,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class AppScalingScheduleJobTest {
 
@@ -73,23 +70,23 @@ public class AppScalingScheduleJobTest {
 
   private AutoCloseable mock;
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() throws IOException {
     embeddedTomcatUtil = new EmbeddedTomcatUtil();
     embeddedTomcatUtil.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws IOException, InterruptedException {
     embeddedTomcatUtil.stop();
   }
 
-  @After
+  @AfterEach
   public void closeMock() throws Exception {
     mock.close();
   }
 
-  @Before
+  @BeforeEach
   public void before() throws SchedulerException {
     mock = MockitoAnnotations.openMocks(this);
     memScheduler = createMemScheduler();

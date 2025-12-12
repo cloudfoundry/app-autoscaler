@@ -2,23 +2,20 @@ package org.cloudfoundry.autoscaler.scheduler.dao;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class ActiveScheduleDaoImplFailureTest {
 
@@ -28,7 +25,7 @@ public class ActiveScheduleDaoImplFailureTest {
 
   @Autowired TestDataDbUtil testDataDbUtil;
 
-  @Before
+  @BeforeEach
   public void before() throws SQLException, InterruptedException {
     Mockito.reset(dataSource);
     Mockito.when(dataSource.getConnection()).thenThrow(new SQLException("test exception"));
