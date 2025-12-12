@@ -5,6 +5,7 @@ aes_terminal_font_yellow := \033[38;2;255;255;0m
 aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
+TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
@@ -262,13 +263,14 @@ scheduler.clean:
 	pushd scheduler; mvn clean; popd
 
 schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
-flattened-schema-file := build/bind-request.schema.json
+flattened-schema-file := ${TARGET_DIR}/bind-request.schema.json
 BIND_REQ_SCHEMA_VERSION ?= v0.1
 bind-request-schema: ${flattened-schema-file}
 ${flattened-schema-file}: ${schema-files}
 	mkdir -p "$$(dirname ${flattened-schema-file})"
 	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
 	> '${flattened-schema-file}'
+	echo '🔨 File created: ${flattened-schema-file}'
 
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
