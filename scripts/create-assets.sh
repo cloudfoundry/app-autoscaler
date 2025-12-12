@@ -25,7 +25,7 @@ function create_mtar() {
 	local build_path=$2
 	echo " - creating autoscaler mtar artifact"
 	pushd "${autoscaler_dir}" > /dev/null
-		make mta-release VERSION="${version}" DEST="${build_path}/artifacts/"
+		make mta-release VERSION="${version}" DEST="${build_path}/artifacts"
 	popd > /dev/null
 }
 
@@ -36,7 +36,7 @@ function create_tests() {
 	local build_path=$2
 	echo " - creating acceptance test artifact"
 	pushd "${autoscaler_dir}" > /dev/null
-		make acceptance-release VERSION="${version}" DEST="${build_path}/artifacts/"
+		make acceptance-release VERSION="${version}" DEST="${build_path}/artifacts"
 	popd > /dev/null
 }
 

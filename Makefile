@@ -313,7 +313,7 @@ release-draft: ## Create a draft GitHub release without artifacts
 		./scripts/release.sh
 
 .PHONY: create-assets
-create-assets: ## Create release assets (mtar and acceptance tests)
+create-assets: ## Create release assets (mtar and acceptance tests), please provide `VERSION` as environment-variable.
 		./scripts/create-assets.sh
 
 .PHONY: release-promote
