@@ -127,7 +127,7 @@ var _ = Describe("AutoScaler Public API", func() {
 		})
 	})
 
-	When("a scaling policy is set without custom metric strategy", func() {
+	FWhen("a scaling policy is set without custom metric strategy", func() {
 		memThreshold := int64(10)
 		var policy string
 

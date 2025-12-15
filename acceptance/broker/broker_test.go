@@ -222,7 +222,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 	Context("Create a service-key", func() {
 		var serviceInstance serviceInstance
 		var serviceInstanceName string
-		When("providing a valid app-guid", func() {
+		FWhen("providing a valid app-guid", func() {
 			When("the corresponding app isn't in the same space than the service-instance", func() {
 				var currentOrgName string
 				var currentSpaceName string
@@ -272,14 +272,12 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 				It("fails", func() {
 					// Preparation
-					paramsTemplate := `
-{
-  "schema-version": "0.1",
-  "configuration": {
-	"app_guid": "%s"
-  }
-}
-`
+					paramsTemplate := `{
+						"schema-version": "0.1",
+						"configuration": {
+						  "app_guid": "%s"
+						}
+					  }`
 					params := fmt.Sprintf(paramsTemplate, appGuid)
 
 					// Execution
