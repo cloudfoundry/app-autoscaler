@@ -222,7 +222,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 	Context("Create a service-key", func() {
 		var serviceInstance serviceInstance
 		var serviceInstanceName string
-		FWhen("providing a valid app-guid", func() {
+		When("providing a valid app-guid", func() {
 			When("the corresponding app isn't in the same space than the service-instance", func() {
 				var currentOrgName string
 				var currentSpaceName string
