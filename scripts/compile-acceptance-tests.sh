@@ -43,7 +43,7 @@ main() {
   echo "Copying test app assets..."
   mkdir -p "build/acceptance/assets/app/go_app/build"
   cp -r "acceptance/assets/app/go_app/build/"* "build/acceptance/assets/app/go_app/build/"
-  cp -r "acceptance/assets/file/"* "build/acceptance/assets/file/"
+  cp -r "acceptance/assets/file/" "build/acceptance/assets/file/"
 }
 
 main
