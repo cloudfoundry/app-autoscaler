@@ -5,6 +5,7 @@ aes_terminal_font_yellow := \033[38;2;255;255;0m
 aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
+TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
@@ -199,7 +200,7 @@ ${gorouter-proxy.program}: ./go.mod ./go.sum ${gorouter-proxy.source}
 .PHONY: integration
 integration: generate-fakes init-db test-certs build_all build-gorouterproxy
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
 
 .PHONY: init-db
 init-db: check-db_type start-db db.java-libs target/init-db-${db_type}
@@ -249,6 +250,7 @@ clean: dbtasks.clean scheduler.clean
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
 	@go clean -cache -testcache
+	@rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'test-certs'
 	@rm --force --recursive 'target'
@@ -259,6 +261,16 @@ dbtasks.clean:
 
 scheduler.clean:
 	pushd scheduler; mvn clean; popd
+
+schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
+flattened-schema-file := ${TARGET_DIR}/bind-request.schema.json
+BIND_REQ_SCHEMA_VERSION ?= v0.1
+bind-request-schema: ${flattened-schema-file}
+${flattened-schema-file}: ${schema-files}
+	mkdir -p "$$(dirname ${flattened-schema-file})"
+	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+	> '${flattened-schema-file}'
+	echo '🔨 File created: ${flattened-schema-file}'
 
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
@@ -301,7 +313,7 @@ release-draft: ## Create a draft GitHub release without artifacts
 		./scripts/release.sh
 
 .PHONY: create-assets
-create-assets: ## Create release assets (mtar and acceptance tests)
+create-assets: ## Create release assets (mtar and acceptance tests), please provide `VERSION` as environment-variable.
 		./scripts/create-assets.sh
 
 .PHONY: release-promote
