@@ -45,7 +45,7 @@ function create_tests() {
 function create_bindreq_schema() {
 	local -r artifact_dir="${1}"
 	echo " - creating bind request schema artifact in ${artifact_dir}"
-	make bind-request-schema TARGET_DIR="${artifact_dir}"
+	make bind-request-schema DEST="${artifact_dir}"
 }
 
 echo " - Creating assets for version ${VERSION}..."
