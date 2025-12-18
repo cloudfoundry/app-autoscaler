@@ -27,7 +27,7 @@ jobs:
           done
 
       - name: checkout app-autoscaler-release
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: install devbox
         uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
@@ -40,7 +40,7 @@ jobs:
           printenv >> "$GITHUB_ENV"
 
       - name: checkout app-autoscaler-env-bbl-state
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           repository: cloudfoundry/app-autoscaler-env-bbl-state
           ssh-key: ${{ secrets.BBL_SSH_KEY }}
