@@ -19,7 +19,6 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,6 +67,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.core.JacksonException;
 
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest
@@ -804,7 +804,7 @@ public class ScheduleManagerTest {
 
   @Test
   public void testSynchronizeSchedules_with_existed_policy_and_no_schedule()
-      throws JsonProcessingException {
+      throws JacksonException {
 
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     String guid = TestDataSetupHelper.generateGuid();
@@ -916,7 +916,7 @@ public class ScheduleManagerTest {
   @Test
   public void
       testSynchronizeSchedules_with_both_policy_with_schedules_and_schedules_existed_and_guid_are_different()
-          throws JsonProcessingException {
+          throws JacksonException {
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     String guid = TestDataSetupHelper.generateGuid();
     String anotherGuid = TestDataSetupHelper.generateGuid();
@@ -1014,7 +1014,7 @@ public class ScheduleManagerTest {
 
   @Test
   public void testSynchronizeSchedules_with_both_policy_without_schedule_and_schedules_existed()
-      throws JsonProcessingException {
+      throws JacksonException {
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     String guid = TestDataSetupHelper.generateGuid();
     String anotherGuid = TestDataSetupHelper.generateGuid();
@@ -1078,7 +1078,7 @@ public class ScheduleManagerTest {
   @Test
   public void
       testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_the_same()
-          throws JsonProcessingException {
+          throws JacksonException {
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     String guid = TestDataSetupHelper.generateGuid();
     int noOfSpecificDateSchedules = 3;

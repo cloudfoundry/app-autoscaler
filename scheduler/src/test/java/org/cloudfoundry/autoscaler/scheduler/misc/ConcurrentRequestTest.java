@@ -3,7 +3,6 @@ package org.cloudfoundry.autoscaler.scheduler.misc;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,32 +17,34 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.client.RestOperations;
+import org.springframework.test.web.servlet.client.RestTestClient;
 
+@AutoConfigureRestTestClient
 @SpringBootTest
-public class ConcurrentRequestTest {
+class ConcurrentRequestTest {
 
   @Value("${autoscaler.scalingengine.url}")
   private String scalingEngineUrl;
 
-  @Autowired private RestOperations restOperations;
+  @Autowired private RestTestClient restTestClient;
 
   private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
   @BeforeAll
-  public static void beforeClass() throws IOException {
+  static void beforeClass() {
     embeddedTomcatUtil = new EmbeddedTomcatUtil();
     embeddedTomcatUtil.start();
   }
 
   @AfterAll
-  public static void afterClass() throws IOException, InterruptedException {
+  static void afterClass() {
     embeddedTomcatUtil.stop();
   }
 
   @Test
-  public void testMultipleRequests() throws Exception {
+  void testMultipleRequests() throws Exception {
 
     String appId = "appId";
     long scheduleId = 0L;
@@ -62,7 +63,7 @@ public class ConcurrentRequestTest {
     Callable<Throwable> task =
         () -> {
           try {
-            restOperations.delete(scalingEnginePathActiveSchedule);
+            restTestClient.delete().uri(scalingEnginePathActiveSchedule).exchange().expectStatus().isNotFound();
             return null;
           } catch (Throwable th) {
             return th;

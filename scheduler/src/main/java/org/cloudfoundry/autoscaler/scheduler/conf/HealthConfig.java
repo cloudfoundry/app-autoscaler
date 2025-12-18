@@ -5,6 +5,7 @@ import org.cloudfoundry.autoscaler.scheduler.health.DbStatusCollector;
 import org.cloudfoundry.autoscaler.scheduler.health.HealthExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 public class HealthConfig {
 
   @Bean
+  @DependsOnDatabaseInitialization
   public DbStatusCollector dbStatusCollector(
       @Qualifier("primary") DataSource primaryDs, @Qualifier("policy") DataSource policyDs) {
     DbStatusCollector dbStatusCollector = new DbStatusCollector();

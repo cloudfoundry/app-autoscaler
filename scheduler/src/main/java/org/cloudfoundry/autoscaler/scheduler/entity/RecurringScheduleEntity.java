@@ -1,10 +1,9 @@
 package org.cloudfoundry.autoscaler.scheduler.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQuery;
@@ -20,7 +19,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.TimeDeserializer;
 import org.cloudfoundry.autoscaler.scheduler.util.TimeSerializer;
 import org.hibernate.annotations.Type;
 
-@ApiModel
+@Schema
 @Entity
 @Table(name = "app_scaling_recurring_schedule")
 @NamedQuery(
@@ -31,11 +30,10 @@ import org.hibernate.annotations.Type;
     query = RecurringScheduleEntity.jpql_findDistinctAppIdAndGuidFromRecurringSchedule)
 public class RecurringScheduleEntity extends ScheduleEntity {
 
-  @ApiModelProperty(
+  @Schema(
       example = DateHelper.TIME_FORMAT,
-      dataType = "java.lang.String",
-      required = true,
-      position = 3)
+      type = "java.lang.String",
+      required = true)
   @JsonDeserialize(using = TimeDeserializer.class)
   @JsonSerialize(using = TimeSerializer.class)
   @NotNull
@@ -43,11 +41,10 @@ public class RecurringScheduleEntity extends ScheduleEntity {
   @JsonProperty(value = "start_time")
   private LocalTime startTime;
 
-  @ApiModelProperty(
+  @Schema(
       example = DateHelper.TIME_FORMAT,
-      dataType = "java.lang.String",
-      required = true,
-      position = 4)
+      type = "java.lang.String",
+      required = true)
   @JsonDeserialize(using = TimeDeserializer.class)
   @JsonSerialize(using = TimeSerializer.class)
   @NotNull
@@ -55,27 +52,27 @@ public class RecurringScheduleEntity extends ScheduleEntity {
   @JsonProperty(value = "end_time")
   private LocalTime endTime;
 
-  @ApiModelProperty(example = DateHelper.DATE_FORMAT, position = 1)
+  @Schema(example = DateHelper.DATE_FORMAT)
   @JsonDeserialize(using = DateDeserializer.class)
   @JsonSerialize(using = DateSerializer.class)
   @Column(name = "start_date")
   @JsonProperty(value = "start_date")
   private LocalDate startDate;
 
-  @ApiModelProperty(example = DateHelper.DATE_FORMAT, position = 2)
+  @Schema(example = DateHelper.DATE_FORMAT)
   @JsonDeserialize(using = DateDeserializer.class)
   @JsonSerialize(using = DateSerializer.class)
   @Column(name = "end_date")
   @JsonProperty(value = "end_date")
   private LocalDate endDate;
 
-  @ApiModelProperty(example = "[2, 3, 4, 5]", hidden = true)
+  @Schema(example = "[2, 3, 4, 5]", hidden = true)
   @Type(value = org.cloudfoundry.autoscaler.scheduler.entity.BitsetUserType.class)
   @Column(name = "days_of_week")
   @JsonProperty(value = "days_of_week")
   private int[] daysOfWeek;
 
-  @ApiModelProperty(example = "[10, 20, 25]", position = 6)
+  @Schema(example = "[10, 20, 25]")
   @Type(value = org.cloudfoundry.autoscaler.scheduler.entity.BitsetUserType.class)
   @Column(name = "days_of_month")
   @JsonProperty(value = "days_of_month")

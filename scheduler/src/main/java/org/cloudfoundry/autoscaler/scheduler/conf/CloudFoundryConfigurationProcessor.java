@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -108,8 +108,7 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
 
       // Extract organization_id
       Object organizationId = vcapApp.get("organization_id");
-      if (organizationId instanceof String && !((String) organizationId).trim().isEmpty()) {
-        String orgGuid = (String) organizationId;
+      if (organizationId instanceof String orgGuid && !orgGuid.trim().isEmpty()) {
         logger.info(
             "Setting cfserver.validOrgGuid from VCAP_APPLICATION organization_id: {}", orgGuid);
         orgSpaceMap.put("validOrgGuid", orgGuid);
@@ -120,8 +119,7 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
 
       // Extract space_id
       Object spaceId = vcapApp.get("space_id");
-      if (spaceId instanceof String && !((String) spaceId).trim().isEmpty()) {
-        String spaceGuid = (String) spaceId;
+      if (spaceId instanceof String spaceGuid && !spaceGuid.trim().isEmpty()) {
         logger.info(
             "Setting cfserver.validSpaceGuid from VCAP_APPLICATION space_id: {}", spaceGuid);
         orgSpaceMap.put("validSpaceGuid", spaceGuid);
@@ -313,7 +311,7 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
     } else if (hostname != null && portObj != null && dbname != null) {
       // Build from individual components
       String port = portObj.toString();
-      baseUrl = String.format("jdbc:postgresql://%s:%s/%s", hostname, port, dbname);
+      baseUrl = "jdbc:postgresql://%s:%s/%s".formatted(hostname, port, dbname);
     }
 
     if (baseUrl == null) {

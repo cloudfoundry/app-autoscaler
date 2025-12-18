@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import org.springframework.web.context.WebApplicationContext;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @Commit
-public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
+class ScheduleRestControllerCreateScheduleAndNotifyScalingEngineTest {
 
   @Autowired private MessageBundleResourceHelper messageBundleResourceHelper;
 
@@ -67,13 +67,13 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
   private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
   @BeforeAll
-  public static void beforeClass() throws IOException {
+  static void beforeClass() {
     embeddedTomcatUtil = new EmbeddedTomcatUtil();
     embeddedTomcatUtil.start();
   }
 
   @AfterAll
-  public static void afterClass() throws IOException, InterruptedException {
+  static void afterClass() {
     embeddedTomcatUtil.stop();
   }
 
@@ -86,7 +86,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
 
   @BeforeEach
   @Transactional
-  public void before() throws Exception {
+  void before() throws Exception {
     // Clean up data
     testDataDbUtil.cleanupData(scheduler);
 
@@ -99,7 +99,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
   }
 
   @Test
-  public void testCreateScheduleAndNotifyScalingEngine() throws Exception {
+  void testCreateScheduleAndNotifyScalingEngine() throws Exception {
     createSchedule();
 
     // Assert START Job successful message
@@ -117,7 +117,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
   }
 
   @Test
-  public void testDeleteSchedule() throws Exception {
+  void testDeleteSchedule() throws Exception {
     createSchedule();
 
     // Assert START Job successful message
@@ -138,7 +138,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
   }
 
   @Test
-  public void testQuartzSetting() throws SchedulerException {
+  void testQuartzSetting() throws SchedulerException {
     assertThat(scheduler.getSchedulerName(), is("app-autoscaler"));
     assertThat(scheduler.getSchedulerInstanceId(), is("scheduler-12345"));
   }

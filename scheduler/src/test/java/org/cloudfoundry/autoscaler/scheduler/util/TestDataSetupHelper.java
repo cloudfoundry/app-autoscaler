@@ -1,7 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -34,6 +33,7 @@ import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
 
 /** Class to set up the test data for the test classes */
 public class TestDataSetupHelper {
@@ -143,7 +143,7 @@ public class TestDataSetupHelper {
 
   public static String generateJsonSchedule(
       int noOfSpecificDateSchedulesToSetUp, int noOfRecurringSchedulesToSetUp)
-      throws JsonProcessingException {
+      throws JacksonException {
     ObjectMapper mapper = new ObjectMapper();
 
     ApplicationSchedules applicationPolicy =
@@ -335,7 +335,7 @@ public class TestDataSetupHelper {
   }
 
   public static String getSchedulerPath(String appId) {
-    return String.format("/v1/apps/%s/schedules", appId);
+    return "/v1/apps/%s/schedules".formatted(appId);
   }
 
   static String getTimeZone() {

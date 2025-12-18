@@ -10,7 +10,6 @@ import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.HttpsSupport;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.util.Timeout;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ssl.SslBundle;
 import org.springframework.boot.ssl.SslBundles;
@@ -25,7 +24,6 @@ import org.springframework.web.client.RestTemplate;
 public class RestClientConfig {
   private final SSLContext sslContext;
 
-  @Autowired
   public RestClientConfig(SslBundles sslBundles) {
     SslBundle sslBundle = sslBundles.getBundle("scalingengine");
     this.sslContext = sslBundle.createSslContext();
@@ -60,7 +58,6 @@ public class RestClientConfig {
         ConnectionConfig.custom().setConnectTimeout(Timeout.ofSeconds(httpClientTimeout)).build();
     HttpClientConnectionManager ccm =
         PoolingHttpClientConnectionManagerBuilder.create()
-            .setSSLSocketFactory(sslsf)
             .setDefaultConnectionConfig(connectionConfig)
             .build();
     builder.setConnectionManager(ccm);

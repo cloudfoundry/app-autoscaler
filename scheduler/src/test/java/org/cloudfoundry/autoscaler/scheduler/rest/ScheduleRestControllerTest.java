@@ -13,8 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.List;
@@ -46,6 +47,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
@@ -374,7 +377,7 @@ public class ScheduleRestControllerTest {
     resultActions.andExpect(status().isBadRequest());
   }
 
-  private static String getPolicyString() throws JsonProcessingException {
+  private static String getPolicyString() throws JacksonException {
     ObjectMapper mapper = new ObjectMapper();
     ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
     String content = mapper.writeValueAsString(applicationPolicy);
@@ -613,7 +616,7 @@ public class ScheduleRestControllerTest {
   private ApplicationSchedules getApplicationSchedulesFromResultActions(ResultActions resultActions)
       throws IOException {
     ObjectMapper mapper = new ObjectMapper();
-    mapper.setDateFormat(DateFormat.getDateInstance(DateFormat.LONG));
+    //TODO mapper.setDateFormat(DateFormat.getDateInstance(DateFormat.LONG));
     return mapper.readValue(
         resultActions.andReturn().getResponse().getContentAsString(), ApplicationSchedules.class);
   }

@@ -1,17 +1,16 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-public class DateSerializer extends JsonSerializer<LocalDate> {
+public class DateSerializer extends ValueSerializer<LocalDate> {
 
   @Override
-  public void serialize(LocalDate value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
+  public void serialize(LocalDate value, JsonGenerator gen, SerializationContext serializers) {
     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateHelper.DATE_FORMAT);
     gen.writeString(value.format(dateTimeFormatter));
   }

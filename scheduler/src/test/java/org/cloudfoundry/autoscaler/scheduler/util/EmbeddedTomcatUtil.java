@@ -65,7 +65,7 @@ public class EmbeddedTomcatUtil {
   }
 
   public void addScalingEngineMockForAppAndScheduleId(
-      String appId, Long scheduleId, int statusCode, String message) throws ServletException {
+      String appId, Long scheduleId, int statusCode, String message) {
     String url = "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
     tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
     appContext.addServletMappingDecoded(url, appId);

@@ -1,8 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,58 +9,58 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.validation.constraints.NotNull;
 
-@ApiModel
+@Schema
 @MappedSuperclass
 public class ScheduleEntity {
 
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "schedule_id")
   private Long id;
 
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   @NotNull
   @JsonProperty(value = "app_id")
   @Column(name = "app_id")
   private String appId;
 
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   @NotNull
   @JsonProperty(value = "timezone")
   @Column(name = "timezone")
   private String timeZone;
 
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   @NotNull
   @Column(name = "default_instance_min_count")
   @JsonProperty(value = "default_instance_min_count")
   private Integer defaultInstanceMinCount;
 
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   @NotNull
   @Column(name = "default_instance_max_count")
   @JsonProperty(value = "default_instance_max_count")
   private Integer defaultInstanceMaxCount;
 
-  @ApiModelProperty(required = true, position = 10)
+  @Schema(required = true)
   @NotNull
   @Column(name = "instance_min_count")
   @JsonProperty(value = "instance_min_count")
   private Integer instanceMinCount;
 
-  @ApiModelProperty(required = true, position = 11)
+  @Schema(required = true)
   @NotNull
   @Column(name = "instance_max_count")
   @JsonProperty(value = "instance_max_count")
   private Integer instanceMaxCount;
 
-  @ApiModelProperty(required = true, position = 12)
+  @Schema(required = true)
   @Column(name = "initial_min_instance_count")
   @JsonProperty(value = "initial_min_instance_count")
   private Integer initialMinInstanceCount;
 
-  @ApiModelProperty(required = true, position = 13)
+  @Schema(required = true)
   @Column(name = "guid")
   @JsonProperty(value = "guid")
   private String guid;

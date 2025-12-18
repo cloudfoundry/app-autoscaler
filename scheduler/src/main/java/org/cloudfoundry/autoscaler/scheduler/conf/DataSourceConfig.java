@@ -5,8 +5,9 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import org.cloudfoundry.autoscaler.scheduler.beanPostProcessor.DatasourceBeanPostProcessor;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -68,6 +69,7 @@ public class DataSourceConfig {
   }
 
   @Bean
+  @DependsOnDatabaseInitialization
   @Primary
   @Qualifier("primary")
   public JpaTransactionManager transactionManager(
@@ -79,6 +81,7 @@ public class DataSourceConfig {
   }
 
   @Bean
+  @DependsOnDatabaseInitialization
   @Qualifier("policy")
   public JpaTransactionManager policyDbTransactionManager(
       @Qualifier("policy") DataSource policyDataSource) {

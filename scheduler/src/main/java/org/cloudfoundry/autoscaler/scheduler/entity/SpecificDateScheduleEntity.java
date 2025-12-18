@@ -2,10 +2,9 @@ package org.cloudfoundry.autoscaler.scheduler.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.NamedQuery;
@@ -16,7 +15,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateTimeDeserializer;
 import org.cloudfoundry.autoscaler.scheduler.util.DateTimeSerializer;
 
-@ApiModel
+@Schema
 @Entity
 @Table(name = "app_scaling_specific_date_schedule")
 @NamedQuery(
@@ -27,7 +26,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.DateTimeSerializer;
     query = SpecificDateScheduleEntity.jpql_findDistinctAppIdAndGuidFromSpecificDateSchedule)
 public class SpecificDateScheduleEntity extends ScheduleEntity {
 
-  @ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 1)
+  @Schema(example = DateHelper.DATE_TIME_FORMAT, required = true)
   @JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
   @JsonDeserialize(using = DateTimeDeserializer.class)
   @JsonSerialize(using = DateTimeSerializer.class)
@@ -36,7 +35,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
   @JsonProperty("start_date_time")
   private LocalDateTime startDateTime;
 
-  @ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 2)
+  @Schema(example = DateHelper.DATE_TIME_FORMAT, required = true)
   @JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
   @JsonDeserialize(using = DateTimeDeserializer.class)
   @JsonSerialize(using = DateTimeSerializer.class)
