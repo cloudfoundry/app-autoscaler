@@ -2,13 +2,12 @@ package org.cloudfoundry.autoscaler.scheduler.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.springframework.jdbc.core.RowMapper;
 
-@ApiModel
+@Schema
 public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
   @JsonIgnore private Long id;
@@ -19,15 +18,15 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
   @JsonIgnore private Long startJobIdentifier;
 
-  @ApiModelProperty(required = true, position = 1)
+  @Schema(required = true)
   @JsonProperty(value = "instance_min_count")
   private Integer instanceMinCount;
 
-  @ApiModelProperty(required = true, position = 2)
+  @Schema(required = true)
   @JsonProperty(value = "instance_max_count")
   private Integer instanceMaxCount;
 
-  @ApiModelProperty(position = 3)
+  @Schema
   @JsonProperty(value = "initial_min_instance_count")
   private Integer initialMinInstanceCount;
 

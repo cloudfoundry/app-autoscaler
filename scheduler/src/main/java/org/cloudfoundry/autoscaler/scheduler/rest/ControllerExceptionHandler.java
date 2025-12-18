@@ -28,14 +28,14 @@ public class ControllerExceptionHandler {
   public ResponseEntity<List<String>> handleException(HttpServletRequest req, Exception e) {
     logger.error("Internal Server Error", e);
 
-    return new ResponseEntity<>(null, null, HttpStatus.INTERNAL_SERVER_ERROR);
+    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<List<String>> handleMethodArgumentNotValidException(
       HttpServletRequest req, Exception e) {
 
-    return new ResponseEntity<>(null, null, HttpStatus.BAD_REQUEST);
+    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(InvalidDataException.class)
@@ -43,7 +43,7 @@ public class ControllerExceptionHandler {
       HttpServletRequest req, Exception e) {
 
     List<String> errors = validationErrorResult.getAllErrorMessages();
-    return new ResponseEntity<>(errors, null, HttpStatus.BAD_REQUEST);
+    return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(SchedulerInternalException.class)
@@ -52,7 +52,7 @@ public class ControllerExceptionHandler {
     logger.error("Internal Server Error", e);
 
     List<String> errors = validationErrorResult.getAllErrorMessages();
-    return new ResponseEntity<>(errors, null, HttpStatus.INTERNAL_SERVER_ERROR);
+    return new ResponseEntity<>(errors, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -61,11 +61,11 @@ public class ControllerExceptionHandler {
 
   @ExceptionHandler(value = {ConstraintViolationException.class})
   protected ResponseEntity<Object> handleConstraintViolation(ConstraintViolationException e) {
-    return new ResponseEntity<>(e.getMessage(), null, HttpStatus.BAD_REQUEST);
+    return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(value = {NoResourceFoundException.class})
   protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException e) {
-    return new ResponseEntity<>(e.getMessage(), null, e.getStatusCode());
+    return new ResponseEntity<>(e.getMessage(), e.getStatusCode());
   }
 }

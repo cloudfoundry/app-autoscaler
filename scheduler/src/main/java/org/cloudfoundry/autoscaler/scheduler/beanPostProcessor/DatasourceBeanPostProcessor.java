@@ -22,13 +22,11 @@ public class DatasourceBeanPostProcessor implements BeanPostProcessor {
 
   @Override
   public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-    if (bean instanceof DataSource) {
-      DataSource ds = (DataSource) bean;
+    if (bean instanceof DataSource ds) {
       Connection con = null;
       try {
         // Log datasource details for debugging
-        if (ds instanceof HikariDataSource) {
-          HikariDataSource hikariDs = (HikariDataSource) ds;
+        if (ds instanceof HikariDataSource hikariDs) {
           logger.info(
               "Attempting to connect to datasource '{}' with URL: {}",
               beanName,
