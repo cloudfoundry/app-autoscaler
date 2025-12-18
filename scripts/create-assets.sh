@@ -27,6 +27,7 @@ fi
 function create_mtar() {
 	local version=$1
 	local artifact_dir=$2
+	mkdir -p "${artifact_dir}"
 	echo " - creating autoscaler mtar artifact"
 	pushd "${autoscaler_dir}" > /dev/null
 		make mta-release VERSION="${version}" DEST="${artifact_dir}"
@@ -36,6 +37,7 @@ function create_mtar() {
 function create_tests() {
 	local version=$1
 	local artifact_dir=$2
+	mkdir -p "${artifact_dir}"
 	echo " - creating acceptance test artifact"
 	pushd "${autoscaler_dir}" > /dev/null
 		make acceptance-release VERSION="${version}" DEST="${artifact_dir}"
@@ -52,7 +54,9 @@ echo " - Creating assets for version ${VERSION}..."
 
 pushd "${autoscaler_dir}" > /dev/null
 	artifact_dir="${build_path}/artifacts"
+	echo " - artifact_dir: ${artifact_dir}"
 	mkdir -p "${artifact_dir}"
+	ls -la "${artifact_dir}" || echo "ERROR: artifact_dir does not exist after mkdir"
 
 	create_bindreq_schema "$artifact_dir"
 	create_tests "${VERSION}" "$artifact_dir"

@@ -294,7 +294,9 @@ mta-build: mta-build-clean
 	cp mta.tpl.yaml mta.yaml
 	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
 	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
+	@echo "DEBUG: DEST=$(DEST)"
 	mkdir -p $(DEST)
+	@ls -la $(DEST) || echo "ERROR: DEST does not exist after mkdir"
 	mbt build -t /tmp --mtar $(MTAR_FILENAME)
 	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)
 	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
