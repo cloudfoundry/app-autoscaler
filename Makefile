@@ -250,7 +250,6 @@ clean: dbtasks.clean scheduler.clean
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
 	@go clean -cache -testcache
-	@rm --force --recursive 'build'
 	@rm --force --recursive 'fakes'
 	@rm --force --recursive 'test-certs'
 	@rm --force --recursive 'target'
