@@ -263,7 +263,7 @@ scheduler.clean:
 	pushd scheduler; mvn clean; popd
 
 schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
-flattened-schema-file := ${TARGET_DIR}/bind-request.schema.json
+flattened-schema-file := ${DEST}/bind-request.schema.json
 BIND_REQ_SCHEMA_VERSION ?= v0.1
 bind-request-schema: ${flattened-schema-file}
 ${flattened-schema-file}: ${schema-files}

@@ -25,49 +25,60 @@ if [ -z "${VERSION}" ]; then
 fi
 
 function create_mtar() {
-	set -e
-	mkdir -p "${build_path}/artifacts"
 	local version=$1
-	local build_path=$2
+	local artifact_dir=$2
 	echo " - creating autoscaler mtar artifact"
 	pushd "${autoscaler_dir}" > /dev/null
-		make mta-release VERSION="${version}" DEST="${build_path}/artifacts"
+		make mta-release VERSION="${version}" DEST="${artifact_dir}"
 	popd > /dev/null
 }
 
 function create_tests() {
-	set -e
-	mkdir -p "${build_path}/artifacts"
 	local version=$1
-	local build_path=$2
+	local artifact_dir=$2
 	echo " - creating acceptance test artifact"
 	pushd "${autoscaler_dir}" > /dev/null
-		make acceptance-release VERSION="${version}" DEST="${build_path}/artifacts"
+		make acceptance-release VERSION="${version}" DEST="${artifact_dir}"
 	popd > /dev/null
 }
 
 function create_bindreq_schema() {
-	local -r target_dir="${1}"
-	echo " - creating bind request schema artifact in ${target_dir}"
-	make bind-request-schema TARGET_DIR="${target_dir}"
-	return 0
+	local -r artifact_dir="${1}"
+	echo " - creating bind request schema artifact in ${artifact_dir}"
+	make bind-request-schema TARGET_DIR="${artifact_dir}"
 }
 
 echo " - Creating assets for version ${VERSION}..."
 
 pushd "${autoscaler_dir}" > /dev/null
-	mkdir -p "${build_path}/artifacts"
+	artifact_dir="${build_path}/artifacts"
+	mkdir -p "${artifact_dir}"
 
-	create_bindreq_schema "${build_path}/artifacts"
-	create_tests "${VERSION}" "${build_path}"
-	create_mtar "${VERSION}" "${build_path}"
+	create_bindreq_schema "$artifact_dir"
+	create_tests "${VERSION}" "$artifact_dir"
+	create_mtar "${VERSION}" "$artifact_dir"
 
-	echo " - Generating checksums..."
-	sha256sum "${build_path}/artifacts/"* > "${build_path}/artifacts/files.sum.sha256"
-
+	# Validate artifacts were created
 	ACCEPTANCE_TEST_TGZ="app-autoscaler-acceptance-tests-v${VERSION}.tgz"
 	AUTOSCALER_MTAR="app-autoscaler-release-v${VERSION}.mtar"
 	BIND_REQ_SCHEMA='bind-request.schema.json'
+
+	echo " - Validating artifacts..."
+	if [[ ! -f "${artifact_dir}/${ACCEPTANCE_TEST_TGZ}" ]]; then
+		echo "ERROR: Acceptance test artifact not found: ${ACCEPTANCE_TEST_TGZ}"
+		exit 1
+	fi
+	if [[ ! -f "${artifact_dir}/${AUTOSCALER_MTAR}" ]]; then
+		echo "ERROR: MTAR artifact not found: ${AUTOSCALER_MTAR}"
+		exit 1
+	fi
+	if [[ ! -f "${artifact_dir}/${BIND_REQ_SCHEMA}" ]]; then
+		echo "ERROR: Bind request schema not found: ${BIND_REQ_SCHEMA}"
+		exit 1
+	fi
+
+	echo " - Generating checksums..."
+	sha256sum "${artifact_dir}/"* > "${SUM_FILE}"
 
 	ACCEPTANCE_SHA256=$( grep "${ACCEPTANCE_TEST_TGZ}$" "${SUM_FILE}" | awk '{print $1}' )
 	MTAR_SHA256=$( grep "${AUTOSCALER_MTAR}$" "${SUM_FILE}" | awk '{print $1}')
