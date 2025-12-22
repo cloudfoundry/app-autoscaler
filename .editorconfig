@@ -9,6 +9,15 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
+[{*.bash,*.sh}]
+indent_style = tab
+indent_size = 2
+softtabstop = 2
+
+[Dockerfile]
+indent_size = 4
+indent_style = tab
+
 [{Makefile,go.mod,go.sum,*.go,.gitmodules}]
 indent_style = tab
 indent_size = 4
@@ -16,16 +25,8 @@ indent_size = 4
 [*.md]
 indent_size = 4
 trim_trailing_whitespace = false
-
 eclint_indent_style = unset
 
-[Dockerfile]
+[*.py]
 indent_size = 4
-indent_style = tab
-
-[{*.bash,*.sh}]
-indent_style = tab
-indent_size = 2
-softtabstop = 2
-
-
+indent_style = space

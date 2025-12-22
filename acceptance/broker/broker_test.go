@@ -272,14 +272,12 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 				It("fails", func() {
 					// Preparation
-					paramsTemplate := `
-{
-  "schema-version": "0.1",
-  "configuration": {
-	"app_guid": "%s"
-  }
-}
-`
+					paramsTemplate := `{
+						"schema-version": "0.1",
+						"configuration": {
+						  "app_guid": "%s"
+						}
+					  }`
 					params := fmt.Sprintf(paramsTemplate, appGuid)
 
 					// Execution

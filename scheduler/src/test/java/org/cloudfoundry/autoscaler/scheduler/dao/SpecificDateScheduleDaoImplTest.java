@@ -3,7 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.dao;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -14,14 +14,11 @@ import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBu
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @Transactional
 public class SpecificDateScheduleDaoImplTest {
@@ -35,7 +32,7 @@ public class SpecificDateScheduleDaoImplTest {
   private String guid1;
   private String guid2;
 
-  @Before
+  @BeforeEach
   public void before() {
     // Remove All ActiveSchedules
     testDataDbUtil.cleanupData();

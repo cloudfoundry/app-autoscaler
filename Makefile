@@ -5,6 +5,7 @@ aes_terminal_font_yellow := \033[38;2;255;255;0m
 aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
+TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
@@ -199,7 +200,7 @@ ${gorouter-proxy.program}: ./go.mod ./go.sum ${gorouter-proxy.source}
 .PHONY: integration
 integration: generate-fakes init-db test-certs build_all build-gorouterproxy
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
 
 .PHONY: init-db
 init-db: check-db_type start-db db.java-libs target/init-db-${db_type}
@@ -255,6 +256,16 @@ dbtasks.clean:
 scheduler.clean:
 	pushd scheduler; mvn clean; popd
 
+schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
+flattened-schema-file := ${DEST}/bind-request.schema.json
+BIND_REQ_SCHEMA_VERSION ?= v0.1
+bind-request-schema: ${flattened-schema-file}
+${flattened-schema-file}: ${schema-files}
+	mkdir -p "$$(dirname ${flattened-schema-file})"
+	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+	> '${flattened-schema-file}'
+	echo '🔨 File created: ${flattened-schema-file}'
+
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
@@ -278,8 +289,7 @@ mta-build: mta-build-clean
 	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
 	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
 	mkdir -p $(DEST)
-	mbt build -t /tmp --mtar $(MTAR_FILENAME)
-	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)
+	mbt build -t $(DEST) --mtar $(MTAR_FILENAME)
 	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
 	du -h $(DEST)/$(MTAR_FILENAME)
 
@@ -295,7 +305,12 @@ clean-build: ## Clean the build directory
 release-draft: ## Create a draft GitHub release without artifacts
 		./scripts/release.sh
 
-release-promote:
+.PHONY: create-assets
+create-assets: ## Create release assets (mtar and acceptance tests), please provide `VERSION` as environment-variable.
+		./scripts/create-assets.sh
+
+.PHONY: release-promote
+release-promote: create-assets ## Promote draft release to final and upload assets
 		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
