@@ -2,10 +2,11 @@
 
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source "${script_dir}/vars.source.sh"
 source "${script_dir}/common.sh"
 
 function main(){
-  bosh_login
+  bosh_login "${BBL_STATE_PATH}"
   cf_login
   cleanup_acceptance_run
 }
