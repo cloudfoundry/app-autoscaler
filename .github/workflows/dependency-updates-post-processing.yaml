@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-          token: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }} # With push token that can trigger new PR jobs
+          ssh-key: ${{ secrets.AUTOSCALER_DEPLOY_KEY_PRIVATE }}
       - name: Configure git
         id: configure_git
         shell: bash
@@ -63,7 +63,6 @@ jobs:
       - name: go-mod-tidy and make package-specs
         shell: bash
         env:
-          GH_TOKEN: "${{ secrets.APP_AUTOSCALER_CI_TOKEN }}"
           PR_BRANCH_REF: "${{ github.head_ref }}"
         run: |
           #! /usr/bin/env bash
