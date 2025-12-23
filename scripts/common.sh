@@ -30,10 +30,10 @@ function bosh_login() {
 		exit 1;
 	fi
 
-	pushd "${bbl_state_path}" > /dev/null
-		unset BBL_STATE_DIRECTORY
-		eval "$(bbl print-env)"
-	popd > /dev/null
+	local script_dir
+	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+	unset BBL_STATE_DIRECTORY
+	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }
 
 function cf_login(){
@@ -189,4 +189,113 @@ function check_database_exists(){
 	else
 		return 0
 	fi
+}
+
+function get_previous_version() {
+  local prev_version
+  prev_version=${PREV_VERSION:-$(gh release list --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null)}
+  # If no previous version found, default to v15.9.0
+  if [ -z "$prev_version" ] || [ "$prev_version" = "null" ]; then
+    prev_version="v15.9.0"
+  fi
+  echo "$prev_version"
+}
+
+function determine_next_version(){
+  local previous_version
+  previous_version=$(get_previous_version)
+  echo " - Previous version from GitHub releases: ${previous_version}"
+  echo " - Determining next version..."
+
+  # Check if there's an existing draft release
+  local draft_version
+  draft_version=$(gh release list --limit 10 --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName' | head -1)
+
+  if [ -n "$draft_version" ]; then
+    echo " - Found existing draft release: ${draft_version}"
+    echo " - Using draft version as next version"
+    echo "${draft_version#v}" > "${build_path}/name"
+    return
+  fi
+
+  # If no draft found, continue with version calculation
+  echo " - No draft release found, calculating version from commits..."
+  echo " - Previous version: $previous_version"
+
+  # Remove 'v' prefix if present
+  local version_number=${previous_version#v}
+
+  # Parse version components
+  IFS='.' read -r major minor patch <<< "$version_number"
+
+  # Get commits since last tag
+  local commits_since_tag
+  commits_since_tag=$(git rev-list "${previous_version}"..HEAD --oneline 2>/dev/null || git rev-list HEAD --oneline)
+  local commit_count
+  commit_count=$(echo "$commits_since_tag" | wc -l)
+
+  if [ -z "$commits_since_tag" ] || [ "$commit_count" -eq 0 ]; then
+    echo " - No commits since last tag, keeping current version"
+    echo "$version_number" > "${build_path}/name"
+    return
+  fi
+
+  # Extract PR numbers from commits (supports both "(#123)" and " #123 " formats)
+  local pr_numbers
+  pr_numbers=$(echo "$commits_since_tag" | grep -oE '(\(#[0-9]+\)| #[0-9]+ )' | grep -oE '[0-9]+' | sort -u)
+
+  if [ -z "$pr_numbers" ]; then
+    echo " - No PR numbers found in commits, incrementing patch version"
+    patch=$((patch + 1))
+    local new_version="${major}.${minor}.${patch}"
+    echo " - Next version: $new_version"
+    echo "$new_version" > "${build_path}/name"
+    return
+  fi
+
+  # Query GitHub API for PR labels and categorize
+  local has_breaking=0
+  local has_enhancement=0
+  local pr_count=0
+
+  echo " - Checking PR labels for version determination..."
+  while IFS= read -r pr_num; do
+    if [ -n "$pr_num" ]; then
+      pr_count=$((pr_count + 1))
+      local labels
+      labels=$(gh pr view "$pr_num" --json labels --jq '.labels[].name' 2>/dev/null || echo "")
+
+      if echo "$labels" | grep -q "exclude-from-changelog"; then
+        echo "   - PR #$pr_num: excluded from changelog"
+        continue
+      fi
+
+      if echo "$labels" | grep -q "breaking-change"; then
+        echo "   - PR #$pr_num: breaking change"
+        has_breaking=1
+      elif echo "$labels" | grep -q "enhancement"; then
+        echo "   - PR #$pr_num: enhancement"
+        has_enhancement=1
+      fi
+    fi
+  done <<< "$pr_numbers"
+
+  # Determine version increment based on PR labels
+  if [[ "$has_breaking" -eq 1 ]]; then
+    major=$((major + 1))
+    minor=0
+    patch=0
+    echo " - Found breaking changes, incrementing major version"
+  elif [[ "$has_enhancement" -eq 1 ]]; then
+    minor=$((minor + 1))
+    patch=0
+    echo " - Found enhancements, incrementing minor version"
+  else
+    patch=$((patch + 1))
+    echo " - Found changes, incrementing patch version"
+  fi
+
+  local new_version="${major}.${minor}.${patch}"
+  echo " - Next version: $new_version"
+  echo "$new_version" > "${build_path}/name"
 }

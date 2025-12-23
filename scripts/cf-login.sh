@@ -6,7 +6,7 @@ echo "Running $0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 source "${SCRIPT_DIR}/vars.source.sh"
-source "${SCRIPT_DIR}/commmon.sh"
+source "${SCRIPT_DIR}/common.sh"
 
 # Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
@@ -16,10 +16,7 @@ if [ -n "${BBL_STATE_PATH:-}" ]; then
     exit 1
   fi
   echo "# bosh login"
-  SAVED_PWD="$(pwd)"
-  cd "${BBL_STATE_PATH}"
-  eval "$(bbl print-env)"
-  cd "${SAVED_PWD}"
+  eval "$("${SCRIPT_DIR}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
 fi
 
 # Login to CF

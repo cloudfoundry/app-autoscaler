@@ -25,6 +25,7 @@ modules:
     path: .
     properties:
       JBP_LOG_LEVEL:
+      JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       LOG_LEVEL: INFO
       DEBUG:
     build-parameters:
@@ -213,6 +214,7 @@ modules:
     properties:
       JBP_LOG_LEVEL:
       JBP_CONFIG_OPEN_JDK_JRE: '{ "version": "21.+", "jre": { "version": "21.+", "java_home": ".java-buildpack/java_home" } }'
+      JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       DEBUG:
     requires:
     - name: scheduler-config
