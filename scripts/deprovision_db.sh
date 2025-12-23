@@ -41,10 +41,8 @@ if [ -n "${BBL_STATE_PATH:-}" ] && [[ "${BBL_STATE_PATH}" != *"ERR_invalid_state
     exit 1
   fi
   echo "# bosh login"
-  SAVED_PWD="$(pwd)"
-  cd "${BBL_STATE_PATH}"
-  eval "$(bbl print-env)"
-  cd "${SAVED_PWD}"
+  script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
 elif [[ "${BBL_STATE_PATH:-}" == *"ERR_invalid_state_path"* ]]; then
   echo "Warning: BBL_STATE_PATH is not set or invalid, skipping bosh login" >&2
   echo "Set BBL_STATE_PATH environment variable if you need to login to bosh" >&2
