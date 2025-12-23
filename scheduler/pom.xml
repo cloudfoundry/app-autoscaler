@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.7</version>
+        <version>3.5.9</version>
         <relativePath/>
     </parent>
 
@@ -159,8 +159,8 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-                  <propertyExpansion>checkstyle.config.path=${basedir}/../../../style-guide</propertyExpansion>
-                  <configLocation>${basedir}/../../../style-guide/google_checks.xml</configLocation>
+                  <propertyExpansion>checkstyle.config.path=${basedir}/../style-guide</propertyExpansion>
+                  <configLocation>${basedir}/../style-guide/google_checks.xml</configLocation>
                   <failOnViolation>true</failOnViolation>
                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>

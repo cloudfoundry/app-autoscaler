@@ -5,6 +5,7 @@ aes_terminal_font_yellow := \033[38;2;255;255;0m
 aes_terminal_reset := \033[0m
 VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
+TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 MTA_ID ?= com.github.cloudfoundry.app-autoscaler-release
 NAMESPACE ?=
@@ -112,7 +113,7 @@ test-app.generate-fakes:
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
-																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
+																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
 
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
@@ -201,7 +202,7 @@ ${gorouter-proxy.program}: ./go.mod ./go.sum ${gorouter-proxy.source}
 .PHONY: integration
 integration: generate-fakes init-db test-certs build_all build-gorouterproxy
 	@echo "# Running integration tests"
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' go run github.com/onsi/ginkgo/v2/ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo ${GINKGO_OPTS} integration DBURL="${DBURL}"
 
 .PHONY: init-db
 init-db: check-db_type start-db db.java-libs target/init-db-${db_type}
@@ -227,11 +228,6 @@ fmt: importfmt
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
 # This target depends on the fakes, because the tests are linted as well.
-lint: generate-fakes
-	readonly GOVERSION='${GO_VERSION}' ;\
-	export GOVERSION ;\
-	echo "Linting with Golang $${GOVERSION}" ;\
-	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
 package-dbtasks:
 	pushd dbtasks; mvn --quiet package ${MVN_OPTS}; popd
@@ -262,6 +258,16 @@ dbtasks.clean:
 scheduler.clean:
 	pushd scheduler; mvn clean; popd
 
+schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
+flattened-schema-file := ${DEST}/bind-request.schema.json
+BIND_REQ_SCHEMA_VERSION ?= v0.1
+bind-request-schema: ${flattened-schema-file}
+${flattened-schema-file}: ${schema-files}
+	mkdir -p "$$(dirname ${flattened-schema-file})"
+	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+	> '${flattened-schema-file}'
+	echo '🔨 File created: ${flattened-schema-file}'
+
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
@@ -291,8 +297,7 @@ mta-build: mta-build-clean
 	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
 	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
 	mkdir -p $(DEST)
-	mbt build -t /tmp --mtar $(MTAR_FILENAME)
-	@mv /tmp/$(MTAR_FILENAME) $(DEST)/$(MTAR_FILENAME)
+	mbt build -t $(DEST) --mtar $(MTAR_FILENAME)
 	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
 	@echo '⚠️ MTA ID: $(MTA_ID)'
 	du -h $(DEST)/$(MTAR_FILENAME)
@@ -309,7 +314,12 @@ clean-build: ## Clean the build directory
 release-draft: ## Create a draft GitHub release without artifacts
 		./scripts/release.sh
 
-release-promote:
+.PHONY: create-assets
+create-assets: ## Create release assets (mtar and acceptance tests), please provide `VERSION` as environment-variable.
+		./scripts/create-assets.sh
+
+.PHONY: release-promote
+release-promote: create-assets ## Promote draft release to final and upload assets
 		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
@@ -449,6 +459,10 @@ build-test-app:
 acceptance.build_tests:
 	@make --directory=acceptance build_tests
 
+.PHONY: acceptance.tests-cleanup
+acceptance.tests-cleanup:
+	@make --directory=acceptance acceptance-tests-cleanup
+
 # This target is defined here rather than directly in the component “scheduler” itself, because it depends on targets outside that component. In the future, it will be moved back to that component and reference a dependency to a Makefile on the same level – the one for the component it depends on.
 .PHONY: scheduler.test
 scheduler.test: check-db_type scheduler.test-certificates init-db
@@ -458,9 +472,18 @@ scheduler.test: check-db_type scheduler.test-certificates init-db
 scheduler.test-certificates:
 	make --directory=scheduler test-certificates
 
+lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: lint acceptance.lint test-app.lint
+lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+	readonly GOVERSION='${GO_VERSION}' ;\
+	export GOVERSION ;\
+	echo "Linting with Golang $${GOVERSION}" ;\
+	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
+.PHONY: lint-actions
+lint-actions:
+	@echo " - linting GitHub actions"
+	actionlint
 
 acceptance.lint:
 	@echo 'Linting acceptance-tests …'
@@ -500,3 +523,21 @@ deploy-cleanup:
 .PHONY: deploy-apps
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh
+
+.PHONY: update-uaac-nix-package
+update-uaac-nix-package:
+	make --directory='./nix/packages/uaac' gemset.nix
+
+.PHONY: lint-markdown
+lint-markdown:
+	@echo " - linting markdown files"
+	@markdownlint-cli2 .
+
+gorouterproxy.lint:
+	@echo " - linting: gorouterproxy"
+	@pushd integration/gorouterproxy >/dev/null && golangci-lint run --config='${lint_config}' $(OPTS)
+
+validate-openapi-specs: $(wildcard ./openapi/*.openapi.yaml)
+	for file in $^ ; do \
+		redocly lint --extends=minimal --format=$(if $(GITHUB_ACTIONS),github-actions,codeframe) "$${file}" ; \
+	done

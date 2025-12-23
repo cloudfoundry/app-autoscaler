@@ -41,10 +41,8 @@ if [ -n "${BBL_STATE_PATH:-}" ] && [[ "${BBL_STATE_PATH}" != *"ERR_invalid_state
     exit 1
   fi
   echo "# bosh login"
-  SAVED_PWD="$(pwd)"
-  cd "${BBL_STATE_PATH}"
-  eval "$(bbl print-env)"
-  cd "${SAVED_PWD}"
+  script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
 elif [[ "${BBL_STATE_PATH:-}" == *"ERR_invalid_state_path"* ]]; then
   echo "Warning: BBL_STATE_PATH is not set or invalid, skipping bosh login" >&2
   echo "Set BBL_STATE_PATH environment variable if you need to login to bosh" >&2
@@ -58,12 +56,6 @@ if ! check_database_exists "${BOSH_DEPLOYMENT}" "${POSTGRES_INSTANCE}" "${DB_USE
   echo "Database '${DEPLOYMENT_NAME}' does not exist. Nothing to deprovision."
 else
   echo "Database '${DEPLOYMENT_NAME}' found. Proceeding with deletion..."
-
-  echo "Terminating active connections to database '${DEPLOYMENT_NAME}'..."
-  TERMINATE_OUTPUT=$(bosh -d "${BOSH_DEPLOYMENT}" ssh "${POSTGRES_INSTANCE}" \
-    -c "sudo su - vcap -c \"PSQL_BIN=\\\$(ls -1d /var/vcap/packages/postgres-*/bin/psql | tail -1) && \\\$PSQL_BIN -h 127.0.0.1 -p 5524 -U ${DB_USER} -d postgres -c 'SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '\\'${DEPLOYMENT_NAME}\\'' AND pid <> pg_backend_pid();'\"" \
-    2>&1 || true)
-
   # Drop the database
   echo "Dropping database '${DEPLOYMENT_NAME}'..."
   DROP_OUTPUT=$(bosh -d "${BOSH_DEPLOYMENT}" ssh "${POSTGRES_INSTANCE}" \

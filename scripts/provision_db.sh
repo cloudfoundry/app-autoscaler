@@ -43,10 +43,8 @@ if [ -n "${BBL_STATE_PATH:-}" ]; then
     exit 1
   fi
   echo "# bosh login"
-  SAVED_PWD="$(pwd)"
-  cd "${BBL_STATE_PATH}"
-  eval "$(bbl print-env)"
-  cd "${SAVED_PWD}"
+  script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
 fi
 
 echo "Provisioning database '${DEPLOYMENT_NAME}' on Postgres instance ${POSTGRES_INSTANCE} in deployment ${BOSH_DEPLOYMENT}"

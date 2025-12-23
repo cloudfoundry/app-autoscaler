@@ -28,6 +28,7 @@ compile_ginkgo() {
         binary_name="ginkgo_v2_${os}_${arch}"
         CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -o "build/ginkgo_v2_${os}_${arch}" github.com/onsi/ginkgo/v2/ginkgo
         chmod +x "build/${binary_name}"
+				mv "build/${binary_name}" "../build/acceptance/${binary_name}"
       done
     done
   popd > /dev/null
@@ -36,6 +37,13 @@ compile_ginkgo() {
 main() {
   compile_suites
   compile_ginkgo
+  cp "acceptance/cleanup.sh" "build/acceptance/cleanup.sh"
+
+  # Copy test app assets
+  echo "Copying test app assets..."
+  mkdir -p "build/acceptance/assets/app/go_app/build"
+  cp -r "acceptance/assets/app/go_app/build/"* "build/acceptance/assets/app/go_app/build/"
+  cp -r "acceptance/assets/file/" "build/acceptance/assets/file/"
 }
 
 main
