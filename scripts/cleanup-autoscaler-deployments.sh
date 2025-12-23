@@ -2,7 +2,9 @@
 
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
+# shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
 function get_autoscaler_deployments(){
@@ -16,6 +18,7 @@ function main(){
 	do
 		unset_vars
 		export DEPLOYMENT_NAME="${deployment}"
+		# shellcheck source=scripts/vars.source.sh
 		source "${script_dir}/vars.source.sh"
 
 		cleanup_acceptance_run
