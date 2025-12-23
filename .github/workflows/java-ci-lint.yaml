@@ -31,18 +31,4 @@ jobs:
           printenv >> "$GITHUB_ENV"
       - name: Check Code Formatting
         run: |
-          sh ./style-guide/google-format-ci-v0.1.sh
-        env:
-          GOOGLE_JAR_VERSION: 1.22.0
-          GOOGLE_JAR_NAME: google-java-format-1.22.0-all-deps.jar
-
-      - name: Checkstyle
-        run: |
-          pushd scheduler
-            mvn --no-transfer-progress jxr:jxr
-            mvn --no-transfer-progress checkstyle:checkstyle
-          popd
-
-      - name: Publish Results on Pull Request
-        run: |
-          go run fmt_chkstyle/format_checkstyle.go
+          make --directory=scheduler check-format check-style
