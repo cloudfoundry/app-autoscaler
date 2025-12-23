@@ -60,7 +60,9 @@ class ZonedDateTimeTest {
     return arguments.stream();
   }
 
-  @ParameterizedTest(name = "When system timezone is {0} a DateTime in timezone {1} in the policy is correctly read")
+  @ParameterizedTest(
+      name =
+          "When system timezone is {0} a DateTime in timezone {1} in the policy is correctly read")
   @MethodSource("provideTimeZoneMatrix")
   void testDateTimeForDifferentPolicyTimeZones(String systemTimeZone, String policyTimeZone) {
     // Set the system timezone for this test invocation
@@ -70,7 +72,8 @@ class ZonedDateTimeTest {
     checkDateHelper_getZonedDateTimeForDateTime(policyTimeZone);
   }
 
-  @ParameterizedTest(name = "When system timezone is {0} a Date in timezone {1} in the policy is correctly read")
+  @ParameterizedTest(
+      name = "When system timezone is {0} a Date in timezone {1} in the policy is correctly read")
   @MethodSource("provideTimeZoneMatrix")
   void testDateForDifferentPolicyTimeZones(String systemTimeZone, String policyTimeZone) {
     // Set the system timezone for this test invocation
