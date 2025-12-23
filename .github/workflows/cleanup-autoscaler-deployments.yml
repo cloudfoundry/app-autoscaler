@@ -1,0 +1,37 @@
+name: Cleanup Autoscaler Deployments
+
+on:
+  schedule:
+    # Run every Monday at 05:30 UTC (30 minutes after resume-ci-vms runs at 05:00 UTC)
+    - cron: '30 5 * * 1'
+  workflow_dispatch:
+
+jobs:
+  cleanup-autoscaler-deployments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app-autoscaler-release
+        uses: actions/checkout@v4
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.14.0
+        with:
+          enable-cache: true
+
+      - name: Make devbox shellenv available
+        run: |
+          eval "$(devbox shellenv)"
+          printenv >> "$GITHUB_ENV"
+
+      - name: Checkout app-autoscaler-env-bbl-state
+        uses: actions/checkout@v4
+        with:
+          repository: cloudfoundry/app-autoscaler-env-bbl-state
+          ssh-key: ${{ secrets.BBL_SSH_KEY }}
+          path: app-autoscaler-env-bbl-state
+
+      - name: Run cleanup script
+        env:
+          BBL_STATE_PATH: ${{ github.workspace }}/app-autoscaler-env-bbl-state/bbl-state
+        run: |
+          ./scripts/cleanup-autoscaler-deployments.sh
