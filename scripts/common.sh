@@ -120,6 +120,24 @@ function cleanup_apps(){
 		 echo "No app to undeploy"
 	fi
 
+	# Purge orphaned service instances from all spaces in the org
+	echo "- Purging orphaned service instances from all spaces"
+	set +e
+	cf spaces 2>/dev/null | tail -n +4 | awk '{print $1}' | while read -r space_name; do
+		if [ -n "${space_name}" ] && [ "${space_name}" != "name" ]; then
+			echo "  - Checking space: ${space_name}"
+			cf target -s "${space_name}" > /dev/null 2>&1
+			# List all service instances (both user-provided and managed)
+			cf services 2>/dev/null | grep -v "^Getting services" | grep -v "^name" | tail -n +3 | awk '{print $1}' | while read -r service_instance; do
+				if [ -n "${service_instance}" ] && [ "${service_instance}" != "No" ]; then
+					echo "    - Purging service instance: ${service_instance}"
+					cf purge-service-instance "${service_instance}" -f 2>&1 | grep -v "FAILED" || true
+				fi
+			done
+		fi
+	done
+	set -e
+
 	if cf spaces | grep --quiet --regexp="^${AUTOSCALER_SPACE}$"; then
 		cf delete-space -f "${AUTOSCALER_SPACE}"
 	fi
@@ -137,6 +155,8 @@ function unset_vars() {
 	unset SYSTEM_DOMAIN
 	unset BBL_STATE_PATH
 	unset AUTOSCALER_DIR
+	unset AUTOSCALER_ORG
+	unset AUTOSCALER_SPACE
 	unset SERVICE_NAME
 	unset SERVICE_BROKER_NAME
 	unset NAME_PREFIX
