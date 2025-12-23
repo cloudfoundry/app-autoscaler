@@ -30,10 +30,10 @@ function bosh_login() {
 		exit 1;
 	fi
 
-	pushd "${bbl_state_path}" > /dev/null
-		unset BBL_STATE_DIRECTORY
-		eval "$(bbl print-env)"
-	popd > /dev/null
+	local script_dir
+	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+	unset BBL_STATE_DIRECTORY
+	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }
 
 function cf_login(){

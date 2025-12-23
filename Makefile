@@ -111,7 +111,7 @@ test-app.generate-fakes:
 
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
-																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-dir}')
+																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
 
 
 # This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
@@ -226,11 +226,6 @@ fmt: importfmt
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
 # This target depends on the fakes, because the tests are linted as well.
-lint: generate-fakes
-	readonly GOVERSION='${GO_VERSION}' ;\
-	export GOVERSION ;\
-	echo "Linting with Golang $${GOVERSION}" ;\
-	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
 package-dbtasks:
 	pushd dbtasks; mvn --quiet package ${MVN_OPTS}; popd
@@ -455,6 +450,10 @@ build-test-app:
 acceptance.build_tests:
 	@make --directory=acceptance build_tests
 
+.PHONY: acceptance.tests-cleanup
+acceptance.tests-cleanup:
+	@make --directory=acceptance acceptance-tests-cleanup
+
 # This target is defined here rather than directly in the component “scheduler” itself, because it depends on targets outside that component. In the future, it will be moved back to that component and reference a dependency to a Makefile on the same level – the one for the component it depends on.
 .PHONY: scheduler.test
 scheduler.test: check-db_type scheduler.test-certificates init-db
@@ -464,9 +463,18 @@ scheduler.test: check-db_type scheduler.test-certificates init-db
 scheduler.test-certificates:
 	make --directory=scheduler test-certificates
 
+lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: lint acceptance.lint test-app.lint
+lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+	readonly GOVERSION='${GO_VERSION}' ;\
+	export GOVERSION ;\
+	echo "Linting with Golang $${GOVERSION}" ;\
+	golangci-lint run --config='.golangci.yaml' ${OPTS}
 
+.PHONY: lint-actions
+lint-actions:
+	@echo " - linting GitHub actions"
+	actionlint
 
 acceptance.lint:
 	@echo 'Linting acceptance-tests …'
@@ -506,3 +514,21 @@ deploy-cleanup:
 .PHONY: deploy-apps
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh
+
+.PHONY: update-uaac-nix-package
+update-uaac-nix-package:
+	make --directory='./nix/packages/uaac' gemset.nix
+
+.PHONY: lint-markdown
+lint-markdown:
+	@echo " - linting markdown files"
+	@markdownlint-cli2 .
+
+gorouterproxy.lint:
+	@echo " - linting: gorouterproxy"
+	@pushd integration/gorouterproxy >/dev/null && golangci-lint run --config='${lint_config}' $(OPTS)
+
+validate-openapi-specs: $(wildcard ./openapi/*.openapi.yaml)
+	for file in $^ ; do \
+		redocly lint --extends=minimal --format=$(if $(GITHUB_ACTIONS),github-actions,codeframe) "$${file}" ; \
+	done
