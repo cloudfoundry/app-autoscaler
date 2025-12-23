@@ -29,7 +29,7 @@ func (e CheckstyleErr) Error() string {
 }
 
 func run() error {
-	xmlFile, err := os.Open("scheduler/target/checkstyle-result.xml")
+	xmlFile, err := os.Open("target/checkstyle-result.xml")
 	if err != nil {
 		return fmt.Errorf("failed to open checkstyle result file: %w", err)
 	}
