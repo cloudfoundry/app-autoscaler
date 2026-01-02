@@ -91,7 +91,7 @@ autoscaler_acceptance_dir="${AUTOSCALER_ACCEPTANCE_DIR}"
 
 export SERVICE_NAME="${DEPLOYMENT_NAME}"
 debug "SERVICE_NAME: ${SERVICE_NAME}"
-service_name="%{SERVICE_NAME"
+service_name="${SERVICE_NAME}"
 
 export SERVICE_BROKER_NAME="${DEPLOYMENT_NAME}servicebroker"
 debug "SERVICE_BROKER_NAME: ${SERVICE_BROKER_NAME}"
