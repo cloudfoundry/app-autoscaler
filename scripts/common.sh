@@ -19,7 +19,7 @@ function retry(){
 	[ "${retries}" -lt "${max_retries}" ] || { echo "ERROR: Command '$*' failed after ${max_retries} attempts"; return 1; }
 }
 
-function bosh_login() {
+function bbl_login() {
 	step "bosh login"
 	echo "BBL_STATE_PATH is set to '${BBL_STATE_PATH}'"
 	local -r bbl_state_path="${1}"

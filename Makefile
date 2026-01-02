@@ -7,6 +7,7 @@ VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
+EXTENSION_FILE := $(DEST)/extension-file-$(VERSION).txt
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
 
@@ -14,7 +15,6 @@ DEBUG := false
 MYSQL_TAG := 8
 POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-GO_MINOR_VERSION = $(shell echo $(GO_VERSION) | cut --delimiter=. --field=2)
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
@@ -32,7 +32,7 @@ test-certs: target/autoscaler_test_certs scheduler/src/test/resources/certs
 build_all: build_programs build_tests
 build_programs: build db.java-libs scheduler.build build-test-app
 
-MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine
+MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine,acceptance-tests
 
 db_type ?= postgres
 DB_HOST ?= localhost
@@ -41,7 +41,6 @@ DBURL := $(shell case "${db_type}" in\
 				 (mysql) printf "root@tcp(${DB_HOST})/autoscaler?tls=false"; ;; esac)
 
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
-EXTENSION_FILE := $(shell mktemp)
 
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
@@ -266,10 +265,8 @@ ${flattened-schema-file}: ${schema-files}
 	> '${flattened-schema-file}'
 	echo '🔨 File created: ${flattened-schema-file}'
 
-mta-deploy: mta-build build-extension-file
-	$(MAKE) -f metricsforwarder/Makefile set-security-group
-	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES)
+mta-deploy:
+	@EXTENSION_FILE=$(EXTENSION_FILE) $(MAKEFILE_DIR)/scripts/mta-deploy.sh
 
 mta-undeploy:
 	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
@@ -284,14 +281,7 @@ mta-logs:
 	vim mta-*
 
 mta-build: mta-build-clean
-	@echo "building mtar file for version: $(VERSION)"
-	cp mta.tpl.yaml mta.yaml
-	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
-	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
-	mkdir -p $(DEST)
-	mbt build -t $(DEST) --mtar $(MTAR_FILENAME)
-	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
-	du -h $(DEST)/$(MTAR_FILENAME)
+	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
 mta-build-clean:
 	rm -rf mta_archives
@@ -317,7 +307,19 @@ release-promote: create-assets ## Promote draft release to final and upload asse
 acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
-	./scripts/compile-acceptance-tests.sh
+	# Build only linux_amd64 binaries when TARGET_OS/TARGET_ARCH are set
+	TARGET_OS="${TARGET_OS:-linux darwin}" TARGET_ARCH="${TARGET_ARCH:-amd64 arm64}" ./scripts/compile-acceptance-tests.sh
+	# Create scripts directory and copy wrapper script
+	@mkdir -p build/acceptance/scripts build/acceptance/bin
+	@cp scripts/run-acceptance-tests-task.sh build/acceptance/scripts/
+	@chmod +x build/acceptance/scripts/run-acceptance-tests-task.sh
+	# Download and bundle CF CLI for linux_amd64
+	@echo "Downloading CF CLI for linux_amd64..."
+	@curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" -o /tmp/cf-cli.tgz
+	@tar -xzf /tmp/cf-cli.tgz -C build/acceptance/bin/
+	@chmod +x build/acceptance/bin/cf
+	@rm /tmp/cf-cli.tgz
+	# Create tarball
 	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
 
 

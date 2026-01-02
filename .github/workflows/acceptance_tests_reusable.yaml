@@ -56,7 +56,9 @@ jobs:
 
       - name: Deploy Apps
         shell: bash
-        run: make --directory="${AUTOSCALER_DIR}" deploy-apps
+        run: |
+          make --directory="${AUTOSCALER_DIR}" mta-build
+          make --directory="${AUTOSCALER_DIR}" mta-deploy
 
       - name: Register autoscaler
         shell: bash
@@ -89,7 +91,7 @@ jobs:
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
-      - name: Run acceptance test - ${{ matrix.suite }}
+      - name: Run acceptance test via CF task - ${{ matrix.suite }}
         env:
           MATRIX_SUITE: ${{ matrix.suite }}
         shell: bash
@@ -97,9 +99,36 @@ jobs:
           #! /usr/bin/env bash
           set -eu -o pipefail
 
-          make --directory="${AUTOSCALER_DIR}/acceptance/assets/app/go_app" generate-fakes
-          make --directory="${AUTOSCALER_DIR}" generate-fakes
-          make --directory="${AUTOSCALER_DIR}" acceptance-tests SUITES="${MATRIX_SUITE,,}"
+          cd "${AUTOSCALER_DIR}"
+          source ./scripts/common.sh
+          source ./scripts/vars.source.sh
+
+          cf_login
+          cf_target "${autoscaler_org}" "${autoscaler_space}"
+
+          # Run the named CF task with the suite-specific SUITES env var
+          task_guid=$(cf run-task acceptance-tests run-acceptance-tests --command "SUITES='${MATRIX_SUITE,,}' bash /home/vcap/app/scripts/run-acceptance-tests-task.sh" -k 2G -m 2G | grep "task id:" | awk '{print $3}')
+
+
+          echo "Started CF task ${task_guid} for suite ${MATRIX_SUITE}"
+
+          # Poll task status
+          while true; do
+            task_state=$(cf tasks acceptance-tests | grep "${task_guid}" | awk '{print $3}')
+            echo "Task ${task_guid} state: ${task_state}"
+
+            if [[ "${task_state}" == "SUCCEEDED" ]]; then
+              echo "Task completed successfully"
+              cf logs acceptance-tests --recent
+              exit 0
+            elif [[ "${task_state}" == "FAILED" ]]; then
+              echo "Task failed"
+              cf logs acceptance-tests --recent
+              exit 1
+            fi
+
+            sleep 10
+          done
 
   deployment_cleanup:
     needs: [ deploy_autoscaler, acceptance_tests ]
