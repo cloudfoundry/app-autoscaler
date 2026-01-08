@@ -1,17 +1,20 @@
 #! /usr/bin/env bash
+# shellcheck disable=SC2154  # Variables are sourced from vars.source.sh
 
 set -eu -o pipefail
 
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# shellcheck source=./vars.source.sh
 source "${script_dir}/vars.source.sh"
+# shellcheck source=./common.sh
 source "${script_dir}/common.sh"
 
-bosh_login "${BBL_STATE_PATH}"
+bbl_login "${BBL_STATE_PATH}"
 cf_login
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
-															--arg service_broker_name "${deployment_name}" \
+															--arg service_broker_name "${deployment_name:-}" \
 															'.resources[] | select(.name == $service_broker_name) | .name')"
 set -e
 
@@ -26,9 +29,9 @@ then
 	cf delete-service-broker -f "${existing_service_broker}"
 fi
 
-echo "Creating service broker ${deployment_name} at 'https://${service_broker_name}.${system_domain}'"
+echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
 
-autoscaler_service_broker_password=$(credhub get --quiet --name="/bosh-autoscaler/${deployment_name}/service_broker_password")
-cf create-service-broker "${deployment_name}" autoscaler-broker-user "$autoscaler_service_broker_password" "https://${service_broker_name}.${system_domain}"
+autoscaler_service_broker_password=$(credhub get --quiet --name="/bosh-autoscaler/${deployment_name:-}/service_broker_password")
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "$autoscaler_service_broker_password" "https://${service_broker_name:-}.${system_domain:-}"
 
 cf logout

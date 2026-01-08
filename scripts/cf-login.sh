@@ -5,7 +5,9 @@ set -euo pipefail
 echo "Running $0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# shellcheck source=scripts/vars.source.sh
 source "${SCRIPT_DIR}/vars.source.sh"
+# shellcheck source=scripts/common.sh
 source "${SCRIPT_DIR}/common.sh"
 
 # Login to BOSH if BBL_STATE_PATH is set
@@ -23,6 +25,6 @@ fi
 cf_login
 
 # Target CF org and space
-cf_target "${autoscaler_org}" "${autoscaler_space}"
+cf_target "${autoscaler_org:-}" "${autoscaler_space:-}"
 
 echo "Done"
