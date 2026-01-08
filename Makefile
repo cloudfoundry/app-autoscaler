@@ -313,6 +313,9 @@ acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor bu
 	@mkdir -p build/acceptance/scripts build/acceptance/bin
 	@cp scripts/run-acceptance-tests-task.sh build/acceptance/scripts/
 	@chmod +x build/acceptance/scripts/run-acceptance-tests-task.sh
+	# Copy Go module files and main.go for go_buildpack detection
+	@cp acceptance/go.mod acceptance/go.sum build/acceptance/
+	@cp acceptance/cmd/main/main.go build/acceptance/main.go
 	# Download and bundle CF CLI for linux_amd64
 	@echo "Downloading CF CLI for linux_amd64..."
 	@curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" -o /tmp/cf-cli.tgz

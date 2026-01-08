@@ -238,6 +238,7 @@ modules:
       NODES: 3
       SKIP_TEARDOWN: false
       GINKGO_OPTS: ""
+      GOVERSION: go1.23
     build-parameters:
       builder: custom
       commands:
@@ -251,7 +252,7 @@ modules:
       memory: 2G
       disk-quota: 2G
       stack: cflinuxfs4
-      buildpack: binary_buildpack
+      buildpack: go_buildpack
       tasks:
       - name: run-acceptance-tests
         command: bash /home/vcap/app/scripts/run-acceptance-tests-task.sh
