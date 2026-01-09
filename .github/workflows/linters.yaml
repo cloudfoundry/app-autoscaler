@@ -31,8 +31,6 @@ jobs:
         with:
           reporter: github-pr-check
           fail_level: error
-          pattern: "*.sh"
-          shellcheck_flags: "-x"
       - name: actionlint
         uses: reviewdog/action-actionlint@83e4ed25b168066ad8f62f5afbb29ebd8641d982 # v1
         with:
