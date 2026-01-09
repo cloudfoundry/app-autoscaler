@@ -2,10 +2,11 @@
 
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# shellcheck disable=SC1091
 source "${script_dir}/common.sh"
 
 function main(){
-  bosh_login "${BBL_STATE_PATH}"
+  bbl_login "${BBL_STATE_PATH}"
   cf_login
   cleanup_acceptance_run
 }

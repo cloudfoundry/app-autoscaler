@@ -4,25 +4,23 @@
 set -e
 
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# shellcheck source=../../ci/autoscaler/scripts/vars.source.sh
 # shellcheck disable=SC1091
-source "${script_dir}/scripts/vars.source.sh"
-# shellcheck source=scripts/common.sh
+source "${script_dir}/vars.source.sh"
+# shellcheck disable=SC1091
 source "${script_dir}/common.sh"
+DEST="${DEST:-/tmp/build}"
 
-if [ -z "$1" ]; then
-  echo "extension file path not provided"
-  exit 1
-else
-  extension_file_path=$1
-fi
+echo "Building extension file for autoscaler deployment with version ${VERSION}"
+# Compute extension file path
+extension_file_path="${DEST}/extension-file-${VERSION}.txt"
+mkdir -p "${DEST}"
 
 if [ -z "${DEPLOYMENT_NAME}" ]; then
   echo "DEPLOYMENT_NAME is not set"
   exit 1
 fi
 
-bosh_login "${BBL_STATE_PATH}"
+bbl_login "${BBL_STATE_PATH}"
 cf_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
@@ -59,6 +57,8 @@ eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler
 scalingengine_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password))
 service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue))
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
+
+cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
@@ -100,6 +100,8 @@ export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secr
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
+export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
+
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
 export DATABASE_DB_USERNAME="$(yq ".database_username" /tmp/mtar-secrets.yml)"
@@ -116,6 +118,9 @@ export SERVICE_BROKER_PASSWORD_BLUE="$(yq ".service_broker_password_blue" /tmp/m
 export SERVICE_BROKER_PASSWORD="$(yq ".service_broker_password" /tmp/mtar-secrets.yml)"
 
 export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
+
+
+
 
 cat <<EOF > "${extension_file_path}"
 ID: development
@@ -179,6 +184,33 @@ modules:
       routes:
       - route: ${SCHEDULER_HOST}.\${default-domain}
       - route: ${SCHEDULER_CF_HOST}.\${default-domain}
+
+  - name: acceptance-tests
+    properties:
+      SUITES: ""
+      ACCEPTANCE_CONFIG_JSON: |
+        {
+          "api": "api.${SYSTEM_DOMAIN}",
+          "admin_user": "admin",
+          "admin_password": "${CF_ADMIN_PASSWORD}",
+          "apps_domain": "${SYSTEM_DOMAIN}",
+          "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
+          "use_http": false,
+          "service_name": "${DEPLOYMENT_NAME}",
+          "service_plan": "autoscaler-free-plan",
+          "service_broker": "${DEPLOYMENT_NAME}",
+          "aggregate_interval": 120,
+          "default_timeout": 60,
+          "cpu_upper_threshold": ${CPU_UPPER_THRESHOLD:-100},
+          "name_prefix": "${NAME_PREFIX:-ASATS}",
+          "autoscaler_api": "${APISERVER_HOST}.\${default-domain}",
+          "performance": {
+            "app_count": ${PERFORMANCE_APP_COUNT:-100},
+            "app_percentage_to_scale": ${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30},
+            "setup_workers": ${PERFORMANCE_SETUP_WORKERS:-50},
+            "update_existing_org_quota": ${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}
+          }
+        }
 
 resources:
 - name: metricsforwarder-config

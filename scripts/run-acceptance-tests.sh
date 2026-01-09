@@ -2,7 +2,9 @@
 
 set -eu -o pipefail
 script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+# shellcheck source=./vars.source.sh
 source "${script_dir}/vars.source.sh"
+# shellcheck source=./common.sh
 source "${script_dir}/common.sh"
 
 skip_teardown="${SKIP_TEARDOWN:-false}"
@@ -16,6 +18,8 @@ then
 	echo "Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository to run this target or indicate its location via BBL_STATE_PATH";
 	exit 1;
 fi
+
+autoscaler_acceptance_dir="${AUTOSCALER_ACCEPTANCE_DIR:-${PWD}}"
 
 if [[ ! -f "${autoscaler_acceptance_dir}/acceptance_config.json" ]]
 then

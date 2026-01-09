@@ -3,12 +3,14 @@
 set -eu -o pipefail
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+# shellcheck disable=SC1091
 source "${script_dir}/vars.source.sh"
+# shellcheck disable=SC1091
 source "${script_dir}/common.sh"
 
 function main() {
 	step "cleaning up deployment ${DEPLOYMENT_NAME}"
-	bosh_login "${BBL_STATE_PATH}"
+	bbl_login "${BBL_STATE_PATH}"
 	cf_login
 
 	cleanup_apps

@@ -3,10 +3,12 @@
 set -eu -o pipefail
 
 script_dir=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+# shellcheck disable=SC1091
 source "${script_dir}/vars.source.sh"
+# shellcheck disable=SC1091
 source "${script_dir}/common.sh"
 
 
-bosh_login "${BBL_STATE_PATH}"
+bbl_login "${BBL_STATE_PATH}"
 cf_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
