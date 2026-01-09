@@ -18,7 +18,7 @@ compile_suites() {
       mkdir -p "build/acceptance/${suite}"
       for os in "${OPERATING_SYSTEMS[@]}"; do
         for arch in "${ARCHITECTURES[@]}"; do
-          CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" ginkgo build --cover "acceptance/${suite}"
+          CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" ginkgo build "acceptance/${suite}"
 
           # adjust binary name to include os and architecture information
           mv "acceptance/${suite}/${suite}.test" "build/acceptance/${suite}/${suite}_${os}_${arch}.test"
