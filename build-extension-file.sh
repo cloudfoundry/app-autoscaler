@@ -119,7 +119,7 @@ export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@
 
 cat <<EOF > "${extension_file_path}"
 ID: development
-extends: com.github.cloudfoundry.app-autoscaler-release
+extends: ${MTA_ID}
 version: 1.0.0
 _schema-version: 3.3.0
 
