@@ -51,7 +51,7 @@ export GO111MODULE=on
 
 .PHONY: dbtasks.clean package-dbtasks vendor-changelogs scheduler.clean package-scheduler clean mta-deploy mta-undeploy mta-build mta-logs
 
-GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
+GINKGO_OPTS = -r --race --require-suite --randomize-all ${OPTS}
 
 
 # ogen generated OpenAPI clients and servers
