@@ -5,9 +5,9 @@ set -euo pipefail
 echo "Running $0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-# shellcheck source=./vars.source.sh
+# shellcheck source=scripts/vars.source.sh
 source "${SCRIPT_DIR}/vars.source.sh"
-# shellcheck source=./common.sh
+# shellcheck source=scripts/common.sh
 source "${SCRIPT_DIR}/common.sh"
 
 # Configuration with defaults
