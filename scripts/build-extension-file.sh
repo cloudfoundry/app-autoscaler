@@ -15,6 +15,13 @@ echo "Building extension file for autoscaler deployment with version ${VERSION}"
 extension_file_path="${DEST}/extension-file-${VERSION}.txt"
 mkdir -p "${DEST}"
 
+# Exit early if extension file already exists
+if [ -f "${extension_file_path}" ]; then
+  echo "⚠️ Extension file already exists at: ${extension_file_path}"
+  echo "Skipping rebuild. Delete the file if you want to regenerate it."
+  exit 0
+fi
+
 if [ -z "${DEPLOYMENT_NAME}" ]; then
   echo "DEPLOYMENT_NAME is not set"
   exit 1
