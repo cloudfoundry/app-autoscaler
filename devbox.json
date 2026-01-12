@@ -6,7 +6,7 @@
     "path:.#cloud-mta-build-tool":      "",
     "path:.#uaac":                      "",
     "path:.#flatten_json-schema":       "",
-    "act":                              "0.2.80",
+    "act":                              "0.2.83",
     "bosh-cli":                         "7.3.1",
     "bundix":                           "2.5.2",
     "cloudfoundry-cli":                 "8.14.1",
