@@ -2,7 +2,7 @@
 
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# shellcheck disable=SC1091
+# shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
 function main(){

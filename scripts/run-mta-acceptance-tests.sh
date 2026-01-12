@@ -8,9 +8,9 @@
 set -euo pipefail
 
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# shellcheck disable=SC1091
+# shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
-# shellcheck disable=SC1091
+# shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
 # Configuration
