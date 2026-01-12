@@ -252,7 +252,7 @@ modules:
       memory: 2G
       disk-quota: 2G
       stack: cflinuxfs4
-      buildpack: go_buildpack
+      buildpack: binary_buildpack
       tasks:
       - name: run-acceptance-tests
         command: bash /home/vcap/app/scripts/run-acceptance-tests-task.sh
