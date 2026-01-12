@@ -1,7 +1,8 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
-set -eu -o pipefail
-script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh

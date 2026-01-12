@@ -4,11 +4,11 @@ set -euo pipefail
 
 echo "Running $0"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # shellcheck source=scripts/vars.source.sh
-source "${SCRIPT_DIR}/vars.source.sh"
+source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
-source "${SCRIPT_DIR}/common.sh"
+source "${script_dir}/common.sh"
 
 # Required environment variables
 BOSH_DEPLOYMENT="${BOSH_DEPLOYMENT:-postgres}"
@@ -37,14 +37,7 @@ fi
 
 # Login to BOSH if BBL_STATE_PATH is set and valid
 if [ -n "${BBL_STATE_PATH:-}" ] && [[ "${BBL_STATE_PATH}" != *"ERR_invalid_state_path"* ]]; then
-  if [[ ! -d "${BBL_STATE_PATH}" ]]; then
-    echo "⛔ FAILED: Did not find bbl-state folder at ${BBL_STATE_PATH}" >&2
-    echo 'Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository to run this target or indicate its location via BBL_STATE_PATH' >&2
-    exit 1
-  fi
-  echo "# bosh login"
-  script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
+  bbl_login "${BBL_STATE_PATH}"
 elif [[ "${BBL_STATE_PATH:-}" == *"ERR_invalid_state_path"* ]]; then
   echo "Warning: BBL_STATE_PATH is not set or invalid, skipping bosh login" >&2
   echo "Set BBL_STATE_PATH environment variable if you need to login to bosh" >&2

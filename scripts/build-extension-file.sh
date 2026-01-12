@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2155,SC2034,SC2086
 
-set -e
+set -euo pipefail
 
-script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh

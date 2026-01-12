@@ -4,11 +4,11 @@ set -euo pipefail
 
 echo "Running $0"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # shellcheck source=scripts/vars.source.sh
-source "${SCRIPT_DIR}/vars.source.sh"
+source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
-source "${SCRIPT_DIR}/common.sh"
+source "${script_dir}/common.sh"
 
 # Configuration with defaults
 BOSH_DEPLOYMENT="${BOSH_DEPLOYMENT:-postgres}"

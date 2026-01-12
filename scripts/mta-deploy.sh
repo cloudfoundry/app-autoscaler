@@ -2,7 +2,8 @@
 # shellcheck disable=SC2154
 
 set -euo pipefail
-script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 autoscaler_dir="${script_dir}/.."
 # shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"

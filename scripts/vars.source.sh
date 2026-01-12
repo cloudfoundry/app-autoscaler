@@ -1,8 +1,7 @@
-#! /usr/bin/env bash
-
-# 🪧 NOTE: to turn on debug use DEBUG=true
+#!/usr/bin/env bash
 # shellcheck disable=SC2155,SC2034
 #
+# NOTE: to turn on debug use DEBUG=true
 
 if [ -z "${BASH_SOURCE[0]}" ]; then
 	echo  "### Source this from inside a script only! "

@@ -4,11 +4,11 @@ set -euo pipefail
 
 echo "Running $0"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # shellcheck source=scripts/vars.source.sh
-source "${SCRIPT_DIR}/vars.source.sh"
+source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
-source "${SCRIPT_DIR}/common.sh"
+source "${script_dir}/common.sh"
 
 # Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
@@ -18,7 +18,7 @@ if [ -n "${BBL_STATE_PATH:-}" ]; then
     exit 1
   fi
   echo "# bosh login"
-  eval "$("${SCRIPT_DIR}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
+  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
 fi
 
 # Login to CF
