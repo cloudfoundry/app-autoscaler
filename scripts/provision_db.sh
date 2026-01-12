@@ -15,7 +15,7 @@ BOSH_DEPLOYMENT="${BOSH_DEPLOYMENT:-postgres}"
 POSTGRES_INSTANCE="${POSTGRES_INSTANCE:-postgres/0}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-autoscaler}"
 DB_USER="${DB_USER:-vcap}"
-APP_DB_USER="${APP_DB_USER:-pgladmin}"
+APP_DB_USER="${APP_DB_USER:-pgadmin}"
 
 usage() {
   echo "Usage: $0" >&2
