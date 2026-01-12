@@ -28,16 +28,14 @@ compile_suites() {
 }
 
 compile_ginkgo() {
-  pushd ./acceptance > /dev/null
-    for os in "${OPERATING_SYSTEMS[@]}"; do
-      for arch in "${ARCHITECTURES[@]}"; do
-        binary_name="ginkgo_v2_${os}_${arch}"
-        CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -o "build/ginkgo_v2_${os}_${arch}" github.com/onsi/ginkgo/v2/ginkgo
-        chmod +x "build/${binary_name}"
-				mv "build/${binary_name}" "../build/acceptance/${binary_name}"
-      done
+  for os in "${OPERATING_SYSTEMS[@]}"; do
+    for arch in "${ARCHITECTURES[@]}"; do
+      binary_name="ginkgo_v2_${os}_${arch}"
+      output_path="build/acceptance/${binary_name}"
+      CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -C acceptance -o "../${output_path}" github.com/onsi/ginkgo/v2/ginkgo
+      chmod +x "${output_path}"
     done
-  popd > /dev/null
+  done
 }
 
 main() {

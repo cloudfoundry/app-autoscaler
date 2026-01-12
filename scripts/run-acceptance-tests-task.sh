@@ -75,8 +75,11 @@ for suite in $SUITES; do
         find . -name "*.test" -type f 2>/dev/null | sed 's|^\./||' || echo "  No test binaries found"
         continue
     fi
-    SUITE_ARGS="$SUITE_ARGS $suite_binary"
+    SUITE_ARGS="${SUITE_ARGS} ${suite_binary}"
 done
+
+# Trim leading whitespace
+SUITE_ARGS="${SUITE_ARGS# }"
 
 if [ -z "$SUITE_ARGS" ]; then
     echo "ERROR: No valid test suites found to run"

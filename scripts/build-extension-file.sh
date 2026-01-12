@@ -17,8 +17,8 @@ mkdir -p "${DEST}"
 
 # Exit early if extension file already exists
 if [ -f "${extension_file_path}" ]; then
-  echo "⚠️ Extension file already exists at: ${extension_file_path}"
-  echo "Skipping rebuild. Delete the file if you want to regenerate it."
+  echo "Extension file already exists at: ${extension_file_path}"
+  echo "Skipping rebuild. Delete the file to regenerate it."
   exit 0
 fi
 
@@ -99,8 +99,6 @@ export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
 export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
-export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
-
 export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
 export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
 export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
@@ -125,9 +123,6 @@ export SERVICE_BROKER_PASSWORD_BLUE="$(yq ".service_broker_password_blue" /tmp/m
 export SERVICE_BROKER_PASSWORD="$(yq ".service_broker_password" /tmp/mtar-secrets.yml)"
 
 export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
-
-
-
 
 cat <<EOF > "${extension_file_path}"
 ID: development
