@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-05/schema#",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Autoscaler Policy JSON Schema",
   "description": "Unification of different schemas for scaling-policies for Autoscaler",
 

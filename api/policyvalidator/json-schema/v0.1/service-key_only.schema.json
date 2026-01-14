@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-05/schema#",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Minimal schema for a service-key-creation.",
   "type": "object",
 
