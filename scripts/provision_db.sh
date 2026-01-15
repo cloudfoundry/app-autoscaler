@@ -10,14 +10,12 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-# Configuration with defaults
 BOSH_DEPLOYMENT="${BOSH_DEPLOYMENT:-postgres}"
 POSTGRES_INSTANCE="${POSTGRES_INSTANCE:-postgres/0}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-autoscaler}"
 DB_USER="${DB_USER:-vcap}"
 APP_DB_USER="${APP_DB_USER:-pgadmin}"
 
-# Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
   bbl_login
 fi

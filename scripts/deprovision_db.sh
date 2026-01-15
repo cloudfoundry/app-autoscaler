@@ -10,7 +10,6 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-# Required environment variables
 BOSH_DEPLOYMENT="${BOSH_DEPLOYMENT:-postgres}"
 POSTGRES_INSTANCE="${POSTGRES_INSTANCE:-postgres/0}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-autoscaler}"
@@ -29,13 +28,11 @@ usage() {
   exit 1
 }
 
-# Check required variables
 if [ -z "${DEPLOYMENT_NAME}" ]; then
   echo "Error: DEPLOYMENT_NAME environment variable is required" >&2
   usage
 fi
 
-# Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
   bbl_login
 else
