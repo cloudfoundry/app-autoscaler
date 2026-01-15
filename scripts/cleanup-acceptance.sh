@@ -9,7 +9,7 @@ source "${script_dir}/vars.source.sh"
 source "${script_dir}/common.sh"
 
 function main() {
-	bbl_login "${BBL_STATE_PATH}"
+	bbl_login
 	cf_login
 	cleanup_acceptance_run
 }

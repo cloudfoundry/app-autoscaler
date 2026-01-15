@@ -9,6 +9,6 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-bbl_login "${BBL_STATE_PATH}"
+bbl_login
 cf_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"

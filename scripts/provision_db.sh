@@ -19,7 +19,7 @@ APP_DB_USER="${APP_DB_USER:-pgadmin}"
 
 # Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
-  bbl_login "${BBL_STATE_PATH}"
+  bbl_login
 fi
 
 echo "Provisioning database '${DEPLOYMENT_NAME}' on Postgres instance ${POSTGRES_INSTANCE} in deployment ${BOSH_DEPLOYMENT}"

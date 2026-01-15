@@ -21,9 +21,19 @@ function retry(){
 
 function bbl_login() {
 	step "bosh login"
-	# shellcheck disable=SC2153
-	echo "BBL_STATE_PATH is set to '${BBL_STATE_PATH}'"
-	local -r bbl_state_path="${1}"
+
+	# Determine BBL_STATE_PATH: use env var if set, otherwise use default path
+	local script_dir
+	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+	local bbl_state_path
+	bbl_state_path="${BBL_STATE_PATH:-"${script_dir}/../../app-autoscaler-env-bbl-state/bbl-state"}"
+
+	# Attempt to canonicalize the path, but don't fail if it doesn't exist yet
+	bbl_state_path="$(realpath --canonicalize-existing "${bbl_state_path}" 2>/dev/null || echo "${bbl_state_path}")"
+
+	echo "BBL_STATE_PATH is set to '${bbl_state_path}'"
+
 	if [[ ! -d "${bbl_state_path}" ]]
 	then
 		echo "⛔ FAILED: Did not find bbl-state folder at ${bbl_state_path}"
@@ -31,8 +41,6 @@ function bbl_login() {
 		exit 1;
 	fi
 
-	local script_dir
-	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 	unset BBL_STATE_DIRECTORY
 	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }

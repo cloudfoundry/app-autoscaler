@@ -35,11 +35,11 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
   usage
 fi
 
-# Login to BOSH if BBL_STATE_PATH is set and valid
-if [ -n "${BBL_STATE_PATH:-}" ] && [[ "${BBL_STATE_PATH}" != *"ERR_invalid_state_path"* ]]; then
-  bbl_login "${BBL_STATE_PATH}"
-elif [[ "${BBL_STATE_PATH:-}" == *"ERR_invalid_state_path"* ]]; then
-  echo "Warning: BBL_STATE_PATH is not set or invalid, skipping bosh login" >&2
+# Login to BOSH if BBL_STATE_PATH is set
+if [ -n "${BBL_STATE_PATH:-}" ]; then
+  bbl_login
+else
+  echo "Warning: BBL_STATE_PATH is not set, skipping bosh login" >&2
   echo "Set BBL_STATE_PATH environment variable if you need to login to bosh" >&2
 fi
 

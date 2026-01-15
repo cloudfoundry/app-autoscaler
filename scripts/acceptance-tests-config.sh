@@ -23,7 +23,7 @@ cpu_upper_threshold=${CPU_UPPER_THRESHOLD:-100}
 
 if [[ -z "${cf_admin_password}" ]]
 then
-	bbl_login "${BBL_STATE_PATH}"
+	bbl_login
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 

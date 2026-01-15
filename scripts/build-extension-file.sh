@@ -27,7 +27,7 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
   exit 1
 fi
 
-bbl_login "${BBL_STATE_PATH}"
+bbl_login
 cf_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 

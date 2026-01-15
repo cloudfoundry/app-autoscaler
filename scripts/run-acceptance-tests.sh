@@ -13,13 +13,6 @@ suites="${SUITES:-"api app broker"}"
 ginkgo_opts="${GINKGO_OPTS:-}"
 nodes="${NODES:-3}"
 
-if [[ ! -d "${BBL_STATE_PATH}" ]]
-then
-	echo "FAILED: Did not find bbl-state folder at ${BBL_STATE_PATH}"
-	echo "Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository to run this target or indicate its location via BBL_STATE_PATH";
-	exit 1;
-fi
-
 autoscaler_acceptance_dir="${AUTOSCALER_ACCEPTANCE_DIR:-${PWD}}"
 
 if [[ ! -f "${autoscaler_acceptance_dir}/acceptance_config.json" ]]

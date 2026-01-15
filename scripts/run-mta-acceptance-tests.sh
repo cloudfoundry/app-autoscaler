@@ -28,7 +28,6 @@ LAUNCHED_TASK_GUIDS=()
 
 validate() {
 	step "Validating prerequisites"
-	[[ -d "${BBL_STATE_PATH}" ]] || { echo "ERROR: BBL_STATE_PATH not found: ${BBL_STATE_PATH}"; exit 1; }
 	command -v cf &>/dev/null || { echo "ERROR: cf CLI not found"; exit 1; }
 	command -v jq &>/dev/null || { echo "ERROR: jq not found"; exit 1; }
 
@@ -166,7 +165,7 @@ main() {
 	echo "PR_NUMBER=${PR_NUMBER:-unknown}"
 	step "Running MTA acceptance tests: ${SUITES}"
 	validate
-	bbl_login "${BBL_STATE_PATH}"
+	bbl_login
 	cf_login
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 	validate_app

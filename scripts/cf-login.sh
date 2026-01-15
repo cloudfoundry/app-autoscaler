@@ -12,13 +12,7 @@ source "${script_dir}/common.sh"
 
 # Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
-  if [[ ! -d "${BBL_STATE_PATH}" ]]; then
-    echo "⛔ FAILED: Did not find bbl-state folder at ${BBL_STATE_PATH}" >&2
-    echo 'Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository to run this target or indicate its location via BBL_STATE_PATH' >&2
-    exit 1
-  fi
-  echo "# bosh login"
-  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
+  bbl_login
 fi
 
 # Login to CF
