@@ -91,9 +91,15 @@ generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
 # or not.
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
-fake-relevant-go-files = $(shell rg --hidden --glob='!/acceptance' --glob='!/fakes'					\
-	--glob='!/integration' --glob='!/target' --glob='!/test-certs' --glob='!/testhelpers' --glob='!**/*_test.go'\
-	--type='go' --files-with-matches --regexp='')
+fake-relevant-go-files = $(shell find . -type f -name '*.go' \
+	! -path './acceptance/*' \
+	! -path './fakes/*' \
+	! -path './integration/*' \
+	! -path './target/*' \
+	! -path './test-certs/*' \
+	! -path './testhelpers/*' \
+	! -path './vendor/*' \
+	! -name '*_test.go')
 .PHONY: autoscaler.generate-fakes
 autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
