@@ -1,7 +1,7 @@
-#! /usr/bin/env bash
-
+#!/usr/bin/env bash
 # shellcheck disable=SC2154
-# This file is intended to be loaded via the `source`-command.
+#
+# This file is intended to be loaded via the source command.
 
 function step(){
 	echo "# $1"
@@ -19,19 +19,23 @@ function retry(){
 	[ "${retries}" -lt "${max_retries}" ] || { echo "ERROR: Command '$*' failed after ${max_retries} attempts"; return 1; }
 }
 
-function bosh_login() {
+function bbl_login() {
 	step "bosh login"
-	echo "BBL_STATE_PATH is set to '${BBL_STATE_PATH}'"
-	local -r bbl_state_path="${1}"
-	if [[ ! -d "${bbl_state_path}" ]]
-	then
-		echo "⛔ FAILED: Did not find bbl-state folder at ${bbl_state_path}"
-		echo 'Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository to run this target or indicate its location via BBL_STATE_PATH'
-		exit 1;
-	fi
 
 	local script_dir
 	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+	local bbl_state_path
+	bbl_state_path="${BBL_STATE_PATH:-"${script_dir}/../../app-autoscaler-env-bbl-state/bbl-state"}"
+
+	echo "BBL_STATE_PATH is set to '${bbl_state_path}'"
+
+	if [[ ! -d "${bbl_state_path}" ]]; then
+		echo "⛔ FAILED: Did not find bbl-state folder at ${bbl_state_path}"
+		echo 'Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository or set BBL_STATE_PATH to its location'
+		exit 1
+	fi
+
 	unset BBL_STATE_DIRECTORY
 	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }

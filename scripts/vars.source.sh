@@ -1,8 +1,7 @@
-#! /usr/bin/env bash
-
-# 🪧 NOTE: to turn on debug use DEBUG=true
+#!/usr/bin/env bash
 # shellcheck disable=SC2155,SC2034
 #
+# NOTE: to turn on debug use DEBUG=true
 
 if [ -z "${BASH_SOURCE[0]}" ]; then
 	echo  "### Source this from inside a script only! "
@@ -47,6 +46,11 @@ debug "CONCOURSE_AAS_RELEASE_TARGET: ${CONCOURSE_AAS_RELEASE_TARGET}"
 
 export PR_NUMBER=${PR_NUMBER:-$(gh pr view --json number --jq '.number' )}
 debug "PR_NUMBER: '${PR_NUMBER}'"
+
+export VERSION="${VERSION:-0.0.0-rc.${PR_NUMBER:-1}}"
+debug "VERSION: '${VERSION}'"
+log "set up vars: VERSION=${VERSION}"
+
 user=${USER:-"test"}
 
 
@@ -71,13 +75,8 @@ export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.clo
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"
 
-BBL_STATE_PATH="${BBL_STATE_PATH:-$( realpath "${script_dir}/../../app-autoscaler-env-bbl-state/bbl-state" )}"
-# We want to print out the name of the variable literally and marked as shell-variable, therefore:
-# shellcheck disable=SC2016
-BBL_STATE_PATH="$(realpath --canonicalize-existing "${BBL_STATE_PATH}" \
-									|| echo 'ERR_invalid_state_path, please set ${BBL_STATE_PATH}' )"
-export BBL_STATE_PATH
-debug "BBL_STATE_PATH: ${BBL_STATE_PATH}"
+# BBL_STATE_PATH is now set inside bbl_login() function in common.sh
+# This prevents issues when the path doesn't exist and BBL is not being used
 
 AUTOSCALER_DIR="${AUTOSCALER_DIR:-${script_dir}/..}"
 export AUTOSCALER_DIR="$(realpath -e "${AUTOSCALER_DIR}" )"
@@ -91,7 +90,7 @@ autoscaler_acceptance_dir="${AUTOSCALER_ACCEPTANCE_DIR}"
 
 export SERVICE_NAME="${DEPLOYMENT_NAME}"
 debug "SERVICE_NAME: ${SERVICE_NAME}"
-service_name="%{SERVICE_NAME"
+service_name="${SERVICE_NAME}"
 
 export SERVICE_BROKER_NAME="${DEPLOYMENT_NAME}servicebroker"
 debug "SERVICE_BROKER_NAME: ${SERVICE_BROKER_NAME}"

@@ -14,7 +14,6 @@ DEBUG := false
 MYSQL_TAG := 8
 POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-GO_MINOR_VERSION = $(shell echo $(GO_VERSION) | cut --delimiter=. --field=2)
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
@@ -23,7 +22,7 @@ MVN_OPTS ?= -Dmaven.test.skip=true
 .PHONY: db.java-libs
 db.java-libs:
 	@echo 'Fetching db.java-libs'
-	cd dbtasks && mvn --quiet package ${MVN_OPTS}
+	cd dbtasks && mvn -B --quiet package ${MVN_OPTS}
 
 .PHONY: test-certs
 test-certs: target/autoscaler_test_certs scheduler/src/test/resources/certs
@@ -32,7 +31,7 @@ test-certs: target/autoscaler_test_certs scheduler/src/test/resources/certs
 build_all: build_programs build_tests
 build_programs: build db.java-libs scheduler.build build-test-app
 
-MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine
+MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine,acceptance-tests
 
 db_type ?= postgres
 DB_HOST ?= localhost
@@ -41,7 +40,6 @@ DBURL := $(shell case "${db_type}" in\
 				 (mysql) printf "root@tcp(${DB_HOST})/autoscaler?tls=false"; ;; esac)
 
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
-EXTENSION_FILE := $(shell mktemp)
 
 export GOWORK=off
 BUILDFLAGS := -ldflags '-linkmode=external'
@@ -53,8 +51,7 @@ export GO111MODULE=on
 
 .PHONY: dbtasks.clean package-dbtasks vendor-changelogs scheduler.clean package-scheduler clean mta-deploy mta-undeploy mta-build mta-logs
 
-GINKGO_OPTS = -r --race --require-suite --randomize-all --cover ${OPTS}
-
+GINKGO_OPTS = -r --race --require-suite --randomize-all ${OPTS}
 
 # ogen generated OpenAPI clients and servers
 openapi-generated-clients-and-servers-api-dir := ./api/apis/scalinghistory
@@ -94,9 +91,15 @@ generate-fakes: autoscaler.generate-fakes test-app.generate-fakes
 # or not.
 app-fakes-dir := ./fakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
-fake-relevant-go-files = $(shell rg --hidden --glob='!/acceptance' --glob='!/fakes'					\
-	--glob='!/integration' --glob='!/target' --glob='!/test-certs' --glob='!/testhelpers' --glob='!**/*_test.go'\
-	--type='go' --files-with-matches --regexp='')
+fake-relevant-go-files = $(shell find . -type f -name '*.go' \
+	! -path './acceptance/*' \
+	! -path './fakes/*' \
+	! -path './integration/*' \
+	! -path './target/*' \
+	! -path './test-certs/*' \
+	! -path './testhelpers/*' \
+	! -path './vendor/*' \
+	! -name '*_test.go')
 .PHONY: autoscaler.generate-fakes
 autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
@@ -228,10 +231,10 @@ fmt: importfmt
 # This target depends on the fakes, because the tests are linted as well.
 
 package-dbtasks:
-	pushd dbtasks; mvn --quiet package ${MVN_OPTS}; popd
+	pushd dbtasks; mvn -B --quiet package ${MVN_OPTS}; popd
 
 build-scheduler:
-	pushd scheduler; mvn package -Dmaven.test.skip=true; popd
+	pushd scheduler; mvn -B --quiet package -Dmaven.test.skip=true; popd
 
 vendor-changelogs:
 	cp $(MAKEFILE_DIR)/api/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
@@ -251,10 +254,10 @@ clean: dbtasks.clean scheduler.clean
 	@rm --force --recursive 'vendor'
 
 dbtasks.clean:
-	pushd dbtasks; mvn clean; popd
+	pushd dbtasks; mvn -B clean; popd
 
 scheduler.clean:
-	pushd scheduler; mvn clean; popd
+	pushd scheduler; mvn -B --quiet clean; popd
 
 schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
 flattened-schema-file := ${DEST}/bind-request.schema.json
@@ -266,17 +269,14 @@ ${flattened-schema-file}: ${schema-files}
 	> '${flattened-schema-file}'
 	echo '🔨 File created: ${flattened-schema-file}'
 
-mta-deploy: mta-build build-extension-file
-	$(MAKE) -f metricsforwarder/Makefile set-security-group
-	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES)
+mta-deploy:
+	$(MAKEFILE_DIR)/scripts/mta-deploy.sh
 
 mta-undeploy:
 	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
 
 build-extension-file:
-	echo "extension file at: $(EXTENSION_FILE)"
-	$(MAKEFILE_DIR)/build-extension-file.sh $(EXTENSION_FILE);
+	$(MAKEFILE_DIR)/scripts/build-extension-file.sh
 
 mta-logs:
 	rm -rf mta-*
@@ -284,14 +284,7 @@ mta-logs:
 	vim mta-*
 
 mta-build: mta-build-clean
-	@echo "building mtar file for version: $(VERSION)"
-	cp mta.tpl.yaml mta.yaml
-	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
-	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
-	mkdir -p $(DEST)
-	mbt build -t $(DEST) --mtar $(MTAR_FILENAME)
-	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
-	du -h $(DEST)/$(MTAR_FILENAME)
+	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
 mta-build-clean:
 	rm -rf mta_archives
@@ -317,7 +310,21 @@ release-promote: create-assets ## Promote draft release to final and upload asse
 acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
+	# Build for linux_amd64 by default (CF tasks platform)
+	@export TARGET_OS=$${TARGET_OS:-linux} TARGET_ARCH=$${TARGET_ARCH:-amd64}; \
+	echo " - Building for OS: $$TARGET_OS, ARCH: $$TARGET_ARCH"; \
 	./scripts/compile-acceptance-tests.sh
+	# Create scripts directory and copy wrapper script
+	@mkdir -p build/acceptance/scripts build/acceptance/bin
+	@cp scripts/run-acceptance-tests-task.sh build/acceptance/scripts/
+	@chmod +x build/acceptance/scripts/run-acceptance-tests-task.sh
+	# Download and bundle CF CLI for linux_amd64
+	@echo "Downloading CF CLI for linux_amd64..."
+	@curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" -o /tmp/cf-cli.tgz
+	@tar -xzf /tmp/cf-cli.tgz -C build/acceptance/bin/
+	@chmod +x build/acceptance/bin/cf
+	@rm /tmp/cf-cli.tgz
+	# Create tarball
 	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
 
 
@@ -499,6 +506,10 @@ acceptance-cleanup:
 .PHONY: acceptance-tests-config
 acceptance-tests-config:
 	make --directory='acceptance' acceptance-tests-config
+
+.PHONY: mta-acceptance-tests
+mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
+	@$(MAKEFILE_DIR)/scripts/run-mta-acceptance-tests.sh
 
 # 🚧 To-do: These targets don't exist here!
 .PHONY: deploy-autoscaler deploy-autoscaler-bosh
