@@ -5,7 +5,7 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request_parser"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
