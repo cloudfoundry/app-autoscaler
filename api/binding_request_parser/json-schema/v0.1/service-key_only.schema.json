@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-05/schema#",
+  "description": "Minimal schema for a service-key-creation.",
+  "type": "object",
+
+  "properties": {
+    "schema-version": {
+      "$ref": "../shared_definitions.json#/schemas/app-scaling-config-schema"
+    },
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "app_guid": {
+          "$ref": "../shared_definitions.json#/schemas/guid"
+        }
+      },
+      "required": ["app_guid"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["schema-version", "configuration"],
+  "additionalProperties": false
+}
