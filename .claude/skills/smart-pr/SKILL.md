@@ -9,6 +9,7 @@ allowed-tools:
   - Bash(gh pr create*)
   - Bash(gh pr edit*)
   - Bash(gh pr list*)
+  - Bash(gh api*)
   - Read
   - Grep
   - Glob
@@ -32,7 +33,8 @@ When invoked, this skill will:
 3. Analyze all changes between your branch and the base branch (main/master)
 4. Generate an intelligent PR title following conventional commit format
 5. Generate a structured PR description with summary, changes, and testing checklist
-6. Either create a new PR or update the existing PR with generated content
+6. Determine the most appropriate PR label based on change type
+7. Either create a new PR or update the existing PR with generated content and label
 
 ## How it Works
 
@@ -113,9 +115,37 @@ Analyze the diff content to understand:
 - For this codebase, reference relevant components:
   - API Server, Event Generator, Scaling Engine, Scheduler (Java), Metrics Forwarder, Operator
 
-### Step 7: Create or Update PR
-- **If PR exists**: Use `gh pr edit <number> --title "..." --body "..."`
-- **If no PR exists**: Use `gh pr create --title "..." --body "..." --base main`
+### Step 7: Determine PR Label
+
+This project requires exactly **one** label from the following options (used for release notes):
+- `enhancement`: New features or improvements to existing functionality
+- `bug`: Bug fixes
+- `chore`: Maintenance tasks (configs, dependencies, tooling, documentation)
+- `breaking-change`: Changes that break backward compatibility
+- `dependencies`: Dependency updates (use only if the primary purpose is dependency updates)
+
+**Label Selection Logic**:
+1. If changes break backward compatibility → `breaking-change`
+2. If primary purpose is dependency updates → `dependencies`
+3. If fixing a bug or issue → `bug`
+4. If adding new feature or improving existing feature → `enhancement`
+5. If documentation, configs, tooling, or maintenance → `chore`
+
+**Examples**:
+- New skill added → `enhancement`
+- Fix race condition → `bug`
+- Update CLAUDE.md documentation → `chore`
+- Add Claude Code config → `chore`
+- Upgrade Go version → `dependencies` (if that's the main change)
+- Bump dependency versions only → `dependencies`
+- Change API interface incompatibly → `breaking-change`
+
+### Step 8: Create or Update PR
+- **If PR exists**:
+  - Use `gh pr edit <number> --title "..." --body "..."`
+  - Add label using: `gh pr edit <number> --add-label "<label>"`
+- **If no PR exists**:
+  - Use `gh pr create --title "..." --body "..." --base main --label "<label>"`
 - Use heredoc syntax for body to handle multi-line content properly:
   ```bash
   gh pr create --title "feat: example" --body "$(cat <<'EOF'
@@ -127,9 +157,9 @@ Analyze the diff content to understand:
 
   🤖 Generated with Claude Code
   EOF
-  )"
+  )" --label "enhancement"
   ```
-- Display the PR URL to user after creation/update
+- Display the PR URL, title, and label to user after creation/update
 
 ## Error Handling
 
@@ -158,6 +188,7 @@ Handle these scenarios gracefully:
 After successful execution, display:
 - PR number (new or updated)
 - Generated title
+- Applied label
 - Brief summary of changes analyzed
 - Direct link to PR on GitHub
 
@@ -166,6 +197,7 @@ Example output:
 ✓ Updated PR #123 with generated content
 
 Title: feat: add CPU-based autoscaling to event generator
+Label: enhancement
 
 Summary:
 - Analyzed 15 files changed across eventgenerator and scalingengine components
