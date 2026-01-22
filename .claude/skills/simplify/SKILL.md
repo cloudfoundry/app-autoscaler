@@ -19,7 +19,7 @@ When invoked:
 
 ## How it Works
 
-Uses the Task tool to launch the **code-simplifier** agent with `subagent_type: "code-simplifier"`. The agent:
+Uses the Task tool to launch the **code-simplifier** agent with `subagent_type: "code-simplifier:code-simplifier"`. The agent:
 - Focuses on recently modified code by default
 - Applies project best practices from CLAUDE.md
 - Reduces complexity and improves naming
@@ -30,7 +30,7 @@ Uses the Task tool to launch the **code-simplifier** agent with `subagent_type: 
 When invoked:
 
 1. **Launch the code-simplifier agent** with Task tool:
-   - `subagent_type: "code-simplifier"`
+   - `subagent_type: "code-simplifier:code-simplifier"`
    - `description: "Simplify and refine code"`
    - `prompt`: Provide context about what to simplify:
      - If user specified files/directories, include in prompt
