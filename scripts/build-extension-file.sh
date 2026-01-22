@@ -344,4 +344,6 @@ resources:
                 plan_updateable: false
             tags:
               - app-autoscaler
+EOF
+
 echo "MTA Extension file created at: ${extension_file_path}"
