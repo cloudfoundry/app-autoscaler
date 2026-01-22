@@ -1,51 +1,51 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "act@0.2.83": {
-      "last_modified": "2025-12-31T03:27:36Z",
-      "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#act",
+    "act@0.2.84": {
+      "last_modified": "2026-01-09T13:41:53Z",
+      "resolved": "github:NixOS/nixpkgs/5f02c91314c8ba4afe83b256b023756412218535#act",
       "source": "devbox-search",
-      "version": "0.2.83",
+      "version": "0.2.84",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/100rijghw705xzci5d24924mzjylkvqz-act-0.2.83",
+              "path": "/nix/store/a66igc76c2vzyl3q5z7c7kf7dr4b9is5-act-0.2.84",
               "default": true
             }
           ],
-          "store_path": "/nix/store/100rijghw705xzci5d24924mzjylkvqz-act-0.2.83"
+          "store_path": "/nix/store/a66igc76c2vzyl3q5z7c7kf7dr4b9is5-act-0.2.84"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qnc1152as0grck7vpvwjp77lkd7zs36c-act-0.2.83",
+              "path": "/nix/store/wwrpc61p07x97b27ryhyks8zc9bq4j5c-act-0.2.84",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qnc1152as0grck7vpvwjp77lkd7zs36c-act-0.2.83"
+          "store_path": "/nix/store/wwrpc61p07x97b27ryhyks8zc9bq4j5c-act-0.2.84"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/dah54fk5kqzmiwpmlywdb0i3zhhi262v-act-0.2.83",
+              "path": "/nix/store/v5fv7inyakck6m1f5q4xz78gfk7r1al7-act-0.2.84",
               "default": true
             }
           ],
-          "store_path": "/nix/store/dah54fk5kqzmiwpmlywdb0i3zhhi262v-act-0.2.83"
+          "store_path": "/nix/store/v5fv7inyakck6m1f5q4xz78gfk7r1al7-act-0.2.84"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8xya4c6jb2qf9ia4w08imac0lx19i36s-act-0.2.83",
+              "path": "/nix/store/vpqyxvqac1f8pwva5ffxidr98qbfhn20-act-0.2.84",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8xya4c6jb2qf9ia4w08imac0lx19i36s-act-0.2.83"
+          "store_path": "/nix/store/vpqyxvqac1f8pwva5ffxidr98qbfhn20-act-0.2.84"
         }
       }
     },
@@ -293,51 +293,51 @@
         }
       }
     },
-    "credhub-cli@2.9.48": {
-      "last_modified": "2025-07-28T17:09:23Z",
-      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b#credhub-cli",
+    "credhub-cli@2.9.52": {
+      "last_modified": "2025-12-31T03:27:36Z",
+      "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#credhub-cli",
       "source": "devbox-search",
-      "version": "2.9.48",
+      "version": "2.9.52",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/6ll4a83ib2k1p73ff9sih281crj0zk5c-credhub-cli-2.9.48",
+              "path": "/nix/store/7l07i0avqnf9mdpn5h252vxc95r0iflx-credhub-cli-2.9.52",
               "default": true
             }
           ],
-          "store_path": "/nix/store/6ll4a83ib2k1p73ff9sih281crj0zk5c-credhub-cli-2.9.48"
+          "store_path": "/nix/store/7l07i0avqnf9mdpn5h252vxc95r0iflx-credhub-cli-2.9.52"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8qf4pxk4skjb8z32ic8zbydj99yj8f8n-credhub-cli-2.9.48",
+              "path": "/nix/store/qz5y3lc5xb8q3iivzyndvh88ngjvqbb6-credhub-cli-2.9.52",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8qf4pxk4skjb8z32ic8zbydj99yj8f8n-credhub-cli-2.9.48"
+          "store_path": "/nix/store/qz5y3lc5xb8q3iivzyndvh88ngjvqbb6-credhub-cli-2.9.52"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/jqkn12a6yg0cgyr9y3i8n1pjp8aj7wmf-credhub-cli-2.9.48",
+              "path": "/nix/store/vny3kr8dcwl21bv1wd1nk3b3rhfp4i4l-credhub-cli-2.9.52",
               "default": true
             }
           ],
-          "store_path": "/nix/store/jqkn12a6yg0cgyr9y3i8n1pjp8aj7wmf-credhub-cli-2.9.48"
+          "store_path": "/nix/store/vny3kr8dcwl21bv1wd1nk3b3rhfp4i4l-credhub-cli-2.9.52"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1jizswgy85fr5nfhl2hldybl2bbi8h9a-credhub-cli-2.9.48",
+              "path": "/nix/store/90wjv3r5gad71qf97j6zwhcydbyhs6ps-credhub-cli-2.9.52",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1jizswgy85fr5nfhl2hldybl2bbi8h9a-credhub-cli-2.9.48"
+          "store_path": "/nix/store/90wjv3r5gad71qf97j6zwhcydbyhs6ps-credhub-cli-2.9.52"
         }
       }
     },
