@@ -13,7 +13,8 @@ function get_autoscaler_deployments(){
 
 function main(){
 	cf_login
-	step "Deployments to cleanup: $(get_autoscaler_deployments)"
+	local deployments=$(get_autoscaler_deployments)
+	step "Deployments to cleanup: ${deployments}"
 	while IFS='' read -r deployment
 	do
 		unset_vars
@@ -25,7 +26,7 @@ function main(){
 		cleanup_service_broker
 		cleanup_credhub
 	  cleanup_apps
-	done < <(get_autoscaler_deployments)
+	done <<< "${deployments}"
 
 }
 
