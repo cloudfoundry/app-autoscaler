@@ -187,17 +187,25 @@ main() {
 
 	[[ ${launched} -eq 0 ]] && { echo "ERROR: No tasks launched successfully"; exit 1; }
 
-	# Wait for CF API to index the tasks
+	# Wait for CF API to index the tasks with retry logic
 	echo "Waiting for tasks to be visible in CF API..."
-	sleep 5
+	local task_count=0
+	local retry=0
+	local max_retries=6  # 6 retries * 5 seconds = 30 seconds max wait
 
-	# Verify we can see the tasks
-	local task_count
-	task_count=$(get_pr_tasks | wc -l)
+	while [[ ${task_count} -eq 0 && ${retry} -lt ${max_retries} ]]; do
+		sleep 5
+		task_count=$(get_pr_tasks | wc -l)
+		retry=$((retry + 1))
+		if [[ ${task_count} -eq 0 ]]; then
+			echo "  Retry $retry/$max_retries: Tasks not yet visible, waiting..."
+		fi
+	done
+
 	echo "Verified ${task_count} of ${#LAUNCHED_TASK_GUIDS[@]} tasks visible in CF API"
 
 	if [[ ${task_count} -eq 0 ]]; then
-		echo "ERROR: None of the launched tasks are visible in CF API yet"
+		echo "ERROR: None of the launched tasks are visible in CF API after ${max_retries} retries"
 		exit 1
 	fi
 
