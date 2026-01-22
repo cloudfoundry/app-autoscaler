@@ -7,46 +7,45 @@ allowed-tools:
 
 # Code Simplifier
 
-This skill simplifies and refines code for clarity, consistency, and maintainability while preserving all functionality.
+Simplifies and refines code for clarity, consistency, and maintainability while preserving all functionality.
 
 ## Usage
 
-When invoked, this skill will:
-1. Launch the code-simplifier agent
-2. The agent will analyze recently modified code (or code you specify)
-3. Apply refinements to improve clarity, consistency, and maintainability
-4. Preserve all functionality - only the code structure improves
+When invoked:
+1. Launches the code-simplifier agent
+2. Analyzes recently modified code (or specified code)
+3. Applies refinements to improve clarity and maintainability
+4. Preserves all functionality - only improves structure
 
 ## How it Works
 
-The skill uses the Task tool to launch the **code-simplifier** agent (subagent_type: "code-simplifier"), which:
+Uses the Task tool to launch the **code-simplifier** agent with `subagent_type: "code-simplifier"`. The agent:
 - Focuses on recently modified code by default
-- Applies project-specific best practices from CLAUDE.md
-- Enhances clarity by reducing complexity and improving naming
-- Never changes functionality - only improves code structure
+- Applies project best practices from CLAUDE.md
+- Reduces complexity and improves naming
+- Never changes functionality
 
 ## Instructions
 
-When this skill is invoked:
+When invoked:
 
-1. **Launch the code-simplifier agent** using the Task tool with:
+1. **Launch the code-simplifier agent** with Task tool:
    - `subagent_type: "code-simplifier"`
    - `description: "Simplify and refine code"`
-   - `prompt`: Provide context about what code to simplify:
-     - If user specified files/directories, include that in the prompt
-     - If no scope given, tell agent to focus on recently modified code
-     - Example prompt: "Simplify the recently modified code, focusing on clarity and maintainability while preserving all functionality"
+   - `prompt`: Provide context about what to simplify:
+     - If user specified files/directories, include in prompt
+     - If no scope, focus on recently modified code
+     - Example: "Simplify the recently modified code, focusing on clarity and maintainability while preserving all functionality"
 
-2. **Pass relevant context** in the prompt:
-   - Mention any specific files or components the user wants simplified
-   - Include any specific concerns (e.g., "the reviewer said it's too complex")
-   - For this autoscaler project, key areas: api, eventgenerator, scalingengine, metricsforwarder, operator
+2. **Pass relevant context**:
+   - Specific files or components to simplify
+   - User concerns (e.g., "the reviewer said it's too complex")
+   - Key project areas: api, eventgenerator, scalingengine, metricsforwarder, operator
 
-3. **Let the agent work autonomously** - it has access to all tools and will:
+3. **Let the agent work autonomously**. It will:
    - Identify target files
    - Read and analyze code
-   - Apply simplifications
-   - Use Edit tool to refine code
+   - Apply simplifications using Edit tool
 
 ## Example Invocations
 
@@ -70,30 +69,30 @@ Claude: [Launches code-simplifier agent with prompt: "Simplify the recently modi
 
 ## What the Agent Does
 
-The code-simplifier agent will:
-- ✓ Reduce unnecessary complexity and nesting
-- ✓ Improve variable and function names for clarity
-- ✓ Eliminate redundant code
-- ✓ Apply project coding standards
-- ✓ Avoid nested ternaries (use if/else or switch instead)
-- ✓ Choose clarity over brevity
+The agent will:
+- Reduce unnecessary complexity and nesting
+- Improve variable and function names
+- Eliminate redundant code
+- Apply project coding standards
+- Avoid nested ternaries (use if/else or switch)
+- Choose clarity over brevity
 
 The agent will NOT:
-- ✗ Change functionality or behavior
-- ✗ Alter test coverage
-- ✗ Modify public APIs
-- ✗ Over-simplify at the cost of clarity
+- Change functionality or behavior
+- Alter test coverage
+- Modify public APIs
+- Over-simplify at the cost of clarity
 
 ## Output
 
-After the agent completes, you'll see:
-- Summary of files that were simplified
-- Description of changes made
-- The agent will have already applied edits using the Edit tool
+After completion:
+- Summary of simplified files
+- Description of changes
+- Edits already applied via Edit tool
 
 ## Tips
 
-- Commit your code before running /simplify to easily review changes
+- Commit code before running /simplify for easy review
 - Run `make test` after simplification to verify functionality
-- Review the changes with `git diff` before committing
-- The agent focuses on recently modified code by default - specify scope if needed
+- Review changes with `git diff` before committing
+- Agent focuses on recently modified code by default

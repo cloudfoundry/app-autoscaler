@@ -10,32 +10,32 @@ allowed-tools:
 
 # Analyze CI Failures
 
-This skill analyzes logs from failed GitHub Action jobs for the current branch's PR.
+Analyzes logs from failed GitHub Action jobs for the current branch's PR.
 
 ## Prerequisites
 
-- **GitHub CLI**: Must be authenticated via `gh auth login`
-- **Current Branch**: Must have an open PR on GitHub
+- **GitHub CLI**: Authenticated via `gh auth login`
+- **Current Branch**: Has an open PR on GitHub
 
 ## Usage
 
-When invoked, this skill will:
-1. Detect the PR number for the current branch
-2. Check the status of all CI checks for that PR
-3. Identify any failed jobs
-4. Fetch and analyze the logs from failed jobs
-5. Provide a concise summary with root causes and relevant error snippets
+When invoked:
+1. Detects the PR number for current branch
+2. Checks status of all CI checks
+3. Identifies failed jobs
+4. Fetches and analyzes logs from failed jobs
+5. Provides summary with root causes and error snippets
 
-## How it works
+## How it Works
 
-The skill uses the GitHub CLI to:
+Uses GitHub CLI to:
 - Detect current PR: `gh pr view --json number`
-- List all checks for the PR: `gh pr checks <pr-number>`
-- View detailed run information: `gh run view <run-id>`
-- Fetch logs from failed jobs: `gh api repos/.../actions/jobs/<job-id>/logs`
+- List checks: `gh pr checks <pr-number>`
+- View run details: `gh run view <run-id>`
+- Fetch logs: `gh api repos/.../actions/jobs/<job-id>/logs`
 
 Output includes:
-- PR number and branch being analyzed
+- PR number and branch
 - Failed job names
 - Root cause analysis
 - Error messages and stack traces

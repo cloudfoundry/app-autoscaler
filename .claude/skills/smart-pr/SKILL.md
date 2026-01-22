@@ -30,34 +30,34 @@ This skill automatically generates or updates Pull Request titles and descriptio
 When invoked, this skill will:
 1. Verify you're on a feature branch (not main/master)
 2. Check if a PR already exists for the current branch
-3. Analyze all changes between your branch and the base branch (main/master)
-4. Generate an intelligent PR title following conventional commit format
+3. Analyze all changes between your branch and the base branch
+4. Generate a PR title following conventional commit format
 5. Generate a structured PR description with summary, changes, and testing checklist
-6. Determine the most appropriate PR label based on change type
-7. Either create a new PR or update the existing PR with generated content and label
+6. Determine the appropriate PR label based on change type
+7. Create a new PR or update the existing PR with generated content and label
 
 ## How it Works
 
 ### Step 1: Verify Git Context
-- Check current branch name using `git branch --show-current`
-- Verify not on main/master branch (error if true)
-- Determine base branch (try main, fallback to master)
+- Check current branch: `git branch --show-current`
+- Ensure not on main/master branch (error if on main)
+- Determine base branch (try main, fall back to master)
 
 ### Step 2: Check for Existing PR
-- Use `gh pr view --json number,title,body` to check if PR exists for current branch
-- Capture PR number if found for later update
+- Check if PR exists: `gh pr view --json number,title,body`
+- Capture PR number if found
 
 ### Step 3: Gather Diff Information
-- Run `git diff main...HEAD` (or `master...HEAD`) to get all changes since branching
-- Run `git log main...HEAD --oneline` to see commit history for context
-- For large diffs (>5000 lines), use `git diff --stat` for file summary instead
+- Get changes since branching: `git diff main...HEAD` (or `master...HEAD`)
+- Get commit history: `git log main...HEAD --oneline`
+- For large diffs (>5000 lines), use `git diff --stat` instead
 
 ### Step 4: Analyze Changes
-Analyze the diff content to understand:
-- What files changed (focus on critical directories: api/, eventgenerator/, scalingengine/, etc.)
-- Nature of changes (feature, bug fix, refactor, docs, tests)
-- Scope of changes (single component vs multiple)
-- Review commit messages for additional context
+Analyze the diff to understand:
+- Which files changed (focus on: api/, eventgenerator/, scalingengine/, etc.)
+- Nature of changes (feature, fix, refactor, docs, tests)
+- Scope (single component vs multiple)
+- Commit messages for context
 
 ### Step 5: Generate PR Title
 **Format**: `<type>: <concise description>`
@@ -72,10 +72,10 @@ Analyze the diff content to understand:
 - `perf`: Performance improvements
 
 **Rules**:
-- Maximum 72 characters (GitHub best practice)
+- Maximum 72 characters
 - Use imperative mood ("add" not "adds" or "added")
-- Be specific but concise
-- Focus on what the change accomplishes, not how
+- Be specific and concise
+- Focus on what, not how
 
 **Examples**:
 - `feat: add autoscaling for CPU metrics`
@@ -107,29 +107,28 @@ Analyze the diff content to understand:
 ```
 
 **Description Rules**:
-- Focus on "why" not just "what" - explain the rationale
-- Reference key files/components changed (e.g., "Updated api/cmd/api/main.go")
-- Include testing guidance specific to the changes
-- Keep it scannable (bullets, clear sections)
-- Mention any breaking changes or migration steps
-- For this codebase, reference relevant components:
-  - API Server, Event Generator, Scaling Engine, Scheduler (Java), Metrics Forwarder, Operator
+- Focus on "why" not just "what"
+- Reference key files/components (e.g., "Updated api/cmd/api/main.go")
+- Include testing guidance
+- Keep it scannable with bullets and clear sections
+- Mention breaking changes or migration steps
+- Reference relevant components: API Server, Event Generator, Scaling Engine, Scheduler (Java), Metrics Forwarder, Operator
 
 ### Step 7: Determine PR Label
 
-This project requires exactly **one** label from the following options (used for release notes):
-- `enhancement`: New features or improvements to existing functionality
+This project requires exactly **one** label for release notes:
+- `enhancement`: New features or improvements
 - `bug`: Bug fixes
-- `chore`: Maintenance tasks (configs, dependencies, tooling, documentation)
-- `breaking-change`: Changes that break backward compatibility
-- `dependencies`: Dependency updates (use only if the primary purpose is dependency updates)
+- `chore`: Maintenance (configs, dependencies, tooling, docs)
+- `breaking-change`: Breaking backward compatibility
+- `dependencies`: Dependency updates (only if primary purpose)
 
-**Label Selection Logic**:
-1. If changes break backward compatibility → `breaking-change`
-2. If primary purpose is dependency updates → `dependencies`
-3. If fixing a bug or issue → `bug`
-4. If adding new feature or improving existing feature → `enhancement`
-5. If documentation, configs, tooling, or maintenance → `chore`
+**Selection Logic**:
+1. Breaking backward compatibility → `breaking-change`
+2. Primary purpose is dependency updates → `dependencies`
+3. Fixing a bug → `bug`
+4. Adding feature or improving functionality → `enhancement`
+5. Documentation, configs, tooling, maintenance → `chore`
 
 **Examples**:
 - New skill added → `enhancement`
@@ -141,58 +140,59 @@ This project requires exactly **one** label from the following options (used for
 - Change API interface incompatibly → `breaking-change`
 
 ### Step 8: Create or Update PR
-- **If PR exists**:
-  - Use `gh pr edit <number> --title "..." --body "..."`
-  - Add label using: `gh pr edit <number> --add-label "<label>"`
-- **If no PR exists**:
-  - Use `gh pr create --title "..." --body "..." --base main --label "<label>"`
-- Use heredoc syntax for body to handle multi-line content properly:
-  ```bash
-  gh pr create --title "feat: example" --body "$(cat <<'EOF'
-  ## Summary
-  - Point 1
+**If PR exists**:
+- Update: `gh pr edit <number> --title "..." --body "..."`
+- Add label: `gh pr edit <number> --add-label "<label>"`
 
-  ## Changes
-  - Change 1
+**If no PR exists**:
+- Create: `gh pr create --title "..." --body "..." --base main --label "<label>"`
 
-  🤖 Generated with Claude Code
-  EOF
-  )" --label "enhancement"
-  ```
-- Display the PR URL, title, and label to user after creation/update
+**Use heredoc for multi-line body**:
+```bash
+gh pr create --title "feat: example" --body "$(cat <<'EOF'
+## Summary
+- Point 1
+
+## Changes
+- Change 1
+
+🤖 Generated with Claude Code
+EOF
+)" --label "enhancement"
+```
+
+Display PR URL, title, and label after creation/update.
 
 ## Error Handling
 
-Handle these scenarios gracefully:
+**On Main Branch**:
+- Error: "Cannot create PR from main/master branch. Please switch to a feature branch first."
+- Suggest: `git checkout -b feature/my-new-feature`
 
-1. **On Main Branch**:
-   - Error message: "Cannot create PR from main/master branch. Please switch to a feature branch first."
-   - Suggest: `git checkout -b feature/my-new-feature`
+**No Changes**:
+- Warn: "No changes detected between your branch and main. Nothing to create a PR for."
 
-2. **No Changes**:
-   - Warn: "No changes detected between your branch and main. Nothing to create a PR for."
+**GitHub CLI Not Authenticated**:
+- Error: "GitHub CLI not authenticated. Please run: gh auth login"
 
-3. **GitHub CLI Not Authenticated**:
-   - Error message: "GitHub CLI not authenticated. Please run: gh auth login"
+**Base Branch Doesn't Exist**:
+- Try main first, then master
+- If neither exists, error: "Could not find base branch (main or master)"
 
-4. **Base Branch Doesn't Exist**:
-   - Try main first, then master
-   - If neither exists, error: "Could not find base branch (main or master)"
-
-5. **Large Diff**:
-   - If diff >5000 lines, use `git diff --stat` summary instead of full diff
-   - Still generate meaningful title/description based on file summary and commit messages
+**Large Diff**:
+- If diff >5000 lines, use `git diff --stat` instead of full diff
+- Still generate meaningful title/description from file summary and commit messages
 
 ## Output
 
-After successful execution, display:
+Display after successful execution:
 - PR number (new or updated)
 - Generated title
 - Applied label
-- Brief summary of changes analyzed
-- Direct link to PR on GitHub
+- Brief summary of changes
+- Link to PR
 
-Example output:
+Example:
 ```
 ✓ Updated PR #123 with generated content
 
@@ -201,22 +201,22 @@ Label: enhancement
 
 Summary:
 - Analyzed 15 files changed across eventgenerator and scalingengine components
-- Detected new feature implementation with corresponding tests
+- Detected new feature implementation with tests
 - Generated description with 3 key changes and testing checklist
 
 View PR: https://github.com/cloudfoundry/app-autoscaler/pull/123
 ```
 
-## Tips for Best Results
+## Tips
 
-- Make descriptive commit messages - they help inform the PR title/description generation
-- Push your changes before running the skill so the remote branch exists
-- Review and manually edit the PR after generation if needed - this is a starting point
-- For complex changes, consider adding more context in commit messages
+- Write descriptive commit messages to improve generation
+- Push changes before running the skill
+- Review and edit the PR after generation
+- Add context in commit messages for complex changes
 
 ## Limitations
 
-- Skill generates based on code diffs and commits - it can't read your mind about intent
-- For very large PRs (100+ files), description may be more generic
-- Does not auto-fill custom PR template fields (but you can manually edit after)
+- Generates from code diffs and commits, not intent
+- Very large PRs (100+ files) get more generic descriptions
+- Does not auto-fill custom PR template fields
 - Works best with focused PRs that have clear, single purposes
