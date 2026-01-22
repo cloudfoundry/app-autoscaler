@@ -21,8 +21,8 @@ function retry(){
 
 function bosh_login() {
 	step "bosh login"
-	echo "BBL_STATE_PATH is set to '${BBL_STATE_PATH}'"
 	local -r bbl_state_path="${1}"
+	echo "bbl_state_path is set to '${bbl_state_path}'"
 	if [[ ! -d "${bbl_state_path}" ]]
 	then
 		echo "⛔ FAILED: Did not find bbl-state folder at ${bbl_state_path}"
