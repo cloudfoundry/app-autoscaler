@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	brParser "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brParser "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser_v1"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
