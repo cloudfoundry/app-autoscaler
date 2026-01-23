@@ -1772,51 +1772,51 @@
         }
       }
     },
-    "redocly@1.34.2": {
-      "last_modified": "2025-07-13T22:45:35Z",
-      "resolved": "github:NixOS/nixpkgs/a421ac6595024edcfbb1ef950a3712b89161c359#redocly",
+    "redocly@1.34.4": {
+      "last_modified": "2025-07-28T17:09:23Z",
+      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b#redocly",
       "source": "devbox-search",
-      "version": "1.34.2",
+      "version": "1.34.4",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/6yf6g1kqf4699k5d4873gj0xfk1qp2ax-redocly-1.34.2",
+              "path": "/nix/store/0d5k3cjkc9ccd54yv7wkfcyznsnj4l7m-redocly-1.34.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/6yf6g1kqf4699k5d4873gj0xfk1qp2ax-redocly-1.34.2"
+          "store_path": "/nix/store/0d5k3cjkc9ccd54yv7wkfcyznsnj4l7m-redocly-1.34.4"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/jdr48y5yg32mipsvy36zgb15xk5chc66-redocly-1.34.2",
+              "path": "/nix/store/ih7ylw9nynlxkp76lgrv91q4yn165rxr-redocly-1.34.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/jdr48y5yg32mipsvy36zgb15xk5chc66-redocly-1.34.2"
+          "store_path": "/nix/store/ih7ylw9nynlxkp76lgrv91q4yn165rxr-redocly-1.34.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/6ms1hk71dsmq3sk8fz7kld4z28b5vjry-redocly-1.34.2",
+              "path": "/nix/store/3ahz9915273zhwykr6jq9rpjldh46j2q-redocly-1.34.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/6ms1hk71dsmq3sk8fz7kld4z28b5vjry-redocly-1.34.2"
+          "store_path": "/nix/store/3ahz9915273zhwykr6jq9rpjldh46j2q-redocly-1.34.4"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2lh1k80ipn13vx2j50ll6xyqxms1n1y1-redocly-1.34.2",
+              "path": "/nix/store/ncy08cwfkv2wx79vx20qn6c64l7c2qps-redocly-1.34.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2lh1k80ipn13vx2j50ll6xyqxms1n1y1-redocly-1.34.2"
+          "store_path": "/nix/store/ncy08cwfkv2wx79vx20qn6c64l7c2qps-redocly-1.34.4"
         }
       }
     },
