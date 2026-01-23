@@ -1,4 +1,4 @@
-package legacy_parser
+package legacy
 
 
 type policyAndBindingCfg struct {

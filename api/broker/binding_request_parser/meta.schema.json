@@ -4,7 +4,7 @@
   "description": "Unification of different schemas for scaling-policies for Autoscaler",
 
   "oneOf": [
-    {"$ref": "./json-schema/v0.1/meta.schema.json"},
-    {"$ref": "./legacy_parser/schema.json"}
+    {"$ref": "./v0.1_parser/meta.schema.json"},
+    {"$ref": "./legacy/schema.json"}
   ]
 }

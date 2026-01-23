@@ -1,4 +1,4 @@
-package clean_parser
+package v0_1
 
 type parameters struct {
 	Configuration *bindingCfg    `json:"configuration"`
