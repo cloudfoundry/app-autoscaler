@@ -16,8 +16,14 @@ type LegacyBindingRequestParser struct {
 
 var _ binding_request_parser.Parser = LegacyBindingRequestParser{}
 
-func New() (LegacyBindingRequestParser, error) {
-	const schemaFilePath string = "file://./schema.json"
+// New creates a new LegacyBindingRequestParser with the JSON schema loaded from the specified file
+// path.
+//
+// The schemaFilePath parameter should be a valid and absolute file URI (e.g.,
+// "file:///path/to/schema.json").
+//
+// Returns an error if the schema file cannot be loaded or parsed.
+func New(schemaFilePath string) (LegacyBindingRequestParser, error) {
 	schemaLoader := gojsonschema.NewReferenceLoader(schemaFilePath)
 	schema, err := gojsonschema.NewSchema(schemaLoader)
 	if err != nil {
@@ -97,8 +103,7 @@ This must not happen because of prior schema-validation. This is a programming-e
 		strat, err := models.ParseCustomMetricsStrategy(
 			bindingReqParams.BindingConfig.CustomMetrics.MetricSubmissionStrategy.AllowFrom)
 
-		if err == nil {
-
+		if err != nil {
 			return models.AppScalingConfig{}, &models.InvalidArgumentError{
 				Param: "err",
 				Value: err,

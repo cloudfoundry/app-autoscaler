@@ -1,6 +1,8 @@
 package binding_request_parser_test
 
 import (
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -49,7 +51,6 @@ var _ = Describe("BindingRequestParsers", func() {
 	const validLegacyBindingRequestRaw string = `
 		{
 		 "configuration": {
-			 "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
 			 "custom_metrics": {
 			   "metric_submission_strategy": {
 				   "allow_from": "bound_app"
@@ -104,11 +105,14 @@ var _ = Describe("BindingRequestParsers", func() {
 
 	Describe("LegacyBindingRequestParser", func() {
 		var (
-			legacyParser lp.LegacyBindingRequestParser
-			err          error
+			legacyParser      lp.LegacyBindingRequestParser
+			schemaFilePathAbs string
+			err               error
 		)
 		var _ = BeforeEach(func() {
-			legacyParser, err = lp.New()
+			schemaFilePathAbs, err = filepath.Abs("./legacy_parser/schema.json")
+			Expect(err).NotTo(HaveOccurred())
+			legacyParser, err = lp.New("file://" + schemaFilePathAbs)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
