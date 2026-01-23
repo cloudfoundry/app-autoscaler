@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
-	"github.com/fgrosse/zaptest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/steinfletcher/apitest"
@@ -25,8 +24,14 @@ var _ = Describe("Ginkgo/Server", func() {
 	})
 
 	Context("basic endpoint tests", func() {
+		apiTest := func() *apitest.APITest {
+			GinkgoHelper()
+			logger := testLogger()
+			return apitest.New().Handler(app.Router(logger, nil, nil, nil, nil, nil))
+		}
+
 		It("Root should respond correctly", func() {
-			apiTest(nil, nil, nil, nil).
+			apiTest().
 				Get("/").
 				Expect(t).
 				Status(http.StatusOK).
@@ -34,7 +39,7 @@ var _ = Describe("Ginkgo/Server", func() {
 				End()
 		})
 		It("health", func() {
-			apiTest(nil, nil, nil, nil).
+			apiTest().
 				Get("/health").
 				Expect(t).
 				Status(http.StatusOK).
@@ -48,7 +53,7 @@ var _ = Describe("Ginkgo/Server", func() {
 		var client *http.Client
 		var port int
 		BeforeEach(func() {
-			logger := zaptest.LoggerWriter(GinkgoWriter)
+			logger := testLogger()
 			/* #nosec G102 -- CF apps run in a container */
 			l, err := net.Listen("tcp", ":0")
 			Expect(err).ToNot(HaveOccurred())
@@ -74,11 +79,3 @@ var _ = Describe("Ginkgo/Server", func() {
 
 	})
 })
-
-func apiTest(timeWaster app.TimeWaster, memoryGobbler app.MemoryGobbler, cpuWaster app.CPUWaster, customMetricClient app.CustomMetricClient) *apitest.APITest {
-	GinkgoHelper()
-	logger := zaptest.LoggerWriter(GinkgoWriter)
-
-	return apitest.New().
-		Handler(app.Router(logger, timeWaster, memoryGobbler, cpuWaster, nil, customMetricClient))
-}

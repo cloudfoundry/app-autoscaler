@@ -10,6 +10,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app/appfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/steinfletcher/apitest"
 )
 
 var _ = Describe("Memory tests", func() {
@@ -18,8 +19,15 @@ var _ = Describe("Memory tests", func() {
 
 		fakeMemoryTest := &appfakes.FakeMemoryGobbler{}
 
+		apiTest := func(memoryGobbler app.MemoryGobbler) *apitest.APITest {
+			GinkgoHelper()
+			logger := testLogger()
+
+			return apitest.New().Handler(app.Router(logger, nil, memoryGobbler, nil, nil, nil))
+		}
+
 		It("should err if memory not an int64", func() {
-			apiTest(nil, fakeMemoryTest, nil, nil).
+			apiTest(fakeMemoryTest).
 				Get("/memory/invalid/4").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
@@ -27,7 +35,7 @@ var _ = Describe("Memory tests", func() {
 				End()
 		})
 		It("should err if memory out of bounds", func() {
-			apiTest(nil, fakeMemoryTest, nil, nil).
+			apiTest(fakeMemoryTest).
 				Get("/memory/100001010101010249032897287298719874687936483275648273632429479827398798271/4").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
@@ -35,7 +43,7 @@ var _ = Describe("Memory tests", func() {
 				End()
 		})
 		It("should err if memory not an int", func() {
-			apiTest(nil, fakeMemoryTest, nil, nil).
+			apiTest(fakeMemoryTest).
 				Get("/memory/5/invalid").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
@@ -43,7 +51,7 @@ var _ = Describe("Memory tests", func() {
 				End()
 		})
 		It("should return ok and sleep correctDuration", func() {
-			apiTest(nil, fakeMemoryTest, nil, nil).
+			apiTest(fakeMemoryTest).
 				Get("/memory/5/4").
 				Expect(GinkgoT()).
 				Status(http.StatusOK).
