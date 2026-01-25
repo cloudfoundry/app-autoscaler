@@ -7,6 +7,8 @@ VERSION ?= 0.0.0-rc.1
 DEST ?= /tmp/build
 TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
+MTA_ID ?= com.github.cloudfoundry.app-autoscaler-release
+NAMESPACE ?=
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
 
@@ -269,10 +271,13 @@ ${flattened-schema-file}: ${schema-files}
 mta-deploy: mta-build build-extension-file
 	$(MAKE) -f metricsforwarder/Makefile set-security-group
 	@echo "Deploying with extension file: $(EXTENSION_FILE)"
-	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES)
+	$(if $(NAMESPACE),@echo "Using namespace: $(NAMESPACE)",)
+	@cf deploy $(DEST)/$(MTAR_FILENAME) --version-rule ALL -f --delete-services -e $(EXTENSION_FILE) -m $(MODULES) $(if $(NAMESPACE),--namespace $(NAMESPACE),)
 
 mta-undeploy:
-	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
+	@echo "Undeploying MTA with ID: $(MTA_ID)"
+	$(if $(NAMESPACE),@echo "Using namespace: $(NAMESPACE)",)
+	@cf undeploy $(MTA_ID) -f $(if $(NAMESPACE),--namespace $(NAMESPACE),)
 
 build-extension-file:
 	echo "extension file at: $(EXTENSION_FILE)"
@@ -280,17 +285,21 @@ build-extension-file:
 
 mta-logs:
 	rm -rf mta-*
-	cf dmol --mta com.github.cloudfoundry.app-autoscaler-release --last 1
+	@echo "Fetching logs for MTA ID: $(MTA_ID)"
+	$(if $(NAMESPACE),@echo "Using namespace: $(NAMESPACE)",)
+	cf dmol --mta $(MTA_ID) --last 1 $(if $(NAMESPACE),--namespace $(NAMESPACE),)
 	vim mta-*
 
 mta-build: mta-build-clean
-	@echo "building mtar file for version: $(VERSION)"
+	@echo "building mtar file for version: $(VERSION) with MTA_ID: $(MTA_ID)"
 	cp mta.tpl.yaml mta.yaml
+	sed --in-place 's/MTA_ID_PLACEHOLDER/$(MTA_ID)/g' mta.yaml
 	sed --in-place 's/MTA_VERSION/$(VERSION)/g' mta.yaml
 	sed --in-place 's/GO_MINOR_VERSION/$(GO_MINOR_VERSION)/g' mta.yaml
 	mkdir -p $(DEST)
 	mbt build -t $(DEST) --mtar $(MTAR_FILENAME)
 	@echo '⚠️ The mta build is done. The mtar file is available at: $(DEST)/$(MTAR_FILENAME)'
+	@echo '⚠️ MTA ID: $(MTA_ID)'
 	du -h $(DEST)/$(MTAR_FILENAME)
 
 mta-build-clean:

@@ -67,6 +67,16 @@ debug "AUTOSCALER_SPACE: ${AUTOSCALER_SPACE}"
 log "set up vars: AUTOSCALER_SPACE=${AUTOSCALER_SPACE}"
 autoscaler_space="${AUTOSCALER_SPACE}"
 
+# MTA ID for deployment - defaults to DEPLOYMENT_NAME, can override for testing
+export MTA_ID="${MTA_ID:-$DEPLOYMENT_NAME}"
+debug "MTA_ID: ${MTA_ID}"
+log "set up vars: MTA_ID=${MTA_ID}"
+
+# Namespace for MTA deployment - used to prefix app names for multiple deployments
+export NAMESPACE="${NAMESPACE:-$DEPLOYMENT_NAME}"
+debug "NAMESPACE: ${NAMESPACE}"
+log "set up vars: NAMESPACE=${NAMESPACE}"
+
 export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"}"
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"
