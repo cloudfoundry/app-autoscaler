@@ -6,7 +6,7 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	brp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/types"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
@@ -84,6 +84,8 @@ func (p BindingRequestParser) toBindingParameters(
 	if err != nil {
 		return models.AppScalingConfig{}, err
 	}
+
+	// 🚧 To-do: Single layer of abstraction
 
 	customMetricsBindAuthScheme := &p.defaultCustomMetricsCredentialType
 	if bindingReqParams.CredentialType != "" {

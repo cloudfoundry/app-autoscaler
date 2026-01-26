@@ -5,7 +5,7 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/types"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
@@ -14,7 +14,7 @@ type BindingRequestParser struct {
 	defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme
 }
 
-var _ binding_request_parser.Parser = BindingRequestParser{}
+var _ brp.Parser = BindingRequestParser{}
 
 // New creates a new LegacyBindingRequestParser with the JSON schema loaded from the specified file
 // path.
@@ -66,7 +66,7 @@ func (p BindingRequestParser) Validate(bindingReqParams string) error {
 		return err
 	} else if !validationResult.Valid() {
 		// The error contains a description of all detected violations against the schema.
-		allErrors := binding_request_parser.JsonSchemaError(validationResult.Errors())
+		allErrors := brp.JsonSchemaError(validationResult.Errors())
 		return &allErrors
 	}
 
@@ -88,6 +88,9 @@ This must not happen for the legacy-parser because …
 This is a programming-error.`,
 		}
 	}
+
+
+	// 🚧 To-do: Single layer of abstraction
 
 	customMetricsBindAuthScheme := &p.defaultCustomMetricsCredentialType
 	if schemeIsSet := bindingReqParams.CredentialType != ""; schemeIsSet {

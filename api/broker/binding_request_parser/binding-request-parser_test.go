@@ -4,9 +4,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	// br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
 	brp_v1 "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/v0_1"
-	// cp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/combined_parser"
 	lp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/legacy"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
@@ -68,7 +67,7 @@ var _ = Describe("BindingRequestParsers", func() {
 		 ]
 	   }`
 
-	Describe("CleanBindingRequestParser", func() {
+	Describe("v0.1_BindingRequestParser", func() {
 		var (
 			v0_1Parser brp_v1.BindingRequestParser
 			err         error
@@ -119,47 +118,47 @@ var _ = Describe("BindingRequestParsers", func() {
 		})
 	})
 
-	// Describe("CombinedBindingRequestParser", func() {
-	//	var (
-	//		cleanParser    brp_v1.CleanBindingRequestParser
-	//		legacyParser   lp.LegacyBindingRequestParser
-	//		combinedParser cp.CombinedBindingRequestParser
+	Describe("CombinedBindingRequestParser", func() {
+		var (
+			parser br.BindRequestParser
+			err error
+		)
+		var _ = BeforeEach(func() {
+			parser, err = br.New(
+				legacySchemaFilePath,
+				v0_1SchemaFilePath,
+				models.X509Certificate,
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-	//		err error
-	//	)
-	//	var _ = BeforeEach(func() {
-	//		cleanParser, err = brp_v1.NewFromFile(cleanSchemaFilePath)
-	//		Expect(err).NotTo(HaveOccurred())
-	//		legacyParser, err = lp.New()
-	//		Expect(err).NotTo(HaveOccurred())
-	//		combinedParser = cp.New([]br.Parser{cleanParser, legacyParser})
-	//	})
+		Context("When using the v0.1 schema for binding-requests", func() {
+			Context("and parsing a valid and complete one", func() {
+				It("should return a correctly populated BindingRequestParameters", func() {
+					bindingRequestRaw := validModernBindingRequestRaw
+					appGuidFromCC := models.GUID("")
 
-	//	Context("When using the new format for binding-requests", func() {
-	//		Context("and parsing a valid and complete one", func() {
-	//			It("should return a correctly populated BindingRequestParameters", func() {
-	//				bindingRequestRaw := validModernBindingRequestRaw
+					bindingRequest, err := parser.Parse(bindingRequestRaw, appGuidFromCC)
 
-	//				bindingRequest, err := combinedParser.Parse(bindingRequestRaw)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(bindingRequest.GetConfiguration().GetAppGUID()).To(
+						Equal(models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")))
+				})
+			})
+		})
 
-	//				Expect(err).NotTo(HaveOccurred())
-	//				Expect(bindingRequest.Configuration.AppGUID).To(
-	//					Equal(models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")))
-	//			})
-	//		})
-	//	})
+		Context("When using the legacy schema for binding-requests", func() {
+			It("should return a correctly populated BindingRequestParameters", func() {
+				bindingRequestRaw := validLegacyBindingRequestRaw
+				appGuidFromCC := models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")
 
-	//	Context("When using the legacy format for binding-requests", func() {
-	//		It("should return a correctly populated BindingRequestParameters", func() {
-	//			bindingRequestRaw := validLegacyBindingRequestRaw
+				bindingRequest, err := parser.Parse(bindingRequestRaw, appGuidFromCC)
 
-	//			bindingRequest, err := combinedParser.Parse(bindingRequestRaw)
-
-	//			Expect(err).NotTo(HaveOccurred())
-	//			Expect(bindingRequest.Configuration.AppGUID).
-	//				To(Equal(models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")))
-	//			// 🚧 To-do: Add a few more field-comparisons;
-	//		})
-	//	})
-	// })
+				Expect(err).NotTo(HaveOccurred())
+				Expect(bindingRequest.GetConfiguration().GetAppGUID()).
+					To(Equal(models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")))
+				// 🚧 To-do: Add a few more field-comparisons;
+			})
+		})
+	})
 })
