@@ -152,13 +152,24 @@ type TerminateSuite func(message string, callerSkip ...int)
 var DefaultTerminateSuite TerminateSuite = ginkgo.AbortSuite
 
 func LoadConfig(terminateSuite TerminateSuite) *Config {
-	path := os.Getenv("CONFIG")
-	if path == "" {
-		terminateSuite("Must set $CONFIG to point to a json file")
-	}
+	// First check for direct JSON config in environment variable
+	configJSON := os.Getenv("ACCEPTANCE_CONFIG_JSON")
 
 	config := defaults
-	err := loadConfigFromPath(path, &config)
+	var err error
+
+	if configJSON != "" {
+		// Parse JSON directly from env var
+		err = loadConfigFromJSON(configJSON, &config)
+	} else {
+		// Fall back to file-based config (existing behavior)
+		path := os.Getenv("CONFIG")
+		if path == "" {
+			terminateSuite("Must set $CONFIG to point to a json file or $ACCEPTANCE_CONFIG_JSON with JSON content")
+		}
+		err = loadConfigFromPath(path, &config)
+	}
+
 	if err != nil {
 		terminateSuite(err.Error())
 	}
@@ -261,6 +272,11 @@ func loadConfigFromPath(path string, config *Config) error {
 	defer func() { _ = configFile.Close() }()
 
 	decoder := json.NewDecoder(configFile)
+	return decoder.Decode(config)
+}
+
+func loadConfigFromJSON(jsonContent string, config *Config) error {
+	decoder := json.NewDecoder(strings.NewReader(jsonContent))
 	return decoder.Decode(config)
 }
 
