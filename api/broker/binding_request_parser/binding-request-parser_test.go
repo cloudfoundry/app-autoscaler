@@ -5,8 +5,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	br "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
-	brp_v1 "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/v0_1"
 	lp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/legacy"
+	brp_v1 "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/v0_1"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
@@ -70,7 +70,7 @@ var _ = Describe("BindingRequestParsers", func() {
 	Describe("v0.1_BindingRequestParser", func() {
 		var (
 			v0_1Parser brp_v1.BindingRequestParser
-			err         error
+			err        error
 		)
 		var _ = BeforeEach(func() {
 			v0_1Parser, err = brp_v1.NewFromFile(v0_1SchemaFilePath, models.X509Certificate)
@@ -94,8 +94,8 @@ var _ = Describe("BindingRequestParsers", func() {
 
 	Describe("LegacyBindingRequestParser", func() {
 		var (
-			legacyParser      lp.BindingRequestParser
-			err               error
+			legacyParser lp.BindingRequestParser
+			err          error
 		)
 		var _ = BeforeEach(func() {
 			Expect(err).NotTo(HaveOccurred())
@@ -121,7 +121,7 @@ var _ = Describe("BindingRequestParsers", func() {
 	Describe("CombinedBindingRequestParser", func() {
 		var (
 			parser br.BindRequestParser
-			err error
+			err    error
 		)
 		var _ = BeforeEach(func() {
 			parser, err = br.New(

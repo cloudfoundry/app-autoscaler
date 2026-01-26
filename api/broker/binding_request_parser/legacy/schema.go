@@ -1,14 +1,13 @@
 package legacy
 
-
 type policyAndBindingCfg struct {
-	SchemaVersion *string             `json:"schema-version"`
-	CredentialType string             `json:"credential-type,omitempty"`
-	BindingConfig  *bindingConfig     `json:"configuration,omitempty"`
-	InstanceMin    int                `json:"instance_min_count"`
-	InstanceMax    int                `json:"instance_max_count"`
-	ScalingRules   []*scalingRule     `json:"scaling_rules,omitempty"`
-	Schedules      *scalingSchedules  `json:"schedules,omitempty"`
+	SchemaVersion  *string           `json:"schema-version"`
+	CredentialType string            `json:"credential-type,omitempty"`
+	BindingConfig  *bindingConfig    `json:"configuration,omitempty"`
+	InstanceMin    int               `json:"instance_min_count"`
+	InstanceMax    int               `json:"instance_max_count"`
+	ScalingRules   []*scalingRule    `json:"scaling_rules,omitempty"`
+	Schedules      *scalingSchedules `json:"schedules,omitempty"`
 }
 
 // ================================================================================

@@ -10,7 +10,7 @@ import (
 )
 
 type BindingRequestParser struct {
-	schema *gojsonschema.Schema
+	schema                             *gojsonschema.Schema
 	defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme
 }
 
@@ -33,7 +33,7 @@ func New(
 	}
 
 	parser := BindingRequestParser{
-		schema: schema,
+		schema:                             schema,
 		defaultCustomMetricsCredentialType: defaultCustomMetricsCredentialType,
 	}
 
@@ -79,18 +79,15 @@ func (p BindingRequestParser) toBindingParameters(
 	appGuid := ccAppGuid
 	if ccAppGuid == "" {
 		return models.AppScalingConfig{}, &models.InvalidArgumentError{
-				Param: "ccAppGuid",
-				Value: ccAppGuid,
-				Msg:   `⛔ Did not get any app-guid from Cloud Controller.
+			Param: "ccAppGuid",
+			Value: ccAppGuid,
+			Msg: `⛔ Did not get any app-guid from Cloud Controller.
 This must not happen for the legacy-parser because …
  + the legacy-parser does not support service-keys and because of …
  + prior schema-validation.
 This is a programming-error.`,
 		}
 	}
-
-
-	// 🚧 To-do: Single layer of abstraction
 
 	customMetricsBindAuthScheme := &p.defaultCustomMetricsCredentialType
 	if schemeIsSet := bindingReqParams.CredentialType != ""; schemeIsSet {
@@ -102,7 +99,7 @@ This is a programming-error.`,
 			return models.AppScalingConfig{}, &models.InvalidArgumentError{
 				Param: "err",
 				Value: err,
-				Msg:   `⛔ Failed to parse the credential-type for custom metrics.
+				Msg: `⛔ Failed to parse the credential-type for custom metrics.
 This must not happen because of prior schema-validation. This is a programming-error.`,
 			}
 		}
@@ -111,7 +108,7 @@ This must not happen because of prior schema-validation. This is a programming-e
 	customMetricsStrat := models.DefaultCustomMetricsStrategy
 	customMetricsStratIsSet := bindingReqParams.BindingConfig != nil && bindingReqParams.BindingConfig.CustomMetrics != nil
 	if customMetricsStratIsSet {
-		strat, err := models.ParseCustomMetricsStrategy(
+		strategy, err := models.ParseCustomMetricsStrategy(
 			bindingReqParams.BindingConfig.CustomMetrics.MetricSubmissionStrategy.AllowFrom)
 
 		if err != nil {
@@ -123,7 +120,7 @@ This must not happen because of prior schema-validation. This is a programming-e
 This is an programming-error.`,
 			}
 		}
-		customMetricsStrat = *strat
+		customMetricsStrat = *strategy
 	}
 
 	bindingConfig := *models.NewBindingConfig(appGuid, customMetricsBindAuthScheme)
@@ -139,7 +136,6 @@ func readPolicyDefinition(bindingReqParams policyAndBindingCfg) *models.PolicyDe
 	if noPolicyIsSet {
 		return nil
 	}
-
 
 	policyDefinition := models.PolicyDefinition{
 		InstanceMin: bindingReqParams.InstanceMin,

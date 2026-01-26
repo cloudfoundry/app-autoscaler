@@ -85,8 +85,6 @@ func (p BindingRequestParser) toBindingParameters(
 		return models.AppScalingConfig{}, err
 	}
 
-	// 🚧 To-do: Single layer of abstraction
-
 	customMetricsBindAuthScheme := &p.defaultCustomMetricsCredentialType
 	if bindingReqParams.CredentialType != "" {
 		var err error
@@ -107,7 +105,7 @@ func (p BindingRequestParser) toBindingParameters(
 	customMetricsStrat := models.DefaultCustomMetricsStrategy
 	customMetricsStratIsSet := bindingReqParams.Configuration != nil && bindingReqParams.Configuration.CustomMetrics != nil
 	if customMetricsStratIsSet {
-		strat, err := models.ParseCustomMetricsStrategy(
+		strategy, err := models.ParseCustomMetricsStrategy(
 			bindingReqParams.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom)
 
 		if err != nil {
@@ -117,7 +115,7 @@ func (p BindingRequestParser) toBindingParameters(
 				Msg:   "Failed to parse custom-metric-submission-strategy",
 			}
 		}
-		customMetricsStrat = *strat
+		customMetricsStrat = *strategy
 	}
 
 	var scalingPolicy *models.ScalingPolicy
