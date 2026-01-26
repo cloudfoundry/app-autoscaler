@@ -10,7 +10,9 @@ import (
 	"regexp"
 	"strings"
 
-	brParser "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser_v1"
+	brParser "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brParserTypes "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/types"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
@@ -74,7 +76,7 @@ func New(
 	catalog []domain.Service, credentials cred_helper.Credentials,
 ) *Broker {
 	policyValidator := policyvalidator.NewPolicyValidator(
-		conf.PolicySchemaPath,
+		conf.BindingRequestSchemaPath,
 		conf.ScalingRules.CPU.LowerThreshold,
 		conf.ScalingRules.CPU.UpperThreshold,
 		conf.ScalingRules.CPUUtil.LowerThreshold,
@@ -97,8 +99,15 @@ func New(
 		}
 	}
 
-	bindingReqParser := brParser.NewBindRequestParser(
-		policyValidator, *defaultCustomMetricsCredentialType)
+	pathToParserDir := conf.BindingRequestSchemaPath
+	pathToLegacySchema := fmt.Sprintf("file://%s/legacy/schema.json", pathToParserDir)
+	pathToV0_1Schema := fmt.Sprintf("file://%s/v0_1/meta.schema.json", pathToParserDir)
+	bindingReqParser, err := brParser.New(
+		pathToLegacySchema, pathToV0_1Schema, *defaultCustomMetricsCredentialType)
+
+	if err != nil {
+		logger.Fatal("create-binding-request-parser", err)
+	}
 
 	broker := &Broker{
 		logger:           logger,
@@ -550,9 +559,17 @@ func (b *Broker) Bind(
 
 	result := domain.Binding{}
 
-	appScalingConfig, err := b.bindingReqParser.Parse(details)
+	appGuidFromCloudCtl := models.GUID("") // No app-guid provided by the cloudcontroller
+	if details.AppGUID != "" {
+		appGuidFromCloudCtl = models.GUID(details.AppGUID)
+	} else if details.BindResource != nil && details.BindResource.AppGuid != "" {
+		appGuidFromCloudCtl = models.GUID(details.BindResource.AppGuid)
+	}
+
+	appScalingConfig, err := b.bindingReqParser.Parse(string(details.RawParameters), appGuidFromCloudCtl)
+
 	var schemaErr *policyvalidator.ValidationErrors
-	var appGuidErr *brParser.BindReqNoAppGuid
+	var appGuidErr *brParserTypes.BindReqNoAppGuid
 	switch {
 	case errors.As(err, &schemaErr):
 		resultsJson, err := json.Marshal(schemaErr)
@@ -583,8 +600,7 @@ func (b *Broker) Bind(
 			err, http.StatusBadRequest, "parse-binding-request")
 	}
 
-	isServiceKeyRequest := (details.BindResource == nil || details.BindResource.AppGuid == "") && details.AppGUID == ""
-	if isServiceKeyRequest {
+	if isServiceKeyRequest := appGuidFromCloudCtl == ""; isServiceKeyRequest {
 		err := b.checkAppInSpace(logger, ctx, instanceID, details, appScalingConfig)
 		if err != nil {
 			return result, err

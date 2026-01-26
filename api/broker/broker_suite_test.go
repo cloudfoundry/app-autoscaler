@@ -50,7 +50,7 @@ var _ = BeforeSuite(func() {
 	conf = &config.Config{
 		CatalogPath:                        "../exampleconfig/catalog-example.json",
 		DashboardRedirectURI:               dashBoardURL,
-		PolicySchemaPath:                   "../policyvalidator/json-schema/meta.schema.json",
+		BindingRequestSchemaPath:           "./binding_request_parser",
 		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
 
