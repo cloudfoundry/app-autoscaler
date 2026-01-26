@@ -4,7 +4,7 @@
     "path:.#log-cache-cli-plugin":      "",
     "path:.#cf-deploy-plugin":          "",
     "path:.#cloud-mta-build-tool":      "",
-    "path:.#uaac":                      "",
+    "path:.#uaa-cli":                   "",
     "path:.#flatten_json-schema":       "",
     "act":                              "0.2.84",
     "bosh-cli":                         "7.3.1",

@@ -163,5 +163,9 @@
       flakeIgnore = [ "E265" "E501" ];
     } programSourceCode;
 
-  uaac = callPackage ./packages/uaac {};
+  # Ruby-based UAA CLI (deprecated in favor of Go version)
+  # uaac = callPackage ./packages/uaac {};
+
+  # Go-based UAA CLI (replaces Ruby uaac)
+  uaa-cli = callPackage ./packages/uaa-cli-go {};
 }

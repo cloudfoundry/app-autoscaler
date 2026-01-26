@@ -8,7 +8,8 @@ on:
       - "**/go.mod"
       - "**/go.sum"
       - "devbox.json"
-      - "nix/packages/uaac/Gemfile*"
+      # No longer needed - using Go-based uaa-cli instead of Ruby uaac
+      # - "nix/packages/uaac/Gemfile*"
   workflow_dispatch: {}
 jobs:
   dependency-updates-post-processing:
@@ -109,7 +110,8 @@ jobs:
           # ⚠️ For this workflow to be successful, the subsequent line must not
           # trigger again the creation of the generated files.
           make go-mod-tidy
-          make update-uaac-nix-package
+          # No longer needed - using Go-based uaa-cli instead of Ruby uaac
+          # make update-uaac-nix-package
 
           declare -i num_changed_files
           num_changed_files="$(git status --porcelain | wc --lines)"
