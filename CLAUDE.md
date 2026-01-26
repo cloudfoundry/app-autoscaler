@@ -193,3 +193,75 @@ Located in `/acceptance`:
 - Configuration: `acceptance/acceptance_config.json`
 - Can run in parallel via CF tasks: `make mta-acceptance-tests`
 - See `acceptance/README.md` for details
+
+## Team Workflows
+
+### PR Comment Resolution Workflow
+
+When implementing a fix for a PR review comment:
+
+1. **Implement the fix** and create a commit addressing the comment
+2. **Add a PR comment** replying to the original comment with the commit hash:
+   ```
+   fixed in <commit_hash>
+   ```
+   Example: `fixed in 8384249f`
+3. **Resolve the comment thread** on GitHub
+
+#### Implementation with GitHub CLI
+
+```bash
+# After committing the fix, get the short commit hash
+COMMIT_HASH=$(git rev-parse --short HEAD)
+
+# Get the thread ID for the comment you're addressing
+# (Use /unresolved-comments skill or query via GraphQL)
+THREAD_ID="PRRT_kwDOA0tdb85qnILg"  # Example thread ID
+
+# Add reply to the review comment thread using GraphQL
+gh api graphql -f query='
+mutation {
+  addPullRequestReviewThreadReply(input: {
+    pullRequestReviewThreadId: "'"${THREAD_ID}"'"
+    body: "fixed in '"${COMMIT_HASH}"'"
+  }) {
+    comment {
+      id
+    }
+  }
+}'
+
+# Resolve the review thread using GraphQL
+gh api graphql -f query='
+mutation {
+  resolveReviewThread(input: {threadId: "'"${THREAD_ID}"'"}) {
+    thread {
+      isResolved
+    }
+  }
+}'
+```
+
+**Finding Thread IDs**: Use the `/unresolved-comments` skill or query via GraphQL:
+```bash
+gh api graphql -f query='
+query {
+  repository(owner: "cloudfoundry", name: "app-autoscaler") {
+    pullRequest(number: 879) {
+      reviewThreads(first: 100) {
+        nodes {
+          id
+          isResolved
+          comments(first: 1) {
+            nodes {
+              path
+              line
+              body
+            }
+          }
+        }
+      }
+    }
+  }
+}'
+```
