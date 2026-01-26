@@ -4,7 +4,7 @@
 package combined_parser
 
 // import (
-//	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/binding_request_parser"
+//	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
 // )
 
 // // Combined parser that tries out all other parser that are associated to it in order

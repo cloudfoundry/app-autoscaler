@@ -9,12 +9,12 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
-type LegacyBindingRequestParser struct {
+type BindingRequestParser struct {
 	schema *gojsonschema.Schema
 	defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme
 }
 
-var _ binding_request_parser.Parser = LegacyBindingRequestParser{}
+var _ binding_request_parser.Parser = BindingRequestParser{}
 
 // New creates a new LegacyBindingRequestParser with the JSON schema loaded from the specified file
 // path.
@@ -23,16 +23,24 @@ var _ binding_request_parser.Parser = LegacyBindingRequestParser{}
 // "file:///path/to/schema.json").
 //
 // Returns an error if the schema file cannot be loaded or parsed.
-func New(schemaFilePath string) (LegacyBindingRequestParser, error) {
+func New(
+	schemaFilePath string, defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme,
+) (BindingRequestParser, error) {
 	schemaLoader := gojsonschema.NewReferenceLoader(schemaFilePath)
 	schema, err := gojsonschema.NewSchema(schemaLoader)
 	if err != nil {
-		return LegacyBindingRequestParser{}, err
+		return BindingRequestParser{}, err
 	}
-	return LegacyBindingRequestParser{schema: schema}, nil
+
+	parser := BindingRequestParser{
+		schema: schema,
+		defaultCustomMetricsCredentialType: defaultCustomMetricsCredentialType,
+	}
+
+	return parser, nil
 }
 
-func (p LegacyBindingRequestParser) Parse(
+func (p BindingRequestParser) Parse(
 	bindingReqParams string, ccAppGuid models.GUID,
 ) (models.AppScalingConfig, error) {
 	validationErr := p.Validate(bindingReqParams)
@@ -49,7 +57,7 @@ func (p LegacyBindingRequestParser) Parse(
 	return p.toBindingParameters(parsedParameters, ccAppGuid)
 }
 
-func (p LegacyBindingRequestParser) Validate(bindingReqParams string) error {
+func (p BindingRequestParser) Validate(bindingReqParams string) error {
 	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
 	validationResult, err := p.schema.Validate(documentLoader)
 	if err != nil {
@@ -65,7 +73,7 @@ func (p LegacyBindingRequestParser) Validate(bindingReqParams string) error {
 	return nil
 }
 
-func (p LegacyBindingRequestParser) toBindingParameters(
+func (p BindingRequestParser) toBindingParameters(
 	bindingReqParams policyAndBindingCfg, ccAppGuid models.GUID,
 ) (models.AppScalingConfig, error) {
 	appGuid := ccAppGuid
@@ -117,13 +125,18 @@ This is an programming-error.`,
 
 	bindingConfig := *models.NewBindingConfig(appGuid, customMetricsBindAuthScheme)
 	policyDefinition := readPolicyDefinition(bindingReqParams)
-	scalingPolicy := models.NewScalingPolicy(customMetricsStrat, &policyDefinition)
+	scalingPolicy := models.NewScalingPolicy(customMetricsStrat, policyDefinition)
 
 	return *models.NewAppScalingConfig(bindingConfig, *scalingPolicy), nil
 }
 
-func readPolicyDefinition(bindingReqParams policyAndBindingCfg) models.PolicyDefinition {
-	// 🚧 To-do: What if no policy has been provided?
+func readPolicyDefinition(bindingReqParams policyAndBindingCfg) *models.PolicyDefinition {
+	noPolicyIsSet := bindingReqParams.InstanceMin == 0 && bindingReqParams.InstanceMax == 0 &&
+		len(bindingReqParams.ScalingRules) == 0 && bindingReqParams.Schedules == nil
+	if noPolicyIsSet {
+		return nil
+	}
+
 
 	policyDefinition := models.PolicyDefinition{
 		InstanceMin: bindingReqParams.InstanceMin,
@@ -176,5 +189,5 @@ func readPolicyDefinition(bindingReqParams policyAndBindingCfg) models.PolicyDef
 		}
 	}
 
-	return policyDefinition
+	return &policyDefinition
 }

@@ -2,127 +2,211 @@ package v0_1
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brp "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 type BindingRequestParser struct {
-	schema *gojsonschema.Schema
+	schema                             *gojsonschema.Schema
+	defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme
 }
 
-var _ binding_request_parser.Parser = BindingRequestParser{}
+var _ brp.Parser = BindingRequestParser{}
 
-func new(jsonLoader gojsonschema.JSONLoader) (BindingRequestParser, error) {
+func new(
+	jsonLoader gojsonschema.JSONLoader, defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme,
+) (BindingRequestParser, error) {
 	schema, err := gojsonschema.NewSchema(jsonLoader)
 	if err != nil {
 		return BindingRequestParser{}, err
 	} else {
-		return BindingRequestParser{schema: schema}, nil
+		parser := BindingRequestParser{
+			schema:                             schema,
+			defaultCustomMetricsCredentialType: defaultCustomMetricsCredentialType,
+		}
+		return parser, nil
 	}
 }
 
-func NewFromString(jsonSchema string) (BindingRequestParser, error) {
+func NewFromString(
+	jsonSchema string, defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme,
+) (BindingRequestParser, error) {
 	schemaLoader := gojsonschema.NewStringLoader(jsonSchema)
-	return new(schemaLoader)
+	return new(schemaLoader, defaultCustomMetricsCredentialType)
 }
 
-func NewFromFile(pathToSchemaFile string) (BindingRequestParser, error) {
+func NewFromFile(
+	pathToSchemaFile string, defaultCustomMetricsCredentialType models.CustomMetricsBindingAuthScheme,
+) (BindingRequestParser, error) {
 	// The type for parameter `pathToSchemaFile` is same type as used in golang's std-library
 	schemaLoader := gojsonschema.NewReferenceLoader(pathToSchemaFile)
-	return new(schemaLoader)
+	return new(schemaLoader, defaultCustomMetricsCredentialType)
 }
 
-func (p BindingRequestParser) Parse(bindingReqParams string) (binding_request_parser.Parameters, error) {
-	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
-	validationResult, err := p.schema.Validate(documentLoader)
-	if err != nil {
-		// Defined by the implementation of `Validate`, this only happens, if the provided document
-		// (in this context `documentLoader`) can not be loaded.
-		return binding_request_parser.Parameters{}, err
-	} else if !validationResult.Valid() {
-		// The error contains a description of all detected violations against the schema.
-		allErrors := binding_request_parser.JsonSchemaError(validationResult.Errors())
-		return binding_request_parser.Parameters{}, allErrors
+func (p BindingRequestParser) Parse(
+	bindingReqParams string, ccAppGuid models.GUID,
+) (models.AppScalingConfig, error) {
+	validationErr := p.Validate(bindingReqParams)
+	if validationErr != nil {
+		return models.AppScalingConfig{}, validationErr
 	}
 
 	var parsedParameters parameters
-	err = json.Unmarshal([]byte(bindingReqParams), &parsedParameters)
+	err := json.Unmarshal([]byte(bindingReqParams), &parsedParameters)
 	if err != nil {
-		return binding_request_parser.Parameters{}, err
+		return models.AppScalingConfig{}, err
 	}
 
-	return toBindingParameters(parsedParameters), nil
+	return p.toBindingParameters(parsedParameters, ccAppGuid)
 }
 
-func toBindingParameters(params parameters) binding_request_parser.Parameters {
-	result := binding_request_parser.Parameters{}
-	if params.Configuration != nil {
-		result.Configuration = &models.BindingConfig{}
-
-		result.Configuration.AppGUID = models.GUID(params.Configuration.AppGuid)
-		result.Configuration.SetCustomMetricsStrategy(params.Configuration.CustomMetricsCfg.MetricSubmStrat.AllowFrom)
+func (p BindingRequestParser) Validate(bindingReqParams string) error {
+	documentLoader := gojsonschema.NewStringLoader(bindingReqParams)
+	validationResult, err := p.schema.Validate(documentLoader)
+	if err != nil {
+		return err
+	} else if !validationResult.Valid() {
+		allErrors := brp.JsonSchemaError(validationResult.Errors())
+		return &allErrors
 	}
 
-	if params.ScalingPolicy != nil {
-		result.ScalingPolicy = &models.ScalingPolicy{}
+	return nil
+}
 
-		result.ScalingPolicy.InstanceMax = params.ScalingPolicy.InstanceMaxCount
-		result.ScalingPolicy.InstanceMin = params.ScalingPolicy.InstanceMinCount
+func (p BindingRequestParser) toBindingParameters(
+	bindingReqParams parameters, ccAppGuid models.GUID,
+) (models.AppScalingConfig, error) {
+	appGuid, err := extractAppGuid(bindingReqParams, ccAppGuid)
+	if err != nil {
+		return models.AppScalingConfig{}, err
+	}
 
-		result.ScalingPolicy.ScalingRules = []*models.ScalingRule{}
-		for _, rule := range params.ScalingPolicy.ScalingRules {
-			r := models.ScalingRule{
-				MetricType:            rule.MetricType,
-				BreachDurationSeconds: rule.BreachDurationSecs,
-				Threshold:             rule.Threshold,
-				Operator:              rule.Operator,
-				CoolDownSeconds:       rule.CoolDownSecs,
-				Adjustment:            rule.Adjustment,
-			}
-			result.ScalingPolicy.ScalingRules = append(result.ScalingPolicy.ScalingRules, &r)
-		}
+	customMetricsBindAuthScheme := &p.defaultCustomMetricsCredentialType
+	if bindingReqParams.CredentialType != "" {
+		var err error
+		customMetricsBindAuthScheme, err = models.ParseCustomMetricsBindingAuthScheme(
+			bindingReqParams.CredentialType)
 
-		if params.ScalingPolicy.Schedules != nil {
-			result.ScalingPolicy.Schedules = &models.ScalingSchedules{
-				Timezone: params.ScalingPolicy.Schedules.Timezone,
-			}
-
-			if params.ScalingPolicy.Schedules.RecurringSchedule != nil {
-				result.ScalingPolicy.Schedules.RecurringSchedules = []*models.RecurringSchedule{}
-				for _, schedule := range params.ScalingPolicy.Schedules.RecurringSchedule {
-					rs := models.RecurringSchedule{
-						StartTime:             schedule.StartTime,
-						EndTime:               schedule.EndTime,
-						DaysOfWeek:            schedule.DaysOfWeek,
-						DaysOfMonth:           schedule.DaysOfMonth,
-						ScheduledInstanceMin:  schedule.InstanceMinCount,
-						ScheduledInstanceMax:  schedule.InstanceMaxCount,
-						ScheduledInstanceInit: schedule.InitialMinInstanceCount,
-						StartDate:             schedule.StartDate,
-						EndDate:               schedule.EndDate,
-					}
-					result.ScalingPolicy.Schedules.RecurringSchedules = append(result.ScalingPolicy.Schedules.RecurringSchedules, &rs)
-				}
-			}
-
-			if params.ScalingPolicy.Schedules.SpecificDate != nil {
-				result.ScalingPolicy.Schedules.SpecificDateSchedules = []*models.SpecificDateSchedule{}
-				for _, specificDate := range params.ScalingPolicy.Schedules.SpecificDate {
-					sd := models.SpecificDateSchedule{
-						StartDateTime:         specificDate.StartDateTime,
-						EndDateTime:           specificDate.EndDateTime,
-						ScheduledInstanceMin:  specificDate.InstanceMinCount,
-						ScheduledInstanceMax:  specificDate.InstanceMaxCount,
-						ScheduledInstanceInit: specificDate.InitialMinInstanceCount,
-					}
-					result.ScalingPolicy.Schedules.SpecificDateSchedules = append(result.ScalingPolicy.Schedules.SpecificDateSchedules, &sd)
-				}
+		if err != nil {
+			return models.AppScalingConfig{}, &models.InvalidArgumentError{
+				Param: "credential-type",
+				Value: err,
+				Msg:   "Failed to parse the credential-type for custom metrics",
 			}
 		}
 	}
 
-	return result
+	bindingConfig := *models.NewBindingConfig(appGuid, customMetricsBindAuthScheme)
+
+	customMetricsStrat := models.DefaultCustomMetricsStrategy
+	customMetricsStratIsSet := bindingReqParams.Configuration != nil && bindingReqParams.Configuration.CustomMetrics != nil
+	if customMetricsStratIsSet {
+		strat, err := models.ParseCustomMetricsStrategy(
+			bindingReqParams.Configuration.CustomMetrics.MetricSubmissionStrategy.AllowFrom)
+
+		if err != nil {
+			return models.AppScalingConfig{}, &models.InvalidArgumentError{
+				Param: "custom_metrics.metric_submission_strategy.allow_from",
+				Value: err,
+				Msg:   "Failed to parse custom-metric-submission-strategy",
+			}
+		}
+		customMetricsStrat = *strat
+	}
+
+	var scalingPolicy *models.ScalingPolicy
+	policyDefinition := readPolicyDefinition(bindingReqParams)
+	scalingPolicy = models.NewScalingPolicy(customMetricsStrat, policyDefinition)
+
+	return *models.NewAppScalingConfig(bindingConfig, *scalingPolicy), nil
+}
+
+func extractAppGuid(bindingReqParams parameters, ccAppGuid models.GUID) (models.GUID, error) {
+	var bindCfgAppGuid models.GUID
+	if bindingReqParams.Configuration != nil {
+		bindCfgAppGuid = models.GUID(bindingReqParams.Configuration.AppGuid)
+	}
+	appGuidIsFromCC := ccAppGuid != ""
+	appGuidIsFromBindingConfig := bindCfgAppGuid != ""
+
+	var appGuid models.GUID
+	switch {
+	case appGuidIsFromCC && appGuidIsFromBindingConfig:
+		msg := "error: app GUID provided in both, binding resource and binding configuration"
+		err := fmt.Errorf("%s:\n\tfrom binding-request: %s", msg, bindCfgAppGuid)
+		return models.GUID(""), err
+	case appGuidIsFromCC:
+		appGuid = ccAppGuid
+	case appGuidIsFromBindingConfig:
+		appGuid = bindCfgAppGuid
+	default:
+		return models.GUID(""), &brp.BindReqNoAppGuid{}
+	}
+
+	return appGuid, nil
+}
+
+func readPolicyDefinition(bindingReqParams parameters) *models.PolicyDefinition {
+	noPolicyIsSet := bindingReqParams.InstanceMin == 0 && bindingReqParams.InstanceMax == 0 &&
+		len(bindingReqParams.ScalingRules) == 0 && bindingReqParams.Schedules == nil
+	if noPolicyIsSet {
+		return nil
+	}
+
+	policyDefinition := models.PolicyDefinition{
+		InstanceMin: bindingReqParams.InstanceMin,
+		InstanceMax: bindingReqParams.InstanceMax,
+	}
+
+	for _, rule := range bindingReqParams.ScalingRules {
+		scalingRule := &models.ScalingRule{
+			MetricType:            rule.MetricType,
+			BreachDurationSeconds: rule.BreachDurationSecs,
+			Threshold:             rule.Threshold,
+			Operator:              rule.Operator,
+			CoolDownSeconds:       rule.CoolDownSecs,
+			Adjustment:            rule.Adjustment,
+		}
+		policyDefinition.ScalingRules = append(policyDefinition.ScalingRules, scalingRule)
+	}
+
+	if bindingReqParams.Schedules != nil {
+		policyDefinition.Schedules = &models.ScalingSchedules{
+			Timezone: bindingReqParams.Schedules.Timezone,
+		}
+
+		for _, recurring := range bindingReqParams.Schedules.RecurringSchedule {
+			recurringSchedule := &models.RecurringSchedule{
+				StartTime:             recurring.StartTime,
+				EndTime:               recurring.EndTime,
+				DaysOfWeek:            recurring.DaysOfWeek,
+				DaysOfMonth:           recurring.DaysOfMonth,
+				StartDate:             recurring.StartDate,
+				EndDate:               recurring.EndDate,
+				ScheduledInstanceMin:  recurring.InstanceMinCount,
+				ScheduledInstanceMax:  recurring.InstanceMaxCount,
+				ScheduledInstanceInit: recurring.InitialMinInstanceCount,
+			}
+			policyDefinition.Schedules.RecurringSchedules = append(
+				policyDefinition.Schedules.RecurringSchedules, recurringSchedule)
+		}
+
+		for _, specific := range bindingReqParams.Schedules.SpecificDate {
+			specificDateSchedule := &models.SpecificDateSchedule{
+				StartDateTime:         specific.StartDateTime,
+				EndDateTime:           specific.EndDateTime,
+				ScheduledInstanceMin:  specific.InstanceMinCount,
+				ScheduledInstanceMax:  specific.InstanceMaxCount,
+				ScheduledInstanceInit: specific.InitialMinInstanceCount,
+			}
+			policyDefinition.Schedules.SpecificDateSchedules = append(
+				policyDefinition.Schedules.SpecificDateSchedules, specificDateSchedule)
+		}
+	}
+
+	return &policyDefinition
 }

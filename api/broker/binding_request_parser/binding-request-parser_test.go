@@ -1,8 +1,6 @@
 package binding_request_parser_test
 
 import (
-	"path/filepath"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -14,40 +12,31 @@ import (
 )
 
 var _ = Describe("BindingRequestParsers", func() {
-	const cleanSchemaFilePath string = "file://./binding-request.json"
+	const v0_1SchemaFilePath string = "file://./v0_1/meta.schema.json"
+	const legacySchemaFilePath string = "file://./legacy/schema.json"
+
 	const validModernBindingRequestRaw string = `
-		{
-		  "configuration": {
-			"app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
-			"custom_metrics": {
-			  "metric_submission_strategy": {
-				"allow_from": "bound_app"
+	{
+		"schema-version": "0.1",
+		"configuration": {
+			  "app_guid": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
+			  "custom_metrics": {
+				  "metric_submission_strategy": {
+					  "allow_from": "bound_app"
+				  }
 			  }
-			}
-		  },
-		  "scaling-policy": {
-			  "instance_min_count": 1,
-			  "instance_max_count": 4,
-			  "scaling_rules": [
-				{
-				  "metric_type": "memoryutil",
-				  "breach_duration_secs": 600,
+		},
+		"instance_min_count": 1,
+		"instance_max_count": 5,
+		"scaling_rules": [
+			  {
+				  "metric_type": "memoryused",
 				  "threshold": 30,
 				  "operator": "<",
-				  "cool_down_secs": 300,
 				  "adjustment": "-1"
-				},
-				{
-				  "metric_type": "memoryutil",
-				  "breach_duration_secs": 600,
-				  "threshold": 90,
-				  "operator": ">=",
-				  "cool_down_secs": 300,
-				  "adjustment": "+1"
-				}
-			  ]
-		  }
-		}`
+			  }
+		]
+	}`
 	const validLegacyBindingRequestRaw string = `
 		{
 		 "configuration": {
@@ -85,18 +74,19 @@ var _ = Describe("BindingRequestParsers", func() {
 			err         error
 		)
 		var _ = BeforeEach(func() {
-			v0_1Parser, err = brp_v1.NewFromFile(cleanSchemaFilePath)
+			v0_1Parser, err = brp_v1.NewFromFile(v0_1SchemaFilePath, models.X509Certificate)
 			Expect(err).NotTo(HaveOccurred())
 		})
 		Context("When using the new format for binding-requests", func() {
 			Context("and parsing a valid and complete one", func() {
 				It("should return a correctly populated BindingRequestParameters", func() {
 					bindingRequestRaw := validModernBindingRequestRaw
+					ccAppGuid := models.GUID("") // Raw request is about creating a service-key;
 
-					bindingRequest, err := v0_1Parser.Parse(bindingRequestRaw)
+					bindingRequest, err := v0_1Parser.Parse(bindingRequestRaw, ccAppGuid)
 
 					Expect(err).NotTo(HaveOccurred())
-					Expect(bindingRequest.Configuration.AppGUID).To(
+					Expect(bindingRequest.GetConfiguration().GetAppGUID()).To(
 						Equal(models.GUID("8d0cee08-23ad-4813-a779-ad8118ea0b91")))
 				})
 			})
@@ -105,14 +95,12 @@ var _ = Describe("BindingRequestParsers", func() {
 
 	Describe("LegacyBindingRequestParser", func() {
 		var (
-			legacyParser      lp.LegacyBindingRequestParser
-			schemaFilePathAbs string
+			legacyParser      lp.BindingRequestParser
 			err               error
 		)
 		var _ = BeforeEach(func() {
-			schemaFilePathAbs, err = filepath.Abs("./legacy/schema.json")
 			Expect(err).NotTo(HaveOccurred())
-			legacyParser, err = lp.New("file://" + schemaFilePathAbs)
+			legacyParser, err = lp.New(legacySchemaFilePath, models.X509Certificate)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

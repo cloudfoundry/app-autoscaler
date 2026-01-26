@@ -1,42 +1,32 @@
 package v0_1
 
 type parameters struct {
-	Configuration *bindingCfg    `json:"configuration"`
-	ScalingPolicy *scalingPolicy `json:"scaling-policy"`
+	SchemaVersion  string           `json:"schema-version"`
+	CredentialType string           `json:"credential-type,omitempty"`
+	Configuration  *bindingCfg      `json:"configuration,omitempty"`
+	InstanceMin    int              `json:"instance_min_count,omitempty"`
+	InstanceMax    int              `json:"instance_max_count,omitempty"`
+	ScalingRules   []scalingRule    `json:"scaling_rules,omitempty"`
+	Schedules      *scalingSchedule `json:"schedules,omitempty"`
 }
 
-// ================================================================================
-// Binding-configuration
-// ================================================================================
-
 type bindingCfg struct {
-	CustomMetricsCfg customMetricsCfg
-	AppGuid          string `json:"app_guid"`
+	CustomMetrics *customMetricsCfg `json:"custom_metrics,omitempty"`
+	AppGuid       string            `json:"app_guid,omitempty"`
 }
 
 type customMetricsCfg struct {
-	MetricSubmStrat metricSubmStrat `json:"metric_submission_strategy"`
+	MetricSubmissionStrategy metricSubmStrat `json:"metric_submission_strategy"`
 }
 
 type metricSubmStrat struct {
 	AllowFrom string `json:"allow_from"`
 }
 
-// ================================================================================
-// Scaling-policy
-// ================================================================================
-
-type scalingPolicy struct {
-	SchemaVersion    string           `json:"schema-version"`
-	InstanceMinCount int              `json:"instance_min_count"`
-	InstanceMaxCount int              `json:"instance_max_count"`
-	ScalingRules     []scalingRule    `json:"scaling_rules,omitempty"`
-	Schedules        *scalingSchedule `json:"schedules,omitempty"`
-}
-
 type scalingRule struct {
 	MetricType         string `json:"metric_type"`
 	BreachDurationSecs int    `json:"breach_duration_secs,omitempty"`
+	StatsWindowSecs    int    `json:"stats_window_secs,omitempty"`
 	Threshold          int64  `json:"threshold"`
 	Operator           string `json:"operator"`
 	CoolDownSecs       int    `json:"cool_down_secs,omitempty"`
