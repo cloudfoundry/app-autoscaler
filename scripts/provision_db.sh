@@ -4,47 +4,20 @@ set -euo pipefail
 
 echo "Running $0"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-source "${SCRIPT_DIR}/vars.source.sh"
-source "${SCRIPT_DIR}/common.sh"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# shellcheck source=scripts/vars.source.sh
+source "${script_dir}/vars.source.sh"
+# shellcheck source=scripts/common.sh
+source "${script_dir}/common.sh"
 
-# Required environment variables
 BOSH_DEPLOYMENT="${BOSH_DEPLOYMENT:-postgres}"
 POSTGRES_INSTANCE="${POSTGRES_INSTANCE:-postgres/0}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-autoscaler}"
 DB_USER="${DB_USER:-vcap}"
 APP_DB_USER="${APP_DB_USER:-pgadmin}"
 
-usage() {
-  echo "Usage: $0" >&2
-  echo "" >&2
-  echo "Environment variables:" >&2
-  echo "  BOSH_DEPLOYMENT   - BOSH deployment name (default: postgres)" >&2
-  echo "  POSTGRES_INSTANCE - Postgres instance to connect to (default: postgres/0)" >&2
-  echo "  DEPLOYMENT_NAME   - Name of the database to create (default: autoscaler)" >&2
-  echo "  DB_USER           - Database user (default: vcap)" >&2
-  echo "  APP_DB_USER       - Application database user to grant permissions (default: pgadmin)" >&2
-  echo "  BBL_STATE_PATH    - Path to BBL state (optional, for bosh login)" >&2
-  echo "" >&2
-  exit 1
-}
-
-# Check required variables
-if [ -z "${DEPLOYMENT_NAME}" ]; then
-  echo "Error: DEPLOYMENT_NAME environment variable is required" >&2
-  usage
-fi
-
-# Login to BOSH if BBL_STATE_PATH is set
 if [ -n "${BBL_STATE_PATH:-}" ]; then
-  if [[ ! -d "${BBL_STATE_PATH}" ]]; then
-    echo "⛔ FAILED: Did not find bbl-state folder at ${BBL_STATE_PATH}" >&2
-    echo 'Make sure you have checked out the app-autoscaler-env-bbl-state repository next to the app-autoscaler-release repository to run this target or indicate its location via BBL_STATE_PATH' >&2
-    exit 1
-  fi
-  echo "# bosh login"
-  script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-  eval "$("${script_dir}/bbl-print-env.sh" "${BBL_STATE_PATH}")"
+  bbl_login
 fi
 
 echo "Provisioning database '${DEPLOYMENT_NAME}' on Postgres instance ${POSTGRES_INSTANCE} in deployment ${BOSH_DEPLOYMENT}"
