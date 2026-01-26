@@ -8,8 +8,6 @@ on:
       - "**/go.mod"
       - "**/go.sum"
       - "devbox.json"
-      # No longer needed - using Go-based uaa-cli instead of Ruby uaac
-      # - "nix/packages/uaac/Gemfile*"
   workflow_dispatch: {}
 jobs:
   dependency-updates-post-processing:

@@ -526,11 +526,6 @@ deploy-cleanup:
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh
 
-# No longer needed - using Go-based uaa-cli instead of Ruby uaac
-# .PHONY: update-uaac-nix-package
-# update-uaac-nix-package:
-# 	make --directory='./nix/packages/uaac' gemset.nix
-
 .PHONY: lint-markdown
 lint-markdown:
 	@echo " - linting markdown files"
