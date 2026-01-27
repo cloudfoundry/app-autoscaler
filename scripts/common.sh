@@ -48,10 +48,11 @@ function cf_login(){
 }
 
 function uaa_login(){
-  step "login to uaa"
-  uaa_client_secret="$(credhub get --quiet --name='/bosh-autoscaler/cf/uaa_admin_client_secret')"
-	uaac target "https://uaa.${system_domain}" --skip-ssl-validation
-	uaac token client get admin -s "${uaa_client_secret}"
+	step "login to uaa"
+	local uaa_client_secret
+	uaa_client_secret="$(credhub get --quiet --name='/bosh-autoscaler/cf/uaa_admin_client_secret')"
+	uaa target "https://uaa.${system_domain}" --skip-ssl-validation
+	uaa get-client-credentials-token admin -s "${uaa_client_secret}"
 }
 
 function cleanup_acceptance_run(){

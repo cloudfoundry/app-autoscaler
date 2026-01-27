@@ -163,5 +163,6 @@
       flakeIgnore = [ "E265" "E501" ];
     } programSourceCode;
 
-  uaac = callPackage ./packages/uaac {};
+  # Replaced Ruby uaac with Go uaa-cli to resolve Rack vulnerabilities
+  uaa-cli = callPackage ./packages/uaa-cli-go {};
 }
