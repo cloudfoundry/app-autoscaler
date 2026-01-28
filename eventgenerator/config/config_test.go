@@ -1002,7 +1002,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 			Context("when it gives a non integer trigger_array_channel_size", func() {
@@ -1041,7 +1041,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
