@@ -53,7 +53,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@439137e1b50c27ba9e2f9befc93e43091b449c34 # v3
+      uses: github/codeql-action/init@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -65,4 +65,4 @@ jobs:
       run: make generate-openapi-generated-clients-and-servers scheduler.build
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@439137e1b50c27ba9e2f9befc93e43091b449c34 # v3
+      uses: github/codeql-action/analyze@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4
