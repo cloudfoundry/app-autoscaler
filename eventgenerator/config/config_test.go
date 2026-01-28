@@ -816,7 +816,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -856,7 +856,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -889,7 +889,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -923,7 +923,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 			Context("when it gives a non integer evaluation_manager_execute_interval", func() {
@@ -1081,7 +1081,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 			Context("when it gives a non integer defaultBreachDurationSecs", func() {
@@ -1120,7 +1120,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -1163,7 +1163,7 @@ health:
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
