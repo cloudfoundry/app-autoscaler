@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"
 
-	api "code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/custommetrics"
+	api "code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/custommetrics"
 	"github.com/cloudfoundry-community/go-cfenv"
 	json "github.com/json-iterator/go"
 	"github.com/mitchellh/mapstructure"

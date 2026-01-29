@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/steinfletcher/apitest"

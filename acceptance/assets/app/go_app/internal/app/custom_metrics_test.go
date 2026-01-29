@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app/appfakes"
-	api "code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/custommetrics"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app/appfakes"
+	api "code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/custommetrics"
 	"github.com/cloudfoundry-community/go-cfenv"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

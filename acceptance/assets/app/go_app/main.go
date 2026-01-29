@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app"
 )
 
 func main() {
