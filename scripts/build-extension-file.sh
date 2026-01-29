@@ -107,6 +107,12 @@ export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
 
+export AUTOSCALER_TEST_USER="${AUTOSCALER_TEST_USER:-admin}"
+export AUTOSCALER_TEST_PASSWORD="${AUTOSCALER_TEST_PASSWORD:-${CF_ADMIN_PASSWORD}}"
+export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-false}"
+export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-}"
+export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-false}"
+
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
 export DATABASE_DB_USERNAME="$(yq ".database_username" /tmp/mtar-secrets.yml)"
@@ -193,11 +199,14 @@ modules:
       ACCEPTANCE_CONFIG_JSON: |
         {
           "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
+          "admin_user": "${AUTOSCALER_TEST_USER}",
+          "admin_password": "${AUTOSCALER_TEST_PASSWORD}",
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
           "use_http": false,
+          "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
+          "existing_organization": "${EXISTING_ORGANIZATION}",
+          "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},
           "service_name": "${DEPLOYMENT_NAME}",
           "service_plan": "autoscaler-free-plan",
           "service_broker": "${DEPLOYMENT_NAME}",
