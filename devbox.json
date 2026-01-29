@@ -10,7 +10,7 @@
     "bosh-cli":                         "7.3.1",
     "cloudfoundry-cli":                 "8.14.1",
     "coreutils":                        "latest",
-    "credhub-cli":                      "2.9.52",
+    "credhub-cli":                      "2.9.53",
     "delve":                            "1.24.2",
     "direnv":                           "2.36.0",
     "fly":                              "7.13.2",
