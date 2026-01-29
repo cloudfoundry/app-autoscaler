@@ -125,54 +125,6 @@
         }
       }
     },
-    "bundix@2.5.2": {
-      "last_modified": "2025-10-07T08:41:47Z",
-      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#bundix",
-      "source": "devbox-search",
-      "version": "2.5.2",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/5dga712jjp3zgv314mgnm41bqa4wm12r-bundix-2.5.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/5dga712jjp3zgv314mgnm41bqa4wm12r-bundix-2.5.2"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/6k53w0wypap3fxb7n1bd14z1pbnv93c1-bundix-2.5.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/6k53w0wypap3fxb7n1bd14z1pbnv93c1-bundix-2.5.2"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/4k3c58b6h6vkrig6dz6ka4k4pkv66jah-bundix-2.5.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/4k3c58b6h6vkrig6dz6ka4k4pkv66jah-bundix-2.5.2"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/dmqv33nqypssqpy05n34vbw22445km1y-bundix-2.5.2",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/dmqv33nqypssqpy05n34vbw22445km1y-bundix-2.5.2"
-        }
-      }
-    },
     "cloudfoundry-cli@8.14.1": {
       "last_modified": "2025-09-18T16:33:27Z",
       "resolved": "github:NixOS/nixpkgs/f4b140d5b253f5e2a1ff4e5506edbf8267724bde#cloudfoundry-cli",
@@ -293,51 +245,51 @@
         }
       }
     },
-    "credhub-cli@2.9.52": {
-      "last_modified": "2025-12-31T03:27:36Z",
-      "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#credhub-cli",
+    "credhub-cli@2.9.53": {
+      "last_modified": "2026-01-23T17:20:52Z",
+      "resolved": "github:NixOS/nixpkgs/a1bab9e494f5f4939442a57a58d0449a109593fe#credhub-cli",
       "source": "devbox-search",
-      "version": "2.9.52",
+      "version": "2.9.53",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/7l07i0avqnf9mdpn5h252vxc95r0iflx-credhub-cli-2.9.52",
+              "path": "/nix/store/nnw53fbvjljn1czzadyghn5j3zj0fqij-credhub-cli-2.9.53",
               "default": true
             }
           ],
-          "store_path": "/nix/store/7l07i0avqnf9mdpn5h252vxc95r0iflx-credhub-cli-2.9.52"
+          "store_path": "/nix/store/nnw53fbvjljn1czzadyghn5j3zj0fqij-credhub-cli-2.9.53"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qz5y3lc5xb8q3iivzyndvh88ngjvqbb6-credhub-cli-2.9.52",
+              "path": "/nix/store/axiwqzsy5p22ds7d2h64c6bi12r3jzkd-credhub-cli-2.9.53",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qz5y3lc5xb8q3iivzyndvh88ngjvqbb6-credhub-cli-2.9.52"
+          "store_path": "/nix/store/axiwqzsy5p22ds7d2h64c6bi12r3jzkd-credhub-cli-2.9.53"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vny3kr8dcwl21bv1wd1nk3b3rhfp4i4l-credhub-cli-2.9.52",
+              "path": "/nix/store/azb01vj31mllhgy7kk3k3r3l4wljf7z6-credhub-cli-2.9.53",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vny3kr8dcwl21bv1wd1nk3b3rhfp4i4l-credhub-cli-2.9.52"
+          "store_path": "/nix/store/azb01vj31mllhgy7kk3k3r3l4wljf7z6-credhub-cli-2.9.53"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/90wjv3r5gad71qf97j6zwhcydbyhs6ps-credhub-cli-2.9.52",
+              "path": "/nix/store/6i8vcbbv243rsxd5vjf9699xb4afg20h-credhub-cli-2.9.53",
               "default": true
             }
           ],
-          "store_path": "/nix/store/90wjv3r5gad71qf97j6zwhcydbyhs6ps-credhub-cli-2.9.52"
+          "store_path": "/nix/store/6i8vcbbv243rsxd5vjf9699xb4afg20h-credhub-cli-2.9.53"
         }
       }
     },
@@ -1865,71 +1817,6 @@
             }
           ],
           "store_path": "/nix/store/13gbxm9yy9vnzdal1czjjka9qmqj3y3d-ripgrep-14.1.1"
-        }
-      }
-    },
-    "ruby@3.4.8": {
-      "last_modified": "2025-12-31T03:27:36Z",
-      "plugin_version": "0.0.2",
-      "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#ruby_3_4",
-      "source": "devbox-search",
-      "version": "3.4.8",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/wsrnc2byfbi6b7f7igfbpx0l2jbyvdy1-ruby-3.4.8",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/a5ds44bp505kvymhb3kqxlb3cpvmwp2w-ruby-3.4.8-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/wsrnc2byfbi6b7f7igfbpx0l2jbyvdy1-ruby-3.4.8"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/azxi2hf2y7yi0pizsanrw2cmh9drhhi3-ruby-3.4.8",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/3l7fhhpshf5hdjnrbpap3y6q0zk98nc8-ruby-3.4.8-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/azxi2hf2y7yi0pizsanrw2cmh9drhhi3-ruby-3.4.8"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/gyksddsdp5zclz5axhaivl75caqs7m37-ruby-3.4.8",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/mc8iqwws2y02cfz9ic5vk577vm2znh30-ruby-3.4.8-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/gyksddsdp5zclz5axhaivl75caqs7m37-ruby-3.4.8"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/1861cbsysxfwvg5lbdp61al76dqlw9ih-ruby-3.4.8",
-              "default": true
-            },
-            {
-              "name": "devdoc",
-              "path": "/nix/store/7h1x2pcpc05h8a0z6qfcyc0pg4da2kqy-ruby-3.4.8-devdoc"
-            }
-          ],
-          "store_path": "/nix/store/1861cbsysxfwvg5lbdp61al76dqlw9ih-ruby-3.4.8"
         }
       }
     },
