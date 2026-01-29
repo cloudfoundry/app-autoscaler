@@ -112,6 +112,10 @@ export AUTOSCALER_TEST_PASSWORD="${AUTOSCALER_TEST_PASSWORD:-${CF_ADMIN_PASSWORD
 export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-false}"
 export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-}"
 export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-false}"
+export USE_EXISTING_USER="${USE_EXISTING_USER:-false}"
+export EXISTING_USER="${EXISTING_USER:-}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-}"
+export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-false}"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -204,6 +208,10 @@ modules:
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
           "use_http": false,
+          "use_existing_user": ${USE_EXISTING_USER},
+          "existing_user": "${EXISTING_USER}",
+          "existing_user_password": "${EXISTING_USER_PASSWORD}",
+          "keep_user_at_suite_end": ${KEEP_USER_AT_SUITE_END},
           "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
           "existing_organization": "${EXISTING_ORGANIZATION}",
           "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},

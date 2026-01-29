@@ -74,6 +74,10 @@ jobs:
             echo "AUTOSCALER_TEST_USER=${AUTOSCALER_TEST_USER}"
             echo "AUTOSCALER_TEST_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
             echo "SKIP_SERVICE_ACCESS_MANAGEMENT=true"
+            echo "USE_EXISTING_USER=true"
+            echo "EXISTING_USER=${AUTOSCALER_TEST_USER}"
+            echo "EXISTING_USER_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
+            echo "KEEP_USER_AT_SUITE_END=true"
           } >> $GITHUB_ENV
 
       - name: Provision DB
