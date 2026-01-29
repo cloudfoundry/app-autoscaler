@@ -56,8 +56,8 @@ connection_max_idletime: 60s
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.LoadErrors{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
 			})
 		})
 
@@ -67,8 +67,8 @@ connection_max_idletime: 60s
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.LoadErrors{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
 			})
 		})
 
@@ -78,8 +78,8 @@ connection_max_idletime: 60s
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.LoadErrors{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 			})
 		})
 
@@ -89,8 +89,8 @@ connection_max_idletime: 60s
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.LoadErrors{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 			})
 		})
 	})

@@ -415,7 +415,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -455,7 +455,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
 				})
 			})
 
@@ -495,7 +495,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
 				})
 			})
 
@@ -535,7 +535,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -575,7 +575,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
 				})
 			})
 
@@ -615,7 +615,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int32")))
 				})
 			})
 
@@ -655,7 +655,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -695,7 +695,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -735,7 +735,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -776,7 +776,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -816,7 +816,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -856,7 +856,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -889,7 +889,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -923,7 +923,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 			Context("when it gives a non integer evaluation_manager_execute_interval", func() {
@@ -962,7 +962,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into time.Duration")))
 				})
 			})
 
@@ -1002,7 +1002,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 			Context("when it gives a non integer trigger_array_channel_size", func() {
@@ -1041,7 +1041,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -1081,7 +1081,7 @@ defaultBreachDurationSecs: 600
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 			Context("when it gives a non integer defaultBreachDurationSecs", func() {
@@ -1120,7 +1120,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
@@ -1163,7 +1163,7 @@ health:
 
 				It("should error", func() {
 					Expect(errors.Is(err, ErrReadYaml)).To(BeTrue())
-					Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
+					Expect(err).To(MatchError(MatchRegexp("cannot construct .* into int")))
 				})
 			})
 
