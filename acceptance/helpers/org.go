@@ -15,6 +15,12 @@ import (
 )
 
 func GetTestOrgs(cfg *config.Config) []string {
+	// When using existing organization, only return that org
+	if cfg.UseExistingOrganization {
+		ginkgo.GinkgoWriter.Printf("\nUsing existing org: %s\n", cfg.ExistingOrganization)
+		return []string{cfg.ExistingOrganization}
+	}
+
 	rawOrgs := getRawOrgs(cfg.DefaultTimeoutDuration())
 
 	var orgNames []string
