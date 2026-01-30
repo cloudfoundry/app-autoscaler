@@ -71,7 +71,9 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 			"minutes", minutes,
 			"bytes", numBytes)
 		go func() {
+			logMemoryUsage(logger, "before memory test")
 			memoryTest.UseMemory(numBytes)
+			logMemoryUsage(logger, "after allocating memory")
 			memoryTest.Sleep(duration)
 			memoryTest.StopTest()
 		}()
@@ -83,40 +85,14 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 		}
 	})
 
-	mux.HandleFunc("GET /memory/stop", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /memory/close", func(w http.ResponseWriter, r *http.Request) {
 		if !memoryTest.IsRunning() {
 			Errorf(logger, w, http.StatusConflict, "memory test is not running")
 			return
 		}
 		memoryTest.StopTest()
+		logMemoryUsage(logger, "after freeing memory")
 		if err := writeJSON(w, http.StatusOK, JSONResponse{"status": "close memory test"}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
-	})
-
-	mux.HandleFunc("GET /memory/usage", func(w http.ResponseWriter, r *http.Request) {
-		pid := os.Getpid()
-		proc, err := procfs.NewProc(pid)
-		if err != nil {
-			Errorf(logger, w, http.StatusInternalServerError, "failed to get process info: %s", err.Error())
-			return
-		}
-		stat, err := proc.Stat()
-		if err != nil {
-			Errorf(logger, w, http.StatusInternalServerError, "failed to get process stats: %s", err.Error())
-			return
-		}
-		var m runtime.MemStats
-		runtime.ReadMemStats(&m)
-
-		if err := writeJSON(w, http.StatusOK, JSONResponse{
-			"rss":         stat.RSS * 4096,
-			"vms":         stat.VSize,
-			"alloc":       m.Alloc,
-			"total_alloc": m.TotalAlloc,
-			"sys":         m.Sys,
-			"num_gc":      m.NumGC,
-		}); err != nil {
 			logger.Error("Failed to write JSON response", slog.Any("error", err))
 		}
 	})
@@ -163,4 +139,34 @@ func (m *ListBasedMemoryGobbler) StopTest() {
 	m.isRunning = false
 	m.used.Init()
 	runtime.GC()
+}
+
+func logMemoryUsage(logger *slog.Logger, action string) {
+	logAction := slog.String("action", action)
+	memoryUsage, err := getTotalMemoryUsage()
+	if err == nil {
+		logger.Info("memory usage", "usage", memoryUsage/Mebi, logAction)
+	} else {
+		logger.Error("could not determine memory usage", slog.Any("error", err), logAction)
+	}
+}
+func getTotalMemoryUsage() (uint64, error) {
+	fs, err := procfs.NewFS("/proc")
+	if err != nil {
+		return 0, err
+	}
+
+	proc, err := fs.Proc(os.Getpid())
+	if err != nil {
+		return 0, err
+	}
+
+	stat, err := proc.NewStatus()
+	if err != nil {
+		return 0, err
+	}
+
+	result := stat.VmRSS + stat.VmSwap
+
+	return result, nil
 }
