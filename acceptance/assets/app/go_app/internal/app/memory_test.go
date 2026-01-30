@@ -69,6 +69,36 @@ var _ = Describe("Memory tests", func() {
 			Expect(fakeMemoryTest.SleepArgsForCall(0)).To(Equal(4 * time.Minute))
 			Eventually(func() int { return fakeMemoryTest.StopTestCallCount() }).Should(Equal(1))
 		})
+		When("the memory test is running", func() {
+			BeforeEach(func() {
+				fakeMemoryTest.IsRunningReturns(true)
+			})
+			It("should close memory test", func() {
+				fakeMemoryTest.IsRunningReturns(true)
+
+				apiTest(fakeMemoryTest).
+					Get("/memory/close").
+					Expect(GinkgoT()).
+					Status(http.StatusOK).
+					Body(`{"status":"close memory test"}`).
+					End()
+
+				Expect(fakeMemoryTest.StopTestCallCount()).To(Equal(1))
+			})
+		})
+		When("the memory test is not running", func() {
+			BeforeEach(func() {
+				fakeMemoryTest.IsRunningReturns(false)
+			})
+			It("should error when closing memory test", func() {
+				apiTest(fakeMemoryTest).
+					Get("/memory/close").
+					Expect(GinkgoT()).
+					Status(http.StatusConflict).
+					Body(`{"error":{"description":"memory test is not running"}}`).
+					End()
+			})
+		})
 	})
 	Context("memTest info tests", func() {
 		It("should gobble memory and release when stopped", func() {
