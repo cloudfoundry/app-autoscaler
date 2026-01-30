@@ -215,7 +215,7 @@ func CurlAppInstance(cfg *config.Config, appName string, appInstance int, url st
 	appGuid, err := GetAppGuid(cfg, appName)
 	Expect(err).NotTo(HaveOccurred())
 	output := cfh.CurlAppWithTimeout(cfg, appName, url, 20*time.Second, "-H", fmt.Sprintf(`X-Cf-App-Instance: %s:%d`, appGuid, appInstance),
-		"-f",
+		"--fail",
 		"--connect-timeout", "5",
 		"--max-time", "10",
 		"--retry", "5",

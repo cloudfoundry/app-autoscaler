@@ -30,21 +30,34 @@ var _ = Describe("Ginkgo/Server", func() {
 			return apitest.New().Handler(app.Router(logger, nil, nil, nil, nil, nil))
 		}
 
-		It("Root should respond correctly", func() {
-			apiTest().
-				Get("/").
-				Expect(t).
-				Status(http.StatusOK).
-				Body(`{"name":"test-app"}`).
-				End()
+		When("getting root path", func() {
+			It("should respond correctly", func() {
+				apiTest().
+					Get("/").
+					Expect(t).
+					Status(http.StatusOK).
+					Body(`{"name":"test-app"}`).
+					End()
+			})
 		})
-		It("health", func() {
-			apiTest().
-				Get("/health").
-				Expect(t).
-				Status(http.StatusOK).
-				Body(`{"status":"ok"}`).
-				End()
+		When("getting unknown path", func() {
+			It("should respond with 404", func() {
+				apiTest().
+					Get("/unknown").
+					Expect(t).
+					Status(http.StatusNotFound).
+					End()
+			})
+		})
+		When("getting health path", func() {
+			It("should respond with a healthy status", func() {
+				apiTest().
+					Get("/health").
+					Expect(t).
+					Status(http.StatusOK).
+					Body(`{"status":"ok"}`).
+					End()
+			})
 		})
 	})
 
