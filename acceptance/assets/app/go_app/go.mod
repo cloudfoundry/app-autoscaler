@@ -14,10 +14,9 @@ require (
 	github.com/onsi/gomega v1.37.0
 	github.com/prometheus/procfs v0.16.1
 	github.com/steinfletcher/apitest v1.6.0
-	go.opentelemetry.io/otel v1.38.0
-	go.opentelemetry.io/otel/metric v1.38.0
-	go.opentelemetry.io/otel/sdk v1.38.0
-	go.opentelemetry.io/otel/trace v1.38.0
+	go.opentelemetry.io/otel v1.32.0
+	go.opentelemetry.io/otel/metric v1.32.0
+	go.opentelemetry.io/otel/trace v1.32.0
 )
 
 require (
@@ -36,8 +35,8 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
