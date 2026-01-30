@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app/appfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/steinfletcher/apitest"
 )
 
 var _ = Describe("CPU tests", func() {
@@ -16,8 +17,15 @@ var _ = Describe("CPU tests", func() {
 	Context("CPU handler", func() {
 		fakeCPUWaster := &appfakes.FakeCPUWaster{}
 
+		apiTest := func(cpuWaster app.CPUWaster) *apitest.APITest {
+			GinkgoHelper()
+			logger := testLogger()
+
+			return apitest.New().Handler(app.Router(logger, nil, nil, cpuWaster, nil, nil))
+		}
+
 		It("should err if utilization not an int64", func() {
-			apiTest(nil, nil, fakeCPUWaster, nil).
+			apiTest(fakeCPUWaster).
 				Get("/cpu/invalid/4").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
@@ -25,7 +33,7 @@ var _ = Describe("CPU tests", func() {
 				End()
 		})
 		It("should err if cpu out of bounds", func() {
-			apiTest(nil, nil, fakeCPUWaster, nil).
+			apiTest(fakeCPUWaster).
 				Get("/cpu/100001010101010249032897287298719874687936483275648273632429479827398798271/4").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
@@ -33,7 +41,7 @@ var _ = Describe("CPU tests", func() {
 				End()
 		})
 		It("should err if cpu not an int", func() {
-			apiTest(nil, nil, fakeCPUWaster, nil).
+			apiTest(fakeCPUWaster).
 				Get("/cpu/5/invalid").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
@@ -41,7 +49,7 @@ var _ = Describe("CPU tests", func() {
 				End()
 		})
 		It("should return ok and sleep correctDuration", func() {
-			apiTest(nil, nil, fakeCPUWaster, nil).
+			apiTest(fakeCPUWaster).
 				Get("/cpu/5/4").
 				Expect(GinkgoT()).
 				Status(http.StatusOK).

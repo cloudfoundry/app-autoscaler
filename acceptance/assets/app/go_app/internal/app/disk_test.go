@@ -11,7 +11,6 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
 	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app/appfakes"
-	"github.com/fgrosse/zaptest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/steinfletcher/apitest"
@@ -23,7 +22,7 @@ var _ = Describe("Disk handler", func() {
 
 	apiTest := func(diskOccupier app.DiskOccupier) *apitest.APITest {
 		GinkgoHelper()
-		logger := zaptest.LoggerWriter(GinkgoWriter)
+		logger := testLogger()
 
 		return apitest.New().Handler(app.Router(logger, nil, nil, nil, diskOccupier, nil))
 	}
