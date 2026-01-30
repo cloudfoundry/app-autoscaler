@@ -389,51 +389,51 @@
         }
       }
     },
-    "fly@7.13.2": {
-      "last_modified": "2025-07-28T17:09:23Z",
-      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b#fly",
+    "fly@7.14.3": {
+      "last_modified": "2026-01-23T17:20:52Z",
+      "resolved": "github:NixOS/nixpkgs/a1bab9e494f5f4939442a57a58d0449a109593fe#fly",
       "source": "devbox-search",
-      "version": "7.13.2",
+      "version": "7.14.3",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ln3s38j49pr4aaz25r92gr1d50nx5w8z-fly-7.13.2",
+              "path": "/nix/store/bq0r894550zj2sxyqslbq6hklws3v168-fly-7.14.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ln3s38j49pr4aaz25r92gr1d50nx5w8z-fly-7.13.2"
+          "store_path": "/nix/store/bq0r894550zj2sxyqslbq6hklws3v168-fly-7.14.3"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5j85q5yyvx5jlzridw3aj4dpryii7f1j-fly-7.13.2",
+              "path": "/nix/store/0kxjkzhnn47rzxpxgqr8837hgy5l4zjs-fly-7.14.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5j85q5yyvx5jlzridw3aj4dpryii7f1j-fly-7.13.2"
+          "store_path": "/nix/store/0kxjkzhnn47rzxpxgqr8837hgy5l4zjs-fly-7.14.3"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/29885dx71xn2wxk7cbfzhhmk6k1pdvxl-fly-7.13.2",
+              "path": "/nix/store/iwr1hg54qwp553hz9r7m6ibvg9p3h25s-fly-7.14.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/29885dx71xn2wxk7cbfzhhmk6k1pdvxl-fly-7.13.2"
+          "store_path": "/nix/store/iwr1hg54qwp553hz9r7m6ibvg9p3h25s-fly-7.14.3"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/7i3h9rznhkw2yzgbqphw56lbrqhbab42-fly-7.13.2",
+              "path": "/nix/store/r2fm4qn9i9ry9mjm5p7d090mk7f7h093-fly-7.14.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/7i3h9rznhkw2yzgbqphw56lbrqhbab42-fly-7.13.2"
+          "store_path": "/nix/store/r2fm4qn9i9ry9mjm5p7d090mk7f7h093-fly-7.14.3"
         }
       }
     },
