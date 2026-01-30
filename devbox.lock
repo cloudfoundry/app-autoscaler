@@ -437,51 +437,51 @@
         }
       }
     },
-    "gh@2.73.0": {
-      "last_modified": "2025-05-19T23:16:24Z",
-      "resolved": "github:NixOS/nixpkgs/359c442b7d1f6229c1dc978116d32d6c07fe8440#gh",
+    "gh@2.86.0": {
+      "last_modified": "2026-01-23T17:20:52Z",
+      "resolved": "github:NixOS/nixpkgs/a1bab9e494f5f4939442a57a58d0449a109593fe#gh",
       "source": "devbox-search",
-      "version": "2.73.0",
+      "version": "2.86.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/inxkf35rrzg4lpn2npgd948nhmhxmm8j-gh-2.73.0",
+              "path": "/nix/store/y207r5sjcd81gfnsxxssgiiiwl6mcg6f-gh-2.86.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/inxkf35rrzg4lpn2npgd948nhmhxmm8j-gh-2.73.0"
+          "store_path": "/nix/store/y207r5sjcd81gfnsxxssgiiiwl6mcg6f-gh-2.86.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2cz3xa8ird2alc3r3ls0y2gdh3r04ssm-gh-2.73.0",
+              "path": "/nix/store/zx4plaf0z1yv06wdhxxhpbm7kmslm2r8-gh-2.86.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2cz3xa8ird2alc3r3ls0y2gdh3r04ssm-gh-2.73.0"
+          "store_path": "/nix/store/zx4plaf0z1yv06wdhxxhpbm7kmslm2r8-gh-2.86.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2z3hpmxp4z8qwcqh0fn68603wizqzr19-gh-2.73.0",
+              "path": "/nix/store/vhpac8ld4xkaa13bsrbwnyrmlcxsg57q-gh-2.86.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2z3hpmxp4z8qwcqh0fn68603wizqzr19-gh-2.73.0"
+          "store_path": "/nix/store/vhpac8ld4xkaa13bsrbwnyrmlcxsg57q-gh-2.86.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ldj4l6hdw3qyz93k3lrk22gw30hmj3ki-gh-2.73.0",
+              "path": "/nix/store/xf3rb2kmk19092b1pf50ag0fsj2f6hpa-gh-2.86.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ldj4l6hdw3qyz93k3lrk22gw30hmj3ki-gh-2.73.0"
+          "store_path": "/nix/store/xf3rb2kmk19092b1pf50ag0fsj2f6hpa-gh-2.86.0"
         }
       }
     },
