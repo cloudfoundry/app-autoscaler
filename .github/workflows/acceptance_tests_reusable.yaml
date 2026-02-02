@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" deploy-register-cf
 
-      - name: Enable service access as OrgManager
+      - name: Enable service access (admin)
         shell: bash
         run: |
           cd "${AUTOSCALER_DIR}"
@@ -104,8 +104,9 @@ jobs:
 
           bbl_login
           cf_login
+          cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
-          ./scripts/enable-service-access.sh "${DEPLOYMENT_NAME}" "${AUTOSCALER_TEST_USER}" "${AUTOSCALER_TEST_PASSWORD}"
+          ./scripts/enable-service-access.sh "${DEPLOYMENT_NAME}"
 
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}
