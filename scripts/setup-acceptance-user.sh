@@ -79,12 +79,22 @@ else
 fi
 echo ""
 
-# Enable service access globally so it's visible in all spaces
-echo "Enabling global service access for '${SERVICE_NAME}'..."
-if cf enable-service-access "${SERVICE_NAME}"; then
-  echo "✓ Service access enabled globally"
+# Switch to OrgManager user to test permissions
+echo "Authenticating as OrgManager user '${USERNAME}'..."
+if cf auth "${USERNAME}" "${PASSWORD}" &> /dev/null; then
+  echo "✓ Authenticated as '${USERNAME}'"
 else
-  echo "ERROR: Failed to enable service access"
+  echo "ERROR: Failed to authenticate as OrgManager user"
+  exit 1
+fi
+
+# Try to enable service access globally as OrgManager
+echo "Testing OrgManager permissions: enabling global service access for '${SERVICE_NAME}'..."
+if cf enable-service-access "${SERVICE_NAME}"; then
+  echo "✓ Service access enabled globally by OrgManager"
+else
+  echo "ERROR: OrgManager cannot enable service access globally"
+  echo "This approach requires a user with admin privileges"
   exit 1
 fi
 echo ""
