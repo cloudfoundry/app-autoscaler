@@ -19,7 +19,7 @@ func TestConfigSuite(t *testing.T) {
 var _ = Describe("LoadConfig", func() {
 	When("CONFIG env var not set", func() {
 		It("terminates suite", func() {
-			loadConfigExpectSuiteTerminationWith("Must set $CONFIG to point to a json file")
+			loadConfigExpectSuiteTerminationWith("Must set $CONFIG to point to a json file or $ACCEPTANCE_CONFIG_JSON with JSON content")
 		})
 	})
 

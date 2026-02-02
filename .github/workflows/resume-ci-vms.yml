@@ -15,7 +15,7 @@ jobs:
           credentials_json: '${{ secrets.GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY }}'
 
       - name: set up gcloud
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
       - name: resume VMs
         run: |
@@ -27,7 +27,7 @@ jobs:
           done
 
       - name: checkout app-autoscaler
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: print files DEBUG
         run: |
@@ -44,7 +44,7 @@ jobs:
           printenv >> "$GITHUB_ENV"
 
       - name: checkout app-autoscaler-env-bbl-state
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           repository: cloudfoundry/app-autoscaler-env-bbl-state
           ssh-key: ${{ secrets.BBL_SSH_KEY }}

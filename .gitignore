@@ -30,3 +30,4 @@ scalingengine/apis/scalinghistory/oas*gen.go
 # api/cmd/api/api
 # scalingengine/cmd/scalingengine/scalingengine
 # Makefile_*
+#
