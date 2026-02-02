@@ -134,7 +134,9 @@ The autoscaler is a **distributed microservices architecture** with 7 components
 - `/cf`: Cloud Foundry client wrapper
 
 ### Database Architecture
+
 Each service uses its own logical PostgreSQL database:
+
 - `policy_db`: Scaling policies and credentials
 - `binding_db`: Service bindings and instances
 - `appmetrics_db`: Metrics time-series data
@@ -143,29 +145,32 @@ Each service uses its own logical PostgreSQL database:
 - `lock_db`: Distributed locks
 
 ### Testing Patterns
-- **Unit tests**: Use Ginkgo/Gomega, run with `make test`
-- **Fakes**: Generated via Counterfeiter with `make generate-fakes`
-- **Integration tests**: Require running PostgreSQL (auto-started)
-- **Test certs**: Generated automatically via `make test-certs`
-- Always regenerate fakes after interface changes
+
+- **Unit tests**: Ginkgo/Gomega framework (run with `make test`)
+- **Fakes**: Generated via Counterfeiter (`make generate-fakes`)
+- **Integration tests**: Require PostgreSQL (auto-started by tests)
+- **Test certificates**: Auto-generated via `make test-certs`
+- **Important**: Regenerate fakes after any interface changes
 
 ### Configuration Management
-- Services use YAML configuration files
-- Environment variables: See `scripts/vars.source.sh` for standard vars
-- Key variables:
-  - `DEPLOYMENT_NAME`: Deployment identifier (default: `autoscaler-mta-${PR_NUMBER}`)
-  - `SYSTEM_DOMAIN`: CF system domain
-  - `DBURL`: Database connection string
-  - `BBL_STATE_PATH`: BBL state directory (optional, falls back to error message if missing)
+
+Services use YAML configuration files and environment variables.
+
+**Key environment variables** (see `scripts/vars.source.sh`):
+- `DEPLOYMENT_NAME`: Deployment identifier (default: `autoscaler-mta-${PR_NUMBER}`)
+- `SYSTEM_DOMAIN`: CF system domain
+- `DBURL`: Database connection string
+- `BBL_STATE_PATH`: BBL state directory (optional, falls back to error message if missing)
 
 ### Scripts
-Critical scripts in `/scripts`:
-- `vars.source.sh`: Sets standard environment variables (source in other scripts)
+
+**Critical scripts** in `/scripts`:
+- `vars.source.sh`: Standard environment variables (source in other scripts)
 - `mta-build.sh`: Builds MTA archive
 - `mta-deploy.sh`: Deploys to Cloud Foundry
 - `run-mta-acceptance-tests.sh`: Runs acceptance tests in parallel via CF tasks
 
-**Important**: `scripts/vars.source.sh` uses ERR trap for error handling. When writing scripts that source it, be aware that commands that fail will trigger error reporting.
+**Note**: `vars.source.sh` uses ERR trap for error handling. Commands that fail will trigger error reporting.
 
 ## API Specifications
 
@@ -198,56 +203,48 @@ Located in `/acceptance`:
 
 ### PR Comment Resolution Workflow
 
-When implementing a fix for a PR review comment:
+Standard process for addressing PR review comments:
 
-1. **Implement the fix** and create a commit addressing the comment
-2. **Add a PR comment** replying to the original comment with the commit hash:
-   ```
-   fixed in <commit_hash>
-   ```
-   Example: `fixed in 8384249f`
-3. **Resolve the comment thread** on GitHub
+1. Implement the fix and create a commit
+2. Reply to the comment with: `fixed in <commit_hash>` (example: `fixed in 8384249f`)
+3. Resolve the comment thread on GitHub
 
-#### Implementation with GitHub CLI
+**Using GitHub CLI**:
 
 ```bash
-# After committing the fix, get the short commit hash
+# Capture the commit hash
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
-# Get the thread ID for the comment you're addressing
-# (Use /unresolved-comments skill or query via GraphQL)
-THREAD_ID="PRRT_kwDOA0tdb85qnILg"  # Example thread ID
+# Get thread ID using /unresolved-comments skill
+THREAD_ID="PRRT_kwDOA0tdb85qnILg"
 
-# Add reply to the review comment thread using GraphQL
+# Reply to the comment
 gh api graphql -f query='
 mutation {
   addPullRequestReviewThreadReply(input: {
     pullRequestReviewThreadId: "'"${THREAD_ID}"'"
     body: "fixed in '"${COMMIT_HASH}"'"
   }) {
-    comment {
-      id
-    }
+    comment { id }
   }
 }'
 
-# Resolve the review thread using GraphQL
+# Resolve the thread
 gh api graphql -f query='
 mutation {
   resolveReviewThread(input: {threadId: "'"${THREAD_ID}"'"}) {
-    thread {
-      isResolved
-    }
+    thread { isResolved }
   }
 }'
 ```
 
-**Finding Thread IDs**: Use the `/unresolved-comments` skill or query via GraphQL:
+**Finding thread IDs**: Use `/unresolved-comments` skill or query manually:
+
 ```bash
 gh api graphql -f query='
 query {
   repository(owner: "cloudfoundry", name: "app-autoscaler") {
-    pullRequest(number: 879) {
+    pullRequest(number: PR_NUMBER) {
       reviewThreads(first: 100) {
         nodes {
           id
