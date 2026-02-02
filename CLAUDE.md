@@ -129,6 +129,7 @@ The autoscaler is a **distributed microservices architecture** with 7 components
 ## Important Development Patterns
 
 ### Shared Code Structure
+
 - `/models`: Shared data models (policy, metrics, API types)
 - `/db`: Database interfaces and SQL implementations
 - `/cf`: Cloud Foundry client wrapper
@@ -146,17 +147,16 @@ Each service uses its own logical PostgreSQL database:
 
 ### Testing Patterns
 
-- **Unit tests**: Ginkgo/Gomega framework (run with `make test`)
-- **Fakes**: Generated via Counterfeiter (`make generate-fakes`)
-- **Integration tests**: Require PostgreSQL (auto-started by tests)
-- **Test certificates**: Auto-generated via `make test-certs`
-- **Important**: Regenerate fakes after any interface changes
+- **Unit tests**: Use Ginkgo/Gomega, run with `make test`
+- **Fakes**: Generated via Counterfeiter with `make generate-fakes`
+- **Integration tests**: Require running PostgreSQL (auto-started)
+- **Test certs**: Auto-generated via `make test-certs`
+- Always regenerate fakes after interface changes
 
 ### Configuration Management
 
-Services use YAML configuration files and environment variables.
+Services use YAML configuration files. See `scripts/vars.source.sh` for standard environment variables:
 
-**Key environment variables** (see `scripts/vars.source.sh`):
 - `DEPLOYMENT_NAME`: Deployment identifier (default: `autoscaler-mta-${PR_NUMBER}`)
 - `SYSTEM_DOMAIN`: CF system domain
 - `DBURL`: Database connection string
@@ -164,21 +164,24 @@ Services use YAML configuration files and environment variables.
 
 ### Scripts
 
-**Critical scripts** in `/scripts`:
-- `vars.source.sh`: Standard environment variables (source in other scripts)
+Critical scripts in `/scripts`:
+
+- `vars.source.sh`: Sets standard environment variables (source in other scripts)
 - `mta-build.sh`: Builds MTA archive
 - `mta-deploy.sh`: Deploys to Cloud Foundry
 - `run-mta-acceptance-tests.sh`: Runs acceptance tests in parallel via CF tasks
 
-**Note**: `vars.source.sh` uses ERR trap for error handling. Commands that fail will trigger error reporting.
+`vars.source.sh` uses ERR trap for error handling. When writing scripts that source it, be aware that commands that fail will trigger error reporting.
 
 ## API Specifications
 
 OpenAPI 3.0 specs in `/openapi`:
+
 - `policy-api.openapi.yaml`: Scaling policy management
 - `scaling-history-api.openapi.yaml`: Query scaling history
 - `custom-metrics-api.openapi.yaml`: Submit custom metrics
-- Code generation: `ogen` tool generates clients/servers
+
+Code generation uses `ogen` tool via `make generate-openapi-generated-clients-and-servers`.
 
 ## Common Gotchas
 
@@ -194,28 +197,33 @@ OpenAPI 3.0 specs in `/openapi`:
 ## Acceptance Tests
 
 Located in `/acceptance`:
+
 - Require deployed autoscaler instance
-- Configuration: `acceptance/acceptance_config.json`
-- Can run in parallel via CF tasks: `make mta-acceptance-tests`
+- Configuration file: `acceptance/acceptance_config.json`
+- Run in parallel via CF tasks: `make mta-acceptance-tests`
 - See `acceptance/README.md` for details
 
 ## Team Workflows
 
 ### PR Comment Resolution Workflow
 
-Standard process for addressing PR review comments:
+When implementing a fix for a PR review comment:
 
-1. Implement the fix and create a commit
-2. Reply to the comment with: `fixed in <commit_hash>` (example: `fixed in 8384249f`)
-3. Resolve the comment thread on GitHub
+1. **Implement the fix** and create a commit addressing the comment
+2. **Add a PR comment** replying to the original comment with the commit hash:
+   ```
+   fixed in <commit_hash>
+   ```
+   Example: `fixed in 8384249f`
+3. **Resolve the comment thread** on GitHub
 
-**Using GitHub CLI**:
+#### Implementation with GitHub CLI
 
 ```bash
 # Capture the commit hash
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
-# Get thread ID using /unresolved-comments skill
+# Get thread ID (see below for finding thread IDs)
 THREAD_ID="PRRT_kwDOA0tdb85qnILg"
 
 # Reply to the comment
@@ -238,7 +246,7 @@ mutation {
 }'
 ```
 
-**Finding thread IDs**: Use `/unresolved-comments` skill or query manually:
+**Finding thread IDs**: Query via GitHub GraphQL API:
 
 ```bash
 gh api graphql -f query='
