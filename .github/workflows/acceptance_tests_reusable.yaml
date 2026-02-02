@@ -78,6 +78,7 @@ jobs:
             echo "EXISTING_USER=${AUTOSCALER_TEST_USER}"
             echo "EXISTING_USER_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
             echo "KEEP_USER_AT_SUITE_END=true"
+            echo "ADD_EXISTING_USER_TO_EXISTING_SPACE=true"
           } >> $GITHUB_ENV
 
       - name: Provision DB

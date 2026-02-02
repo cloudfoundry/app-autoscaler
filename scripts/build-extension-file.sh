@@ -116,6 +116,7 @@ export USE_EXISTING_USER="${USE_EXISTING_USER:-false}"
 export EXISTING_USER="${EXISTING_USER:-}"
 export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-}"
 export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-false}"
+export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -212,6 +213,7 @@ modules:
           "existing_user": "${EXISTING_USER}",
           "existing_user_password": "${EXISTING_USER_PASSWORD}",
           "keep_user_at_suite_end": ${KEEP_USER_AT_SUITE_END},
+          "add_existing_user_to_existing_space": ${ADD_EXISTING_USER_TO_EXISTING_SPACE},
           "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
           "existing_organization": "${EXISTING_ORGANIZATION}",
           "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},
