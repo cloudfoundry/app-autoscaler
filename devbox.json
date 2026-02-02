@@ -22,7 +22,7 @@
     "go":                               "1.24.3",
     "go-tools":                         "2025.1",
     "golangci-lint":                    "2.8.0",
-    "gopls":                            "0.18.1",
+    "gopls":                            "0.21.0",
     "gum":                              "0.16.2",
     "jdt-language-server":              "",
     "jq":                               "latest",
