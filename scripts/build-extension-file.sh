@@ -66,6 +66,7 @@ service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_brok
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
+autoscaler_test_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/test_user_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
@@ -107,14 +108,14 @@ export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
 
-export AUTOSCALER_TEST_USER="${AUTOSCALER_TEST_USER:-admin}"
-export AUTOSCALER_TEST_PASSWORD="${AUTOSCALER_TEST_PASSWORD:-${CF_ADMIN_PASSWORD}}"
+export AUTOSCALER_TEST_USER="${AUTOSCALER_TEST_USER}"
+export AUTOSCALER_TEST_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
 export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-false}"
 export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-}"
 export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-false}"
 export USE_EXISTING_USER="${USE_EXISTING_USER:-false}"
-export EXISTING_USER="${EXISTING_USER:-}"
-export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_TEST_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_TEST_PASSWORD}}"
 export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-false}"
 export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
 
