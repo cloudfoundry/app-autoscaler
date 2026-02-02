@@ -79,10 +79,10 @@ else
 fi
 echo ""
 
-# Enable service access for the organization
-echo "Enabling service access for '${SERVICE_NAME}' in org '${ORG_NAME}'..."
-if cf enable-service-access "${SERVICE_NAME}" -o "${ORG_NAME}"; then
-  echo "✓ Service access enabled successfully"
+# Enable service access globally so it's visible in all spaces
+echo "Enabling global service access for '${SERVICE_NAME}'..."
+if cf enable-service-access "${SERVICE_NAME}"; then
+  echo "✓ Service access enabled globally"
 else
   echo "ERROR: Failed to enable service access"
   exit 1
@@ -96,8 +96,8 @@ echo "Organization users:"
 cf org-users "${ORG_NAME}"
 echo ""
 
-echo "Service access:"
-cf service-access -e "${SERVICE_NAME}" -o "${ORG_NAME}"
+echo "Service access (global):"
+cf service-access -e "${SERVICE_NAME}"
 echo ""
 
 echo "========================================="
