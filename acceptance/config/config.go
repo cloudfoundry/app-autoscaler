@@ -71,8 +71,8 @@ type Config struct {
 	CfJavaTimeout   int `json:"cf_java_timeout"`
 	NodeMemoryLimit int `json:"node_memory_limit"`
 
-	ASApiEndpoint              string `json:"autoscaler_api"`
-	EnableServiceAccess        bool   `json:"enable_service_access"`
+	ASApiEndpoint               string `json:"autoscaler_api"`
+	EnableServiceAccess         bool   `json:"enable_service_access"`
 	SkipServiceAccessManagement bool   `json:"skip_service_access_management"`
 
 	EventgeneratorHealthEndpoint   string `json:"eventgenerator_health_endpoint"`
