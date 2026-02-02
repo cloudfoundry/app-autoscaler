@@ -4,29 +4,32 @@ set -eu -o pipefail
 
 # This script provisions an OrgManager user for running acceptance tests
 # with limited permissions (no Cloud Controller admin required).
+# Password is retrieved from CredHub.
 #
 # Prerequisites:
 # - Must be run by a CF admin user
 # - Target CF environment must be set (cf target)
 # - Organization must already exist
+# - DEPLOYMENT_NAME must be set (for CredHub path)
 #
 # Usage:
-#   ./setup-acceptance-user.sh <org-name> <username> <password>
+#   ./setup-acceptance-user.sh <org-name> <username>
 #
 # Example:
-#   ./setup-acceptance-user.sh autoscaler-mta-922 autoscaler-test-user my-password
+#   export DEPLOYMENT_NAME=autoscaler-mta-922
+#   ./setup-acceptance-user.sh autoscaler-mta-922 autoscaler-test-user
 
-if [[ $# -ne 3 ]]; then
-  echo "Usage: $0 <org-name> <username> <password>"
+if [[ $# -ne 2 ]]; then
+  echo "Usage: $0 <org-name> <username>"
   echo ""
   echo "Example:"
-  echo "  $0 autoscaler-mta-922 autoscaler-test-user my-password"
+  echo "  export DEPLOYMENT_NAME=autoscaler-mta-922"
+  echo "  $0 autoscaler-mta-922 autoscaler-test-user"
   exit 1
 fi
 
 ORG_NAME="$1"
 USERNAME="$2"
-PASSWORD="$3"
 
 script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source "${script_dir}/vars.source.sh"
@@ -39,6 +42,13 @@ echo "========================================="
 echo "Organization: ${ORG_NAME}"
 echo "Username: ${USERNAME}"
 echo "Service: ${SERVICE_NAME}"
+echo ""
+
+# Generate or retrieve password from CredHub
+echo "Generating/retrieving password from CredHub: ${CREDHUB_TEST_USER_PASSWORD_PATH}"
+credhub generate --no-overwrite -n "${CREDHUB_TEST_USER_PASSWORD_PATH}" --length 32 -t password > /dev/null
+PASSWORD=$(credhub get --quiet --name="${CREDHUB_TEST_USER_PASSWORD_PATH}")
+echo "✓ Password retrieved from CredHub"
 echo ""
 
 # Verify org exists
@@ -79,10 +89,6 @@ else
 fi
 echo ""
 
-# Note: Service access will be enabled after service broker registration
-echo "Note: Service access will be enabled after the service broker is registered"
-echo ""
-
 # Verify setup
 echo "Verifying setup..."
 echo ""
@@ -94,13 +100,10 @@ echo "========================================="
 echo "✓ Setup complete!"
 echo "========================================="
 echo ""
-echo "You can now run acceptance tests with:"
+echo "User: ${USERNAME}"
+echo "Password stored in CredHub at: ${CREDHUB_TEST_USER_PASSWORD_PATH}"
 echo ""
-echo "export USE_EXISTING_ORGANIZATION=true"
-echo "export EXISTING_ORGANIZATION=\"${ORG_NAME}\""
-echo "export AUTOSCALER_TEST_USER=\"${USERNAME}\""
-echo "export AUTOSCALER_TEST_PASSWORD=\"${PASSWORD}\""
-echo "export SKIP_SERVICE_ACCESS_MANAGEMENT=true"
+echo "To retrieve password:"
+echo "  credhub get --name='${CREDHUB_TEST_USER_PASSWORD_PATH}'"
 echo ""
-echo "make acceptance-tests-config"
-echo "make acceptance-tests SUITES=\"api\""
+echo "Note: Service access will be enabled after the service broker is registered"

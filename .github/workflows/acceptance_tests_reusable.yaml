@@ -57,29 +57,10 @@ jobs:
           cd "${AUTOSCALER_DIR}"
           source scripts/vars.source.sh
           source scripts/common.sh
-
           bbl_login
           cf_login
           cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-
-          CREDHUB_PASSWORD_PATH="/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_test_password"
-          credhub generate --no-overwrite -n "${CREDHUB_PASSWORD_PATH}" --length 32 -t password
-          AUTOSCALER_TEST_PASSWORD=$(credhub get --quiet --name="${CREDHUB_PASSWORD_PATH}")
-
-          ./scripts/setup-acceptance-user.sh "${AUTOSCALER_ORG}" "${AUTOSCALER_TEST_USER}" "${AUTOSCALER_TEST_PASSWORD}"
-
-          {
-            echo "USE_EXISTING_ORGANIZATION=true"
-            echo "EXISTING_ORGANIZATION=${AUTOSCALER_ORG}"
-            echo "AUTOSCALER_TEST_USER=${AUTOSCALER_TEST_USER}"
-            echo "AUTOSCALER_TEST_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
-            echo "SKIP_SERVICE_ACCESS_MANAGEMENT=true"
-            echo "USE_EXISTING_USER=true"
-            echo "EXISTING_USER=${AUTOSCALER_TEST_USER}"
-            echo "EXISTING_USER_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
-            echo "KEEP_USER_AT_SUITE_END=true"
-            echo "ADD_EXISTING_USER_TO_EXISTING_SPACE=true"
-          } >> $GITHUB_ENV
+          ./scripts/setup-acceptance-user.sh "${AUTOSCALER_ORG}" "${AUTOSCALER_TEST_USER}"
 
       - name: Provision DB
         shell: bash
@@ -136,6 +117,28 @@ jobs:
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
+      - name: Set acceptance test environment variables
+        shell: bash
+        run: |
+          cd "${AUTOSCALER_DIR}"
+          source scripts/vars.source.sh
+          source scripts/common.sh
+          bbl_login
+
+          AUTOSCALER_TEST_PASSWORD=$(credhub get --quiet --name="${CREDHUB_TEST_USER_PASSWORD_PATH}")
+
+          {
+            echo "USE_EXISTING_ORGANIZATION=true"
+            echo "EXISTING_ORGANIZATION=${AUTOSCALER_ORG}"
+            echo "AUTOSCALER_TEST_USER=${AUTOSCALER_TEST_USER}"
+            echo "AUTOSCALER_TEST_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
+            echo "SKIP_SERVICE_ACCESS_MANAGEMENT=true"
+            echo "USE_EXISTING_USER=true"
+            echo "EXISTING_USER=${AUTOSCALER_TEST_USER}"
+            echo "EXISTING_USER_PASSWORD=${AUTOSCALER_TEST_PASSWORD}"
+            echo "KEEP_USER_AT_SUITE_END=true"
+            echo "ADD_EXISTING_USER_TO_EXISTING_SPACE=true"
+          } >> $GITHUB_ENV
       - name: Run acceptance tests via CF tasks - ${{ matrix.suite }}
         shell: bash
         env:

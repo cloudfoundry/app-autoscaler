@@ -512,7 +512,7 @@ mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 	@$(MAKEFILE_DIR)/scripts/run-mta-acceptance-tests.sh
 
 .PHONY: setup-acceptance-user
-setup-acceptance-user: ## Setup acceptance test user with OrgManager permissions
+setup-acceptance-user: ## Setup acceptance test user with OrgManager role (password from CredHub)
 	@./scripts/setup-acceptance-user.sh
 
 # 🚧 To-do: These targets don't exist here!
