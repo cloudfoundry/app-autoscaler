@@ -17,7 +17,7 @@ vendor
 devbox.d/
 
 # ==================== 🤖 Claude Code ====================
-.claude/.claude/
+.claude/
 
 # ==================== 🏭 Generated api-clients ====================
 acceptance/assets/app/go_app/internal/applicationmetric/oas*gen.go
