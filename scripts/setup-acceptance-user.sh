@@ -79,24 +79,8 @@ else
 fi
 echo ""
 
-# Switch to OrgManager user to test permissions
-echo "Authenticating as OrgManager user '${USERNAME}'..."
-if cf auth "${USERNAME}" "${PASSWORD}" &> /dev/null; then
-  echo "✓ Authenticated as '${USERNAME}'"
-else
-  echo "ERROR: Failed to authenticate as OrgManager user"
-  exit 1
-fi
-
-# Try to enable service access globally as OrgManager
-echo "Testing OrgManager permissions: enabling global service access for '${SERVICE_NAME}'..."
-if cf enable-service-access "${SERVICE_NAME}"; then
-  echo "✓ Service access enabled globally by OrgManager"
-else
-  echo "ERROR: OrgManager cannot enable service access globally"
-  echo "This approach requires a user with admin privileges"
-  exit 1
-fi
+# Note: Service access will be enabled after service broker registration
+echo "Note: Service access will be enabled after the service broker is registered"
 echo ""
 
 # Verify setup
@@ -104,10 +88,6 @@ echo "Verifying setup..."
 echo ""
 echo "Organization users:"
 cf org-users "${ORG_NAME}"
-echo ""
-
-echo "Service access (global):"
-cf service-access -e "${SERVICE_NAME}"
 echo ""
 
 echo "========================================="
