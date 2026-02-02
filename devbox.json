@@ -23,7 +23,7 @@
     "go-tools":                         "2025.1",
     "golangci-lint":                    "2.8.0",
     "gopls":                            "0.21.0",
-    "gum":                              "0.16.2",
+    "gum":                              "0.17.0",
     "jdt-language-server":              "",
     "jq":                               "latest",
     "markdownlint-cli2":                "0.17.1",
