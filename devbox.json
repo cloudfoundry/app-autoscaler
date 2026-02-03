@@ -25,7 +25,7 @@
     "gopls":                            "0.21.0",
     "gum":                              "0.17.0",
     "jdt-language-server":              "",
-    "jq":                               "latest",
+    "jq":                               "1.8.1",
     "markdownlint-cli2":                "0.17.1",
     "maven":                            "3.9.12",
     "mysql":                            "10.6.12",
