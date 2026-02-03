@@ -18,6 +18,7 @@ defaults:
     shell: bash
 
 env:
+  DEBUG: true
   PR_NUMBER: "${{ github.event.pull_request.number }}"
   DEPLOYMENT_NAME: "${{ inputs.deployment_name }}"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"

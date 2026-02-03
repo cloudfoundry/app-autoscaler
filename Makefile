@@ -10,7 +10,7 @@ MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
 
-DEBUG := false
+DEBUG ?= false
 MYSQL_TAG := 8
 POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
@@ -513,7 +513,7 @@ mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 
 .PHONY: setup-acceptance-user
 setup-acceptance-user: ## Setup acceptance test user with OrgManager role (password from CredHub)
-	@./scripts/setup-acceptance-user.sh
+	DEBUG="${DEBUG}" ./scripts/setup-acceptance-user.sh
 
 # 🚧 To-do: These targets don't exist here!
 .PHONY: deploy-autoscaler deploy-autoscaler-bosh

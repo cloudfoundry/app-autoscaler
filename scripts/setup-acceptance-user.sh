@@ -12,7 +12,7 @@ source "${script_dir}/common.sh"
 function get_password_from_credhub() {
     local password_path="${1}"
 
-    log "Generating/retrieving password from CredHub"
+    log "Generating/retrieving password from CredHub" >&2
     credhub generate --no-overwrite -n "${password_path}" --length 32 -t password > /dev/null
     credhub get --quiet --name="${password_path}"
 }
