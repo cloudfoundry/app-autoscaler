@@ -60,7 +60,7 @@ jobs:
           bbl_login
           cf_login
           cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-          ./scripts/setup-acceptance-user.sh "${AUTOSCALER_ORG}" "${AUTOSCALER_TEST_USER}"
+          ./scripts/setup-acceptance-user.sh
 
       - name: Provision DB
         shell: bash

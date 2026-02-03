@@ -71,6 +71,11 @@ debug "AUTOSCALER_SPACE: ${AUTOSCALER_SPACE}"
 log "set up vars: AUTOSCALER_SPACE=${AUTOSCALER_SPACE}"
 autoscaler_space="${AUTOSCALER_SPACE}"
 
+export AUTOSCALER_TEST_USER="${AUTOSCALER_TEST_USER:-autoscaler-test-user}"
+debug "AUTOSCALER_TEST_USER: ${AUTOSCALER_TEST_USER}"
+log "set up vars: AUTOSCALER_TEST_USER=${AUTOSCALER_TEST_USER}"
+autoscaler_test_user="${AUTOSCALER_TEST_USER}"
+
 export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"}"
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"
