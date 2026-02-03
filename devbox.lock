@@ -50,30 +50,30 @@
       }
     },
     "apple-sdk@latest": {
-      "last_modified": "2025-10-07T08:41:47Z",
-      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#apple-sdk",
+      "last_modified": "2026-01-23T17:20:52Z",
+      "resolved": "github:NixOS/nixpkgs/a1bab9e494f5f4939442a57a58d0449a109593fe#apple-sdk",
       "source": "devbox-search",
-      "version": "11.3",
+      "version": "14.4",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ghspqwzhdmzj1rss36lcayyc8mrvparn-apple-sdk-11.3",
+              "path": "/nix/store/8pk2m0fn7z5dlb86z5qlv1pxa8w68idx-apple-sdk-14.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ghspqwzhdmzj1rss36lcayyc8mrvparn-apple-sdk-11.3"
+          "store_path": "/nix/store/8pk2m0fn7z5dlb86z5qlv1pxa8w68idx-apple-sdk-14.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/wf9x4kaaykhnq72v6xvxncp2h2sl97zw-apple-sdk-11.3",
+              "path": "/nix/store/0b11sl1s441yhz6fxa6h8nr8h05c8w7p-apple-sdk-14.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/wf9x4kaaykhnq72v6xvxncp2h2sl97zw-apple-sdk-11.3"
+          "store_path": "/nix/store/0b11sl1s441yhz6fxa6h8nr8h05c8w7p-apple-sdk-14.4"
         }
       }
     },
@@ -534,8 +534,8 @@
       }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2025-10-28T12:57:11Z",
-      "resolved": "github:NixOS/nixpkgs/e99366c665bdd53b7b500ccdc5226675cfc51f45?lastModified=1761656231&narHash=sha256-EiED5k6gXTWoAIS8yQqi5mAX6ojnzpHwAQTS3ykeYMg%3D"
+      "last_modified": "2026-02-03T08:29:05Z",
+      "resolved": "github:NixOS/nixpkgs/4533d9293756b63904b7238acb84ac8fe4c8c2c4?lastModified=1770107345"
     },
     "glibcLocales@latest": {
       "last_modified": "2025-12-31T03:27:36Z",
@@ -1073,17 +1073,51 @@
         }
       }
     },
-    "jdt-language-server": {
-      "resolved": "github:NixOS/nixpkgs/e99366c665bdd53b7b500ccdc5226675cfc51f45?narHash=sha256-EiED5k6gXTWoAIS8yQqi5mAX6ojnzpHwAQTS3ykeYMg%3D#jdt-language-server",
-      "source": "nixpkg",
+    "jdt-language-server@latest": {
+      "last_modified": "2026-01-26T09:54:05Z",
+      "resolved": "github:NixOS/nixpkgs/5b265bda51b42a2a85af0a543c3e57b778b01b7d#jdt-language-server",
+      "source": "devbox-search",
+      "version": "1.55.0",
       "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/sjjlbsr2r97liz9nka1i7d2nh7vv53xd-jdt-language-server-1.55.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/sjjlbsr2r97liz9nka1i7d2nh7vv53xd-jdt-language-server-1.55.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9igdy1l9m5k4w3xwx7zixdxh96abgda3-jdt-language-server-1.55.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9igdy1l9m5k4w3xwx7zixdxh96abgda3-jdt-language-server-1.55.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/vlinlryz911s2xpdbzk07hd0gachwjqy-jdt-language-server-1.55.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/vlinlryz911s2xpdbzk07hd0gachwjqy-jdt-language-server-1.55.0"
+        },
         "x86_64-linux": {
           "outputs": [
             {
-              "path": "/tmp/containerbase/cache/nix/store/q7iv99n0f7y8yr0rrfkd0bxmffig3r42-jdt-language-server-1.51.0",
+              "name": "out",
+              "path": "/nix/store/4wrh3mzbvsqfbm3ifxqg52j3ifv3xvph-jdt-language-server-1.55.0",
               "default": true
             }
-          ]
+          ],
+          "store_path": "/nix/store/4wrh3mzbvsqfbm3ifxqg52j3ifv3xvph-jdt-language-server-1.55.0"
         }
       }
     },
