@@ -95,8 +95,9 @@ function setup_acceptance_user() {
 }
 
 function main() {
-		bbl_login
-    setup_acceptance_user
+	bbl_login
+	cf_login
+	setup_acceptance_user
 }
 
 [ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"
