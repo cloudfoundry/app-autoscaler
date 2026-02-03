@@ -537,6 +537,14 @@
       "last_modified": "2026-02-03T08:29:05Z",
       "resolved": "github:NixOS/nixpkgs/4533d9293756b63904b7238acb84ac8fe4c8c2c4?lastModified=1770107345"
     },
+    "github:joergdw/prspkgs#cloud-mta-build-tool": {
+      "last_modified": "2026-01-28T08:12:10Z",
+      "resolved": "github:joergdw/prspkgs/15b51d6e6d6adb1abda763fa74abb9a7c664653a?lastModified=1769587930#cloud-mta-build-tool"
+    },
+    "github:joergdw/prspkgs#multiapps-cli-plugin": {
+      "last_modified": "2026-01-28T08:12:10Z",
+      "resolved": "github:joergdw/prspkgs/15b51d6e6d6adb1abda763fa74abb9a7c664653a?lastModified=1769587930#multiapps-cli-plugin"
+    },
     "glibcLocales@latest": {
       "last_modified": "2025-12-31T03:27:36Z",
       "resolved": "github:NixOS/nixpkgs/f665af0cdb70ed27e1bd8f9fdfecaf451260fc55#glibcLocales",
