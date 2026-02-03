@@ -1,51 +1,101 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
-script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+set -euo pipefail
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
+# shellcheck source=scripts/common.sh
+source "${script_dir}/common.sh"
 
 
-echo "========================================="
-echo "Setting up acceptance test user"
-echo "========================================="
-echo "Organization: ${AUTOSCALER_ORG}"
-echo "Username: ${AUTOSCALER_TEST_USER}"
-echo ""
 
-echo "Generating/retrieving password from CredHub: ${CREDHUB_TEST_USER_PASSWORD_PATH}"
-credhub generate --no-overwrite -n "${CREDHUB_TEST_USER_PASSWORD_PATH}" --length 32 -t password > /dev/null
-PASSWORD=$(credhub get --quiet --name="${CREDHUB_TEST_USER_PASSWORD_PATH}")
-echo "✓ Password retrieved from CredHub"
-echo ""
+function get_password_from_credhub() {
+    local password_path="${1}"
 
-echo "Creating user '${AUTOSCALER_TEST_USER}'..."
-if cf create-user "${AUTOSCALER_TEST_USER}" "${PASSWORD}" &> /dev/null; then
-  echo "✓ User created successfully"
-else
-  echo "User may already exist, checking..."
-  if cf auth "${AUTOSCALER_TEST_USER}" "${PASSWORD}" &> /dev/null; then
-    echo "✓ User already exists and credentials are valid"
-    cf auth admin "$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')" &> /dev/null
-  else
-    echo "ERROR: Failed to create user or authenticate with provided credentials"
-    exit 1
-  fi
-fi
-echo ""
+    log "Generating/retrieving password from CredHub"
+    credhub generate --no-overwrite -n "${password_path}" --length 32 -t password > /dev/null
+    credhub get --quiet --name="${password_path}"
+}
 
-echo "Setting OrgManager role for '${AUTOSCALER_TEST_USER}' in org '${AUTOSCALER_ORG}'..."
-if cf set-org-role "${AUTOSCALER_TEST_USER}" "${AUTOSCALER_ORG}" OrgManager; then
-  echo "✓ OrgManager role set successfully"
-else
-  echo "ERROR: Failed to set OrgManager role"
-  exit 1
-fi
-echo ""
+function user_exists_and_can_authenticate() {
+    local username="${1}"
+    local password="${2}"
 
+    cf auth "${username}" "${password}" &> /dev/null
+}
 
-echo "========================================="
-echo "✓ Setup complete!"
-echo "========================================="
-echo ""
-echo "User: ${AUTOSCALER_TEST_USER}"
-echo "Password stored in CredHub at: ${CREDHUB_TEST_USER_PASSWORD_PATH}"
+function reauthenticate_as_admin() {
+    local admin_password
+    admin_password=$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')
+    cf auth admin "${admin_password}" &> /dev/null
+}
+
+function create_user_if_needed() {
+    local username="${1}"
+    local password="${2}"
+
+    log "Creating user '${username}'"
+
+    if cf create-user "${username}" "${password}" &> /dev/null; then
+        log "✓ User created successfully"
+        return 0
+    fi
+
+    log "User may already exist, verifying credentials"
+    if user_exists_and_can_authenticate "${username}" "${password}"; then
+        log "✓ User already exists with valid credentials"
+        reauthenticate_as_admin
+        return 0
+    fi
+
+    echo "ERROR: Failed to create user or authenticate" >&2
+    return 1
+}
+
+function assign_org_manager_role() {
+    local username="${1}"
+    local org="${2}"
+
+    log "Setting OrgManager role for '${username}' in org '${org}'"
+
+    if cf set-org-role "${username}" "${org}" OrgManager; then
+        log "✓ OrgManager role set successfully"
+        return 0
+    fi
+
+    echo "ERROR: Failed to set OrgManager role" >&2
+    return 1
+}
+
+function print_success_summary() {
+    local username="${1}"
+    local password_path="${2}"
+
+    step "Setup complete!"
+    log "User: ${username}"
+    log "Password stored in CredHub at: ${password_path}"
+    echo ""
+    log "To retrieve password:"
+    log "  credhub get --name='${password_path}'"
+}
+
+function setup_acceptance_user() {
+    step "Setting up acceptance test user"
+    log "Organization: ${AUTOSCALER_ORG}"
+    log "Username: ${AUTOSCALER_TEST_USER}"
+
+    local password
+    password=$(get_password_from_credhub "${CREDHUB_TEST_USER_PASSWORD_PATH}")
+    log "✓ Password retrieved"
+
+    create_user_if_needed "${AUTOSCALER_TEST_USER}" "${password}" || exit 1
+    assign_org_manager_role "${AUTOSCALER_TEST_USER}" "${AUTOSCALER_ORG}" || exit 1
+
+    print_success_summary "${AUTOSCALER_TEST_USER}" "${CREDHUB_TEST_USER_PASSWORD_PATH}"
+}
+
+function main() {
+    setup_acceptance_user
+}
+
+[ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"
