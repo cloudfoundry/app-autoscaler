@@ -32,7 +32,7 @@
     "oha":                              "1.12.1",
     "openssl":                          "3.6.0",
     "postgresql":                       "latest",
-    "python":                           "3.13.3",
+    "python":                           "3.14.2",
     "redocly":                          "1.34.4",
     "ripgrep":                          "14.1.1",
     "shellcheck":                       "0.11.0",
