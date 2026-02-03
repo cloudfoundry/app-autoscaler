@@ -1,0 +1,34 @@
+---
+name: Check Java Code
+on:
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+
+concurrency:
+  group: "${{ github.workflow }}/${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  code-style:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Repository content
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          submodules: true
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
+        with:
+          enable-cache: 'true'
+      - name: Make devbox shellenv available
+        run: |
+          eval "$(devbox shellenv)"
+          printenv >> "$GITHUB_ENV"
+      - name: Check Code Formatting
+        run: |
+          make --directory=scheduler check-format check-style

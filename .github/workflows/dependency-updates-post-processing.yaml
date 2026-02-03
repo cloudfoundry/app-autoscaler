@@ -1,0 +1,126 @@
+name: "Dependency Updates Post-Processing"
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/dependency-updates-post-processing.yaml"
+      - "go.mod"
+      - "go.sum"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "devbox.json"
+  workflow_dispatch: {}
+jobs:
+  dependency-updates-post-processing:
+    name: "Dependency Updates Post-Processing"
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-dependency-postprocessing')"
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      # We potentially want to add at the end a commit by the author of the most recent
+      # commit in this branch. However github has some protection which prevents workflows
+      # to run in case a commit has been pushed with the default job-specific github-token.
+      # For this case we need to use another one here.
+      #
+      # For more information, see:
+      # <https://docs.github.com/en/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow>
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          submodules: true
+          ssh-key: ${{ secrets.AUTOSCALER_DEPLOY_KEY_PRIVATE }}
+      - name: Configure git
+        id: configure_git
+        shell: bash
+        run: |
+          #! /usr/bin/env bash
+          set -eu -o pipefail
+
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+          commit_author_name="$(git log -1 --pretty=format:'%an')"
+          commit_author_email="$(git log -1 --pretty=format:'%ae')"
+          commit_subject="$(git log -1 --pretty=format:'%s')"
+          readonly commit_author_name commit_author_email commit_subject
+
+          git config user.name "${commit_author_name}"
+          git config user.email "${commit_author_email}"
+
+          echo "commit_author_name=${commit_author_name}" >> "${GITHUB_OUTPUT}"
+          echo "commit_subject=${commit_subject}" >> "${GITHUB_OUTPUT}"
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
+        with:
+          enable-cache: 'true'
+      - name: Make devbox shellenv available
+        run: |
+          eval "$(devbox shellenv)"
+          printenv >> "${GITHUB_ENV}"
+
+      - name: go-mod-tidy and make package-specs
+        shell: bash
+        env:
+          PR_BRANCH_REF: "${{ github.head_ref }}"
+        run: |
+          #! /usr/bin/env bash
+          set -eu -o pipefail
+
+          # We need the subsequent standard-message to determine if the last commit
+          # has already cleaned up everything. In this case this workflow should not
+          # change anything and we exit early.
+          # An alternative would be to use a tag for this. But this does affect the whole
+          # PR instead of just the latest commit.
+          declare -r tidy_message='🤖🦾🛠️ go mod tidy'
+          declare -r commit_message='${{steps.configure_git.outputs.commit_subject}}'
+
+          if [[ "${commit_message}" == "${tidy_message}" ]]
+          then
+            # shellcheck disable=SC2016
+            echo 'This commit is already an automatic `go-mod-tidy`! Exiting …'
+            exit 0
+          fi
+
+          # Generated files are needed for `go mod tidy` which is a dependency of the
+          # target `package-specs`. However the generation of them itself already
+          # requires go-modules to be tidied up. So we need to generate the files
+          # before changing `go.mod` and `go.sum`.
+          current_branch_head="${PR_BRANCH_REF}"
+          readonly current_branch_head
+          echo "Working in branch \`${current_branch_head}\`" \
+               " on revision \`$(git rev-parse 'HEAD')\`."
+
+          echo "Generating clients, servers and fakes on \`${current_branch_head}~1\`"
+          # Sometimes just loading an env may trigger a change regarding the `plugin_version` of
+          # the derivation python.
+          git restore devbox.lock
+          git checkout 'HEAD~1'
+
+          make generate-fakes
+          make generate-openapi-generated-clients-and-servers
+
+          # Sometimes just loading an env may trigger a change regarding the `plugin_version` of
+          # the derivation python.
+          git restore devbox.lock
+          git checkout "${current_branch_head}"
+
+          # ⚠️ For this workflow to be successful, the subsequent line must not
+          # trigger again the creation of the generated files.
+          make go-mod-tidy
+
+          declare -i num_changed_files
+          num_changed_files="$(git status --porcelain | wc --lines)"
+          readonly num_changed_files
+
+          if ((num_changed_files > 0))
+          then
+            echo 'Changes to some files were necessary!'
+            git add .
+            git commit --message="${tidy_message}"
+            git pull --rebase=true
+            git push
+          else
+            echo 'No files changed!'
+          fi
+          echo '🏁'

@@ -1,3 +1,6 @@
+.ONESHELL:
+SHELL := /bin/bash
+
 war_file_path := ./target/scheduler-${scheduler_version}.war
 
 .PHONY: build
@@ -8,12 +11,7 @@ java_files = $(shell find . -type f -name "*.java" -print | xargs realpath)
 MVN_BUILD_OPTS ?= '-Dmaven.test.skip=true'
 ${war_file_path}: $(java_files) ./pom.xml ./Makefile
 	@echo "# building $@ (root in $$(pwd))"
-	@mvn --no-transfer-progress package '${MVN_BUILD_OPTS}'
-
-
-test:
-	@echo "Running tests..."
-	@mvn --no-transfer-progress test
+	@mvn -B --no-transfer-progress package '${MVN_BUILD_OPTS}'
 
 # Format all Java files in the src/ directory
 .PHONY: format
@@ -27,7 +25,11 @@ check-format:
 	@echo "Checking Java file formatting..."
 	@google-java-format --skip-javadoc-formatting --dry-run $(java_files)
 
-
+.PHONY: check-style
+check-style:
+	@echo "Checking Checkstyle compliance..."
+	@mvn -B --no-transfer-progress checkstyle:checkstyle
+	@go run fmt_chkstyle/format_checkstyle.go
 
 # # 🚸 The following targets are commented out, because they have temporarily been
 # # moved to the top-level-Makefile. The reason is, they depend on targets outside this component. In the future, they will be moved back to this component and reference dependencies to Makefiles on the same level – the ones for the component they depend on.
@@ -44,7 +46,7 @@ test: test-certificates
 	@echo 'Running tests …' \
 		'\n\t🚸 Please keep in mind that this requires a running db!'
 	@export DB_HOST='${DB_HOST}'; \
-	mvn test --no-transfer-progress '-Dspring.profiles.include=${db_type}'
+	mvn -B test --no-transfer-progress '-Dspring.profiles.include=${db_type}'
 
 test-certs-dir := src/test/resources/certs
 test-certs = $(shell find './${test-certs-dir}' -type f 2> /dev/null)

@@ -1,13 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
-script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# shellcheck source=scripts/vars.source.sh
+source "${script_dir}/vars.source.sh"
+# shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-function main(){
-  bosh_login
-  cf_login
-  cleanup_acceptance_run
+function main() {
+	bbl_login
+	cf_login
+	cleanup_acceptance_run
 }
 
 [ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"

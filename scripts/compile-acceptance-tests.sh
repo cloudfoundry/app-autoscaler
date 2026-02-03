@@ -3,9 +3,15 @@ set -euo pipefail
 
 mkdir -p build/acceptance
 
-readonly SUITES=("api" "app" "broker" "post_upgrade" "pre_upgrade" "run_performance" "setup_performance")
-readonly OPERATING_SYSTEMS=("linux" "darwin")
-readonly ARCHITECTURES=("amd64" "arm64") # [amd64: intel 64 bit chips]  [arm64: apple silicon chips]
+# Allow environment variables to override for selective builds
+SUITES="${SUITES:-api app broker post_upgrade pre_upgrade run_performance setup_performance}"
+OPERATING_SYSTEMS="${TARGET_OS:-linux darwin}"
+ARCHITECTURES="${TARGET_ARCH:-amd64 arm64}"
+
+# Convert space-separated strings to arrays
+read -ra SUITES <<< "$SUITES"
+read -ra OPERATING_SYSTEMS <<< "$OPERATING_SYSTEMS"
+read -ra ARCHITECTURES <<< "$ARCHITECTURES"
 
 compile_suites() {
   for suite in "${SUITES[@]}"; do
@@ -22,16 +28,14 @@ compile_suites() {
 }
 
 compile_ginkgo() {
-  pushd ./acceptance > /dev/null
-    for os in "${OPERATING_SYSTEMS[@]}"; do
-      for arch in "${ARCHITECTURES[@]}"; do
-        binary_name="ginkgo_v2_${os}_${arch}"
-        CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -o "build/ginkgo_v2_${os}_${arch}" github.com/onsi/ginkgo/v2/ginkgo
-        chmod +x "build/${binary_name}"
-				mv "build/${binary_name}" "../build/acceptance/${binary_name}"
-      done
+  for os in "${OPERATING_SYSTEMS[@]}"; do
+    for arch in "${ARCHITECTURES[@]}"; do
+      binary_name="ginkgo_v2_${os}_${arch}"
+      output_path="build/acceptance/${binary_name}"
+      CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -C acceptance -o "../${output_path}" github.com/onsi/ginkgo/v2/ginkgo
+      chmod +x "${output_path}"
     done
-  popd > /dev/null
+  done
 }
 
 main() {
