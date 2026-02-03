@@ -54,13 +54,8 @@ jobs:
       - name: Setup acceptance test user with OrgManager role
         shell: bash
         run: |
-          cd "${AUTOSCALER_DIR}"
-          source scripts/vars.source.sh
-          source scripts/common.sh
-          bbl_login
-          cf_login
-          cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-          ./scripts/setup-acceptance-user.sh
+          make cf-login
+          make setup-acceptance-user.sh
 
       - name: Provision DB
         shell: bash
