@@ -95,6 +95,7 @@ function setup_acceptance_user() {
 }
 
 function main() {
+		bbl_login
     setup_acceptance_user
 }
 

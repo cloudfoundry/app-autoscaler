@@ -54,7 +54,6 @@ jobs:
       - name: Setup acceptance test user with OrgManager role
         shell: bash
         run: |
-          make --directory="${AUTOSCALER_DIR}" cf-login
           make --directory="${AUTOSCALER_DIR}" setup-acceptance-user
 
       - name: Provision DB
