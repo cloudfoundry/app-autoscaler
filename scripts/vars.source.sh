@@ -126,7 +126,7 @@ export CPU_UPPER_THRESHOLD=${CPU_UPPER_THRESHOLD:-100}
 debug "CPU_UPPER_THRESHOLD: ${CPU_UPPER_THRESHOLD}"
 cpu_upper_threshold=${CPU_UPPER_THRESHOLD}
 
-export CREDHUB_TEST_USER_PASSWORD_PATH="/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_test_password"
+export CREDHUB_TEST_USER_PASSWORD_PATH="/bosh-autoscaler/${DEPLOYMENT_NAME}/test_user_password"
 debug "CREDHUB_TEST_USER_PASSWORD_PATH: ${CREDHUB_TEST_USER_PASSWORD_PATH}"
 credhub_test_user_password_path="${CREDHUB_TEST_USER_PASSWORD_PATH}"
 
