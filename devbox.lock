@@ -1081,7 +1081,7 @@
         }
       }
     },
-    "jdt-language-server@latest": {
+    "jdt-language-server@1.55.0": {
       "last_modified": "2026-01-26T09:54:05Z",
       "resolved": "github:NixOS/nixpkgs/5b265bda51b42a2a85af0a543c3e57b778b01b7d#jdt-language-server",
       "source": "devbox-search",
