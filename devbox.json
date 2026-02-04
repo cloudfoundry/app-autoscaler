@@ -33,7 +33,7 @@
     "gopls":                                            "0.21.0",
     "google-java-format":                               "1.33.0",
     "gum":                                              "0.17.0",
-    "jdt-language-server":                              "latest",
+    "jdt-language-server":                              "1.55.0",
     "jq":                                               "1.8.1",
     "markdownlint-cli2":                                "0.20.0",
     "maven":                                            "3.9.12",
