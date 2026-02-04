@@ -51,6 +51,7 @@
   "shell": {
     "init_hook": [
       "export GOFIPS140=v1.0.0",
+      "export GOTOOLCHAIN='local+path'",
       "install_plugin_if_needed() {",
       "  sum=$(sha1sum $(which $1) | cut --delimiter=' ' --fields='1')",
       "  cf plugins --checksum | grep --quiet ${sum} || cf install-plugin -f $(which $1)",
