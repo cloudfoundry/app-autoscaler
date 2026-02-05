@@ -5,7 +5,8 @@ on:
       suites:
         required: false
         type: string
-        default: "[ 'api', 'app', 'broker' ]"
+        default: "[ 'api' ]"
+        #default: "[ 'api', 'app', 'broker' ]"
       deployment_name:
         required: true
         type: string
