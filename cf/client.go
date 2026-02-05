@@ -6,30 +6,24 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
+type Tokens struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int64  `json:"expires_in"`
+}
+
 const (
-	PathCFAuth                     = "/oauth/token"
-	PathIntrospectToken            = "/introspect"
-	GrantTypeClientCredentials     = "client_credentials"
-	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
-	defaultPerPage                 = 100
+	PathCFAuth                 = "/oauth/token"
+	PathIntrospectToken        = "/introspect"
+	GrantTypeClientCredentials = "client_credentials"
+	defaultPerPage             = 100
 )
 
 type (
-	Guid   = models.GUID
-	Tokens struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int64  `json:"expires_in"`
-	}
-
-	TokensInfo struct {
-		Tokens
-		grantTime time.Time
-	}
+	Guid = models.GUID
 
 	IntrospectionResponse struct {
 		Active   bool     `json:"active"`
@@ -40,9 +34,6 @@ type (
 
 	AuthClient interface {
 		Login() error
-		InvalidateToken()
-		RefreshAuthToken() (Tokens, error)
-		GetTokens() (Tokens, error)
 		IsUserAdmin(userToken string) (bool, error)
 		IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error)
 		IsTokenAuthorized(token, clientId string) (bool, error)
@@ -50,9 +41,6 @@ type (
 
 	AuthContextClient interface {
 		Login(ctx context.Context) error
-		InvalidateToken()
-		RefreshAuthToken(ctx context.Context) (Tokens, error)
-		GetTokens(ctx context.Context) (Tokens, error)
 		IsUserAdmin(ctx context.Context, userToken string) (bool, error)
 		IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error)
 		IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error)
@@ -90,13 +78,9 @@ type (
 	}
 )
 
-func (t TokensInfo) isTokenExpired(now func() time.Time) bool {
-	return now().Sub(t.grantTime) > (time.Duration(t.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
-}
-
 // NewCFClient creates a new CF client using go-cfclient/v3
-func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) (CFClient, error) {
-	return NewCFClientWrapper(conf, logger, clk)
+func NewCFClient(conf *Config, logger lager.Logger) (CFClient, error) {
+	return NewCFClientWrapper(conf, logger)
 }
 
 // RetryClient creates a retryable HTTP client

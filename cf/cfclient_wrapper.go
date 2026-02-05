@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
@@ -27,9 +26,6 @@ type CFClientWrapper struct {
 	cfClient    *client.Client
 	conf        *Config
 	logger      lager.Logger
-	clk         clock.Clock
-	tokenInfoMu sync.RWMutex
-	tokenInfo   TokensInfo
 	endpointsMu sync.RWMutex
 	endpoints   *Endpoints
 }
@@ -41,7 +37,7 @@ type CtxClientWrapper struct {
 var _ CFClient = &CFClientWrapper{}
 var _ ContextClient = &CtxClientWrapper{}
 
-func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CFClientWrapper, error) {
+func NewCFClientWrapper(conf *Config, logger lager.Logger) (*CFClientWrapper, error) {
 	options := []config.Option{
 		config.ClientCredentials(conf.ClientID, conf.Secret),
 		config.UserAgent(GetUserAgent()),
@@ -64,7 +60,6 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CF
 		cfClient: cfClient,
 		conf:     conf,
 		logger:   logger,
-		clk:      clk,
 	}, nil
 }
 
@@ -77,72 +72,13 @@ func (w *CFClientWrapper) Login() error {
 }
 
 func (c *CtxClientWrapper) Login(ctx context.Context) error {
-	tokens, err := c.refreshToken(ctx)
+	// Verify credentials by making a test API call
+	// go-cfclient handles token management internally
+	_, err := c.cfClient.Root.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("login failed: %w", err)
 	}
-
-	c.tokenInfoMu.Lock()
-	defer c.tokenInfoMu.Unlock()
-	c.tokenInfo.Tokens = tokens
-	c.tokenInfo.grantTime = c.clk.Now()
-
 	return nil
-}
-
-func (w *CFClientWrapper) InvalidateToken() {
-	w.tokenInfoMu.Lock()
-	defer w.tokenInfoMu.Unlock()
-	w.tokenInfo.grantTime = time.Time{}
-}
-
-func (w *CFClientWrapper) RefreshAuthToken() (Tokens, error) {
-	return w.GetCtxClient().RefreshAuthToken(context.Background())
-}
-
-func (c *CtxClientWrapper) RefreshAuthToken(ctx context.Context) (Tokens, error) {
-	c.tokenInfoMu.Lock()
-	defer c.tokenInfoMu.Unlock()
-
-	if !c.tokenInfo.isTokenExpired(c.clk.Now) {
-		return c.tokenInfo.Tokens, nil
-	}
-
-	tokens, err := c.refreshToken(ctx)
-	if err != nil {
-		return c.tokenInfo.Tokens, err
-	}
-
-	c.tokenInfo.Tokens = tokens
-	c.tokenInfo.grantTime = c.clk.Now()
-
-	return tokens, nil
-}
-
-func (c *CtxClientWrapper) refreshToken(ctx context.Context) (Tokens, error) {
-	_, err := c.cfClient.Root.Get(ctx)
-	if err != nil {
-		return Tokens{}, fmt.Errorf("failed to refresh token: %w", err)
-	}
-	return c.tokenInfo.Tokens, nil
-}
-
-func (w *CFClientWrapper) GetTokens() (Tokens, error) {
-	return w.GetCtxClient().GetTokens(context.Background())
-}
-
-func (c *CtxClientWrapper) GetTokens(ctx context.Context) (Tokens, error) {
-	info := c.getTokenInfo()
-	if info.isTokenExpired(c.clk.Now) {
-		return c.RefreshAuthToken(ctx)
-	}
-	return info.Tokens, nil
-}
-
-func (c *CtxClientWrapper) getTokenInfo() TokensInfo {
-	c.tokenInfoMu.RLock()
-	defer c.tokenInfoMu.RUnlock()
-	return c.tokenInfo
 }
 
 func (w *CFClientWrapper) IsUserAdmin(userToken string) (bool, error) {

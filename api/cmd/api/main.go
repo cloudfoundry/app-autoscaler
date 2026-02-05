@@ -15,7 +15,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/tedsuo/ifrit/grouper"
 )
@@ -43,8 +42,7 @@ func main() {
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 
-	paClock := clock.NewClock()
-	cfClient, err := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	cfClient, err := cf.NewCFClient(&conf.CF, logger.Session("cf"))
 	startup.ExitOnError(err, logger, "failed to create cloud foundry client", lager.Data{"API": conf.CF.API})
 	err = cfClient.Login()
 	startup.ExitOnError(err, logger, "failed to login cloud foundry", lager.Data{"API": conf.CF.API})
