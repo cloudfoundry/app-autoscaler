@@ -14,10 +14,12 @@ import (
 
 var _ = Describe("CFClientWrapper", func() {
 	var (
-		mockServer *mocks.Server
-		client     cf.CFClient
-		conf       *cf.Config
-		logger     lager.Logger
+		mockServer   *mocks.Server
+		client       cf.CFClient
+		clientErr    error
+		conf         *cf.Config
+		logger       lager.Logger
+		createClient bool
 	)
 
 	BeforeEach(func() {
@@ -33,6 +35,15 @@ var _ = Describe("CFClientWrapper", func() {
 			ClientID: "test-client",
 			Secret:   "test-secret",
 		}
+		createClient = true
+	})
+
+	JustBeforeEach(func() {
+		if createClient {
+			mockServer.Add().OauthToken("test-access-token")
+			mockServer.Add().Info(mockServer.URL())
+			client, clientErr = cf.NewCFClient(conf, logger)
+		}
 	})
 
 	AfterEach(func() {
@@ -40,6 +51,10 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("NewCFClientWrapper", func() {
+		BeforeEach(func() {
+			createClient = false
+		})
+
 		It("creates a client successfully", func() {
 			mockServer.Add().OauthToken("test-access-token")
 			mockServer.Add().Info(mockServer.URL())
@@ -58,32 +73,17 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("Login", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-		})
-
 		It("logs in successfully", func() {
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(clientErr).NotTo(HaveOccurred())
 
-			err = client.Login()
+			err := client.Login()
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
 	Describe("GetApp", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns app details", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 
 			app, err := client.GetApp("test-app-guid")
@@ -94,6 +94,7 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns error for non-existent app", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetApp("", http.StatusNotFound, "")
 
 			_, err := client.GetApp("non-existent-app")
@@ -103,16 +104,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("GetAppProcesses", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns process details", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetAppProcesses(3)
 
 			processes, err := client.GetAppProcesses("test-app-guid", cf.ProcessTypeWeb)
@@ -124,16 +117,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("GetAppAndProcesses", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns both app and processes", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 			mockServer.Add().GetAppProcesses(2)
 
@@ -147,16 +132,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("ScaleAppWebProcess", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("scales the app successfully", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetAppProcesses(2)
 			mockServer.Add().ScaleAppWebProcess()
 
@@ -166,16 +143,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("GetServiceInstance", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns service instance details", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().ServiceInstance("test-plan-guid")
 
 			si, err := client.GetServiceInstance("test-si-guid")
@@ -187,16 +156,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("GetServicePlan", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns service plan details", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().ServicePlan("broker-plan-id")
 
 			sp, err := client.GetServicePlan("test-plan-guid")
@@ -207,16 +168,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("IsUserAdmin", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns true when user has admin scope", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().Introspect([]string{"cloud_controller.admin", "openid"})
 
 			isAdmin, err := client.IsUserAdmin("user-token")
@@ -225,6 +178,7 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when user does not have admin scope", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().Introspect([]string{"openid", "cloud_controller.read"})
 
 			isAdmin, err := client.IsUserAdmin("user-token")
@@ -234,16 +188,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("IsUserSpaceDeveloper", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns true when user is space developer", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().UserInfo(http.StatusOK, "test-user-id")
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 			mockServer.Add().Roles(http.StatusOK, cf.Role{Guid: "role-guid", Type: cf.RoleSpaceDeveloper})
@@ -254,6 +200,7 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when user is not space developer", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().UserInfo(http.StatusOK, "test-user-id")
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 			mockServer.Add().Roles(http.StatusOK) // No roles
@@ -264,6 +211,7 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false without error when token is unauthorized", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().UserInfo(http.StatusUnauthorized, "")
 
 			isSpaceDev, err := client.IsUserSpaceDeveloper("invalid-token", "test-app-guid")
@@ -274,18 +222,10 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("IsTokenAuthorized", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns true when token is authorized for client", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
-				RespondWithJSON(http.StatusOK, map[string]interface{}{
+				RespondWithJSON(http.StatusOK, map[string]any{
 					"active":    true,
 					"client_id": "expected-client",
 				}))
@@ -296,8 +236,9 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when client_id does not match", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
-				RespondWithJSON(http.StatusOK, map[string]interface{}{
+				RespondWithJSON(http.StatusOK, map[string]any{
 					"active":    true,
 					"client_id": "different-client",
 				}))
@@ -308,8 +249,9 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when token is inactive", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
-				RespondWithJSON(http.StatusOK, map[string]interface{}{
+				RespondWithJSON(http.StatusOK, map[string]any{
 					"active":    false,
 					"client_id": "expected-client",
 				}))
@@ -321,16 +263,8 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("GetEndpoints", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns endpoints and caches them", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			// Count requests before calling GetEndpoints
 			requestsBefore := mockServer.Count().Requests("^/$")
 
@@ -351,23 +285,15 @@ var _ = Describe("CFClientWrapper", func() {
 	})
 
 	Describe("GetCtxClient", func() {
-		BeforeEach(func() {
-			mockServer.Add().OauthToken("test-access-token")
-			mockServer.Add().Info(mockServer.URL())
-
-			var err error
-			client, err = cf.NewCFClient(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("returns a context client", func() {
+			Expect(clientErr).NotTo(HaveOccurred())
 			ctxClient := client.GetCtxClient()
 			Expect(ctxClient).NotTo(BeNil())
 		})
 	})
 })
 
-func RespondWithJSON(statusCode int, body interface{}) http.HandlerFunc {
+func RespondWithJSON(statusCode int, body any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
