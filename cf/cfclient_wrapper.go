@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -116,7 +117,7 @@ func (w *CFClientWrapper) IsUserSpaceDeveloper(userToken string, appId Guid) (bo
 func (c *CtxClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error) {
 	userId, err := c.getUserId(ctx, userToken)
 	if err != nil {
-		if err == ErrUnauthorized {
+		if errors.Is(err, ErrUnauthorized) {
 			c.logger.Error("getUserId: token not authorized", err)
 			return false, nil
 		}
