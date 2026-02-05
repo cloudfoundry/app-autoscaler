@@ -1396,7 +1396,7 @@
         }
       }
     },
-    "openssl@latest": {
+    "openssl@3.6.0": {
       "last_modified": "2025-12-05T06:24:47Z",
       "resolved": "github:NixOS/nixpkgs/42e29df35be6ef54091d3a3b4e97056ce0a98ce8#openssl",
       "source": "devbox-search",
