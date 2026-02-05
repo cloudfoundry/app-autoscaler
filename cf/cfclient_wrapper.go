@@ -21,23 +21,19 @@ import (
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
-// CFClientWrapper wraps go-cfclient to implement the existing CFClient interfaces
-type CFClientWrapper struct {
-	cfClient *client.Client
-	conf     *Config
-	logger   lager.Logger
-	clk      clock.Clock
+const uaaRequestTimeout = 30 * time.Second
 
-	// Token management
+type CFClientWrapper struct {
+	cfClient    *client.Client
+	conf        *Config
+	logger      lager.Logger
+	clk         clock.Clock
 	tokenInfoMu sync.RWMutex
 	tokenInfo   TokensInfo
-
-	// Cached endpoints
 	endpointsMu sync.RWMutex
 	endpoints   *Endpoints
 }
 
-// CtxClientWrapper provides context-aware methods
 type CtxClientWrapper struct {
 	*CFClientWrapper
 }
@@ -45,9 +41,7 @@ type CtxClientWrapper struct {
 var _ CFClient = &CFClientWrapper{}
 var _ ContextClient = &CtxClientWrapper{}
 
-// NewCFClientWrapper creates a new CFClient using go-cfclient/v3
 func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CFClientWrapper, error) {
-	// Build config options
 	options := []config.Option{
 		config.ClientCredentials(conf.ClientID, conf.Secret),
 		config.UserAgent(GetUserAgent()),
@@ -56,36 +50,28 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CF
 		options = append(options, config.SkipTLSValidation())
 	}
 
-	// Create go-cfclient configuration
 	cfg, err := config.New(conf.API, options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cfclient config: %w", err)
 	}
 
-	// Create go-cfclient
 	cfClient, err := client.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cfclient: %w", err)
 	}
 
-	wrapper := &CFClientWrapper{
+	return &CFClientWrapper{
 		cfClient: cfClient,
 		conf:     conf,
 		logger:   logger,
 		clk:      clk,
-	}
-
-	return wrapper, nil
+	}, nil
 }
 
-// GetCtxClient returns the context-aware client
 func (w *CFClientWrapper) GetCtxClient() ContextClient {
 	return &CtxClientWrapper{w}
 }
 
-// --- AuthClient Interface Implementation ---
-
-// Login authenticates with CF using client credentials
 func (w *CFClientWrapper) Login() error {
 	return w.GetCtxClient().Login(context.Background())
 }
@@ -104,14 +90,12 @@ func (c *CtxClientWrapper) Login(ctx context.Context) error {
 	return nil
 }
 
-// InvalidateToken invalidates the current token
 func (w *CFClientWrapper) InvalidateToken() {
 	w.tokenInfoMu.Lock()
 	defer w.tokenInfoMu.Unlock()
 	w.tokenInfo.grantTime = time.Time{}
 }
 
-// RefreshAuthToken refreshes the authentication token
 func (w *CFClientWrapper) RefreshAuthToken() (Tokens, error) {
 	return w.GetCtxClient().RefreshAuthToken(context.Background())
 }
@@ -135,40 +119,24 @@ func (c *CtxClientWrapper) RefreshAuthToken(ctx context.Context) (Tokens, error)
 	return tokens, nil
 }
 
-// refreshToken performs the actual token refresh using go-cfclient
 func (c *CtxClientWrapper) refreshToken(ctx context.Context) (Tokens, error) {
-	// go-cfclient handles token refresh internally, but we need to expose tokens
-	// for compatibility. We'll get a fresh token by making a lightweight API call.
-	// The cfClient internally manages token refresh.
-
-	// Get the access token from cfclient's config
-	// Since go-cfclient manages tokens internally, we need to trigger a refresh
-	// by making a call that requires authentication
-
-	// For now, we simulate getting tokens by making a root API call
-	// which will trigger the internal token refresh mechanism
 	_, err := c.cfClient.Root.Get(ctx)
 	if err != nil {
 		return Tokens{}, fmt.Errorf("failed to refresh token: %w", err)
 	}
-
-	// go-cfclient doesn't expose the token directly in v3
-	// We need to get it from the underlying config/transport
-	// This is a limitation - we may need to use our own token management for UAA
 	return c.tokenInfo.Tokens, nil
 }
 
-// GetTokens returns the current tokens, refreshing if necessary
 func (w *CFClientWrapper) GetTokens() (Tokens, error) {
 	return w.GetCtxClient().GetTokens(context.Background())
 }
 
 func (c *CtxClientWrapper) GetTokens(ctx context.Context) (Tokens, error) {
-	tokenInfo := c.getTokenInfo()
-	if tokenInfo.isTokenExpired(c.clk.Now) {
+	info := c.getTokenInfo()
+	if info.isTokenExpired(c.clk.Now) {
 		return c.RefreshAuthToken(ctx)
 	}
-	return tokenInfo.Tokens, nil
+	return info.Tokens, nil
 }
 
 func (c *CtxClientWrapper) getTokenInfo() TokensInfo {
@@ -177,26 +145,22 @@ func (c *CtxClientWrapper) getTokenInfo() TokensInfo {
 	return c.tokenInfo
 }
 
-// IsUserAdmin checks if the user has cloud_controller.admin scope
 func (w *CFClientWrapper) IsUserAdmin(userToken string) (bool, error) {
 	return w.GetCtxClient().IsUserAdmin(context.Background(), userToken)
 }
 
 func (c *CtxClientWrapper) IsUserAdmin(ctx context.Context, userToken string) (bool, error) {
-	introspectionResponse, err := c.introspectToken(ctx, userToken)
+	resp, err := c.introspectToken(ctx, userToken)
 	if err != nil {
 		return false, err
 	}
-
-	if slices.Contains(introspectionResponse.Scopes, CCAdminScope) {
+	if slices.Contains(resp.Scopes, CCAdminScope) {
 		c.logger.Info("user is cc admin")
 		return true, nil
 	}
-
 	return false, nil
 }
 
-// IsUserSpaceDeveloper checks if the user is a space developer for the app's space
 func (w *CFClientWrapper) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error) {
 	return w.GetCtxClient().IsUserSpaceDeveloper(context.Background(), userToken, appId)
 }
@@ -205,7 +169,7 @@ func (c *CtxClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken s
 	userId, err := c.getUserId(ctx, userToken)
 	if err != nil {
 		if err == ErrUnauthorized {
-			c.logger.Error("getUserId: token Not authorized", err)
+			c.logger.Error("getUserId: token not authorized", err)
 			return false, nil
 		}
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
@@ -219,161 +183,125 @@ func (c *CtxClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken s
 	roles, err := c.GetSpaceDeveloperRoles(ctx, spaceId, userId)
 	if err != nil {
 		if IsNotFound(err) {
-			c.logger.Info("GetSpaceDeveloperRoles: Not not found", lager.Data{"userId": userId, "spaceid": spaceId})
+			c.logger.Info("GetSpaceDeveloperRoles: not found", lager.Data{"userId": userId, "spaceId": spaceId})
 			return false, nil
 		}
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
 
-	isSpaceDeveloperOnAppSpace := roles.HasRole(RoleSpaceDeveloper)
-	if !isSpaceDeveloperOnAppSpace {
-		c.logger.Error("User without SpaceDeveloper role in the apps space tried to access API", nil)
+	isSpaceDev := roles.HasRole(RoleSpaceDeveloper)
+	if !isSpaceDev {
+		c.logger.Error("user without SpaceDeveloper role tried to access API", nil)
 	}
-	return isSpaceDeveloperOnAppSpace, nil
+	return isSpaceDev, nil
 }
 
-// IsTokenAuthorized checks if a token is authorized for a specific client
 func (w *CFClientWrapper) IsTokenAuthorized(token, clientId string) (bool, error) {
 	return w.GetCtxClient().IsTokenAuthorized(context.Background(), token, clientId)
 }
 
 func (c *CtxClientWrapper) IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error) {
-	introspectionResponse, err := c.introspectToken(ctx, token)
+	resp, err := c.introspectToken(ctx, token)
 	if err != nil {
 		return false, err
 	}
-	if introspectionResponse.Active && introspectionResponse.ClientId == clientId {
-		return true, nil
-	}
-
-	return false, nil
+	return resp.Active && resp.ClientId == clientId, nil
 }
 
-// introspectToken uses UAA's introspection endpoint with direct HTTP
-// Note: /introspect requires Basic Auth with client credentials
-func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
-	// Get UAA URL from endpoints
-	endpoints, err := c.GetEndpoints(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get endpoints for introspection: %w", err)
-	}
-
-	// Build the introspect URL
-	introspectURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/introspect"
-
-	// Create request body
-	data := fmt.Sprintf("token=%s", url.QueryEscape(token))
-
-	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", introspectURL, strings.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create introspect request: %w", err)
-	}
-
-	// Set Basic Auth header (required for /introspect endpoint)
-	basicAuth := base64.StdEncoding.EncodeToString([]byte(c.conf.ClientID + ":" + c.conf.Secret))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Authorization", "Basic "+basicAuth)
-
-	// Create HTTP client with appropriate TLS settings
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+func (c *CtxClientWrapper) newHTTPClient() *http.Client {
+	httpClient := &http.Client{Timeout: uaaRequestTimeout}
 	if c.conf.SkipSSLValidation {
 		httpClient.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
 		}
 	}
+	return httpClient
+}
 
-	// Execute request
-	resp, err := httpClient.Do(req)
+func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
+	endpoints, err := c.GetEndpoints(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get endpoints for introspection: %w", err)
+	}
+
+	introspectURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/introspect"
+	body := "token=" + url.QueryEscape(token)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, introspectURL, strings.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create introspect request: %w", err)
+	}
+
+	credentials := base64.StdEncoding.EncodeToString([]byte(c.conf.ClientID + ":" + c.conf.Secret))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Basic "+credentials)
+
+	resp, err := c.newHTTPClient().Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("introspect token failed: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read introspect response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("introspect token failed with status code: %d, body: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("introspect token failed with status code: %d, body: %s", resp.StatusCode, string(respBody))
 	}
 
-	// Parse the response
-	response := &IntrospectionResponse{}
-	if err := parseJSON(body, response); err != nil {
+	var result IntrospectionResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse introspection response: %w", err)
 	}
 
-	return response, nil
+	return &result, nil
 }
 
-// getUserId gets the user ID from the user token using UAA's /userinfo endpoint
 func (c *CtxClientWrapper) getUserId(ctx context.Context, userToken string) (UserId, error) {
 	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	// Build the userinfo URL
 	userinfoURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/userinfo"
 
-	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "GET", userinfoURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, userinfoURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create userinfo request: %w", err)
 	}
-
-	// Set Bearer auth header with user's token
 	req.Header.Set("Authorization", "Bearer "+userToken)
 
-	// Create HTTP client with appropriate TLS settings
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	if c.conf.SkipSSLValidation {
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
-		}
-	}
-
-	// Execute request
-	resp, err := httpClient.Do(req)
+	resp, err := c.newHTTPClient().Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to get user info: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Check for unauthorized
 	if resp.StatusCode == http.StatusUnauthorized {
 		return "", ErrUnauthorized
 	}
 
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to read userinfo response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("userinfo failed with status code: %d, body: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("userinfo failed with status code: %d, body: %s", resp.StatusCode, string(respBody))
 	}
 
-	// Parse the response
 	var userInfo struct {
 		UserID string `json:"user_id"`
 	}
-	if err := parseJSON(body, &userInfo); err != nil {
+	if err := json.Unmarshal(respBody, &userInfo); err != nil {
 		return "", fmt.Errorf("failed to parse userinfo response: %w", err)
 	}
 
 	return UserId(userInfo.UserID), nil
 }
 
-// getSpaceId gets the space ID from an app
 func (c *CtxClientWrapper) getSpaceId(ctx context.Context, appId Guid) (SpaceId, error) {
 	app, err := c.GetApp(ctx, appId)
 	if err != nil {
@@ -382,15 +310,12 @@ func (c *CtxClientWrapper) getSpaceId(ctx context.Context, appId Guid) (SpaceId,
 
 	spaceId := app.Relationships.Space.Data.Guid
 	if spaceId == "" {
-		return "", fmt.Errorf("empty space-guid: failed to retrieve it for app with id %s", appId)
+		return "", fmt.Errorf("empty space-guid for app %s", appId)
 	}
 
 	return spaceId, nil
 }
 
-// --- ApiClient Interface Implementation ---
-
-// GetEndpoints returns the CF API endpoints
 func (w *CFClientWrapper) GetEndpoints() (Endpoints, error) {
 	return w.GetCtxClient().GetEndpoints(context.Background())
 }
@@ -406,12 +331,10 @@ func (c *CtxClientWrapper) GetEndpoints(ctx context.Context) (Endpoints, error) 
 	c.endpointsMu.Lock()
 	defer c.endpointsMu.Unlock()
 
-	// Double-check after acquiring write lock
 	if c.endpoints != nil {
 		return *c.endpoints, nil
 	}
 
-	// Get root info from go-cfclient
 	root, err := c.cfClient.Root.Get(ctx)
 	if err != nil {
 		return Endpoints{}, fmt.Errorf("failed GetEndpoints: %w", MapCFClientError(err))
@@ -423,7 +346,6 @@ func (c *CtxClientWrapper) GetEndpoints(ctx context.Context) (Endpoints, error) 
 	return endpoints, nil
 }
 
-// GetApp retrieves an application by its GUID
 func (w *CFClientWrapper) GetApp(appId Guid) (*App, error) {
 	return w.GetCtxClient().GetApp(context.Background(), appId)
 }
@@ -436,7 +358,6 @@ func (c *CtxClientWrapper) GetApp(ctx context.Context, appId Guid) (*App, error)
 	return mapResourceApp(app), nil
 }
 
-// GetAppProcesses retrieves processes for an application
 func (w *CFClientWrapper) GetAppProcesses(appId Guid, processTypes ...string) (Processes, error) {
 	return w.GetCtxClient().GetAppProcesses(context.Background(), appId, processTypes...)
 }
@@ -455,45 +376,41 @@ func (c *CtxClientWrapper) GetAppProcesses(ctx context.Context, appId Guid, proc
 	return mapResourceProcesses(processes), nil
 }
 
-// GetAppAndProcesses retrieves both app and processes in parallel
 func (w *CFClientWrapper) GetAppAndProcesses(appId Guid) (*AppAndProcesses, error) {
 	return w.GetCtxClient().GetAppAndProcesses(context.Background(), appId)
 }
 
 func (c *CtxClientWrapper) GetAppAndProcesses(ctx context.Context, appId Guid) (*AppAndProcesses, error) {
-	wg := sync.WaitGroup{}
-	wg.Add(2)
+	var wg sync.WaitGroup
 	var app *App
 	var processes Processes
-	var errApp, errProc error
+	var appErr, procErr error
 
+	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		app, errApp = c.GetApp(ctx, appId)
+		app, appErr = c.GetApp(ctx, appId)
 	}()
 	go func() {
 		defer wg.Done()
-		processes, errProc = c.GetAppProcesses(ctx, appId, ProcessTypeWeb)
+		processes, procErr = c.GetAppProcesses(ctx, appId, ProcessTypeWeb)
 	}()
 	wg.Wait()
 
-	if errApp != nil {
-		return nil, fmt.Errorf("get state&instances failed: %w", errApp)
+	if appErr != nil {
+		return nil, fmt.Errorf("get state&instances failed: %w", appErr)
 	}
-	if errProc != nil {
-		return nil, fmt.Errorf("get state&instances failed: %w", errProc)
+	if procErr != nil {
+		return nil, fmt.Errorf("get state&instances failed: %w", procErr)
 	}
 	return &AppAndProcesses{App: app, Processes: processes}, nil
 }
 
-// ScaleAppWebProcess scales the web process of an application
 func (w *CFClientWrapper) ScaleAppWebProcess(appId Guid, numberOfProcesses int) error {
 	return w.GetCtxClient().ScaleAppWebProcess(context.Background(), appId, numberOfProcesses)
 }
 
-func (c *CtxClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, numberOfProcesses int) error {
-	// go-cfclient v3 scales by process GUID, but we can use the app GUID + process type
-	// First, get the web process for the app
+func (c *CtxClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, instances int) error {
 	processes, err := c.cfClient.Processes.ListForAppAll(ctx, string(appId), &client.ProcessListOptions{
 		Types: client.Filter{Values: []string{ProcessTypeWeb}},
 	})
@@ -505,45 +422,40 @@ func (c *CtxClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, n
 		return fmt.Errorf("no web process found for app '%s'", appId)
 	}
 
-	// Scale the web process
-	processGUID := processes[0].GUID
-	_, err = c.cfClient.Processes.Scale(ctx, processGUID, &resource.ProcessScale{
-		Instances: &numberOfProcesses,
+	_, err = c.cfClient.Processes.Scale(ctx, processes[0].GUID, &resource.ProcessScale{
+		Instances: &instances,
 	})
 	if err != nil {
-		return fmt.Errorf("failed scaling app '%s' to %d: %w", appId, numberOfProcesses, MapCFClientError(err))
+		return fmt.Errorf("failed scaling app '%s' to %d: %w", appId, instances, MapCFClientError(err))
 	}
 
 	return nil
 }
 
-// GetServiceInstance retrieves a service instance by GUID
-func (w *CFClientWrapper) GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error) {
-	return w.GetCtxClient().GetServiceInstance(context.Background(), serviceInstanceGuid)
+func (w *CFClientWrapper) GetServiceInstance(guid string) (*ServiceInstance, error) {
+	return w.GetCtxClient().GetServiceInstance(context.Background(), guid)
 }
 
-func (c *CtxClientWrapper) GetServiceInstance(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error) {
-	si, err := c.cfClient.ServiceInstances.Get(ctx, serviceInstanceGuid)
+func (c *CtxClientWrapper) GetServiceInstance(ctx context.Context, guid string) (*ServiceInstance, error) {
+	si, err := c.cfClient.ServiceInstances.Get(ctx, guid)
 	if err != nil {
-		return nil, fmt.Errorf("failed GetServiceInstance guid(%s): %w", serviceInstanceGuid, MapCFClientError(err))
+		return nil, fmt.Errorf("failed GetServiceInstance(%s): %w", guid, MapCFClientError(err))
 	}
 	return mapResourceServiceInstance(si), nil
 }
 
-// GetServicePlan retrieves a service plan by GUID
-func (w *CFClientWrapper) GetServicePlan(servicePlanGuid string) (*ServicePlan, error) {
-	return w.GetCtxClient().GetServicePlan(context.Background(), servicePlanGuid)
+func (w *CFClientWrapper) GetServicePlan(guid string) (*ServicePlan, error) {
+	return w.GetCtxClient().GetServicePlan(context.Background(), guid)
 }
 
-func (c *CtxClientWrapper) GetServicePlan(ctx context.Context, servicePlanGuid string) (*ServicePlan, error) {
-	sp, err := c.cfClient.ServicePlans.Get(ctx, servicePlanGuid)
+func (c *CtxClientWrapper) GetServicePlan(ctx context.Context, guid string) (*ServicePlan, error) {
+	sp, err := c.cfClient.ServicePlans.Get(ctx, guid)
 	if err != nil {
-		return nil, fmt.Errorf("failed GetServicePlan(%s): %w", servicePlanGuid, MapCFClientError(err))
+		return nil, fmt.Errorf("failed GetServicePlan(%s): %w", guid, MapCFClientError(err))
 	}
 	return mapResourceServicePlan(sp), nil
 }
 
-// GetSpaceDeveloperRoles retrieves space developer roles for a user
 func (c *CtxClientWrapper) GetSpaceDeveloperRoles(ctx context.Context, spaceId SpaceId, userId UserId) (Roles, error) {
 	opts := &client.RoleListOptions{
 		Types:      client.Filter{Values: []string{string(RoleSpaceDeveloper)}},
@@ -559,9 +471,6 @@ func (c *CtxClientWrapper) GetSpaceDeveloperRoles(ctx context.Context, spaceId S
 	return mapResourceRoles(roles), nil
 }
 
-// --- Type Mapping Functions ---
-
-// mapRootToEndpoints maps go-cfclient's Root to our Endpoints type
 func mapRootToEndpoints(root *resource.Root) Endpoints {
 	return Endpoints{
 		CloudControllerV3: Href{Url: root.Links.CloudControllerV3.Href},
@@ -577,7 +486,6 @@ func mapRootToEndpoints(root *resource.Root) Endpoints {
 	}
 }
 
-// mapResourceApp maps go-cfclient's App to our App type
 func mapResourceApp(app *resource.App) *App {
 	return &App{
 		Guid:      app.GUID,
@@ -596,11 +504,8 @@ func mapResourceApp(app *resource.App) *App {
 	}
 }
 
-// mapResourceMetadata maps go-cfclient's Metadata to our Metadata type
 func mapResourceMetadata(m *resource.Metadata) Metadata {
-	result := Metadata{
-		Labels: Labels{},
-	}
+	result := Metadata{Labels: Labels{}}
 	if m != nil && m.Labels != nil {
 		if v, ok := m.Labels["app-autoscaler.cloudfoundry.org/disable-autoscaling"]; ok {
 			result.DisableAutoscaling = v
@@ -609,7 +514,6 @@ func mapResourceMetadata(m *resource.Metadata) Metadata {
 	return result
 }
 
-// mapResourceProcesses maps go-cfclient's Process list to our Processes type
 func mapResourceProcesses(processes []*resource.Process) Processes {
 	result := make(Processes, len(processes))
 	for i, p := range processes {
@@ -618,7 +522,6 @@ func mapResourceProcesses(processes []*resource.Process) Processes {
 	return result
 }
 
-// mapResourceProcess maps go-cfclient's Process to our Process type
 func mapResourceProcess(p *resource.Process) Process {
 	return Process{
 		Guid:       p.GUID,
@@ -631,7 +534,6 @@ func mapResourceProcess(p *resource.Process) Process {
 	}
 }
 
-// mapResourceServiceInstance maps go-cfclient's ServiceInstance to our ServiceInstance type
 func mapResourceServiceInstance(si *resource.ServiceInstance) *ServiceInstance {
 	return &ServiceInstance{
 		Guid: si.GUID,
@@ -646,7 +548,6 @@ func mapResourceServiceInstance(si *resource.ServiceInstance) *ServiceInstance {
 	}
 }
 
-// mapResourceServicePlan maps go-cfclient's ServicePlan to our ServicePlan type
 func mapResourceServicePlan(sp *resource.ServicePlan) *ServicePlan {
 	return &ServicePlan{
 		Guid: sp.GUID,
@@ -656,7 +557,6 @@ func mapResourceServicePlan(sp *resource.ServicePlan) *ServicePlan {
 	}
 }
 
-// mapResourceRoles maps go-cfclient's Role list to our Roles type
 func mapResourceRoles(roles []*resource.Role) Roles {
 	result := make(Roles, len(roles))
 	for i, r := range roles {
@@ -666,9 +566,4 @@ func mapResourceRoles(roles []*resource.Role) Roles {
 		}
 	}
 	return result
-}
-
-// parseJSON is a helper to parse JSON bytes
-func parseJSON(data []byte, v any) error {
-	return json.Unmarshal(data, v)
 }
