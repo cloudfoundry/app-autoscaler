@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -33,6 +34,9 @@ type CFClientWrapper struct {
 	// Cached endpoints
 	endpointsMu sync.RWMutex
 	endpoints   *Endpoints
+
+	// UAA client initialization lock
+	uaaClientMu sync.Mutex
 }
 
 // CtxClientWrapper provides context-aware methods
@@ -78,6 +82,16 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CF
 
 // initUAAClient initializes the UAA client lazily (after we have endpoints)
 func (w *CFClientWrapper) initUAAClient(ctx context.Context) error {
+	// Fast path: check without lock
+	if w.uaaClient != nil {
+		return nil
+	}
+
+	// Slow path: acquire lock and double-check
+	w.uaaClientMu.Lock()
+	defer w.uaaClientMu.Unlock()
+
+	// Double-check after acquiring lock
 	if w.uaaClient != nil {
 		return nil
 	}
@@ -210,11 +224,9 @@ func (c *CtxClientWrapper) IsUserAdmin(ctx context.Context, userToken string) (b
 		return false, err
 	}
 
-	for _, scope := range introspectionResponse.Scopes {
-		if scope == CCAdminScope {
-			c.logger.Info("user is cc admin")
-			return true, nil
-		}
+	if slices.Contains(introspectionResponse.Scopes, CCAdminScope) {
+		c.logger.Info("user is cc admin")
+		return true, nil
 	}
 
 	return false, nil
@@ -646,6 +658,6 @@ func mapResourceRoles(roles []*resource.Role) Roles {
 }
 
 // parseJSON is a helper to parse JSON bytes
-func parseJSON(data []byte, v interface{}) error {
+func parseJSON(data []byte, v any) error {
 	return json.Unmarshal(data, v)
 }
