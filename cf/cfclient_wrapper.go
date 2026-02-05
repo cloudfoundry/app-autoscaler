@@ -2,6 +2,7 @@ package cf
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -292,17 +293,20 @@ func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*
 	}
 
 	// Use go-uaa's Curl to call /introspect endpoint
+	// The /introspect endpoint requires Basic Auth with client credentials
 	// Curl signature: Curl(path string, method string, data string, headers []string) (string, string, int, error)
 	data := fmt.Sprintf("token=%s", url.QueryEscape(token))
+	basicAuth := base64.StdEncoding.EncodeToString([]byte(c.conf.ClientID + ":" + c.conf.Secret))
 	body, _, statusCode, err := c.uaaClient.Curl("/introspect", "POST", data, []string{
 		"Content-Type: application/x-www-form-urlencoded",
+		"Authorization: Basic " + basicAuth,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("introspect token failed: %w", err)
 	}
 
 	if statusCode != 200 {
-		return nil, fmt.Errorf("introspect token failed with status code: %d", statusCode)
+		return nil, fmt.Errorf("introspect token failed with status code: %d, body: %s", statusCode, body)
 	}
 
 	// Parse the response
@@ -592,7 +596,7 @@ func mapResourceMetadata(m *resource.Metadata) Metadata {
 	}
 	if m != nil && m.Labels != nil {
 		if v, ok := m.Labels["app-autoscaler.cloudfoundry.org/disable-autoscaling"]; ok {
-			result.Labels.DisableAutoscaling = v
+			result.DisableAutoscaling = v
 		}
 	}
 	return result
