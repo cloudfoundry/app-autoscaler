@@ -480,7 +480,7 @@ scheduler.test-certificates:
 
 lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\
 	export GOVERSION ;\
 	echo "Linting with Golang $${GOVERSION}" ;\
