@@ -43,6 +43,7 @@ var _ = Describe("CFClientWrapper", func() {
 			mockServer.Add().OauthToken("test-access-token")
 			mockServer.Add().Info(mockServer.URL())
 			client, clientErr = cf.NewCFClient(conf, logger)
+			Expect(clientErr).NotTo(HaveOccurred())
 		}
 	})
 
@@ -74,7 +75,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("Login", func() {
 		It("logs in successfully", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 
 			err := client.Login()
 			Expect(err).NotTo(HaveOccurred())
@@ -83,7 +83,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetApp", func() {
 		It("returns app details", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 
 			app, err := client.GetApp("test-app-guid")
@@ -94,7 +93,6 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns error for non-existent app", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetApp("", http.StatusNotFound, "")
 
 			_, err := client.GetApp("non-existent-app")
@@ -105,7 +103,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetAppProcesses", func() {
 		It("returns process details", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetAppProcesses(3)
 
 			processes, err := client.GetAppProcesses("test-app-guid", cf.ProcessTypeWeb)
@@ -118,7 +115,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetAppAndProcesses", func() {
 		It("returns both app and processes", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 			mockServer.Add().GetAppProcesses(2)
 
@@ -133,7 +129,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("ScaleAppWebProcess", func() {
 		It("scales the app successfully", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().GetAppProcesses(2)
 			mockServer.Add().ScaleAppWebProcess()
 
@@ -144,7 +139,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetServiceInstance", func() {
 		It("returns service instance details", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().ServiceInstance("test-plan-guid")
 
 			si, err := client.GetServiceInstance("test-si-guid")
@@ -157,7 +151,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetServicePlan", func() {
 		It("returns service plan details", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().ServicePlan("broker-plan-id")
 
 			sp, err := client.GetServicePlan("test-plan-guid")
@@ -169,7 +162,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("IsUserAdmin", func() {
 		It("returns true when user has admin scope", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().Introspect([]string{"cloud_controller.admin", "openid"})
 
 			isAdmin, err := client.IsUserAdmin("user-token")
@@ -178,7 +170,6 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when user does not have admin scope", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().Introspect([]string{"openid", "cloud_controller.read"})
 
 			isAdmin, err := client.IsUserAdmin("user-token")
@@ -189,7 +180,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("IsUserSpaceDeveloper", func() {
 		It("returns true when user is space developer", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().UserInfo(http.StatusOK, "test-user-id")
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 			mockServer.Add().Roles(http.StatusOK, cf.Role{Guid: "role-guid", Type: cf.RoleSpaceDeveloper})
@@ -200,7 +190,6 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when user is not space developer", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().UserInfo(http.StatusOK, "test-user-id")
 			mockServer.Add().GetApp("STARTED", http.StatusOK, "test-space-guid")
 			mockServer.Add().Roles(http.StatusOK) // No roles
@@ -211,7 +200,6 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false without error when token is unauthorized", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.Add().UserInfo(http.StatusUnauthorized, "")
 
 			isSpaceDev, err := client.IsUserSpaceDeveloper("invalid-token", "test-app-guid")
@@ -223,7 +211,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("IsTokenAuthorized", func() {
 		It("returns true when token is authorized for client", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
 				RespondWithJSON(http.StatusOK, map[string]any{
 					"active":    true,
@@ -236,7 +223,6 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when client_id does not match", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
 				RespondWithJSON(http.StatusOK, map[string]any{
 					"active":    true,
@@ -249,7 +235,6 @@ var _ = Describe("CFClientWrapper", func() {
 		})
 
 		It("returns false when token is inactive", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
 				RespondWithJSON(http.StatusOK, map[string]any{
 					"active":    false,
@@ -264,7 +249,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetEndpoints", func() {
 		It("returns endpoints and caches them", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			// Count requests before calling GetEndpoints
 			requestsBefore := mockServer.Count().Requests("^/$")
 
@@ -286,7 +270,6 @@ var _ = Describe("CFClientWrapper", func() {
 
 	Describe("GetCtxClient", func() {
 		It("returns a context client", func() {
-			Expect(clientErr).NotTo(HaveOccurred())
 			ctxClient := client.GetCtxClient()
 			Expect(ctxClient).NotTo(BeNil())
 		})
