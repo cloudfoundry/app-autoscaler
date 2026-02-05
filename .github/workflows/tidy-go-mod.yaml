@@ -9,13 +9,16 @@ concurrency:
 jobs:
   check-tidy-go-mod:
     name: ensure that go mod tidy has run
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/cloudfoundry/app-autoscaler-release-tools:main@sha256:5051e58cc3f83830238ed3185277f884f03a87c92c5e14f355038d9b2f9add8c
+    runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: true
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
+        with:
+          enable-cache: true
 
       - name: Trust my checkout
         run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
@@ -26,13 +29,12 @@ jobs:
           #! /usr/bin/env bash
           set -eu -o pipefail
 
-          make generate-fakes
-          make generate-openapi-generated-clients-and-servers
-          make go-mod-tidy
+          devbox run make generate-fake generate-openapi-generated-clients-and-servers
+          devbox run make go-mod-tidy
 
       - name: Check if there is any change
         id: get_changes
-        run: echo "changed=$(git status --porcelain | wc -l)" >> "$GITHUB_OUTPUT"
+        run: echo "changed=$(git status --porcelain | wc -l)" >> "${GITHUB_OUTPUT}"
 
       - name: Process changes
         if: steps.get_changes.outputs.changed != 0
