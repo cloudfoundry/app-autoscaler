@@ -86,17 +86,17 @@ func (a AddMock) GetApp(appState string, statusCode int, spaceGuid cf.SpaceId) A
 	return a
 }
 
-func definedResponsesOR(statusCode int, response interface{}) interface{} {
+func definedResponsesOR(statusCode int, response any) any {
 	switch statusCode {
 	case 401:
-		response = cf.CfNotAuthenticated
+		return cf.CfNotAuthenticated
 	case 403:
-		response = cf.CfNotAuthorized
+		return cf.CfNotAuthorized
 	case 404:
-		response = cf.CfResourceNotFound
+		return cf.CfResourceNotFound
 	default:
+		return response
 	}
-	return response
 }
 
 func (a AddMock) GetAppProcesses(processes int) AddMock {

@@ -9,9 +9,17 @@ import (
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
-const cfResourceNotFound = 10010
-const cfNotAuthenticated = 10002
-const cfNotAuthorised = 10003
+const (
+	cfResourceNotFound = 10010
+	cfNotAuthenticated = 10002
+	cfNotAuthorised    = 10003
+)
+
+var (
+	ErrUnauthorized       = errors.New("Unauthorized")
+	ErrInvalidTokenFormat = errors.New("invalid token format")
+	ErrInvalidJson        = errors.New("invalid error json")
+)
 
 type CFErrorResponse struct {
 	Description string `json:"description"`
@@ -19,13 +27,14 @@ type CFErrorResponse struct {
 	Code        int    `json:"code"`
 }
 
-var CfResourceNotFound = &CfError{Errors: []CfErrorItem{{Detail: "App usage event not found", Title: "CF-ResourceNotFound", Code: cfResourceNotFound}}}
-var CfInternalServerError = &CfError{Errors: []CfErrorItem{{Detail: "An unexpected, uncaught error occurred; the CC logs will contain more information", Title: "UnknownError", Code: 10001}}}
-var CfNotAuthenticated = &CfError{Errors: []CfErrorItem{{Detail: "No auth token was given, but authentication is required for this endpoint", Title: "CF-NotAuthenticated", Code: cfNotAuthenticated}}}
-var CfNotAuthorized = &CfError{Errors: []CfErrorItem{{Detail: "The authenticated user does not have permission to perform this operation", Title: "CF-NotAuthorized", Code: cfNotAuthorised}}}
+var (
+	CfResourceNotFound    = &CfError{Errors: []CfErrorItem{{Detail: "App usage event not found", Title: "CF-ResourceNotFound", Code: cfResourceNotFound}}}
+	CfInternalServerError = &CfError{Errors: []CfErrorItem{{Detail: "An unexpected, uncaught error occurred; the CC logs will contain more information", Title: "UnknownError", Code: 10001}}}
+	CfNotAuthenticated    = &CfError{Errors: []CfErrorItem{{Detail: "No auth token was given, but authentication is required for this endpoint", Title: "CF-NotAuthenticated", Code: cfNotAuthenticated}}}
+	CfNotAuthorized       = &CfError{Errors: []CfErrorItem{{Detail: "The authenticated user does not have permission to perform this operation", Title: "CF-NotAuthorized", Code: cfNotAuthorised}}}
 
-var _ error = &CfError{}
-var ErrInvalidJson = fmt.Errorf("invalid error json")
+	_ error = &CfError{}
+)
 
 func NewCfError(url string, resourceId string, statusCode int, respBody []byte) error {
 	var cfError = &CfError{}
@@ -114,27 +123,22 @@ func IsNotFound(err error) bool {
 	return errors.As(err, &cfError) && cfError.IsNotFound()
 }
 
-// MapCFClientError converts go-cfclient CloudFoundryError to our CfError type
 func MapCFClientError(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	// Check if it's a CloudFoundryError from go-cfclient
 	var cfClientErr resource.CloudFoundryError
 	if errors.As(err, &cfClientErr) {
 		return &CfError{
-			Errors: []CfErrorItem{
-				{
-					Code:   cfClientErr.Code,
-					Title:  cfClientErr.Title,
-					Detail: cfClientErr.Detail,
-				},
-			},
+			Errors: []CfErrorItem{{
+				Code:   cfClientErr.Code,
+				Title:  cfClientErr.Title,
+				Detail: cfClientErr.Detail,
+			}},
 		}
 	}
 
-	// Check for CloudFoundryErrors (multiple errors)
 	var cfClientErrs resource.CloudFoundryErrors
 	if errors.As(err, &cfClientErrs) {
 		items := make([]CfErrorItem, len(cfClientErrs.Errors))
@@ -148,6 +152,5 @@ func MapCFClientError(err error) error {
 		return &CfError{Errors: items}
 	}
 
-	// Return original error if it's not a CF error
 	return err
 }

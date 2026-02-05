@@ -1,9 +1,6 @@
 package cf
 
-import (
-	"errors"
-	"time"
-)
+import "time"
 
 const (
 	TokenTypeBearer   = "Bearer"
@@ -165,9 +162,3 @@ func (r Roles) HasRole(roleType RoleType) bool {
 	}
 	return false
 }
-
-// Error types
-var (
-	ErrUnauthorized       = errors.New("Unauthorized")
-	ErrInvalidTokenFormat = errors.New("invalid token format")
-)

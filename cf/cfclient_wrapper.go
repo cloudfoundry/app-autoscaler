@@ -218,16 +218,48 @@ func (c *CtxClientWrapper) newHTTPClient() *http.Client {
 	return httpClient
 }
 
-func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
+func (c *CtxClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get endpoints for introspection: %w", err)
+		return "", fmt.Errorf("failed to get UAA endpoint: %w", err)
+	}
+	return strings.TrimSuffix(endpoints.Uaa.Url, "/"), nil
+}
+
+func (c *CtxClientWrapper) doUaaRequest(req *http.Request, result any) error {
+	resp, err := c.newHTTPClient().Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return ErrUnauthorized
 	}
 
-	introspectURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/introspect"
-	body := "token=" + url.QueryEscape(token)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, introspectURL, strings.NewReader(body))
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	if err := json.Unmarshal(body, result); err != nil {
+		return fmt.Errorf("failed to parse response: %w", err)
+	}
+	return nil
+}
+
+func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
+	uaaURL, err := c.getUaaURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	body := "token=" + url.QueryEscape(token)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uaaURL+"/introspect", strings.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create introspect request: %w", err)
 	}
@@ -236,69 +268,31 @@ func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Basic "+credentials)
 
-	resp, err := c.newHTTPClient().Do(req)
-	if err != nil {
+	var result IntrospectionResponse
+	if err := c.doUaaRequest(req, &result); err != nil {
 		return nil, fmt.Errorf("introspect token failed: %w", err)
 	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read introspect response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("introspect token failed with status code: %d, body: %s", resp.StatusCode, string(respBody))
-	}
-
-	var result IntrospectionResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse introspection response: %w", err)
-	}
-
 	return &result, nil
 }
 
 func (c *CtxClientWrapper) getUserId(ctx context.Context, userToken string) (UserId, error) {
-	endpoints, err := c.GetEndpoints(ctx)
+	uaaURL, err := c.getUaaURL(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	userinfoURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/userinfo"
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, userinfoURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uaaURL+"/userinfo", nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create userinfo request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+userToken)
 
-	resp, err := c.newHTTPClient().Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to get user info: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return "", ErrUnauthorized
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read userinfo response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("userinfo failed with status code: %d, body: %s", resp.StatusCode, string(respBody))
-	}
-
 	var userInfo struct {
 		UserID string `json:"user_id"`
 	}
-	if err := json.Unmarshal(respBody, &userInfo); err != nil {
-		return "", fmt.Errorf("failed to parse userinfo response: %w", err)
+	if err := c.doUaaRequest(req, &userInfo); err != nil {
+		return "", fmt.Errorf("failed to get user info: %w", err)
 	}
-
 	return UserId(userInfo.UserID), nil
 }
 
