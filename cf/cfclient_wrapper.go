@@ -2,9 +2,12 @@ package cf
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"slices"
 	"strings"
@@ -13,20 +16,17 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/cloudfoundry-community/go-uaa"
 	"github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
-	"golang.org/x/oauth2"
 )
 
-// CFClientWrapper wraps go-cfclient and go-uaa to implement the existing CFClient interfaces
+// CFClientWrapper wraps go-cfclient to implement the existing CFClient interfaces
 type CFClientWrapper struct {
-	cfClient  *client.Client
-	uaaClient *uaa.API
-	conf      *Config
-	logger    lager.Logger
-	clk       clock.Clock
+	cfClient *client.Client
+	conf     *Config
+	logger   lager.Logger
+	clk      clock.Clock
 
 	// Token management
 	tokenInfoMu sync.RWMutex
@@ -35,9 +35,6 @@ type CFClientWrapper struct {
 	// Cached endpoints
 	endpointsMu sync.RWMutex
 	endpoints   *Endpoints
-
-	// UAA client initialization lock
-	uaaClientMu sync.Mutex
 }
 
 // CtxClientWrapper provides context-aware methods
@@ -48,7 +45,7 @@ type CtxClientWrapper struct {
 var _ CFClient = &CFClientWrapper{}
 var _ ContextClient = &CtxClientWrapper{}
 
-// NewCFClientWrapper creates a new CFClient using go-cfclient/v3 and go-uaa
+// NewCFClientWrapper creates a new CFClient using go-cfclient/v3
 func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CFClientWrapper, error) {
 	// Build config options
 	options := []config.Option{
@@ -79,40 +76,6 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, clk clock.Clock) (*CF
 	}
 
 	return wrapper, nil
-}
-
-// initUAAClient initializes the UAA client lazily (after we have endpoints)
-func (w *CFClientWrapper) initUAAClient(ctx context.Context) error {
-	// Fast path: check without lock
-	if w.uaaClient != nil {
-		return nil
-	}
-
-	// Slow path: acquire lock and double-check
-	w.uaaClientMu.Lock()
-	defer w.uaaClientMu.Unlock()
-
-	// Double-check after acquiring lock
-	if w.uaaClient != nil {
-		return nil
-	}
-
-	endpoints, err := w.GetCtxClient().GetEndpoints(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get endpoints for UAA client: %w", err)
-	}
-
-	uaaAPI, err := uaa.New(
-		endpoints.Uaa.Url,
-		uaa.WithClientCredentials(w.conf.ClientID, w.conf.Secret, uaa.JSONWebToken),
-		uaa.WithSkipSSLValidation(w.conf.SkipSSLValidation),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create UAA client: %w", err)
-	}
-
-	w.uaaClient = uaaAPI
-	return nil
 }
 
 // GetCtxClient returns the context-aware client
@@ -286,32 +249,62 @@ func (c *CtxClientWrapper) IsTokenAuthorized(ctx context.Context, token, clientI
 	return false, nil
 }
 
-// introspectToken uses UAA's introspection endpoint via go-uaa's Curl method
+// introspectToken uses UAA's introspection endpoint with direct HTTP
+// Note: /introspect requires Basic Auth with client credentials
 func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
-	if err := c.initUAAClient(ctx); err != nil {
-		return nil, err
+	// Get UAA URL from endpoints
+	endpoints, err := c.GetEndpoints(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get endpoints for introspection: %w", err)
 	}
 
-	// Use go-uaa's Curl to call /introspect endpoint
-	// The /introspect endpoint requires Basic Auth with client credentials
-	// Curl signature: Curl(path string, method string, data string, headers []string) (string, string, int, error)
+	// Build the introspect URL
+	introspectURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/introspect"
+
+	// Create request body
 	data := fmt.Sprintf("token=%s", url.QueryEscape(token))
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", introspectURL, strings.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create introspect request: %w", err)
+	}
+
+	// Set Basic Auth header (required for /introspect endpoint)
 	basicAuth := base64.StdEncoding.EncodeToString([]byte(c.conf.ClientID + ":" + c.conf.Secret))
-	body, _, statusCode, err := c.uaaClient.Curl("/introspect", "POST", data, []string{
-		"Content-Type: application/x-www-form-urlencoded",
-		"Authorization: Basic " + basicAuth,
-	})
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Basic "+basicAuth)
+
+	// Create HTTP client with appropriate TLS settings
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	if c.conf.SkipSSLValidation {
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		}
+	}
+
+	// Execute request
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("introspect token failed: %w", err)
 	}
+	defer resp.Body.Close()
 
-	if statusCode != 200 {
-		return nil, fmt.Errorf("introspect token failed with status code: %d, body: %s", statusCode, body)
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read introspect response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("introspect token failed with status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse the response
 	response := &IntrospectionResponse{}
-	if err := parseJSON([]byte(body), response); err != nil {
+	if err := parseJSON(body, response); err != nil {
 		return nil, fmt.Errorf("failed to parse introspection response: %w", err)
 	}
 
@@ -320,47 +313,61 @@ func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*
 
 // getUserId gets the user ID from the user token using UAA's /userinfo endpoint
 func (c *CtxClientWrapper) getUserId(ctx context.Context, userToken string) (UserId, error) {
-	if err := c.initUAAClient(ctx); err != nil {
-		return "", err
-	}
-
-	// Create a temporary UAA client with the user's token
 	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	// Use oauth2.Token for go-uaa
-	token := &oauth2.Token{
-		AccessToken: userToken,
-		TokenType:   TokenTypeBearer,
+	// Build the userinfo URL
+	userinfoURL := strings.TrimSuffix(endpoints.Uaa.Url, "/") + "/userinfo"
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "GET", userinfoURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create userinfo request: %w", err)
 	}
 
-	var userUAAClient *uaa.API
+	// Set Bearer auth header with user's token
+	req.Header.Set("Authorization", "Bearer "+userToken)
+
+	// Create HTTP client with appropriate TLS settings
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 	if c.conf.SkipSSLValidation {
-		userUAAClient, err = uaa.New(
-			endpoints.Uaa.Url,
-			uaa.WithToken(token),
-			uaa.WithSkipSSLValidation(true),
-		)
-	} else {
-		userUAAClient, err = uaa.New(
-			endpoints.Uaa.Url,
-			uaa.WithToken(token),
-		)
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to create user UAA client: %w", err)
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		}
 	}
 
-	// Use GetMe to get the user info
-	userInfo, err := userUAAClient.GetMe()
+	// Execute request
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		// Check if it's an unauthorized error
-		if strings.Contains(err.Error(), "401") || strings.Contains(err.Error(), "unauthorized") {
-			return "", ErrUnauthorized
-		}
 		return "", fmt.Errorf("failed to get user info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for unauthorized
+	if resp.StatusCode == http.StatusUnauthorized {
+		return "", ErrUnauthorized
+	}
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read userinfo response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("userinfo failed with status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse the response
+	var userInfo struct {
+		UserID string `json:"user_id"`
+	}
+	if err := parseJSON(body, &userInfo); err != nil {
+		return "", fmt.Errorf("failed to parse userinfo response: %w", err)
 	}
 
 	return UserId(userInfo.UserID), nil

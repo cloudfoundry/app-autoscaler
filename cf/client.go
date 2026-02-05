@@ -94,7 +94,7 @@ func (t TokensInfo) isTokenExpired(now func() time.Time) bool {
 	return now().Sub(t.grantTime) > (time.Duration(t.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
 }
 
-// NewCFClient creates a new CF client using go-cfclient/v3 and go-uaa
+// NewCFClient creates a new CF client using go-cfclient/v3
 func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) (CFClient, error) {
 	return NewCFClientWrapper(conf, logger, clk)
 }
