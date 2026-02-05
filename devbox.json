@@ -27,7 +27,7 @@
     "gnumake":                                          "4.4.1",
     "gnused":                                           "latest",
     "gnutar":                                           "latest",
-    "go":                                               "1.25.2",
+    "go":                                               "1.24.5",
     "go-tools":                                         "2025.1.1",
     "golangci-lint":                                    "2.8.0",
     "gopls":                                            "0.21.0",
