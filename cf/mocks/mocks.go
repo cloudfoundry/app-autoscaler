@@ -106,7 +106,7 @@ func (a AddMock) GetAppProcesses(processes int) AddMock {
 	}
 	a.server.RouteToHandler("GET",
 		regexp.MustCompile(`^/v3/apps/[^/]+/processes$`),
-		ghttp.RespondWithJSONEncoded(http.StatusOK, processesResponse{Resources: cf.Processes{{Instances: processes}}}))
+		ghttp.RespondWithJSONEncoded(http.StatusOK, processesResponse{Resources: cf.Processes{{Guid: "mock-web-process-guid", Type: "web", Instances: processes}}}))
 	return a
 }
 
@@ -121,7 +121,8 @@ func (a AddMock) Info(url string) AddMock {
 }
 
 func (a AddMock) ScaleAppWebProcess() AddMock {
-	a.server.RouteToHandler("POST", regexp.MustCompile(`^/v3/apps/[^/]+/processes/web/actions/scale$`), ghttp.RespondWith(http.StatusAccepted, "{}"))
+	// go-cfclient v3 scales by process GUID, not app GUID
+	a.server.RouteToHandler("POST", regexp.MustCompile(`^/v3/processes/[^/]+/actions/scale$`), ghttp.RespondWith(http.StatusAccepted, "{}"))
 	return a
 }
 
