@@ -108,7 +108,12 @@ autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
-	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	# Create a temporary placeholder file so that Go recognizes the fakes package.
+	# Without this, counterfeiter fails because it loads source packages (e.g. ./cf)
+	# whose test files import the fakes package - but an empty directory is not a valid package.
+	@echo 'package fakes' > '${app-fakes-dir}/doc.go'
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate ./generate-fakes.go
+	@rm -f '${app-fakes-dir}/doc.go'
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
@@ -184,7 +189,7 @@ check: fmt lint build test
 
 test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
-autoscaler.test: check-db_type init-db test-certs generate-fakes build-gorouterproxy
+autoscaler.test: check-db_type init-db test-certs generate-openapi-generated-clients-and-servers generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
