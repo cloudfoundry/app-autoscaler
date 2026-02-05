@@ -28,3 +28,5 @@ scalingengine/apis/scalinghistory/oas*gen.go
 # scalingengine/cmd/scalingengine/scalingengine
 # Makefile_*
 #
+#
+.claude

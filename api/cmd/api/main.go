@@ -44,7 +44,8 @@ func main() {
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 
 	paClock := clock.NewClock()
-	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	cfClient, err := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	startup.ExitOnError(err, logger, "failed to create cloud foundry client", lager.Data{"API": conf.CF.API})
 	err = cfClient.Login()
 	startup.ExitOnError(err, logger, "failed to login cloud foundry", lager.Data{"API": conf.CF.API})
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 )
 
 const cfResourceNotFound = 10010
@@ -110,4 +112,42 @@ func truncateString(stringToTrunk string, length int) string {
 func IsNotFound(err error) bool {
 	var cfError *CfError
 	return errors.As(err, &cfError) && cfError.IsNotFound()
+}
+
+// MapCFClientError converts go-cfclient CloudFoundryError to our CfError type
+func MapCFClientError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// Check if it's a CloudFoundryError from go-cfclient
+	var cfClientErr resource.CloudFoundryError
+	if errors.As(err, &cfClientErr) {
+		return &CfError{
+			Errors: []CfErrorItem{
+				{
+					Code:   cfClientErr.Code,
+					Title:  cfClientErr.Title,
+					Detail: cfClientErr.Detail,
+				},
+			},
+		}
+	}
+
+	// Check for CloudFoundryErrors (multiple errors)
+	var cfClientErrs resource.CloudFoundryErrors
+	if errors.As(err, &cfClientErrs) {
+		items := make([]CfErrorItem, len(cfClientErrs.Errors))
+		for i, e := range cfClientErrs.Errors {
+			items[i] = CfErrorItem{
+				Code:   e.Code,
+				Title:  e.Title,
+				Detail: e.Detail,
+			}
+		}
+		return &CfError{Errors: items}
+	}
+
+	// Return original error if it's not a CF error
+	return err
 }
