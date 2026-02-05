@@ -9,7 +9,7 @@ go 1.25.0
 replace golang.org/x/tools => golang.org/x/tools v0.39.0
 
 require (
-	code.cloudfoundry.org/brokerapi/v13 v13.0.17
+	code.cloudfoundry.org/brokerapi/v13 v13.0.18
 	code.cloudfoundry.org/cfhttp/v2 v2.45.0
 	code.cloudfoundry.org/clock v1.38.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
@@ -20,7 +20,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.17
-	github.com/go-chi/chi/v5 v5.2.4
+	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.1.0
 	github.com/go-logr/logr v1.4.3
