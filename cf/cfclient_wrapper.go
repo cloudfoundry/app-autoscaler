@@ -26,6 +26,7 @@ type CFClientWrapper struct {
 	cfClient    *client.Client
 	conf        *Config
 	logger      lager.Logger
+	httpClient  *http.Client
 	endpointsMu sync.RWMutex
 	endpoints   *Endpoints
 }
@@ -57,10 +58,21 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger) (*CFClientWrapper, er
 	}
 
 	return &CFClientWrapper{
-		cfClient: cfClient,
-		conf:     conf,
-		logger:   logger,
+		cfClient:   cfClient,
+		conf:       conf,
+		logger:     logger,
+		httpClient: newUaaHTTPClient(conf.SkipSSLValidation),
 	}, nil
+}
+
+func newUaaHTTPClient(skipSSL bool) *http.Client {
+	httpClient := &http.Client{Timeout: uaaRequestTimeout}
+	if skipSSL {
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		}
+	}
+	return httpClient
 }
 
 func (w *CFClientWrapper) GetCtxClient() ContextClient {
@@ -144,16 +156,6 @@ func (c *CtxClientWrapper) IsTokenAuthorized(ctx context.Context, token, clientI
 	return resp.Active && resp.ClientId == clientId, nil
 }
 
-func (c *CtxClientWrapper) newHTTPClient() *http.Client {
-	httpClient := &http.Client{Timeout: uaaRequestTimeout}
-	if c.conf.SkipSSLValidation {
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
-		}
-	}
-	return httpClient
-}
-
 func (c *CtxClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 	endpoints, err := c.GetEndpoints(ctx)
 	if err != nil {
@@ -163,7 +165,7 @@ func (c *CtxClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 }
 
 func (c *CtxClientWrapper) doUaaRequest(req *http.Request, result any) error {
-	resp, err := c.newHTTPClient().Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
