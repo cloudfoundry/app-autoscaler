@@ -55,24 +55,21 @@ var _ CFClient = &CFClientWrapper{}
 var _ ContextClient = &CtxClientWrapper{}
 
 func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption) (*CFClientWrapper, error) {
-	// Apply functional options first to check if HTTP client is provided
 	wo := &wrapperOptions{}
 	for _, opt := range opts {
 		opt(wo)
 	}
 
-	options := []config.Option{
-		config.ClientCredentials(conf.ClientID, conf.Secret),
-		config.UserAgent(GetUserAgent()),
-	}
-
-	// Use provided HTTP client (for testing) or create a configured one with
-	// retry logic and connection pool settings from ClientConfig
 	httpClient := wo.httpClient
 	if httpClient == nil {
 		httpClient = createConfiguredHTTPClient(conf, logger)
 	}
-	options = append(options, config.HttpClient(httpClient))
+
+	options := []config.Option{
+		config.ClientCredentials(conf.ClientID, conf.Secret),
+		config.UserAgent(GetUserAgent()),
+		config.HttpClient(httpClient),
+	}
 
 	cfg, err := config.New(conf.API, options...)
 	if err != nil {
@@ -92,10 +89,7 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption
 	}, nil
 }
 
-// createConfiguredHTTPClient creates an HTTP client with retry logic and connection
-// pool settings from ClientConfig. This ensures the go-cfclient uses the same
-// configuration (MaxRetries, MaxRetryWaitMs, IdleConnectionTimeoutMs, MaxIdleConnsPerHost)
-// that was previously used with the custom CF client implementation.
+// createConfiguredHTTPClient creates an HTTP client with retry logic and connection pool settings.
 func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client {
 	transport := &http.Transport{
 		MaxIdleConnsPerHost: conf.MaxIdleConnsPerHost,
@@ -108,7 +102,6 @@ func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client 
 		Timeout:   uaaRequestTimeout,
 	}
 
-	// Wrap with retry logic using the same RetryClient function used elsewhere
 	return RetryClient(conf.ClientConfig, baseClient, logger)
 }
 
