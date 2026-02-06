@@ -66,6 +66,7 @@ service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_brok
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
+autoscaler_test_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/test_user_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
@@ -106,6 +107,17 @@ export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
+
+export AUTOSCALER_TEST_USER="${AUTOSCALER_TEST_USER}"
+export AUTOSCALER_TEST_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
+export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
+export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
+export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_TEST_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_TEST_PASSWORD}}"
+export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
+export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -193,11 +205,19 @@ modules:
       ACCEPTANCE_CONFIG_JSON: |
         {
           "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
+          "admin_user": "${AUTOSCALER_TEST_USER}",
+          "admin_password": "${AUTOSCALER_TEST_PASSWORD}",
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
           "use_http": false,
+          "use_existing_user": ${USE_EXISTING_USER},
+          "existing_user": "${EXISTING_USER}",
+          "existing_user_password": "${EXISTING_USER_PASSWORD}",
+          "keep_user_at_suite_end": ${KEEP_USER_AT_SUITE_END},
+          "add_existing_user_to_existing_space": ${ADD_EXISTING_USER_TO_EXISTING_SPACE},
+          "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
+          "existing_organization": "${EXISTING_ORGANIZATION}",
+          "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},
           "service_name": "${DEPLOYMENT_NAME}",
           "service_plan": "autoscaler-free-plan",
           "service_broker": "${DEPLOYMENT_NAME}",

@@ -3,6 +3,11 @@
 #
 # This file is intended to be loaded via the source command.
 
+# Enable debug output if DEBUG=true
+if [[ "${DEBUG:-false}" == "true" ]]; then
+	set -x
+fi
+
 function step(){
 	echo "# $1"
 }
@@ -105,6 +110,15 @@ function cleanup_bosh(){
 function cleanup_credhub(){
 	step "cleaning up credhub: '/bosh-autoscaler/${deployment_name}/*'"
 	retry 3 credhub delete --path="/bosh-autoscaler/${deployment_name}"
+}
+
+function cleanup_test_user(){
+	step "cleaning up test user '${AUTOSCALER_TEST_USER}'"
+	if cf delete-user -f "${AUTOSCALER_TEST_USER}" &> /dev/null; then
+		log "✓ Test user deleted successfully"
+	else
+		log "Test user does not exist or already deleted"
+	fi
 }
 
 function cleanup_apps(){

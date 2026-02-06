@@ -111,6 +111,10 @@ var _ = AfterSuite(func() {
 		DeleteTestApp(appName, cfg.DefaultTimeoutDuration())
 		DisableServiceAccess(cfg, setup)
 		otherSetup.Teardown()
-		setup.Teardown()
+		if cfg.UseExistingOrganization {
+			CleanupInExistingOrg(cfg, setup)
+		} else {
+			setup.Teardown()
+		}
 	}
 })
