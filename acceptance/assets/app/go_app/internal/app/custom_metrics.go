@@ -5,21 +5,20 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 
-	api "code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/custommetrics"
+	api "code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/custommetrics"
 	"github.com/cloudfoundry-community/go-cfenv"
-	"github.com/gin-gonic/gin"
-	"github.com/go-logr/logr"
 	json "github.com/json-iterator/go"
 	"github.com/mitchellh/mapstructure"
 )
 
 //counterfeiter:generate . CustomMetricClient
 type CustomMetricClient interface {
-	PostCustomMetric(ctx context.Context, logger logr.Logger, appConfig *cfenv.App, metricsValue float64, metricName string, useMtls bool) error
+	PostCustomMetric(ctx context.Context, logger *slog.Logger, appConfig *cfenv.App, metricsValue float64, metricName string, useMtls bool) error
 }
 
 type CustomMetricAPIClient struct{}
@@ -28,47 +27,52 @@ var _ CustomMetricClient = &CustomMetricAPIClient{}
 
 var CfenvCurrent = cfenv.Current
 
-func CustomMetricsTests(logger logr.Logger, r *gin.RouterGroup, customMetricTest CustomMetricClient) *gin.RouterGroup {
-	r.GET("/mtls/:name/:value", handleCustomMetricsEndpoint(logger, customMetricTest, true))
-	r.GET("/:name/:value", handleCustomMetricsEndpoint(logger, customMetricTest, false))
-
-	return r
+func CustomMetricsTests(logger *slog.Logger, mux *http.ServeMux, customMetricTest CustomMetricClient) {
+	mux.HandleFunc("GET /custom-metrics/mtls/{name}/{value}", handleCustomMetricsEndpoint(logger, customMetricTest, true))
+	mux.HandleFunc("GET /custom-metrics/{name}/{value}", handleCustomMetricsEndpoint(logger, customMetricTest, false))
 }
 
-func handleCustomMetricsEndpoint(logger logr.Logger, customMetricTest CustomMetricClient, useMtls bool) func(c *gin.Context) {
-	return func(c *gin.Context) {
+func handleCustomMetricsEndpoint(logger *slog.Logger, customMetricTest CustomMetricClient, useMtls bool) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var (
 			metricName  string
 			metricValue uint64
 		)
 		var err error
 
-		if metricName = c.Param("name"); metricName == "" {
+		if metricName = r.PathValue("name"); metricName == "" {
 			err = fmt.Errorf("empty metric name")
-			logger.Error(err, err.Error())
-			Error(c, http.StatusBadRequest, "empty metric name")
+			logger.Error("Errorf in custom metrics", "error", err)
+			Errorf(logger, w, http.StatusBadRequest, "empty metric name")
 			return
 		}
-		if metricValue, err = strconv.ParseUint(c.Param("value"), 10, 64); err != nil {
-			logger.Error(err, "invalid metric value")
-			Error(c, http.StatusBadRequest, "invalid metric value: %s", err.Error())
-			return
-		}
-		// required if producer app is sending metric for appToScaleGuid
-		appToScaleGuid := c.Query("appToScaleGuid")
-		appConfig := &cfenv.App{AppID: appToScaleGuid}
 
-		err = customMetricTest.PostCustomMetric(c, logger, appConfig, float64(metricValue), metricName, useMtls)
-		if err != nil {
-			logger.Error(err, "failed to submit custom metric")
-			Error(c, http.StatusInternalServerError, "failed to submit custom metric: %s", err.Error())
+		if metricValue, err = strconv.ParseUint(r.PathValue("value"), 10, 64); err != nil {
+			logger.Error("Invalid metric value", "error", err)
+			Errorf(logger, w, http.StatusBadRequest, "invalid metric value: %s", err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"mtls": useMtls})
+
+		// required if producer app is sending metric for appToScaleGuid
+		appToScaleGuid := r.URL.Query().Get("appToScaleGuid")
+		appEnv := &cfenv.App{AppID: appToScaleGuid}
+
+		err = customMetricTest.PostCustomMetric(r.Context(), logger, appEnv, float64(metricValue), metricName, useMtls)
+		if err != nil {
+			logger.Error("Errorf posting custom metric", "error", err)
+			Errorf(logger, w, http.StatusInternalServerError, "error posting custom metric")
+			return
+		}
+
+		if err := writeJSON(w, http.StatusOK, JSONResponse{
+			"mtls": useMtls,
+		}); err != nil {
+			logger.Error("Failed to write JSON response", slog.Any("error", err))
+		}
 	}
 }
 
-func (*CustomMetricAPIClient) PostCustomMetric(ctx context.Context, logger logr.Logger, appConfig *cfenv.App, metricValue float64, metricName string, useMtls bool) error {
+func (*CustomMetricAPIClient) PostCustomMetric(ctx context.Context, logger *slog.Logger, appConfig *cfenv.App, metricValue float64, metricName string, useMtls bool) error {
 	currentApp, err := CfenvCurrent()
 	if err != nil {
 		return fmt.Errorf("cloud foundry environment not found %w", err)
