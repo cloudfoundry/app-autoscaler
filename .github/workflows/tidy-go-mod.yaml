@@ -29,7 +29,7 @@ jobs:
           #! /usr/bin/env bash
           set -eu -o pipefail
 
-          devbox run make generate-fakes generate-openapi-generated-clients-and-servers
+          devbox run make generate-openapi-generated-clients-and-servers
           devbox run make go-mod-tidy
 
       - name: Check if there is any change

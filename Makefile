@@ -108,12 +108,7 @@ autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
-	# Create a temporary placeholder file so that Go recognizes the fakes package.
-	# Without this, counterfeiter fails because it loads source packages (e.g. ./cf)
-	# whose test files import the fakes package - but an empty directory is not a valid package.
-	@echo 'package fakes' > '${app-fakes-dir}/doc.go'
-	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate ./generate-fakes.go
-	@rm -f '${app-fakes-dir}/doc.go'
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
@@ -125,23 +120,42 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
 
 
-# This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
-# this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
-# present but fortunately not necessarily up-to-date. This is fortunate because the generation of
-# the fake requires the files `go.mod` and `go.sum` to be already tidied up, introducing a cyclic
-# dependency otherwise. But that would make any modification to `go.mod` or `go.sum`
-# impossible. This definition now makes it possible to update `go.mod` and `go.sum` as follows:
-#  1. `make generate-fakes`
-#  2. Update `go.mod` and/or `go.sum`
-#  3. `make go-mod-tidy`
-#  4. Optionally: `make generate-fakes` to update the fakes as well.
+# This target should depend additionally on `${app-fakes-dir}, `${app-fakes-files}`,
+# `${openapi-generated-clients-and-servers-scalingengine-dir}`,
+# `${openapi-generated-clients-and-servers-api-dir}`,
+# `${openapi-generated-clients-and-servers-scalingengine-files}`,
+# `${openapi-generated-clients-and-servers-api-files}`. However this is not defined here. The reason
+# is, that for `go-mod-tidy` the generated files need to be present but fortunately not necessarily
+# up-to-date. This is fortunate because their generation require the files `go.mod` and
+# `go.sum` to be already tidied up, introducing a cyclic dependency otherwise. But that would make
+# any modification to `go.mod` or `go.sum` impossible. This definition now makes it possible to
+# update `go.mod` and `go.sum` as follows:
+#
+# 1. `make generate-openapi-generated-clients-and-servers generate-fakes`
+# 2. Update `go.mod` and/or `go.sum`
+# 3. `make go-mod-tidy`
+# 4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
 go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.go-mod-tidy test-app.go-mod-tidy
 	@echo -ne '${aes_terminal_font_yellow}' \
 		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 		'outdated. Please consider re-generating them, if this is relevant.' \
 		'${aes_terminal_reset}'
+
+	# 🚸 This is a workaround that lifts the requirement of `make generate-fakes` before. The files
+	# generate from the openapi-spec are still needed.
+	#
+	# In case the fakes-directory does not exist and is not populated, we have the issue that it is
+	# not a valid package. However this is needed for `go mod tidy`.
+	mkdir -p './${app-fakes-dir}'
+	echo 'package fakes' > '${app-fakes-dir}/doc.go'
 	go mod tidy
+	rm '${app-fakes-dir}/doc.go'
+
+	# If we fail subsequently, there are fakes in it and this is not an issue. If we forget this
+	# removal in case the directory is empty, the make-target `generate-fakes` assumes the fakes
+	# have already been created while the have not.
+	rmdir '${app-fakes-dir}' || true
 
 .PHONY: acceptance.go-mod-tidy
 acceptance.go-mod-tidy:

@@ -1,4 +1,4 @@
-package main
+package fakes
 
 // Multiple go:generate directives instead of counterfeiter:generate due to https://github.com/maxbrunsfeld/counterfeiter/issues/254
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_cf_client.go ./cf CFClient
