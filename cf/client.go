@@ -15,12 +15,6 @@ type Tokens struct {
 	ExpiresIn   int64  `json:"expires_in"`
 }
 
-const (
-	PathCFAuth                 = "/oauth/token"
-	PathIntrospectToken        = "/introspect"
-	GrantTypeClientCredentials = "client_credentials"
-)
-
 type (
 	Guid = models.GUID
 

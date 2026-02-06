@@ -41,7 +41,6 @@ func (conf *Config) Validate() error {
 	}
 
 	apiURL.Path = strings.TrimSuffix(apiURL.Path, "/")
-
 	conf.API = apiURL.String()
 
 	if conf.ClientID == "" {

@@ -77,16 +77,14 @@ type CfErrorItem struct {
 }
 
 func (c *CfError) Error() string {
-	var errs []string
-	message := "None found"
-	for _, errorItem := range c.Errors {
-		errorsString := fmt.Sprintf("['%s' code: %d, Detail: '%s']", errorItem.Title, errorItem.Code, errorItem.Detail)
-		errs = append(errs, errorsString)
+	if len(c.Errors) == 0 {
+		return fmt.Sprintf("cf api Error url='%s', resourceId='%s': None found", c.Url, c.ResourceId)
 	}
-	if len(errs) > 0 {
-		message = strings.Join(errs, ", ")
+	errs := make([]string, len(c.Errors))
+	for i, item := range c.Errors {
+		errs[i] = fmt.Sprintf("['%s' code: %d, Detail: '%s']", item.Title, item.Code, item.Detail)
 	}
-	return fmt.Sprintf("cf api Error url='%s', resourceId='%s': %s", c.Url, c.ResourceId, message)
+	return fmt.Sprintf("cf api Error url='%s', resourceId='%s': %s", c.Url, c.ResourceId, strings.Join(errs, ", "))
 }
 
 func (c *CfError) IsValid() bool {

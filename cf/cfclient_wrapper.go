@@ -170,11 +170,11 @@ func (c *CtxClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken s
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
 
-	isSpaceDev := roles.HasRole(RoleSpaceDeveloper)
-	if !isSpaceDev {
-		c.logger.Error("user without SpaceDeveloper role tried to access API", nil)
+	if !roles.HasRole(RoleSpaceDeveloper) {
+		c.logger.Info("user without SpaceDeveloper role tried to access API")
+		return false, nil
 	}
-	return isSpaceDev, nil
+	return true, nil
 }
 
 func (w *CFClientWrapper) IsTokenAuthorized(token, clientId string) (bool, error) {
@@ -273,13 +273,10 @@ func (c *CtxClientWrapper) getSpaceId(ctx context.Context, appId Guid) (SpaceId,
 	if err != nil {
 		return "", fmt.Errorf("getSpaceId failed: %w", err)
 	}
-
-	spaceId := app.Relationships.Space.Data.Guid
-	if spaceId == "" {
+	if app.Relationships.Space == nil || app.Relationships.Space.Data.Guid == "" {
 		return "", fmt.Errorf("empty space-guid for app %s", appId)
 	}
-
-	return spaceId, nil
+	return app.Relationships.Space.Data.Guid, nil
 }
 
 func (w *CFClientWrapper) GetEndpoints() (Endpoints, error) {
@@ -472,10 +469,11 @@ func mapResourceApp(app *resource.App) *App {
 
 func mapResourceMetadata(m *resource.Metadata) Metadata {
 	result := Metadata{Labels: Labels{}}
-	if m != nil && m.Labels != nil {
-		if v, ok := m.Labels["app-autoscaler.cloudfoundry.org/disable-autoscaling"]; ok {
-			result.DisableAutoscaling = v
-		}
+	if m == nil || m.Labels == nil {
+		return result
+	}
+	if v, ok := m.Labels["app-autoscaler.cloudfoundry.org/disable-autoscaling"]; ok {
+		result.DisableAutoscaling = v
 	}
 	return result
 }
