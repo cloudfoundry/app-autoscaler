@@ -35,7 +35,7 @@ func main() {
 	defer func() { _ = policyDb.Closer() }()
 
 	// CF Client
-	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger, prClock)
+	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger)
 
 	// HTTP clients
 	scalingEngineHttpclient, err := helpers.CreateHTTPSClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_client"))
