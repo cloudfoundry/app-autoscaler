@@ -1,4 +1,4 @@
-package bindingrequestparser
+package binding_request_parser_v1
 
 import (
 	"encoding/json"
