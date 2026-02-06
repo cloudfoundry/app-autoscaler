@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"slices"
@@ -22,6 +23,7 @@ import (
 )
 
 const uaaRequestTimeout = 30 * time.Second
+const defaultDialTimeout = 10 * time.Second
 
 type CFClientWrapper struct {
 	cfClient    *client.Client
@@ -92,6 +94,7 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption
 // createConfiguredHTTPClient creates an HTTP client with retry logic and connection pool settings.
 func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client {
 	transport := &http.Transport{
+		DialContext:         (&net.Dialer{Timeout: defaultDialTimeout}).DialContext,
 		MaxIdleConnsPerHost: conf.MaxIdleConnsPerHost,
 		IdleConnTimeout:     time.Duration(conf.IdleConnectionTimeoutMs) * time.Millisecond,
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}, //nolint:gosec
