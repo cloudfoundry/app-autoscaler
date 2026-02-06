@@ -281,6 +281,6 @@ func RespondWithJSON(statusCode int, body any) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		data, _ := json.Marshal(body)
-		w.Write(data)
+		_, _ = w.Write(data)
 	}
 }
