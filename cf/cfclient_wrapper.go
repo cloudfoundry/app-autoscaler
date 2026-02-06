@@ -198,6 +198,7 @@ func (c *CtxClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 }
 
 func (c *CtxClientWrapper) doUaaRequest(req *http.Request, result any) error {
+	req.Header.Set("User-Agent", GetUserAgent())
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
