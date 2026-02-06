@@ -19,7 +19,6 @@ const (
 	PathCFAuth                 = "/oauth/token"
 	PathIntrospectToken        = "/introspect"
 	GrantTypeClientCredentials = "client_credentials"
-	defaultPerPage             = 100
 )
 
 type (

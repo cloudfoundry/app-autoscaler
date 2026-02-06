@@ -19,7 +19,6 @@ type Config struct {
 	API          string `yaml:"api" json:"api"`
 	ClientID     string `yaml:"client_id" json:"client_id"`
 	Secret       string `yaml:"secret" json:"secret"`
-	PerPage      int    `yaml:"per_page" json:"per_page"`
 }
 
 func (conf *Config) Validate() error {
