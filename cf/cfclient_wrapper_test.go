@@ -29,7 +29,9 @@ var _ = Describe("CFClientWrapper", func() {
 
 		conf = &cf.Config{
 			ClientConfig: cf.ClientConfig{
-				SkipSSLValidation: true,
+				// SkipSSLValidation is false - we inject the test server's pre-configured HTTP client
+				// which trusts the test server's certificate for both go-cfclient and UAA requests.
+				SkipSSLValidation: false,
 			},
 			API:      mockServer.URL(),
 			ClientID: "test-client",
@@ -42,7 +44,8 @@ var _ = Describe("CFClientWrapper", func() {
 		if createClient {
 			mockServer.Add().OauthToken("test-access-token")
 			mockServer.Add().Info(mockServer.URL())
-			client, clientErr = cf.NewCFClient(conf, logger)
+			// Use the test server's HTTP client which trusts the test server's certificate
+			client, clientErr = cf.NewCFClient(conf, logger, cf.WithHTTPClient(mockServer.HTTPTestServer.Client()))
 			Expect(clientErr).NotTo(HaveOccurred())
 		}
 	})
@@ -61,14 +64,14 @@ var _ = Describe("CFClientWrapper", func() {
 			mockServer.Add().Info(mockServer.URL())
 
 			var err error
-			client, err = cf.NewCFClient(conf, logger)
+			client, err = cf.NewCFClient(conf, logger, cf.WithHTTPClient(mockServer.HTTPTestServer.Client()))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(client).NotTo(BeNil())
 		})
 
 		It("returns error for invalid API URL", func() {
 			conf.API = "://invalid-url"
-			_, err := cf.NewCFClient(conf, logger)
+			_, err := cf.NewCFClient(conf, logger, cf.WithHTTPClient(mockServer.HTTPTestServer.Client()))
 			Expect(err).To(HaveOccurred())
 		})
 	})

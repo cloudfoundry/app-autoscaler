@@ -2,7 +2,6 @@ package cf
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -36,15 +35,41 @@ type CtxClientWrapper struct {
 	*CFClientWrapper
 }
 
+// WrapperOption is a functional option for configuring CFClientWrapper
+type WrapperOption func(*wrapperOptions)
+
+type wrapperOptions struct {
+	httpClient *http.Client
+}
+
+// WithHTTPClient sets a custom HTTP client for UAA requests.
+// This is primarily used for testing with mock servers.
+func WithHTTPClient(client *http.Client) WrapperOption {
+	return func(o *wrapperOptions) {
+		o.httpClient = client
+	}
+}
+
 var _ CFClient = &CFClientWrapper{}
 var _ ContextClient = &CtxClientWrapper{}
 
-func NewCFClientWrapper(conf *Config, logger lager.Logger) (*CFClientWrapper, error) {
+func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption) (*CFClientWrapper, error) {
+	// Apply functional options first to check if HTTP client is provided
+	wo := &wrapperOptions{}
+	for _, opt := range opts {
+		opt(wo)
+	}
+
 	options := []config.Option{
 		config.ClientCredentials(conf.ClientID, conf.Secret),
 		config.UserAgent(GetUserAgent()),
 	}
-	if conf.SkipSSLValidation {
+
+	// If a custom HTTP client is provided (e.g., for testing), use it for go-cfclient too.
+	// Otherwise, fall back to SkipTLSValidation if configured.
+	if wo.httpClient != nil {
+		options = append(options, config.HttpClient(wo.httpClient))
+	} else if conf.SkipSSLValidation {
 		options = append(options, config.SkipTLSValidation())
 	}
 
@@ -58,22 +83,18 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger) (*CFClientWrapper, er
 		return nil, fmt.Errorf("failed to create cfclient: %w", err)
 	}
 
+	// Use provided HTTP client or create default for UAA requests
+	httpClient := wo.httpClient
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: uaaRequestTimeout}
+	}
+
 	return &CFClientWrapper{
 		cfClient:   cfClient,
 		conf:       conf,
 		logger:     logger,
-		httpClient: newUaaHTTPClient(conf.SkipSSLValidation),
+		httpClient: httpClient,
 	}, nil
-}
-
-func newUaaHTTPClient(skipSSL bool) *http.Client {
-	httpClient := &http.Client{Timeout: uaaRequestTimeout}
-	if skipSSL {
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
-		}
-	}
-	return httpClient
 }
 
 func (w *CFClientWrapper) GetCtxClient() ContextClient {

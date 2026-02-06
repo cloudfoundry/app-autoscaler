@@ -79,8 +79,8 @@ type (
 )
 
 // NewCFClient creates a new CF client using go-cfclient/v3
-func NewCFClient(conf *Config, logger lager.Logger) (CFClient, error) {
-	return NewCFClientWrapper(conf, logger)
+func NewCFClient(conf *Config, logger lager.Logger, opts ...WrapperOption) (CFClient, error) {
+	return NewCFClientWrapper(conf, logger, opts...)
 }
 
 // RetryClient creates a retryable HTTP client
