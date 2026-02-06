@@ -85,16 +85,11 @@ func NewCFClient(conf *Config, logger lager.Logger, opts ...WrapperOption) (CFCl
 // RetryClient creates a retryable HTTP client
 func RetryClient(config ClientConfig, client *http.Client, logger lager.Logger) *http.Client {
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 0
-	if config.MaxRetries != 0 {
-		retryClient.RetryMax = config.MaxRetries
-	}
-	if config.MaxRetryWaitMs != 0 {
-		retryClient.RetryWaitMax = time.Duration(config.MaxRetryWaitMs) * time.Millisecond
-	}
+	retryClient.RetryMax = config.MaxRetries
+	retryClient.RetryWaitMax = time.Duration(config.MaxRetryWaitMs) * time.Millisecond
 	retryClient.Logger = LeveledLoggerAdapter{logger.Session("retryablehttp")}
 	retryClient.HTTPClient = client
-	retryClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
+	retryClient.ErrorHandler = func(resp *http.Response, err error, _ int) (*http.Response, error) {
 		return resp, err
 	}
 	return retryClient.StandardClient()
