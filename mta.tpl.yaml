@@ -77,7 +77,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
       GOFIPS140: v1.0.0
-      GOTOOLCHAIN: local
+      GOTOOLCHAIN: "local+path"
       GOVERSION: go1.GO_MINOR_VERSION
     build-parameters:
       builder: custom
