@@ -2,6 +2,7 @@ package cf
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -65,13 +66,13 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption
 		config.UserAgent(GetUserAgent()),
 	}
 
-	// If a custom HTTP client is provided (e.g., for testing), use it for go-cfclient too.
-	// Otherwise, fall back to SkipTLSValidation if configured.
-	if wo.httpClient != nil {
-		options = append(options, config.HttpClient(wo.httpClient))
-	} else if conf.SkipSSLValidation {
-		options = append(options, config.SkipTLSValidation())
+	// Use provided HTTP client (for testing) or create a configured one with
+	// retry logic and connection pool settings from ClientConfig
+	httpClient := wo.httpClient
+	if httpClient == nil {
+		httpClient = createConfiguredHTTPClient(conf, logger)
 	}
+	options = append(options, config.HttpClient(httpClient))
 
 	cfg, err := config.New(conf.API, options...)
 	if err != nil {
@@ -83,18 +84,32 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption
 		return nil, fmt.Errorf("failed to create cfclient: %w", err)
 	}
 
-	// Use provided HTTP client or create default for UAA requests
-	httpClient := wo.httpClient
-	if httpClient == nil {
-		httpClient = &http.Client{Timeout: uaaRequestTimeout}
-	}
-
 	return &CFClientWrapper{
 		cfClient:   cfClient,
 		conf:       conf,
 		logger:     logger,
 		httpClient: httpClient,
 	}, nil
+}
+
+// createConfiguredHTTPClient creates an HTTP client with retry logic and connection
+// pool settings from ClientConfig. This ensures the go-cfclient uses the same
+// configuration (MaxRetries, MaxRetryWaitMs, IdleConnectionTimeoutMs, MaxIdleConnsPerHost)
+// that was previously used with the custom CF client implementation.
+func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client {
+	transport := &http.Transport{
+		MaxIdleConnsPerHost: conf.MaxIdleConnsPerHost,
+		IdleConnTimeout:     time.Duration(conf.IdleConnectionTimeoutMs) * time.Millisecond,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}, //nolint:gosec
+	}
+
+	baseClient := &http.Client{
+		Transport: transport,
+		Timeout:   uaaRequestTimeout,
+	}
+
+	// Wrap with retry logic using the same RetryClient function used elsewhere
+	return RetryClient(conf.ClientConfig, baseClient, logger)
 }
 
 func (w *CFClientWrapper) GetCtxClient() ContextClient {
