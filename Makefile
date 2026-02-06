@@ -108,7 +108,9 @@ autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
+	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	rm '${app-fakes-dir}/doc.go' # Now other files are there.
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
@@ -118,7 +120,6 @@ test-app.generate-fakes:
 go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
 																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
-
 
 # This target should depend additionally on `${app-fakes-dir}, `${app-fakes-files}`,
 # `${openapi-generated-clients-and-servers-scalingengine-dir}`,
@@ -141,21 +142,7 @@ go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.g
 		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 		'outdated. Please consider re-generating them, if this is relevant.' \
 		'${aes_terminal_reset}'
-
-	# 🚸 This is a workaround that lifts the requirement of `make generate-fakes` before. The files
-	# generate from the openapi-spec are still needed.
-	#
-	# In case the fakes-directory does not exist and is not populated, we have the issue that it is
-	# not a valid package. However this is needed for `go mod tidy`.
-	mkdir -p './${app-fakes-dir}'
-	echo 'package fakes' > '${app-fakes-dir}/doc.go'
 	go mod tidy
-	rm '${app-fakes-dir}/doc.go'
-
-	# If we fail subsequently, there are fakes in it and this is not an issue. If we forget this
-	# removal in case the directory is empty, the make-target `generate-fakes` assumes the fakes
-	# have already been created while the have not.
-	rmdir '${app-fakes-dir}' || true
 
 .PHONY: acceptance.go-mod-tidy
 acceptance.go-mod-tidy:
