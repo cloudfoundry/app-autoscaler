@@ -108,7 +108,9 @@ autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
+	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	rm '${app-fakes-dir}/doc.go' # Now other files are there.
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
@@ -475,7 +477,7 @@ scheduler.test-certificates:
 
 lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\
 	export GOVERSION ;\
 	echo "Linting with Golang $${GOVERSION}" ;\
