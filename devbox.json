@@ -27,7 +27,7 @@
     "gnumake":                                          "4.4.1",
     "gnused":                                           "latest",
     "gnutar":                                           "latest",
-    "go":                                               "1.25.2",
+    "go":                                               "1.24.5",
     "go-tools":                                         "2025.1.1",
     "golangci-lint":                                    "2.8.0",
     "gopls":                                            "0.21.0",
@@ -53,6 +53,7 @@
   "shell": {
     "init_hook": [
       "export GOFIPS140=v1.0.0",
+      "export GOTOOLCHAIN='local'",
       "install_plugin_if_needed() {",
       "  sum=$(sha1sum $(which $1) | cut --delimiter=' ' --fields='1')",
       "  cf plugins --checksum | grep --quiet ${sum} || cf install-plugin -f $(which $1)",

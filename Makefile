@@ -15,6 +15,9 @@ MYSQL_TAG := 8
 POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
+GOTOOLCHAIN ?= local
+export GOTOOLCHAIN
+
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 MVN_OPTS ?= -Dmaven.test.skip=true
@@ -105,7 +108,9 @@ autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
+	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	rm '${app-fakes-dir}/doc.go' # Now other files are there.
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
@@ -116,17 +121,21 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
 																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
 
-
-# This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
-# this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
-# present but fortunately not necessarily up-to-date. This is fortunate because the generation of
-# the fake requires the files `go.mod` and `go.sum` to be already tidied up, introducing a cyclic
-# dependency otherwise. But that would make any modification to `go.mod` or `go.sum`
-# impossible. This definition now makes it possible to update `go.mod` and `go.sum` as follows:
-#  1. `make generate-fakes`
-#  2. Update `go.mod` and/or `go.sum`
-#  3. `make go-mod-tidy`
-#  4. Optionally: `make generate-fakes` to update the fakes as well.
+# This target should depend additionally on `${app-fakes-dir}, `${app-fakes-files}`,
+# `${openapi-generated-clients-and-servers-scalingengine-dir}`,
+# `${openapi-generated-clients-and-servers-api-dir}`,
+# `${openapi-generated-clients-and-servers-scalingengine-files}`,
+# `${openapi-generated-clients-and-servers-api-files}`. However this is not defined here. The reason
+# is, that for `go-mod-tidy` the generated files need to be present but fortunately not necessarily
+# up-to-date. This is fortunate because their generation require the files `go.mod` and
+# `go.sum` to be already tidied up, introducing a cyclic dependency otherwise. But that would make
+# any modification to `go.mod` or `go.sum` impossible. This definition now makes it possible to
+# update `go.mod` and `go.sum` as follows:
+#
+# 1. `make generate-openapi-generated-clients-and-servers generate-fakes`
+# 2. Update `go.mod` and/or `go.sum`
+# 3. `make go-mod-tidy`
+# 4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
 go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.go-mod-tidy test-app.go-mod-tidy
 	@echo -ne '${aes_terminal_font_yellow}' \
@@ -181,7 +190,7 @@ check: fmt lint build test
 
 test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
-autoscaler.test: check-db_type init-db test-certs generate-fakes build-gorouterproxy
+autoscaler.test: check-db_type init-db test-certs generate-openapi-generated-clients-and-servers generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
@@ -472,7 +481,7 @@ scheduler.test-certificates:
 
 lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\
 	export GOVERSION ;\
 	echo "Linting with Golang $${GOVERSION}" ;\
