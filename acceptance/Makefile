@@ -7,7 +7,7 @@ GO_NOMOD := GO111MODULE=off go
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
-GOTOOLCHAIN ?= local+path
+GOTOOLCHAIN ?= local
 export GOTOOLCHAIN
 
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
