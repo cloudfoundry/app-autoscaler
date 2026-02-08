@@ -172,6 +172,9 @@ func (a AddMock) Introspect(testUserScope []string) AddMock {
 
 func (a AddMock) OauthToken(accessToken string) AddMock {
 	a.server.RouteToHandler(http.MethodPost, "/oauth/token",
-		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{AccessToken: accessToken, ExpiresIn: 12000}))
+		ghttp.RespondWithJSONEncoded(http.StatusOK, struct {
+			AccessToken string `json:"access_token"`
+			ExpiresIn   int64  `json:"expires_in"`
+		}{AccessToken: accessToken, ExpiresIn: 12000}))
 	return a
 }

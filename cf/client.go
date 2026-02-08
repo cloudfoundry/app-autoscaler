@@ -10,11 +10,6 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-type Tokens struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int64  `json:"expires_in"`
-}
-
 type (
 	Guid = models.GUID
 
