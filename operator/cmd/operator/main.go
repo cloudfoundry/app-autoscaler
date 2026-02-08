@@ -62,7 +62,7 @@ func main() {
 	schedulerSyncRunner := operator.NewOperatorRunner(schedulerSync, conf.Scheduler.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "application-sync"
-	applicationSync := operator.NewApplicationSynchronizer(cfClient.GetCtxClient(), policyDb.DB, logger.Session(loggerSessionName))
+	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDb.DB, logger.Session(loggerSessionName))
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	// Service members

@@ -20,42 +20,13 @@ type (
 		Scopes   []string `json:"scope"`
 	}
 
-	AuthClient interface {
-		Login() error
-		IsUserAdmin(userToken string) (bool, error)
-		IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error)
-		IsTokenAuthorized(token, clientId string) (bool, error)
-	}
-
-	AuthContextClient interface {
+	// CFClient is the main CF client interface.
+	// All methods accept a context.Context parameter for cancellation and timeout control.
+	CFClient interface {
 		Login(ctx context.Context) error
 		IsUserAdmin(ctx context.Context, userToken string) (bool, error)
 		IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error)
 		IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error)
-	}
-
-	CFClient interface {
-		AuthClient
-		ApiClient
-		GetCtxClient() ContextClient
-	}
-
-	ContextClient interface {
-		AuthContextClient
-		ApiContextClient
-	}
-
-	ApiClient interface {
-		GetEndpoints() (Endpoints, error)
-		GetApp(appId Guid) (*App, error)
-		GetAppProcesses(appId Guid, processTypes ...string) (Processes, error)
-		GetAppAndProcesses(appId Guid) (*AppAndProcesses, error)
-		ScaleAppWebProcess(appId Guid, numberOfProcesses int) error
-		GetServiceInstance(serviceInstanceGuid string) (*ServiceInstance, error)
-		GetServicePlan(servicePlanGuid string) (*ServicePlan, error)
-	}
-
-	ApiContextClient interface {
 		GetEndpoints(ctx context.Context) (Endpoints, error)
 		GetApp(ctx context.Context, appId Guid) (*App, error)
 		GetAppProcesses(ctx context.Context, appId Guid, processTypes ...string) (Processes, error)
@@ -66,12 +37,10 @@ type (
 	}
 )
 
-// NewCFClient creates a new CF client using go-cfclient/v3
 func NewCFClient(conf *Config, logger lager.Logger, opts ...WrapperOption) (CFClient, error) {
 	return NewCFClientWrapper(conf, logger, opts...)
 }
 
-// RetryClient creates a retryable HTTP client
 func RetryClient(config ClientConfig, client *http.Client, logger lager.Logger) *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = config.MaxRetries

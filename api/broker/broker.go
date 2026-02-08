@@ -31,7 +31,7 @@ var _ domain.ServiceBroker = &Broker{}
 type Broker struct {
 	logger           lager.Logger
 	conf             *config.Config
-	cfClient         cf.ApiContextClient
+	cfClient         cf.CFClient
 	bindingdb        db.BindingDB
 	policydb         db.PolicyDB
 	policyValidator  *policyvalidator.PolicyValidator
@@ -70,7 +70,7 @@ var _ error = Errors{}
 
 func New(
 	logger lager.Logger, conf *config.Config,
-	cfClient cf.ApiContextClient, bindingDb db.BindingDB, policyDb db.PolicyDB,
+	cfClient cf.CFClient, bindingDb db.BindingDB, policyDb db.PolicyDB,
 	catalog []domain.Service, credentials cred_helper.Credentials,
 ) *Broker {
 	policyValidator := policyvalidator.NewPolicyValidator(

@@ -34,19 +34,12 @@ type CFClientWrapper struct {
 	endpoints   *Endpoints
 }
 
-type CtxClientWrapper struct {
-	*CFClientWrapper
-}
-
-// WrapperOption is a functional option for configuring CFClientWrapper
 type WrapperOption func(*wrapperOptions)
 
 type wrapperOptions struct {
 	httpClient *http.Client
 }
 
-// WithHTTPClient sets a custom HTTP client for UAA requests.
-// This is primarily used for testing with mock servers.
 func WithHTTPClient(client *http.Client) WrapperOption {
 	return func(o *wrapperOptions) {
 		o.httpClient = client
@@ -54,7 +47,6 @@ func WithHTTPClient(client *http.Client) WrapperOption {
 }
 
 var _ CFClient = &CFClientWrapper{}
-var _ ContextClient = &CtxClientWrapper{}
 
 func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption) (*CFClientWrapper, error) {
 	wo := &wrapperOptions{}
@@ -108,98 +100,78 @@ func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client 
 	return RetryClient(conf.ClientConfig, baseClient, logger)
 }
 
-func (w *CFClientWrapper) GetCtxClient() ContextClient {
-	return &CtxClientWrapper{w}
-}
-
-func (w *CFClientWrapper) Login() error {
-	return w.GetCtxClient().Login(context.Background())
-}
-
-func (c *CtxClientWrapper) Login(ctx context.Context) error {
+func (w *CFClientWrapper) Login(ctx context.Context) error {
 	// Verify credentials by making a test API call
 	// go-cfclient handles token management internally
-	_, err := c.cfClient.Root.Get(ctx)
+	_, err := w.cfClient.Root.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("login failed: %w", err)
 	}
 	return nil
 }
 
-func (w *CFClientWrapper) IsUserAdmin(userToken string) (bool, error) {
-	return w.GetCtxClient().IsUserAdmin(context.Background(), userToken)
-}
-
-func (c *CtxClientWrapper) IsUserAdmin(ctx context.Context, userToken string) (bool, error) {
-	resp, err := c.introspectToken(ctx, userToken)
+func (w *CFClientWrapper) IsUserAdmin(ctx context.Context, userToken string) (bool, error) {
+	resp, err := w.introspectToken(ctx, userToken)
 	if err != nil {
 		return false, err
 	}
 	if slices.Contains(resp.Scopes, CCAdminScope) {
-		c.logger.Info("user is cc admin")
+		w.logger.Info("user is cc admin")
 		return true, nil
 	}
 	return false, nil
 }
 
-func (w *CFClientWrapper) IsUserSpaceDeveloper(userToken string, appId Guid) (bool, error) {
-	return w.GetCtxClient().IsUserSpaceDeveloper(context.Background(), userToken, appId)
-}
-
-func (c *CtxClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error) {
-	userId, err := c.getUserId(ctx, userToken)
+func (w *CFClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error) {
+	userId, err := w.getUserId(ctx, userToken)
 	if err != nil {
 		if errors.Is(err, ErrUnauthorized) {
-			c.logger.Error("getUserId: token not authorized", err)
+			w.logger.Error("getUserId: token not authorized", err)
 			return false, nil
 		}
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	spaceId, err := c.getSpaceId(ctx, appId)
+	spaceId, err := w.getSpaceId(ctx, appId)
 	if err != nil {
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper for appId(%s): %w", appId, err)
 	}
 
-	roles, err := c.GetSpaceDeveloperRoles(ctx, spaceId, userId)
+	roles, err := w.GetSpaceDeveloperRoles(ctx, spaceId, userId)
 	if err != nil {
 		if IsNotFound(err) {
-			c.logger.Info("GetSpaceDeveloperRoles: not found", lager.Data{"userId": userId, "spaceId": spaceId})
+			w.logger.Info("GetSpaceDeveloperRoles: not found", lager.Data{"userId": userId, "spaceId": spaceId})
 			return false, nil
 		}
 		return false, fmt.Errorf("failed IsUserSpaceDeveloper userId(%s), spaceId(%s): %w", userId, spaceId, err)
 	}
 
 	if !roles.HasRole(RoleSpaceDeveloper) {
-		c.logger.Info("user without SpaceDeveloper role tried to access API")
+		w.logger.Info("user without SpaceDeveloper role tried to access API")
 		return false, nil
 	}
 	return true, nil
 }
 
-func (w *CFClientWrapper) IsTokenAuthorized(token, clientId string) (bool, error) {
-	return w.GetCtxClient().IsTokenAuthorized(context.Background(), token, clientId)
-}
-
-func (c *CtxClientWrapper) IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error) {
-	resp, err := c.introspectToken(ctx, token)
+func (w *CFClientWrapper) IsTokenAuthorized(ctx context.Context, token, clientId string) (bool, error) {
+	resp, err := w.introspectToken(ctx, token)
 	if err != nil {
 		return false, err
 	}
 	return resp.Active && resp.ClientId == clientId, nil
 }
 
-func (c *CtxClientWrapper) getUaaURL(ctx context.Context) (string, error) {
-	endpoints, err := c.GetEndpoints(ctx)
+func (w *CFClientWrapper) getUaaURL(ctx context.Context) (string, error) {
+	endpoints, err := w.GetEndpoints(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get UAA endpoint: %w", err)
 	}
 	return strings.TrimSuffix(endpoints.Uaa.Url, "/"), nil
 }
 
-func (c *CtxClientWrapper) doUaaRequest(req *http.Request, result any) error {
+func (w *CFClientWrapper) doUaaRequest(req *http.Request, result any) error {
 	req.Header.Set("User-Agent", GetUserAgent())
-	resp, err := c.httpClient.Do(req)
+	resp, err := w.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -224,8 +196,8 @@ func (c *CtxClientWrapper) doUaaRequest(req *http.Request, result any) error {
 	return nil
 }
 
-func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
-	uaaURL, err := c.getUaaURL(ctx)
+func (w *CFClientWrapper) introspectToken(ctx context.Context, token string) (*IntrospectionResponse, error) {
+	uaaURL, err := w.getUaaURL(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -236,19 +208,19 @@ func (c *CtxClientWrapper) introspectToken(ctx context.Context, token string) (*
 		return nil, fmt.Errorf("failed to create introspect request: %w", err)
 	}
 
-	credentials := base64.StdEncoding.EncodeToString([]byte(c.conf.ClientID + ":" + c.conf.Secret))
+	credentials := base64.StdEncoding.EncodeToString([]byte(w.conf.ClientID + ":" + w.conf.Secret))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Basic "+credentials)
 
 	var result IntrospectionResponse
-	if err := c.doUaaRequest(req, &result); err != nil {
+	if err := w.doUaaRequest(req, &result); err != nil {
 		return nil, fmt.Errorf("introspect token failed: %w", err)
 	}
 	return &result, nil
 }
 
-func (c *CtxClientWrapper) getUserId(ctx context.Context, userToken string) (UserId, error) {
-	uaaURL, err := c.getUaaURL(ctx)
+func (w *CFClientWrapper) getUserId(ctx context.Context, userToken string) (UserId, error) {
+	uaaURL, err := w.getUaaURL(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -262,14 +234,14 @@ func (c *CtxClientWrapper) getUserId(ctx context.Context, userToken string) (Use
 	var userInfo struct {
 		UserID string `json:"user_id"`
 	}
-	if err := c.doUaaRequest(req, &userInfo); err != nil {
+	if err := w.doUaaRequest(req, &userInfo); err != nil {
 		return "", fmt.Errorf("failed to get user info: %w", err)
 	}
 	return UserId(userInfo.UserID), nil
 }
 
-func (c *CtxClientWrapper) getSpaceId(ctx context.Context, appId Guid) (SpaceId, error) {
-	app, err := c.GetApp(ctx, appId)
+func (w *CFClientWrapper) getSpaceId(ctx context.Context, appId Guid) (SpaceId, error) {
+	app, err := w.GetApp(ctx, appId)
 	if err != nil {
 		return "", fmt.Errorf("getSpaceId failed: %w", err)
 	}
@@ -279,59 +251,47 @@ func (c *CtxClientWrapper) getSpaceId(ctx context.Context, appId Guid) (SpaceId,
 	return app.Relationships.Space.Data.Guid, nil
 }
 
-func (w *CFClientWrapper) GetEndpoints() (Endpoints, error) {
-	return w.GetCtxClient().GetEndpoints(context.Background())
-}
-
-func (c *CtxClientWrapper) GetEndpoints(ctx context.Context) (Endpoints, error) {
-	c.endpointsMu.RLock()
-	if c.endpoints != nil {
-		defer c.endpointsMu.RUnlock()
-		return *c.endpoints, nil
+func (w *CFClientWrapper) GetEndpoints(ctx context.Context) (Endpoints, error) {
+	w.endpointsMu.RLock()
+	if w.endpoints != nil {
+		defer w.endpointsMu.RUnlock()
+		return *w.endpoints, nil
 	}
-	c.endpointsMu.RUnlock()
+	w.endpointsMu.RUnlock()
 
-	c.endpointsMu.Lock()
-	defer c.endpointsMu.Unlock()
+	w.endpointsMu.Lock()
+	defer w.endpointsMu.Unlock()
 
-	if c.endpoints != nil {
-		return *c.endpoints, nil
+	if w.endpoints != nil {
+		return *w.endpoints, nil
 	}
 
-	root, err := c.cfClient.Root.Get(ctx)
+	root, err := w.cfClient.Root.Get(ctx)
 	if err != nil {
 		return Endpoints{}, fmt.Errorf("failed GetEndpoints: %w", MapCFClientError(err))
 	}
 
 	endpoints := mapRootToEndpoints(root)
-	c.endpoints = &endpoints
+	w.endpoints = &endpoints
 
 	return endpoints, nil
 }
 
-func (w *CFClientWrapper) GetApp(appId Guid) (*App, error) {
-	return w.GetCtxClient().GetApp(context.Background(), appId)
-}
-
-func (c *CtxClientWrapper) GetApp(ctx context.Context, appId Guid) (*App, error) {
-	app, err := c.cfClient.Applications.Get(ctx, string(appId))
+func (w *CFClientWrapper) GetApp(ctx context.Context, appId Guid) (*App, error) {
+	app, err := w.cfClient.Applications.Get(ctx, string(appId))
 	if err != nil {
 		return nil, fmt.Errorf("failed getting app '%s': %w", appId, MapCFClientError(err))
 	}
 	return mapResourceApp(app), nil
 }
 
-func (w *CFClientWrapper) GetAppProcesses(appId Guid, processTypes ...string) (Processes, error) {
-	return w.GetCtxClient().GetAppProcesses(context.Background(), appId, processTypes...)
-}
-
-func (c *CtxClientWrapper) GetAppProcesses(ctx context.Context, appId Guid, processTypes ...string) (Processes, error) {
+func (w *CFClientWrapper) GetAppProcesses(ctx context.Context, appId Guid, processTypes ...string) (Processes, error) {
 	opts := &client.ProcessListOptions{}
 	if len(processTypes) > 0 {
 		opts.Types = client.Filter{Values: processTypes}
 	}
 
-	processes, err := c.cfClient.Processes.ListForAppAll(ctx, string(appId), opts)
+	processes, err := w.cfClient.Processes.ListForAppAll(ctx, string(appId), opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetAppProcesses '%s': %w", appId, MapCFClientError(err))
 	}
@@ -339,11 +299,7 @@ func (c *CtxClientWrapper) GetAppProcesses(ctx context.Context, appId Guid, proc
 	return mapResourceProcesses(processes), nil
 }
 
-func (w *CFClientWrapper) GetAppAndProcesses(appId Guid) (*AppAndProcesses, error) {
-	return w.GetCtxClient().GetAppAndProcesses(context.Background(), appId)
-}
-
-func (c *CtxClientWrapper) GetAppAndProcesses(ctx context.Context, appId Guid) (*AppAndProcesses, error) {
+func (w *CFClientWrapper) GetAppAndProcesses(ctx context.Context, appId Guid) (*AppAndProcesses, error) {
 	var wg sync.WaitGroup
 	var app *App
 	var processes Processes
@@ -352,11 +308,11 @@ func (c *CtxClientWrapper) GetAppAndProcesses(ctx context.Context, appId Guid) (
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		app, appErr = c.GetApp(ctx, appId)
+		app, appErr = w.GetApp(ctx, appId)
 	}()
 	go func() {
 		defer wg.Done()
-		processes, procErr = c.GetAppProcesses(ctx, appId, ProcessTypeWeb)
+		processes, procErr = w.GetAppProcesses(ctx, appId, ProcessTypeWeb)
 	}()
 	wg.Wait()
 
@@ -369,12 +325,8 @@ func (c *CtxClientWrapper) GetAppAndProcesses(ctx context.Context, appId Guid) (
 	return &AppAndProcesses{App: app, Processes: processes}, nil
 }
 
-func (w *CFClientWrapper) ScaleAppWebProcess(appId Guid, numberOfProcesses int) error {
-	return w.GetCtxClient().ScaleAppWebProcess(context.Background(), appId, numberOfProcesses)
-}
-
-func (c *CtxClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, instances int) error {
-	processes, err := c.cfClient.Processes.ListForAppAll(ctx, string(appId), &client.ProcessListOptions{
+func (w *CFClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, instances int) error {
+	processes, err := w.cfClient.Processes.ListForAppAll(ctx, string(appId), &client.ProcessListOptions{
 		Types: client.Filter{Values: []string{ProcessTypeWeb}},
 	})
 	if err != nil {
@@ -385,7 +337,7 @@ func (c *CtxClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, i
 		return fmt.Errorf("no web process found for app '%s'", appId)
 	}
 
-	_, err = c.cfClient.Processes.Scale(ctx, processes[0].GUID, &resource.ProcessScale{
+	_, err = w.cfClient.Processes.Scale(ctx, processes[0].GUID, &resource.ProcessScale{
 		Instances: &instances,
 	})
 	if err != nil {
@@ -395,38 +347,30 @@ func (c *CtxClientWrapper) ScaleAppWebProcess(ctx context.Context, appId Guid, i
 	return nil
 }
 
-func (w *CFClientWrapper) GetServiceInstance(guid string) (*ServiceInstance, error) {
-	return w.GetCtxClient().GetServiceInstance(context.Background(), guid)
-}
-
-func (c *CtxClientWrapper) GetServiceInstance(ctx context.Context, guid string) (*ServiceInstance, error) {
-	si, err := c.cfClient.ServiceInstances.Get(ctx, guid)
+func (w *CFClientWrapper) GetServiceInstance(ctx context.Context, guid string) (*ServiceInstance, error) {
+	si, err := w.cfClient.ServiceInstances.Get(ctx, guid)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetServiceInstance(%s): %w", guid, MapCFClientError(err))
 	}
 	return mapResourceServiceInstance(si), nil
 }
 
-func (w *CFClientWrapper) GetServicePlan(guid string) (*ServicePlan, error) {
-	return w.GetCtxClient().GetServicePlan(context.Background(), guid)
-}
-
-func (c *CtxClientWrapper) GetServicePlan(ctx context.Context, guid string) (*ServicePlan, error) {
-	sp, err := c.cfClient.ServicePlans.Get(ctx, guid)
+func (w *CFClientWrapper) GetServicePlan(ctx context.Context, guid string) (*ServicePlan, error) {
+	sp, err := w.cfClient.ServicePlans.Get(ctx, guid)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetServicePlan(%s): %w", guid, MapCFClientError(err))
 	}
 	return mapResourceServicePlan(sp), nil
 }
 
-func (c *CtxClientWrapper) GetSpaceDeveloperRoles(ctx context.Context, spaceId SpaceId, userId UserId) (Roles, error) {
+func (w *CFClientWrapper) GetSpaceDeveloperRoles(ctx context.Context, spaceId SpaceId, userId UserId) (Roles, error) {
 	opts := &client.RoleListOptions{
 		Types:      client.Filter{Values: []string{string(RoleSpaceDeveloper)}},
 		SpaceGUIDs: client.Filter{Values: []string{string(spaceId)}},
 		UserGUIDs:  client.Filter{Values: []string{string(userId)}},
 	}
 
-	roles, err := c.cfClient.Roles.ListAll(ctx, opts)
+	roles, err := w.cfClient.Roles.ListAll(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed GetSpaceDeveloperRoles spaceId(%s) userId(%s): %w", spaceId, userId, MapCFClientError(err))
 	}

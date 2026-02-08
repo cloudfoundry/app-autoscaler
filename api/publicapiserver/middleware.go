@@ -59,7 +59,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 			})
 			return
 		}
-		isUserAdmin, err := mw.cfClient.IsUserAdmin(userToken)
+		isUserAdmin, err := mw.cfClient.IsUserAdmin(r.Context(), userToken)
 		if err != nil {
 			mw.logger.Error("failed to check if user is admin", err, nil)
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -71,7 +71,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(userToken, cf.Guid(appId))
+		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(r.Context(), userToken, cf.Guid(appId))
 		if err != nil {
 			switch {
 			case cf.IsNotFound(err):
@@ -153,7 +153,7 @@ func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 			writeErrorResponse(w, http.StatusUnauthorized, "client token is not present in X-Autoscaler-Token header. Are you using the correct API endpoint?")
 			return
 		}
-		isTokenAuthorized, err := mw.cfClient.IsTokenAuthorized(clientToken, mw.clientId)
+		isTokenAuthorized, err := mw.cfClient.IsTokenAuthorized(r.Context(), clientToken, mw.clientId)
 		if err != nil {
 			if errors.Is(err, cf.ErrUnauthorized) {
 				writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
