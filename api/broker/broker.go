@@ -418,16 +418,17 @@ func parseInstanceParameters(rawParameters json.RawMessage) (*models.InstancePar
 
 func (b *Broker) getServiceInstance(ctx context.Context, instanceID string) (*models.ServiceInstance, error) {
 	serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
-	if err != nil {
-		if errors.Is(err, db.ErrDoesNotExist) {
-			b.logger.Error("failed to find service instance to update", err, lager.Data{"instanceID": instanceID})
-			return nil, apiresponses.ErrInstanceDoesNotExist
-		} else {
-			b.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceID": instanceID})
-			return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service instance"), http.StatusInternalServerError, "retrieving-instance-for-update")
-		}
+	if err == nil {
+		return serviceInstance, nil
 	}
-	return serviceInstance, nil
+
+	if errors.Is(err, db.ErrDoesNotExist) {
+		b.logger.Error("failed to find service instance to update", err, lager.Data{"instanceID": instanceID})
+		return nil, apiresponses.ErrInstanceDoesNotExist
+	}
+
+	b.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceID": instanceID})
+	return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service instance"), http.StatusInternalServerError, "retrieving-instance-for-update")
 }
 
 func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolicy *models.PolicyDefinition, updatedDefaultPolicyGuid string, allBoundApps []string, serviceInstance *models.ServiceInstance) error {
@@ -439,15 +440,16 @@ func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolic
 		b.logger.Error("failed to set default policies", err, lager.Data{"instanceID": instanceID})
 		return apiresponses.NewFailureResponse(errors.New("failed to set default policy"), http.StatusInternalServerError, "updating-default-policy")
 	}
+
 	var errs Errors
 	for _, appId := range appIds {
-		err = b.schedulerUtil.CreateOrUpdateSchedule(ctx, appId, updatedDefaultPolicy, updatedDefaultPolicyGuid)
-		if err != nil {
+		if err := b.schedulerUtil.CreateOrUpdateSchedule(ctx, appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
 			b.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
 			errs = append(errs, err)
 		}
 	}
-	if errs != nil {
+
+	if len(errs) > 0 {
 		return errs
 	}
 	return nil
@@ -893,16 +895,17 @@ func (b *Broker) getServiceBinding(ctx context.Context, bindingID string) (*mode
 	logger := b.logger.Session("get-service-binding", lager.Data{"bindingID": bindingID})
 
 	serviceBinding, err := b.bindingdb.GetServiceBinding(ctx, bindingID)
-	if err != nil {
-		if errors.Is(err, db.ErrDoesNotExist) {
-			logger.Error("failed to find service binding", err)
-			return nil, apiresponses.ErrBindingDoesNotExist
-		} else {
-			logger.Error("failed to retrieve service binding", err)
-			return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service binding"), http.StatusInternalServerError, "retrieving-service-binding")
-		}
+	if err == nil {
+		return serviceBinding, nil
 	}
-	return serviceBinding, nil
+
+	if errors.Is(err, db.ErrDoesNotExist) {
+		logger.Error("failed to find service binding", err)
+		return nil, apiresponses.ErrBindingDoesNotExist
+	}
+
+	logger.Error("failed to retrieve service binding", err)
+	return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service binding"), http.StatusInternalServerError, "retrieving-service-binding")
 }
 
 // LastBindingOperation fetches last operation state for a service binding

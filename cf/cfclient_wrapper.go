@@ -115,11 +115,12 @@ func (w *CFClientWrapper) IsUserAdmin(ctx context.Context, userToken string) (bo
 	if err != nil {
 		return false, err
 	}
-	if slices.Contains(resp.Scopes, CCAdminScope) {
+
+	isAdmin := slices.Contains(resp.Scopes, CCAdminScope)
+	if isAdmin {
 		w.logger.Info("user is cc admin")
-		return true, nil
 	}
-	return false, nil
+	return isAdmin, nil
 }
 
 func (w *CFClientWrapper) IsUserSpaceDeveloper(ctx context.Context, userToken string, appId Guid) (bool, error) {
@@ -412,14 +413,14 @@ func mapResourceApp(app *resource.App) *App {
 }
 
 func mapResourceMetadata(m *resource.Metadata) Metadata {
-	result := Metadata{Labels: Labels{}}
 	if m == nil || m.Labels == nil {
-		return result
+		return Metadata{Labels: Labels{}}
 	}
-	if v, ok := m.Labels["app-autoscaler.cloudfoundry.org/disable-autoscaling"]; ok {
-		result.DisableAutoscaling = v
+	return Metadata{
+		Labels: Labels{
+			DisableAutoscaling: m.Labels["app-autoscaler.cloudfoundry.org/disable-autoscaling"],
+		},
 	}
-	return result
 }
 
 func mapResourceProcesses(processes []*resource.Process) Processes {

@@ -128,17 +128,19 @@ func (mw *Middleware) CheckServiceBinding(next http.Handler) http.Handler {
 }
 
 func (mw *Middleware) extractBearerToken(token string) (string, error) {
-	if !strings.HasPrefix(strings.ToLower(token), "bearer ") {
+	const bearerPrefix = "bearer "
+	if !strings.HasPrefix(strings.ToLower(token), bearerPrefix) {
 		mw.logger.Error("check-bearer-scheme", fmt.Errorf("authorization credentials should specify bearer scheme"))
 		return "", cf.ErrInvalidTokenFormat
 	}
-	tokenSplitted := strings.Split(token, " ")
-	if len(tokenSplitted) != 2 {
+
+	parts := strings.SplitN(token, " ", 3)
+	if len(parts) != 2 {
 		mw.logger.Error("split-auth-credentials", fmt.Errorf("authorization credentials should contain scheme and token separated by space"))
 		return "", cf.ErrInvalidTokenFormat
 	}
 
-	return tokenSplitted[1], nil
+	return parts[1], nil
 }
 
 func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
@@ -147,28 +149,30 @@ func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+
 		clientToken := r.Header.Get("X-Autoscaler-Token")
 		if clientToken == "" {
 			mw.logger.Error("client token is not present", nil, lager.Data{"url": r.URL.String()})
 			writeErrorResponse(w, http.StatusUnauthorized, "client token is not present in X-Autoscaler-Token header. Are you using the correct API endpoint?")
 			return
 		}
+
 		isTokenAuthorized, err := mw.cfClient.IsTokenAuthorized(r.Context(), clientToken, mw.clientId)
 		if err != nil {
 			if errors.Is(err, cf.ErrUnauthorized) {
 				writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
-				return
 			} else {
 				mw.logger.Error("failed to check if token is authorized", err)
 				writeErrorResponse(w, http.StatusInternalServerError, "failed to check if token is authorized")
-				return
 			}
-		}
-		if isTokenAuthorized {
-			next.ServeHTTP(w, r)
 			return
 		}
 
-		writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
+		if !isTokenAuthorized {
+			writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }
