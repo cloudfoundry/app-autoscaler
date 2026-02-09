@@ -1,15 +1,15 @@
 package scalingengine_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
-
+	"context"
 	"errors"
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
@@ -69,7 +69,7 @@ var _ = Describe("ScalingEngine", func() {
 		})
 
 		JustBeforeEach(func() {
-			scalingResult, err = scalingEngine.Scale("an-app-id", trigger)
+			scalingResult, err = scalingEngine.Scale(context.Background(), "an-app-id", trigger)
 		})
 
 		Context("when scaling succeeds", func() {
@@ -662,7 +662,7 @@ var _ = Describe("ScalingEngine", func() {
 
 	Describe("SetActiveSchedule", func() {
 		JustBeforeEach(func() {
-			err = scalingEngine.SetActiveSchedule("an-app-id", activeSchedule)
+			err = scalingEngine.SetActiveSchedule(context.Background(), "an-app-id", activeSchedule)
 		})
 
 		BeforeEach(func() {
@@ -907,7 +907,7 @@ var _ = Describe("ScalingEngine", func() {
 
 	Describe("RemoveActiveSchedule", func() {
 		JustBeforeEach(func() {
-			err = scalingEngine.RemoveActiveSchedule("an-app-id", "a-schedule-id")
+			err = scalingEngine.RemoveActiveSchedule(context.Background(), "an-app-id", "a-schedule-id")
 		})
 
 		BeforeEach(func() {

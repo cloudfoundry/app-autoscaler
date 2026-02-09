@@ -2,24 +2,22 @@ package scalingengine
 
 import (
 	"context"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
 	"fmt"
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 )
 
 type ScalingEngine interface {
-	Scale(appId string, trigger *models.Trigger) (*models.AppScalingResult, error)
+	Scale(ctx context.Context, appId string, trigger *models.Trigger) (*models.AppScalingResult, error)
 	ComputeNewInstances(currentInstances int, adjustment string) (int, error)
-	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
-	RemoveActiveSchedule(appId string, scheduleId string) error
+	SetActiveSchedule(ctx context.Context, appId string, schedule *models.ActiveSchedule) error
+	RemoveActiveSchedule(ctx context.Context, appId string, scheduleId string) error
 }
 
 type scalingEngine struct {
@@ -53,7 +51,7 @@ func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.Pol
 	}
 }
 
-func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.AppScalingResult, error) {
+func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models.Trigger) (*models.AppScalingResult, error) {
 	logger := s.logger.WithData(lager.Data{"appId": appId})
 
 	s.appLock.GetLock(appId).Lock()
@@ -82,7 +80,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		CooldownExpiredAt: 0,
 	}
 
-	appAndProcesses, err := s.cfClient.GetAppAndProcesses(context.TODO(), cf.Guid(appId))
+	appAndProcesses, err := s.cfClient.GetAppAndProcesses(ctx, cf.Guid(appId))
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
@@ -158,7 +156,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		instanceMin = schedule.InstanceMin
 		instanceMax = schedule.InstanceMax
 	} else {
-		policy, err := s.policyDB.GetAppPolicy(context.TODO(), appId)
+		policy, err := s.policyDB.GetAppPolicy(ctx, appId)
 		if err != nil {
 			logger.Error("failed-to-get-app-policy", err)
 			history.Status = models.ScalingStatusFailed
@@ -196,7 +194,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		return result, nil
 	}
 
-	err = s.cfClient.ScaleAppWebProcess(context.TODO(), cf.Guid(appId), newInstances)
+	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		history.Status = models.ScalingStatusFailed
@@ -244,7 +242,7 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 	return newInstances, nil
 }
 
-func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error {
+func (s *scalingEngine) SetActiveSchedule(ctx context.Context, appId string, schedule *models.ActiveSchedule) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "schedule": schedule})
 
 	s.appLock.GetLock(appId).Lock()
@@ -286,7 +284,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		}
 	}()
 
-	processes, err := s.cfClient.GetAppProcesses(context.TODO(), cf.Guid(appId), cf.ProcessTypeWeb)
+	processes, err := s.cfClient.GetAppProcesses(ctx, cf.Guid(appId), cf.ProcessTypeWeb)
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
@@ -317,7 +315,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		return nil
 	}
 
-	err = s.cfClient.ScaleAppWebProcess(context.TODO(), cf.Guid(appId), newInstances)
+	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed
@@ -328,7 +326,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 	return nil
 }
 
-func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) error {
+func (s *scalingEngine) RemoveActiveSchedule(ctx context.Context, appId string, scheduleId string) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "scheduleId": scheduleId})
 
 	s.appLock.GetLock(appId).Lock()
@@ -367,7 +365,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		}
 	}()
 
-	processes, err := s.cfClient.GetAppProcesses(context.TODO(), cf.Guid(appId), cf.ProcessTypeWeb)
+	processes, err := s.cfClient.GetAppProcesses(ctx, cf.Guid(appId), cf.ProcessTypeWeb)
 	if err != nil {
 		if cf.IsNotFound(err) {
 			s.logger.Info(fmt.Sprintf("app(%s) missing ignoring scale request", appId))
@@ -383,7 +381,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 
 	history.OldInstances = instances
 
-	policy, err := s.policyDB.GetAppPolicy(context.TODO(), appId)
+	policy, err := s.policyDB.GetAppPolicy(ctx, appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-policy", err)
 		history.Status = models.ScalingStatusFailed
@@ -414,7 +412,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		return nil
 	}
 
-	err = s.cfClient.ScaleAppWebProcess(context.TODO(), cf.Guid(appId), newInstances)
+	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed

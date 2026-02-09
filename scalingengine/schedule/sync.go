@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"context"
 	"sync"
 
 	"code.cloudfoundry.org/lager/v3"
@@ -54,9 +55,8 @@ func (ss *activeScheduleSychronizer) Sync() {
 			wg.Add(1)
 			go func(aid string, as *models.ActiveSchedule) {
 				defer wg.Done()
-				err = ss.engine.SetActiveSchedule(aid, as)
-				if err != nil {
-					ss.logger.Error("synchronize-active-schedules-find-missing-active-schedule-start-failed", err, lager.Data{"appId": appId, "schedule": schedule})
+				if err := ss.engine.SetActiveSchedule(context.Background(), aid, as); err != nil {
+					ss.logger.Error("synchronize-active-schedules-find-missing-active-schedule-start-failed", err, lager.Data{"appId": aid, "schedule": as})
 				}
 			}(appId, schedule)
 		}
@@ -68,9 +68,8 @@ func (ss *activeScheduleSychronizer) Sync() {
 			wg.Add(1)
 			go func(aid, sid string) {
 				defer wg.Done()
-				err = ss.engine.RemoveActiveSchedule(aid, sid)
-				if err != nil {
-					ss.logger.Error("synchronize-active-schedules-find-missing-active-schedule-end-failed", err, lager.Data{"appId": appId, "scheduleId": scheduleId})
+				if err := ss.engine.RemoveActiveSchedule(context.Background(), aid, sid); err != nil {
+					ss.logger.Error("synchronize-active-schedules-find-missing-active-schedule-end-failed", err, lager.Data{"appId": aid, "scheduleId": sid})
 				}
 			}(appId, scheduleId)
 		}
