@@ -1,8 +1,10 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -10,9 +12,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/lager/v3"
-
-	"encoding/json"
-	"net/http"
 )
 
 type ScalingHandler struct {
@@ -45,7 +44,7 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 
 	logger.Debug("handling", lager.Data{"trigger": trigger})
 
-	result, err := h.scalingEngine.Scale(appId, trigger)
+	result, err := h.scalingEngine.Scale(r.Context(), appId, trigger)
 
 	if err != nil {
 		logger.Error("failed-to-scale", err, lager.Data{"trigger": trigger})
@@ -92,7 +91,7 @@ func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Requ
 	activeSchedule.ScheduleId = scheduleId
 	logger.Info("handling", lager.Data{"activeSchedule": activeSchedule})
 
-	err = h.scalingEngine.SetActiveSchedule(appId, activeSchedule)
+	err = h.scalingEngine.SetActiveSchedule(r.Context(), appId, activeSchedule)
 	if err != nil {
 		h.logger.Error("failed-to-set-active-schedule", err, lager.Data{"activeSchedule": activeSchedule})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -109,7 +108,7 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 	logger := h.logger.Session("remove-active-schedule", lager.Data{"appid": appId, "scheduleid": scheduleId})
 	logger.Info("handle-active-schedule-end")
 
-	err := h.scalingEngine.RemoveActiveSchedule(appId, scheduleId)
+	err := h.scalingEngine.RemoveActiveSchedule(r.Context(), appId, scheduleId)
 
 	if err != nil {
 		logger.Error("failed-to-remove-active-schedule", err)

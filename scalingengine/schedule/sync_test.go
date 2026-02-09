@@ -1,17 +1,16 @@
 package schedule_test
 
 import (
+	"errors"
+	"time"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
-
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-
-	"errors"
-	"time"
 )
 
 const TestSyncInterval = 10 * time.Second
@@ -89,7 +88,7 @@ var _ = Describe("Sync", func() {
 			It("set the active schedule", func() {
 				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-start"))
 				Eventually(engine.SetActiveScheduleCallCount).Should(Equal(1))
-				appId, schedule := engine.SetActiveScheduleArgsForCall(0)
+				_, appId, schedule := engine.SetActiveScheduleArgsForCall(0)
 				Expect(appId).To(Equal("app-id-2"))
 				Expect(schedule).To(Equal(&models.ActiveSchedule{ScheduleId: "schedule-id-2"}))
 			})
@@ -115,7 +114,7 @@ var _ = Describe("Sync", func() {
 			It("set the new active schedule", func() {
 				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-start"))
 				Eventually(engine.SetActiveScheduleCallCount).Should(Equal(1))
-				appId, schedule := engine.SetActiveScheduleArgsForCall(0)
+				_, appId, schedule := engine.SetActiveScheduleArgsForCall(0)
 				Expect(appId).To(Equal("app-id-2"))
 				Expect(schedule).To(Equal(&models.ActiveSchedule{ScheduleId: "schedule-id-2-2"}))
 			})
@@ -138,7 +137,7 @@ var _ = Describe("Sync", func() {
 			It("set the active schedule", func() {
 				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-end"))
 				Eventually(engine.RemoveActiveScheduleCallCount).Should(Equal(1))
-				appId, scheduleId := engine.RemoveActiveScheduleArgsForCall(0)
+				_, appId, scheduleId := engine.RemoveActiveScheduleArgsForCall(0)
 				Expect(appId).To(Equal("app-id-2"))
 				Expect(scheduleId).To(Equal("schedule-id-2"))
 			})

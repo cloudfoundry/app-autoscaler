@@ -12,6 +12,7 @@ function get_autoscaler_deployments(){
 }
 
 function main(){
+	bbl_login
 	cf_login
 	local deployments
 	deployments=$(get_autoscaler_deployments)

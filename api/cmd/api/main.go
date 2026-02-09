@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
@@ -15,7 +14,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/tedsuo/ifrit/grouper"
 )
@@ -43,10 +41,7 @@ func main() {
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 
-	paClock := clock.NewClock()
-	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
-	err = cfClient.Login()
-	startup.ExitOnError(err, logger, "failed to login cloud foundry", lager.Data{"API": conf.CF.API})
+	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger)
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
 	bindingDb, err := sqldb.NewBindingSQLDB(conf.Db[db.BindingDb], logger.Session("bindingdb-db"))

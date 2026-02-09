@@ -15,12 +15,12 @@ type Operator interface {
 var _ Operator = &ApplicationSynchronizer{}
 
 type ApplicationSynchronizer struct {
-	cfClient cf.ContextClient
+	cfClient cf.CFClient
 	policyDb db.PolicyDB
 	logger   lager.Logger
 }
 
-func NewApplicationSynchronizer(cfClient cf.ContextClient, policyDb db.PolicyDB, logger lager.Logger) *ApplicationSynchronizer {
+func NewApplicationSynchronizer(cfClient cf.CFClient, policyDb db.PolicyDB, logger lager.Logger) *ApplicationSynchronizer {
 	return &ApplicationSynchronizer{
 		policyDb: policyDb,
 		cfClient: cfClient,
