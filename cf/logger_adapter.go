@@ -1,38 +1,33 @@
 package cf
 
-import (
-	"code.cloudfoundry.org/lager/v3"
-	"github.com/hashicorp/go-retryablehttp"
-)
+import "code.cloudfoundry.org/lager/v3"
 
-var _ retryablehttp.LeveledLogger = &LeveledLoggerAdapter{}
-
-type LeveledLoggerAdapter struct{ lager.Logger }
-
-func (l LeveledLoggerAdapter) Error(msg string, keysAndValues ...interface{}) {
-	l.Logger.Error(msg, nil, createData(keysAndValues))
+// LeveledLoggerAdapter adapts lager.Logger to retryablehttp's LeveledLogger interface
+type LeveledLoggerAdapter struct {
+	lager.Logger
 }
 
-func (l LeveledLoggerAdapter) Info(msg string, keysAndValues ...interface{}) {
-	l.Logger.Info(msg, createData(keysAndValues))
+func (l LeveledLoggerAdapter) Error(msg string, keyval ...interface{}) {
+	l.Logger.Error(msg, nil, toData(keyval))
 }
 
-func (l LeveledLoggerAdapter) Debug(msg string, keysAndValues ...interface{}) {
-	l.Logger.Debug(msg, createData(keysAndValues))
+func (l LeveledLoggerAdapter) Warn(msg string, keyval ...interface{}) {
+	l.Logger.Info(msg, toData(keyval))
 }
 
-func (l LeveledLoggerAdapter) Warn(msg string, keysAndValues ...interface{}) {
-	//This is because lager.logger does not have a warning level ... need to replace it.
-	l.Logger.Info("Warning: "+msg, createData(keysAndValues))
+func (l LeveledLoggerAdapter) Info(msg string, keyval ...interface{}) {
+	l.Logger.Info(msg, toData(keyval))
 }
 
-func createData(keysAndValues []interface{}) lager.Data {
+func (l LeveledLoggerAdapter) Debug(msg string, keyval ...interface{}) {
+	l.Logger.Debug(msg, toData(keyval))
+}
+
+func toData(keyval []interface{}) lager.Data {
 	data := lager.Data{}
-
-	for i := 0; (i + 1) < len(keysAndValues); i += 2 {
-		key, isString := keysAndValues[i].(string)
-		if isString {
-			data[key] = keysAndValues[i+1]
+	for i := 0; i < len(keyval)-1; i += 2 {
+		if key, ok := keyval[i].(string); ok {
+			data[key] = keyval[i+1]
 		}
 	}
 	return data

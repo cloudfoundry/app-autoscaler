@@ -22,7 +22,6 @@ type Config struct {
 	GrantType    string `yaml:"grant_type" json:"grant_type"`
 	Username     string `yaml:"username" json:"username"`
 	Password     string `yaml:"password" json:"password"`
-	PerPage      int    `yaml:"per_page" json:"per_page"`
 }
 
 func (conf *Config) IsPasswordGrant() bool {

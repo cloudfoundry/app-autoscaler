@@ -32,7 +32,7 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
-		cfClient        *fakes.FakeContextClient
+		cfClient        *fakes.FakeCFClient
 		bindingdb       *fakes.FakeBindingDB
 		policydb        *fakes.FakePolicyDB
 		fakeCredentials *fakes.FakeCredentials
@@ -45,7 +45,7 @@ var _ = Describe("BrokerHandler", func() {
 	)
 
 	BeforeEach(func() {
-		cfClient = &fakes.FakeContextClient{}
+		cfClient = &fakes.FakeCFClient{}
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()

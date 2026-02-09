@@ -13,7 +13,7 @@ jobs:
     container:
       image: ghcr.io/cloudfoundry/app-autoscaler-release-tools:main@sha256:5051e58cc3f83830238ed3185277f884f03a87c92c5e14f355038d9b2f9add8c
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: true
 

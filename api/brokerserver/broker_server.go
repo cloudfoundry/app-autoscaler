@@ -155,7 +155,7 @@ func (s *brokerServer) GetRouter() (*chi.Mux, error) {
 	httpStatusMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(s.httpStatusCollector)
 
 	autoscalerBroker := broker.New(s.logger.Session("broker"), s.conf,
-		s.cfClient.GetCtxClient(), s.bindingDB, s.policyDB,
+		s.cfClient, s.bindingDB, s.policyDB,
 		catalog, s.credentials)
 
 	router := chi.NewRouter()

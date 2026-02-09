@@ -71,6 +71,8 @@ EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
 
+export AUTOSCALER_TEST_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
+
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
@@ -112,8 +114,6 @@ export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
 
-export AUTOSCALER_TEST_USER="${AUTOSCALER_TEST_USER}"
-export AUTOSCALER_TEST_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
 export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
 export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
 export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
@@ -332,7 +332,6 @@ resources:
           api:  https://api.\${default-domain}
           grant_type: ${SCALINGENGINE_CF_GRANT_TYPE}
           client_id: ${SCALINGENGINE_CF_CLIENT_ID}
-          secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
           username: ${SCALINGENGINE_CF_USERNAME}
           password: ${SCALINGENGINE_CF_PASSWORD}
 
