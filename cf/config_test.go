@@ -158,6 +158,20 @@ idle_connection_timeout_ms: 200
 			})
 		})
 
+		Context("when grant_type is password with explicit client_id", func() {
+			BeforeEach(func() {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = "test-user"
+				conf.Password = "test-password"
+				conf.ClientID = "custom-client"
+			})
+
+			It("should preserve the explicit client_id", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.ClientID).To(Equal("custom-client"))
+			})
+		})
+
 		Context("when grant_type is password but username is empty", func() {
 			BeforeEach(func() {
 				conf.GrantType = cf.GrantTypePassword
