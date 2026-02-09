@@ -5,7 +5,7 @@ on:
       suites:
         required: false
         type: string
-        default: "[ 'API', 'APP', 'Broker' ]"
+        default: "[ 'api', 'app', 'broker' ]"
       deployment_name:
         required: true
         type: string
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: app-autoscaler
       - name: Install devbox
@@ -56,23 +56,26 @@ jobs:
 
       - name: Deploy Apps
         shell: bash
-        run: make --directory="${AUTOSCALER_DIR}" deploy-apps
+        run: |
+          make --directory="${AUTOSCALER_DIR}" build-extension-file
+          make --directory="${AUTOSCALER_DIR}" mta-build
+          make --directory="${AUTOSCALER_DIR}" mta-deploy
 
       - name: Register autoscaler
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" deploy-register-cf
 
   acceptance_tests:
-    name: Acceptance Tests
+    name: Acceptance Tests - ${{ matrix.suite }}
     needs: [ deploy_autoscaler ]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        suite: "${{ fromJSON(inputs.suites) }}"
-    runs-on: ubuntu-latest
+        suite: ${{ fromJson(inputs.suites) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: app-autoscaler
       - name: Install devbox
@@ -89,17 +92,11 @@ jobs:
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
-      - name: Run acceptance test - ${{ matrix.suite }}
-        env:
-          MATRIX_SUITE: ${{ matrix.suite }}
+      - name: Run acceptance tests via CF tasks - ${{ matrix.suite }}
         shell: bash
-        run: |
-          #! /usr/bin/env bash
-          set -eu -o pipefail
-
-          make --directory="${AUTOSCALER_DIR}/acceptance/assets/app/go_app" generate-fakes
-          make --directory="${AUTOSCALER_DIR}" generate-fakes
-          make --directory="${AUTOSCALER_DIR}" acceptance-tests SUITES="${MATRIX_SUITE,,}"
+        env:
+          SUITES: ${{ matrix.suite }}
+        run: make --directory="${AUTOSCALER_DIR}" mta-acceptance-tests
 
   deployment_cleanup:
     needs: [ deploy_autoscaler, acceptance_tests ]
@@ -108,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: app-autoscaler
       - name: Install devbox

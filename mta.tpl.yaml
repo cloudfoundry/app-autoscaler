@@ -77,7 +77,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
       GOFIPS140: v1.0.0
-      GOTOOLCHAIN: local
+      GOTOOLCHAIN: "local"
       GOVERSION: go1.GO_MINOR_VERSION
     build-parameters:
       builder: custom
@@ -226,6 +226,38 @@ modules:
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
+
+  - name: acceptance-tests
+    type: application
+    path: .
+    properties:
+      # JSON configuration - set via extension file during deployment
+      ACCEPTANCE_CONFIG_JSON: ~
+      # Test execution settings
+      SUITES: ""
+      NODES: 3
+      SKIP_TEARDOWN: false
+      GINKGO_OPTS: ""
+      GOVERSION: go1.23
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "Building acceptance tests for version ${version}"
+        - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
+      build-result: build/acceptance
+      ignore: [ "build", "scheduler", "dbtasks", ".devbox", ".git", ".github" ]
+    parameters:
+      no-route: true
+      no-start: true
+      memory: 2G
+      disk-quota: 2G
+      stack: cflinuxfs4
+      buildpack: binary_buildpack
+      tasks:
+      - name: run-acceptance-tests
+        command: bash /home/vcap/app/scripts/run-acceptance-tests-task.sh
+        memory: 2G
+        disk-quota: 2G
 
 resources:
 - name: metricsforwarder-config

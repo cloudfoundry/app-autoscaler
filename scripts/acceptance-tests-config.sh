@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154
 
-set -eu -o pipefail
+set -euo pipefail
 
-script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# shellcheck source=scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
+# shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
 cf_admin_password="${CF_ADMIN_PASSWORD:-}"
@@ -20,7 +23,7 @@ cpu_upper_threshold=${CPU_UPPER_THRESHOLD:-100}
 
 if [[ -z "${cf_admin_password}" ]]
 then
-	bosh_login "${BBL_STATE_PATH}"
+	bbl_login
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 

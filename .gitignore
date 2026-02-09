@@ -1,15 +1,16 @@
 # ==================== 🏗️ Build- and test-artefacts ====================
+*.mta
+*.out*
+**/*.test
+
 api/default_catalog.json
 build/
 fakes/*
-*.mta
 keys
 mta.yaml
 mta_archives/
-*.out*
 target/
 test-certs
-**/*.test
 vendor
 
 # ==================== 📦 Devbox, ❄ Nix, direnv ====================
@@ -27,3 +28,4 @@ scalingengine/apis/scalinghistory/oas*gen.go
 # api/cmd/api/api
 # scalingengine/cmd/scalingengine/scalingengine
 # Makefile_*
+#
