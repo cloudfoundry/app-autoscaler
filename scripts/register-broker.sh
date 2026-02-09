@@ -10,7 +10,7 @@ source "${script_dir}/vars.source.sh"
 source "${script_dir}/common.sh"
 
 bbl_login
-cf_login
+cf_admin_login
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \

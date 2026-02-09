@@ -45,8 +45,8 @@ function bbl_login() {
 	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }
 
-function cf_login(){
-	step 'login to cf'
+function cf_admin_login(){
+	step 'login to cf as admin'
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 	cf auth admin "$cf_admin_password"
@@ -113,8 +113,8 @@ function cleanup_credhub(){
 }
 
 function cleanup_test_user(){
-	step "cleaning up test user '${AUTOSCALER_TEST_USER}'"
-	if cf delete-user -f "${AUTOSCALER_TEST_USER}" &> /dev/null; then
+	step "cleaning up test user '${AUTOSCALER_ORG_MANAGER_USER}'"
+	if cf delete-user -f "${AUTOSCALER_ORG_MANAGER_USER}" &> /dev/null; then
 		log "✓ Test user deleted successfully"
 	else
 		log "Test user does not exist or already deleted"

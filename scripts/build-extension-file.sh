@@ -28,7 +28,7 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
 fi
 
 bbl_login
-cf_login
+cf_admin_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
@@ -71,7 +71,7 @@ EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
 
-export AUTOSCALER_TEST_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
+export AUTOSCALER_ORG_MANAGER_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
 
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
@@ -92,8 +92,8 @@ export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_N
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 
 export SCALINGENGINE_CF_GRANT_TYPE="password"
-export SCALINGENGINE_CF_USERNAME="${AUTOSCALER_TEST_USER}"
-export SCALINGENGINE_CF_PASSWORD="${AUTOSCALER_TEST_PASSWORD}"
+export SCALINGENGINE_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export SCALINGENGINE_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 export SCALINGENGINE_CF_CLIENT_ID="cf"
 export SCALINGENGINE_HEALTH_PASSWORD="$(yq ".scalingengine_health_password" /tmp/mtar-secrets.yml)"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
@@ -105,8 +105,8 @@ export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
 export OPERATOR_CF_GRANT_TYPE="password"
-export OPERATOR_CF_USERNAME="${AUTOSCALER_TEST_USER}"
-export OPERATOR_CF_PASSWORD="${AUTOSCALER_TEST_PASSWORD}"
+export OPERATOR_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export OPERATOR_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 export OPERATOR_CF_CLIENT_ID="cf"
 export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
@@ -118,8 +118,8 @@ export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
 export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
 export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
 export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
-export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_TEST_USER}}"
-export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_TEST_PASSWORD}}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
 export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
 export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
 
@@ -209,8 +209,8 @@ modules:
       ACCEPTANCE_CONFIG_JSON: |
         {
           "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "${AUTOSCALER_TEST_USER}",
-          "admin_password": "${AUTOSCALER_TEST_PASSWORD}",
+          "admin_user": "${AUTOSCALER_ORG_MANAGER_USER}",
+          "admin_password": "${AUTOSCALER_ORG_MANAGER_PASSWORD}",
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
           "use_http": false,

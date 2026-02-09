@@ -10,7 +10,7 @@ source "${script_dir}/common.sh"
 
 function main() {
 	bbl_login
-	cf_login
+	cf_admin_login
 	cleanup_acceptance_run
 	cleanup_test_user
 }

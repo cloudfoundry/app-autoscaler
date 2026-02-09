@@ -11,7 +11,7 @@ source "${script_dir}/common.sh"
 function main() {
 	step "cleaning up deployment ${DEPLOYMENT_NAME}"
 	bbl_login
-	cf_login
+	cf_admin_login
 
 	cleanup_apps
 	cleanup_acceptance_run

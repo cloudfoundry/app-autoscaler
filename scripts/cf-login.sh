@@ -14,7 +14,7 @@ if [ -n "${BBL_STATE_PATH:-}" ]; then
 	bbl_login
 fi
 
-cf_login
+cf_admin_login
 cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 echo "Done"

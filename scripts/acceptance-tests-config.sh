@@ -27,8 +27,8 @@ then
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 
-autoscaler_test_user="${AUTOSCALER_TEST_USER:-admin}"
-autoscaler_test_password="${AUTOSCALER_TEST_PASSWORD:-${cf_admin_password}}"
+autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER:-admin}"
+autoscaler_org_manager_password="${AUTOSCALER_ORG_MANAGER_PASSWORD:-${cf_admin_password}}"
 skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-false}"
 
 function write_app_config() {
@@ -41,8 +41,8 @@ function write_app_config() {
 	cat > "${config_path}" << EOF
 {
 	"api": "api.${system_domain}",
-	"admin_user": "${autoscaler_test_user}",
-	"admin_password": "${autoscaler_test_password}",
+	"admin_user": "${autoscaler_org_manager_user}",
+	"admin_password": "${autoscaler_org_manager_password}",
 	"apps_domain": "${system_domain}",
 	"skip_ssl_validation": ${skip_ssl_validation},
 	"use_http": false,
