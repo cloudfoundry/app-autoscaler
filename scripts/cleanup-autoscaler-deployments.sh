@@ -13,7 +13,8 @@ function get_autoscaler_deployments(){
 
 function main(){
 	cf_login
-	local deployments=$(get_autoscaler_deployments)
+	local deployments
+	deployments=$(get_autoscaler_deployments)
 	step "Deployments to cleanup: ${deployments}"
 	while IFS='' read -r deployment
 	do
