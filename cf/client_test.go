@@ -23,6 +23,40 @@ var _ = Describe("Client", func() {
 		var tokens cf.Tokens
 		JustBeforeEach(func() { err = cfc.Login() })
 
+		Context("when using password grant", func() {
+			BeforeEach(func() {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = "test-user"
+				conf.Password = "test-password"
+				conf.ClientID = "cf"
+				conf.Secret = ""
+				cfc = cf.NewCFClient(conf, lager.NewLogger("cf"), fclock)
+
+				fakeLoginServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", cf.PathCFAuth),
+						ghttp.VerifyBasicAuth("cf", ""),
+						ghttp.VerifyForm(url.Values{
+							"grant_type": {cf.GrantTypePassword},
+							"username":   {"test-user"},
+							"password":   {"test-password"},
+						}),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{
+							AccessToken: "test-password-grant-token",
+							ExpiresIn:   12000,
+						}),
+					),
+				)
+			})
+
+			It("returns the correct tokens using password grant", func() {
+				Expect(err).ToNot(HaveOccurred())
+				tokens, err = cfc.GetTokens()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(tokens.AccessToken).To(Equal("test-password-grant-token"))
+			})
+		})
+
 		Context("when the token url is valid", func() {
 			Context("when token server returns 200 status code", func() {
 

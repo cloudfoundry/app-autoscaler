@@ -25,6 +25,7 @@ const (
 	PathCFAuth                     = "/oauth/token"
 	PathIntrospectToken            = "/introspect"
 	GrantTypeClientCredentials     = "client_credentials"
+	GrantTypePassword              = "password"
 	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
 	defaultPerPage                 = 100
 )
@@ -131,12 +132,7 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 	c.logger = logger
 	c.conf = conf
 	c.clk = clk
-
-	c.loginForm = url.Values{
-		"grant_type":    {GrantTypeClientCredentials},
-		"client_id":     {conf.ClientID},
-		"client_secret": {conf.Secret},
-	}
+	c.loginForm = buildLoginForm(conf)
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 	//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
 	c.Client = cfhttp.NewClient(
@@ -152,6 +148,21 @@ func NewCFClient(conf *Config, logger lager.Logger, clk clock.Clock) *Client {
 		c.conf.PerPage = defaultPerPage
 	}
 	return c
+}
+
+func buildLoginForm(conf *Config) url.Values {
+	if conf.IsPasswordGrant() {
+		return url.Values{
+			"grant_type": {GrantTypePassword},
+			"username":   {conf.Username},
+			"password":   {conf.Password},
+		}
+	}
+	return url.Values{
+		"grant_type":    {GrantTypeClientCredentials},
+		"client_id":     {conf.ClientID},
+		"client_secret": {conf.Secret},
+	}
 }
 
 func createRetryClient(conf *Config, client *http.Client, logger lager.Logger) *http.Client {

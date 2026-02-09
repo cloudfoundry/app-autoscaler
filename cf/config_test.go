@@ -146,5 +146,54 @@ idle_connection_timeout_ms: 200
 			})
 		})
 
+		Context("when grant_type is password", func() {
+			BeforeEach(func() {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = "test-user"
+				conf.Password = "test-password"
+				conf.ClientID = ""
+			})
+
+			It("should not error and set default client_id to 'cf'", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.ClientID).To(Equal("cf"))
+			})
+		})
+
+		Context("when grant_type is password but username is empty", func() {
+			BeforeEach(func() {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = ""
+				conf.Password = "test-password"
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: username is empty for password grant"))
+			})
+		})
+
+		Context("when grant_type is password but password is empty", func() {
+			BeforeEach(func() {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = "test-user"
+				conf.Password = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: password is empty for password grant"))
+			})
+		})
+
+		Context("when grant_type is not set", func() {
+			BeforeEach(func() {
+				conf.GrantType = ""
+			})
+
+			It("should default to client_credentials", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.GrantType).To(Equal(cf.GrantTypeClientCredentials))
+			})
+		})
+
 	})
 })

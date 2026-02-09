@@ -89,8 +89,10 @@ export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metri
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 
-export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
-export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
+export SCALINGENGINE_CF_GRANT_TYPE="password"
+export SCALINGENGINE_CF_USERNAME="${AUTOSCALER_TEST_USER}"
+export SCALINGENGINE_CF_PASSWORD="${AUTOSCALER_TEST_PASSWORD}"
+export SCALINGENGINE_CF_CLIENT_ID="cf"
 export SCALINGENGINE_HEALTH_PASSWORD="$(yq ".scalingengine_health_password" /tmp/mtar-secrets.yml)"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
@@ -100,8 +102,10 @@ export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
 export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
-export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
-export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
+export OPERATOR_CF_GRANT_TYPE="password"
+export OPERATOR_CF_USERNAME="${AUTOSCALER_TEST_USER}"
+export OPERATOR_CF_PASSWORD="${AUTOSCALER_TEST_PASSWORD}"
+export OPERATOR_CF_CLIENT_ID="cf"
 export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
@@ -309,8 +313,10 @@ resources:
             password: "${OPERATOR_HEALTH_PASSWORD}"
         cf:
           api:  https://api.\${default-domain}
+          grant_type: ${OPERATOR_CF_GRANT_TYPE}
           client_id: ${OPERATOR_CF_CLIENT_ID}
-          secret: ${OPERATOR_CF_CLIENT_SECRET}
+          username: ${OPERATOR_CF_USERNAME}
+          password: ${OPERATOR_CF_PASSWORD}
         scaling_engine:
           scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.\${default-domain}
         scheduler:
@@ -324,8 +330,11 @@ resources:
             password: "${SCALINGENGINE_HEALTH_PASSWORD}"
         cf:
           api:  https://api.\${default-domain}
+          grant_type: ${SCALINGENGINE_CF_GRANT_TYPE}
           client_id: ${SCALINGENGINE_CF_CLIENT_ID}
           secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          username: ${SCALINGENGINE_CF_USERNAME}
+          password: ${SCALINGENGINE_CF_PASSWORD}
 
 - name: database
   parameters:
