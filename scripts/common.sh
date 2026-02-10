@@ -52,7 +52,7 @@ function cf_admin_login(){
 	cf auth admin "$cf_admin_password"
 }
 
-function cf_login(){
+function cf_org_manager_login(){
 	step 'login to cf as org manager'
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 	local org_manager_password

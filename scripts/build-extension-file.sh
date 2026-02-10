@@ -66,12 +66,12 @@ service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_brok
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
-autoscaler_test_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/test_user_password))
+org_manager_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/org_manager_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
 
-export AUTOSCALER_ORG_MANAGER_PASSWORD="$(yq ".autoscaler_test_user_password" /tmp/mtar-secrets.yml)"
+export AUTOSCALER_ORG_MANAGER_PASSWORD="$(yq ".org_manager_password" /tmp/mtar-secrets.yml)"
 
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
@@ -124,6 +124,8 @@ export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
 export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
 export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
 export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
+export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-true}"
+export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -223,6 +225,8 @@ modules:
           "add_existing_user_to_existing_space": ${ADD_EXISTING_USER_TO_EXISTING_SPACE},
           "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
           "existing_organization": "${EXISTING_ORGANIZATION}",
+          "use_existing_space": ${USE_EXISTING_SPACE},
+          "existing_space": "${EXISTING_SPACE}",
           "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},
           "service_name": "${DEPLOYMENT_NAME}",
           "service_plan": "autoscaler-free-plan",

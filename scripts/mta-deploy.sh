@@ -27,7 +27,7 @@ if [ ! -f "${EXTENSION_FILE}" ]; then
 fi
 
 bbl_login
-cf_login
+cf_org_manager_login
 cf_target "${autoscaler_org}" "${autoscaler_space}"
 echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 echo "Deploying with extension file: ${EXTENSION_FILE}"
