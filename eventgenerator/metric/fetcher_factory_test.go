@@ -113,29 +113,20 @@ var _ = Describe("logCacheFetcherFactory", func() {
 				}
 			})
 
-			It("creates a log cache client that uses an HTTP-client with password grant", func() {
+			It("creates a log cache client that uses a custom CF OAuth2 HTTP client for password grant", func() {
+				// For password grant, we use our custom CFOauth2HTTPClient that sends
+				// client credentials via Basic auth header (required by CF's "cf" UAA client)
+				expectedHTTPClient := metric.NewCFOauth2HTTPClient(
+					conf.MetricCollector.UAACreds.URL,
+					conf.MetricCollector.UAACreds.ClientID,
+					conf.MetricCollector.UAACreds.ClientSecret,
+					conf.MetricCollector.UAACreds.Username,
+					conf.MetricCollector.UAACreds.Password,
+					conf.MetricCollector.UAACreds.SkipSSLValidation,
+				)
 				expectedLogCacheClient := logcache.NewClient(
 					conf.MetricCollector.MetricCollectorURL,
-					logcache.WithHTTPClient(
-						logcache.NewOauth2HTTPClient(
-							conf.MetricCollector.UAACreds.URL,
-							conf.MetricCollector.UAACreds.ClientID,
-							conf.MetricCollector.UAACreds.ClientSecret,
-							logcache.WithOauth2HTTPClient(&http.Client{
-								Timeout: 5 * time.Second,
-								Transport: &http.Transport{
-									TLSClientConfig: &tls.Config{
-										// #nosec G402
-										InsecureSkipVerify: conf.MetricCollector.UAACreds.SkipSSLValidation,
-									},
-								},
-							}),
-							logcache.WithOauth2HTTPUser(
-								conf.MetricCollector.UAACreds.Username,
-								conf.MetricCollector.UAACreds.Password,
-							),
-						),
-					),
+					logcache.WithHTTPClient(expectedHTTPClient),
 				)
 				mockLogCacheMetricFetcherCreator.NewLogCacheFetcherReturns(mockMetricFetcher)
 

@@ -33,29 +33,40 @@ func (l *logCacheFetcherFactory) CreateFetcher(logger lager.Logger, conf config.
 	metricsCollectorConfig := conf.MetricCollector
 	uaaCredsConfig := metricsCollectorConfig.UAACreds
 	if uaaCredsConfig.IsNotEmpty() {
-		oauth2Options := []logcache.Oauth2Option{
-			logcache.WithOauth2HTTPClient(&http.Client{
-				Timeout: 5 * time.Second,
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						// #nosec G402
-						InsecureSkipVerify: uaaCredsConfig.SkipSSLValidation,
-					},
-				},
-			}),
-		}
-
 		if uaaCredsConfig.IsPasswordGrant() {
-			oauth2Options = append(oauth2Options,
-				logcache.WithOauth2HTTPUser(uaaCredsConfig.Username, uaaCredsConfig.Password))
-		}
+			// Use custom OAuth2 client that sends client credentials via Basic auth header,
+			// which is required by CF's "cf" UAA client. The go-log-cache library sends
+			// credentials in the request body which doesn't work with the "cf" client.
+			oauth2HTTPClient := NewCFOauth2HTTPClient(
+				uaaCredsConfig.URL,
+				uaaCredsConfig.ClientID,
+				uaaCredsConfig.ClientSecret,
+				uaaCredsConfig.Username,
+				uaaCredsConfig.Password,
+				uaaCredsConfig.SkipSSLValidation,
+			)
+			options = append(options, logcache.WithHTTPClient(oauth2HTTPClient))
+		} else {
+			// For client_credentials grant, use the standard go-log-cache OAuth2 client
+			oauth2Options := []logcache.Oauth2Option{
+				logcache.WithOauth2HTTPClient(&http.Client{
+					Timeout: 5 * time.Second,
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							// #nosec G402
+							InsecureSkipVerify: uaaCredsConfig.SkipSSLValidation,
+						},
+					},
+				}),
+			}
 
-		oauth2HTTPClient := logcache.NewOauth2HTTPClient(
-			uaaCredsConfig.URL,
-			uaaCredsConfig.ClientID,
-			uaaCredsConfig.ClientSecret,
-			oauth2Options...)
-		options = append(options, logcache.WithHTTPClient(oauth2HTTPClient))
+			oauth2HTTPClient := logcache.NewOauth2HTTPClient(
+				uaaCredsConfig.URL,
+				uaaCredsConfig.ClientID,
+				uaaCredsConfig.ClientSecret,
+				oauth2Options...)
+			options = append(options, logcache.WithHTTPClient(oauth2HTTPClient))
+		}
 	} else {
 		tlsConfig, err := metricsCollectorConfig.TLSClientCerts.CreateClientConfig()
 		if err != nil {
