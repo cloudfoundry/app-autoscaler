@@ -24,6 +24,11 @@ function setup_acceptance_user() {
 	# Assign OrgManager role
 	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
 
+	# Assign space roles for MTA deployments
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
+	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
+
 	step "Setup complete!"
 	log "User: ${AUTOSCALER_ORG_MANAGER_USER}"
 	log "Password stored in CredHub at: ${CREDHUB_ORG_MANAGER_PASSWORD_PATH}"

@@ -52,6 +52,14 @@ function cf_admin_login(){
 	cf auth admin "$cf_admin_password"
 }
 
+function cf_login(){
+	step 'login to cf as org manager'
+	cf api "https://api.${system_domain}" --skip-ssl-validation
+	local org_manager_password
+	org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
+	cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "$org_manager_password"
+}
+
 function uaa_login(){
 	step "login to uaa"
 	local uaa_client_secret

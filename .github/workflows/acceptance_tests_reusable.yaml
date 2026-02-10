@@ -50,10 +50,10 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
 
-      - name: Setup acceptance test user with OrgManager role
+      - name: Setup org manager user with OrgManager and SpaceDeveloper roles
         shell: bash
         run: |
-          make --directory="${AUTOSCALER_DIR}" setup-acceptance-user
+          make --directory="${AUTOSCALER_DIR}" setup-org-manager-user
 
       - name: Provision DB
         shell: bash
@@ -68,7 +68,7 @@ jobs:
 
       - name: Register autoscaler
         shell: bash
-        run: make --directory="${AUTOSCALER_DIR}" deploy-register-cf
+        run: make --directory="${AUTOSCALER_DIR}" register-broker
 
       - name: Enable service access (admin)
         shell: bash

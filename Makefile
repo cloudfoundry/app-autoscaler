@@ -340,8 +340,8 @@ clean-acceptance:
 	@rm acceptance/ginkgo* &> /dev/null || true
 	@rm -rf acceptance/results &> /dev/null || true
 
-.PHONY: cf-login
-cf-login:
+.PHONY: cf-admin-login
+cf-admin-login:
 	@echo '⚠️ Please note that this login only works for cf and concourse,' \
 		  'in spite of performing a login as well on bosh and credhub.' \
 		  'The necessary changes to the environment get lost when make exits its process.'
@@ -514,15 +514,15 @@ acceptance-tests-config:
 mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 	@$(MAKEFILE_DIR)/scripts/run-mta-acceptance-tests.sh
 
-.PHONY: setup-acceptance-user
-setup-acceptance-user: ## Setup acceptance test user with OrgManager role (password from CredHub)
-	DEBUG="${DEBUG}" ./scripts/setup-acceptance-user.sh
+.PHONY: setup-org-manager-user
+setup-org-manager-user: ## Setup org manager user with OrgManager and SpaceDeveloper roles (password from CredHub)
+	DEBUG="${DEBUG}" ./scripts/setup-org-manager-user.sh
 
 # 🚧 To-do: These targets don't exist here!
 .PHONY: deploy-autoscaler deploy-autoscaler-bosh
 
-.PHONY: deploy-register-cf
-deploy-register-cf:
+.PHONY: register-broker
+register-broker:
 	DEBUG="${DEBUG}" ./scripts/register-broker.sh
 
 .PHONY: deploy-cleanup
