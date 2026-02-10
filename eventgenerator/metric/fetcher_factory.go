@@ -33,15 +33,28 @@ func (l *logCacheFetcherFactory) CreateFetcher(logger lager.Logger, conf config.
 	metricsCollectorConfig := conf.MetricCollector
 	uaaCredsConfig := metricsCollectorConfig.UAACreds
 	if uaaCredsConfig.IsNotEmpty() {
-		oauth2HTTPClient := logcache.NewOauth2HTTPClient(uaaCredsConfig.URL, uaaCredsConfig.ClientID, uaaCredsConfig.ClientSecret, logcache.WithOauth2HTTPClient(&http.Client{
-			Timeout: 5 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					// #nosec G402
-					InsecureSkipVerify: uaaCredsConfig.SkipSSLValidation,
+		oauth2Options := []logcache.Oauth2Option{
+			logcache.WithOauth2HTTPClient(&http.Client{
+				Timeout: 5 * time.Second,
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						// #nosec G402
+						InsecureSkipVerify: uaaCredsConfig.SkipSSLValidation,
+					},
 				},
-			},
-		}))
+			}),
+		}
+
+		if uaaCredsConfig.IsPasswordGrant() {
+			oauth2Options = append(oauth2Options,
+				logcache.WithOauth2HTTPUser(uaaCredsConfig.Username, uaaCredsConfig.Password))
+		}
+
+		oauth2HTTPClient := logcache.NewOauth2HTTPClient(
+			uaaCredsConfig.URL,
+			uaaCredsConfig.ClientID,
+			uaaCredsConfig.ClientSecret,
+			oauth2Options...)
 		options = append(options, logcache.WithHTTPClient(oauth2HTTPClient))
 	} else {
 		tlsConfig, err := metricsCollectorConfig.TLSClientCerts.CreateClientConfig()

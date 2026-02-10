@@ -78,8 +78,10 @@ export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
 export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_CF_GRANT_TYPE="password"
+export EVENTGENERATOR_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export EVENTGENERATOR_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export EVENTGENERATOR_CF_CLIENT_ID="cf"
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
 export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
@@ -255,9 +257,11 @@ resources:
           metric_collector_url: https://log-cache.\${default-domain}
           port: ''
           uaa:
-            client_id: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID}"
-            client_secret: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET}"
             url: https://uaa.\${default-domain}
+            grant_type: ${EVENTGENERATOR_CF_GRANT_TYPE}
+            client_id: ${EVENTGENERATOR_CF_CLIENT_ID}
+            username: ${EVENTGENERATOR_CF_USERNAME}
+            password: ${EVENTGENERATOR_CF_PASSWORD}
             skip_ssl_validation: true
         pool:
           total_instances: ${EVENTGENERATOR_INSTANCES}
