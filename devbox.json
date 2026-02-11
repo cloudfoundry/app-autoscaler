@@ -31,7 +31,7 @@
     "go-tools":                                         "2025.1.1",
     "golangci-lint":                                    "2.8.0",
     "gopls":                                            "0.21.0",
-    "google-java-format":                               "1.33.0",
+    "google-java-format":                               "1.34.0",
     "gum":                                              "0.17.0",
     "jdt-language-server":                              "1.55.0",
     "jq":                                               "1.8.1",
