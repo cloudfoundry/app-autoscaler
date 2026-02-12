@@ -6,7 +6,7 @@ go 1.24.5
 // Any (transitive) dependency on `golang.org/x/tools` v0.38.0 or newer breaks fake generation with `counterfeiter`, which relies on `.VendorlessPath()`: https://github.com/maxbrunsfeld/counterfeiter/blob/main/generator/import.go#L45
 // Track the upstream issue here: https://github.com/maxbrunsfeld/counterfeiter/issues/344
 // Remove this `replace` directive once the upstream issue is resolved and `counterfeiter` is compatible with newer `golang.org/x/tools` versions.
-replace golang.org/x/tools => golang.org/x/tools v0.41.0
+replace golang.org/x/tools => golang.org/x/tools v0.42.0
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.18
