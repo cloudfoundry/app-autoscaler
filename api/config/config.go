@@ -108,7 +108,7 @@ type Config struct {
 	CatalogPath                        string                        `yaml:"catalog_path" json:"catalog_path"`
 	CatalogSchemaPath                  string                        `yaml:"catalog_schema_path" json:"catalog_schema_path"`
 	DashboardRedirectURI               string                        `yaml:"dashboard_redirect_uri" json:"dashboard_redirect_uri"`
-	PolicySchemaPath                   string                        `yaml:"policy_schema_path" json:"policy_schema_path"`
+	BindingRequestSchemaPath           string                        `yaml:"policy_schema_path" json:"policy_schema_path"`
 	Scheduler                          SchedulerConfig               `yaml:"scheduler" json:"scheduler"`
 	ScalingEngine                      ScalingEngineConfig           `yaml:"scaling_engine" json:"scaling_engine"`
 	EventGenerator                     EventGeneratorConfig          `yaml:"event_generator" json:"event_generator"`
@@ -255,7 +255,7 @@ func (c *Config) Validate() error {
 	if c.MetricsForwarder.MetricsForwarderUrl == "" {
 		return fmt.Errorf("Configuration error: metrics_forwarder.metrics_forwarder_url is empty")
 	}
-	if c.PolicySchemaPath == "" {
+	if c.BindingRequestSchemaPath == "" {
 		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
 	}
 	if c.RateLimit.MaxAmount <= 0 {
