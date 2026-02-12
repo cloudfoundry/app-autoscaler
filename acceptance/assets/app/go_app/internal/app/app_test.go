@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
-	"github.com/fgrosse/zaptest"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/steinfletcher/apitest"
@@ -25,21 +24,40 @@ var _ = Describe("Ginkgo/Server", func() {
 	})
 
 	Context("basic endpoint tests", func() {
-		It("Root should respond correctly", func() {
-			apiTest(nil, nil, nil, nil).
-				Get("/").
-				Expect(t).
-				Status(http.StatusOK).
-				Body(`{"name":"test-app"}`).
-				End()
+		apiTest := func() *apitest.APITest {
+			GinkgoHelper()
+			logger := testLogger()
+			return apitest.New().Handler(app.Router(logger, nil, nil, nil, nil, nil))
+		}
+
+		When("getting root path", func() {
+			It("should respond correctly", func() {
+				apiTest().
+					Get("/").
+					Expect(t).
+					Status(http.StatusOK).
+					Body(`{"name":"test-app"}`).
+					End()
+			})
 		})
-		It("health", func() {
-			apiTest(nil, nil, nil, nil).
-				Get("/health").
-				Expect(t).
-				Status(http.StatusOK).
-				Body(`{"status":"ok"}`).
-				End()
+		When("getting unknown path", func() {
+			It("should respond with 404", func() {
+				apiTest().
+					Get("/unknown").
+					Expect(t).
+					Status(http.StatusNotFound).
+					End()
+			})
+		})
+		When("getting health path", func() {
+			It("should respond with a healthy status", func() {
+				apiTest().
+					Get("/health").
+					Expect(t).
+					Status(http.StatusOK).
+					Body(`{"status":"ok"}`).
+					End()
+			})
 		})
 	})
 
@@ -48,7 +66,7 @@ var _ = Describe("Ginkgo/Server", func() {
 		var client *http.Client
 		var port int
 		BeforeEach(func() {
-			logger := zaptest.LoggerWriter(GinkgoWriter)
+			logger := testLogger()
 			/* #nosec G102 -- CF apps run in a container */
 			l, err := net.Listen("tcp", ":0")
 			Expect(err).ToNot(HaveOccurred())
@@ -74,11 +92,3 @@ var _ = Describe("Ginkgo/Server", func() {
 
 	})
 })
-
-func apiTest(timeWaster app.TimeWaster, memoryGobbler app.MemoryGobbler, cpuWaster app.CPUWaster, customMetricClient app.CustomMetricClient) *apitest.APITest {
-	GinkgoHelper()
-	logger := zaptest.LoggerWriter(GinkgoWriter)
-
-	return apitest.New().
-		Handler(app.Router(logger, timeWaster, memoryGobbler, cpuWaster, nil, customMetricClient))
-}

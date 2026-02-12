@@ -35,8 +35,12 @@ app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 go_deps_without_fakes = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --regexp='${app-fakes-dir}')
 
+.PHONY: help
+help: ## Show this help
+	@grep --extended-regexp --no-filename '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
 .PHONY: generate-fakes
-generate-fakes: ${app-fakes-dir} ${app-fakes-files}
+generate-fakes: ${app-fakes-dir} ${app-fakes-files} ## generate Go code (fakes, clients from OpenAPI specs)
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/generate.go ${openapi-specs-list}
 	go generate ./...
 
@@ -53,7 +57,7 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/generate.go 
 #  3. `make go-mod-tidy`
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
-go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
+go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes} ## run go mod tidy
 	@echo -ne '${aes_terminal_font_yellow}' \
 		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 		'outdated. Please consider re-generating them, if this is relevant.' \
@@ -63,7 +67,7 @@ go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
 
 
 .PHONY: build
-build: ./build/app ./build/manifest.yml
+build: ./build/app ./build/manifest.yml ## build the app
 ./build/app ./build/manifest.yml: ./go.mod ${app-fakes-dir} ${app-fakes-files}
 	echo '# building  test-app'
 	mkdir -p build
@@ -91,35 +95,35 @@ build_test-%: ${app-fakes-dir} ${app-fakes-files}
 
 
 .PHONY: check lint lint-fix test
-check: lint build test
+check: lint build test ## run linting, build and tests
 
-test: generate-fakes
+test: generate-fakes ## run tests
 	@echo 'Running tests'
 	ginkgo run ${GINKGO_OPTS} './...'
 
 lint: generate-fakes
 	golangci-lint run
 
-lint-fix: generate-fakes
+lint-fix: generate-fakes ## run linting with auto-fix
 	golangci-lint run --fix
 
 
 
 .PHONY: start
-start: build
+start: build ## start the app locally in a cflinuxfs5 container
 	docker run --interactive --tty --name go_app --volume="$${PWD}/build/:/cf/bin" \
-						 --publish '8080:8080' --rm 'cloudfoundry/cflinuxfs4' '/cf/bin/app'
+						 --publish '8080:8080' --rm 'cloudfoundry/cflinuxfs5' '/cf/bin/app'
 
 
 
 .PHONY: deploy
-deploy: build
+deploy: build ## Deploy the app to Cloud Foundry, requires the CONFIG env variable to be pointing to the acceptance test config file
 	./deploy.sh
 
 
 
 .PHONY: clean
-clean:
+clean: ## clean up build artifacts
 	@echo "# cleaning go_app"
 	@go clean -cache -testcache
 	@rm --force --recursive './build'
