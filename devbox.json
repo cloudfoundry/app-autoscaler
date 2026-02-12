@@ -48,7 +48,7 @@
     "temurin-bin-21":                                   "21.0.3",
     "which":                                            "latest",
     "xq-xml":                                           "1.3.0",
-    "yq-go":                                            "4.50.1"
+    "yq-go":                                            "4.52.2"
   },
   "shell": {
     "init_hook": [
