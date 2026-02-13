@@ -166,7 +166,7 @@ main() {
 	step "Running MTA acceptance tests: ${SUITES}"
 	validate
 	bbl_login
-	cf_login
+	cf_admin_login
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 	validate_app
 

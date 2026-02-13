@@ -11,11 +11,17 @@ import (
 )
 
 func CleanupOrgs(cfg *config.Config, wfh *workflowhelpers.ReproducibleTestSuiteSetup) {
-	By("Clearing down existing test orgs/spaces...")
-	workflowhelpers.AsUser(wfh.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
-		DeleteOrgs(GetTestOrgs(cfg), cfg.DefaultTimeoutDuration())
-	})
-	By("Clearing down existing test orgs/spaces... Complete")
+	if cfg.UseExistingOrganization {
+		By("Cleaning up test spaces in existing organization...")
+		CleanupInExistingOrg(cfg, wfh)
+		By("Cleaning up test spaces in existing organization... Complete")
+	} else {
+		By("Clearing down existing test orgs/spaces...")
+		workflowhelpers.AsUser(wfh.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
+			DeleteOrgs(GetTestOrgs(cfg), cfg.DefaultTimeoutDuration())
+		})
+		By("Clearing down existing test orgs/spaces... Complete")
+	}
 }
 
 func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.ReproducibleTestSuiteSetup) {
@@ -27,10 +33,16 @@ func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.Reproducibl
 			if len(spaceNames) == 0 {
 				return
 			}
-			spaceName := spaceNames[0]
-			deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), GetSpaceGuid(cfg, orgGuid), spaceName)
-			deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), GetSpaceGuid(cfg, orgGuid), spaceName)
-			DeleteSpaces(cfg.ExistingOrganization, GetTestSpaces(orgGuid, cfg), cfg.DefaultTimeoutDuration())
+
+			// Clean up all test spaces
+			for _, spaceName := range spaceNames {
+				spaceGuid := GetSpaceGuid(cfg, orgGuid)
+				deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
+				deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
+			}
+
+			// Delete all test spaces
+			DeleteSpaces(cfg.ExistingOrganization, spaceNames, cfg.DefaultTimeoutDuration())
 		}
 	})
 }
