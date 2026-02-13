@@ -78,7 +78,7 @@ jobs:
           source scripts/common.sh
 
           bbl_login
-          cf_login
+          cf_org_manager_login
           cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
           ./scripts/enable-service-access.sh "${DEPLOYMENT_NAME}"
