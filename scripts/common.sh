@@ -84,6 +84,106 @@ function cleanup_service_broker(){
 	fi
 }
 
+# Returns GUIDs of autoscaler service instances (one per line)
+function get_autoscaler_service_instance_guids(){
+	cf curl "/v3/service_instances" | jq -r \
+		'.resources[] | select(.relationships.service_plan.data != null) |
+		select(.name | contains("autoscaler")) | .guid' || true
+}
+
+# Deletes all bindings for a service instance
+function delete_service_instance_bindings(){
+	local instance_guid="$1"
+	local bindings
+	bindings=$(cf curl "/v3/service_credential_bindings?service_instance_guids=${instance_guid}" | jq -r '.resources[].guid' || true)
+
+	for binding_guid in ${bindings}; do
+		echo "     - deleting binding: ${binding_guid}"
+		cf curl -X DELETE "/v3/service_credential_bindings/${binding_guid}" || true
+	done
+}
+
+# Deletes a single service instance (with fallback to purge)
+function delete_service_instance(){
+	local instance_guid="$1"
+	local instance_name
+	instance_name=$(cf curl "/v3/service_instances/${instance_guid}" | jq -r '.name')
+
+	echo "   - processing: ${instance_name} (${instance_guid})"
+	delete_service_instance_bindings "${instance_guid}"
+
+	echo "     - deleting instance: ${instance_name}"
+	if ! cf delete-service -f "${instance_name}"; then
+		echo "     - standard delete failed, attempting purge"
+		cf purge-service-instance -f "${instance_name}" || echo "     - purge failed for ${instance_name}"
+	fi
+}
+
+# Waits for all autoscaler service instances to be deleted
+function wait_for_service_instance_deletion(){
+	local max_wait_seconds="${1:-60}"
+	local poll_interval=5
+	local max_iterations=$((max_wait_seconds / poll_interval))
+
+	echo " - waiting for service instance deletions to complete (max ${max_wait_seconds}s)"
+
+	for ((attempt=1; attempt<=max_iterations; attempt++)); do
+		local remaining
+		remaining=$(get_autoscaler_service_instance_guids | wc -l | tr -d ' ')
+
+		if [[ ${remaining} -eq 0 ]]; then
+			echo " - all service instances deleted"
+			return 0
+		fi
+
+		echo " - ${remaining} instances remaining, waiting..."
+		sleep "${poll_interval}"
+	done
+
+	echo " - timeout waiting for service instance deletion"
+	return 1
+}
+
+# Deletes all autoscaler service instances and their bindings
+function delete_autoscaler_service_instances(){
+	echo " - finding autoscaler service instances"
+	local service_instances
+	service_instances=$(get_autoscaler_service_instance_guids)
+
+	if [[ -z "${service_instances}" ]]; then
+		echo " - no autoscaler service instances found"
+		return 0
+	fi
+
+	echo " - deleting service bindings and instances"
+	for instance_guid in ${service_instances}; do
+		delete_service_instance "${instance_guid}"
+	done
+
+	wait_for_service_instance_deletion 180
+}
+
+# Deletes a service broker (with fallback to purge offerings)
+function delete_service_broker(){
+	local broker_name="$1"
+
+	echo " - deleting broker '${broker_name}'"
+	if cf delete-service-broker -f "${broker_name}"; then
+		return 0
+	fi
+
+	echo " - failed to delete broker, attempting force cleanup"
+	local offerings
+	offerings=$(cf service-access | grep "${broker_name}" | awk '{print $1}' | sort -u || true)
+
+	for offering in ${offerings}; do
+		echo "   - purging service offering: ${offering}"
+		cf purge-service-offering -f "${offering}" || true
+	done
+
+	cf delete-service-broker -f "${broker_name}" || echo " - ERROR: Could not delete broker ${broker_name}"
+}
+
 function cleanup_bosh_deployment(){
 	step "deleting bosh deployment '${deployment_name}'"
 	retry 3 bosh delete-deployment -d "${deployment_name}" -n

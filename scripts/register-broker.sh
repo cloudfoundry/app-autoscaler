@@ -18,11 +18,13 @@ existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
 	'.resources[] | select(.name == $service_broker_name) | .name' || true)"
 
 if [[ -n "${existing_service_broker}" ]]; then
-	echo "Service Broker ${existing_service_broker} already exists"
-	echo " - cleaning up pr"
-	"${script_dir}/../acceptance/cleanup.sh"
-	echo " - deleting broker"
-	cf delete-service-broker -f "${existing_service_broker}"
+	step "Cleaning up existing broker '${existing_service_broker}'"
+
+	delete_autoscaler_service_instances
+	"${script_dir}/../acceptance/cleanup.sh" || echo " - acceptance cleanup had errors (non-fatal)"
+	delete_service_broker "${existing_service_broker}"
+
+	echo " - cleanup complete"
 fi
 
 echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
