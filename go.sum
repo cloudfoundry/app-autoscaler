@@ -388,8 +388,8 @@ code.cloudfoundry.org/lager/v3 v3.37.0 h1:cAOUYz2am0remjeKBorIwIapzW6QoRGAFa3ztQ
 code.cloudfoundry.org/lager/v3 v3.37.0/go.mod h1:k6m2qvgAaiS6fE1TpzUoCo3p3aED72dcGgSZCiQznf4=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250910195140-26c118c0f681 h1:9EHkJ8TvCAsgAlH+H/l9wrYk1ewYuqTAXRCnS8fDC8E=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20250910195140-26c118c0f681/go.mod h1:YvPoi2VvaatJ+v9r2LxNyzQ7FDuEltlmgc1OJPWeTSE=
-code.cloudfoundry.org/tlsconfig v0.29.0 h1:t9//PpF7fNJi4mfmkzWd1F4fHpqREQUsQMIe4sj6AKU=
-code.cloudfoundry.org/tlsconfig v0.29.0/go.mod h1:YDHTq7ZNy8W26SinApuFKxlhg78xN28g86so8kRD6/Q=
+code.cloudfoundry.org/tlsconfig v0.45.0 h1:axem2ESLqMm645WyTkw1RZ9zjfZzUiojImNqxGXEtlI=
+code.cloudfoundry.org/tlsconfig v0.45.0/go.mod h1:62TfSYz4O4pgggNLF0wEZOTr2ZtrsnKPX9c2LSL1Cl0=
 codeberg.org/go-fonts/dejavu v0.4.0/go.mod h1:abni088lmhQJvso2Lsb7azCKzwkfcnttl6tL1UTWKzg=
 codeberg.org/go-fonts/latin-modern v0.4.0/go.mod h1:BF68mZznJ9QHn+hic9ks2DaFl4sR5YhfM6xTYaP9vNw=
 codeberg.org/go-fonts/liberation v0.4.1/go.mod h1:Gu6FTZHMMpGxPBfc8WFL8RfwMYFTvG7TIFOMx8oM4B8=
@@ -1528,8 +1528,8 @@ go.opentelemetry.io/proto/otlp v0.15.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI
 go.opentelemetry.io/proto/otlp v0.19.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.opentelemetry.io/proto/otlp v1.0.0/go.mod h1:Sy6pihPLfYHkr3NkUbEhGHFhINUSI/v80hjKIs5JXpM=
 go.opentelemetry.io/proto/otlp v1.7.0/go.mod h1:fSKjH6YJ7HDlwzltzyMj036AJ3ejJLCgCSHGj4efDDo=
-go.step.sm/crypto v0.66.0 h1:9TW6BEguOtcS9NIjja9bDQ+j8OjhenU/F6lJfHjbXNU=
-go.step.sm/crypto v0.66.0/go.mod h1:anqGyvO/Px05D1mznHq4/a9wwP1I1DmMZvk+TWX5Dzo=
+go.step.sm/crypto v0.76.0 h1:K23BSaeoiY7Y5dvvijTeYC9EduDBetNwQYMBwMhi1aA=
+go.step.sm/crypto v0.76.0/go.mod h1:PXYJdKkK8s+GHLwLguFaLxHNAFsFL3tL1vSBrYfey5k=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
 go.uber.org/atomic v1.6.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
