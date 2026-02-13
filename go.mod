@@ -2,12 +2,6 @@ module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
 go 1.24.5
 
-// `.VendorlessPath()` was removed from `golang.org/x/tools` in v0.38.0: https://github.com/golang/tools/commit/be644c74962554e500e5f890413951358e19fbb7
-// Any (transitive) dependency on `golang.org/x/tools` v0.38.0 or newer breaks fake generation with `counterfeiter`, which relies on `.VendorlessPath()`: https://github.com/maxbrunsfeld/counterfeiter/blob/main/generator/import.go#L45
-// Track the upstream issue here: https://github.com/maxbrunsfeld/counterfeiter/issues/344
-// Remove this `replace` directive once the upstream issue is resolved and `counterfeiter` is compatible with newer `golang.org/x/tools` versions.
-replace golang.org/x/tools => golang.org/x/tools v0.42.0
-
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.18
 	code.cloudfoundry.org/cfhttp/v2 v2.45.0
