@@ -12,7 +12,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/json-iterator/go v1.1.12
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ogen-go/ogen v1.8.1
 	github.com/onsi/ginkgo/v2 v2.28.1
