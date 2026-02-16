@@ -1,7 +1,7 @@
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
-github.com/cloudfoundry/cf-test-helpers/v2 v2.12.0 h1:wArGHMEkF+E32NHtRNakNa//7zcM2X/5i/MwrnZNX1s=
-github.com/cloudfoundry/cf-test-helpers/v2 v2.12.0/go.mod h1:Mm1edTR4/39wGV8IqFdOBiXlS9CxFwIqDk2Gsqca7vY=
+github.com/cloudfoundry/cf-test-helpers/v2 v2.13.0 h1:q65uuVPHzWjjz8DxfvL9emayOJm3QszsXP3NJzGR8mQ=
+github.com/cloudfoundry/cf-test-helpers/v2 v2.13.0/go.mod h1:YdqObgXGnwxZ2oP5Nan3RZCfP/PETDqdW9XS5K1WVO8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gkampitakis/ciinfo v0.3.2 h1:JcuOPk8ZU7nZQjdUhctuhQofk7BGHuIy0c9Ez8BNhXs=
