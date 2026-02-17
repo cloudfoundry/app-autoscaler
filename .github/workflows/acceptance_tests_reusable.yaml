@@ -50,6 +50,11 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
 
+      - name: Cleanup previous deployment
+        shell: bash
+        run: |
+          make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
+
       - name: Setup org manager user with OrgManager and SpaceDeveloper roles
         shell: bash
         run: |
