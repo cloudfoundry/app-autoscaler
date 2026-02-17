@@ -1348,51 +1348,51 @@
       "source": "devbox-search",
       "version": "10.6.12"
     },
-    "oha@1.12.1": {
-      "last_modified": "2026-01-23T17:20:52Z",
-      "resolved": "github:NixOS/nixpkgs/a1bab9e494f5f4939442a57a58d0449a109593fe#oha",
+    "oha@1.13.0": {
+      "last_modified": "2026-02-08T07:51:33Z",
+      "resolved": "github:NixOS/nixpkgs/fef9403a3e4d31b0a23f0bacebbec52c248fbb51#oha",
       "source": "devbox-search",
-      "version": "1.12.1",
+      "version": "1.13.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/720r7lvy3b9cs1ysblnjcirg7xab7ckg-oha-1.12.1",
+              "path": "/nix/store/ysma89xbyaz2xknvbaipmskp28q7sxgx-oha-1.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/720r7lvy3b9cs1ysblnjcirg7xab7ckg-oha-1.12.1"
+          "store_path": "/nix/store/ysma89xbyaz2xknvbaipmskp28q7sxgx-oha-1.13.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pvvykyvwqi8hyngr37lcfapg7id2lvb7-oha-1.12.1",
+              "path": "/nix/store/q3pd5f93ad6dhlbj9ni7yf9p9mrkd7zs-oha-1.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pvvykyvwqi8hyngr37lcfapg7id2lvb7-oha-1.12.1"
+          "store_path": "/nix/store/q3pd5f93ad6dhlbj9ni7yf9p9mrkd7zs-oha-1.13.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2zm8s6qf5g1frg392z50ac4acwmkqgjd-oha-1.12.1",
+              "path": "/nix/store/rnh9wav7ick7bi1kwa919b04ahi4xsgh-oha-1.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2zm8s6qf5g1frg392z50ac4acwmkqgjd-oha-1.12.1"
+          "store_path": "/nix/store/rnh9wav7ick7bi1kwa919b04ahi4xsgh-oha-1.13.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qpdphxrykw87km91cysnd9r1nc3yq2x4-oha-1.12.1",
+              "path": "/nix/store/l3496fss5p28rbgpdmyar6wpfp0qi4cl-oha-1.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qpdphxrykw87km91cysnd9r1nc3yq2x4-oha-1.12.1"
+          "store_path": "/nix/store/l3496fss5p28rbgpdmyar6wpfp0qi4cl-oha-1.13.0"
         }
       }
     },
