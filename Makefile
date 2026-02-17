@@ -318,8 +318,8 @@ create-assets: ## Create release assets (mtar and acceptance tests), please prov
 release-promote: create-assets ## Promote draft release to final and upload assets
 		PROMOTE_DRAFT=true ./scripts/release.sh
 
-.PHONY: acceptance-release
-acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
+.PHONY: local-acceptance-release
+local-acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
 	# Build for linux_amd64 by default (CF tasks platform)
