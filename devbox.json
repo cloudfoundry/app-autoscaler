@@ -29,7 +29,7 @@
     "gnutar":                                           "latest",
     "go":                                               "1.24.5",
     "go-tools":                                         "2025.1.1",
-    "golangci-lint":                                    "2.8.0",
+    "golangci-lint":                                    "2.9.0",
     "gopls":                                            "0.21.0",
     "google-java-format":                               "1.34.1",
     "gum":                                              "0.17.0",
