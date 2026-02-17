@@ -70,19 +70,6 @@ jobs:
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" register-broker
 
-      - name: Enable service access (admin)
-        shell: bash
-        run: |
-          cd "${AUTOSCALER_DIR}"
-          source scripts/vars.source.sh
-          source scripts/common.sh
-
-          bbl_login
-          cf_org_manager_login
-          cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-
-          ./scripts/enable-service-access.sh "${DEPLOYMENT_NAME}"
-
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}
     needs: [ deploy_autoscaler ]
