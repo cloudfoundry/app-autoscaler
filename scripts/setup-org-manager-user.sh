@@ -12,6 +12,9 @@ function setup_acceptance_user() {
 	log "Organization: ${AUTOSCALER_ORG}"
 	log "Username: ${AUTOSCALER_ORG_MANAGER_USER}"
 
+	# Ensure org and space exist before assigning roles
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+
 	# Generate/retrieve password from CredHub
 	credhub generate --no-overwrite -n "${CREDHUB_ORG_MANAGER_PASSWORD_PATH}" --length 32 -t password > /dev/null
 	local password
@@ -25,7 +28,6 @@ function setup_acceptance_user() {
 	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
 
 	# Assign space roles for MTA deployments
-	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
