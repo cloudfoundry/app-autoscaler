@@ -58,6 +58,7 @@ var _ = BeforeSuite(func() {
 
 	otherConfig := cfg.Clone()
 	otherConfig.NamePrefix = otherConfig.NamePrefix + "_other"
+	otherConfig.UseExistingUser = false
 
 	By("Setup test environment")
 	setup = workflowhelpers.NewTestSuiteSetup(cfg)
