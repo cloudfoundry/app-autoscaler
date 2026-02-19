@@ -203,70 +203,50 @@ Located in `/acceptance`:
 - Run in parallel via CF tasks: `make mta-acceptance-tests`
 - See `acceptance/README.md` for details
 
-## Team Workflows
+### Running Acceptance Tests with CF Tasks
 
-### PR Comment Resolution Workflow
-
-When implementing a fix for a PR review comment:
-
-1. **Implement the fix** and create a commit addressing the comment
-2. **Add a PR comment** replying to the original comment with the commit hash:
-   ```
-   fixed in <commit_hash>
-   ```
-   Example: `fixed in 8384249f`
-3. **Resolve the comment thread** on GitHub
-
-#### Implementation with GitHub CLI
+To run acceptance tests on a deployed autoscaler via Cloud Foundry tasks:
 
 ```bash
-# Capture the commit hash
-COMMIT_HASH=$(git rev-parse --short HEAD)
+# Run all app suite tests
+cf run-task acceptance-tests --command "export SUITES=app NODES=1; bash /home/vcap/app/scripts/run-acceptance-tests-task.sh" --name "run-app-tests"
 
-# Get thread ID (see below for finding thread IDs)
-THREAD_ID="PRRT_kwDOA0tdb85qnILg"
+# Run with focus filter (memory tests only)
+cf run-task acceptance-tests --command "export SUITES=app NODES=1 GINKGO_OPTS='--focus=memoryused'; bash /home/vcap/app/scripts/run-acceptance-tests-task.sh" --name "memory-tests"
 
-# Reply to the comment
-gh api graphql -f query='
-mutation {
-  addPullRequestReviewThreadReply(input: {
-    pullRequestReviewThreadId: "'"${THREAD_ID}"'"
-    body: "fixed in '"${COMMIT_HASH}"'"
-  }) {
-    comment { id }
-  }
-}'
-
-# Resolve the thread
-gh api graphql -f query='
-mutation {
-  resolveReviewThread(input: {threadId: "'"${THREAD_ID}"'"}) {
-    thread { isResolved }
-  }
-}'
+# Check results
+cf logs acceptance-tests --recent
 ```
 
-**Finding thread IDs**: Query via GitHub GraphQL API:
+**Important - Environment Variable Syntax:**
 
+When passing environment variables to `cf run-task`, use this format:
 ```bash
-gh api graphql -f query='
-query {
-  repository(owner: "cloudfoundry", name: "app-autoscaler") {
-    pullRequest(number: PR_NUMBER) {
-      reviewThreads(first: 100) {
-        nodes {
-          id
-          isResolved
-          comments(first: 1) {
-            nodes {
-              path
-              line
-              body
-            }
-          }
-        }
-      }
-    }
-  }
-}'
+export VAR1=value1 VAR2=value2; bash script.sh
+```
+
+**NOT** this format (won't work):
+```bash
+VAR1=value1 VAR2=value2 bash script.sh
+```
+
+**GINKGO_OPTS patterns** for filtering tests (used with `--focus`):
+- `memoryused`: Tests scaling by memory used metric
+- `memoryutil`: Tests scaling by memory utilization %
+- `cpu`: Tests scaling by CPU metric
+- `throughput`: Tests scaling by request throughput
+- `responsetime`: Tests scaling by response time
+- `disk`: Tests scaling by disk usage
+- Custom patterns: Use Ginkgo v2 regex syntax
+
+**Task Monitoring:**
+```bash
+# List all tasks for acceptance-tests app
+cf tasks acceptance-tests
+
+# View running task logs
+cf logs acceptance-tests --recent
+
+# Search for specific test results
+cf logs acceptance-tests --recent | grep "SUCCESS\|FAILED"
 ```
