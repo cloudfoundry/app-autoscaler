@@ -64,6 +64,10 @@ jobs:
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" provision-db
 
+      - name: Set Security Group
+        shell: bash
+        run: make --directory="${AUTOSCALER_DIR}" set-security-group
+
       - name: Deploy Apps
         shell: bash
         run: |
