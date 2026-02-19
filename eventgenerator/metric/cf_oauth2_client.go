@@ -27,8 +27,9 @@ type CFOauth2HTTPClient struct {
 
 	httpClient *http.Client
 
-	mu    sync.RWMutex
-	token string
+	mu        sync.RWMutex
+	token     string
+	expiresAt time.Time
 }
 
 type tokenResponse struct {
@@ -64,13 +65,15 @@ func NewCFOauth2HTTPClient(oauth2URL, clientID, clientSecret, username, password
 func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 	c.mu.RLock()
 	token := c.token
+	expiresAt := c.expiresAt
 	c.mu.RUnlock()
 
-	if token == "" {
+	// Check if token is missing or expired
+	if token == "" || time.Now().After(expiresAt) {
 		var err error
 		token, err = c.refreshToken()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get initial token: %w", err)
+			return nil, fmt.Errorf("failed to refresh token: %w", err)
 		}
 	}
 
@@ -139,5 +142,7 @@ func (c *CFOauth2HTTPClient) refreshToken() (string, error) {
 	}
 
 	c.token = tokenResp.AccessToken
+	// Calculate expiration time with 30 second buffer for clock skew
+	c.expiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn-30) * time.Second)
 	return c.token, nil
 }
