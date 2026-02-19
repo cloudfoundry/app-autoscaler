@@ -60,9 +60,14 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption
 	}
 
 	options := []config.Option{
-		config.ClientCredentials(conf.ClientID, conf.Secret),
 		config.UserAgent(GetUserAgent()),
 		config.HttpClient(httpClient),
+	}
+
+	if conf.IsPasswordGrant() {
+		options = append(options, config.UserPassword(conf.Username, conf.Password))
+	} else {
+		options = append(options, config.ClientCredentials(conf.ClientID, conf.Secret))
 	}
 
 	cfg, err := config.New(conf.API, options...)

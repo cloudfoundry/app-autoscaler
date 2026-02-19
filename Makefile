@@ -10,7 +10,7 @@ MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 CI ?= false
 
-DEBUG := false
+DEBUG ?= false
 MYSQL_TAG := 8
 POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
@@ -281,6 +281,9 @@ ${flattened-schema-file}: ${schema-files}
 mta-deploy:
 	$(MAKEFILE_DIR)/scripts/mta-deploy.sh
 
+set-security-group:
+	$(MAKEFILE_DIR)/scripts/set-security-group.sh
+
 mta-undeploy:
 	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
 
@@ -346,12 +349,19 @@ clean-acceptance:
 	@rm acceptance/ginkgo* &> /dev/null || true
 	@rm -rf acceptance/results &> /dev/null || true
 
-.PHONY: cf-login
-cf-login:
+.PHONY: cf-admin-login
+cf-admin-login:
 	@echo '⚠️ Please note that this login only works for cf and concourse,' \
 		  'in spite of performing a login as well on bosh and credhub.' \
 		  'The necessary changes to the environment get lost when make exits its process.'
 	@${MAKEFILE_DIR}/scripts/os-infrastructure-login.sh
+
+.PHONY: cf-org-manager-login
+cf-org-manager-login:
+	@echo '⚠️ Please note that this login only works for cf and concourse,' \
+		  'in spite of performing a login as well on bosh and credhub.' \
+		  'The necessary changes to the environment get lost when make exits its process.'
+	@${MAKEFILE_DIR}/scripts/org-manager-login.sh
 
 
 .PHONY: start-db
@@ -520,11 +530,15 @@ acceptance-tests-config:
 mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 	@$(MAKEFILE_DIR)/scripts/run-mta-acceptance-tests.sh
 
+.PHONY: setup-org-manager-user
+setup-org-manager-user: ## Setup org manager user with OrgManager and SpaceDeveloper roles (password from CredHub)
+	DEBUG="${DEBUG}" ./scripts/setup-org-manager-user.sh
+
 # 🚧 To-do: These targets don't exist here!
 .PHONY: deploy-autoscaler deploy-autoscaler-bosh
 
-.PHONY: deploy-register-cf
-deploy-register-cf:
+.PHONY: register-broker
+register-broker:
 	DEBUG="${DEBUG}" ./scripts/register-broker.sh
 
 .PHONY: deploy-cleanup
