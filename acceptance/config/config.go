@@ -33,6 +33,8 @@ type Config struct {
 	ShouldKeepUser                 bool    `json:"keep_user_at_suite_end"`
 	ExistingUser                   string  `json:"existing_user"`
 	ExistingUserPassword           string  `json:"existing_user_password"`
+	OtherExistingUser              string  `json:"other_existing_user"`
+	OtherExistingUserPassword      string  `json:"other_existing_user_password"`
 	UserOrigin                     string  `json:"user_origin"`
 	ConfigurableTestPassword       string  `json:"test_password"`
 	UseExistingOrganization        bool    `json:"use_existing_organization"`
@@ -284,14 +286,13 @@ func loadConfigFromJSON(jsonContent string, config *Config) error {
 func (c *Config) Protocol() string {
 	if c.UseHttp {
 		return "http://"
-	} else {
-		return "https://"
 	}
+	return "https://"
 }
 
 func (c *Config) Clone() *Config {
-	copy := *c
-	return &copy
+	cloned := *c
+	return &cloned
 }
 
 func (c *Config) DefaultTimeoutDuration() time.Duration {

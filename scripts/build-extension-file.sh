@@ -67,11 +67,13 @@ service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_pa
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
 org_manager_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/org_manager_password))
+other_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/other_user_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
 
 export AUTOSCALER_ORG_MANAGER_PASSWORD="$(yq ".org_manager_password" /tmp/mtar-secrets.yml)"
+export AUTOSCALER_OTHER_USER_PASSWORD="$(yq ".other_user_password" /tmp/mtar-secrets.yml)"
 
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
@@ -221,6 +223,8 @@ modules:
           "use_existing_user": ${USE_EXISTING_USER},
           "existing_user": "${EXISTING_USER}",
           "existing_user_password": "${EXISTING_USER_PASSWORD}",
+          "other_existing_user": "${AUTOSCALER_OTHER_USER}",
+          "other_existing_user_password": "${AUTOSCALER_OTHER_USER_PASSWORD}",
           "keep_user_at_suite_end": ${KEEP_USER_AT_SUITE_END},
           "add_existing_user_to_existing_space": ${ADD_EXISTING_USER_TO_EXISTING_SPACE},
           "use_existing_organization": ${USE_EXISTING_ORGANIZATION},

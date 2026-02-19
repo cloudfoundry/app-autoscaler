@@ -7,39 +7,39 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-function setup_acceptance_user() {
-	step "Setting up acceptance test user"
-	log "Organization: ${AUTOSCALER_ORG}"
-	log "Username: ${AUTOSCALER_ORG_MANAGER_USER}"
+function create_cf_user() {
+	local username="$1"
+	local credhub_path="$2"
 
-	# Ensure org and space exist before assigning roles
+	log "Creating user: ${username}"
+	credhub generate --no-overwrite -n "${credhub_path}" --length 32 -t password > /dev/null
+	local password
+	password=$(credhub get --quiet --name="${credhub_path}")
+
+	cf delete-user -f "${username}" || true
+	cf create-user "${username}" "${password}"
+}
+
+function setup_acceptance_users() {
+	step "Setting up acceptance test users"
+	log "Organization: ${AUTOSCALER_ORG}"
+
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
-	# Generate/retrieve password from CredHub
-	credhub generate --no-overwrite -n "${CREDHUB_ORG_MANAGER_PASSWORD_PATH}" --length 32 -t password > /dev/null
-	local password
-	password=$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")
-
-	# Delete and recreate user for idempotency
-	cf delete-user -f "${AUTOSCALER_ORG_MANAGER_USER}" || true
-	cf create-user "${AUTOSCALER_ORG_MANAGER_USER}" "${password}"
-
-	# Assign OrgManager role
+	create_cf_user "${AUTOSCALER_ORG_MANAGER_USER}" "${CREDHUB_ORG_MANAGER_PASSWORD_PATH}"
 	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
-
-	# Assign space roles for MTA deployments
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
+	create_cf_user "${AUTOSCALER_OTHER_USER}" "${CREDHUB_OTHER_USER_PASSWORD_PATH}"
+
 	step "Setup complete!"
-	log "User: ${AUTOSCALER_ORG_MANAGER_USER}"
-	log "Password stored in CredHub at: ${CREDHUB_ORG_MANAGER_PASSWORD_PATH}"
 }
 
 function main() {
 	bbl_login
 	cf_admin_login
-	setup_acceptance_user
+	setup_acceptance_users
 }
 
 [ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"

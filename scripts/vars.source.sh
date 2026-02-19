@@ -76,6 +76,11 @@ debug "AUTOSCALER_ORG_MANAGER_USER: ${AUTOSCALER_ORG_MANAGER_USER}"
 log "set up vars: AUTOSCALER_ORG_MANAGER_USER=${AUTOSCALER_ORG_MANAGER_USER}"
 autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
 
+export AUTOSCALER_OTHER_USER="${AUTOSCALER_OTHER_USER:-other-user}"
+debug "AUTOSCALER_OTHER_USER: ${AUTOSCALER_OTHER_USER}"
+log "set up vars: AUTOSCALER_OTHER_USER=${AUTOSCALER_OTHER_USER}"
+autoscaler_other_user="${AUTOSCALER_OTHER_USER}"
+
 export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"}"
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
 system_domain="${SYSTEM_DOMAIN}"
@@ -129,4 +134,8 @@ cpu_upper_threshold=${CPU_UPPER_THRESHOLD}
 export CREDHUB_ORG_MANAGER_PASSWORD_PATH="/bosh-autoscaler/${DEPLOYMENT_NAME}/org_manager_password"
 debug "CREDHUB_ORG_MANAGER_PASSWORD_PATH: ${CREDHUB_ORG_MANAGER_PASSWORD_PATH}"
 credhub_org_manager_password_path="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}"
+
+export CREDHUB_OTHER_USER_PASSWORD_PATH="/bosh-autoscaler/${DEPLOYMENT_NAME}/other_user_password"
+debug "CREDHUB_OTHER_USER_PASSWORD_PATH: ${CREDHUB_OTHER_USER_PASSWORD_PATH}"
+credhub_other_user_password_path="${CREDHUB_OTHER_USER_PASSWORD_PATH}"
 
