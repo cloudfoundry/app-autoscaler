@@ -168,7 +168,7 @@ var _ = Describe("AutoScaler Public API", func() {
 			Expect(string(existing)).Should(MatchJSON(policy))
 
 		})
-		When("an unrelated user tries to access the API", func() {
+		When("an unrelated user tries to access the API", Serial, func() {
 			BeforeEach(func() {
 				workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
 					// Make "other user" a space auditor in the space along with a space developer in the other space
@@ -185,7 +185,7 @@ var _ = Describe("AutoScaler Public API", func() {
 				Expect(status).To(Equal(401))
 			})
 		})
-		When("an admin user tries to access the api", func() {
+		When("an admin user tries to access the api", Serial, func() {
 			BeforeEach(func() {
 				workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
 					oauthToken = OauthToken(cfg)
