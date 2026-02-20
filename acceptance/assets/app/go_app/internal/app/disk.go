@@ -64,34 +64,30 @@ func NewDefaultDiskOccupier(filePath string) *defaultDiskOccupier {
 }
 
 func (d *defaultDiskOccupier) Occupy(space int64, duration time.Duration) error {
-	if err := d.checkAlreadyRunning(); err != nil {
-		return err
-	}
-
-	if err := d.occupy(space); err != nil {
-		return err
-	}
-
-	d.stopAfter(duration)
-
-	return nil
-}
-
-func (d *defaultDiskOccupier) checkAlreadyRunning() error {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
+	d.mu.Lock()
 	if d.isRunning {
+		d.mu.Unlock()
 		return errors.New("disk space is already being occupied")
 	}
+	d.isRunning = true
+	d.mu.Unlock()
+
+	// Start disk occupation asynchronously to avoid HTTP timeout
+	go func() {
+		if err := d.occupy(space); err != nil {
+			// On error, reset isRunning flag
+			d.mu.Lock()
+			d.isRunning = false
+			d.mu.Unlock()
+			return
+		}
+		d.stopAfter(duration)
+	}()
 
 	return nil
 }
 
 func (d *defaultDiskOccupier) occupy(space int64) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	file, err := os.Create(d.filePath)
 	if err != nil {
 		return err
@@ -102,7 +98,6 @@ func (d *defaultDiskOccupier) occupy(space int64) error {
 	if err := file.Close(); err != nil {
 		return err
 	}
-	d.isRunning = true
 
 	return nil
 }

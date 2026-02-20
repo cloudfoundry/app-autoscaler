@@ -1,0 +1,15 @@
+{
+  "allow": [
+    "execute",
+    "executes",
+    "executed",
+    "executing",
+    "execution",
+    "period",
+    "periods",
+    "trap",
+    "traps",
+    "trapped",
+    "trapping"
+  ]
+}
