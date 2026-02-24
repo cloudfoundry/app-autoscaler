@@ -63,18 +63,9 @@ func NewCFOauth2HTTPClient(oauth2URL, clientID, clientSecret, username, password
 // Do implements the HTTPClient interface for go-log-cache.
 // It adds the Bearer token to the request and handles 401 responses by refreshing the token.
 func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
-	c.mu.RLock()
-	token := c.token
-	expiresAt := c.expiresAt
-	c.mu.RUnlock()
-
-	// Check if token is missing or expired
-	if token == "" || time.Now().After(expiresAt) {
-		var err error
-		token, err = c.refreshToken()
-		if err != nil {
-			return nil, fmt.Errorf("failed to refresh token: %w", err)
-		}
+	token, err := c.getValidToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to refresh token: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -83,11 +74,11 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	// If we get 401, try to refresh the token and retry once
+	// If we get 401, force refresh the token and retry once
 	if resp.StatusCode == http.StatusUnauthorized {
 		resp.Body.Close()
 
-		token, err = c.refreshToken()
+		token, err = c.forceRefreshToken()
 		if err != nil {
 			return nil, fmt.Errorf("failed to refresh token after 401: %w", err)
 		}
@@ -99,10 +90,44 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+// getValidToken returns a valid token, refreshing it if necessary.
+// Uses double-checked locking to prevent multiple concurrent token refreshes.
+func (c *CFOauth2HTTPClient) getValidToken() (string, error) {
+	// First check with read lock (fast path)
+	c.mu.RLock()
+	if c.token != "" && time.Now().Before(c.expiresAt) {
+		token := c.token
+		c.mu.RUnlock()
+		return token, nil
+	}
+	c.mu.RUnlock()
+
+	// Token is missing or expired, need to refresh with write lock
+	return c.refreshToken()
+}
+
+// forceRefreshToken forces a token refresh without checking expiration.
+// Used when we get a 401 response indicating the server rejected our token.
+func (c *CFOauth2HTTPClient) forceRefreshToken() (string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.doRefreshToken()
+}
+
 func (c *CFOauth2HTTPClient) refreshToken() (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Double-check: another goroutine may have refreshed the token while we waited for the lock
+	if c.token != "" && time.Now().Before(c.expiresAt) {
+		return c.token, nil
+	}
+
+	return c.doRefreshToken()
+}
+
+// doRefreshToken performs the actual token refresh. Must be called with lock held.
+func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 	tokenURL := c.oauth2URL
 	if !strings.HasSuffix(tokenURL, "/oauth/token") {
 		tokenURL = strings.TrimSuffix(tokenURL, "/") + "/oauth/token"

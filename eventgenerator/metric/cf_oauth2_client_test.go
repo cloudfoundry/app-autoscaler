@@ -1,11 +1,11 @@
 package metric
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -283,15 +283,24 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			captureServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path == "/oauth/token" {
 					headerCaptured = r.Header.Get("Authorization")
-					Expect(headerCaptured).To(HavePrefix("Basic "))
+					// Verify Basic auth header
+					if !strings.HasPrefix(headerCaptured, "Basic ") {
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
 
 					// Decode and verify
-					parts := bytes.Split([]byte(headerCaptured), []byte(" "))
-					Expect(parts).To(HaveLen(2))
+					parts := strings.Split(headerCaptured, " ")
+					if len(parts) != 2 {
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
 
-					decoded, err := base64.StdEncoding.DecodeString(string(parts[1]))
-					Expect(err).NotTo(HaveOccurred())
-					Expect(string(decoded)).To(Equal("cf:cf-secret"))
+					decoded, err := base64.StdEncoding.DecodeString(parts[1])
+					if err != nil || string(decoded) != "cf:cf-secret" {
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
 
 					w.Header().Set("Content-Type", "application/json")
 					fmt.Fprint(w, `{
@@ -299,7 +308,10 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 						"token_type": "Bearer",
 						"expires_in": 3600
 					}`)
+					return
 				}
+				// For non-token requests, return success
+				w.WriteHeader(http.StatusOK)
 			}))
 			defer captureServer.Close()
 
@@ -312,11 +324,14 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 				true,
 			)
 
-			// This will trigger token fetch
-			req, _ := http.NewRequest("POST", captureServer.URL+"/oauth/token", nil)
+			// Make an API request to trigger token fetch
+			req, _ := http.NewRequest("GET", captureServer.URL+"/api/metrics", nil)
 			_, _ = testClient.Do(req)
 
-			Expect(headerCaptured).NotTo(BeEmpty())
+			// Verify that a token request was made with Basic auth
+			Expect(headerCaptured).To(HavePrefix("Basic "))
+			decoded, _ := base64.StdEncoding.DecodeString(strings.TrimPrefix(headerCaptured, "Basic "))
+			Expect(string(decoded)).To(Equal("cf:cf-secret"))
 		})
 	})
 
