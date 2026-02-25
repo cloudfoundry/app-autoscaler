@@ -50,9 +50,23 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
 
+      - name: Cleanup previous deployment
+        shell: bash
+        run: |
+          make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
+
+      - name: Setup org manager user with OrgManager and SpaceDeveloper roles
+        shell: bash
+        run: |
+          make --directory="${AUTOSCALER_DIR}" setup-org-manager-user
+
       - name: Provision DB
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" provision-db
+
+      - name: Set Security Group
+        shell: bash
+        run: make --directory="${AUTOSCALER_DIR}" set-security-group
 
       - name: Deploy Apps
         shell: bash
@@ -63,7 +77,7 @@ jobs:
 
       - name: Register autoscaler
         shell: bash
-        run: make --directory="${AUTOSCALER_DIR}" deploy-register-cf
+        run: make --directory="${AUTOSCALER_DIR}" register-broker
 
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}

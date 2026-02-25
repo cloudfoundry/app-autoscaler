@@ -33,6 +33,8 @@ type Config struct {
 	ShouldKeepUser                 bool    `json:"keep_user_at_suite_end"`
 	ExistingUser                   string  `json:"existing_user"`
 	ExistingUserPassword           string  `json:"existing_user_password"`
+	OtherExistingUser              string  `json:"other_existing_user"`
+	OtherExistingUserPassword      string  `json:"other_existing_user_password"`
 	UserOrigin                     string  `json:"user_origin"`
 	ConfigurableTestPassword       string  `json:"test_password"`
 	UseExistingOrganization        bool    `json:"use_existing_organization"`
@@ -71,8 +73,9 @@ type Config struct {
 	CfJavaTimeout   int `json:"cf_java_timeout"`
 	NodeMemoryLimit int `json:"node_memory_limit"`
 
-	ASApiEndpoint       string `json:"autoscaler_api"`
-	EnableServiceAccess bool   `json:"enable_service_access"`
+	ASApiEndpoint               string `json:"autoscaler_api"`
+	EnableServiceAccess         bool   `json:"enable_service_access"`
+	SkipServiceAccessManagement bool   `json:"skip_service_access_management"`
 
 	EventgeneratorHealthEndpoint   string `json:"eventgenerator_health_endpoint"`
 	ScalingengineHealthEndpoint    string `json:"scalingengine_health_endpoint"`
@@ -283,14 +286,13 @@ func loadConfigFromJSON(jsonContent string, config *Config) error {
 func (c *Config) Protocol() string {
 	if c.UseHttp {
 		return "http://"
-	} else {
-		return "https://"
 	}
+	return "https://"
 }
 
 func (c *Config) Clone() *Config {
-	copy := *c
-	return &copy
+	cloned := *c
+	return &cloned
 }
 
 func (c *Config) DefaultTimeoutDuration() time.Duration {
@@ -410,6 +412,10 @@ func (c *Config) GetApiEndpoint() string {
 
 func (c *Config) ShouldEnableServiceAccess() bool {
 	return c.EnableServiceAccess
+}
+
+func (c *Config) ShouldSkipServiceAccessManagement() bool {
+	return c.SkipServiceAccessManagement
 }
 
 func (c *Config) GetAdminClient() string {

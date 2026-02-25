@@ -10,6 +10,11 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
+const (
+	GrantTypeClientCredentials = "client_credentials"
+	GrantTypePassword          = "password"
+)
+
 type (
 	Guid = models.GUID
 
