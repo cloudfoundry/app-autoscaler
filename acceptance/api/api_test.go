@@ -133,8 +133,8 @@ var _ = Describe("AutoScaler Public API", func() {
 
 		BeforeEach(func() {
 			policy = GenerateDynamicScaleOutPolicy(1, 2, "memoryused", memThreshold)
-			_, status := createPolicy(policy)
-			Expect(status).To(Or(Equal(200), Equal(201)))
+			respBody, status := createPolicy(policy)
+			Expect(status).To(Or(Equal(200), Equal(201)), "failed to create policy, received response: %s", string(respBody))
 		})
 		It("should succeed to delete a policy", func() {
 			_, status := deletePolicy()
@@ -306,7 +306,7 @@ func createPolicy(policy string) ([]byte, int) {
 	return put(policyURL, policy)
 }
 
-func put(url string, body string) ([]byte, int) {
+func put(url string, body string) (response []byte, statusCode int) {
 	By(fmt.Sprintf("PUT '%s'", url))
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer([]byte(body)))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -318,9 +318,9 @@ func put(url string, body string) ([]byte, int) {
 
 	defer func() { _ = resp.Body.Close() }()
 
-	raw, err := io.ReadAll(resp.Body)
+	response, err = io.ReadAll(resp.Body)
 	Expect(err).ShouldNot(HaveOccurred())
-	return raw, resp.StatusCode
+	return response, resp.StatusCode
 }
 
 func deletePolicy() ([]byte, int) {
