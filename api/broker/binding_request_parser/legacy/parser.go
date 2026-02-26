@@ -43,6 +43,11 @@ func New(
 func (p BindingRequestParser) Parse(
 	bindingReqParams string, ccAppGuid models.GUID,
 ) (models.AppScalingConfig, error) {
+	// Empty input means no policy is provided - return default config
+	if len(bindingReqParams) == 0 {
+		return p.toBindingParameters(policyAndBindingCfg{}, ccAppGuid)
+	}
+
 	validationErr := p.Validate(bindingReqParams)
 	if validationErr != nil {
 		return models.AppScalingConfig{}, validationErr
