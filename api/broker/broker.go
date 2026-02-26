@@ -568,15 +568,34 @@ func (b *Broker) Bind(
 
 	appScalingConfig, err := b.bindingReqParser.Parse(string(details.RawParameters), appGuidFromCloudCtl)
 
-	var schemaErr *policyvalidator.ValidationErrors
+	var schemaErr *policyvalidator.ValidationErrors // 🚧 To-do: Check when we can remove this!
+	var jsonSchemaErr *brParserTypes.JsonSchemaError
 	var appGuidErr *brParserTypes.BindReqNoAppGuid
 	switch {
-	case errors.As(err, &schemaErr):
+	case errors.As(err, &schemaErr): // 🚧 To-do: Check when we can remove this!
 		resultsJson, err := json.Marshal(schemaErr)
 		if err != nil {
 			serialisationErr := &models.InvalidArgumentError{
 				Param: "errResults",
 				Value: schemaErr,
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return result, apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
+		}
+		apiErr := apiresponses.NewFailureResponseBuilder(
+			fmt.Errorf("invalid policy provided: %s", resultsJson),
+			http.StatusBadRequest, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
+
+		return result, apiErr
+	case errors.As(err, &jsonSchemaErr):
+		resultsJson, err := json.Marshal(jsonSchemaErr)
+		if err != nil {
+			serialisationErr := &models.InvalidArgumentError{
+				Param: "errResults",
+				Value: jsonSchemaErr,
 				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
 			const loggerAction = "failed-serialising-errors"
 			logger.Error(loggerAction, serialisationErr)

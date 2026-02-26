@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/xeipuuv/gojsonschema"
@@ -21,6 +22,29 @@ type JsonSchemaError []gojsonschema.ResultError
 func (e *JsonSchemaError) Error() string {
 	var errors []gojsonschema.ResultError = *e
 	return fmt.Sprintf("%s", errors)
+}
+
+var _ error = &JsonSchemaError{}
+
+// MarshalJSON implements the json.Marshaler interface for JsonSchemaError.
+// It serializes the schema validation errors to JSON with "context" and "description" fields.
+func (e *JsonSchemaError) MarshalJSON() ([]byte, error) {
+	var errors []gojsonschema.ResultError = *e
+
+	type validationError struct {
+		Context     string `json:"context"`
+		Description string `json:"description"`
+	}
+	validationErrors := make([]validationError, 0, len(errors))
+
+	for _, err := range errors {
+		validationErrors = append(validationErrors, validationError{
+			Context:     err.Context().String(),
+			Description: err.Description(),
+		})
+	}
+
+	return json.Marshal(validationErrors)
 }
 
 // This error type is used, when the passed binding-request fails to validate against the schema.
