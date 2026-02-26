@@ -39,10 +39,10 @@
           "required": [
             "metric_submission_strategy"
           ]
+        },
+        "app_guid": {
+          "not": {}
         }
-      },
-      "not": {
-        "required": ["app_guid"]
       }
     },
     "instance_min_count": {

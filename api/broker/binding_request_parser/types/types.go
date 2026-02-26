@@ -47,6 +47,8 @@ func (e *JsonSchemaError) MarshalJSON() ([]byte, error) {
 	return json.Marshal(validationErrors)
 }
 
+var _ json.Marshaler = &JsonSchemaError{}
+
 // This error type is used, when the passed binding-request fails to validate against the schema.
 type BindReqNoAppGuid struct{}
 
