@@ -109,7 +109,7 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-file
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
 	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
-	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './generate-fakes.go'
 	rm '${app-fakes-dir}/doc.go' # Now other files are there.
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
