@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	brParser "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brParserTypes "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/types"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
@@ -74,7 +76,7 @@ func New(
 	catalog []domain.Service, credentials cred_helper.Credentials,
 ) *Broker {
 	policyValidator := policyvalidator.NewPolicyValidator(
-		conf.PolicySchemaPath,
+		conf.BindingRequestSchemaPath,
 		conf.ScalingRules.CPU.LowerThreshold,
 		conf.ScalingRules.CPU.UpperThreshold,
 		conf.ScalingRules.CPUUtil.LowerThreshold,
@@ -97,8 +99,15 @@ func New(
 		}
 	}
 
-	bindingReqParser := brParser.NewBindRequestParser(
-		policyValidator, *defaultCustomMetricsCredentialType)
+	pathToParserDir := conf.BindingRequestSchemaPath
+	pathToLegacySchema := fmt.Sprintf("file://%s/legacy/schema.json", pathToParserDir)
+	pathToV0_1Schema := fmt.Sprintf("file://%s/v0_1/meta.schema.json", pathToParserDir)
+	bindingReqParser, err := brParser.New(
+		pathToLegacySchema, pathToV0_1Schema, *defaultCustomMetricsCredentialType)
+
+	if err != nil {
+		logger.Fatal("create-binding-request-parser", err)
+	}
 
 	broker := &Broker{
 		logger:           logger,
@@ -550,16 +559,43 @@ func (b *Broker) Bind(
 
 	result := domain.Binding{}
 
-	appScalingConfig, err := b.bindingReqParser.Parse(details)
-	var schemaErr *policyvalidator.ValidationErrors
-	var appGuidErr *brParser.BindReqNoAppGuid
+	appGuidFromCloudCtl := models.GUID("") // No app-guid provided by the cloudcontroller
+	if details.AppGUID != "" {
+		appGuidFromCloudCtl = models.GUID(details.AppGUID)
+	} else if details.BindResource != nil && details.BindResource.AppGuid != "" {
+		appGuidFromCloudCtl = models.GUID(details.BindResource.AppGuid)
+	}
+
+	appScalingConfig, err := b.bindingReqParser.Parse(string(details.RawParameters), appGuidFromCloudCtl)
+
+	var schemaErr *policyvalidator.ValidationErrors // 🚧 To-do: Check when we can remove this!
+	var jsonSchemaErr *brParserTypes.JsonSchemaError
+	var appGuidErr *brParserTypes.BindReqNoAppGuid
 	switch {
-	case errors.As(err, &schemaErr):
+	case errors.As(err, &schemaErr): // 🚧 To-do: Check when we can remove this!
 		resultsJson, err := json.Marshal(schemaErr)
 		if err != nil {
 			serialisationErr := &models.InvalidArgumentError{
 				Param: "errResults",
 				Value: schemaErr,
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return result, apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
+		}
+		apiErr := apiresponses.NewFailureResponseBuilder(
+			fmt.Errorf("invalid policy provided: %s", resultsJson),
+			http.StatusBadRequest, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
+
+		return result, apiErr
+	case errors.As(err, &jsonSchemaErr):
+		resultsJson, err := json.Marshal(jsonSchemaErr)
+		if err != nil {
+			serialisationErr := &models.InvalidArgumentError{
+				Param: "errResults",
+				Value: jsonSchemaErr,
 				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
 			const loggerAction = "failed-serialising-errors"
 			logger.Error(loggerAction, serialisationErr)
@@ -583,8 +619,7 @@ func (b *Broker) Bind(
 			err, http.StatusBadRequest, "parse-binding-request")
 	}
 
-	isServiceKeyRequest := (details.BindResource == nil || details.BindResource.AppGuid == "") && details.AppGUID == ""
-	if isServiceKeyRequest {
+	if isServiceKeyRequest := appGuidFromCloudCtl == ""; isServiceKeyRequest {
 		err := b.checkAppInSpace(logger, ctx, instanceID, details, appScalingConfig)
 		if err != nil {
 			return result, err

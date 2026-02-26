@@ -670,7 +670,10 @@ var _ = Describe("Broker", func() {
 
 					Expect(err).NotTo(BeNil())
 					Expect(err).To(MatchError(ContainSubstring(
-						`{"context":"(root)","description":"schema-version is required"}`,
+						// This indicates that we use the legacy-parser which is correct because no
+						// schema-version has been provided. And the legacy-parser does not allow
+						// the field `configuration.app_guid`.
+						`{"context":"(root).configuration.app_guid","description":"Must not validate the schema (not)"}`,
 					)))
 
 					// Verify that fakeBindingDB does not create an entry

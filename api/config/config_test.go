@@ -173,7 +173,7 @@ var _ = Describe("Config", func() {
 					Expect(conf.BrokerCredentials[0].BrokerPassword).To(Equal("broker_password"))
 					Expect(conf.CatalogPath).To(Equal("../exampleconfig/catalog-example.json"))
 					Expect(conf.CatalogSchemaPath).To(Equal("../schemas/catalog.schema.json"))
-					Expect(conf.PolicySchemaPath).To(Equal("../exampleconfig/policy.schema.json"))
+					Expect(conf.BindingRequestSchemaPath).To(Equal("../exampleconfig/policy.schema.json"))
 					Expect(conf.Scheduler).To(Equal(
 						SchedulerConfig{
 							SchedulerURL: "https://localhost:8083",
@@ -304,7 +304,7 @@ rate_limit:
 
 				conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
 				conf.CatalogPath = "../exampleconfig/catalog-example.json"
-				conf.PolicySchemaPath = "../exampleconfig/policy.schema.json"
+				conf.BindingRequestSchemaPath = "../exampleconfig/policy.schema.json"
 
 				conf.Scheduler.SchedulerURL = "https://localhost:8083"
 
@@ -505,7 +505,7 @@ rate_limit:
 
 			Context("when policy schema path is not set", func() {
 				BeforeEach(func() {
-					conf.PolicySchemaPath = ""
+					conf.BindingRequestSchemaPath = ""
 				})
 				It("should err", func() {
 					Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicySchemaPath is empty")))
