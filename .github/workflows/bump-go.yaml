@@ -1,0 +1,48 @@
+# This workflow can be triggered to update the Go version in the devbox and the go.mod file.
+# It can be triggered by a workflow_dispatch and takes as parameters the new Go version.
+
+name: Bump Go
+
+on:
+  workflow_dispatch:
+    inputs:
+      go-version:
+        description: Go version to bump to
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-go:
+    runs-on: ubuntu-latest
+    name: Bump Go
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@a0d2d53632934ae004f878c840055956d9f741b0 # v0.14.0
+        with:
+          enable-cache: 'true'
+
+      - name: Parse minor version
+        id: parse-go-version
+        run: |
+         echo "major-version=$(echo ${{ inputs.go-version }} | cut --delimiter='.' --field=1)" >> "${GITHUB_OUTPUT}"
+         echo "minor-version=$(echo ${{ inputs.go-version }} | cut --delimiter='.' --field=2)" >> "${GITHUB_OUTPUT}"         
+
+      - name: Bump Go
+        run: |
+          devbox add go@${{ inputs.go-version }}
+          devbox run -- find . -name go.mod -exec go mod edit -go=${{ inputs.go-version }} {} \;
+          devbox run -- find . -name mta.tpl.yaml -exec yq --inplace '.modules[] |= (.properties.GOTOOLCHAIN = "local" |.properties.GOVERSION = "go${{ steps.parse-go-version.outputs.major-version }}.${{ steps.parse-go-version.outputs.minor-version }}")' {} \;
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+        with:
+          commit-message: "Bump Go to ${{ inputs.go-version }}"
+          branch: "bump-go-${{ inputs.go-version }}"
+          title: "Bump Go to ${{ inputs.go-version }}"
+          body: "This PR bumps the Go version to ${{ inputs.go-version }}."
+          labels: dependencies
