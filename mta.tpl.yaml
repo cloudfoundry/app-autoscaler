@@ -238,7 +238,9 @@ modules:
       NODES: 3
       SKIP_TEARDOWN: false
       GINKGO_OPTS: ""
-      GOVERSION: go1.23
+      GOFIPS140: v1.0.0
+      GOTOOLCHAIN: local
+      GOVERSION: go1.GO_MINOR_VERSION
     build-parameters:
       builder: custom
       commands:
