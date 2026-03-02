@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.2.0
 	code.cloudfoundry.org/lager/v3 v3.37.0
-	code.cloudfoundry.org/loggregator-agent-release/src 4fe9904aa3b2
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260302093745-4fe9904aa3b2
 	code.cloudfoundry.org/tlsconfig v0.46.0
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -51,11 +51,11 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260226221140-a57be14db171
 
 require (
-	code.cloudfoundry.org/go-diodes v0.0.0-20250505082646-e4c2d772c2ec // indirect
-	code.cloudfoundry.org/go-metric-registry v0.0.0-20250611124144-ca953cadd16e // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 // indirect
+	code.cloudfoundry.org/go-metric-registry v0.0.0-20260217151434-5acadfff053b // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/andybalholm/brotli v1.1.1 // indirect
+	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
@@ -71,13 +71,13 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260115054156-294ebfa9ad83 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
+	github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -86,26 +86,26 @@ require (
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.66.1 // indirect
-	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/prometheus/common v0.67.5 // indirect
+	github.com/prometheus/procfs v0.20.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.62.0 // indirect
+	github.com/valyala/fasthttp v1.69.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
