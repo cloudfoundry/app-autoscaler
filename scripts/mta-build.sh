@@ -10,8 +10,6 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-GO_VERSION="${GO_VERSION:-$(go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')}"
-GO_MINOR_VERSION="${GO_MINOR_VERSION:-$(echo "${GO_VERSION}" | cut --delimiter=. --field=2)}"
 DEST="${DEST:-/tmp/build}"
 MTAR_FILENAME="${MTAR_FILENAME:-app-autoscaler-release-v${VERSION}.mtar}"
 
@@ -31,7 +29,6 @@ pushd "${autoscaler_dir}" > /dev/null
 # Copy template and perform substitutions
 cp mta.tpl.yaml mta.yaml
 sed --in-place "s/MTA_VERSION/${VERSION}/g" mta.yaml
-sed --in-place "s/GO_MINOR_VERSION/${GO_MINOR_VERSION}/g" mta.yaml
 
 # Create destination directory
 mkdir -p "${DEST}"
