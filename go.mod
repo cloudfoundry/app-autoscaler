@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
-go 1.24.5
+go 1.25.5
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.18
