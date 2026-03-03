@@ -34,7 +34,7 @@ func DiskTest(logger *slog.Logger, mux *http.ServeMux, diskOccupier DiskOccupier
 			return
 		}
 		if err := writeJSON(w, http.StatusOK, JSONResponse{"utilization": utilisation, "minutes": minutes}); err != nil {
-			slog.Error("Failed to write JSON response", slog.Any("error", err))
+			logger.Error("Failed to write JSON response", slog.Any("error", err))
 		}
 	})
 
