@@ -320,7 +320,7 @@ acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor bu
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
 	# Build for linux_amd64 by default (CF tasks platform)
-	@export TARGET_OS=$${TARGET_OS:-linux} TARGET_ARCH=$${TARGET_ARCH:-amd64}; \
+	@export TARGET_OS=$${TARGET_OS:-linux} TARGET_ARCH=$${TARGET_ARCH}; \
 	echo " - Building for OS: $$TARGET_OS, ARCH: $$TARGET_ARCH"; \
 	./scripts/compile-acceptance-tests.sh
 	# Create scripts directory and copy wrapper script
