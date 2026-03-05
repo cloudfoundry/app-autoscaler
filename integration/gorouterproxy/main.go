@@ -118,7 +118,7 @@ func forwardRequest(inRequest *http.Request, cert *auth.Cert) (*http.Response, e
 	url.Scheme = "http"
 	url.Host = fmt.Sprintf("127.0.0.1:%s", *forwardTo)
 
-	outRequest, err := http.NewRequest(inRequest.Method, url.String(), inRequest.Body) //nolint:gosec // URL host is hardcoded
+	outRequest, err := http.NewRequest(inRequest.Method, url.String(), inRequest.Body)
 	outRequest.Header = inRequest.Header
 	if err != nil {
 		logger.Printf("Error creating request: %v", err)
@@ -132,7 +132,7 @@ func forwardRequest(inRequest *http.Request, cert *auth.Cert) (*http.Response, e
 		log.Printf("Adding XFCC header before forwarding request")
 
 		outRequest.Header.Add("X-Forwarded-Client-Cert", cert.GetXFCCHeader())
-		resp, err := client.Do(outRequest) //nolint:gosec // URL host in out request is hardcoded
+		resp, err := client.Do(outRequest)
 		return resp, err
 	}
 }
