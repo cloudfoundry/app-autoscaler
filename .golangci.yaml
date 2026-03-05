@@ -99,6 +99,9 @@ linters:
       - linters:
           - gosec
         path: acceptance/
+      - linters:
+          - gosec
+        path: integration/
     paths:
       - third_party$
       - builtin$
