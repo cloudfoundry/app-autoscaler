@@ -629,7 +629,6 @@ func GetHTTPClient(cfg *config.Config) *http.Client {
 			TLSHandshakeTimeout: 10 * time.Second,
 			DisableCompression:  true,
 			DisableKeepAlives:   true,
-			//nolint:gosec // #nosec G402 -- due https://github.com/securego/gosec/issues/11051
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},
