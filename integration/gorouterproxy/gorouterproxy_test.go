@@ -91,8 +91,7 @@ var _ = Describe("Gorouterproxy", func() {
 		c := &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					Certificates: []tls.Certificate{tlsCert},
-					//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
+					Certificates:       []tls.Certificate{tlsCert},
 					InsecureSkipVerify: true,
 				},
 			},
