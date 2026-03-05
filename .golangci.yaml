@@ -96,6 +96,9 @@ linters:
           - dupl
           - mnd
         path: _test\.go
+      - linters:
+          - gosec
+        path: acceptance/
     paths:
       - third_party$
       - builtin$
