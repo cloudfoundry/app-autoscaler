@@ -39,7 +39,7 @@ MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,
 db_type ?= postgres
 DB_HOST ?= localhost
 DBURL := $(shell case "${db_type}" in\
-			 (postgres) printf "postgres://postgres:postgres@${DB_HOST}/autoscaler?sslmode=disable"; ;; \
+			 (postgres) printf "postgres://postgres:postgres-fips-pass@${DB_HOST}/autoscaler?sslmode=disable"; ;; \
 				 (mysql) printf "root@tcp(${DB_HOST})/autoscaler?tls=false"; ;; esac)
 
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -373,7 +373,7 @@ target/start-db-postgres_CI_false:
 		fi;\
 		echo " - starting docker for ${db_type}";\
 		docker run -p 5432:5432 --name postgres \
-			-e POSTGRES_PASSWORD=postgres \
+			-e POSTGRES_PASSWORD=postgres-fips-pass \
 			-e POSTGRES_USER=postgres \
 			-e POSTGRES_DB=autoscaler \
 			--health-cmd pg_isready \

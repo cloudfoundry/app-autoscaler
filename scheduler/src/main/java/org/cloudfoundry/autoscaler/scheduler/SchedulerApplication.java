@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler;
 
+import org.cloudfoundry.autoscaler.scheduler.conf.FipsSecurityProviderConfig;
 import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ public class SchedulerApplication {
   }
 
   public static void main(String[] args) {
+    FipsSecurityProviderConfig.initialize();
     SpringApplication.run(SchedulerApplication.class, args);
   }
 }
