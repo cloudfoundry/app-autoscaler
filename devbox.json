@@ -46,7 +46,8 @@
         "aarch64-darwin"
       ]
     },
-    "google-java-format": "1.32.0"
+    "google-java-format": "1.32.0",
+    "actionlint":         "latest"
   },
   "shell": {
     "init_hook": [
