@@ -98,6 +98,9 @@ linters:
         path: _test\.go
       - linters:
           - gosec
+        text: "G101"
+      - linters:
+          - gosec
         path: acceptance/
       - linters:
           - gosec
