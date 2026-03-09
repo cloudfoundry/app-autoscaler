@@ -15,6 +15,7 @@
         "aarch64-darwin"
       ]
     },
+    "actionlint":         "latest",
     "bosh-cli":            "7.3.1",
     "cloudfoundry-cli":    "8.17.0",
     "coreutils":           "latest",

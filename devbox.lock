@@ -49,6 +49,54 @@
         }
       }
     },
+    "actionlint@latest": {
+      "last_modified": "2026-02-23T15:40:43Z",
+      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#actionlint",
+      "source": "devbox-search",
+      "version": "1.7.11",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lgjp3mb2wfk2mpfay8w62mk4jl2bg4gr-actionlint-1.7.11",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lgjp3mb2wfk2mpfay8w62mk4jl2bg4gr-actionlint-1.7.11"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/css8sdn6z2y71y9d0dbmnj6i5v5vcybv-actionlint-1.7.11",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/css8sdn6z2y71y9d0dbmnj6i5v5vcybv-actionlint-1.7.11"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/1snf915whqdd6579iig1icpk1lqc6khg-actionlint-1.7.11",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/1snf915whqdd6579iig1icpk1lqc6khg-actionlint-1.7.11"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/pafy6lli47c2fhrnxanz4wdmcy9932ix-actionlint-1.7.11",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/pafy6lli47c2fhrnxanz4wdmcy9932ix-actionlint-1.7.11"
+        }
+      }
+    },
     "apple-sdk@latest": {
       "last_modified": "2026-02-23T15:40:43Z",
       "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#apple-sdk",
