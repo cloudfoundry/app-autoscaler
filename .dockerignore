@@ -1,0 +1,47 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# DevBox runtime
+.devbox
+.direnv
+
+# Claude
+.claude
+
+# Build artifacts
+dist
+build
+target
+*.jar
+*.class
+*.o
+*.a
+
+# Go
+vendor
+bin
+
+# Test files
+*_test.go
+*_test.java
+test
+tests
+
+# Documentation
+*.md
+docs
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
