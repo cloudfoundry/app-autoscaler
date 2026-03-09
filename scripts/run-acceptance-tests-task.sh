@@ -57,7 +57,7 @@ echo "CF CLI found: $(cf version)"
 
 # Install app-autoscaler-cli-plugin if available
 AUTOSCALER_PLUGIN_PATH="/home/vcap/app/bin/app-autoscaler-plugin"
-if [ -f "$AUTOSCALER_PLUGIN_PATH" ]; then
+if [[ -f "$AUTOSCALER_PLUGIN_PATH" ]]; then
     echo "Installing app-autoscaler-cli-plugin..."
     if cf install-plugin "$AUTOSCALER_PLUGIN_PATH" -f; then
         echo "app-autoscaler-cli-plugin installed successfully"
