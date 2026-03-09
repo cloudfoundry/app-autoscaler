@@ -55,6 +55,19 @@ fi
 
 echo "CF CLI found: $(cf version)"
 
+# Install app-autoscaler-cli-plugin if available
+AUTOSCALER_PLUGIN_PATH="/home/vcap/app/bin/app-autoscaler-plugin"
+if [ -f "$AUTOSCALER_PLUGIN_PATH" ]; then
+    echo "Installing app-autoscaler-cli-plugin..."
+    if cf install-plugin "$AUTOSCALER_PLUGIN_PATH" -f; then
+        echo "app-autoscaler-cli-plugin installed successfully"
+    else
+        echo "Warning: Failed to install app-autoscaler-cli-plugin, continuing without it"
+    fi
+else
+    echo "Warning: app-autoscaler-plugin binary not found at $AUTOSCALER_PLUGIN_PATH"
+fi
+
 # Set ginkgo binary path based on platform
 GINKGO_BINARY="./ginkgo_v2_${GOOS}_${GOARCH}"
 if [ ! -x "$GINKGO_BINARY" ]; then

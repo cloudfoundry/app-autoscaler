@@ -235,7 +235,6 @@ modules:
       GOVERSION: go1.25
     build-parameters:
       builder: custom
-      # TODO: provision autoscaler-cli-plugin, see https://github.com/cloudfoundry/app-autoscaler-cli-plugin/releases/tag/v4.1.2
       commands:
         - echo "Building acceptance tests for version ${version}"
         - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
