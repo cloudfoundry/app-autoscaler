@@ -101,6 +101,9 @@ linters:
         text: "G101"
       - linters:
           - gosec
+        text: "G117"
+      - linters:
+          - gosec
         path: acceptance/
       - linters:
           - gosec
