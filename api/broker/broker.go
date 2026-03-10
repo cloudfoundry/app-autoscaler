@@ -100,7 +100,13 @@ func New(
 		}
 	}
 
-	pathToParserDir := filepath.Dir(conf.BindingRequestSchemaPath)
+	pathToParserDir, err := filepath.Abs(filepath.Dir(conf.BindingRequestSchemaPath))
+	// We need the absolute path because our json-schema-library "gojsonschema" can not deal with
+	// relative paths in "$ref"s.
+	if err != nil {
+		logger.Fatal("resolve-binding-request-schema-path", err)
+	}
+
 	pathToLegacySchema := fmt.Sprintf("file://%s/legacy/schema.json", pathToParserDir)
 	pathToV0_1Schema := fmt.Sprintf("file://%s/v0_1/meta.schema.json", pathToParserDir)
 	bindingReqParser, err := brParser.New(
