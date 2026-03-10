@@ -784,31 +784,30 @@ var _ = Describe("BrokerHandler", func() {
 		)
 		BeforeEach(func() {
 			bindingPolicy = `{
-					"instance_max_count":4,
-					"instance_min_count":1,
-					"schedules": {
-								"timezone": "Asia/Shanghai",
-								"recurring_schedule": [{
-									  "start_time": "10:00",
-									  "end_time": "18:00",
-									  "days_of_week": [
-										1,
-										2,
-										3
-									  ],
-									  "instance_min_count": 1,
-									  "instance_max_count": 10,
-									  "initial_min_instance_count": 5
-									}]
-							},
-					"scaling_rules":[
-					{
-						"metric_type":"memoryused",
-						"threshold":30,
-						"operator":"<",
-						"adjustment":"-1"
+				"instance_max_count":4,
+				"instance_min_count":1,
+				"schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+						"start_time": "10:00",
+						"end_time": "18:00",
+						"days_of_week": [
+							1,
+							2,
+							3
+						],
+						"instance_min_count": 1,
+						"instance_max_count": 10,
+						"initial_min_instance_count": 5
 					}]
-				}`
+				},
+				"scaling_rules":[{
+					"metric_type":"memoryused",
+					"threshold":30,
+					"operator":"<",
+					"adjustment":"-1"
+				}]
+			}`
 			bindingRequestBody = &models.BindingRequestBody{
 				AppID: "an-app-id",
 				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
@@ -833,7 +832,7 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When mandatory parameters are not provided", func() {
 			Context("When AppID is not provided", func() {
 				BeforeEach(func() {
-					bindingRequestBody.AppID = ""
+					bindingRequestBody.AppID = "" // This can only happen in case of service-key-creation.
 					body, err = json.Marshal(bindingRequestBody)
 					Expect(err).NotTo(HaveOccurred())
 				})

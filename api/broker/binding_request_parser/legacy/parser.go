@@ -83,15 +83,7 @@ func (p BindingRequestParser) toBindingParameters(
 ) (models.AppScalingConfig, error) {
 	appGuid := ccAppGuid
 	if ccAppGuid == "" {
-		return models.AppScalingConfig{}, &models.InvalidArgumentError{
-			Param: "ccAppGuid",
-			Value: ccAppGuid,
-			Msg: `⛔ Did not get any app-guid from Cloud Controller.
-This must not happen for the legacy-parser because …
- + the legacy-parser does not support service-keys and because of …
- + prior schema-validation.
-This is a programming-error.`,
-		}
+		return models.AppScalingConfig{}, &brp.BindReqNoAppGuid{}
 	}
 
 	customMetricsBindAuthScheme := &p.defaultCustomMetricsCredentialType
