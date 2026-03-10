@@ -1,6 +1,11 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -13,6 +18,7 @@ import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.HttpsSupport;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.util.Timeout;
+import org.cloudfoundry.autoscaler.scheduler.util.FipsPemUtils;
 import org.cloudfoundry.autoscaler.scheduler.util.FipsSslContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +46,12 @@ public class RestClientConfig {
     // Load custom CA certificates from SSL bundle if configured (for test environments)
     X509TrustManager customTrustManager = loadCustomTrustManager(sslBundle);
 
-    // Load client certificate KeyManagers for mutual TLS authentication
+    // Load client certificate KeyManagers for mutual TLS authentication.
+    // Try SSL bundle first, then fall back to reading CF_INSTANCE_CERT/KEY directly.
     javax.net.ssl.KeyManager[] keyManagers = loadKeyManagers(sslBundle);
+    if (keyManagers == null) {
+      keyManagers = loadCfInstanceKeyManagers();
+    }
 
     // In FIPS mode, Bouncy Castle TrustManager doesn't automatically fall back
     // to system trust, so we explicitly merge system CAs with custom CAs.
@@ -77,30 +87,98 @@ public class RestClientConfig {
       KeyStore keyStore = sslBundle.getStores().getKeyStore();
 
       if (keyStore == null) {
-        logger.info("No keystore configured in SSL bundle - client certificate auth disabled");
+        logger.info("No keystore configured in SSL bundle");
         return null;
       }
 
       if (keyStore.size() == 0) {
-        logger.info("Keystore from SSL bundle is empty - client certificate auth disabled");
+        logger.info("Keystore from SSL bundle is empty");
         return null;
       }
 
       logger.info("Loaded keystore with {} entry/entries from SSL bundle", keyStore.size());
 
-      // Create KeyManager from the keystore
       javax.net.ssl.KeyManagerFactory kmf =
           javax.net.ssl.KeyManagerFactory.getInstance(
               javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
-      kmf.init(keyStore, null); // Password is null as it's already loaded by Spring
+      kmf.init(keyStore, null);
 
-      logger.info("KeyManagerFactory initialized successfully with {} KeyManager(s)", kmf.getKeyManagers().length);
+      logger.info(
+          "KeyManagerFactory initialized successfully with {} KeyManager(s)",
+          kmf.getKeyManagers().length);
       return kmf.getKeyManagers();
 
     } catch (Exception e) {
-      logger.error(
-          "Could not load keystore from SSL bundle, client certificate auth will not be available",
-          e);
+      logger.info("Could not load keystore from SSL bundle: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Loads KeyManagers directly from CF_INSTANCE_CERT and CF_INSTANCE_KEY file paths. This is the
+   * fallback when the Spring SSL bundle doesn't contain the client certificate (e.g., because the
+   * EnvironmentPostProcessor couldn't inject them, or PEM parsing failed under FIPS).
+   *
+   * <p>CF_INSTANCE_CERT and CF_INSTANCE_KEY are file paths set by Diego to give each container a
+   * unique cryptographic identity for mutual TLS.
+   *
+   * @return KeyManager array or null if CF instance identity is not available
+   */
+  private javax.net.ssl.KeyManager[] loadCfInstanceKeyManagers() {
+    String certPath = System.getenv("CF_INSTANCE_CERT");
+    String keyPath = System.getenv("CF_INSTANCE_KEY");
+
+    if (certPath == null || keyPath == null) {
+      logger.info(
+          "CF_INSTANCE_CERT/CF_INSTANCE_KEY not set - no CF instance identity available");
+      return null;
+    }
+
+    try {
+      Path certFile = Paths.get(certPath);
+      Path keyFile = Paths.get(keyPath);
+
+      if (!Files.exists(certFile) || !Files.exists(keyFile)) {
+        logger.warn(
+            "CF instance cert/key files do not exist: cert={} (exists={}), key={} (exists={})",
+            certPath,
+            Files.exists(certFile),
+            keyPath,
+            Files.exists(keyFile));
+        return null;
+      }
+
+      String certPem = Files.readString(certFile);
+      String keyPem = Files.readString(keyFile);
+
+      logger.info(
+          "Loading CF instance identity from {} and {}", certPath, keyPath);
+
+      X509Certificate cert = FipsPemUtils.parseCertificate(certPem);
+      PrivateKey privateKey = FipsPemUtils.parsePrivateKey(keyPem);
+
+      KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      keyStore.load(null, null);
+      keyStore.setKeyEntry(
+          "cf-instance-identity",
+          privateKey,
+          new char[0],
+          new X509Certificate[] {cert});
+
+      javax.net.ssl.KeyManagerFactory kmf =
+          javax.net.ssl.KeyManagerFactory.getInstance(
+              javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+      kmf.init(keyStore, new char[0]);
+
+      logger.info(
+          "Loaded CF instance identity certificate (subject: {}, issuer: {})",
+          cert.getSubjectX500Principal().getName(),
+          cert.getIssuerX500Principal().getName());
+
+      return kmf.getKeyManagers();
+
+    } catch (Exception e) {
+      logger.error("Failed to load CF instance identity certificates", e);
       return null;
     }
   }
