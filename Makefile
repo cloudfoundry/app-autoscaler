@@ -274,7 +274,11 @@ BIND_REQ_SCHEMA_VERSION ?= v0.1
 bind-request-schema: ${flattened-schema-file}
 ${flattened-schema-file}: ${schema-files}
 	mkdir -p "$$(dirname ${flattened-schema-file})"
-	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+
+	# # 🚸 Use me again in the future, to publish a configurable schema.
+	# flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+
+	flatten_json-schema './api/policyvalidator/json-schema/legacy.schema.json' \
 	> '${flattened-schema-file}'
 	echo '🔨 File created: ${flattened-schema-file}'
 
