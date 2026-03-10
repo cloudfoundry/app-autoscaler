@@ -35,9 +35,19 @@ app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 go_deps_without_fakes = $(shell find . -type f -name '*.go' \
 									| grep --invert-match --regexp='${app-fakes-dir}')
 
+
+openapi-generated-clients-dir := ./internal/custommetrics
+openapi-generated-clients-files = $(wildcard ${openapi-generated-clients-dir}/*.go)
+
+.PHONY: generate-openapi-clients
+generate-openapi-clients: ${openapi-generated-clients-dir} ${openapi-generated-clients-files}
+${openapi-generated-clients-dir} ${openapi-generated-clients-files} &: ./go.mod ./go.sum ./internal/generate.go ${openapi-specs-list}
+	go generate ./internal/generate.go
+	@touch '${openapi-generated-clients-dir}' # Ensure that the folder-modification-timestamp gets updated.
+
 .PHONY: generate-fakes
 generate-fakes: ${app-fakes-dir} ${app-fakes-files}
-${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/app/generate.go ${openapi-specs-list}
+${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/app/generate.go generate-openapi-clients
 	go generate ./internal/app/generate.go
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
