@@ -20,7 +20,7 @@ import (
 // well as some other dedicated types) within the sub-package `types`.
 
 // ================================================================================
-// To-level parser
+// Top-level parser
 // ================================================================================
 
 type BindRequestParser struct {
@@ -61,7 +61,7 @@ func (p BindRequestParser) Parse(
 ) (models.AppScalingConfig, error) {
 	schemaVersion, err := extractSchemaVersion(bindingReqParams)
 	if err != nil {
-		return models.AppScalingConfig{}, err
+		schemaVersion = "" // Default to legacy schema if schema-version cannot be extracted
 	}
 
 	switch schemaVersion {
