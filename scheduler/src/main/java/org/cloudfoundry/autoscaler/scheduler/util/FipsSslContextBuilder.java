@@ -1,13 +1,19 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -20,18 +26,22 @@ import org.slf4j.LoggerFactory;
  * Builds FIPS-compliant SSLContext that trusts both system CAs and custom CAs.
  *
  * <p>In FIPS mode with Bouncy Castle providers, the TrustManager requires explicit trust anchors
- * and won't automatically fall back to system certificates. This builder merges:
+ * and won't automatically fall back to system certificates. Additionally, the Java buildpack's
+ * Container Security Provider (which normally adds BOSH trusted certificates transparently) is
+ * bypassed because we replaced SunJSSE with BCJSSE. This builder explicitly loads:
  *
  * <ol>
- *   <li>System CA certificates from the JVM's default cacerts keystore
+ *   <li>JVM cacerts (standard public CAs like Let's Encrypt, DigiCert)
+ *   <li>BOSH/CF trusted certificates from /etc/ssl/certs/ca-certificates.crt (CF internal CAs)
  *   <li>Custom CA certificates from application configuration
  * </ol>
  *
  * <p>This ensures that HTTPS connections work both with:
  *
  * <ul>
- *   <li>Public services using well-known CAs (e.g., Let's Encrypt)
- *   <li>Internal services using custom/self-signed CAs (e.g., CF internal routing)
+ *   <li>Public services using well-known CAs (validated via JVM cacerts)
+ *   <li>Internal CF services using BOSH-managed CAs (validated via ca-certificates.crt)
+ *   <li>Services using custom/self-signed CAs (validated via application configuration)
  * </ul>
  */
 public class FipsSslContextBuilder {
@@ -103,35 +113,119 @@ public class FipsSslContextBuilder {
   }
 
   /**
-   * Gets the default system TrustManager with JVM cacerts.
+   * Path to BOSH/CF trusted certificates. The Java buildpack's Container Security Provider normally
+   * adds these certificates via a custom TrustManagerFactory, but since we replaced SunJSSE with
+   * BCJSSE, we must load them explicitly.
    *
-   * @return X509TrustManager with system CA certificates
+   * @see <a
+   *     href="https://github.com/cloudfoundry/java-buildpack/blob/main/docs/framework-container_security_provider.md">
+   *     Container Security Provider documentation</a>
+   */
+  private static final String CF_TRUSTED_CA_CERTS_PATH = "/etc/ssl/certs/ca-certificates.crt";
+
+  /**
+   * Gets the default system TrustManager with JVM cacerts merged with BOSH/CF trusted certificates.
+   *
+   * @return X509TrustManager with system and CF CA certificates
    */
   private static X509TrustManager getSystemTrustManager()
       throws NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException {
-    // Load system truststore (cacerts)
+    // Load JVM cacerts keystore
     KeyStore systemKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
     String javaHome = System.getProperty("java.home");
     String cacertsPath = javaHome + "/lib/security/cacerts";
 
-    logger.debug("Loading system CA certificates from: {}", cacertsPath);
+    logger.debug("Loading JVM CA certificates from: {}", cacertsPath);
 
-    try (InputStream is = java.nio.file.Files.newInputStream(java.nio.file.Paths.get(cacertsPath))) {
+    try (InputStream is = Files.newInputStream(Paths.get(cacertsPath))) {
       systemKeyStore.load(is, "changeit".toCharArray());
     }
 
-    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    int jvmCertCount = systemKeyStore.size();
+    logger.info("Loaded {} CA certificates from JVM cacerts", jvmCertCount);
+
+    // Load BOSH/CF trusted certificates from /etc/ssl/certs/ca-certificates.crt
+    // This is where the Java buildpack places BOSH trusted certificates including
+    // the CF system CA that signs internal service certificates (e.g., scaling engine).
+    int cfCertCount = loadCfTrustedCertificates(systemKeyStore);
+
+    TrustManagerFactory tmf =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     tmf.init(systemKeyStore);
 
     for (TrustManager tm : tmf.getTrustManagers()) {
       if (tm instanceof X509TrustManager) {
         X509TrustManager x509tm = (X509TrustManager) tm;
-        logger.info("System truststore loaded with {} CA certificates", x509tm.getAcceptedIssuers().length);
+        logger.info(
+            "System truststore loaded with {} CA certificates ({} from JVM cacerts, {} from CF trusted certs)",
+            x509tm.getAcceptedIssuers().length,
+            jvmCertCount,
+            cfCertCount);
         return x509tm;
       }
     }
 
     throw new IllegalStateException("No X509TrustManager found in system TrustManagerFactory");
+  }
+
+  /**
+   * Loads PEM-encoded certificates from the CF/BOSH trusted certificates file into the given
+   * keystore.
+   *
+   * @param keyStore the keystore to add certificates to
+   * @return the number of certificates loaded
+   */
+  private static int loadCfTrustedCertificates(KeyStore keyStore) {
+    Path cfCertsPath = Paths.get(CF_TRUSTED_CA_CERTS_PATH);
+
+    if (!Files.exists(cfCertsPath)) {
+      logger.info(
+          "CF trusted certificates file not found at {} (not running in Cloud Foundry?), skipping",
+          CF_TRUSTED_CA_CERTS_PATH);
+      return 0;
+    }
+
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(cfCertsPath))) {
+      CertificateFactory cf = CertificateFactory.getInstance("X.509");
+
+      @SuppressWarnings("unchecked")
+      Collection<X509Certificate> certs =
+          (Collection<X509Certificate>) (Collection<?>) cf.generateCertificates(is);
+
+      int count = 0;
+      for (X509Certificate cert : certs) {
+        String alias = "cf-trusted-" + count;
+        if (!containsCertificate(keyStore, cert)) {
+          keyStore.setCertificateEntry(alias, cert);
+          count++;
+          logger.debug(
+              "Added CF trusted certificate: {}", cert.getSubjectX500Principal().getName());
+        }
+      }
+
+      logger.info(
+          "Loaded {} CF/BOSH trusted certificates from {}", count, CF_TRUSTED_CA_CERTS_PATH);
+      return count;
+    } catch (Exception e) {
+      logger.warn(
+          "Failed to load CF trusted certificates from {}: {}",
+          CF_TRUSTED_CA_CERTS_PATH,
+          e.getMessage());
+      return 0;
+    }
+  }
+
+  /**
+   * Checks if a keystore already contains a certificate (by comparing encoded form) to avoid
+   * duplicates when merging JVM cacerts with CF trusted certs.
+   */
+  private static boolean containsCertificate(KeyStore keyStore, X509Certificate cert) {
+    try {
+      String alias = keyStore.getCertificateAlias(cert);
+      return alias != null;
+    } catch (KeyStoreException e) {
+      return false;
+    }
   }
 
   /**
