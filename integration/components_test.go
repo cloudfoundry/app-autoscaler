@@ -232,7 +232,7 @@ func DefaultGolangAPITestConfig() apiConfig.Config {
 		},
 		CatalogPath:          "../servicebroker/config/catalog.json",
 		CatalogSchemaPath:    "../api/schemas/catalog.schema.json",
-		BindingRequestSchemaPath:     "../api/policyvalidator/json-schema/meta.schema.json",
+		BindingRequestSchemaPath:     "../api/broker/binding_request_parser/meta.schema.json",
 		InfoFilePath:         "../api/exampleconfig/catalog-example.json",
 		DashboardRedirectURI: "",
 		CF: cf.Config{

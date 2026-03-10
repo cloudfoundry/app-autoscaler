@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -99,7 +100,7 @@ func New(
 		}
 	}
 
-	pathToParserDir := conf.BindingRequestSchemaPath
+	pathToParserDir := filepath.Dir(conf.BindingRequestSchemaPath)
 	pathToLegacySchema := fmt.Sprintf("file://%s/legacy/schema.json", pathToParserDir)
 	pathToV0_1Schema := fmt.Sprintf("file://%s/v0_1/meta.schema.json", pathToParserDir)
 	bindingReqParser, err := brParser.New(
