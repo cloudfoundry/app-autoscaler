@@ -77,16 +77,16 @@ public class RestClientConfig {
       KeyStore keyStore = sslBundle.getStores().getKeyStore();
 
       if (keyStore == null) {
-        logger.debug("No keystore configured in SSL bundle");
+        logger.info("No keystore configured in SSL bundle - client certificate auth disabled");
         return null;
       }
 
       if (keyStore.size() == 0) {
-        logger.debug("Keystore is empty");
+        logger.info("Keystore from SSL bundle is empty - client certificate auth disabled");
         return null;
       }
 
-      logger.debug("Loaded keystore with {} key(s) from SSL bundle", keyStore.size());
+      logger.info("Loaded keystore with {} entry/entries from SSL bundle", keyStore.size());
 
       // Create KeyManager from the keystore
       javax.net.ssl.KeyManagerFactory kmf =
@@ -94,12 +94,13 @@ public class RestClientConfig {
               javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
       kmf.init(keyStore, null); // Password is null as it's already loaded by Spring
 
+      logger.info("KeyManagerFactory initialized successfully with {} KeyManager(s)", kmf.getKeyManagers().length);
       return kmf.getKeyManagers();
 
     } catch (Exception e) {
-      logger.warn(
-          "Could not load keystore from SSL bundle, client certificate auth will not be available: {}",
-          e.getMessage());
+      logger.error(
+          "Could not load keystore from SSL bundle, client certificate auth will not be available",
+          e);
       return null;
     }
   }
@@ -115,17 +116,17 @@ public class RestClientConfig {
       KeyStore trustStore = sslBundle.getStores().getTrustStore();
 
       if (trustStore == null) {
-        logger.debug("No truststore configured in SSL bundle");
+        logger.info("No truststore configured in SSL bundle");
         return null;
       }
 
       // Check if the truststore actually has certificates
       if (trustStore.size() == 0) {
-        logger.debug("Truststore is empty");
+        logger.info("Truststore from SSL bundle is empty");
         return null;
       }
 
-      logger.debug("Loaded truststore with {} certificate(s) from SSL bundle", trustStore.size());
+      logger.info("Loaded truststore with {} certificate(s) from SSL bundle", trustStore.size());
 
       // Create TrustManager from the truststore
       TrustManagerFactory tmf =
