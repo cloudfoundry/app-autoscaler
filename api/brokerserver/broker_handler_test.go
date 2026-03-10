@@ -1142,32 +1142,32 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			Context("credential-type is set with invalid value", func() {
 				const testBindingPolicy = `{
-							"credential-type": "invalid-binding-secret",
-							"instance_max_count":3,
-							"instance_min_count":1,
-							"scaling_rules":[
-							{
-								"metric_type":"memoryused",
-								"threshold":99,
-								"operator":"<",
-								"adjustment":"-1"
-							}],
-							"schedules": {
-								"timezone": "Asia/Shanghai",
-								"recurring_schedule": [{
-									  "start_time": "10:00",
-									  "end_time": "18:00",
-									  "days_of_week": [
-										1,
-										2,
-										3
-									  ],
-									  "instance_min_count": 1,
-									  "instance_max_count": 10,
-									  "initial_min_instance_count": 5
-									}]
-							}
-						}`
+					"credential-type": "invalid-binding-secret",
+					"instance_max_count":3,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryused",
+						"threshold":99,
+						"operator":"<",
+						"adjustment":"-1"
+					}],
+					"schedules": {
+						"timezone": "Asia/Shanghai",
+						"recurring_schedule": [{
+							  "start_time": "10:00",
+							  "end_time": "18:00",
+							  "days_of_week": [
+								1,
+								2,
+								3
+							  ],
+							  "instance_min_count": 1,
+							  "instance_max_count": 10,
+							  "initial_min_instance_count": 5
+							}]
+					}
+				}`
 				BeforeEach(func() {
 					bindingRequestBody = &models.BindingRequestBody{
 						AppID: testAppId,
@@ -1187,7 +1187,7 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(resp.Body.String()).To(MatchJSON(
 						`{
 						  "error": "InvalidPolicy",
-						  "description": "invalid policy provided: [{\"context\":\"(root)\",\"description\":\"Must validate one and only one schema (oneOf)\"},{\"context\":\"(root)\",\"description\":\"Must validate one and only one schema (oneOf)\"},{\"context\":\"(root)\",\"description\":\"schema-version is required\"},{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"
+						  "description": "invalid policy provided: [{\"context\":\"(root).credential-type\",\"description\":\"credential-type must be one of the following: \\\"x509\\\", \\\"binding-secret\\\"\"}]"
 						}`,
 					))
 				})
