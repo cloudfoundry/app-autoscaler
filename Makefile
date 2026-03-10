@@ -268,12 +268,13 @@ clean: dbtasks.clean scheduler.clean
 	@rm --force --recursive 'test-certs'
 	@rm --force --recursive 'target'
 	@rm --force --recursive 'vendor'
+	@make --directory='./acceptance' clean
 
 dbtasks.clean:
 	pushd dbtasks; mvn -B clean; popd
 
 scheduler.clean:
-	pushd scheduler; mvn -B --quiet clean; popd
+	@make --directory='scheduler' clean
 
 schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
 flattened-schema-file := ${DEST}/bind-request.schema.json
