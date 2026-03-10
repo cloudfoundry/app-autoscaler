@@ -170,8 +170,10 @@ build-%: generate-openapi-generated-clients-and-servers
 	@echo "# building $*"
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
+.PHONY: build
 build: $(addprefix build-,$(binaries))
 
+.PHONY: build_tests
 build_tests: $(addprefix build_test-,$(test_dirs))
 
 build_test-%: generate-fakes
@@ -186,18 +188,23 @@ build_test-%: generate-fakes
 		 go test -c -o $${test_file} $${package};\
 	 done;
 
+.PHONY: check
 check: fmt lint build test
 
+.PHONY: test
 test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
+.PHONY: autoscaler.test
 autoscaler.test: check-db_type init-db test-certs generate-openapi-generated-clients-and-servers generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
+.PHONY: test-autoscaler-suite
 test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} ${TEST}
 
+.PHONY: test-acceptance-unit
 test-acceptance-unit:
 	@make --directory=acceptance test-unit
 
