@@ -261,13 +261,13 @@ vendor-changelogs:
 
 clean: dbtasks.clean scheduler.clean
 	@echo "# cleaning autoscaler"
+	@go clean -cache -testcache
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
-	@go clean -cache -testcache
-	@rm --force --recursive 'fakes'
-	@rm --force --recursive 'test-certs'
-	@rm --force --recursive 'target'
-	@rm --force --recursive 'vendor'
+	@rm --force --recursive './mta.yaml'
+	@rm --force --recursive './build' 'fakes' 'test-certs' 'target' 'vendor'
+	@rm --force --recursive coverprofile.out*
+	@rm --force --recursive dbtasks/src/main/resources/*.db.changelog.y*ml
 	@make --directory='./acceptance' clean
 
 dbtasks.clean:

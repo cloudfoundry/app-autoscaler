@@ -133,5 +133,5 @@ deploy: build
 clean:
 	@echo "# cleaning go_app"
 	@go clean -cache -testcache
-	@rm --force --recursive './build'
-	@rm --force --recursive './internal/app/appfakes'
+	@rm --force --recursive './build' './internal/app/appfakes'
+	@rm --force --recursive internal/**/oas*
