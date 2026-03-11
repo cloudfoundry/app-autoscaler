@@ -25,7 +25,7 @@ test_dirs = $(shell find . -name "*_test.go" -exec dirname {} \; \
 GINKGO_OPTS := -r --race --require-suite --randomize-all --cover ${OPTS}
 export CONFIG ?= ../../../../acceptance_config.json
 
-openapi-spec-path := ../../../../../api
+openapi-spec-path := ../../../../openapi
 openapi-specs-list = $(wildcard ${openapi-spec-path}/*.openapi.yaml)
 
 # The presence of the subsequent directory indicates wheather the fakes still need to be generated
@@ -42,6 +42,8 @@ openapi-generated-clients-files = $(wildcard ${openapi-generated-clients-dir}/*.
 .PHONY: generate-openapi-clients
 generate-openapi-clients: ${openapi-generated-clients-dir} ${openapi-generated-clients-files}
 ${openapi-generated-clients-dir} ${openapi-generated-clients-files} &: ./go.mod ./go.sum ./internal/generate.go ${openapi-specs-list}
+	# Fail gracefully, when the openapi-specifications are not where expected.
+	@test -n '${openapi-specs-list}' || { echo 'ERROR: No OpenAPI specs found at ${openapi-spec-path}/' >&2; exit 1; }
 	go generate ./internal/generate.go
 	@touch '${openapi-generated-clients-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
@@ -119,7 +121,7 @@ lint-fix: generate-fakes
 .PHONY: start
 start: build
 	docker run --interactive --tty --name go_app --volume="$${PWD}/build/:/cf/bin" \
-						 --publish '8080:8080' --rm 'cloudfoundry/cflinuxfs4' '/cf/bin/app'
+				--publish '8080:8080' --rm 'cloudfoundry/cflinuxfs4' '/cf/bin/app'
 
 
 
