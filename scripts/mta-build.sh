@@ -1,13 +1,13 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 # shellcheck disable=SC2154
 
-set -euo pipefail
+set -eu -o pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 autoscaler_dir="${script_dir}/.."
-# shellcheck source=scripts/vars.source.sh
+# shellcheck source=./vars.source.sh
 source "${script_dir}/vars.source.sh"
-# shellcheck source=scripts/common.sh
+# shellcheck source=./common.sh
 source "${script_dir}/common.sh"
 
 DEST="${DEST:-/tmp/build}"
@@ -25,18 +25,16 @@ echo "building mtar file for version: ${VERSION}"
 
 # Navigate to the autoscaler directory
 pushd "${autoscaler_dir}" > /dev/null
+	# Copy template and perform substitutions
+	cp mta.tpl.yaml mta.yaml
+	sed --in-place "s/MTA_VERSION/${VERSION}/g" mta.yaml
 
-# Copy template and perform substitutions
-cp mta.tpl.yaml mta.yaml
-sed --in-place "s/MTA_VERSION/${VERSION}/g" mta.yaml
+	# Create destination directory
+	mkdir --parents "${DEST}"
 
-# Create destination directory
-mkdir -p "${DEST}"
+	# Build the mtar file
+	mbt build --target="${DEST}" --mtar="${MTAR_FILENAME}"
 
-# Build the mtar file
-mbt build -t "${DEST}" --mtar "${MTAR_FILENAME}"
-
-echo "⚠️ The mta build is done. The mtar file is available at: ${DEST}/${MTAR_FILENAME}"
-du -h "${DEST}/${MTAR_FILENAME}"
-
+	echo "⚠️ The mta build is done. The mtar file is available at: ${DEST}/${MTAR_FILENAME}"
+	du --human-readable "${DEST}/${MTAR_FILENAME}"
 popd > /dev/null

@@ -259,7 +259,7 @@ vendor-changelogs:
 	cp $(MAKEFILE_DIR)/scalingengine/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/scheduler/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
-clean: dbtasks.clean scheduler.clean
+clean: dbtasks.clean mta-build-clean scheduler.clean
 	@echo "# cleaning autoscaler"
 	@go clean -cache -testcache
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
@@ -304,11 +304,13 @@ mta-logs:
 	cf dmol --mta com.github.cloudfoundry.app-autoscaler-release --last 1
 	vim mta-*
 
+.PHONY: mta-build
 mta-build: mta-build-clean
 	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
+.PHONY: mta-build-clean
 mta-build-clean:
-	rm -rf mta_archives
+	rm --force --recursive mta_archives
 
 .PHONY: clean-build
 clean-build: ## Clean the build directory
