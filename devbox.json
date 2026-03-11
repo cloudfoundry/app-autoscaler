@@ -17,7 +17,7 @@
     },
     "actionlint":         "latest",
     "bosh-cli":            "7.3.1",
-    "cloudfoundry-cli":    "8.17.0",
+    "cloudfoundry-cli":    "8.17.1",
     "coreutils":           "latest",
     "credhub-cli":         "2.9.53",
     "delve":               "1.26.0",
