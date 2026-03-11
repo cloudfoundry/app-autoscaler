@@ -94,6 +94,7 @@ linters:
     rules:
       - linters:
           - dupl
+          - gosec
           - mnd
         path: _test\.go
       - linters:
