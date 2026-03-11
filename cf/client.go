@@ -215,7 +215,7 @@ func (c *CtxClient) doRequestCredGrant(ctx context.Context, formData *url.Values
 	c.setUserAgent(req)
 
 	var resp *http.Response
-	resp, err = c.Client.Do(req)
+	resp, err = c.Client.Do(req) // #nosec G704 -- URL host from CF API endpoints, not user input
 	if err != nil {
 		c.logger.Error("request-client-credential-grant-do-request", err)
 		return tokens, err
@@ -325,7 +325,7 @@ func (c *CtxClient) introspectToken(ctx context.Context, token string) (*Introsp
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 	c.setUserAgent(request)
 
-	resp, err := c.Client.Do(request)
+	resp, err := c.Client.Do(request) // #nosec G704 -- URL host from CF API endpoints, not user input
 	if err != nil {
 		return nil, err
 	}
