@@ -99,10 +99,10 @@ linters:
         path: _test\.go
       - linters:
           - gosec
-        text: "G101"
+        text: "G101" # Excluded, taken care by GitHub Secret Scanning
       - linters:
           - gosec
-        text: "G117"
+        text: "G117" # Excluded, taken care by GitHub Secret Scanning
       - linters:
           - gosec
         path: acceptance/
