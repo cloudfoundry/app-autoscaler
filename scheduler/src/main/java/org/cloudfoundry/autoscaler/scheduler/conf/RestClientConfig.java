@@ -1,13 +1,16 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
+import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.ConnectionConfig;
@@ -52,6 +55,7 @@ public class RestClientConfig {
     if (keyManagers == null) {
       keyManagers = loadCfInstanceKeyManagers();
     }
+    keyManagers = wrapWithDebugLogging(keyManagers);
 
     // In FIPS mode, Bouncy Castle TrustManager doesn't automatically fall back
     // to system trust, so we explicitly merge system CAs with custom CAs.
@@ -225,6 +229,90 @@ public class RestClientConfig {
           "Could not load custom truststore from SSL bundle, will use system CAs only: {}",
           e.getMessage());
       return null;
+    }
+  }
+
+  /**
+   * Wraps each X509KeyManager in a logging decorator so that every TLS handshake with the scaling
+   * engine emits an INFO log showing which certificate alias (and its subject DN) was chosen.
+   * Returns the original array unchanged if it is null or contains no X509KeyManager instances.
+   */
+  private javax.net.ssl.KeyManager[] wrapWithDebugLogging(
+      javax.net.ssl.KeyManager[] keyManagers) {
+    if (keyManagers == null) {
+      return null;
+    }
+    javax.net.ssl.KeyManager[] wrapped = new javax.net.ssl.KeyManager[keyManagers.length];
+    for (int i = 0; i < keyManagers.length; i++) {
+      if (keyManagers[i] instanceof X509KeyManager) {
+        wrapped[i] = new DebuggingX509KeyManager((X509KeyManager) keyManagers[i]);
+      } else {
+        wrapped[i] = keyManagers[i];
+      }
+    }
+    return wrapped;
+  }
+
+  /**
+   * X509KeyManager decorator that logs every alias selection and certificate chain lookup at INFO
+   * level. This makes it possible to prove (or disprove) that a client certificate is presented
+   * during TLS handshakes with the scaling engine.
+   */
+  private static class DebuggingX509KeyManager implements X509KeyManager {
+    private static final Logger debugLogger =
+        LoggerFactory.getLogger(DebuggingX509KeyManager.class);
+    private final X509KeyManager delegate;
+
+    DebuggingX509KeyManager(X509KeyManager delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+      String alias = delegate.chooseClientAlias(keyType, issuers, socket);
+      if (alias != null) {
+        X509Certificate[] chain = delegate.getCertificateChain(alias);
+        String subject =
+            (chain != null && chain.length > 0)
+                ? chain[0].getSubjectX500Principal().getName()
+                : "<no chain>";
+        debugLogger.info(
+            "[mTLS] Chose client alias '{}' with subject '{}' for key types {} to {}",
+            alias,
+            subject,
+            java.util.Arrays.toString(keyType),
+            socket != null ? socket.getInetAddress() : "unknown");
+      } else {
+        debugLogger.info(
+            "[mTLS] No client alias available for key types {} – no client certificate will be sent",
+            java.util.Arrays.toString(keyType));
+      }
+      return alias;
+    }
+
+    @Override
+    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+      return delegate.chooseServerAlias(keyType, issuers, socket);
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain(String alias) {
+      return delegate.getCertificateChain(alias);
+    }
+
+    @Override
+    public String[] getClientAliases(String keyType, Principal[] issuers) {
+      return delegate.getClientAliases(keyType, issuers);
+    }
+
+    @Override
+    public PrivateKey getPrivateKey(String alias) {
+      return delegate.getPrivateKey(alias);
+    }
+
+    @Override
+    public String[] getServerAliases(String keyType, Principal[] issuers) {
+      return delegate.getServerAliases(keyType, issuers);
     }
   }
 
