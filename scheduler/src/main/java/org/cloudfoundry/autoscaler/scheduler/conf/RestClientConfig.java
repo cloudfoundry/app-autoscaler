@@ -155,10 +155,9 @@ public class RestClientConfig {
       String certPem = Files.readString(certFile);
       String keyPem = Files.readString(keyFile);
 
-      logger.info(
-          "Loading CF instance identity from {} and {}", certPath, keyPath);
+      logger.info("Loading CF instance identity from {} and {}", certPath, keyPath);
 
-      X509Certificate cert = FipsPemUtils.parseCertificate(certPem);
+      java.util.List<X509Certificate> certChain = FipsPemUtils.parseCertificateChain(certPem);
       PrivateKey privateKey = FipsPemUtils.parsePrivateKey(keyPem);
 
       KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -167,17 +166,19 @@ public class RestClientConfig {
           "cf-instance-identity",
           privateKey,
           new char[0],
-          new X509Certificate[] {cert});
+          certChain.toArray(new X509Certificate[0]));
 
       javax.net.ssl.KeyManagerFactory kmf =
           javax.net.ssl.KeyManagerFactory.getInstance(
               javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
       kmf.init(keyStore, new char[0]);
 
+      X509Certificate leaf = certChain.get(0);
       logger.info(
-          "Loaded CF instance identity certificate (subject: {}, issuer: {})",
-          cert.getSubjectX500Principal().getName(),
-          cert.getIssuerX500Principal().getName());
+          "Loaded CF instance identity chain ({} cert(s)): leaf subject: {}, issuer: {}",
+          certChain.size(),
+          leaf.getSubjectX500Principal().getName(),
+          leaf.getIssuerX500Principal().getName());
 
       return kmf.getKeyManagers();
 

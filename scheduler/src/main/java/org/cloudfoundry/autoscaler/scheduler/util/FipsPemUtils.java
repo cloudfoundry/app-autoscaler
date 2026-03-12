@@ -36,6 +36,29 @@ public class FipsPemUtils {
         factory.generateCertificate(new ByteArrayInputStream(derBytes));
   }
 
+  /**
+   * Parses all X.509 certificates from a PEM string that may contain multiple concatenated
+   * CERTIFICATE blocks (e.g. a leaf cert followed by intermediates, as in CF_INSTANCE_CERT).
+   *
+   * @return list of certificates in order: [leaf, intermediate, ...]
+   */
+  @SuppressWarnings("unchecked")
+  public static java.util.List<X509Certificate> parseCertificateChain(String pem)
+      throws CertificateException {
+    if (pem == null || pem.isBlank()) {
+      throw new CertificateException("PEM input is null or empty");
+    }
+    CertificateFactory factory = CertificateFactory.getInstance("X.509", getBcfipsProvider());
+    java.util.Collection<X509Certificate> certs =
+        (java.util.Collection<X509Certificate>)
+            (java.util.Collection<?>)
+                factory.generateCertificates(new ByteArrayInputStream(pem.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    if (certs.isEmpty()) {
+      throw new CertificateException("No certificates found in PEM input");
+    }
+    return new java.util.ArrayList<>(certs);
+  }
+
   public static PrivateKey parsePrivateKey(String pem)
       throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException,
           IOException {
