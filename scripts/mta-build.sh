@@ -28,7 +28,7 @@ pushd "${autoscaler_dir}" > /dev/null
 
 # Copy template and perform substitutions
 cp mta.tpl.yaml mta.yaml
-sed --in-place "s/MTA_VERSION/${VERSION}/g" mta.yaml
+sed -i "s/MTA_VERSION/${VERSION}/g" mta.yaml
 
 # Create destination directory
 mkdir -p "${DEST}"

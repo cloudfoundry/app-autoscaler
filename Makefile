@@ -8,6 +8,7 @@ DEST ?= /tmp/build
 TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
+AUTOSCALER_PLUGIN_VERSION ?= $(shell cf plugins --checksum 2>/dev/null | awk '/^AutoScaler/ {print $$2}')
 CI ?= false
 
 DEBUG := false
@@ -337,6 +338,14 @@ acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor bu
 	@tar -xzf /tmp/cf-cli.tgz -C build/acceptance/bin/
 	@chmod +x build/acceptance/bin/cf
 	@rm /tmp/cf-cli.tgz
+	# Download and bundle app-autoscaler-cli-plugin for linux_amd64
+	@if [ -z "$(AUTOSCALER_PLUGIN_VERSION)" ]; then \
+		echo "ERROR: AUTOSCALER_PLUGIN_VERSION is empty. Please install the AutoScaler CF plugin: cf install-plugin app-autoscaler-cli-plugin"; \
+		exit 1; \
+	fi
+	@echo "Downloading app-autoscaler-cli-plugin v$(AUTOSCALER_PLUGIN_VERSION) for linux_amd64..."
+	@curl -fsSL "https://github.com/cloudfoundry/app-autoscaler-cli-plugin/releases/download/v$(AUTOSCALER_PLUGIN_VERSION)/ascli-linux-amd64-$(AUTOSCALER_PLUGIN_VERSION)-release%2B0" -o build/acceptance/bin/app-autoscaler-plugin || { echo "ERROR: Failed to download app-autoscaler-plugin"; exit 1; }
+	@chmod +x build/acceptance/bin/app-autoscaler-plugin
 	# Create tarball
 	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
 
