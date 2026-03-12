@@ -264,7 +264,6 @@ clean: dbtasks.clean mta-build-clean scheduler.clean
 	@go clean -cache -testcache
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
-	@rm --force --recursive './mta.yaml'
 	@rm --force --recursive './build' 'fakes' 'test-certs' 'target' 'vendor'
 	@rm --force --recursive coverprofile.out*
 	@rm --force --recursive dbtasks/src/main/resources/*.db.changelog.y*ml
@@ -304,13 +303,18 @@ mta-logs:
 	cf dmol --mta com.github.cloudfoundry.app-autoscaler-release --last 1
 	vim mta-*
 
+# 🚧 To-do: Get "mta-build-clean" away from here as it is not strictly guaranteed to run before
+# the other dependencies. Instead we should rely on the dependencies being complete and updated
+# as needed.
 .PHONY: mta-build
-mta-build: mta-build-clean
+mta-build: mta-build-clean go-mod-vendor-mta vendor-changelogs
 	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
 .PHONY: mta-build-clean
 mta-build-clean:
-	rm --force --recursive mta_archives
+	@rm --force --recursive mta_archives
+	@rm --force --recursive './mta.yaml'
+	@rm --force '${DEST}/${MTAR_FILENAME}'
 
 .PHONY: clean-build
 clean-build: ## Clean the build directory
