@@ -173,51 +173,51 @@
         }
       }
     },
-    "cloudfoundry-cli@8.17.0": {
-      "last_modified": "2026-02-23T15:40:43Z",
-      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#cloudfoundry-cli",
+    "cloudfoundry-cli@8.17.1": {
+      "last_modified": "2026-03-03T08:03:20Z",
+      "resolved": "github:NixOS/nixpkgs/72b1d820cb0149b40a35aa077b4b6d60cd1b23c3#cloudfoundry-cli",
       "source": "devbox-search",
-      "version": "8.17.0",
+      "version": "8.17.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n2cj7611r65wzbfrac1dy0p1ivqq5cj5-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/72hb9g09qmdd3iszwmlmczn8blc8pwls-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n2cj7611r65wzbfrac1dy0p1ivqq5cj5-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/72hb9g09qmdd3iszwmlmczn8blc8pwls-cloudfoundry-cli-8.17.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/g0rdfqpi1x5xxbr7dvnxpknm74ga4fk0-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/r5vwnili1jkjlfqxwgds007ycsssx53a-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/g0rdfqpi1x5xxbr7dvnxpknm74ga4fk0-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/r5vwnili1jkjlfqxwgds007ycsssx53a-cloudfoundry-cli-8.17.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/9n273wf2f40r71xdfj7assyhk6x15ws6-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/vfi6dp1vqplwwn24808ivvcdqp5s00i6-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/9n273wf2f40r71xdfj7assyhk6x15ws6-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/vfi6dp1vqplwwn24808ivvcdqp5s00i6-cloudfoundry-cli-8.17.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0mdaipajw9isbkr2krybhr97ga3j628k-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/gsl8q2k7jnx0im7ngnb6pa082n358i54-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0mdaipajw9isbkr2krybhr97ga3j628k-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/gsl8q2k7jnx0im7ngnb6pa082n358i54-cloudfoundry-cli-8.17.1"
         }
       }
     },
@@ -293,51 +293,51 @@
         }
       }
     },
-    "credhub-cli@2.9.53": {
-      "last_modified": "2026-02-23T15:40:43Z",
-      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#credhub-cli",
+    "credhub-cli@2.9.54": {
+      "last_modified": "2026-03-03T08:03:20Z",
+      "resolved": "github:NixOS/nixpkgs/72b1d820cb0149b40a35aa077b4b6d60cd1b23c3#credhub-cli",
       "source": "devbox-search",
-      "version": "2.9.53",
+      "version": "2.9.54",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pg1jdx8vj80fh4bl24scx1b4rvrxh48x-credhub-cli-2.9.53",
+              "path": "/nix/store/33nz5485ir3bwwj2n14rw66rvsradwxw-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pg1jdx8vj80fh4bl24scx1b4rvrxh48x-credhub-cli-2.9.53"
+          "store_path": "/nix/store/33nz5485ir3bwwj2n14rw66rvsradwxw-credhub-cli-2.9.54"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5kd23xp3b5z2qr60yz05sjx6nd54xl14-credhub-cli-2.9.53",
+              "path": "/nix/store/y8ma9q5imyq70di3d7lci51qq95y3vsr-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5kd23xp3b5z2qr60yz05sjx6nd54xl14-credhub-cli-2.9.53"
+          "store_path": "/nix/store/y8ma9q5imyq70di3d7lci51qq95y3vsr-credhub-cli-2.9.54"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/b5rrrrqlkdxgmbm2krlnxnrn68p4bhs0-credhub-cli-2.9.53",
+              "path": "/nix/store/vvpb8kf9c7dmk2j1wqdl6nqq0z62wh5b-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/b5rrrrqlkdxgmbm2krlnxnrn68p4bhs0-credhub-cli-2.9.53"
+          "store_path": "/nix/store/vvpb8kf9c7dmk2j1wqdl6nqq0z62wh5b-credhub-cli-2.9.54"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/lqvnlwjcq2dpb0qzmbgq0wpwyzydm0i7-credhub-cli-2.9.53",
+              "path": "/nix/store/74yzakgrbwfazbaxrjlf21xll1nv26kp-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/lqvnlwjcq2dpb0qzmbgq0wpwyzydm0i7-credhub-cli-2.9.53"
+          "store_path": "/nix/store/74yzakgrbwfazbaxrjlf21xll1nv26kp-credhub-cli-2.9.54"
         }
       }
     },
