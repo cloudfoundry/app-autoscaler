@@ -5,9 +5,13 @@ set -eu -o pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 autoscaler_dir="${script_dir}/.."
-# shellcheck source=./vars.source.sh
+
+# Locally the subsequent shell-check-directives don't not work. However they are
+# needed as they are for CI/CD.
+
+# shellcheck source=./scripts/vars.source.sh
 source "${script_dir}/vars.source.sh"
-# shellcheck source=./common.sh
+# shellcheck source=./scripts/common.sh
 source "${script_dir}/common.sh"
 
 DEST="${DEST:-/tmp/build}"
