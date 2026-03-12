@@ -1,4 +1,6 @@
 #!/bin/bash
+# TODO: Maybe we could give orgs from PRs like three days before they are cleaned up,
+#       so your deployment from Friday is still around on Monday.
 
 set -euo pipefail
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
