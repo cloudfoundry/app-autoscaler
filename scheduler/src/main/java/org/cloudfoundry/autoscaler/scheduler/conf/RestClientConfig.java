@@ -269,6 +269,10 @@ public class RestClientConfig {
 
     @Override
     public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+      String issuersStr =
+          (issuers == null || issuers.length == 0)
+              ? "<none – server did not request a client cert>"
+              : java.util.Arrays.toString(issuers);
       String alias = delegate.chooseClientAlias(keyType, issuers, socket);
       if (alias != null) {
         X509Certificate[] chain = delegate.getCertificateChain(alias);
@@ -277,15 +281,17 @@ public class RestClientConfig {
                 ? chain[0].getSubjectX500Principal().getName()
                 : "<no chain>";
         debugLogger.info(
-            "[mTLS] Chose client alias '{}' with subject '{}' for key types {} to {}",
+            "[mTLS] Chose client alias '{}' with subject '{}' for key types {} to {} (server acceptable issuers: {})",
             alias,
             subject,
             java.util.Arrays.toString(keyType),
-            socket != null ? socket.getInetAddress() : "unknown");
+            socket != null ? socket.getInetAddress() : "unknown",
+            issuersStr);
       } else {
         debugLogger.info(
-            "[mTLS] No client alias available for key types {} – no client certificate will be sent",
-            java.util.Arrays.toString(keyType));
+            "[mTLS] No client alias available for key types {} (server acceptable issuers: {}) – no client certificate will be sent",
+            java.util.Arrays.toString(keyType),
+            issuersStr);
       }
       return alias;
     }
