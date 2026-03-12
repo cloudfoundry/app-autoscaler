@@ -1,64 +1,52 @@
 package app
 
 import (
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
-
-	ginzap "github.com/gin-contrib/zap"
-	"github.com/gin-gonic/gin"
-	"github.com/go-logr/zapr"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
-func Router(logger *zap.Logger, timewaster TimeWaster, memoryTest MemoryGobbler,
-	cpuTest CPUWaster, diskOccupier DiskOccupier, customMetricTest CustomMetricClient) *gin.Engine {
-	r := gin.New()
+// JSONResponse represents a JSON response structure
+type JSONResponse map[string]interface{}
 
-	otel.SetTracerProvider(sdktrace.NewTracerProvider())
-	otel.SetTextMapPropagator(propagation.TraceContext{})
-	r.Use(otelgin.Middleware("acceptance-tests-go-app"))
-
-	r.Use(ginzap.GinzapWithConfig(logger, &ginzap.Config{
-		TimeFormat: time.RFC3339,
-		UTC:        true,
-		Context: ginzap.Fn(func(c *gin.Context) []zapcore.Field {
-			fields := []zapcore.Field{}
-			// log CF ID
-			if requestID := c.Request.Header.Get("X-Vcap-Request-Id"); requestID != "" {
-				fields = append(fields, zap.String("vcap_request_id", requestID))
-			}
-			if passport := c.Request.Header.Get("SAP-PASSPORT"); passport != "" {
-				fields = append(fields, zap.String("sap_passport", passport))
-			}
-			// support opentelemetry trace ID
-			fields = append(fields, zap.String("w3c_trace-id", trace.SpanFromContext(c.Request.Context()).SpanContext().TraceID().String()))
-
-			return fields
-		}),
-	}))
-
-	r.Use(ginzap.RecoveryWithZap(logger, true))
-
-	logr := zapr.NewLogger(logger)
-
-	r.GET("/", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"name": "test-app"}) })
-	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
-	MemoryTests(logr, r.Group("/memory"), memoryTest)
-	ResponseTimeTests(logr, r.Group("/responsetime"), timewaster)
-	CPUTests(logr, r.Group("/cpu"), cpuTest)
-	DiskTest(r.Group("/disk"), diskOccupier)
-	CustomMetricsTests(logr, r.Group("/custom-metrics"), customMetricTest)
-	return r
+// writeJSON writes a JSON response with the given status code
+func writeJSON(w http.ResponseWriter, statusCode int, data JSONResponse) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	return json.NewEncoder(w).Encode(data)
 }
 
-func New(logger *zap.Logger, address string) *http.Server {
-	errorLog, _ := zap.NewStdLogAt(logger, zapcore.ErrorLevel)
+func Router(logger *slog.Logger, timewaster TimeWaster, memoryTest MemoryGobbler,
+	cpuTest CPUWaster, diskOccupier DiskOccupier, customMetricTest CustomMetricClient) http.Handler {
+	mux := http.NewServeMux()
+
+	// Root routes
+
+	// /{$} to match root path "/" exactly, see https://pkg.go.dev/net/http#hdr-Patterns-ServeMux
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		if err := writeJSON(w, http.StatusOK, JSONResponse{"name": "test-app"}); err != nil {
+			logger.Error("Failed to write JSON response", slog.Any("error", err))
+		}
+	})
+
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		if err := writeJSON(w, http.StatusOK, JSONResponse{"status": "ok"}); err != nil {
+			logger.Error("Failed to write JSON response", slog.Any("error", err))
+		}
+	})
+
+	// Register test endpoints
+	MemoryTests(logger, mux, memoryTest)
+	ResponseTimeTests(logger, mux, timewaster)
+	CPUTests(logger, mux, cpuTest)
+	DiskTest(logger, mux, diskOccupier)
+	CustomMetricsTests(logger, mux, customMetricTest)
+
+	return loggingMiddleware(logger)(mux)
+}
+
+func New(logger *slog.Logger, address string) *http.Server {
 	return &http.Server{
 		Addr: address,
 		Handler: Router(
@@ -72,6 +60,49 @@ func New(logger *zap.Logger, address string) *http.Server {
 		ReadTimeout:  5 * time.Second,
 		IdleTimeout:  2 * time.Second,
 		WriteTimeout: 30 * time.Second,
-		ErrorLog:     errorLog,
 	}
+}
+
+func loggingMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+
+			// Wrap ResponseWriter to capture status code
+			wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+			attrs := []slog.Attr{
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("remote_addr", r.RemoteAddr),
+				slog.String("user_agent", r.UserAgent()),
+			}
+
+			// Log Cloud Foundry (VCAP) request ID
+			if requestID := r.Header.Get("X-Vcap-Request-Id"); requestID != "" {
+				attrs = append(attrs, slog.String("vcap_request_id", requestID))
+			}
+
+			next.ServeHTTP(wrapped, r)
+
+			duration := time.Since(start)
+			attrs = append(attrs,
+				slog.Int("status_code", wrapped.statusCode),
+				slog.Duration("duration", duration),
+			)
+
+			logger.LogAttrs(r.Context(), slog.LevelInfo, "HTTP request", attrs...)
+		})
+	}
+}
+
+// responseWriter wraps http.ResponseWriter to capture status code for logging
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }

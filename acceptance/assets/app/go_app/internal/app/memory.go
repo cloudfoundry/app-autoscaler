@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -11,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/go-logr/logr"
 	"github.com/prometheus/procfs"
 )
 
@@ -38,61 +37,73 @@ type ListBasedMemoryGobbler struct {
 
 var _ MemoryGobbler = &ListBasedMemoryGobbler{}
 
-func MemoryTests(logger logr.Logger, r *gin.RouterGroup, memoryTest MemoryGobbler) *gin.RouterGroup {
-	r.GET("/:memoryMiB/:minutes", func(c *gin.Context) {
+func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbler) {
+	mux.HandleFunc("GET /memory/{memoryMiB}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
 		if memoryTest.IsRunning() {
-			Error(c, http.StatusConflict, "memory test is already running")
+			Errorf(logger, w, http.StatusConflict, "memory test is already running")
 			return
 		}
 		var memoryMiB int64
 		var minutes int64
 		var err error
-		memoryMiB, err = strconv.ParseInt(c.Param("memoryMiB"), 10, 64)
+		memoryMiB, err = strconv.ParseInt(r.PathValue("memoryMiB"), 10, 64)
 		if err != nil {
-			Error(c, http.StatusBadRequest, "invalid memoryMiB: %s", err.Error())
+			Errorf(logger, w, http.StatusBadRequest, "invalid memoryMiB: %s", err.Error())
 			return
 		}
-		if minutes, err = strconv.ParseInt(c.Param("minutes"), 10, 64); err != nil {
-			Error(c, http.StatusBadRequest, "invalid minutes: %s", err.Error())
+		minutes, err = strconv.ParseInt(r.PathValue("minutes"), 10, 64)
+		if err != nil {
+			Errorf(logger, w, http.StatusBadRequest, "invalid minutes: %s", err.Error())
+			return
+		}
+		if memoryMiB < 1 {
+			Errorf(logger, w, http.StatusBadRequest, "memoryMiB must be > 0")
+			return
+		}
+		if minutes < 1 {
+			Errorf(logger, w, http.StatusBadRequest, "minutes must be > 0")
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
-		logger := logger.WithValues("memoryMiB", memoryMiB, "duration", duration)
+		numBytes := memoryMiB * Mebi
+		logger.Info("Starting memory test",
+			"memoryMiB", memoryMiB,
+			"minutes", minutes,
+			"bytes", numBytes)
 		go func() {
 			logMemoryUsage(logger, "before memory test")
-			memoryTest.UseMemory(memoryMiB * Mebi)
+			memoryTest.UseMemory(numBytes)
 			logMemoryUsage(logger, "after allocating memory")
 			memoryTest.Sleep(duration)
 			memoryTest.StopTest()
 		}()
-		c.JSON(http.StatusOK, gin.H{"memoryMiB": memoryMiB, "minutes": minutes})
-	})
-
-	r.GET("/close", func(c *gin.Context) {
-		if memoryTest.IsRunning() {
-			logger.Info("stop mem test")
-			memoryTest.StopTest()
-			logMemoryUsage(logger, "after freeing memory")
-			c.JSON(http.StatusOK, gin.H{"status": "close memory test"})
-		} else {
-			Error(c, http.StatusBadRequest, "memory test not running")
+		if err := writeJSON(w, http.StatusOK, JSONResponse{
+			"memoryMiB": memoryMiB,
+			"minutes":   minutes,
+		}); err != nil {
+			logger.Error("Failed to write JSON response", slog.Any("error", err))
 		}
 	})
-	return r
+
+	mux.HandleFunc("GET /memory/close", func(w http.ResponseWriter, r *http.Request) {
+		if !memoryTest.IsRunning() {
+			Errorf(logger, w, http.StatusConflict, "memory test is not running")
+			return
+		}
+		memoryTest.StopTest()
+		logMemoryUsage(logger, "after freeing memory")
+		if err := writeJSON(w, http.StatusOK, JSONResponse{"status": "close memory test"}); err != nil {
+			logger.Error("Failed to write JSON response", slog.Any("error", err))
+		}
+	})
 }
 
-func logMemoryUsage(logger logr.Logger, action string) {
-	logger = logger.WithValues("action", action)
-	memoryUsage, err := getTotalMemoryUsage()
-	if err == nil {
-		logger.Info("memory usage", "usage", memoryUsage/Mebi)
-	} else {
-		logger.Error(err, "could not determine memory usage")
+// Errorf writes an error response
+func Errorf(logger *slog.Logger, w http.ResponseWriter, statusCode int, format string, args ...any) {
+	message := fmt.Sprintf(format, args...)
+	if err := writeJSON(w, statusCode, JSONResponse{"error": JSONResponse{"description": message}}); err != nil {
+		logger.Error("Failed to write JSON error response", slog.Any("error", err))
 	}
-}
-
-func Error(c *gin.Context, status int, descriptionf string, args ...any) {
-	c.JSON(status, gin.H{"error": gin.H{"description": fmt.Sprintf(descriptionf, args...)}})
 }
 
 const chunkSize = 4 * Kibi
@@ -130,6 +141,15 @@ func (m *ListBasedMemoryGobbler) StopTest() {
 	runtime.GC()
 }
 
+func logMemoryUsage(logger *slog.Logger, action string) {
+	logAction := slog.String("action", action)
+	memoryUsage, err := getTotalMemoryUsage()
+	if err == nil {
+		logger.Info("memory usage", "usage", memoryUsage/Mebi, logAction)
+	} else {
+		logger.Error("could not determine memory usage", slog.Any("error", err), logAction)
+	}
+}
 func getTotalMemoryUsage() (uint64, error) {
 	fs, err := procfs.NewFS("/proc")
 	if err != nil {
