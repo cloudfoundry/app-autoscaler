@@ -351,7 +351,7 @@ func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, _ *http.Request, _ 
 		return
 	}
 
-	_, err = w.Write(info)
+	_, err = w.Write(info) // #nosec G705 -- info is read from a server-config file path, not user input
 	if err != nil {
 		h.logger.Error(ActionWriteBody, err)
 	}
