@@ -57,7 +57,6 @@ func LoadAndValidateConfig[T ConfigWithLogging](path string, vcapConfig configut
 }
 
 func SetupEnvironment() {
-	helpers.AssertFIPSMode()
 	helpers.SetupOpenTelemetry()
 }
 
