@@ -28,7 +28,7 @@ case "$1" in
     ;;
   postgres)
     DB_USER="${DB_USER:-postgres}"
-    DB_PASSWORD="${DB_PASSWORD:-postgres}"
+    DB_PASSWORD="${DB_PASSWORD:-postgres-fips-pass}"
     URL="jdbc:postgresql://${DB_HOST}/autoscaler"
     DRIVER="org.postgresql.Driver"
     PASSWORD_OPT="--password=${DB_PASSWORD}"

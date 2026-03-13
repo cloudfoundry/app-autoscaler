@@ -360,12 +360,29 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
     Map<String, Object> sslConfig = new java.util.HashMap<>();
 
     try {
-      String caCert = environment.getProperty("CF_INSTANCE_CA_CERT");
-      String instanceCert = environment.getProperty("CF_INSTANCE_CERT");
-      String instanceKey = environment.getProperty("CF_INSTANCE_KEY");
+      // CF_INSTANCE_CERT, CF_INSTANCE_KEY, and CF_INSTANCE_CA_CERT are FILE PATHS,
+      // not inline PEM content. See:
+      // https://docs.cloudfoundry.org/devguide/deploy-apps/instance-identity.html
+      String caCertPath = environment.getProperty("CF_INSTANCE_CA_CERT");
+      String instanceCertPath = environment.getProperty("CF_INSTANCE_CERT");
+      String instanceKeyPath = environment.getProperty("CF_INSTANCE_KEY");
 
-      if (caCert != null && instanceCert != null && instanceKey != null) {
-        logger.info("Found CF instance certificates, configuring SSL bundle");
+      if (caCertPath != null && instanceCertPath != null && instanceKeyPath != null) {
+        logger.info(
+            "Found CF instance certificate paths: cert={}, key={}, ca={}",
+            instanceCertPath,
+            instanceKeyPath,
+            caCertPath);
+
+        // Read file contents — Spring Boot PEM SSL bundles expect inline PEM content
+        String caCert = readFileContent(caCertPath);
+        String instanceCert = readFileContent(instanceCertPath);
+        String instanceKey = readFileContent(instanceKeyPath);
+
+        if (caCert == null || instanceCert == null || instanceKey == null) {
+          logger.error("Failed to read one or more CF instance certificate files");
+          return sslConfig;
+        }
 
         // Configure SSL bundle for the scalingengine client
         Map<String, Object> sslBundle = new java.util.HashMap<>();
@@ -401,6 +418,19 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
     }
 
     return sslConfig;
+  }
+
+  /**
+   * Reads file content from a path. CF_INSTANCE_* environment variables contain file paths, but
+   * Spring Boot PEM SSL bundles expect inline PEM content.
+   */
+  private String readFileContent(String path) {
+    try {
+      return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)));
+    } catch (Exception e) {
+      logger.error("Failed to read file {}: {}", path, e.getMessage());
+      return null;
+    }
   }
 
   private Map<String, Object> flattenConfiguration(String prefix, Map<String, Object> config) {
