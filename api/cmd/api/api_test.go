@@ -141,7 +141,6 @@ var _ = Describe("Api", func() {
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 		Context("When a request comes to broker catalog", func() {
-
 			It("succeeds with a 200", func() {
 				brokerURL.Path = "/v2/catalog"
 				req, err := http.NewRequest(http.MethodGet, brokerURL.String(), nil)

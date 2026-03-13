@@ -230,11 +230,11 @@ func DefaultGolangAPITestConfig() apiConfig.Config {
 				//	BrokerPasswordHash: []byte("$2a$10$HZOfLweDfjNfe2h3KItdg.26BxNU6TVKMDwhJMNPPIWpj7T2HCVbW"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password2")'
 			},
 		},
-		CatalogPath:          "../servicebroker/config/catalog.json",
-		CatalogSchemaPath:    "../api/schemas/catalog.schema.json",
-		PolicySchemaPath:     "../api/policyvalidator/json-schema/meta.schema.json",
-		InfoFilePath:         "../api/exampleconfig/catalog-example.json",
-		DashboardRedirectURI: "",
+		CatalogPath:              "../servicebroker/config/catalog.json",
+		CatalogSchemaPath:        "../api/schemas/catalog.schema.json",
+		BindingRequestSchemaPath: "../api/broker/binding_request_parser/meta.schema.json",
+		InfoFilePath:             "../api/exampleconfig/catalog-example.json",
+		DashboardRedirectURI:     "",
 		CF: cf.Config{
 			ClientID: "admin",
 			Secret:   "admin",

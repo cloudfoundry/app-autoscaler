@@ -110,7 +110,7 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-file
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
 	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
-	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './generate-fakes.go'
 	rm '${app-fakes-dir}/doc.go' # Now other files are there.
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
@@ -171,8 +171,10 @@ build-%: generate-openapi-generated-clients-and-servers
 	@echo "# building $*"
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
+.PHONY: build
 build: $(addprefix build-,$(binaries))
 
+.PHONY: build_tests
 build_tests: $(addprefix build_test-,$(test_dirs))
 
 build_test-%: generate-fakes
@@ -187,18 +189,23 @@ build_test-%: generate-fakes
 		 go test -c -o $${test_file} $${package};\
 	 done;
 
+.PHONY: check
 check: fmt lint build test
 
+.PHONY: test
 test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
+.PHONY: autoscaler.test
 autoscaler.test: check-db_type init-db test-certs generate-openapi-generated-clients-and-servers generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
+.PHONY: test-autoscaler-suite
 test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} ${TEST}
 
+.PHONY: test-acceptance-unit
 test-acceptance-unit:
 	@make --directory=acceptance test-unit
 
@@ -253,21 +260,21 @@ vendor-changelogs:
 	cp $(MAKEFILE_DIR)/scalingengine/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/scheduler/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
-clean: dbtasks.clean scheduler.clean
+clean: dbtasks.clean mta-build-clean scheduler.clean
 	@echo "# cleaning autoscaler"
+	@go clean -cache -testcache
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
-	@go clean -cache -testcache
-	@rm --force --recursive 'fakes'
-	@rm --force --recursive 'test-certs'
-	@rm --force --recursive 'target'
-	@rm --force --recursive 'vendor'
+	@rm --force --recursive './build' 'fakes' 'test-certs' 'target' 'vendor'
+	@rm --force --recursive coverprofile.out*
+	@rm --force --recursive dbtasks/src/main/resources/*.db.changelog.y*ml
+	@make --directory='./acceptance' clean
 
 dbtasks.clean:
 	pushd dbtasks; mvn -B clean; popd
 
 scheduler.clean:
-	pushd scheduler; mvn -B --quiet clean; popd
+	@make --directory='scheduler' clean
 
 schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
 flattened-schema-file := ${DEST}/bind-request.schema.json
@@ -297,11 +304,18 @@ mta-logs:
 	cf dmol --mta com.github.cloudfoundry.app-autoscaler-release --last 1
 	vim mta-*
 
-mta-build: mta-build-clean
+# 🚧 To-do: Get "mta-build-clean" away from here as it is not strictly guaranteed to run before
+# the other dependencies. Instead we should rely on the dependencies being complete and updated
+# as needed.
+.PHONY: mta-build
+mta-build: mta-build-clean go-mod-vendor-mta vendor-changelogs
 	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
+.PHONY: mta-build-clean
 mta-build-clean:
-	rm -rf mta_archives
+	@rm --force --recursive mta_archives
+	@rm --force --recursive './mta.yaml'
+	@rm --force '${DEST}/${MTAR_FILENAME}'
 
 .PHONY: clean-build
 clean-build: ## Clean the build directory
