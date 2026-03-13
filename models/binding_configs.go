@@ -53,40 +53,6 @@ func NewBindingConfig(
 	}
 }
 
-// // BindingConfigFromServiceBinding creates a new BindingConfig from an existing ServiceBinding.
-// //
-// // Parameters:
-// //   - serviceBinding: The ServiceBinding instance from which to extract configuration data.
-// //     Must not be nil. The AppID field is used as the application GUID, and the
-// //     CustomMetricsStrategy field determines the metrics submission strategy.
-// //
-// // Returns:
-// //   - *BindingConfig: A newly created BindingConfig instance with the extracted configuration.
-// //     Returns nil if an error occurs during processing.
-// //   - error: An InvalidArgumentError if serviceBinding is nil, or a formatting error if the
-// //     CustomMetricsStrategy contains an unsupported value.
-// //
-// // Edge cases:
-// //   - If serviceBinding is nil, returns an InvalidArgumentError with detailed parameter information.
-// //   - If CustomMetricsStrategy is empty string, defaults to CustomMetricsSameApp strategy.
-// //   - If CustomMetricsStrategy contains an unsupported value, returns a descriptive error.
-// func BindingConfigFromServiceBinding(serviceBinding *ServiceBinding) (*BindingConfig, error) {
-//	var bindingConfig *BindingConfig
-
-//	if serviceBinding == nil {
-//		err := InvalidArgumentError{
-//			Param: "serviceBinding",
-//			Value: serviceBinding,
-//			Msg:   "serviceBinding must not be nil, see function-contract;",
-//		}
-//		return nil, &err
-//	}
-
-//	bindingConfig = NewBindingConfig(GUID(serviceBinding.AppID), nil)
-
-//	return bindingConfig, nil
-// }
-
 // GetAppGUID returns the GUID of the application associated with this binding.
 func (bc *BindingConfig) GetAppGUID() GUID {
 	return bc.appGUID
@@ -99,60 +65,6 @@ func (bc *BindingConfig) GetCustomMetricsBindingAuth() *CustomMetricsBindingAuth
 		return nil
 	}
 	return &bc.customMetricsBindingAuth
-}
-
-// ---------- Deserialization and serialization methods for BindingConfig ----------
-
-// Json-Serialized example of a BindingConfig:
-// {
-//   "app_guid": "550e8400-e29b-41d4-a716-446655440000",
-//   "credential-type": "binding-secret"
-// }
-
-type bindingConfigJsonRawRepr struct {
-	AppGUID GUID `json:"app_guid"`
-
-	// Omit if default strategy is used
-	CmAuthScheme *CustomMetricsBindingAuthScheme `json:"credential-type,omitempty"`
-}
-
-func (bc BindingConfig) ToRawJSON() (json.RawMessage, error) {
-	var authScheme *CustomMetricsBindingAuthScheme
-	if bc.useDefaultAuthScheme {
-		authScheme = nil // The default-scheme does not need to be serialized.
-	} else {
-		authScheme = &bc.customMetricsBindingAuth
-	}
-
-	bindingConfigRaw := bindingConfigJsonRawRepr{
-		AppGUID:      bc.appGUID,
-		CmAuthScheme: authScheme,
-	}
-
-	data, err := json.Marshal(bindingConfigRaw)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal BindingConfig: %w", err)
-	}
-	return json.RawMessage(data), nil
-}
-
-func BindingConfigFromRawJSON(data json.RawMessage) (*BindingConfig, error) {
-	if len(data) <= 0 {
-		msg := "data must not be empty, see function-contract;"
-		return nil, &InvalidArgumentError{
-			Param: "data",
-			Value: data,
-			Msg:   msg,
-		}
-	}
-
-	var bindingConfigRaw bindingConfigJsonRawRepr
-	if err := json.Unmarshal(data, &bindingConfigRaw); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BindingConfig: %w", err)
-	}
-
-	bindingConfig := NewBindingConfig(bindingConfigRaw.AppGUID, bindingConfigRaw.CmAuthScheme)
-	return bindingConfig, nil
 }
 
 func (bc BindingConfig) String() string {
