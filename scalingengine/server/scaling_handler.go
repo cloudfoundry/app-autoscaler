@@ -156,7 +156,7 @@ func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err = w.Write(body)
+	_, err = w.Write(body) // #nosec G705 -- JSON-marshaled response, not rendered as HTML
 	if err != nil {
 		logger.Error("failed-to-write-body", err)
 	}

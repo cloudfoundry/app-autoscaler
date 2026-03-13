@@ -53,7 +53,7 @@ jobs:
       # after suspension and resumption, backend VMs become unreachable by the load balancer and require recreation.
       - name: recreate router VM
         run: |
-          pushd ${GITHUB_WORKSPACE}
+          pushd "${GITHUB_WORKSPACE}"
             eval "$("scripts/bbl-print-env.sh" "${GITHUB_WORKSPACE}/app-autoscaler-env-bbl-state/bbl-state")"
             bosh recreate router -d cf -n
           popd

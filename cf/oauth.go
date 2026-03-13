@@ -89,7 +89,7 @@ func (c *CtxClient) getUserId(ctx context.Context, userToken string) (UserId, er
 	req.Header.Set("Content-Type", "application/json")
 	c.setUserAgent(req)
 
-	resp, err := c.Client.Do(req)
+	resp, err := c.Client.Do(req) // #nosec G704 -- URL host from CF API endpoints, not user input
 	if err != nil {
 		c.logger.Error("Failed to get user info, request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
