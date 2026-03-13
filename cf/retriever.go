@@ -134,7 +134,7 @@ func (r AuthenticatedClient) SendRequest(ctx context.Context, req *http.Request)
 
 func (c *CtxClient) SendRequest(_ context.Context, req *http.Request) (*http.Response, error) {
 	c.setUserAgent(req)
-	resp, err := c.retryClient.Do(req)
+	resp, err := c.retryClient.Do(req) // #nosec G704 -- central CF API client, URLs from internal config
 	if err != nil {
 		return resp, err
 	}

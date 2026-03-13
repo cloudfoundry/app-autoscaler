@@ -38,7 +38,7 @@ func (s ScheduleSynchronizer) Operate(ctx context.Context) {
 		s.logger.Error("failed-to-create-sync-scheduler-request", err)
 	}
 
-	resp, err := s.client.Do(req)
+	resp, err := s.client.Do(req) // #nosec G704 -- URL from internal config, not user input
 	if err != nil {
 		s.logger.Error("failed-to-send-sync-scheduler-request", err)
 		return

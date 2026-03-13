@@ -94,8 +94,21 @@ linters:
     rules:
       - linters:
           - dupl
+          - gosec
           - mnd
         path: _test\.go
+      - linters:
+          - gosec
+        text: "G101" # Excluded, taken care by GitHub Secret Scanning
+      - linters:
+          - gosec
+        text: "G117" # Excluded, taken care by GitHub Secret Scanning
+      - linters:
+          - gosec
+        path: acceptance/
+      - linters:
+          - gosec
+        path: integration/
     paths:
       - third_party$
       - builtin$

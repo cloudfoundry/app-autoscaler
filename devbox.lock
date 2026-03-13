@@ -173,51 +173,51 @@
         }
       }
     },
-    "cloudfoundry-cli@8.17.0": {
-      "last_modified": "2026-02-23T15:40:43Z",
-      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#cloudfoundry-cli",
+    "cloudfoundry-cli@8.17.1": {
+      "last_modified": "2026-03-03T08:03:20Z",
+      "resolved": "github:NixOS/nixpkgs/72b1d820cb0149b40a35aa077b4b6d60cd1b23c3#cloudfoundry-cli",
       "source": "devbox-search",
-      "version": "8.17.0",
+      "version": "8.17.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n2cj7611r65wzbfrac1dy0p1ivqq5cj5-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/72hb9g09qmdd3iszwmlmczn8blc8pwls-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n2cj7611r65wzbfrac1dy0p1ivqq5cj5-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/72hb9g09qmdd3iszwmlmczn8blc8pwls-cloudfoundry-cli-8.17.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/g0rdfqpi1x5xxbr7dvnxpknm74ga4fk0-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/r5vwnili1jkjlfqxwgds007ycsssx53a-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/g0rdfqpi1x5xxbr7dvnxpknm74ga4fk0-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/r5vwnili1jkjlfqxwgds007ycsssx53a-cloudfoundry-cli-8.17.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/9n273wf2f40r71xdfj7assyhk6x15ws6-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/vfi6dp1vqplwwn24808ivvcdqp5s00i6-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/9n273wf2f40r71xdfj7assyhk6x15ws6-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/vfi6dp1vqplwwn24808ivvcdqp5s00i6-cloudfoundry-cli-8.17.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0mdaipajw9isbkr2krybhr97ga3j628k-cloudfoundry-cli-8.17.0",
+              "path": "/nix/store/gsl8q2k7jnx0im7ngnb6pa082n358i54-cloudfoundry-cli-8.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0mdaipajw9isbkr2krybhr97ga3j628k-cloudfoundry-cli-8.17.0"
+          "store_path": "/nix/store/gsl8q2k7jnx0im7ngnb6pa082n358i54-cloudfoundry-cli-8.17.1"
         }
       }
     },
@@ -293,51 +293,175 @@
         }
       }
     },
-    "credhub-cli@2.9.53": {
-      "last_modified": "2026-02-23T15:40:43Z",
-      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#credhub-cli",
+    "credhub-cli@2.9.54": {
+      "last_modified": "2026-03-03T08:03:20Z",
+      "resolved": "github:NixOS/nixpkgs/72b1d820cb0149b40a35aa077b4b6d60cd1b23c3#credhub-cli",
       "source": "devbox-search",
-      "version": "2.9.53",
+      "version": "2.9.54",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pg1jdx8vj80fh4bl24scx1b4rvrxh48x-credhub-cli-2.9.53",
+              "path": "/nix/store/33nz5485ir3bwwj2n14rw66rvsradwxw-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pg1jdx8vj80fh4bl24scx1b4rvrxh48x-credhub-cli-2.9.53"
+          "store_path": "/nix/store/33nz5485ir3bwwj2n14rw66rvsradwxw-credhub-cli-2.9.54"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5kd23xp3b5z2qr60yz05sjx6nd54xl14-credhub-cli-2.9.53",
+              "path": "/nix/store/y8ma9q5imyq70di3d7lci51qq95y3vsr-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5kd23xp3b5z2qr60yz05sjx6nd54xl14-credhub-cli-2.9.53"
+          "store_path": "/nix/store/y8ma9q5imyq70di3d7lci51qq95y3vsr-credhub-cli-2.9.54"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/b5rrrrqlkdxgmbm2krlnxnrn68p4bhs0-credhub-cli-2.9.53",
+              "path": "/nix/store/vvpb8kf9c7dmk2j1wqdl6nqq0z62wh5b-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/b5rrrrqlkdxgmbm2krlnxnrn68p4bhs0-credhub-cli-2.9.53"
+          "store_path": "/nix/store/vvpb8kf9c7dmk2j1wqdl6nqq0z62wh5b-credhub-cli-2.9.54"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/lqvnlwjcq2dpb0qzmbgq0wpwyzydm0i7-credhub-cli-2.9.53",
+              "path": "/nix/store/74yzakgrbwfazbaxrjlf21xll1nv26kp-credhub-cli-2.9.54",
               "default": true
             }
           ],
-          "store_path": "/nix/store/lqvnlwjcq2dpb0qzmbgq0wpwyzydm0i7-credhub-cli-2.9.53"
+          "store_path": "/nix/store/74yzakgrbwfazbaxrjlf21xll1nv26kp-credhub-cli-2.9.54"
+        }
+      }
+    },
+    "curl@latest": {
+      "last_modified": "2025-12-05T15:03:55Z",
+      "resolved": "github:NixOS/nixpkgs/a672be65651c80d3f592a89b3945466584a22069#curl",
+      "source": "devbox-search",
+      "version": "8.17.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "bin",
+              "path": "/nix/store/qfwqcndy8bji6xww0gizclf2nqi2qpph-curl-8.17.0-bin",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/rk815zvrhwzbi7c6d589v2mhxzyzb400-curl-8.17.0-man",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/ydp55g2mbd6rk6lfw0krkk3jwgdiqj5d-curl-8.17.0-dev"
+            },
+            {
+              "name": "devdoc",
+              "path": "/nix/store/8s884m82fmrbiyz8malglqc4sd632dkc-curl-8.17.0-devdoc"
+            },
+            {
+              "name": "out",
+              "path": "/nix/store/yxv8fxaz0fyhc31dv3rz89kc50zw5hgj-curl-8.17.0"
+            }
+          ],
+          "store_path": "/nix/store/qfwqcndy8bji6xww0gizclf2nqi2qpph-curl-8.17.0-bin"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "bin",
+              "path": "/nix/store/4x19j6zihdl6pya63xs8g360f2r614sx-curl-8.17.0-bin",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/b29qbmbfvzkm34k0jnj8ykqg2gzj3rdy-curl-8.17.0-man",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/5hmbdk99knmbg8b0fzh96bv6bkcf6v5i-curl-8.17.0-debug"
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/iqs9mjscns3h5npgkrhgr5xa7qzwd0si-curl-8.17.0-dev"
+            },
+            {
+              "name": "devdoc",
+              "path": "/nix/store/1fwncv08c8g78k3hj3cj375vx92ndrp8-curl-8.17.0-devdoc"
+            },
+            {
+              "name": "out",
+              "path": "/nix/store/b0a6qc92vybjiggh0kg387cg0zp3kl6j-curl-8.17.0"
+            }
+          ],
+          "store_path": "/nix/store/4x19j6zihdl6pya63xs8g360f2r614sx-curl-8.17.0-bin"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "bin",
+              "path": "/nix/store/w2336wv560g1n58cwashmmczdn3bfkq1-curl-8.17.0-bin",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/i6xmhcan8g4abda7ivv20nvwxrsssjqj-curl-8.17.0-man",
+              "default": true
+            },
+            {
+              "name": "devdoc",
+              "path": "/nix/store/ipa7v9z7pjcnnv0fmdya1fldcxv0a28z-curl-8.17.0-devdoc"
+            },
+            {
+              "name": "out",
+              "path": "/nix/store/x9gyg634fi8mgcyay9mqa1ral7xg72fm-curl-8.17.0"
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/39zfdgq9kg3mb4sycf8pj4pdssrzki6c-curl-8.17.0-dev"
+            }
+          ],
+          "store_path": "/nix/store/w2336wv560g1n58cwashmmczdn3bfkq1-curl-8.17.0-bin"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "bin",
+              "path": "/nix/store/0rfz69vp1nl0q2hxzig20hc60sk72z62-curl-8.17.0-bin",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/ijd0yybyzwm98d3q6x7a9cyixgxk0i5d-curl-8.17.0-man",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/h1fxw0xrifxvbhcp7b8hxsgirxxxfzav-curl-8.17.0-debug"
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/ikmdk37frjdblkba3wl3xws2wwgln17x-curl-8.17.0-dev"
+            },
+            {
+              "name": "devdoc",
+              "path": "/nix/store/jm6irg81cc0hqg43l39lkxr6pb0w2xk5-curl-8.17.0-devdoc"
+            },
+            {
+              "name": "out",
+              "path": "/nix/store/8idis3j5l13c3x74jl8xly0k4qyk9mx6-curl-8.17.0"
+            }
+          ],
+          "store_path": "/nix/store/0rfz69vp1nl0q2hxzig20hc60sk72z62-curl-8.17.0-bin"
         }
       }
     },
@@ -953,51 +1077,51 @@
         }
       }
     },
-    "golangci-lint@2.9.0": {
-      "last_modified": "2026-02-11T21:01:36Z",
-      "resolved": "github:NixOS/nixpkgs/2343bbb58f99267223bc2aac4fc9ea301a155a16#golangci-lint",
+    "golangci-lint@2.10.1": {
+      "last_modified": "2026-02-23T15:40:43Z",
+      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#golangci-lint",
       "source": "devbox-search",
-      "version": "2.9.0",
+      "version": "2.10.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/d58cy4knp90177kgyjw76qlgxwrmz39r-golangci-lint-2.9.0",
+              "path": "/nix/store/1rrjjclzxlr6f1ivb6l74vq1n1g1lki8-golangci-lint-2.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/d58cy4knp90177kgyjw76qlgxwrmz39r-golangci-lint-2.9.0"
+          "store_path": "/nix/store/1rrjjclzxlr6f1ivb6l74vq1n1g1lki8-golangci-lint-2.10.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0pmkfq41ay1hdz64lkvfqxyfd41ir1k6-golangci-lint-2.9.0",
+              "path": "/nix/store/ri4b9yqars42sc3hwwa5w81w91h13lm8-golangci-lint-2.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0pmkfq41ay1hdz64lkvfqxyfd41ir1k6-golangci-lint-2.9.0"
+          "store_path": "/nix/store/ri4b9yqars42sc3hwwa5w81w91h13lm8-golangci-lint-2.10.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/c2aa1drrmj4ahhcg87nm2arlh9gv4s5y-golangci-lint-2.9.0",
+              "path": "/nix/store/qvvg1rv8b4m4qyvqh40zc4nfa72vyzlw-golangci-lint-2.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/c2aa1drrmj4ahhcg87nm2arlh9gv4s5y-golangci-lint-2.9.0"
+          "store_path": "/nix/store/qvvg1rv8b4m4qyvqh40zc4nfa72vyzlw-golangci-lint-2.10.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/z4hziw97m0z1zlrn27pyk53s13czn1gi-golangci-lint-2.9.0",
+              "path": "/nix/store/ziv6x93wkd587qji6z0648050g0r9qjn-golangci-lint-2.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/z4hziw97m0z1zlrn27pyk53s13czn1gi-golangci-lint-2.9.0"
+          "store_path": "/nix/store/ziv6x93wkd587qji6z0648050g0r9qjn-golangci-lint-2.10.1"
         }
       }
     },

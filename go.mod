@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
 	code.cloudfoundry.org/lager/v3 v3.61.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260309070516-f7b040dff31c
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260309204013-94e3a5f5a6b4
 	code.cloudfoundry.org/tlsconfig v0.46.0
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -37,10 +37,10 @@ require (
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.57.0
-	go.opentelemetry.io/otel v1.39.0
-	go.opentelemetry.io/otel/metric v1.39.0
-	go.opentelemetry.io/otel/sdk v1.39.0
-	go.opentelemetry.io/otel/trace v1.39.0
+	go.opentelemetry.io/otel v1.40.0
+	go.opentelemetry.io/otel/metric v1.40.0
+	go.opentelemetry.io/otel/sdk v1.40.0
+	go.opentelemetry.io/otel/trace v1.40.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
 	golang.org/x/crypto v0.48.0
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
@@ -48,7 +48,7 @@ require (
 	google.golang.org/grpc v1.79.2
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260226221140-a57be14db171
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260311181403-84a4fc48630c
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 // indirect

@@ -48,7 +48,7 @@ jobs:
             echo "release_url=$(echo "$RELEASE_INFO" | jq -r '.url')"
             # Get the actual commit SHA that was just pushed (the version bump commit)
             echo "commit_sha=$(git rev-parse HEAD)"
-          } >> $GITHUB_OUTPUT
+          } >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
 
