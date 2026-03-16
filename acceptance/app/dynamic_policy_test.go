@@ -441,7 +441,7 @@ func concurrentHttpGet(count int, url string) {
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, //nolint:all
+				InsecureSkipVerify: true,
 			},
 		},
 	}
