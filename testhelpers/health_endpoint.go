@@ -15,7 +15,7 @@ func CheckHealthAuth(t GinkgoTInterface, client *http.Client, url string, userna
 
 	req.SetBasicAuth(username, password)
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) // #nosec G704 -- test helper, URL from test setup
 	Expect(err).NotTo(HaveOccurred())
 
 	defer resp.Body.Close()

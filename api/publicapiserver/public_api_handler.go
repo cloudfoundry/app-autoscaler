@@ -179,7 +179,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, "Error building response")
 		return
 	}
-	_, err = w.Write(responseJson)
+	_, err = w.Write(responseJson) // #nosec G705 -- JSON marshaled from struct, not user input
 	if err != nil {
 		h.logger.Error("Failed to write body", err)
 	}
@@ -290,9 +290,9 @@ func (h *PublicApiHandler) proxyRequest(logger lager.Logger, appId string, metri
 	}
 
 	aUrl := h.conf.EventGenerator.EventGeneratorUrl + path.RequestURI() + "?" + parameters.Encode()
-	req, _ = http.NewRequest("GET", aUrl, nil)
+	req, _ = http.NewRequest("GET", aUrl, nil) // #nosec G704 -- URL host from internal config, path from validated route params
 
-	resp, err := h.eventGeneratorClient.Do(req)
+	resp, err := h.eventGeneratorClient.Do(req) // #nosec G704 -- URL host from internal config, path from validated route params
 	if err != nil {
 		logger.Error("Failed to retrieve "+requestDescription, err, lager.Data{"url": aUrl})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving "+requestDescription)
@@ -344,14 +344,14 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 }
 
 func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
-	info, err := os.ReadFile(h.conf.InfoFilePath)
+	info, err := os.ReadFile(h.conf.InfoFilePath) // #nosec G703 -- path from server config, not user input
 	if err != nil {
 		h.logger.Error("Failed to info file", err, lager.Data{"info-file-path": h.conf.InfoFilePath})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load info")
 		return
 	}
 
-	_, err = w.Write(info)
+	_, err = w.Write(info) // #nosec G705 -- content from server config file, not user input
 	if err != nil {
 		h.logger.Error(ActionWriteBody, err)
 	}

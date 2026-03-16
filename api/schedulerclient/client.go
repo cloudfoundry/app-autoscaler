@@ -50,7 +50,7 @@ func (s *Client) CreateOrUpdateSchedule(ctx context.Context, appId string, polic
 		return err
 	}
 
-	resp, err := s.httpClient.Do(req)
+	resp, err := s.httpClient.Do(req) // #nosec G704 -- URL built from internal scheduler config, not user input
 	if err != nil {
 		logger.Error("Failed to do request to scheduler", err, lager.Data{"policy": policy})
 		return err
@@ -114,7 +114,7 @@ func (s *Client) DeleteSchedule(ctx context.Context, appId string) error {
 		return err
 	}
 
-	resp, err := s.httpClient.Do(req)
+	resp, err := s.httpClient.Do(req) // #nosec G704 -- URL built from internal scheduler config, not user input
 	if err != nil {
 		s.logger.Error("Failed to do request to scheduler", err, lager.Data{"appId": appId})
 		return err
