@@ -67,7 +67,6 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
-      GOFIPS140: v1.0.0
       GOTOOLCHAIN: "local"
       GOVERSION: go1.25
     build-parameters:
@@ -93,7 +92,6 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/cmd/eventgenerator
-      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.25
     build-parameters:
@@ -118,7 +116,6 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
-      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.25
     build-parameters:
@@ -144,7 +141,6 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/cmd/operator
-      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.25
     build-parameters:
@@ -169,7 +165,6 @@ modules:
     properties:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/cmd/scalingengine
-      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.25
     build-parameters:
@@ -225,7 +220,6 @@ modules:
       NODES: 3
       SKIP_TEARDOWN: false
       GINKGO_OPTS: ""
-      GOFIPS140: v1.0.0
       GOTOOLCHAIN: local
       GOVERSION: go1.25
     build-parameters:
