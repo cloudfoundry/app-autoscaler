@@ -574,56 +574,8 @@ func (b *Broker) Bind(
 	}
 
 	appScalingConfig, err := b.bindingReqParser.Parse(string(details.RawParameters), appGuidFromCloudCtl)
-
-	var schemaErr *policyvalidator.ValidationErrors // 🚧 To-do: Check when we can remove this!
-	var jsonSchemaErr *brParserTypes.JsonSchemaError
-	var appGuidErr *brParserTypes.BindReqNoAppGuid
-	switch {
-	case errors.As(err, &schemaErr): // 🚧 To-do: Check when we can remove this!
-		resultsJson, err := json.Marshal(schemaErr)
-		if err != nil {
-			serialisationErr := &models.InvalidArgumentError{
-				Param: "errResults",
-				Value: schemaErr,
-				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
-			const loggerAction = "failed-serialising-errors"
-			logger.Error(loggerAction, serialisationErr)
-			return result, apiresponses.NewFailureResponse(
-				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
-		}
-		apiErr := apiresponses.NewFailureResponseBuilder(
-			fmt.Errorf("invalid policy provided: %s", resultsJson),
-			http.StatusBadRequest, "failed-to-validate-policy").
-			WithErrorKey("InvalidPolicy").Build()
-
-		return result, apiErr
-	case errors.As(err, &jsonSchemaErr):
-		resultsJson, err := json.Marshal(jsonSchemaErr)
-		if err != nil {
-			serialisationErr := &models.InvalidArgumentError{
-				Param: "errResults",
-				Value: jsonSchemaErr,
-				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
-			const loggerAction = "failed-serialising-errors"
-			logger.Error(loggerAction, serialisationErr)
-			return result, apiresponses.NewFailureResponse(
-				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
-		}
-		apiErr := apiresponses.NewFailureResponseBuilder(
-			fmt.Errorf("invalid policy provided: %s", resultsJson),
-			http.StatusBadRequest, "failed-to-validate-policy").
-			WithErrorKey("InvalidPolicy").Build()
-
-		return result, apiErr
-	case errors.As(err, &appGuidErr):
-		logger.Error("bind-no-app-guid-provided", err)
-		return result, apiresponses.NewFailureResponseBuilder(
-			err, http.StatusBadRequest, "bind-no-app-guid-provided").
-			WithErrorKey("RequiresApp").Build()
-	case err != nil:
-		logger.Error("parse-binding-request", err)
-		return result, apiresponses.NewFailureResponse(
-			err, http.StatusBadRequest, "parse-binding-request")
+	if err != nil {
+		return result, handleParsingError(err, logger)
 	}
 
 	if isServiceKeyRequest := appGuidFromCloudCtl == ""; isServiceKeyRequest {
@@ -702,6 +654,60 @@ func (b *Broker) Bind(
 		CustomMetrics: *customMetricsCredentials,
 	}
 	return result, nil
+}
+
+func handleParsingError(err error, logger lager.Logger) error {
+	var schemaErr *policyvalidator.ValidationErrors // 🚧 To-do: Check when we can remove this!
+	var jsonSchemaErr *brParserTypes.JsonSchemaError
+	var appGuidErr *brParserTypes.BindReqNoAppGuid
+	switch {
+	case errors.As(err, &schemaErr): // 🚧 To-do: Check when we can remove this!
+		resultsJson, err := json.Marshal(schemaErr)
+		if err != nil {
+			serialisationErr := &models.InvalidArgumentError{
+				Param: "errResults",
+				Value: schemaErr,
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
+		}
+		apiErr := apiresponses.NewFailureResponseBuilder(
+			fmt.Errorf("invalid policy provided: %s", resultsJson),
+			http.StatusBadRequest, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
+
+		return apiErr
+	case errors.As(err, &jsonSchemaErr):
+		resultsJson, err := json.Marshal(jsonSchemaErr)
+		if err != nil {
+			serialisationErr := &models.InvalidArgumentError{
+				Param: "errResults",
+				Value: jsonSchemaErr,
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
+		}
+		apiErr := apiresponses.NewFailureResponseBuilder(
+			fmt.Errorf("invalid policy provided: %s", resultsJson),
+			http.StatusBadRequest, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
+
+		return apiErr
+	case errors.As(err, &appGuidErr):
+		logger.Error("bind-no-app-guid-provided", err)
+		return apiresponses.NewFailureResponseBuilder(
+			err, http.StatusBadRequest, "bind-no-app-guid-provided").
+			WithErrorKey("RequiresApp").Build()
+	case err != nil:
+		logger.Error("parse-binding-request", err)
+		return apiresponses.NewFailureResponse(
+			err, http.StatusBadRequest, "parse-binding-request")
+	}
+	return nil
 }
 
 // ☢️ This is an important check! Without doing it, users may define scaling-policies to apps of
