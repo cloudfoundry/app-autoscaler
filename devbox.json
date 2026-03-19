@@ -21,7 +21,7 @@
     "coreutils":           "latest",
     "credhub-cli":         "2.9.54",
     "curl":                "latest",
-    "delve":               "1.26.0",
+    "delve":               "1.26.1",
     "direnv":              "2.37.1",
     "fly":                 "7.14.3",
     "gh":                  "2.87.3",
