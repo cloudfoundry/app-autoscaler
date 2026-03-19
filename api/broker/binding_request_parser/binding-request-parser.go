@@ -110,7 +110,7 @@ func extractSchemaVersion(bindingReqParams string) (schemaVersion, error) {
 
 	// Empty or whitespace-only input is valid and indicates legacy schema (no policy)
 	if len(bindingReqParams) == 0 {
-		return errSchemaVersion, nil
+		return schemaVersionLegacy, nil
 	}
 
 	type schemaHolder struct {
