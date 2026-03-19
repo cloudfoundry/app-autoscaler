@@ -56,29 +56,61 @@ func New(
 	return NewFromParsers(legacyParser, v0_1Parser), nil
 }
 
+type schemaVersion int
+
+const (
+	schemaVersionLegacy schemaVersion = iota
+	schemaVersionV0_1
+)
+
+var supportedSchemaVersions = []schemaVersion{
+	schemaVersionLegacy,
+	schemaVersionV0_1,
+}
+
+func (sv schemaVersion) String() string {
+	switch sv {
+	case schemaVersionLegacy:
+		return "legacy"
+	case schemaVersionV0_1:
+		return "0.1"
+	default:
+		return fmt.Sprintf("unknown(%d)", sv)
+	}
+}
+
+var _ fmt.Stringer = schemaVersion(1)
+
 func (p BindRequestParser) Parse(
 	bindingReqParams string, ccAppGuid models.GUID,
 ) (models.AppScalingConfig, error) {
 	schemaVersion, err := extractSchemaVersion(bindingReqParams)
 	if err != nil {
-		schemaVersion = "" // Default to legacy schema if schema-version cannot be extracted
+		// Default to legacy schema if schema-version cannot be extracted. The legacy-schema is the
+		// only one without a version-identifier.
+		schemaVersion = schemaVersionLegacy
 	}
 
 	switch schemaVersion {
-	case "0.1":
+	case schemaVersionV0_1:
 		return p.v0_1Parser.Parse(bindingReqParams, ccAppGuid)
-	case "": // The legacy-schema is the only one without a version-identifier;
+	case schemaVersionLegacy:
 		return p.legacyParser.Parse(bindingReqParams, ccAppGuid)
 	default:
 		return models.AppScalingConfig{}, fmt.Errorf(
-			"unsupported schema-version '%s' referenced in binding-request", schemaVersion)
+			`unsupported schema-version '%d' referenced in binding-request\npossible values: %v`,
+			schemaVersion, supportedSchemaVersions)
 	}
 }
 
-func extractSchemaVersion(bindingReqParams string) (string, error) {
+func extractSchemaVersion(bindingReqParams string) (schemaVersion, error) {
+	// We return that in case of an error. This constant is just for better readability and has no
+	// special meaning outside of this function's scope.
+	const errSchemaVersion = -1
+
 	// Empty or whitespace-only input is valid and indicates legacy schema (no policy)
 	if len(bindingReqParams) == 0 {
-		return "", nil
+		return errSchemaVersion, nil
 	}
 
 	type schemaHolder struct {
@@ -88,8 +120,18 @@ func extractSchemaVersion(bindingReqParams string) (string, error) {
 	var holder schemaHolder
 	err := json.Unmarshal([]byte(bindingReqParams), &holder)
 	if err != nil {
-		return "", fmt.Errorf("failed to extract schema-version from binding-request: %w", err)
+		return errSchemaVersion, fmt.Errorf("failed to extract schema-version from binding-request: %w", err)
 	}
 
-	return holder.Schema, nil
+	var schemaVersion schemaVersion
+	switch holder.Schema {
+	case "0.1":
+		schemaVersion = schemaVersionV0_1
+	case "":
+		schemaVersion = schemaVersionLegacy
+	default:
+		return errSchemaVersion, fmt.Errorf("unsupported schema-version '%s' referenced in binding-request", holder.Schema)
+	}
+
+	return schemaVersion, nil
 }
