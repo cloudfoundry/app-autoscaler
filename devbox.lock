@@ -465,51 +465,51 @@
         }
       }
     },
-    "delve@1.26.0": {
-      "last_modified": "2026-02-23T15:40:43Z",
-      "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#delve",
+    "delve@1.26.1": {
+      "last_modified": "2026-03-12T22:11:02Z",
+      "resolved": "github:NixOS/nixpkgs/24f4544180242cd80bb2492ce6907243bc716e08#delve",
       "source": "devbox-search",
-      "version": "1.26.0",
+      "version": "1.26.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/36a6xa4m38lv854ay1yrcalh0nr7ilxf-delve-1.26.0",
+              "path": "/nix/store/sa1g8rzl8ppvvli27wz61ikglz3qkfcn-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/36a6xa4m38lv854ay1yrcalh0nr7ilxf-delve-1.26.0"
+          "store_path": "/nix/store/sa1g8rzl8ppvvli27wz61ikglz3qkfcn-delve-1.26.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/yz73jca4a47yhhza7pxzw14s40xjrvbz-delve-1.26.0",
+              "path": "/nix/store/pvzzzvxaxjww78igf8s6igqsf3al03lf-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/yz73jca4a47yhhza7pxzw14s40xjrvbz-delve-1.26.0"
+          "store_path": "/nix/store/pvzzzvxaxjww78igf8s6igqsf3al03lf-delve-1.26.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/yad9vkvhsqbzdbicbrid889d8lf9p3l3-delve-1.26.0",
+              "path": "/nix/store/4zzdv9ybavfi6bbqmcn3khxgbzm5mzww-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/yad9vkvhsqbzdbicbrid889d8lf9p3l3-delve-1.26.0"
+          "store_path": "/nix/store/4zzdv9ybavfi6bbqmcn3khxgbzm5mzww-delve-1.26.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/308g0qj2aw6mhd1s3d7nnms630adi8ww-delve-1.26.0",
+              "path": "/nix/store/p9vabc9wm6lci02cyr6pqgaz3pp9n520-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/308g0qj2aw6mhd1s3d7nnms630adi8ww-delve-1.26.0"
+          "store_path": "/nix/store/p9vabc9wm6lci02cyr6pqgaz3pp9n520-delve-1.26.1"
         }
       }
     },
