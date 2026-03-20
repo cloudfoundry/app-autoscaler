@@ -117,7 +117,7 @@ export DEBUG=true
 # The config will be automatically picked up from ACCEPTANCE_CONFIG_JSON
 # Test binaries are built without coverage support (ginkgo build)
 # shellcheck disable=SC2086
-$GINKGO_BINARY -race -nodes="$NODES" -trace $GINKGO_OPTS $SUITE_ARGS
+eval "$GINKGO_BINARY -race -nodes=\"$NODES\" -trace $GINKGO_OPTS $SUITE_ARGS"
 
 TEST_EXIT_CODE=$?
 
