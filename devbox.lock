@@ -49,7 +49,7 @@
         }
       }
     },
-    "actionlint@latest": {
+    "actionlint@1.7.11": {
       "last_modified": "2026-02-23T15:40:43Z",
       "resolved": "github:NixOS/nixpkgs/80d901ec0377e19ac3f7bb8c035201e2e098cc97#actionlint",
       "source": "devbox-search",
