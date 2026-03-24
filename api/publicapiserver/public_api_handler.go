@@ -62,7 +62,7 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 
 func createPolicyValidator(conf *config.Config) *policyvalidator.PolicyValidator {
 	return policyvalidator.NewPolicyValidator(
-		conf.PolicySchemaPath,
+		conf.BindingRequestSchemaPath,
 		conf.ScalingRules.CPU.LowerThreshold,
 		conf.ScalingRules.CPU.UpperThreshold,
 		conf.ScalingRules.CPUUtil.LowerThreshold,

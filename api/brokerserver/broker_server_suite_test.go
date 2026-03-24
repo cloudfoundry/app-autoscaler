@@ -127,9 +127,9 @@ var _ = BeforeSuite(func() {
 				},
 			},
 		},
-		CatalogPath:       "../exampleconfig/catalog-example.json",
-		CatalogSchemaPath: "../schemas/catalog.schema.json",
-		PolicySchemaPath:  "../policyvalidator/json-schema/meta.schema.json",
+		CatalogPath:              "../exampleconfig/catalog-example.json",
+		CatalogSchemaPath:        "../schemas/catalog.schema.json",
+		BindingRequestSchemaPath: "../broker/binding_request_parser/meta.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},

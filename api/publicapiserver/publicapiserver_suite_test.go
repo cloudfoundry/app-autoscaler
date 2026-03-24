@@ -104,7 +104,7 @@ var _ = BeforeSuite(func() {
 		CFServer: helpers.ServerConfig{
 			Port: 14000 + GinkgoParallelProcess(),
 		},
-		PolicySchemaPath: "../policyvalidator/json-schema/meta.schema.json",
+		BindingRequestSchemaPath: "../broker/binding_request_parser/meta.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},

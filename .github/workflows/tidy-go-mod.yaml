@@ -34,7 +34,14 @@ jobs:
 
       - name: Check if there is any change
         id: get_changes
-        run: echo "changed=$(git status --porcelain | wc -l)" >> "${GITHUB_OUTPUT}"
+        shell: bash
+        run: |
+          #! /usr/bin/env bash
+          set -eu -o pipefail
+
+          echo "changed=$(git status --porcelain | wc -l)" >> "${GITHUB_OUTPUT}"
+          git status
+          git diff --diff-algorithm='minimal' --word-diff
 
       - name: Process changes
         if: steps.get_changes.outputs.changed != 0
