@@ -20,7 +20,7 @@
     "cloudfoundry-cli":    "8.17.1",
     "coreutils":           "latest",
     "credhub-cli":         "2.9.54",
-    "curl":                "latest",
+    "curl":                "7.88.1",
     "delve":               "1.26.1",
     "direnv":              "2.37.1",
     "fly":                 "7.14.3",
