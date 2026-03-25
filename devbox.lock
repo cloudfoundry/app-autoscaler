@@ -1269,51 +1269,51 @@
         }
       }
     },
-    "jdt-language-server@1.56.0": {
-      "last_modified": "2026-03-02T11:03:52Z",
-      "resolved": "github:NixOS/nixpkgs/dc7513872406b53d2ff417a003895d6daffdff2f#jdt-language-server",
+    "jdt-language-server@1.57.0": {
+      "last_modified": "2026-03-21T07:29:51Z",
+      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#jdt-language-server",
       "source": "devbox-search",
-      "version": "1.56.0",
+      "version": "1.57.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/yjzpkzr41gvixpsf6cj6md50mrxbii39-jdt-language-server-1.56.0",
+              "path": "/nix/store/ga5sfrajrn8q6hfps333ff2v7wrfr4x7-jdt-language-server-1.57.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/yjzpkzr41gvixpsf6cj6md50mrxbii39-jdt-language-server-1.56.0"
+          "store_path": "/nix/store/ga5sfrajrn8q6hfps333ff2v7wrfr4x7-jdt-language-server-1.57.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/q2aqfx567qbl1f2amwmj6hrzdivlxand-jdt-language-server-1.56.0",
+              "path": "/nix/store/ghbjbc97hy2jn78vzhn5nf6nfn01pq37-jdt-language-server-1.57.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/q2aqfx567qbl1f2amwmj6hrzdivlxand-jdt-language-server-1.56.0"
+          "store_path": "/nix/store/ghbjbc97hy2jn78vzhn5nf6nfn01pq37-jdt-language-server-1.57.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/v1vnscz3q231vbqajrl6clhmp9rspzxw-jdt-language-server-1.56.0",
+              "path": "/nix/store/58jxm2nys7j0dn0p8p0rmp3dxr5h9zy7-jdt-language-server-1.57.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/v1vnscz3q231vbqajrl6clhmp9rspzxw-jdt-language-server-1.56.0"
+          "store_path": "/nix/store/58jxm2nys7j0dn0p8p0rmp3dxr5h9zy7-jdt-language-server-1.57.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/g2nfsp3lg0wj3308fbpkakkvdya87353-jdt-language-server-1.56.0",
+              "path": "/nix/store/kbf92cisq5aaf919kz3wk0cgabvy60vb-jdt-language-server-1.57.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/g2nfsp3lg0wj3308fbpkakkvdya87353-jdt-language-server-1.56.0"
+          "store_path": "/nix/store/kbf92cisq5aaf919kz3wk0cgabvy60vb-jdt-language-server-1.57.0"
         }
       }
     },
