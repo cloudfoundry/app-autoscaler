@@ -127,7 +127,7 @@ var _ = Describe("AutoScaler Public API", func() {
 		})
 	})
 
-	When("a scaling policy is set without custom metric strategy", func() {
+	When("a scaling policy with 'memoryused' metric is set without custom metric strategy", func() {
 		memThreshold := int64(10)
 		var policy string
 
@@ -200,8 +200,16 @@ var _ = Describe("AutoScaler Public API", func() {
 		})
 		When("a scale out is triggered ", func() {
 			BeforeEach(func() {
+				By("Trigger memory consumption (30 MB) to exceed threshold")
+				CurlAppInstance(cfg, appName, 0, "/memory/30/5")
+
 				totalTime := time.Duration(cfg.AggregateInterval*2)*time.Second + 3*time.Minute
 				WaitForNInstancesRunning(appGUID, 2, totalTime)
+			})
+
+			AfterEach(func() {
+				By("Release consumed memory")
+				CurlAppInstance(cfg, appName, 0, "/memory/close")
 			})
 
 			It("should successfully scale out", func() {
