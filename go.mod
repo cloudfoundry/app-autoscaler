@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
 	code.cloudfoundry.org/lager/v3 v3.64.0
-	code.cloudfoundry.org/loggregator-agent-release/src 45a7e37d676e
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260330083552-45a7e37d676e
 	code.cloudfoundry.org/tlsconfig v0.49.0
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cloud-gov/go-cfenv v1.19.1
@@ -52,7 +52,7 @@ replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260319
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 // indirect
-	code.cloudfoundry.org/go-metric-registry v0.0.0-20260316221732-b5ae994e6b10 // indirect
+	code.cloudfoundry.org/go-metric-registry v0.0.0-20260325091030-e6272bdc60ad // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
