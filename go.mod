@@ -4,13 +4,13 @@ go 1.25.2
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.20
-	code.cloudfoundry.org/cfhttp/v2 v2.70.0
-	code.cloudfoundry.org/clock v1.62.0
+	code.cloudfoundry.org/cfhttp/v2 v2.72.0
+	code.cloudfoundry.org/clock v1.64.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
-	code.cloudfoundry.org/lager/v3 v3.61.0
+	code.cloudfoundry.org/lager/v3 v3.64.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260323083523-c9b83e7efb37
-	code.cloudfoundry.org/tlsconfig v0.48.0
+	code.cloudfoundry.org/tlsconfig v0.49.0
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.20
