@@ -4,7 +4,7 @@ go 1.25.2
 
 require (
 	github.com/cloudfoundry-community/go-cfenv v1.18.0
-	github.com/fgrosse/zaptest v1.2.1
+	github.com/fgrosse/zaptest v1.3.1
 	github.com/gin-contrib/zap v1.1.5
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-faster/errors v0.7.1
