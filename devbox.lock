@@ -125,6 +125,54 @@
         }
       }
     },
+    "bash-language-server@latest": {
+      "last_modified": "2026-03-21T07:29:51Z",
+      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#bash-language-server",
+      "source": "devbox-search",
+      "version": "5.6.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/53yqnx33sdf1l4hhnslyisdag8kvixip-bash-language-server-5.6.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/53yqnx33sdf1l4hhnslyisdag8kvixip-bash-language-server-5.6.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/j9jz92x0l7hjz9gvp2kjjigfihyx8l3w-bash-language-server-5.6.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/j9jz92x0l7hjz9gvp2kjjigfihyx8l3w-bash-language-server-5.6.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/k0ikdy6r6fxjalyjrqlh33mdykb8a22x-bash-language-server-5.6.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/k0ikdy6r6fxjalyjrqlh33mdykb8a22x-bash-language-server-5.6.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hr9gm2yqiphrywkpp8hva25xpxffibxh-bash-language-server-5.6.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hr9gm2yqiphrywkpp8hva25xpxffibxh-bash-language-server-5.6.0"
+        }
+      }
+    },
     "bosh-cli@7.3.1": {
       "last_modified": "2023-08-22T06:04:29Z",
       "resolved": "github:NixOS/nixpkgs/9d757ec498666cc1dcc6f2be26db4fd3e1e9ab37#bosh-cli",

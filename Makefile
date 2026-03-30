@@ -335,7 +335,7 @@ release-promote: create-assets ## Promote draft release to final and upload asse
 		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
-acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
+acceptance-release: clean-acceptance generate-openapi-generated-clients-and-servers generate-fakes go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
 	# Build for linux_amd64 by default (CF tasks platform)
@@ -368,6 +368,7 @@ acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor bu
 mta-release: generate-fakes mta-build
 	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
 
+.PHONY: clean-acceptance
 clean-acceptance:
 	@echo ' - cleaning acceptance (⚠️ This keeps the file “acceptance/acceptance_config.json” if present!)'
 	@rm acceptance/ginkgo* &> /dev/null || true
