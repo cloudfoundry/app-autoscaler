@@ -16,7 +16,7 @@
       ]
     },
     "actionlint":           "1.7.11",
-    "bash-language-server": "latest",
+    "bash-language-server": "5.6.0",
     "bosh-cli":             "7.3.1",
     "cloudfoundry-cli":     "8.18.0",
     "coreutils":            "latest",
