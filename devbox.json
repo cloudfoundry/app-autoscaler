@@ -30,7 +30,6 @@
     "gnumake":              "4.4.1",
     "gnused":               "latest",
     "gnutar":               "latest",
-    "go":                   "1.25.2",
     "go-tools":             "2025.1.1",
     "golangci-lint":        "2.11.3",
     "gopls":                "0.21.1",
@@ -51,7 +50,8 @@
     "temurin-bin-21":       "21.0.3",
     "which":                "latest",
     "xq-xml":               "1.4.0",
-    "yq-go":                "4.52.4"
+    "yq-go":                "4.52.4",
+    "go":                   "1.25.5"
   },
   "shell": {
     "init_hook": [
