@@ -31,7 +31,7 @@
     "gnused":               "latest",
     "gnutar":               "latest",
     "go-tools":             "2025.1.1",
-    "golangci-lint":        "2.11.3",
+    "golangci-lint":        "2.11.4",
     "gopls":                "0.21.1",
     "google-java-format":   "1.35.0",
     "gum":                  "0.17.0",

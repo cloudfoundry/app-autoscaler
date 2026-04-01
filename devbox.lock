@@ -1125,51 +1125,51 @@
         }
       }
     },
-    "golangci-lint@2.11.3": {
-      "last_modified": "2026-03-21T07:29:51Z",
-      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#golangci-lint",
+    "golangci-lint@2.11.4": {
+      "last_modified": "2026-03-27T11:17:38Z",
+      "resolved": "github:NixOS/nixpkgs/832efc09b4caf6b4569fbf9dc01bec3082a00611#golangci-lint",
       "source": "devbox-search",
-      "version": "2.11.3",
+      "version": "2.11.4",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/h28ikgw4hsg9jlpnfjq09xaiysqv01j0-golangci-lint-2.11.3",
+              "path": "/nix/store/zjhq23zqjjlyclylkwvny6s7qzcq56n4-golangci-lint-2.11.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/h28ikgw4hsg9jlpnfjq09xaiysqv01j0-golangci-lint-2.11.3"
+          "store_path": "/nix/store/zjhq23zqjjlyclylkwvny6s7qzcq56n4-golangci-lint-2.11.4"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/jgbwbmqbd8yj1xrxlpcmq2lmx80kwdaa-golangci-lint-2.11.3",
+              "path": "/nix/store/6rnv5q31z65m0cx0gsclybizgly224r8-golangci-lint-2.11.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/jgbwbmqbd8yj1xrxlpcmq2lmx80kwdaa-golangci-lint-2.11.3"
+          "store_path": "/nix/store/6rnv5q31z65m0cx0gsclybizgly224r8-golangci-lint-2.11.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n5x4ia2sacf10ypn7b4wzc6c0gj68cvq-golangci-lint-2.11.3",
+              "path": "/nix/store/laj0sxwhanwj9nk8hnsqzsj1b141z2bm-golangci-lint-2.11.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n5x4ia2sacf10ypn7b4wzc6c0gj68cvq-golangci-lint-2.11.3"
+          "store_path": "/nix/store/laj0sxwhanwj9nk8hnsqzsj1b141z2bm-golangci-lint-2.11.4"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5v86l5m9238byic9xgaahf06xmsqw35k-golangci-lint-2.11.3",
+              "path": "/nix/store/j4w0z1lgrs4fdds7npk2bnby5ks612cf-golangci-lint-2.11.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5v86l5m9238byic9xgaahf06xmsqw35k-golangci-lint-2.11.3"
+          "store_path": "/nix/store/j4w0z1lgrs4fdds7npk2bnby5ks612cf-golangci-lint-2.11.4"
         }
       }
     },
