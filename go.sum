@@ -384,8 +384,8 @@ cloud.google.com/go/websecurityscanner v1.8.0/go.mod h1:2FS2WQ+RaL6O3/HaGBl9JHkS
 cloud.google.com/go/workflows v1.15.0/go.mod h1:2UOYVoNLYsroRbG3Ok6eBliFPThf5ronyqlD64NFLx8=
 code.cloudfoundry.org/brokerapi/v13 v13.0.20 h1:iFHQpk/PO5alSuMXu9mgxXdWr/U9Gtjb+wJbfprFuVQ=
 code.cloudfoundry.org/brokerapi/v13 v13.0.20/go.mod h1:U6NIHE3wPyXWbFkweEFqCWYBss2shzIIceBFtJ7vRQw=
-code.cloudfoundry.org/cfhttp/v2 v2.72.0 h1:ssBQOonFZrTjJLdEC79cwFdpa9EAaTJhgm8j8GpU8c0=
-code.cloudfoundry.org/cfhttp/v2 v2.72.0/go.mod h1:Lk25StNNgOYE4LjJpOcy35FOpez5qlqzPHjJN7//90c=
+code.cloudfoundry.org/cfhttp/v2 v2.73.0 h1:yJ6/98S6Hk7+O1pSqYS7VdPwvSu8rN7ZvARjCPLaDzY=
+code.cloudfoundry.org/cfhttp/v2 v2.73.0/go.mod h1:acl6VWNCkPN8L92/nBL/JlLTKsFPnW4F0fuGbfsoAkM=
 code.cloudfoundry.org/clock v1.64.0 h1:b8JCOjU0n5UIGeSia1MOH9/4XAHaWE3aZIxya7CSjRM=
 code.cloudfoundry.org/clock v1.64.0/go.mod h1:k2jbAp/Swu0HMToTixxoBBK9J/aX4VoFb8Ueg6fDSjs=
 code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 h1:uZ6UIz7zl39FMy5GybKzI83zD35c4fvkU8sQEZDH/x8=
@@ -887,8 +887,8 @@ github.com/google/pprof v0.0.0-20210601050228-01bbb1931b22/go.mod h1:kpwsk12EmLe
 github.com/google/pprof v0.0.0-20210609004039-a478d1d731e9/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
 github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
 github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26/go.mod h1:dDKJzRmX4S37WGHujM7tX//fmj1uioxKzKxz3lo4HJo=
-github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc h1:VBbFa1lDYWEeV5FZKUiYKYT0VxCp9twUmmaq9eb8sXw=
-github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc/go.mod h1:MxpfABSjhmINe3F1It9d+8exIHFvUqtLIRCdOGNXqiI=
+github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 h1:EwtI+Al+DeppwYX2oXJCETMO23COyaKGP6fHVpkpWpg=
+github.com/google/pprof v0.0.0-20260402051712-545e8a4df936/go.mod h1:MxpfABSjhmINe3F1It9d+8exIHFvUqtLIRCdOGNXqiI=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/google/s2a-go v0.1.0/go.mod h1:OJpEgntRZo8ugHpF9hkoLJbS5dSI20XZeXJ9JVywLlM=
 github.com/google/s2a-go v0.1.3/go.mod h1:Ej+mSEMGRnqRzjc7VtF+jdBwYG5fuJfiZ8ELkjEwM0A=
