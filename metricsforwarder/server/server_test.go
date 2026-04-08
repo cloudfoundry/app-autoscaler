@@ -27,6 +27,48 @@ func setupRequest(method string, url *url.URL, body []byte) (*http.Request, erro
 	return req, nil
 }
 
+// Helper function to create test scaling policy
+func createTestScalingPolicy() *models.PolicyDefinition {
+	return &models.PolicyDefinition{
+		InstanceMin: 1,
+		InstanceMax: 6,
+		ScalingRules: []*models.ScalingRule{{
+			MetricType:            "queuelength",
+			BreachDurationSeconds: 60,
+			Threshold:             10,
+			Operator:              ">",
+			CoolDownSeconds:       60,
+			Adjustment:            "+1"}}}
+}
+
+// Helper function to create test custom metrics
+func createTestCustomMetrics() []*models.CustomMetric {
+	return []*models.CustomMetric{
+		{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id"},
+	}
+}
+
+// Helper function to marshal custom metric
+func marshalCustomMetric() ([]byte, error) {
+	return json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
+}
+
+// Helper function to marshal metrics consumer
+func marshalMetricsConsumer(customMetrics []*models.CustomMetric) ([]byte, error) {
+	return json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+}
+
+// Helper function to setup authenticated request
+func setupAuthenticatedRequest(method string, serverURL *url.URL, body []byte, username, password string) (*http.Request, error) {
+	req, err := setupRequest(method, serverURL, body)
+	if err != nil {
+		return nil, err
+	}
+	//#nosec G101 -- test credentials, not real secrets
+	req.SetBasicAuth(username, password)
+	return req, nil
+}
+
 var _ = Describe("CustomMetricsConfig Server", func() {
 
 	var (
@@ -55,27 +97,14 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("POST /v1/apps/some-app-id/metrics", func() {
 		BeforeEach(func() {
-			scalingPolicy = &models.PolicyDefinition{
-				InstanceMin: 1,
-				InstanceMax: 6,
-				ScalingRules: []*models.ScalingRule{{
-					MetricType:            "queuelength",
-					BreachDurationSeconds: 60,
-					Threshold:             10,
-					Operator:              ">",
-					CoolDownSeconds:       60,
-					Adjustment:            "+1"}}}
+			scalingPolicy = createTestScalingPolicy()
 			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-			customMetrics := []*models.CustomMetric{
-				{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id"},
-			}
-			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+			customMetrics := createTestCustomMetrics()
+			body, err = marshalMetricsConsumer(customMetrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
-			req, err = setupRequest("POST", serverURL, body)
-			//#nosec G101 -- test credentials, not real secrets
-			req.SetBasicAuth("username", "password")
+			req, err = setupAuthenticatedRequest("POST", serverURL, body, "username", "password")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -90,7 +119,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("A request to forward custom metrics comes without Authorization header", func() {
 		BeforeEach(func() {
-			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
+			body, err = marshalCustomMetric()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
@@ -108,7 +137,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("a request to forward custom metrics comes without 'Basic'", func() {
 		BeforeEach(func() {
-			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
+			body, err = marshalCustomMetric()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
@@ -126,14 +155,13 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("a request to forward custom metrics comes with wrong user credentials", func() {
 		BeforeEach(func() {
-			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
+			body, err = marshalCustomMetric()
 			Expect(err).NotTo(HaveOccurred())
 
 			fakeCredentials.ValidateReturns(false, errors.New("wrong credentials"))
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
-			req, err = setupRequest("POST", serverURL, body)
-			req.SetBasicAuth("invalidUsername", "invalidPassword")
+			req, err = setupAuthenticatedRequest("POST", serverURL, body, "invalidUsername", "invalidPassword")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -147,13 +175,11 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("a request to forward custom metrics comes with unmatched metric types", func() {
 		BeforeEach(func() {
-			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
+			body, err = marshalCustomMetric()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
-			req, err = setupRequest("POST", serverURL, body)
-			//#nosec G101 -- test credentials, not real secrets
-			req.SetBasicAuth("username", "password")
+			req, err = setupAuthenticatedRequest("POST", serverURL, body, "username", "password")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -168,27 +194,14 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 	When("multiple requests to forward custom metrics come beyond rate limit", func() {
 		BeforeEach(func() {
 			rateLimiter.ExceedsLimitReturns(true)
-			scalingPolicy = &models.PolicyDefinition{
-				InstanceMin: 1,
-				InstanceMax: 6,
-				ScalingRules: []*models.ScalingRule{{
-					MetricType:            "queuelength",
-					BreachDurationSeconds: 60,
-					Threshold:             10,
-					Operator:              ">",
-					CoolDownSeconds:       60,
-					Adjustment:            "+1"}}}
+			scalingPolicy = createTestScalingPolicy()
 			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-			customMetrics := []*models.CustomMetric{
-				{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id"},
-			}
-			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+			customMetrics := createTestCustomMetrics()
+			body, err = marshalMetricsConsumer(customMetrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
-			req, err = setupRequest("POST", serverURL, body)
-			//#nosec G101 -- test credentials, not real secrets
-			req.SetBasicAuth("username", "password")
+			req, err = setupAuthenticatedRequest("POST", serverURL, body, "username", "password")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
