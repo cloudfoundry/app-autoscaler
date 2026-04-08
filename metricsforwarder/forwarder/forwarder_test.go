@@ -17,7 +17,7 @@ var _ = Describe("MetricForwarder", func() {
 	var (
 		metricForwarder   forwarder.MetricForwarder
 		loggregatorConfig config.LoggregatorConfig
-		syslogConfig      config.SyslogConfig
+		logCacheConfig    config.LogCacheConfig
 		err               error
 		conf              *config.Config
 	)
@@ -25,7 +25,7 @@ var _ = Describe("MetricForwarder", func() {
 	JustBeforeEach(func() {
 		conf = &config.Config{
 			LoggregatorConfig: loggregatorConfig,
-			SyslogConfig:      syslogConfig,
+			LogCacheConfig:    logCacheConfig,
 		}
 
 		logger := lager.NewLogger("metricsforwarder-test")
@@ -34,25 +34,22 @@ var _ = Describe("MetricForwarder", func() {
 	})
 
 	Describe("NewMetricForwarder", func() {
-		When("syslog it is present it creates a SyslogEmitter", func() {
-
+		When("logcache config is present it creates a LogCacheEmitter", func() {
 			BeforeEach(func() {
-				// Loggregator config in spec has this default value
-				loggregatorConfig.MetronAddress = "127.0.0.1:3458"
-				syslogConfig = config.SyslogConfig{
-					ServerAddress: "syslog://some-server-address",
+				logCacheConfig = config.LogCacheConfig{
+					Address: "127.0.0.1:8080",
 				}
 			})
 
-			It("should create a SyslogClient", func() {
-				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.SyslogEmitter{}))
+			It("should create a LogCacheEmitter", func() {
+				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.LogCacheEmitter{}))
 			})
 		})
 
 		When("loggregatorConfig is present creates a metronForwarder", func() {
 			BeforeEach(func() {
 				testCertDir := "../../test-certs"
-				syslogConfig = config.SyslogConfig{}
+				logCacheConfig = config.LogCacheConfig{}
 				loggregatorConfig = config.LoggregatorConfig{
 					MetronAddress: "some-address",
 					TLS: models.TLSCerts{
