@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/clock v1.64.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
-	code.cloudfoundry.org/lager/v3 v3.64.0
+	code.cloudfoundry.org/lager/v3 v3.65.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260401205800-83519ee8128e
 	code.cloudfoundry.org/tlsconfig v0.50.0
 	github.com/cenkalti/backoff/v5 v5.0.3
