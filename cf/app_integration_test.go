@@ -35,6 +35,7 @@ func TestClient_GetAppProcesses(t *testing.T) {
 	client := cf.NewCFClient(conf, logger, clock.NewClock())
 	err := client.Login()
 	assert.Nil(t, err)
+	//#nosec G402 -- integration test that uses test foundations without proper certs
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	resp, err := http.Get("https://test_app." + systemDomain)
 	if err != nil {

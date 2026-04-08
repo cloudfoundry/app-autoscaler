@@ -44,6 +44,7 @@ var (
 
 const (
 	username = "username"
+	//#nosec G101 -- test credentials, not real secrets
 	password = "password"
 )
 

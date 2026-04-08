@@ -28,7 +28,7 @@ func (sdb *StoredProcedureSQLDb) Ping() error {
 func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
 	poolConfig, err := pgxpool.ParseConfig(dbConfig.URL)
 	if err != nil {
-		logger.Error("parse-procedure-db-url", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("parse-procedure-db-url", err, lager.Data{"maxConnections": dbConfig.MaxOpenConnections})
 		return nil, err
 	}
 
@@ -38,14 +38,14 @@ func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.Da
 
 	sqldb, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
-		logger.Error("open-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("open-stored-procedure-db", err, lager.Data{"maxConnections": dbConfig.MaxOpenConnections})
 		return nil, err
 	}
 
 	err = sqldb.Ping(context.Background())
 	if err != nil {
 		sqldb.Close()
-		logger.Error("ping-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("ping-stored-procedure-db", err, lager.Data{"maxConnections": dbConfig.MaxOpenConnections})
 		return nil, err
 	}
 
@@ -123,7 +123,7 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	if err != nil {
 		sdb.logger.Error(
 			"credential-validation-with-stored-function-errored",
-			err, lager.Data{"query": query, "creds": creds, "appId": appId})
+			err, lager.Data{"query": query, "appId": appId})
 
 		return nil, err
 	}
