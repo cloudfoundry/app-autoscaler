@@ -27,17 +27,17 @@ type LoggregatorConfig struct {
 	MetronAddress string          `yaml:"metron_address"`
 	TLS           models.TLSCerts `yaml:"tls"`
 }
-type SyslogConfig struct {
-	ServerAddress string          `yaml:"server_address"`
-	Port          int             `yaml:"port"`
-	TLS           models.TLSCerts `yaml:"tls"`
+
+type LogCacheConfig struct {
+	Address string          `yaml:"address"`
+	TLS     models.TLSCerts `yaml:"tls"`
 }
 
 type Config struct {
 	Logging               helpers.LoggingConfig         `yaml:"logging"`
 	Server                helpers.ServerConfig          `yaml:"server"`
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
-	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
+	LogCacheConfig        LogCacheConfig                `yaml:"log_cache"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
@@ -95,12 +95,6 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
-	if err != nil {
-		return err
-	}
-	conf.SyslogConfig.TLS = tls
-
 	return nil
 }
 
@@ -108,7 +102,7 @@ func (c *Config) Validate() error {
 	if err := c.validateDbConfig(); err != nil {
 		return err
 	}
-	if err := c.validateSyslogOrLoggregator(); err != nil {
+	if err := c.validateEmitterConfig(); err != nil {
 		return err
 	}
 	if err := c.validateRateLimit(); err != nil {
@@ -127,26 +121,19 @@ func (c *Config) validateDbConfig() error {
 	if c.Db[db.BindingDb].URL == "" {
 		return errors.New("configuration error: Binding DB url is empty")
 	}
-	if c.UsingSyslog() {
-		return c.validateSyslogConfig()
+	return nil
+}
+
+func (c *Config) validateEmitterConfig() error {
+	if c.UsingLogCache() {
+		return c.validateLogCacheConfig()
 	}
 	return c.validateLoggregatorConfig()
 }
-func (c *Config) validateSyslogOrLoggregator() error {
-	if c.UsingSyslog() {
-		return c.validateSyslogConfig()
-	}
-	return c.validateLoggregatorConfig()
-}
-func (c *Config) validateSyslogConfig() error {
-	if c.SyslogConfig.TLS.CACertFile == "" {
-		return errors.New("SyslogServer Loggregator CACert is empty")
-	}
-	if c.SyslogConfig.TLS.CertFile == "" {
-		return errors.New("SyslogServer ClientCert is empty")
-	}
-	if c.SyslogConfig.TLS.KeyFile == "" {
-		return errors.New("SyslogServer ClientKey is empty")
+
+func (c *Config) validateLogCacheConfig() error {
+	if c.LogCacheConfig.Address == "" {
+		return errors.New("LogCache address is empty")
 	}
 	return nil
 }
@@ -181,8 +168,8 @@ func (c *Config) validateCredHelperImpl() error {
 	return nil
 }
 
-func (c *Config) UsingSyslog() bool {
-	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
+func (c *Config) UsingLogCache() bool {
+	return c.LogCacheConfig.Address != ""
 }
 
 // GetLogging returns the logging configuration

@@ -11,9 +11,8 @@
     "logging": {
       "level": "debug"
     },
-    "syslog": {
-      "server_address": "log-cache.service.cf.internal",
-      "port": 6067
+    "log_cache": {
+      "address": "log-cache.service.cf.internal:8080"
     },
     "db": {
       "policy_db": {

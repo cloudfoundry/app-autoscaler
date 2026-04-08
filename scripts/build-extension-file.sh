@@ -48,9 +48,9 @@ postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))
 eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
 eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
 
-syslog_client_ca: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.ca))
-syslog_client_cert: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.certificate))
-syslog_client_key: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.private_key))
+syslog_client_ca: ""
+syslog_client_cert: ""
+syslog_client_key: ""
 
 database_username: pgadmin
 database_password: ((/bosh-autoscaler/postgres/pgadmin_database_password))
@@ -115,10 +115,6 @@ export DATABASE_DB_SERVER_CA="$(yq ".database_server_ca" /tmp/mtar-secrets.yml)"
 export DATABASE_DB_CLIENT_CERT="$(yq ".database_client_cert" /tmp/mtar-secrets.yml)"
 export DATABASE_DB_CLIENT_KEY="$(yq ".database_client_key" /tmp/mtar-secrets.yml)"
 
-export SYSLOG_CLIENT_CA="$(yq ".syslog_client_ca" /tmp/mtar-secrets.yml)"
-export SYSLOG_CLIENT_CERT="$(yq ".syslog_client_cert" /tmp/mtar-secrets.yml)"
-export SYSLOG_CLIENT_KEY="$(yq ".syslog_client_key" /tmp/mtar-secrets.yml)"
-
 export SERVICE_BROKER_PASSWORD_BLUE="$(yq ".service_broker_password_blue" /tmp/mtar-secrets.yml)"
 export SERVICE_BROKER_PASSWORD="$(yq ".service_broker_password" /tmp/mtar-secrets.yml)"
 
@@ -162,7 +158,6 @@ modules:
   - name: metricsforwarder
     requires:
     - name: metricsforwarder-config
-    - name: syslog-client
     - name: database
     parameters:
       instances: ${METRICSFORWARDER_INSTANCES}
@@ -314,13 +309,6 @@ resources:
       client_cert: "${DATABASE_DB_CLIENT_CERT//$'\n'/\\n}"
       client_key: "${DATABASE_DB_CLIENT_KEY//$'\n'/\\n}"
       server_ca: "${DATABASE_DB_SERVER_CA//$'\n'/\\n}"
-
-- name: syslog-client
-  parameters:
-    config:
-      client_cert: "${SYSLOG_CLIENT_CERT//$'\n'/\\n}"
-      client_key: "${SYSLOG_CLIENT_KEY//$'\n'/\\n}"
-      server_ca: "${SYSLOG_CLIENT_CA//$'\n'/\\n}"
 
 - name: broker-catalog
   parameters:

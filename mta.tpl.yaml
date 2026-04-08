@@ -126,7 +126,6 @@ modules:
     requires:
       - name: metricsforwarder-config
       - name: database
-      - name: syslog-client
       - name: app-autoscaler-application-logs
       - name: app-autoscaler-dynatrace
     parameters:
@@ -296,11 +295,6 @@ resources:
         - scheduler_db
         - lock_db
         - relational
-  - name: syslog-client
-    type: org.cloudfoundry.user-provided-service
-    parameters:
-      service-tags:
-        - syslog-client
   - name: app-autoscaler-application-logs
     active: false
     type: org.cloudfoundry.managed-service
