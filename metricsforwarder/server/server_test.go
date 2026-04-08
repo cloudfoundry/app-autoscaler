@@ -74,6 +74,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
 			req, err = setupRequest("POST", serverURL, body)
+			//#nosec G101 -- test credentials, not real secrets
 			req.SetBasicAuth("username", "password")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
@@ -151,6 +152,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
 			req, err = setupRequest("POST", serverURL, body)
+			//#nosec G101 -- test credentials, not real secrets
 			req.SetBasicAuth("username", "password")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
@@ -185,6 +187,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
 			req, err = setupRequest("POST", serverURL, body)
+			//#nosec G101 -- test credentials, not real secrets
 			req.SetBasicAuth("username", "password")
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
