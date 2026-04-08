@@ -18,7 +18,7 @@ defaults:
     shell: bash
 
 env:
-  PR_NUMBER: "${{ github.event.pull_request.number }}"
+  PR_NUMBER: "${{ github.event.pull_request.number || 'main' }}"
   DEPLOYMENT_NAME: "${{ inputs.deployment_name }}"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
   GINKGO_OPTS: "--fail-fast"
