@@ -15,9 +15,9 @@ import (
 )
 
 type LogCacheEmitter struct {
-	logger  lager.Logger
-	client  rpc.IngressClient
-	conn    *grpc.ClientConn
+	logger lager.Logger
+	client rpc.IngressClient
+	conn   *grpc.ClientConn
 }
 
 func NewLogCacheEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
