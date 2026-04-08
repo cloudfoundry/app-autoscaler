@@ -8,7 +8,7 @@
     "path:.#uaa-cli":                   "",
     "path:.#flatten_json-schema":       "",
 
-    "act": "0.2.84",
+    "act": "0.2.86",
     "apple-sdk": {
       "version": "latest",
       "platforms": [
@@ -16,23 +16,22 @@
       ]
     },
     "actionlint":           "1.7.11",
-    "bash-language-server": "latest",
+    "bash-language-server": "5.6.0",
     "bosh-cli":             "7.3.1",
     "cloudfoundry-cli":     "8.18.0",
     "coreutils":            "latest",
     "credhub-cli":          "2.9.54",
-    "curl":                 "7.88.1",
+    "curl":                 "8.17.0",
     "delve":                "1.26.1",
     "direnv":               "2.37.1",
     "fly":                  "7.14.3",
-    "gh":                   "2.88.1",
+    "gh":                   "2.89.0",
     "ginkgo":               "2.28.1",
     "gnumake":              "4.4.1",
     "gnused":               "latest",
     "gnutar":               "latest",
-    "go":                   "1.25.2",
     "go-tools":             "2025.1.1",
-    "golangci-lint":        "2.11.3",
+    "golangci-lint":        "2.11.4",
     "gopls":                "0.21.1",
     "google-java-format":   "1.35.0",
     "gum":                  "0.17.0",
@@ -51,7 +50,8 @@
     "temurin-bin-21":       "21.0.3",
     "which":                "latest",
     "xq-xml":               "1.4.0",
-    "yq-go":                "4.52.4"
+    "yq-go":                "4.52.5",
+    "go":                   "1.25.5"
   },
   "shell": {
     "init_hook": [

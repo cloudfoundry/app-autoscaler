@@ -229,6 +229,8 @@ modules:
         - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
       build-result: build/acceptance
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+    requires:
+      - name: app-autoscaler-application-logs
     parameters:
       no-route: true
       no-start: true
