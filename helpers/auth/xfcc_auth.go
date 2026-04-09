@@ -86,11 +86,11 @@ func CheckAuth(r *http.Request, org, space string) error {
 		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
-	if getSpaceGuid(cert) != space {
+	if space != "" && getSpaceGuid(cert) != space {
 		return ErrorWrongSpace
 	}
 
-	if getOrgGuid(cert) != org {
+	if org != "" && getOrgGuid(cert) != org {
 		return ErrorWrongOrg
 	}
 

@@ -33,11 +33,17 @@ type SyslogConfig struct {
 	TLS           models.TLSCerts `yaml:"tls"`
 }
 
+type MetricsGatewayConfig struct {
+	URL string `yaml:"url" json:"url"`
+}
+
 type Config struct {
 	Logging               helpers.LoggingConfig         `yaml:"logging"`
 	Server                helpers.ServerConfig          `yaml:"server"`
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
 	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
+	MetricsGateway        MetricsGatewayConfig          `yaml:"metrics_gateway" json:"metrics_gateway"`
+	InstanceTLSCerts      models.TLSCerts               `yaml:"-" json:"-"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
@@ -95,11 +101,15 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
-	if err != nil {
-		return err
+	if conf.UsingGateway() {
+		conf.InstanceTLSCerts = vcapReader.GetInstanceTLSCerts()
+	} else {
+		tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
+		if err != nil {
+			return err
+		}
+		conf.SyslogConfig.TLS = tls
 	}
-	conf.SyslogConfig.TLS = tls
 
 	return nil
 }
@@ -127,12 +137,12 @@ func (c *Config) validateDbConfig() error {
 	if c.Db[db.BindingDb].URL == "" {
 		return errors.New("configuration error: Binding DB url is empty")
 	}
-	if c.UsingSyslog() {
-		return c.validateSyslogConfig()
-	}
-	return c.validateLoggregatorConfig()
+	return nil
 }
 func (c *Config) validateSyslogOrLoggregator() error {
+	if c.UsingGateway() {
+		return nil
+	}
 	if c.UsingSyslog() {
 		return c.validateSyslogConfig()
 	}
@@ -183,6 +193,10 @@ func (c *Config) validateCredHelperImpl() error {
 
 func (c *Config) UsingSyslog() bool {
 	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
+}
+
+func (c *Config) UsingGateway() bool {
+	return c.MetricsGateway.URL != ""
 }
 
 // GetLogging returns the logging configuration

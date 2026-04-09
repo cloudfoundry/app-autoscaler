@@ -18,6 +18,7 @@ var _ = Describe("MetricForwarder", func() {
 		metricForwarder   forwarder.MetricForwarder
 		loggregatorConfig config.LoggregatorConfig
 		syslogConfig      config.SyslogConfig
+		gatewayConfig     config.MetricsGatewayConfig
 		err               error
 		conf              *config.Config
 	)
@@ -26,6 +27,7 @@ var _ = Describe("MetricForwarder", func() {
 		conf = &config.Config{
 			LoggregatorConfig: loggregatorConfig,
 			SyslogConfig:      syslogConfig,
+			MetricsGateway:    gatewayConfig,
 		}
 
 		logger := lager.NewLogger("metricsforwarder-test")
@@ -34,11 +36,24 @@ var _ = Describe("MetricForwarder", func() {
 	})
 
 	Describe("NewMetricForwarder", func() {
-		When("syslog it is present it creates a SyslogEmitter", func() {
-
+		When("gateway config is present it creates a GatewayEmitter", func() {
 			BeforeEach(func() {
-				// Loggregator config in spec has this default value
+				syslogConfig = config.SyslogConfig{}
+				loggregatorConfig = config.LoggregatorConfig{}
+				gatewayConfig = config.MetricsGatewayConfig{
+					URL: "https://some-gateway-url",
+				}
+			})
+
+			It("should create a GatewayEmitter", func() {
+				Expect(metricForwarder).To(BeAssignableToTypeOf(&forwarder.GatewayEmitter{}))
+			})
+		})
+
+		When("syslog it is present it creates a SyslogEmitter", func() {
+			BeforeEach(func() {
 				loggregatorConfig.MetronAddress = "127.0.0.1:3458"
+				gatewayConfig = config.MetricsGatewayConfig{}
 				syslogConfig = config.SyslogConfig{
 					ServerAddress: "syslog://some-server-address",
 				}
@@ -53,6 +68,7 @@ var _ = Describe("MetricForwarder", func() {
 			BeforeEach(func() {
 				testCertDir := "../../test-certs"
 				syslogConfig = config.SyslogConfig{}
+				gatewayConfig = config.MetricsGatewayConfig{}
 				loggregatorConfig = config.LoggregatorConfig{
 					MetronAddress: "some-address",
 					TLS: models.TLSCerts{

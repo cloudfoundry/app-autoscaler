@@ -24,6 +24,10 @@ func hasSyslogConfig(conf *config.Config) bool {
 }
 
 func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
+	if conf.UsingGateway() {
+		logger.Info("using-gateway-emitter", lager.Data{"url": conf.MetricsGateway.URL})
+		return NewGatewayEmitter(logger, conf.MetricsGateway.URL, conf.InstanceTLSCerts)
+	}
 	if hasSyslogConfig(conf) {
 		logger.Info("using-syslog-emitter")
 		return NewSyslogEmitter(logger, conf)

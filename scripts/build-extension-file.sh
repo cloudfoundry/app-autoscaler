@@ -36,6 +36,7 @@ export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsgateway_health_password" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password" --length 16 -t password
@@ -59,6 +60,7 @@ database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
 database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
+metricsgateway_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsgateway_health_password))
 operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
 eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
 scalingengine_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password))
@@ -87,6 +89,11 @@ export METRICSFORWARDER_HEALTH_PASSWORD="$(yq ".metricsforwarder_health_password
 export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
+
+export METRICSGATEWAY_HOST="${METRICSGATEWAY_HOST:-"${DEPLOYMENT_NAME}-metricsgateway"}"
+export METRICSGATEWAY_HEALTH_PASSWORD="$(yq ".metricsgateway_health_password" /tmp/mtar-secrets.yml)"
+export METRICSGATEWAY_INSTANCES="${METRICSGATEWAY_INSTANCES:-2}"
+export AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
 
 export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
 export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
@@ -162,13 +169,20 @@ modules:
   - name: metricsforwarder
     requires:
     - name: metricsforwarder-config
-    - name: syslog-client
     - name: database
     parameters:
       instances: ${METRICSFORWARDER_INSTANCES}
       routes:
       - route: ${METRICSFORWARDER_HOST}.\${default-domain}
       - route: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
+  - name: metricsgateway
+    requires:
+    - name: metricsgateway-config
+    - name: syslog-client
+    parameters:
+      instances: ${METRICSGATEWAY_INSTANCES}
+      routes:
+      - route: ${METRICSGATEWAY_HOST}.\${default-domain}
   - name: operator
     requires:
     - name: operator-config
@@ -219,9 +233,22 @@ resources:
   parameters:
     config:
       metricsforwarder-config:
+        metrics_gateway:
+          url: "https://${METRICSGATEWAY_HOST}.\${default-domain}"
         health:
           basic_auth:
             password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
+
+- name: metricsgateway-config
+  parameters:
+    config:
+      metricsgateway-config:
+        cf_server:
+          xfcc:
+            valid_org_guid: "${AUTOSCALER_ORG_GUID}"
+        health:
+          basic_auth:
+            password: "${METRICSGATEWAY_HEALTH_PASSWORD}"
 
 - name: eventgenerator-config
   parameters:
