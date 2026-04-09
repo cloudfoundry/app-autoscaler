@@ -3,7 +3,6 @@ package cf
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -170,6 +169,19 @@ func (w *CFClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 	return strings.TrimSuffix(endpoints.Uaa.Url, "/"), nil
 }
 
+// doAuthRequest executes an HTTP request using go-cfclient's authenticated HTTP client,
+// which automatically adds a Bearer token via the oauth2 transport.
+func (w *CFClientWrapper) doAuthRequest(req *http.Request, result any) error {
+	req.Header.Set("User-Agent", GetUserAgent())
+	resp, err := w.cfClient.HTTPAuthClient().Do(req)
+	if err != nil {
+		return err
+	}
+	return parseUaaResponse(resp, result)
+}
+
+// doUaaRequest executes an HTTP request using the wrapper's HTTP client directly.
+// Used for requests that provide their own authorization (e.g. user Bearer tokens).
 func (w *CFClientWrapper) doUaaRequest(req *http.Request, result any) error {
 	req.Header.Set("User-Agent", GetUserAgent())
 	// #nosec G704 -- UAA URL is fetched from trusted CF API endpoints
@@ -177,6 +189,10 @@ func (w *CFClientWrapper) doUaaRequest(req *http.Request, result any) error {
 	if err != nil {
 		return err
 	}
+	return parseUaaResponse(resp, result)
+}
+
+func parseUaaResponse(resp *http.Response, result any) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
@@ -210,12 +226,10 @@ func (w *CFClientWrapper) introspectToken(ctx context.Context, token string) (*I
 		return nil, fmt.Errorf("failed to create introspect request: %w", err)
 	}
 
-	credentials := base64.StdEncoding.EncodeToString([]byte(w.conf.ClientID + ":" + w.conf.Secret))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Authorization", "Basic "+credentials)
 
 	var result IntrospectionResponse
-	if err := w.doUaaRequest(req, &result); err != nil {
+	if err := w.doAuthRequest(req, &result); err != nil {
 		return nil, fmt.Errorf("introspect token failed: %w", err)
 	}
 	return &result, nil
