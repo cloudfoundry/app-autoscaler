@@ -74,8 +74,9 @@ var _ = Describe("Config", func() {
 					mockVCAPConfigurationReader.MaterializeTLSConfigFromServiceReturns(expectedTLSConfig, nil)
 				})
 
-				It("loads config from VCAP_SERVICES without error", func() {
+				It("loads the syslog config from VCAP_SERVICES", func() {
 					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.SyslogConfig.TLS).To(Equal(expectedTLSConfig))
 				})
 			})
 
@@ -255,16 +256,52 @@ health:
 			Expect(conf.Logging.PlainTextSink).To(BeFalse())
 		})
 
-		When("log_cache is configured", func() {
+		When("syslog is available", func() {
 			BeforeEach(func() {
-				conf.LogCacheConfig = LogCacheConfig{
-					Address: "log-cache.service.cf.internal:8080",
+				conf.SyslogConfig = SyslogConfig{
+					ServerAddress: "localhost",
+					Port:          514,
+					TLS: models.TLSCerts{
+						CACertFile: "../testcerts/ca.crt",
+						CertFile:   "../testcerts/client.crt",
+						KeyFile:    "../testcerts/client.crt",
+					},
 				}
 				conf.LoggregatorConfig = LoggregatorConfig{}
 			})
 
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
+			})
+
+			When("SyslogServer CACert is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.CACertFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("SyslogServer Loggregator CACert is empty")))
+				})
+			})
+
+			When("SyslogServer CertFile is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.KeyFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("SyslogServer ClientKey is empty")))
+				})
+			})
+
+			When("SyslogServer ClientCert is not set", func() {
+				BeforeEach(func() {
+					conf.SyslogConfig.TLS.CertFile = ""
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("SyslogServer ClientCert is empty")))
+				})
 			})
 		})
 
