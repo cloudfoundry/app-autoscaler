@@ -43,14 +43,14 @@ func (f *fakeIngressServer) ReceivedEnvelopes() []*loggregator_v2.Envelope {
 
 var _ = Describe("LogCacheEmitter", func() {
 	var (
-		listener    net.Listener
-		grpcServer  *grpc.Server
-		fakeIngress *fakeIngressServer
-		emitter     forwarder.MetricForwarder
-		err         error
-		conf        *config.Config
-		logger      *lagertest.TestLogger
-		buffer      *gbytes.Buffer
+		listener      net.Listener
+		grpcServer    *grpc.Server
+		fakeIngress   *fakeIngressServer
+		emitter       forwarder.MetricForwarder
+		err           error
+		conf          *config.Config
+		logger        *lagertest.TestLogger
+		buffer        *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
