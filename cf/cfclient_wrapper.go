@@ -173,6 +173,7 @@ func (w *CFClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 // which automatically adds a Bearer token via the oauth2 transport.
 func (w *CFClientWrapper) doAuthRequest(req *http.Request, result any) error {
 	req.Header.Set("User-Agent", GetUserAgent())
+	// #nosec G704 -- UAA URL is fetched from trusted CF API endpoints
 	resp, err := w.cfClient.HTTPAuthClient().Do(req)
 	if err != nil {
 		return err
