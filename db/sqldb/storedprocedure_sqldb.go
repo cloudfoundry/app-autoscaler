@@ -22,7 +22,9 @@ func sanitizeDBURL(dbURL string) string {
 		return "invalid-url"
 	}
 	// Remove password but keep username, host, port, database
-	parsedURL.User = url.UserPassword(parsedURL.User.Username(), "***")
+	if parsedURL.User != nil {
+		parsedURL.User = url.UserPassword(parsedURL.User.Username(), "***")
+	}
 	return parsedURL.String()
 }
 
@@ -38,10 +40,11 @@ func (sdb *StoredProcedureSQLDb) Ping() error {
 }
 
 func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
+	// Sanitize URL once for logging throughout this function
+	safeURL := sanitizeDBURL(dbConfig.URL)
+
 	poolConfig, err := pgxpool.ParseConfig(dbConfig.URL)
 	if err != nil {
-		// Log URL without credentials for debugging
-		safeURL := sanitizeDBURL(dbConfig.URL)
 		logger.Error("parse-procedure-db-url", err, lager.Data{"url": safeURL})
 		return nil, err
 	}
@@ -52,7 +55,6 @@ func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.Da
 
 	sqldb, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
-		safeURL := sanitizeDBURL(dbConfig.URL)
 		logger.Error("open-stored-procedure-db", err, lager.Data{"url": safeURL})
 		return nil, err
 	}
@@ -60,7 +62,6 @@ func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.Da
 	err = sqldb.Ping(context.Background())
 	if err != nil {
 		sqldb.Close()
-		safeURL := sanitizeDBURL(dbConfig.URL)
 		logger.Error("ping-stored-procedure-db", err, lager.Data{"url": safeURL})
 		return nil, err
 	}

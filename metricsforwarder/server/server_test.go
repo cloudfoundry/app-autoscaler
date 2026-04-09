@@ -48,8 +48,8 @@ func createTestCustomMetrics() []*models.CustomMetric {
 	}
 }
 
-// Helper function to marshal custom metric
-func marshalCustomMetric() ([]byte, error) {
+// Helper function to create test custom metric JSON
+func createTestCustomMetricJSON() ([]byte, error) {
 	return json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 }
 
@@ -119,7 +119,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("A request to forward custom metrics comes without Authorization header", func() {
 		BeforeEach(func() {
-			body, err = marshalCustomMetric()
+			body, err = createTestCustomMetricJSON()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
@@ -137,7 +137,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("a request to forward custom metrics comes without 'Basic'", func() {
 		BeforeEach(func() {
-			body, err = marshalCustomMetric()
+			body, err = createTestCustomMetricJSON()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
@@ -155,7 +155,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("a request to forward custom metrics comes with wrong user credentials", func() {
 		BeforeEach(func() {
-			body, err = marshalCustomMetric()
+			body, err = createTestCustomMetricJSON()
 			Expect(err).NotTo(HaveOccurred())
 
 			fakeCredentials.ValidateReturns(false, errors.New("wrong credentials"))
@@ -175,7 +175,7 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 
 	When("a request to forward custom metrics comes with unmatched metric types", func() {
 		BeforeEach(func() {
-			body, err = marshalCustomMetric()
+			body, err = createTestCustomMetricJSON()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
