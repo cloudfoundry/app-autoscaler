@@ -169,6 +169,7 @@ modules:
   - name: metricsforwarder
     requires:
     - name: metricsforwarder-config
+    - name: syslog-client
     - name: database
     parameters:
       instances: ${METRICSFORWARDER_INSTANCES}
@@ -235,8 +236,6 @@ resources:
   parameters:
     config:
       metricsforwarder-config:
-        metrics_gateway:
-          url: "https://${METRICSGATEWAY_HOST}.\${default-domain}"
         health:
           basic_auth:
             password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
