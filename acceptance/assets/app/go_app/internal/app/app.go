@@ -18,6 +18,12 @@ func writeJSON(w http.ResponseWriter, statusCode int, data JSONResponse) error {
 	return json.NewEncoder(w).Encode(data)
 }
 
+func respondJSON(logger *slog.Logger, w http.ResponseWriter, data JSONResponse) {
+	if err := writeJSON(w, http.StatusOK, data); err != nil {
+		logger.Error("Failed to write JSON response", slog.Any("error", err))
+	}
+}
+
 func Errorf(logger *slog.Logger, w http.ResponseWriter, statusCode int, format string, args ...any) {
 	message := fmt.Sprintf(format, args...)
 	if err := writeJSON(w, statusCode, JSONResponse{"error": JSONResponse{"description": message}}); err != nil {
@@ -33,15 +39,11 @@ func Router(logger *slog.Logger, timewaster TimeWaster, memoryTest MemoryGobbler
 
 	// /{$} to match root path "/" exactly, see https://pkg.go.dev/net/http#hdr-Patterns-ServeMux
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"name": "test-app"}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"name": "test-app"})
 	})
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"status": "ok"}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"status": "ok"})
 	})
 
 	// Register test endpoints

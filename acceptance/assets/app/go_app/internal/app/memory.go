@@ -77,12 +77,10 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 			memoryTest.Sleep(duration)
 			memoryTest.StopTest()
 		}()
-		if err := writeJSON(w, http.StatusOK, JSONResponse{
+		respondJSON(logger, w, JSONResponse{
 			"memoryMiB": memoryMiB,
 			"minutes":   minutes,
-		}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		})
 	})
 
 	mux.HandleFunc("GET /memory/close", func(w http.ResponseWriter, r *http.Request) {
@@ -92,9 +90,7 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 		}
 		memoryTest.StopTest()
 		logMemoryUsage(logger, "after freeing memory")
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"status": "close memory test"}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"status": "close memory test"})
 	})
 }
 

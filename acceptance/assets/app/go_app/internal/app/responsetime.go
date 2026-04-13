@@ -26,15 +26,11 @@ func ResponseTimeTests(logger *slog.Logger, mux *http.ServeMux, timeWaster TimeW
 		}
 		duration := time.Duration(milliseconds) * time.Millisecond
 		timeWaster.Sleep(duration)
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"duration": duration.String()}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"duration": duration.String()})
 	})
 
 	mux.HandleFunc("GET /responsetime/fast", func(w http.ResponseWriter, r *http.Request) {
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"fast": true}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"fast": true})
 	})
 }
 

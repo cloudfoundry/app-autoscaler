@@ -33,16 +33,12 @@ func DiskTest(logger *slog.Logger, mux *http.ServeMux, diskOccupier DiskOccupier
 			Errorf(logger, w, http.StatusInternalServerError, "error invoking occupation: %s", err.Error())
 			return
 		}
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"utilization": utilisation, "minutes": minutes}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"utilization": utilisation, "minutes": minutes})
 	})
 
 	mux.HandleFunc("GET /disk/close", func(w http.ResponseWriter, r *http.Request) {
 		diskOccupier.Stop()
-		if err := writeJSON(w, http.StatusOK, JSONResponse{"message": "close disk test"}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		respondJSON(logger, w, JSONResponse{"message": "close disk test"})
 	})
 }
 

@@ -64,11 +64,9 @@ func handleCustomMetricsEndpoint(logger *slog.Logger, customMetricTest CustomMet
 			return
 		}
 
-		if err := writeJSON(w, http.StatusOK, JSONResponse{
+		respondJSON(logger, w, JSONResponse{
 			"mtls": useMtls,
-		}); err != nil {
-			logger.Error("Failed to write JSON response", slog.Any("error", err))
-		}
+		})
 	}
 }
 
