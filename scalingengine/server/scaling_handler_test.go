@@ -1,7 +1,12 @@
 package server_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -10,12 +15,6 @@ import (
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"bytes"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"net/http/httptest"
 )
 
 const testUrlActiveSchedules = "http://localhost/v1/apps/an-app-id/active_schedules/a-schedule-id"
@@ -72,7 +71,7 @@ var _ = Describe("ScalingHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 
 				Expect(scalingEngine.ScaleCallCount()).To(Equal(1))
-				appId, scaleTrigger := scalingEngine.ScaleArgsForCall(0)
+				_, appId, scaleTrigger := scalingEngine.ScaleArgsForCall(0)
 				Expect(appId).To(Equal("an-app-id"))
 				Expect(scaleTrigger).To(Equal(trigger))
 

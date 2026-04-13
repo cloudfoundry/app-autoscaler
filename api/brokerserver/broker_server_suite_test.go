@@ -141,8 +141,6 @@ var _ = BeforeSuite(func() {
 		DefaultCustomMetricsCredentialType: "binding-secret",
 	}
 	fakeCfClient := &fakes.FakeCFClient{}
-	fakeCfCtxClient := &fakes.FakeContextClient{}
-	fakeCfClient.GetCtxClientReturns(fakeCfCtxClient)
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	fakeCredentials := &fakes.FakeCredentials{}
