@@ -37,31 +37,31 @@ type ListBasedMemoryGobbler struct {
 
 var _ MemoryGobbler = &ListBasedMemoryGobbler{}
 
+func parsePositiveInt64(r *http.Request, name string) (int64, error) {
+	val, err := strconv.ParseInt(r.PathValue(name), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: %s", name, err.Error())
+	}
+	if val < 1 {
+		return 0, fmt.Errorf("%s must be > 0", name)
+	}
+	return val, nil
+}
+
 func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbler) {
 	mux.HandleFunc("GET /memory/{memoryMiB}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
 		if memoryTest.IsRunning() {
 			Errorf(logger, w, http.StatusConflict, "memory test is already running")
 			return
 		}
-		var memoryMiB int64
-		var minutes int64
-		var err error
-		memoryMiB, err = strconv.ParseInt(r.PathValue("memoryMiB"), 10, 64)
+		memoryMiB, err := parsePositiveInt64(r, "memoryMiB")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid memoryMiB: %s", err.Error())
+			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
-		minutes, err = strconv.ParseInt(r.PathValue("minutes"), 10, 64)
+		minutes, err := parsePositiveInt64(r, "minutes")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid minutes: %s", err.Error())
-			return
-		}
-		if memoryMiB < 1 {
-			Errorf(logger, w, http.StatusBadRequest, "memoryMiB must be > 0")
-			return
-		}
-		if minutes < 1 {
-			Errorf(logger, w, http.StatusBadRequest, "minutes must be > 0")
+			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
