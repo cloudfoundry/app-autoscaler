@@ -24,7 +24,7 @@ var _ = Describe("Broker", func() {
 	var (
 		aBroker         *broker.Broker
 		err             error
-		fakeCfCtxClient *fakes.FakeContextClient
+		fakeCfCtxClient *fakes.FakeCFClient
 		fakeBindingDB   *fakes.FakeBindingDB
 		fakePolicyDB    *fakes.FakePolicyDB
 		fakeCredentials *fakes.FakeCredentials
@@ -32,7 +32,7 @@ var _ = Describe("Broker", func() {
 	)
 
 	BeforeEach(func() {
-		fakeCfCtxClient = &fakes.FakeContextClient{}
+		fakeCfCtxClient = &fakes.FakeCFClient{}
 		fakeBindingDB = &fakes.FakeBindingDB{}
 		fakePolicyDB = &fakes.FakePolicyDB{}
 		fakeCredentials = &fakes.FakeCredentials{}

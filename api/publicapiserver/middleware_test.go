@@ -133,7 +133,8 @@ var _ = Describe("Middleware", func() {
 			It("should fail with 500", func() {
 				By("checking if the token is from an admin user")
 				Expect(fakeCFClient.IsUserAdminCallCount()).To(Equal(1))
-				Expect(fakeCFClient.IsUserAdminArgsForCall(0)).To(Equal(TEST_BEARER_TOKEN))
+				_, token := fakeCFClient.IsUserAdminArgsForCall(0)
+				Expect(token).To(Equal(TEST_BEARER_TOKEN))
 
 				CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
 					Code:    http.StatusText(http.StatusInternalServerError),
@@ -152,7 +153,8 @@ var _ = Describe("Middleware", func() {
 			It("should succeed with 200", func() {
 				By("checking if the token is from an admin user")
 				Expect(fakeCFClient.IsUserAdminCallCount()).To(Equal(1))
-				Expect(fakeCFClient.IsUserAdminArgsForCall(0)).To(Equal(TEST_BEARER_TOKEN))
+				_, token := fakeCFClient.IsUserAdminArgsForCall(0)
+				Expect(token).To(Equal(TEST_BEARER_TOKEN))
 
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})

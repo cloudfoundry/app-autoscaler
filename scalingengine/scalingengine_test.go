@@ -1,15 +1,15 @@
 package scalingengine_test
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
-
+	"context"
 	"errors"
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
@@ -69,7 +69,7 @@ var _ = Describe("ScalingEngine", func() {
 		})
 
 		JustBeforeEach(func() {
-			scalingResult, err = scalingEngine.Scale("an-app-id", trigger)
+			scalingResult, err = scalingEngine.Scale(context.Background(), "an-app-id", trigger)
 		})
 
 		Context("when scaling succeeds", func() {
@@ -82,7 +82,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			It("sets the new app instance number and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
-				guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				_, guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(guid.String()).To(Equal("an-app-id"))
 				Expect(num).To(Equal(3))
 
@@ -231,12 +231,12 @@ var _ = Describe("ScalingEngine", func() {
 			It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				_, guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(guid.String()).To(Equal("an-app-id"))
 				Expect(num).To(Equal(6))
 
-				id, expiredAt := scalingEngineDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
+				cooldownId, expiredAt := scalingEngineDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
+				Expect(cooldownId).To(Equal("an-app-id"))
 				Expect(expiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -301,7 +301,7 @@ var _ = Describe("ScalingEngine", func() {
 			It("updates the app instance with  min instances and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				_, guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(guid.String()).To(Equal("an-app-id"))
 				Expect(num).To(Equal(2))
 
@@ -343,7 +343,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(policyDB.GetAppPolicyCallCount()).To(BeZero())
 
-					id, num := cfc.ScaleAppWebProcessArgsForCall(0)
+					_, id, num := cfc.ScaleAppWebProcessArgsForCall(0)
 					Expect(id.String()).To(Equal("an-app-id"))
 					Expect(num).To(Equal(7))
 
@@ -376,7 +376,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(policyDB.GetAppPolicyCallCount()).To(BeZero())
 
-					id, num := cfc.ScaleAppWebProcessArgsForCall(0)
+					_, id, num := cfc.ScaleAppWebProcessArgsForCall(0)
 					Expect(id.String()).To(Equal("an-app-id"))
 					Expect(num).To(Equal(3))
 
@@ -662,7 +662,7 @@ var _ = Describe("ScalingEngine", func() {
 
 	Describe("SetActiveSchedule", func() {
 		JustBeforeEach(func() {
-			err = scalingEngine.SetActiveSchedule("an-app-id", activeSchedule)
+			err = scalingEngine.SetActiveSchedule(context.Background(), "an-app-id", activeSchedule)
 		})
 
 		BeforeEach(func() {
@@ -684,7 +684,7 @@ var _ = Describe("ScalingEngine", func() {
 			It("sets the app instances to be InstanceMax", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
+				_, appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(appid.String()).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(10))
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -714,7 +714,7 @@ var _ = Describe("ScalingEngine", func() {
 				It("sets the app instances to be InstanceMin", func() {
 					Expect(err).NotTo(HaveOccurred())
 
-					appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
+					_, appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
 					Expect(appid.String()).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(2))
 
@@ -762,7 +762,7 @@ var _ = Describe("ScalingEngine", func() {
 				It("sets the app instances to be InstanceMinInitial", func() {
 					Expect(err).NotTo(HaveOccurred())
 
-					appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
+					_, appid, instances := cfc.ScaleAppWebProcessArgsForCall(0)
 					Expect(appid.String()).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(5))
 
@@ -907,7 +907,7 @@ var _ = Describe("ScalingEngine", func() {
 
 	Describe("RemoveActiveSchedule", func() {
 		JustBeforeEach(func() {
-			err = scalingEngine.RemoveActiveSchedule("an-app-id", "a-schedule-id")
+			err = scalingEngine.RemoveActiveSchedule(context.Background(), "an-app-id", "a-schedule-id")
 		})
 
 		BeforeEach(func() {
@@ -941,7 +941,7 @@ var _ = Describe("ScalingEngine", func() {
 			})
 
 			It("changes the instance number to InstanceMin", func() {
-				appId, instances := cfc.ScaleAppWebProcessArgsForCall(0)
+				_, appId, instances := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(appId.String()).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(3))
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -965,7 +965,7 @@ var _ = Describe("ScalingEngine", func() {
 			})
 
 			It("changes the instance number to instance-max-count", func() {
-				appId, instances := cfc.ScaleAppWebProcessArgsForCall(0)
+				_, appId, instances := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(appId.String()).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(6))
 

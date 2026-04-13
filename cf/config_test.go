@@ -25,7 +25,6 @@ var _ = Describe("Config", func() {
 			BeforeEach(func() {
 				objectbytes = `
 api: https://api.example.com
-per_page: 3
 client_id: client-id
 secret: client-secret
 skip_ssl_validation: true
@@ -41,7 +40,6 @@ idle_connection_timeout_ms: 200
 					API:      "https://api.example.com",
 					ClientID: "client-id",
 					Secret:   "client-secret",
-					PerPage:  3,
 					ClientConfig: cf.ClientConfig{
 						SkipSSLValidation:       true,
 						MaxRetries:              3,

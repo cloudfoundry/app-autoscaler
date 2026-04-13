@@ -86,17 +86,17 @@ func (a AddMock) GetApp(appState string, statusCode int, spaceGuid cf.SpaceId) A
 	return a
 }
 
-func definedResponsesOR(statusCode int, response interface{}) interface{} {
+func definedResponsesOR(statusCode int, response any) any {
 	switch statusCode {
 	case 401:
-		response = cf.CfNotAuthenticated
+		return cf.CfNotAuthenticated
 	case 403:
-		response = cf.CfNotAuthorized
+		return cf.CfNotAuthorized
 	case 404:
-		response = cf.CfResourceNotFound
+		return cf.CfResourceNotFound
 	default:
+		return response
 	}
-	return response
 }
 
 func (a AddMock) GetAppProcesses(processes int) AddMock {
@@ -106,7 +106,7 @@ func (a AddMock) GetAppProcesses(processes int) AddMock {
 	}
 	a.server.RouteToHandler("GET",
 		regexp.MustCompile(`^/v3/apps/[^/]+/processes$`),
-		ghttp.RespondWithJSONEncoded(http.StatusOK, processesResponse{Resources: cf.Processes{{Instances: processes}}}))
+		ghttp.RespondWithJSONEncoded(http.StatusOK, processesResponse{Resources: cf.Processes{{Guid: "mock-web-process-guid", Type: "web", Instances: processes}}}))
 	return a
 }
 
@@ -121,7 +121,8 @@ func (a AddMock) Info(url string) AddMock {
 }
 
 func (a AddMock) ScaleAppWebProcess() AddMock {
-	a.server.RouteToHandler("POST", regexp.MustCompile(`^/v3/apps/[^/]+/processes/web/actions/scale$`), ghttp.RespondWith(http.StatusAccepted, "{}"))
+	// go-cfclient v3 scales by process GUID, not app GUID
+	a.server.RouteToHandler("POST", regexp.MustCompile(`^/v3/processes/[^/]+/actions/scale$`), ghttp.RespondWith(http.StatusAccepted, "{}"))
 	return a
 }
 
@@ -171,6 +172,9 @@ func (a AddMock) Introspect(testUserScope []string) AddMock {
 
 func (a AddMock) OauthToken(accessToken string) AddMock {
 	a.server.RouteToHandler(http.MethodPost, "/oauth/token",
-		ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{AccessToken: accessToken, ExpiresIn: 12000}))
+		ghttp.RespondWithJSONEncoded(http.StatusOK, struct {
+			AccessToken string `json:"access_token"`
+			ExpiresIn   int64  `json:"expires_in"`
+		}{AccessToken: accessToken, ExpiresIn: 12000}))
 	return a
 }
