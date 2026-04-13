@@ -120,18 +120,19 @@ var _ = Describe("logCacheFetcherFactory", func() {
 			It("creates a log cache client that uses a custom CF OAuth2 HTTP client for password grant", func() {
 				// For password grant, we use our custom CFOauth2HTTPClient that sends
 				// client credentials via Basic auth header (required by CF's "cf" UAA client)
-				mockLogCacheMetricFetcherCreator.NewLogCacheFetcherReturns(mockMetricFetcher)
-
-				metricFetcher, err := metricFetcherFactory.CreateFetcher(testLogger, conf)
-
-				Expect(err).ToNot(HaveOccurred())
-				Expect(metricFetcher).To(Equal(mockMetricFetcher))
-				Expect(mockLogCacheMetricFetcherCreator.NewLogCacheFetcherCallCount()).To(Equal(1))
-				logger, logCacheClient, envelopeProcessor, collectionInterval := mockLogCacheMetricFetcherCreator.NewLogCacheFetcherArgsForCall(0)
-				Expect(logger).To(Equal(testLogger))
-				Expect(logCacheClient).ToNot(BeNil())
-				Expect(envelopeProcessor).ToNot(BeNil())
-				Expect(collectionInterval).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
+				expectedHTTPClient := metric.NewCFOauth2HTTPClient(
+					conf.MetricCollector.UAACreds.URL,
+					conf.MetricCollector.UAACreds.ClientID,
+					conf.MetricCollector.UAACreds.ClientSecret,
+					conf.MetricCollector.UAACreds.Username,
+					conf.MetricCollector.UAACreds.Password,
+					conf.MetricCollector.UAACreds.SkipSSLValidation,
+				)
+				expectedLogCacheClient := logcache.NewClient(
+					conf.MetricCollector.MetricCollectorURL,
+					logcache.WithHTTPClient(expectedHTTPClient),
+				)
+				verifyFetcherCreation(expectedLogCacheClient)
 			})
 		})
 
