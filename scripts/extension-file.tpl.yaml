@@ -79,11 +79,23 @@ modules:
       ACCEPTANCE_CONFIG_JSON: |
         {
           "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
+          "admin_user": "${EXISTING_USER}",
+          "admin_password": "${EXISTING_USER_PASSWORD}",
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION},
           "use_http": false,
+          "use_existing_user": ${USE_EXISTING_USER},
+          "existing_user": "${EXISTING_USER}",
+          "existing_user_password": "${EXISTING_USER_PASSWORD}",
+          "other_existing_user": "${AUTOSCALER_OTHER_USER}",
+          "other_existing_user_password": "${AUTOSCALER_OTHER_USER_PASSWORD}",
+          "keep_user_at_suite_end": ${KEEP_USER_AT_SUITE_END},
+          "add_existing_user_to_existing_space": ${ADD_EXISTING_USER_TO_EXISTING_SPACE},
+          "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
+          "existing_organization": "${EXISTING_ORGANIZATION}",
+          "use_existing_space": ${USE_EXISTING_SPACE},
+          "existing_space": "${EXISTING_SPACE}",
+          "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},
           "service_name": "${DEPLOYMENT_NAME}",
           "service_plan": "autoscaler-free-plan",
           "service_broker": "${DEPLOYMENT_NAME}",
@@ -188,8 +200,10 @@ resources:
               password: ${OPERATOR_HEALTH_PASSWORD}
           cf:
             api: https://api.${default-domain}
+            grant_type: ${OPERATOR_CF_GRANT_TYPE}
             client_id: ${OPERATOR_CF_CLIENT_ID}
-            secret: ${OPERATOR_CF_CLIENT_SECRET}
+            username: ${OPERATOR_CF_USERNAME}
+            password: ${OPERATOR_CF_PASSWORD}
           scaling_engine:
             scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
           scheduler:
@@ -204,8 +218,10 @@ resources:
               password: ${SCALINGENGINE_HEALTH_PASSWORD}
           cf:
             api: https://api.${default-domain}
+            grant_type: ${SCALINGENGINE_CF_GRANT_TYPE}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
-            secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+            username: ${SCALINGENGINE_CF_USERNAME}
+            password: ${SCALINGENGINE_CF_PASSWORD}
 
   - name: database
     parameters:

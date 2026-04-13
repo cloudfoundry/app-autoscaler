@@ -343,30 +343,24 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 type ServicePlans []ServicePlan
 
-// BoolOrInt handles CF API inconsistency where plan_updateable field is returned as:
-//
-//   - boolean (true/false) when queried by admin users
-//   - integer (0/1) when queried by org-manager or non-admin users
-//
-// This type accepts both formats during JSON unmarshaling, converting integers to booleans.
+// BoolOrInt handles CF API responses where plan_updateable may be returned as
+// either a boolean (true/false) or an integer (0/1) depending on user permissions.
 type BoolOrInt bool
 
 func (b *BoolOrInt) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 && (data[0] == 't' || data[0] == 'f') {
-		var boolVal bool
-		if err := json.Unmarshal(data, &boolVal); err != nil {
-			return err
-		}
+	var boolVal bool
+	if err := json.Unmarshal(data, &boolVal); err == nil {
 		*b = BoolOrInt(boolVal)
 		return nil
 	}
 
 	var intVal int
-	if err := json.Unmarshal(data, &intVal); err != nil {
-		return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
+	if err := json.Unmarshal(data, &intVal); err == nil {
+		*b = BoolOrInt(intVal != 0)
+		return nil
 	}
-	*b = BoolOrInt(intVal != 0)
-	return nil
+
+	return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
 }
 
 type (
@@ -411,7 +405,7 @@ func GetServicePlans(cfg *config.Config) ServicePlans {
 }
 
 func (p ServicePlan) isUpdatable() bool {
-	return p.BrokerCatalog.Features.PlanUpdateable.Bool()
+	return bool(p.BrokerCatalog.Features.PlanUpdateable)
 }
 
 func (b BoolOrInt) Bool() bool { return bool(b) }

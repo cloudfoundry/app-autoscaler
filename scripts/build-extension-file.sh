@@ -26,7 +26,7 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
 fi
 
 bbl_login
-cf_login
+cf_admin_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
@@ -61,7 +61,11 @@ load_secrets() {
     "export DATABASE_DB_CLIENT_KEY="                  + (.database_client_key                     | @sh),
     "export SYSLOG_CLIENT_CA="                        + (.syslog_client_ca                        | @sh),
     "export SYSLOG_CLIENT_CERT="                      + (.syslog_client_cert                      | @sh),
-    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh)
+    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh),
+    "export SERVICE_BROKER_PASSWORD_BLUE="            + (.service_broker_password_blue            | @sh),
+    "export SERVICE_BROKER_PASSWORD="                 + (.service_broker_password                 | @sh),
+    "export AUTOSCALER_ORG_MANAGER_PASSWORD="         + (.org_manager_password                    | @sh),
+    "export AUTOSCALER_OTHER_USER_PASSWORD="          + (.other_user_password                     | @sh)
   ' "${secrets_file}")"
   eval "${exports}"
   return
@@ -89,6 +93,8 @@ database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
 database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
+org_manager_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/org_manager_password))
+other_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/other_user_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
@@ -100,6 +106,10 @@ export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
 # --- Event generator ---
+export EVENTGENERATOR_CF_GRANT_TYPE="password"
+export EVENTGENERATOR_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export EVENTGENERATOR_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export EVENTGENERATOR_CF_CLIENT_ID="cf"
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
 export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
@@ -117,8 +127,10 @@ AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
 export AUTOSCALER_ORG_GUID
 
 # --- Scaling engine ---
-export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
-export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
+export SCALINGENGINE_CF_GRANT_TYPE="password"
+export SCALINGENGINE_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export SCALINGENGINE_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export SCALINGENGINE_CF_CLIENT_ID="cf"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
 export SCALINGENGINE_INSTANCES="${SCALINGENGINE_INSTANCES:-2}"
@@ -129,14 +141,15 @@ export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
 # --- Operator ---
-export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
-export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
+export OPERATOR_CF_GRANT_TYPE="password"
+export OPERATOR_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export OPERATOR_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export OPERATOR_CF_CLIENT_ID="cf"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 # --- Database ---
 # Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
-export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
 DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
 DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
 DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
@@ -154,6 +167,16 @@ export PERFORMANCE_APP_COUNT="${PERFORMANCE_APP_COUNT:-100}"
 export PERFORMANCE_APP_PERCENTAGE_TO_SCALE="${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30}"
 export PERFORMANCE_SETUP_WORKERS="${PERFORMANCE_SETUP_WORKERS:-50}"
 export PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA="${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}"
+export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
+export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
+export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
+export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
+export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
+export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-true}"
+export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
 
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"

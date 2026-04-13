@@ -20,8 +20,7 @@ export GOWORK := off
 
 .PHONY: clean
 clean:
-	rm --recursive --force './build' './vendor' './ginkgo_v2' './results'
-	@make --directory='./assets/app/go_app' clean
+	rm --recursive --force './vendor'
 
 
 .PHONY: go-mod-tidy
@@ -78,7 +77,7 @@ lint:
 .PHONY: acceptance-tests-config
 acceptance-tests-config:
 	@ACCEPTANCE_CONFIG_PATH='./acceptance_config.json' ${MAKEFILE_DIR}/../scripts/acceptance-tests-config.sh
-	@echo '✏️ Configuration for acceptance-tests written to file "./acceptance_config.json"!'
+	@echo '✏️ Configuration for acceptance-tests written to file "${acceptance-config-path}"!'
 
 
 .PHONY: run-acceptance-tests
