@@ -29,6 +29,17 @@ func (conf *Config) IsPasswordGrant() bool {
 }
 
 func (conf *Config) Validate() error {
+	if err := conf.validateAPI(); err != nil {
+		return err
+	}
+
+	if conf.IsPasswordGrant() {
+		return conf.validatePasswordGrant()
+	}
+	return conf.validateClientCredentials()
+}
+
+func (conf *Config) validateAPI() error {
 	if conf.API == "" {
 		return fmt.Errorf("Configuration error: cf api is empty")
 	}
@@ -50,10 +61,7 @@ func (conf *Config) Validate() error {
 	apiURL.Path = strings.TrimSuffix(apiURL.Path, "/")
 	conf.API = apiURL.String()
 
-	if conf.IsPasswordGrant() {
-		return conf.validatePasswordGrant()
-	}
-	return conf.validateClientCredentials()
+	return nil
 }
 
 func (conf *Config) validatePasswordGrant() error {
