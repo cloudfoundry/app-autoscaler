@@ -178,6 +178,7 @@ func (w *CFClientWrapper) getUaaURL(ctx context.Context) (string, error) {
 // doUaaRequest executes an HTTP request using the wrapper's HTTP client directly.
 func (w *CFClientWrapper) doUaaRequest(req *http.Request, result any) error {
 	req.Header.Set("User-Agent", GetUserAgent())
+	// #nosec G704 -- UAA URL is fetched from trusted CF API endpoints
 	resp, err := w.httpClient.Do(req)
 	if err != nil {
 		return err

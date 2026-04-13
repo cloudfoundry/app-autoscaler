@@ -69,6 +69,7 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
+	// #nosec G704 -- URL comes from user-configured metrics endpoint
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -84,6 +85,7 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 		}
 
 		req.Header.Set("Authorization", "Bearer "+token)
+		// #nosec G704 -- URL comes from user-configured metrics endpoint
 		return c.httpClient.Do(req)
 	}
 

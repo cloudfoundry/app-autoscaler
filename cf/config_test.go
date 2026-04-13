@@ -19,7 +19,8 @@ var _ = Describe("Config", func() {
 			objectbytes string
 		)
 		JustBeforeEach(func() {
-			err = yaml.Unmarshal([]byte(objectbytes), &conf)
+			conf = &cf.Config{}
+			err = yaml.Unmarshal([]byte(objectbytes), conf)
 		})
 		Context("Given a valid configuration", func() {
 			BeforeEach(func() {
