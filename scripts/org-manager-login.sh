@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2086
 
 set -euo pipefail
 
@@ -8,16 +9,6 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-function main() {
-	step "cleaning up deployment ${DEPLOYMENT_NAME}"
-	bbl_login
-	cf_admin_login
-
-	cleanup_apps
-	cleanup_acceptance_run
-	cleanup_service_broker
-	cleanup_credhub
-	cleanup_db
-}
-
-[ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"
+bbl_login
+cf_org_manager_login
+cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"

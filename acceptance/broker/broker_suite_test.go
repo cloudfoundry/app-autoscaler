@@ -42,7 +42,11 @@ var _ = BeforeSuite(func() {
 			fmt.Println("Skipping Teardown...")
 		} else {
 			DisableServiceAccess(cfg, setup)
-			setup.Teardown()
+			if cfg.UseExistingOrganization {
+				CleanupInExistingOrg(cfg, setup)
+			} else {
+				setup.Teardown()
+			}
 		}
 	})
 })

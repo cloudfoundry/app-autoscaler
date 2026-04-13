@@ -26,12 +26,23 @@ func CleanupOrgs(cfg *config.Config, wfh *workflowhelpers.ReproducibleTestSuiteS
 
 func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.ReproducibleTestSuiteSetup) {
 	workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
-		targetOrgWithSpace(setup.GetOrganizationName(), "", cfg.DefaultTimeoutDuration())
-		orgGuid := GetOrgGuid(cfg, cfg.ExistingOrganization)
-		rawSpaces := GetRawSpaces(orgGuid, cfg.DefaultTimeoutDuration())
-		spaces := filterTestSpaces(rawSpaces, cfg.NamePrefix)
-		if len(spaces) == 0 {
-			return
+		if cfg.UseExistingOrganization {
+			targetOrgWithSpace(setup.GetOrganizationName(), "", cfg.DefaultTimeoutDuration())
+			orgGuid := GetOrgGuid(cfg, cfg.ExistingOrganization)
+			spaceNames := GetTestSpaces(orgGuid, cfg)
+			if len(spaceNames) == 0 {
+				return
+			}
+
+			// Clean up all test spaces
+			for _, spaceName := range spaceNames {
+				spaceGuid := GetSpaceGuid(cfg, orgGuid)
+				deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
+				deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
+			}
+
+			// Delete all test spaces
+			DeleteSpaces(cfg.ExistingOrganization, spaceNames, cfg.DefaultTimeoutDuration())
 		}
 
 		spaceNames := make([]string, 0, len(spaces))

@@ -82,7 +82,7 @@ var _ = BeforeSuite(func() {
 	BindServiceToApp(cfg, appName, instanceName)
 	StartApp(appName, cfg.CfPushTimeoutDuration())
 
-	// #nosec G402 -- skip TLS verification for test environments
+	//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
 	client = &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
@@ -116,6 +116,10 @@ var _ = AfterSuite(func() {
 		DeleteTestApp(appName, cfg.DefaultTimeoutDuration())
 		DisableServiceAccess(cfg, setup)
 		otherSetup.Teardown()
-		setup.Teardown()
+		if cfg.UseExistingOrganization {
+			CleanupInExistingOrg(cfg, setup)
+		} else {
+			setup.Teardown()
+		}
 	}
 })
