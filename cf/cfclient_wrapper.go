@@ -88,7 +88,6 @@ func NewCFClientWrapper(conf *Config, logger lager.Logger, opts ...WrapperOption
 	}, nil
 }
 
-// createConfiguredHTTPClient creates an HTTP client with retry logic and connection pool settings.
 func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client {
 	transport := &http.Transport{
 		DialContext:         (&net.Dialer{Timeout: defaultDialTimeout}).DialContext,
@@ -106,7 +105,6 @@ func createConfiguredHTTPClient(conf *Config, logger lager.Logger) *http.Client 
 }
 
 func (w *CFClientWrapper) Login(ctx context.Context) error {
-	// Verify credentials by making a test API call
 	// go-cfclient handles token management internally
 	_, err := w.cfClient.Root.Get(ctx)
 	if err != nil {

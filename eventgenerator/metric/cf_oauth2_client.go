@@ -79,7 +79,7 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		resp.Body.Close()
 
-		token, err = c.forceRefreshToken()
+		token, err = c.forceRefreshToken(token)
 		if err != nil {
 			return nil, fmt.Errorf("failed to refresh token after 401: %w", err)
 		}
@@ -95,7 +95,6 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 // getValidToken returns a valid token, refreshing it if necessary.
 // Uses double-checked locking to prevent multiple concurrent token refreshes.
 func (c *CFOauth2HTTPClient) getValidToken() (string, error) {
-	// First check with read lock (fast path)
 	c.mu.RLock()
 	if c.token != "" && time.Now().Before(c.expiresAt) {
 		token := c.token
@@ -104,15 +103,22 @@ func (c *CFOauth2HTTPClient) getValidToken() (string, error) {
 	}
 	c.mu.RUnlock()
 
-	// Token is missing or expired, need to refresh with write lock
 	return c.refreshToken()
 }
 
-// forceRefreshToken forces a token refresh without checking expiration.
-// Used when we get a 401 response indicating the server rejected our token.
-func (c *CFOauth2HTTPClient) forceRefreshToken() (string, error) {
+// forceRefreshToken refreshes the token after a 401 response.
+// The rejectedToken parameter is the token that was rejected by the server.
+// If another goroutine has already refreshed the token (i.e., the cached token
+// differs from the rejected one), the new token is returned without re-fetching.
+func (c *CFOauth2HTTPClient) forceRefreshToken(rejectedToken string) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// If the token has changed since we got the 401, another goroutine already refreshed it
+	if c.token != rejectedToken {
+		return c.token, nil
+	}
+
 	return c.doRefreshToken()
 }
 
@@ -135,7 +141,6 @@ func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 		tokenURL = strings.TrimSuffix(tokenURL, "/") + "/oauth/token"
 	}
 
-	// Build form data for password grant
 	data := url.Values{}
 	data.Set("grant_type", "password")
 	data.Set("username", c.username)
