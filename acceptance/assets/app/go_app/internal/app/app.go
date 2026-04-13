@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -15,6 +16,13 @@ func writeJSON(w http.ResponseWriter, statusCode int, data JSONResponse) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	return json.NewEncoder(w).Encode(data)
+}
+
+func Errorf(logger *slog.Logger, w http.ResponseWriter, statusCode int, format string, args ...any) {
+	message := fmt.Sprintf(format, args...)
+	if err := writeJSON(w, statusCode, JSONResponse{"error": JSONResponse{"description": message}}); err != nil {
+		logger.Error("Failed to write JSON error response", slog.Any("error", err))
+	}
 }
 
 func Router(logger *slog.Logger, timewaster TimeWaster, memoryTest MemoryGobbler,

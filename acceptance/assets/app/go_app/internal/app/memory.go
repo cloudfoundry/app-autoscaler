@@ -98,14 +98,6 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 	})
 }
 
-// Errorf writes an error response
-func Errorf(logger *slog.Logger, w http.ResponseWriter, statusCode int, format string, args ...any) {
-	message := fmt.Sprintf(format, args...)
-	if err := writeJSON(w, statusCode, JSONResponse{"error": JSONResponse{"description": message}}); err != nil {
-		logger.Error("Failed to write JSON error response", slog.Any("error", err))
-	}
-}
-
 const chunkSize = 4 * Kibi
 
 func (m *ListBasedMemoryGobbler) UseMemory(numBytes int64) {
