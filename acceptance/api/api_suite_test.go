@@ -82,7 +82,7 @@ var _ = BeforeSuite(func() {
 	BindServiceToApp(cfg, appName, instanceName)
 	StartApp(appName, cfg.CfPushTimeoutDuration())
 
-	//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
+	// #nosec G402 -- skip TLS verification for test environments
 	client = &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
