@@ -293,6 +293,9 @@ ${flattened-schema-file}: ${schema-files}
 mta-deploy:
 	$(MAKEFILE_DIR)/scripts/mta-deploy.sh
 
+set-security-group:
+	$(MAKEFILE_DIR)/scripts/set-security-group.sh
+
 mta-undeploy:
 	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
 
@@ -380,6 +383,25 @@ cf-login:
 		  'in spite of performing a login as well on bosh and credhub.' \
 		  'The necessary changes to the environment get lost when make exits its process.'
 	@${MAKEFILE_DIR}/scripts/os-infrastructure-login.sh
+
+.PHONY: cf-org-manager-login
+cf-org-manager-login:
+	@echo '⚠️ Please note that this login only works for cf and concourse,' \
+		  'in spite of performing a login as well on bosh and credhub.' \
+		  'The necessary changes to the environment get lost when make exits its process.'
+	@${MAKEFILE_DIR}/scripts/org-manager-login.sh
+
+.PHONY: setup-org-manager-user
+setup-org-manager-user:
+	DEBUG="${DEBUG}" ./scripts/setup-org-manager-user.sh
+
+.PHONY: register-broker
+register-broker:
+	DEBUG="${DEBUG}" ./scripts/register-broker.sh
+
+.PHONY: deploy-cleanup
+deploy-cleanup:
+	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
 
 
 .PHONY: start-db

@@ -343,6 +343,26 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 type ServicePlans []ServicePlan
 
+// BoolOrInt handles CF API responses where plan_updateable may be returned as
+// either a boolean (true/false) or an integer (0/1) depending on user permissions.
+type BoolOrInt bool
+
+func (b *BoolOrInt) UnmarshalJSON(data []byte) error {
+	var boolVal bool
+	if err := json.Unmarshal(data, &boolVal); err == nil {
+		*b = BoolOrInt(boolVal)
+		return nil
+	}
+
+	var intVal int
+	if err := json.Unmarshal(data, &intVal); err == nil {
+		*b = BoolOrInt(intVal != 0)
+		return nil
+	}
+
+	return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
+}
+
 type (
 	ServicePlan struct {
 		Guid          string        `json:"guid"`
@@ -354,7 +374,7 @@ type (
 		Features Features `json:"features"`
 	}
 	Features struct {
-		PlanUpdateable bool `json:"plan_updateable"`
+		PlanUpdateable BoolOrInt `json:"plan_updateable"`
 	}
 )
 
@@ -370,8 +390,6 @@ func GetServicePlans(cfg *config.Config) ServicePlans {
 
 	var result ServicePlans
 
-	// This should also work as normal user - for some reason, if we use the normal user
-	// plan_updateable is returned as integer instead of boolean
 	workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
 		serviceCmd := cf.CfSilent("curl", "-f", servicePlansURL.String()).Wait(cfg.DefaultTimeoutDuration())
 		Expect(serviceCmd).To(Exit(0), "failed getting service plans")
@@ -387,7 +405,7 @@ func GetServicePlans(cfg *config.Config) ServicePlans {
 }
 
 func (p ServicePlan) isUpdatable() bool {
-	return p.BrokerCatalog.Features.PlanUpdateable
+	return bool(p.BrokerCatalog.Features.PlanUpdateable)
 }
 
 func (p ServicePlans) getSourceAndTargetForPlanUpdate() (source, target ServicePlan, err error) {

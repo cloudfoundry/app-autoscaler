@@ -58,6 +58,11 @@ var _ = BeforeSuite(func() {
 
 	otherConfig := cfg.Clone()
 	otherConfig.NamePrefix = otherConfig.NamePrefix + "_other"
+	otherConfig.UseExistingSpace = false
+	if cfg.OtherExistingUser != "" {
+		otherConfig.ExistingUser = cfg.OtherExistingUser
+		otherConfig.ExistingUserPassword = cfg.OtherExistingUserPassword
+	}
 
 	By("Setup test environment")
 	setup = workflowhelpers.NewTestSuiteSetup(cfg)
@@ -77,6 +82,7 @@ var _ = BeforeSuite(func() {
 	BindServiceToApp(cfg, appName, instanceName)
 	StartApp(appName, cfg.CfPushTimeoutDuration())
 
+	//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
 	client = &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
@@ -110,6 +116,10 @@ var _ = AfterSuite(func() {
 		DeleteTestApp(appName, cfg.DefaultTimeoutDuration())
 		DisableServiceAccess(cfg, setup)
 		otherSetup.Teardown()
-		setup.Teardown()
+		if cfg.UseExistingOrganization {
+			CleanupInExistingOrg(cfg, setup)
+		} else {
+			setup.Teardown()
+		}
 	}
 })

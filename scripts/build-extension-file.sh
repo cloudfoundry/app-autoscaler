@@ -28,7 +28,7 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
 fi
 
 bbl_login
-cf_login
+cf_admin_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
@@ -66,17 +66,24 @@ service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_brok
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
+org_manager_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/org_manager_password))
+other_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/other_user_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
+
+export AUTOSCALER_ORG_MANAGER_PASSWORD="$(yq ".org_manager_password" /tmp/mtar-secrets.yml)"
+export AUTOSCALER_OTHER_USER_PASSWORD="$(yq ".other_user_password" /tmp/mtar-secrets.yml)"
 
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
 export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
+export EVENTGENERATOR_CF_GRANT_TYPE="password"
+export EVENTGENERATOR_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export EVENTGENERATOR_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export EVENTGENERATOR_CF_CLIENT_ID="cf"
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
 export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
@@ -88,8 +95,10 @@ export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metri
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 
-export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
-export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
+export SCALINGENGINE_CF_GRANT_TYPE="password"
+export SCALINGENGINE_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export SCALINGENGINE_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export SCALINGENGINE_CF_CLIENT_ID="cf"
 export SCALINGENGINE_HEALTH_PASSWORD="$(yq ".scalingengine_health_password" /tmp/mtar-secrets.yml)"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
@@ -99,13 +108,26 @@ export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
 export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
-export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
-export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
+export OPERATOR_CF_GRANT_TYPE="password"
+export OPERATOR_CF_USERNAME="${AUTOSCALER_ORG_MANAGER_USER}"
+export OPERATOR_CF_PASSWORD="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+export OPERATOR_CF_CLIENT_ID="cf"
 export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
+
+export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
+export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
+export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
+export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
+export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
+export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-true}"
+export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
 
 export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
 
@@ -193,11 +215,23 @@ modules:
       ACCEPTANCE_CONFIG_JSON: |
         {
           "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
+          "admin_user": "${AUTOSCALER_ORG_MANAGER_USER}",
+          "admin_password": "${AUTOSCALER_ORG_MANAGER_PASSWORD}",
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
           "use_http": false,
+          "use_existing_user": ${USE_EXISTING_USER},
+          "existing_user": "${EXISTING_USER}",
+          "existing_user_password": "${EXISTING_USER_PASSWORD}",
+          "other_existing_user": "${AUTOSCALER_OTHER_USER}",
+          "other_existing_user_password": "${AUTOSCALER_OTHER_USER_PASSWORD}",
+          "keep_user_at_suite_end": ${KEEP_USER_AT_SUITE_END},
+          "add_existing_user_to_existing_space": ${ADD_EXISTING_USER_TO_EXISTING_SPACE},
+          "use_existing_organization": ${USE_EXISTING_ORGANIZATION},
+          "existing_organization": "${EXISTING_ORGANIZATION}",
+          "use_existing_space": ${USE_EXISTING_SPACE},
+          "existing_space": "${EXISTING_SPACE}",
+          "skip_service_access_management": ${SKIP_SERVICE_ACCESS_MANAGEMENT},
           "service_name": "${DEPLOYMENT_NAME}",
           "service_plan": "autoscaler-free-plan",
           "service_broker": "${DEPLOYMENT_NAME}",
@@ -231,9 +265,11 @@ resources:
           metric_collector_url: https://log-cache.\${default-domain}
           port: ''
           uaa:
-            client_id: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID}"
-            client_secret: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET}"
             url: https://uaa.\${default-domain}
+            grant_type: ${EVENTGENERATOR_CF_GRANT_TYPE}
+            client_id: ${EVENTGENERATOR_CF_CLIENT_ID}
+            username: ${EVENTGENERATOR_CF_USERNAME}
+            password: ${EVENTGENERATOR_CF_PASSWORD}
             skip_ssl_validation: true
         pool:
           total_instances: ${EVENTGENERATOR_INSTANCES}
@@ -289,8 +325,10 @@ resources:
             password: "${OPERATOR_HEALTH_PASSWORD}"
         cf:
           api:  https://api.\${default-domain}
+          grant_type: ${OPERATOR_CF_GRANT_TYPE}
           client_id: ${OPERATOR_CF_CLIENT_ID}
-          secret: ${OPERATOR_CF_CLIENT_SECRET}
+          username: ${OPERATOR_CF_USERNAME}
+          password: ${OPERATOR_CF_PASSWORD}
         scaling_engine:
           scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.\${default-domain}
         scheduler:
@@ -304,8 +342,10 @@ resources:
             password: "${SCALINGENGINE_HEALTH_PASSWORD}"
         cf:
           api:  https://api.\${default-domain}
+          grant_type: ${SCALINGENGINE_CF_GRANT_TYPE}
           client_id: ${SCALINGENGINE_CF_CLIENT_ID}
-          secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          username: ${SCALINGENGINE_CF_USERNAME}
+          password: ${SCALINGENGINE_CF_PASSWORD}
 
 - name: database
   parameters:

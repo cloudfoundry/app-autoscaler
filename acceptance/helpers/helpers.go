@@ -122,6 +122,9 @@ func OauthToken(cfg *config.Config) string {
 }
 
 func EnableServiceAccess(setup *workflowhelpers.ReproducibleTestSuiteSetup, cfg *config.Config, orgName string) {
+	if cfg.ShouldSkipServiceAccessManagement() {
+		return
+	}
 	if cfg.ShouldEnableServiceAccess() {
 		workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
 			if orgName == "" {
@@ -134,6 +137,9 @@ func EnableServiceAccess(setup *workflowhelpers.ReproducibleTestSuiteSetup, cfg 
 }
 
 func DisableServiceAccess(cfg *config.Config, setup *workflowhelpers.ReproducibleTestSuiteSetup) {
+	if cfg.ShouldSkipServiceAccessManagement() {
+		return
+	}
 	if cfg.ShouldEnableServiceAccess() {
 		workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
 			orgName := setup.GetOrganizationName()
@@ -629,6 +635,7 @@ func GetHTTPClient(cfg *config.Config) *http.Client {
 			TLSHandshakeTimeout: 10 * time.Second,
 			DisableCompression:  true,
 			DisableKeepAlives:   true,
+			//nolint:gosec // #nosec G402 -- due https://github.com/securego/gosec/issues/11051
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.SkipSSLValidation,
 			},

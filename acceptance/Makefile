@@ -20,8 +20,7 @@ export GOWORK := off
 
 .PHONY: clean
 clean:
-	rm --recursive --force './build' './vendor' './ginkgo_v2' './results'
-	@make --directory='./assets/app/go_app' clean
+	rm --recursive --force './vendor'
 
 
 .PHONY: go-mod-tidy
@@ -73,14 +72,11 @@ lint:
 	golangci-lint run --config='${GOLANGCI_CONF}' ${OPTS}
 
 
-acceptance-config-path := ./acceptance_config.json
-
 # The subsequent target should always stay a target-filepath-aware target, to not overwrite manual
 # changes.
 .PHONY: acceptance-tests-config
-acceptance-tests-config: ${acceptance-config-path}
-${acceptance-config-path}:
-	@ACCEPTANCE_CONFIG_PATH='${acceptance-config-path}' ${MAKEFILE_DIR}/../scripts/acceptance-tests-config.sh
+acceptance-tests-config:
+	@ACCEPTANCE_CONFIG_PATH='./acceptance_config.json' ${MAKEFILE_DIR}/../scripts/acceptance-tests-config.sh
 	@echo '✏️ Configuration for acceptance-tests written to file "${acceptance-config-path}"!'
 
 
