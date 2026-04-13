@@ -144,5 +144,40 @@ idle_connection_timeout_ms: 200
 			})
 		})
 
+		DescribeTable("password grant validation",
+			func(username, password, clientID, expectedClientID, expectedErr string) {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = username
+				conf.Password = password
+				conf.ClientID = clientID
+				err = conf.Validate()
+				if expectedErr != "" {
+					Expect(err).To(MatchError(expectedErr))
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.ClientID).To(Equal(expectedClientID))
+				}
+			},
+			Entry("sets default client_id to 'cf' when empty",
+				"test-user", "test-password", "", "cf", ""),
+			Entry("preserves explicit client_id",
+				"test-user", "test-password", "custom-client", "custom-client", ""),
+			Entry("errors when username is empty",
+				"", "test-password", "", "", "Configuration error: username is empty for password grant"),
+			Entry("errors when password is empty",
+				"test-user", "", "", "", "Configuration error: password is empty for password grant"),
+		)
+
+		Context("when grant_type is not set", func() {
+			BeforeEach(func() {
+				conf.GrantType = ""
+			})
+
+			It("should default to client_credentials", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.GrantType).To(Equal(cf.GrantTypeClientCredentials))
+			})
+		})
+
 	})
 })
