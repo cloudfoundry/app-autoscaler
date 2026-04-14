@@ -9,9 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app"
-	"code.cloudfoundry.org/app-autoscaler-release/src/acceptance/assets/app/go_app/internal/app/appfakes"
-	"github.com/fgrosse/zaptest"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app"
+	"code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app/internal/app/appfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/steinfletcher/apitest"
@@ -23,7 +22,7 @@ var _ = Describe("Disk handler", func() {
 
 	apiTest := func(diskOccupier app.DiskOccupier) *apitest.APITest {
 		GinkgoHelper()
-		logger := zaptest.LoggerWriter(GinkgoWriter)
+		logger := testLogger()
 
 		return apitest.New().Handler(app.Router(logger, nil, nil, nil, diskOccupier, nil))
 	}
@@ -54,6 +53,22 @@ var _ = Describe("Disk handler", func() {
 			Expect(GinkgoT()).
 			Status(http.StatusBadRequest).
 			Body(`{"error":{"description":"invalid minutes: strconv.ParseInt: parsing \"invalid\": invalid syntax"}}`).
+			End()
+	})
+	It("should err if utilization is negative", func() {
+		apiTest(mockDiskOccupier).
+			Get("/disk/-1/4").
+			Expect(GinkgoT()).
+			Status(http.StatusBadRequest).
+			Body(`{"error":{"description":"utilization must be > 0"}}`).
+			End()
+	})
+	It("should err if minutes is zero", func() {
+		apiTest(mockDiskOccupier).
+			Get("/disk/5/0").
+			Expect(GinkgoT()).
+			Status(http.StatusBadRequest).
+			Body(`{"error":{"description":"minutes must be > 0"}}`).
 			End()
 	})
 	It("should return ok", func() {

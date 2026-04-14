@@ -4,45 +4,38 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
-	"strconv"
 	"sync"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
-func DiskTest(r *gin.RouterGroup, diskOccupier DiskOccupier) *gin.RouterGroup {
-	r.GET("/:utilization/:minutes", func(c *gin.Context) {
-		var utilisation int64
-		var minutes int64
-		var err error
-
-		utilisation, err = strconv.ParseInt(c.Param("utilization"), 10, 64)
+func DiskTest(logger *slog.Logger, mux *http.ServeMux, diskOccupier DiskOccupier) {
+	mux.HandleFunc("GET /disk/{utilization}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
+		utilisation, err := parsePositiveInt64(r, "utilization")
 		if err != nil {
-			Error(c, http.StatusBadRequest, "invalid utilization: %s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
-		if minutes, err = strconv.ParseInt(c.Param("minutes"), 10, 64); err != nil {
-			Error(c, http.StatusBadRequest, "invalid minutes: %s", err.Error())
+		minutes, err := parsePositiveInt64(r, "minutes")
+		if err != nil {
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
 		spaceInMB := utilisation * 1000 * 1000
 		if err = diskOccupier.Occupy(spaceInMB, duration); err != nil {
-			Error(c, http.StatusInternalServerError, "error invoking occupation: %s", err.Error())
+			respondWithErrorf(logger, w, http.StatusInternalServerError, "error invoking occupation: %s", err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"utilization": utilisation, "minutes": minutes})
+		respondOk(logger, w, JSONResponse{"utilization": utilisation, "minutes": minutes})
 	})
 
-	r.GET("/close", func(c *gin.Context) {
+	mux.HandleFunc("GET /disk/close", func(w http.ResponseWriter, r *http.Request) {
 		diskOccupier.Stop()
-		c.String(http.StatusOK, "close disk test")
+		respondOk(logger, w, JSONResponse{"message": "close disk test"})
 	})
-
-	return r
 }
 
 //counterfeiter:generate . DiskOccupier
