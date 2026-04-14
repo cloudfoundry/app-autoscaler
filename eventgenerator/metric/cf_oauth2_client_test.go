@@ -1,5 +1,4 @@
-//nolint:testpackage // White-box testing required to verify internal state
-package metric
+package metric_test
 
 import (
 	"encoding/base64"
@@ -8,21 +7,17 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
-	"testing"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/metric"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-func TestCFOauth2HTTPClient(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CFOauth2HTTPClient Suite")
-}
-
 var _ = Describe("CFOauth2HTTPClient", func() {
 	var (
-		client          *CFOauth2HTTPClient
+		client          *metric.CFOauth2HTTPClient
 		tokenServer     *httptest.Server
 		metricsServer   *httptest.Server
 		tokenCallCount  int
@@ -73,7 +68,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 		}))
 
 		// Create client with mock servers
-		client = NewCFOauth2HTTPClient(
+		client = metric.NewCFOauth2HTTPClient(
 			tokenServer.URL,
 			"cf",
 			"cf-secret",
@@ -168,7 +163,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			}))
 			defer failingTokenServer.Close()
 
-			failingClient := NewCFOauth2HTTPClient(
+			failingClient := metric.NewCFOauth2HTTPClient(
 				failingTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -203,7 +198,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			}))
 			defer expiringTokenServer.Close()
 
-			expiringClient := NewCFOauth2HTTPClient(
+			expiringClient := metric.NewCFOauth2HTTPClient(
 				expiringTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -254,7 +249,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			}))
 			defer longLivedTokenServer.Close()
 
-			longLivedClient := NewCFOauth2HTTPClient(
+			longLivedClient := metric.NewCFOauth2HTTPClient(
 				longLivedTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -264,7 +259,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			)
 
 			// Make multiple requests
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				req, err := http.NewRequest("GET", metricsServer.URL, nil)
 				Expect(err).NotTo(HaveOccurred())
 				resp, err := longLivedClient.Do(req)
@@ -316,7 +311,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			}))
 			defer captureServer.Close()
 
-			testClient := NewCFOauth2HTTPClient(
+			testClient := metric.NewCFOauth2HTTPClient(
 				captureServer.URL,
 				"cf",
 				"cf-secret",
@@ -338,33 +333,52 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 
 	Describe("Token Endpoint URL Handling", func() {
 		It("should append /oauth/token to URL if not present", func() {
-			testClient := NewCFOauth2HTTPClient(
-				"https://uaa.example.com",
-				"cf",
-				"cf-secret",
-				"test-user",
-				"test-password",
-				true,
+			// Verify that a base URL gets /oauth/token appended during token fetch
+			tokenRequests := []string{}
+			urlTestServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				tokenRequests = append(tokenRequests, r.URL.Path)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"access_token": "test-token", "token_type": "Bearer", "expires_in": 3600}`)
+			}))
+			defer urlTestServer.Close()
+
+			testClient := metric.NewCFOauth2HTTPClient(
+				urlTestServer.URL,
+				"cf", "cf-secret", "test-user", "test-password", true,
 			)
 
-			Expect(testClient.oauth2URL).To(Equal("https://uaa.example.com"))
-			// The URL normalization happens in refreshToken method
+			req, err := http.NewRequest("GET", urlTestServer.URL+"/api/metrics", nil)
+			Expect(err).NotTo(HaveOccurred())
+			resp, err := testClient.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
 
-			// We can't directly test the URL construction here without making a request,
-			// but the logic is tested through integration
+			Expect(tokenRequests).To(ContainElement("/oauth/token"))
 		})
 
 		It("should not duplicate /oauth/token", func() {
-			testClient := NewCFOauth2HTTPClient(
-				"https://uaa.example.com/oauth/token",
-				"cf",
-				"cf-secret",
-				"test-user",
-				"test-password",
-				true,
+			tokenRequests := []string{}
+			urlTestServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				tokenRequests = append(tokenRequests, r.URL.Path)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"access_token": "test-token", "token_type": "Bearer", "expires_in": 3600}`)
+			}))
+			defer urlTestServer.Close()
+
+			testClient := metric.NewCFOauth2HTTPClient(
+				urlTestServer.URL+"/oauth/token",
+				"cf", "cf-secret", "test-user", "test-password", true,
 			)
 
-			Expect(testClient.oauth2URL).To(Equal("https://uaa.example.com/oauth/token"))
+			req, err := http.NewRequest("GET", urlTestServer.URL+"/api/metrics", nil)
+			Expect(err).NotTo(HaveOccurred())
+			resp, err := testClient.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			// Should hit /oauth/token exactly, not /oauth/token/oauth/token
+			Expect(tokenRequests).To(ContainElement("/oauth/token"))
+			Expect(tokenRequests).NotTo(ContainElement("/oauth/token/oauth/token"))
 		})
 	})
 
@@ -389,7 +403,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			}))
 			defer concurrentServer.Close()
 
-			testClient := NewCFOauth2HTTPClient(
+			testClient := metric.NewCFOauth2HTTPClient(
 				concurrentServer.URL,
 				"cf",
 				"cf-secret",
@@ -402,7 +416,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			var wg sync.WaitGroup
 			errChan := make(chan error, 10)
 
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
@@ -431,36 +445,6 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 		})
 	})
 
-	Describe("HTTP Client Configuration", func() {
-		It("should skip SSL validation when configured", func() {
-			testClient := NewCFOauth2HTTPClient(
-				"https://uaa.example.com",
-				"cf",
-				"cf-secret",
-				"test-user",
-				"test-password",
-				true, // skipSSLValidation
-			)
-
-			Expect(testClient.skipSSLValidation).To(BeTrue())
-			Expect(testClient.httpClient).NotTo(BeNil())
-		})
-
-		It("should not skip SSL validation when false", func() {
-			testClient := NewCFOauth2HTTPClient(
-				"https://uaa.example.com",
-				"cf",
-				"cf-secret",
-				"test-user",
-				"test-password",
-				false, // skipSSLValidation
-			)
-
-			Expect(testClient.skipSSLValidation).To(BeFalse())
-			Expect(testClient.httpClient).NotTo(BeNil())
-		})
-	})
-
 	Describe("Error Handling", func() {
 		It("should handle malformed token response", func() {
 			badTokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -469,7 +453,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			}))
 			defer badTokenServer.Close()
 
-			badClient := NewCFOauth2HTTPClient(
+			badClient := metric.NewCFOauth2HTTPClient(
 				badTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -487,7 +471,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 		})
 
 		It("should handle network errors during token fetch", func() {
-			testClient := NewCFOauth2HTTPClient(
+			testClient := metric.NewCFOauth2HTTPClient(
 				"https://invalid-host-that-does-not-exist.local",
 				"cf",
 				"cf-secret",
