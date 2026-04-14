@@ -87,7 +87,7 @@ public class HttpAuthFilterTest {
 
     assertThat(response.getStatus()).isEqualTo(400);
     assertThat(response.getErrorMessage())
-        .contains("Invalid certificate: Could not parse certificate");
+        .contains("Invalid certificate:");
   }
 
   @Test

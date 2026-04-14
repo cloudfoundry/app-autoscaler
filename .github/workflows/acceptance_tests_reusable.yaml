@@ -13,6 +13,10 @@ on:
         required: false
         type: boolean
         default: false
+      build_fips_extension:
+        required: false
+        type: boolean
+        default: false
     secrets:
       bbl_ssh_key:
         required: true
@@ -67,7 +71,10 @@ jobs:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
-          "${AUTOSCALER_DIR}/scripts/mta-build.sh"
+          if [ "${{ inputs.build_fips_extension }}" = "true" ]; then
+            make --directory="${AUTOSCALER_DIR}" build-extension-file-fips
+          fi
+          make --directory="${AUTOSCALER_DIR}" mta-build
           make --directory="${AUTOSCALER_DIR}" mta-deploy
 
   acceptance_tests:

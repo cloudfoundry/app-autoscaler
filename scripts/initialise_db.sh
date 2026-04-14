@@ -15,7 +15,7 @@ usage() {
   exit 1
 }
 
-if [ "$#" -ne 1 ]; then
+if [[ "$#" -ne 1 ]]; then
   usage
 fi
 
@@ -28,7 +28,7 @@ case "$1" in
     ;;
   postgres)
     DB_USER="${DB_USER:-postgres}"
-    DB_PASSWORD="${DB_PASSWORD:-postgres}"
+    DB_PASSWORD="${DB_PASSWORD:-postgres-fips-pass}"
     URL="jdbc:postgresql://${DB_HOST}/autoscaler"
     DRIVER="org.postgresql.Driver"
     PASSWORD_OPT="--password=${DB_PASSWORD}"
@@ -56,10 +56,10 @@ $ROOT/eventgenerator/db/:\
 $ROOT/scalingengine/db/:\
 $ROOT/operator/db/"
 
-[ -e "${LOG_FILE}" ] && rm "${LOG_FILE}"
+[[ -e "${LOG_FILE}" ]] && rm "${LOG_FILE}"
 
 error() {
-  [ -e "${LOG_FILE}" ] && cat "${LOG_FILE}"
+  [[ -e "${LOG_FILE}" ]] && cat "${LOG_FILE}"
 }
 trap error ERR
 trap 'rm -f "${LOG_FILE}" || echo "no log file"' EXIT
