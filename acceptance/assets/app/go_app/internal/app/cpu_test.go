@@ -48,6 +48,22 @@ var _ = Describe("CPU tests", func() {
 				Body(`{"error":{"description":"invalid minutes: strconv.ParseInt: parsing \"invalid\": invalid syntax"}}`).
 				End()
 		})
+		It("should err if utilization is negative", func() {
+			apiTest(fakeCPUWaster).
+				Get("/cpu/-1/4").
+				Expect(GinkgoT()).
+				Status(http.StatusBadRequest).
+				Body(`{"error":{"description":"utilization must be > 0"}}`).
+				End()
+		})
+		It("should err if minutes is zero", func() {
+			apiTest(fakeCPUWaster).
+				Get("/cpu/5/0").
+				Expect(GinkgoT()).
+				Status(http.StatusBadRequest).
+				Body(`{"error":{"description":"minutes must be > 0"}}`).
+				End()
+		})
 		It("should return ok and sleep correctDuration", func() {
 			apiTest(fakeCPUWaster).
 				Get("/cpu/5/4").

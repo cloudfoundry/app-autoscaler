@@ -55,6 +55,22 @@ var _ = Describe("Disk handler", func() {
 			Body(`{"error":{"description":"invalid minutes: strconv.ParseInt: parsing \"invalid\": invalid syntax"}}`).
 			End()
 	})
+	It("should err if utilization is negative", func() {
+		apiTest(mockDiskOccupier).
+			Get("/disk/-1/4").
+			Expect(GinkgoT()).
+			Status(http.StatusBadRequest).
+			Body(`{"error":{"description":"utilization must be > 0"}}`).
+			End()
+	})
+	It("should err if minutes is zero", func() {
+		apiTest(mockDiskOccupier).
+			Get("/disk/5/0").
+			Expect(GinkgoT()).
+			Status(http.StatusBadRequest).
+			Body(`{"error":{"description":"minutes must be > 0"}}`).
+			End()
+	})
 	It("should return ok", func() {
 		apiTest(mockDiskOccupier).
 			Get("/disk/100/2").

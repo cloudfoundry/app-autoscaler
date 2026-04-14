@@ -50,6 +50,22 @@ var _ = Describe("Memory tests", func() {
 				Body(`{"error":{"description":"invalid minutes: strconv.ParseInt: parsing \"invalid\": invalid syntax"}}`).
 				End()
 		})
+		It("should err if memory is negative", func() {
+			apiTest(fakeMemoryTest).
+				Get("/memory/-1/4").
+				Expect(GinkgoT()).
+				Status(http.StatusBadRequest).
+				Body(`{"error":{"description":"memoryMiB must be > 0"}}`).
+				End()
+		})
+		It("should err if minutes is zero", func() {
+			apiTest(fakeMemoryTest).
+				Get("/memory/5/0").
+				Expect(GinkgoT()).
+				Status(http.StatusBadRequest).
+				Body(`{"error":{"description":"minutes must be > 0"}}`).
+				End()
+		})
 		It("should return ok and sleep correctDuration", func() {
 			apiTest(fakeMemoryTest).
 				Get("/memory/5/4").
