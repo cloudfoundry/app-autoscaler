@@ -26,6 +26,7 @@ var _ = Describe("Config", func() {
 		BeforeEach(func() {
 			// Simulate CF environment
 			os.Setenv("VCAP_APPLICATION", `{"application_id":"test-app"}`)
+			os.Setenv("VCAP_SERVICES", `{}`)
 			os.Setenv("CF_INSTANCE_CERT", "/tmp/instance.crt")
 			os.Setenv("CF_INSTANCE_KEY", "/tmp/instance.key")
 			os.Setenv("CF_INSTANCE_CA_CERT", "/tmp/instance_ca.crt")
@@ -36,6 +37,7 @@ var _ = Describe("Config", func() {
 
 		AfterEach(func() {
 			os.Unsetenv("VCAP_APPLICATION")
+			os.Unsetenv("VCAP_SERVICES")
 			os.Unsetenv("CF_INSTANCE_CERT")
 			os.Unsetenv("CF_INSTANCE_KEY")
 			os.Unsetenv("CF_INSTANCE_CA_CERT")
