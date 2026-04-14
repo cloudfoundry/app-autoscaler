@@ -30,7 +30,8 @@ var _ = Describe("Config", func() {
 			os.Setenv("CF_INSTANCE_KEY", "/tmp/instance.key")
 			os.Setenv("CF_INSTANCE_CA_CERT", "/tmp/instance_ca.crt")
 
-			vcapReader = configutil.NewVCAPConfigurationReader()
+			vcapReader, err = configutil.NewVCAPConfigurationReader()
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -54,7 +55,8 @@ var _ = Describe("Config", func() {
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
-			vcapReader = configutil.NewVCAPConfigurationReader()
+			vcapReader, err = configutil.NewVCAPConfigurationReader()
+			Expect(err).ToNot(HaveOccurred())
 			conf, err = config.LoadConfig("", vcapReader)
 			Expect(err).ToNot(HaveOccurred())
 		})
