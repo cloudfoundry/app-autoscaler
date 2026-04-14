@@ -25,7 +25,6 @@ func NewGatewayEmitter(logger lager.Logger, gatewayURL string, tlsCerts models.T
 		return nil, fmt.Errorf("failed to create TLS config for gateway: %w", err)
 	}
 	if tlsConfig != nil {
-		tlsConfig.InsecureSkipVerify = true
 		transport.TLSClientConfig = tlsConfig
 	}
 
