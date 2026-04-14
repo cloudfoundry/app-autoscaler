@@ -62,7 +62,7 @@ var _ = Describe("GatewayEmitter TLS", func() {
 				testServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					var metrics []*models.CustomMetric
 					body, _ := io.ReadAll(r.Body)
-					json.Unmarshal(body, &metrics)
+					_ = json.Unmarshal(body, &metrics)
 					receivedMetric = len(metrics) > 0
 					w.WriteHeader(http.StatusOK)
 				}))
@@ -72,11 +72,13 @@ var _ = Describe("GatewayEmitter TLS", func() {
 				certFile, err := os.Create(caCertPath)
 				Expect(err).ToNot(HaveOccurred())
 				// httptest server certificate is self-signed, encode as PEM
-				pem.Encode(certFile, &pem.Block{
+				err = pem.Encode(certFile, &pem.Block{
 					Type:  "CERTIFICATE",
 					Bytes: testServer.Certificate().Raw,
 				})
-				certFile.Close()
+				Expect(err).ToNot(HaveOccurred())
+				err = certFile.Close()
+				Expect(err).ToNot(HaveOccurred())
 
 				// Client validates using server cert as CA
 				tlsCerts = models.TLSCerts{
@@ -98,7 +100,7 @@ var _ = Describe("GatewayEmitter TLS", func() {
 				testServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					var metrics []*models.CustomMetric
 					body, _ := io.ReadAll(r.Body)
-					json.Unmarshal(body, &metrics)
+					_ = json.Unmarshal(body, &metrics)
 					receivedMetric = len(metrics) > 0
 					w.WriteHeader(http.StatusOK)
 				}))
