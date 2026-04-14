@@ -384,10 +384,10 @@ cloud.google.com/go/websecurityscanner v1.8.0/go.mod h1:2FS2WQ+RaL6O3/HaGBl9JHkS
 cloud.google.com/go/workflows v1.15.0/go.mod h1:2UOYVoNLYsroRbG3Ok6eBliFPThf5ronyqlD64NFLx8=
 code.cloudfoundry.org/brokerapi/v13 v13.0.21 h1:GAzIPGdnLOzEkSjiI5T2170RIVp4QBuM42mN9YUMfkM=
 code.cloudfoundry.org/brokerapi/v13 v13.0.21/go.mod h1:D+ZPcDxMjYLzDRk/qEPiVzbjiROFpyV7D0yTyTjTsmo=
-code.cloudfoundry.org/cfhttp/v2 v2.73.0 h1:yJ6/98S6Hk7+O1pSqYS7VdPwvSu8rN7ZvARjCPLaDzY=
-code.cloudfoundry.org/cfhttp/v2 v2.73.0/go.mod h1:acl6VWNCkPN8L92/nBL/JlLTKsFPnW4F0fuGbfsoAkM=
-code.cloudfoundry.org/clock v1.65.0 h1:r3QNfdjq8sxzAnuTf24FAh7A+7KVbCOJ4ZSMBMPd/1M=
-code.cloudfoundry.org/clock v1.65.0/go.mod h1:vHjVDAJB13nKjOzbIBtrCoVGt8q/91o7d2h+6WysXas=
+code.cloudfoundry.org/cfhttp/v2 v2.74.0 h1:U8OIpXEi0tjpx6upeQzC4IVse7lfPFf5APqdiql0B04=
+code.cloudfoundry.org/cfhttp/v2 v2.74.0/go.mod h1:isgxk/v6y29WDjwnLcuIqF1kVT2BjJ4lZcJSj6jpSM4=
+code.cloudfoundry.org/clock v1.66.0 h1:hX7B+4EREnSf2T0xpq2gQGV5LI5LYRqwB331M9OhqW4=
+code.cloudfoundry.org/clock v1.66.0/go.mod h1:tiZfotIRQkAjmhlD4rtSNU8mV15Kpvgdir4Vgejnv4k=
 code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 h1:uZ6UIz7zl39FMy5GybKzI83zD35c4fvkU8sQEZDH/x8=
 code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978/go.mod h1:ZZMgJNANhsfqeXF//d5qDK0dNnQ4jTBsib4WR0xbWJQ=
 code.cloudfoundry.org/go-log-cache/v3 v3.1.1 h1:1DL5Ifs7WNIQBuMWUDac0f5IMGoP99gHXjxHLthzXq8=
@@ -396,8 +396,8 @@ code.cloudfoundry.org/go-loggregator/v10 v10.3.1 h1:iuAoFA4ajpH1pBmVGQlUNRMvVAHC
 code.cloudfoundry.org/go-loggregator/v10 v10.3.1/go.mod h1:Md5WIfzcFSiT//dNHTS6Zfj4MCmO+Zz9d/2ihZjaj+0=
 code.cloudfoundry.org/go-metric-registry v0.0.0-20260325091030-e6272bdc60ad h1:ZUjn7+ac9yce1EaxoXqSxYu2MkFF+cCc5gPEcqM97/s=
 code.cloudfoundry.org/go-metric-registry v0.0.0-20260325091030-e6272bdc60ad/go.mod h1:qavzop3HdX6XxluF8v8TsLllRMWu5ecUE+bwhA9hy+c=
-code.cloudfoundry.org/lager/v3 v3.65.0 h1:Z/euENq42rULCPl65R4tdNDWav9AJ6OoZkKfjIkQ3JM=
-code.cloudfoundry.org/lager/v3 v3.65.0/go.mod h1:reJ2m/UwSmkU/eJkrgHf4ZEhAMnBuXGiGzLmuDR3D5s=
+code.cloudfoundry.org/lager/v3 v3.66.0 h1:OM9Zy+KCTUpanOfIlL4ac87po7VlBZEq+Mdf32VBi/g=
+code.cloudfoundry.org/lager/v3 v3.66.0/go.mod h1:d+HET0t/G9vf8+sxAzhauv313xbfv8molPzY4uNb7vo=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260401205800-83519ee8128e h1:zgttSqMVZ+0OL2irwSD8dQ4YgCiyUv678Q8Zp+TdCTk=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260401205800-83519ee8128e/go.mod h1:fS0yzmbrake0cMw/Ia3kmFXczEekjMA453hDdVDYZmk=
 code.cloudfoundry.org/tlsconfig v0.50.0 h1:HzbNSzYcM+c8V1ql1pYaXZGGUGsk6XgLjWSVidHvEIc=
