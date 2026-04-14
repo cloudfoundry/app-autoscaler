@@ -54,10 +54,11 @@ var _ = Describe("GatewayEmitter TLS", func() {
 	})
 
 	Describe("TLS certificate validation", func() {
-		When("server uses valid cert signed by CA", func() {
+		When("server uses valid cert", func() {
 			BeforeEach(func() {
-				// Create TLS server with test certificates
-				testServer = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// httptest.NewTLSServer creates self-signed cert
+				// Use its client for validation
+				testServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					var metrics []*models.CustomMetric
 					body, _ := io.ReadAll(r.Body)
 					json.Unmarshal(body, &metrics)
@@ -65,21 +66,15 @@ var _ = Describe("GatewayEmitter TLS", func() {
 					w.WriteHeader(http.StatusOK)
 				}))
 
-				// Configure server TLS
-				testServer.TLS = &tls.Config{
-					MinVersion: tls.VersionTLS12,
-				}
-				testServer.StartTLS()
-
-				// Extract server CA for client
-				serverCert := testServer.Certificate()
+				// Write server's CA cert for client validation
 				caCertPath := filepath.Join(tempDir, "ca.crt")
 				certFile, err := os.Create(caCertPath)
 				Expect(err).ToNot(HaveOccurred())
-				certFile.Write(serverCert.Raw)
+				// httptest server certificate is self-signed, use it as CA
+				certFile.Write(testServer.Certificate().Raw)
 				certFile.Close()
 
-				// Client uses CA cert for validation (no InsecureSkipVerify needed)
+				// Client validates using server cert as CA
 				tlsCerts = models.TLSCerts{
 					CACertFile: caCertPath,
 				}
