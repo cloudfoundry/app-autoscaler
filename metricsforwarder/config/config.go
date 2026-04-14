@@ -49,6 +49,7 @@ type Config struct {
 	PolicyPollerInterval time.Duration
 	Health               helpers.HealthConfig
 	RateLimit            models.RateLimitConfig
+	FipsMode             bool
 
 	// CredentialHelperConfig configures how credentials for "Basic Authentication" are managed.
 	// nil means no credential helper is configured (Basic Auth disabled).
@@ -65,4 +66,9 @@ func (c *Config) UsingGateway() bool {
 
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
+}
+
+// GetFipsMode returns whether FIPS 140-3 mode is configured
+func (c *Config) GetFipsMode() bool {
+	return c.FipsMode
 }

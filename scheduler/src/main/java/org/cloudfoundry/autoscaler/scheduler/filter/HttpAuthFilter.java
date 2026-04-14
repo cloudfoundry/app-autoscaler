@@ -1,17 +1,19 @@
 package org.cloudfoundry.autoscaler.scheduler.filter;
 
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.common.TextFormat;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Writer;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import org.cloudfoundry.autoscaler.scheduler.conf.CfServerConfiguration;
+import org.cloudfoundry.autoscaler.scheduler.util.FipsPemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -106,9 +108,11 @@ public class HttpAuthFilter extends OncePerRequestFilter {
     }
 
     response.setStatus(HttpServletResponse.SC_OK);
-    response.setContentType("application/json");
-    response.getWriter().write("{\"status\":\"UP\"}");
-    response.getWriter().flush();
+    response.setContentType(TextFormat.CONTENT_TYPE_004);
+    try (Writer writer = response.getWriter()) {
+      TextFormat.write004(
+          writer, CollectorRegistry.defaultRegistry.metricFamilySamples());
+    }
   }
 
   private String[] decodeBasicAuth(String authHeader) {
@@ -128,17 +132,12 @@ public class HttpAuthFilter extends OncePerRequestFilter {
   }
 
   private X509Certificate parseCertificate(String certValue) throws CertificateException {
-    // Extract the base64-encoded certificate from the XFCC header
-    String base64Cert =
-        certValue
-            .replace("-----BEGIN CERTIFICATE-----", "")
-            .replace("-----END CERTIFICATE-----", "")
-            .replaceAll("\\s+", "");
-
-    byte[] decodedCert = Base64.getDecoder().decode(base64Cert);
-
-    CertificateFactory factory = CertificateFactory.getInstance("X.509");
-    return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(decodedCert));
+    // XFCC header contains raw base64-encoded DER or PEM; normalize to PEM for FipsPemUtils
+    String pem = certValue.strip();
+    if (!pem.startsWith("-----BEGIN CERTIFICATE-----")) {
+      pem = "-----BEGIN CERTIFICATE-----\n" + pem + "\n-----END CERTIFICATE-----";
+    }
+    return FipsPemUtils.parseCertificate(pem);
   }
 
   private boolean isValidOrganizationalUnit(String organizationalUnit) {
