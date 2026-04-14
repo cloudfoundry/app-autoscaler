@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -70,8 +71,11 @@ var _ = Describe("GatewayEmitter TLS", func() {
 				caCertPath := filepath.Join(tempDir, "ca.crt")
 				certFile, err := os.Create(caCertPath)
 				Expect(err).ToNot(HaveOccurred())
-				// httptest server certificate is self-signed, use it as CA
-				certFile.Write(testServer.Certificate().Raw)
+				// httptest server certificate is self-signed, encode as PEM
+				pem.Encode(certFile, &pem.Block{
+					Type:  "CERTIFICATE",
+					Bytes: testServer.Certificate().Raw,
+				})
 				certFile.Close()
 
 				// Client validates using server cert as CA
