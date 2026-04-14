@@ -15,6 +15,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const envelopesEndpoint = "/v1/envelopes"
+
 type fakeEmitter struct {
 	emittedMetrics []*models.CustomMetric
 	emitErr        error
@@ -61,7 +63,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("emits all metrics and returns 200", func() {
-				req := httptest.NewRequest(http.MethodPost, "/v1/envelopes", bytes.NewReader(reqBody))
+				req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(reqBody))
 				handler.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusOK))
@@ -77,7 +79,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("returns 400", func() {
-				req := httptest.NewRequest(http.MethodPost, "/v1/envelopes", bytes.NewReader(reqBody))
+				req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(reqBody))
 				handler.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
@@ -90,7 +92,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("returns 400", func() {
-				req := httptest.NewRequest(http.MethodPost, "/v1/envelopes", bytes.NewReader(reqBody))
+				req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(reqBody))
 				handler.ServeHTTP(recorder, req)
 
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
