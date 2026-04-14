@@ -26,11 +26,11 @@ func ResponseTimeTests(logger *slog.Logger, mux *http.ServeMux, timeWaster TimeW
 		}
 		duration := time.Duration(milliseconds) * time.Millisecond
 		timeWaster.Sleep(duration)
-		respondJSON(logger, w, JSONResponse{"duration": duration.String()})
+		respondOk(logger, w, JSONResponse{"duration": duration.String()})
 	})
 
 	mux.HandleFunc("GET /responsetime/fast", func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(logger, w, JSONResponse{"fast": true})
+		respondOk(logger, w, JSONResponse{"fast": true})
 	})
 }
 

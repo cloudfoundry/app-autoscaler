@@ -64,7 +64,7 @@ func handleCustomMetricsEndpoint(logger *slog.Logger, customMetricTest CustomMet
 			return
 		}
 
-		respondJSON(logger, w, JSONResponse{
+		respondOk(logger, w, JSONResponse{
 			"mtls": useMtls,
 		})
 	}

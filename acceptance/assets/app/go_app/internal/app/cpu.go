@@ -42,7 +42,7 @@ func CPUTests(logger *slog.Logger, mux *http.ServeMux, cpuTest CPUWaster) {
 		go func() {
 			cpuTest.UseCPU(utilization, duration)
 		}()
-		respondJSON(logger, w, JSONResponse{"utilization": utilization, "minutes": minutes})
+		respondOk(logger, w, JSONResponse{"utilization": utilization, "minutes": minutes})
 	})
 
 	mux.HandleFunc("GET /cpu/close", func(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func CPUTests(logger *slog.Logger, mux *http.ServeMux, cpuTest CPUWaster) {
 			return
 		}
 		cpuTest.StopTest()
-		respondJSON(logger, w, JSONResponse{"status": "close cpu test"})
+		respondOk(logger, w, JSONResponse{"status": "close cpu test"})
 	})
 }
 

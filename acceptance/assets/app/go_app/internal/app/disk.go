@@ -29,12 +29,12 @@ func DiskTest(logger *slog.Logger, mux *http.ServeMux, diskOccupier DiskOccupier
 			respondWithErrorf(logger, w, http.StatusInternalServerError, "error invoking occupation: %s", err.Error())
 			return
 		}
-		respondJSON(logger, w, JSONResponse{"utilization": utilisation, "minutes": minutes})
+		respondOk(logger, w, JSONResponse{"utilization": utilisation, "minutes": minutes})
 	})
 
 	mux.HandleFunc("GET /disk/close", func(w http.ResponseWriter, r *http.Request) {
 		diskOccupier.Stop()
-		respondJSON(logger, w, JSONResponse{"message": "close disk test"})
+		respondOk(logger, w, JSONResponse{"message": "close disk test"})
 	})
 }
 

@@ -64,7 +64,7 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 			memoryTest.Sleep(duration)
 			memoryTest.StopTest()
 		}()
-		respondJSON(logger, w, JSONResponse{
+		respondOk(logger, w, JSONResponse{
 			"memoryMiB": memoryMiB,
 			"minutes":   minutes,
 		})
@@ -77,7 +77,7 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 		}
 		memoryTest.StopTest()
 		logMemoryUsage(logger, "after freeing memory")
-		respondJSON(logger, w, JSONResponse{"status": "close memory test"})
+		respondOk(logger, w, JSONResponse{"status": "close memory test"})
 	})
 }
 
