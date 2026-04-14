@@ -24,6 +24,10 @@ func ResponseTimeTests(logger *slog.Logger, mux *http.ServeMux, timeWaster TimeW
 			respondWithErrorf(logger, w, http.StatusBadRequest, "invalid milliseconds: %s", err.Error())
 			return
 		}
+		if milliseconds < 0 {
+			respondWithErrorf(logger, w, http.StatusBadRequest, "milliseconds must be >= 0")
+			return
+		}
 		duration := time.Duration(milliseconds) * time.Millisecond
 		timeWaster.Sleep(duration)
 		respondOk(logger, w, JSONResponse{"duration": duration.String()})

@@ -40,6 +40,14 @@ var _ = Describe("Responsetime tests", func() {
 				Body(`{"error":{"description":"invalid milliseconds: strconv.ParseInt: parsing \"100001010101010249032897287298719874687936483275648273632429479827398798271\": value out of range"}}`).
 				End()
 		})
+		It("should err if delay is negative", func() {
+			apiTest(fakeTimeWaster).
+				Get("/responsetime/slow/-1").
+				Expect(GinkgoT()).
+				Status(http.StatusBadRequest).
+				Body(`{"error":{"description":"milliseconds must be >= 0"}}`).
+				End()
+		})
 
 		It("should return ok and sleep correctDuration", func() {
 			apiTest(fakeTimeWaster).
