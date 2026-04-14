@@ -3,12 +3,10 @@ package app
 import (
 	"bytes"
 	"container/list"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 
@@ -36,17 +34,6 @@ type ListBasedMemoryGobbler struct {
 }
 
 var _ MemoryGobbler = &ListBasedMemoryGobbler{}
-
-func parsePositiveInt64(r *http.Request, name string) (int64, error) {
-	val, err := strconv.ParseInt(r.PathValue(name), 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid %s: %s", name, err.Error())
-	}
-	if val < 1 {
-		return 0, fmt.Errorf("%s must be > 0", name)
-	}
-	return val, nil
-}
 
 func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbler) {
 	mux.HandleFunc("GET /memory/{memoryMiB}/{minutes}", func(w http.ResponseWriter, r *http.Request) {

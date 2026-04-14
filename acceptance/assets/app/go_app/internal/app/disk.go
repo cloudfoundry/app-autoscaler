@@ -7,24 +7,20 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 )
 
 func DiskTest(logger *slog.Logger, mux *http.ServeMux, diskOccupier DiskOccupier) {
 	mux.HandleFunc("GET /disk/{utilization}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
-		var utilisation int64
-		var minutes int64
-		var err error
-
-		utilisation, err = strconv.ParseInt(r.PathValue("utilization"), 10, 64)
+		utilisation, err := parsePositiveInt64(r, "utilization")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid utilization: %s", err.Error())
+			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
-		if minutes, err = strconv.ParseInt(r.PathValue("minutes"), 10, 64); err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid minutes: %s", err.Error())
+		minutes, err := parsePositiveInt64(r, "minutes")
+		if err != nil {
+			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute

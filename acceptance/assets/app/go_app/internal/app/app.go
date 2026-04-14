@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -29,6 +30,17 @@ func Errorf(logger *slog.Logger, w http.ResponseWriter, statusCode int, format s
 	if err := writeJSON(w, statusCode, JSONResponse{"error": JSONResponse{"description": message}}); err != nil {
 		logger.Error("Failed to write JSON error response", slog.Any("error", err))
 	}
+}
+
+func parsePositiveInt64(r *http.Request, name string) (int64, error) {
+	val, err := strconv.ParseInt(r.PathValue(name), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: %s", name, err.Error())
+	}
+	if val < 1 {
+		return 0, fmt.Errorf("%s must be > 0", name)
+	}
+	return val, nil
 }
 
 func Router(logger *slog.Logger, timewaster TimeWaster, memoryTest MemoryGobbler,

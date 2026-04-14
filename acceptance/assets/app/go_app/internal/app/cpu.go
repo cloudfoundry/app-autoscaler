@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -29,16 +28,14 @@ func CPUTests(logger *slog.Logger, mux *http.ServeMux, cpuTest CPUWaster) {
 			Errorf(logger, w, http.StatusConflict, "CPU test is already running")
 			return
 		}
-		var utilization int64
-		var minutes int64
-		var err error
-		utilization, err = strconv.ParseInt(r.PathValue("utilization"), 10, 64)
+		utilization, err := parsePositiveInt64(r, "utilization")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid utilization: %s", err.Error())
+			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
-		if minutes, err = strconv.ParseInt(r.PathValue("minutes"), 10, 64); err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid minutes: %s", err.Error())
+		minutes, err := parsePositiveInt64(r, "minutes")
+		if err != nil {
+			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
