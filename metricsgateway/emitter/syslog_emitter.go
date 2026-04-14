@@ -28,6 +28,8 @@ type SyslogEmitter struct {
 
 type dummyCounter struct{}
 
+// Add is a no-op implementation required by syslog.WriterFactory interface.
+// Metrics counting is handled elsewhere in the application.
 func (c *dummyCounter) Add(_ float64) {}
 
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error) {
