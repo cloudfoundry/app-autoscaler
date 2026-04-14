@@ -23,6 +23,7 @@ func sanitizeDBURL(dbURL string) string {
 	}
 	// Remove password but keep username, host, port, database
 	if parsedURL.User != nil {
+		//#nosec G101 -- "***" is placeholder for redaction, not actual credential
 		parsedURL.User = url.UserPassword(parsedURL.User.Username(), "***")
 	}
 	return parsedURL.String()
