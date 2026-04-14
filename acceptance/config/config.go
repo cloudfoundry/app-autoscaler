@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -82,9 +83,13 @@ type Config struct {
 
 	HealthEndpointsBasicAuthEnabled bool `json:"health_endpoints_basic_auth_enabled"`
 
+	HealthEndpoints map[string]HealthEndpointConfig `json:"health_endpoints"`
+
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
 
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
+
+	FipsModeExpected bool `json:"fips_mode_expected"`
 
 	Performance PerformanceConfig `json:"performance"`
 }
@@ -92,6 +97,12 @@ type Config struct {
 type CPUUtilScalingPolicyTest struct {
 	AppMemory         string `json:"app_memory"`
 	AppCPUEntitlement int    `json:"app_cpu_entitlement"`
+}
+
+type HealthEndpointConfig struct {
+	Endpoint string `json:"endpoint"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 var defaults = Config{
@@ -152,20 +163,18 @@ type TerminateSuite func(message string, callerSkip ...int)
 var DefaultTerminateSuite TerminateSuite = ginkgo.AbortSuite
 
 func LoadConfig(terminateSuite TerminateSuite) *Config {
-	// First check for direct JSON config in environment variable
-	configJSON := os.Getenv("ACCEPTANCE_CONFIG_JSON")
-
 	config := defaults
 	var err error
 
-	if configJSON != "" {
-		// Parse JSON directly from env var
+	// Priority: VCAP_SERVICES (CF deployment) > ACCEPTANCE_CONFIG_JSON (env) > CONFIG file
+	if configJSON := loadConfigFromVCAPServices(); configJSON != "" {
+		err = loadConfigFromJSON(configJSON, &config)
+	} else if configJSON := os.Getenv("ACCEPTANCE_CONFIG_JSON"); configJSON != "" {
 		err = loadConfigFromJSON(configJSON, &config)
 	} else {
-		// Fall back to file-based config (existing behavior)
 		path := os.Getenv("CONFIG")
 		if path == "" {
-			terminateSuite("Must set $CONFIG to point to a json file or $ACCEPTANCE_CONFIG_JSON with JSON content")
+			terminateSuite("Must set $CONFIG to point to a json file, $ACCEPTANCE_CONFIG_JSON with JSON content, or bind an acceptance-tests-config service")
 		}
 		err = loadConfigFromPath(path, &config)
 	}
@@ -278,6 +287,61 @@ func loadConfigFromPath(path string, config *Config) error {
 func loadConfigFromJSON(jsonContent string, config *Config) error {
 	decoder := json.NewDecoder(strings.NewReader(jsonContent))
 	return decoder.Decode(config)
+}
+
+// loadConfigFromVCAPServices extracts acceptance test config from the
+// acceptance-tests-config user-provided service in VCAP_SERVICES.
+// Returns the credentials JSON string, or "" if not found.
+func loadConfigFromVCAPServices() string {
+	vcapServices := os.Getenv("VCAP_SERVICES")
+	if vcapServices == "" {
+		return ""
+	}
+
+	var services map[string][]struct {
+		Tags        []string               `json:"tags"`
+		Credentials map[string]interface{} `json:"credentials"`
+	}
+	if err := json.Unmarshal([]byte(vcapServices), &services); err != nil {
+		return ""
+	}
+
+	svc, found := findServiceByTag(services, "acceptance-tests-config")
+	if !found {
+		return ""
+	}
+
+	creds, ok := svc.Credentials["acceptance-tests-config"]
+	if !ok {
+		return ""
+	}
+
+	credBytes, err := json.Marshal(creds)
+	if err != nil {
+		return ""
+	}
+	return string(credBytes)
+}
+
+func findServiceByTag(services map[string][]struct {
+	Tags        []string               `json:"tags"`
+	Credentials map[string]interface{} `json:"credentials"`
+}, tag string) (struct {
+	Tags        []string               `json:"tags"`
+	Credentials map[string]interface{} `json:"credentials"`
+}, bool) {
+	for _, instances := range services {
+		for _, svc := range instances {
+			if slices.Contains(svc.Tags, tag) {
+				return svc, true
+			}
+		}
+	}
+	var zero struct {
+		Tags        []string               `json:"tags"`
+		Credentials map[string]interface{} `json:"credentials"`
+	}
+	return zero, false
 }
 
 func (c *Config) Protocol() string {

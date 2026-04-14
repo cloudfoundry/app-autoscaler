@@ -87,6 +87,7 @@ func createPrometheusRegistry(policyDb db.PolicyDB, httpStatusCollector healthen
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsforwarder", "policyDB", policyDb),
 		httpStatusCollector,
+		helpers.FipsEnabledGauge,
 	}, true, logger.Session("metricsforwarder-prometheus"))
 	return promRegistry
 }

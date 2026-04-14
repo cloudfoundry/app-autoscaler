@@ -121,6 +121,7 @@ type Config struct {
 	StoredProcedureConfig              *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config" json:"stored_procedure_binding_credential_config"`
 	ScalingRules                       ScalingRulesConfig            `yaml:"scaling_rules" json:"scaling_rules"`
 	DefaultCustomMetricsCredentialType string                        `yaml:"default_credential_type" json:"default_credential_type"`
+	FipsMode                           bool                          `yaml:"fips_mode" json:"fips_mode"`
 }
 
 func (c *Config) SetLoggingLevel() {
@@ -130,6 +131,11 @@ func (c *Config) SetLoggingLevel() {
 // GetLogging returns the logging configuration
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
+}
+
+// GetFipsMode returns whether FIPS 140-3 mode is configured
+func (c *Config) GetFipsMode() bool {
+	return c.FipsMode
 }
 
 type PlanCheckConfig struct {

@@ -194,6 +194,22 @@ Code generation uses `ogen` tool via `make generate-openapi-generated-clients-an
 7. **FIPS builds**: `GOFIPS140=v1.0.0` enables FIPS 140 compliance.
 8. **BBL_STATE_PATH**: Script continues gracefully if path doesn't exist (shows error message but doesn't fail).
 
+## Verification
+
+After any code changes, always run unit and integration tests before committing:
+
+```bash
+make test                    # Run all unit tests (Go + Java + acceptance unit)
+make integration             # Run integration tests
+```
+
+If tests fail due to database issues (stale containers, port conflicts, schema mismatches), clean and retry:
+
+```bash
+make clean && make test
+make clean && make integration
+```
+
 ## Acceptance Tests
 
 Located in `/acceptance`:

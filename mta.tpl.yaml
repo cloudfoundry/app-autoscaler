@@ -231,6 +231,7 @@ modules:
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
     requires:
       - name: app-autoscaler-application-logs
+      - name: acceptance-tests-config
     parameters:
       no-route: true
       no-start: true
@@ -301,6 +302,11 @@ resources:
     parameters:
       service-tags:
         - syslog-client
+  - name: acceptance-tests-config
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - acceptance-tests-config
   - name: app-autoscaler-application-logs
     active: false
     type: org.cloudfoundry.managed-service

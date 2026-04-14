@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
+import org.cloudfoundry.autoscaler.scheduler.util.VcapServicesHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -19,8 +20,6 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
 
   private static final String VCAP_SERVICES = "VCAP_SERVICES";
   private static final String VCAP_APPLICATION = "VCAP_APPLICATION";
-  private static final String SCHEDULER_CONFIG_TAG = "scheduler-config";
-  private static final String DATABASE_TAG = "relational";
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
@@ -137,14 +136,12 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
 
   private Map<String, Object> extractSchedulerConfig(String vcapServices) {
     try {
-      TypeReference<Map<String, List<Map<String, Object>>>> typeRef =
-          new TypeReference<Map<String, List<Map<String, Object>>>>() {};
       Map<String, List<Map<String, Object>>> services =
-          objectMapper.readValue(vcapServices, typeRef);
+          VcapServicesHelper.parseVcapServices(vcapServices);
 
       return services.values().stream()
           .flatMap(List::stream)
-          .filter(this::hasSchedulerConfigTag)
+          .filter(s -> VcapServicesHelper.hasTag(s, VcapServicesHelper.SCHEDULER_CONFIG_TAG))
           .findFirst()
           .map(this::extractCredentialsFromService)
           .orElse(null);
@@ -156,16 +153,14 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
 
   private Map<String, Object> extractDatabaseConfigs(String vcapServices) {
     try {
-      TypeReference<Map<String, List<Map<String, Object>>>> typeRef =
-          new TypeReference<Map<String, List<Map<String, Object>>>>() {};
       Map<String, List<Map<String, Object>>> services =
-          objectMapper.readValue(vcapServices, typeRef);
+          VcapServicesHelper.parseVcapServices(vcapServices);
 
       Map<String, Object> databaseConfigs = new java.util.HashMap<>();
 
       services.values().stream()
           .flatMap(List::stream)
-          .filter(this::hasDatabaseTag)
+          .filter(s -> VcapServicesHelper.hasTag(s, VcapServicesHelper.DATABASE_TAG))
           .forEach(
               service -> {
                 Map<String, Object> credentialsMap = extractCredentialsFromService(service);
@@ -336,36 +331,33 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
     return urlBuilder.toString();
   }
 
-  private boolean hasSchedulerConfigTag(Map<String, Object> service) {
-    Object tags = service.get("tags");
-    if (tags instanceof List) {
-      @SuppressWarnings("unchecked")
-      List<String> tagList = (List<String>) tags;
-      return tagList.contains(SCHEDULER_CONFIG_TAG);
-    }
-    return false;
-  }
-
-  private boolean hasDatabaseTag(Map<String, Object> service) {
-    Object tags = service.get("tags");
-    if (tags instanceof List) {
-      @SuppressWarnings("unchecked")
-      List<String> tagList = (List<String>) tags;
-      return tagList.contains(DATABASE_TAG);
-    }
-    return false;
-  }
-
   private Map<String, Object> extractCfInstanceCertificates(ConfigurableEnvironment environment) {
     Map<String, Object> sslConfig = new java.util.HashMap<>();
 
     try {
-      String caCert = environment.getProperty("CF_INSTANCE_CA_CERT");
-      String instanceCert = environment.getProperty("CF_INSTANCE_CERT");
-      String instanceKey = environment.getProperty("CF_INSTANCE_KEY");
+      // CF_INSTANCE_CERT, CF_INSTANCE_KEY, and CF_INSTANCE_CA_CERT are FILE PATHS,
+      // not inline PEM content. See:
+      // https://docs.cloudfoundry.org/devguide/deploy-apps/instance-identity.html
+      String caCertPath = environment.getProperty("CF_INSTANCE_CA_CERT");
+      String instanceCertPath = environment.getProperty("CF_INSTANCE_CERT");
+      String instanceKeyPath = environment.getProperty("CF_INSTANCE_KEY");
 
-      if (caCert != null && instanceCert != null && instanceKey != null) {
-        logger.info("Found CF instance certificates, configuring SSL bundle");
+      if (caCertPath != null && instanceCertPath != null && instanceKeyPath != null) {
+        logger.info(
+            "Found CF instance certificate paths: cert={}, key={}, ca={}",
+            instanceCertPath,
+            instanceKeyPath,
+            caCertPath);
+
+        // Read file contents — Spring Boot PEM SSL bundles expect inline PEM content
+        String caCert = readFileContent(caCertPath);
+        String instanceCert = readFileContent(instanceCertPath);
+        String instanceKey = readFileContent(instanceKeyPath);
+
+        if (caCert == null || instanceCert == null || instanceKey == null) {
+          logger.error("Failed to read one or more CF instance certificate files");
+          return sslConfig;
+        }
 
         // Configure SSL bundle for the scalingengine client
         Map<String, Object> sslBundle = new java.util.HashMap<>();
@@ -401,6 +393,19 @@ public class CloudFoundryConfigurationProcessor implements EnvironmentPostProces
     }
 
     return sslConfig;
+  }
+
+  /**
+   * Reads file content from a path. CF_INSTANCE_* environment variables contain file paths, but
+   * Spring Boot PEM SSL bundles expect inline PEM content.
+   */
+  private String readFileContent(String path) {
+    try {
+      return java.nio.file.Files.readString(java.nio.file.Paths.get(path));
+    } catch (Exception e) {
+      logger.error("Failed to read file {}: {}", path, e.getMessage());
+      return null;
+    }
   }
 
   private Map<String, Object> flattenConfiguration(String prefix, Map<String, Object> config) {
