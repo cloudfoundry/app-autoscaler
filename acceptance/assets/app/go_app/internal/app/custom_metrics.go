@@ -43,13 +43,13 @@ func handleCustomMetricsEndpoint(logger *slog.Logger, customMetricTest CustomMet
 		if metricName = r.PathValue("name"); metricName == "" {
 			err = fmt.Errorf("empty metric name")
 			logger.Error("Empty metric name", "error", err)
-			Errorf(logger, w, http.StatusBadRequest, "empty metric name")
+			respondWithErrorf(logger, w, http.StatusBadRequest, "empty metric name")
 			return
 		}
 
 		if metricValue, err = strconv.ParseUint(r.PathValue("value"), 10, 64); err != nil {
 			logger.Error("Invalid metric value", "error", err)
-			Errorf(logger, w, http.StatusBadRequest, "invalid metric value: %s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "invalid metric value: %s", err.Error())
 			return
 		}
 
@@ -60,7 +60,7 @@ func handleCustomMetricsEndpoint(logger *slog.Logger, customMetricTest CustomMet
 		err = customMetricTest.PostCustomMetric(r.Context(), logger, appEnv, float64(metricValue), metricName, useMtls)
 		if err != nil {
 			logger.Error("Failed to post custom metric", "error", err)
-			Errorf(logger, w, http.StatusInternalServerError, "error posting custom metric")
+			respondWithErrorf(logger, w, http.StatusInternalServerError, "error posting custom metric")
 			return
 		}
 

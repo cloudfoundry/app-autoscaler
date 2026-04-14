@@ -21,7 +21,7 @@ func ResponseTimeTests(logger *slog.Logger, mux *http.ServeMux, timeWaster TimeW
 		var milliseconds int64
 		var err error
 		if milliseconds, err = strconv.ParseInt(r.PathValue("delayInMS"), 10, 64); err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "invalid milliseconds: %s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "invalid milliseconds: %s", err.Error())
 			return
 		}
 		duration := time.Duration(milliseconds) * time.Millisecond

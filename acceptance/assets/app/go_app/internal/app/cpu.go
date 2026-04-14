@@ -25,17 +25,17 @@ var _ CPUWaster = &ConcurrentBusyLoopCPUWaster{}
 func CPUTests(logger *slog.Logger, mux *http.ServeMux, cpuTest CPUWaster) {
 	mux.HandleFunc("GET /cpu/{utilization}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
 		if cpuTest.IsRunning() {
-			Errorf(logger, w, http.StatusConflict, "CPU test is already running")
+			respondWithErrorf(logger, w, http.StatusConflict, "CPU test is already running")
 			return
 		}
 		utilization, err := parsePositiveInt64(r, "utilization")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		minutes, err := parsePositiveInt64(r, "minutes")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
@@ -47,7 +47,7 @@ func CPUTests(logger *slog.Logger, mux *http.ServeMux, cpuTest CPUWaster) {
 
 	mux.HandleFunc("GET /cpu/close", func(w http.ResponseWriter, r *http.Request) {
 		if !cpuTest.IsRunning() {
-			Errorf(logger, w, http.StatusConflict, "CPU test is not running")
+			respondWithErrorf(logger, w, http.StatusConflict, "CPU test is not running")
 			return
 		}
 		cpuTest.StopTest()

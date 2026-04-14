@@ -38,17 +38,17 @@ var _ MemoryGobbler = &ListBasedMemoryGobbler{}
 func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbler) {
 	mux.HandleFunc("GET /memory/{memoryMiB}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
 		if memoryTest.IsRunning() {
-			Errorf(logger, w, http.StatusConflict, "memory test is already running")
+			respondWithErrorf(logger, w, http.StatusConflict, "memory test is already running")
 			return
 		}
 		memoryMiB, err := parsePositiveInt64(r, "memoryMiB")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		minutes, err := parsePositiveInt64(r, "minutes")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
@@ -72,7 +72,7 @@ func MemoryTests(logger *slog.Logger, mux *http.ServeMux, memoryTest MemoryGobbl
 
 	mux.HandleFunc("GET /memory/close", func(w http.ResponseWriter, r *http.Request) {
 		if !memoryTest.IsRunning() {
-			Errorf(logger, w, http.StatusConflict, "memory test is not running")
+			respondWithErrorf(logger, w, http.StatusConflict, "memory test is not running")
 			return
 		}
 		memoryTest.StopTest()

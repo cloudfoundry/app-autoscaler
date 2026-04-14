@@ -15,18 +15,18 @@ func DiskTest(logger *slog.Logger, mux *http.ServeMux, diskOccupier DiskOccupier
 	mux.HandleFunc("GET /disk/{utilization}/{minutes}", func(w http.ResponseWriter, r *http.Request) {
 		utilisation, err := parsePositiveInt64(r, "utilization")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		minutes, err := parsePositiveInt64(r, "minutes")
 		if err != nil {
-			Errorf(logger, w, http.StatusBadRequest, "%s", err.Error())
+			respondWithErrorf(logger, w, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 		duration := time.Duration(minutes) * time.Minute
 		spaceInMB := utilisation * 1000 * 1000
 		if err = diskOccupier.Occupy(spaceInMB, duration); err != nil {
-			Errorf(logger, w, http.StatusInternalServerError, "error invoking occupation: %s", err.Error())
+			respondWithErrorf(logger, w, http.StatusInternalServerError, "error invoking occupation: %s", err.Error())
 			return
 		}
 		respondJSON(logger, w, JSONResponse{"utilization": utilisation, "minutes": minutes})
