@@ -117,61 +117,34 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 		})
 	})
 
-	When("A request to forward custom metrics comes without Authorization header", func() {
-		BeforeEach(func() {
+	DescribeTable("authentication failures",
+		func(setupAuth func() error) {
 			body, err = createTestCustomMetricJSON()
 			Expect(err).NotTo(HaveOccurred())
 
 			serverURL.Path = "/v1/apps/an-app-id/metrics"
-			req, err = setupRequest("POST", serverURL, body)
+			err = setupAuth()
 			Expect(err).NotTo(HaveOccurred())
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
-		})
 
-		It("returns status code 401", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
 			resp.Body.Close()
-		})
-	})
-
-	When("a request to forward custom metrics comes without 'Basic'", func() {
-		BeforeEach(func() {
-			body, err = createTestCustomMetricJSON()
-			Expect(err).NotTo(HaveOccurred())
-
-			serverURL.Path = "/v1/apps/an-app-id/metrics"
+		},
+		Entry("without Authorization header", func() error {
 			req, err = setupRequest("POST", serverURL, body)
-			Expect(err).NotTo(HaveOccurred())
-			resp, err = client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("returns status code 401", func() {
-			Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
-			resp.Body.Close()
-		})
-	})
-
-	When("a request to forward custom metrics comes with wrong user credentials", func() {
-		BeforeEach(func() {
-			body, err = createTestCustomMetricJSON()
-			Expect(err).NotTo(HaveOccurred())
-
+			return err
+		}),
+		Entry("without 'Basic' scheme", func() error {
+			req, err = setupRequest("POST", serverURL, body)
+			return err
+		}),
+		Entry("with wrong credentials", func() error {
 			fakeCredentials.ValidateReturns(false, errors.New("wrong credentials"))
-
-			serverURL.Path = "/v1/apps/an-app-id/metrics"
 			req, err = setupAuthenticatedRequest("POST", serverURL, body, "invalidUsername", "invalidPassword")
-			Expect(err).NotTo(HaveOccurred())
-			resp, err = client.Do(req)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("returns status code 401", func() {
-			Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
-			resp.Body.Close()
-		})
-	})
+			return err
+		}),
+	)
 
 	When("a request to forward custom metrics comes with unmatched metric types", func() {
 		BeforeEach(func() {
