@@ -29,7 +29,7 @@ var _ = Describe("Responsetime tests", func() {
 				Get("/responsetime/slow/yes").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
-				Body(`{"error":{"description":"invalid milliseconds: strconv.ParseInt: parsing \"yes\": invalid syntax"}}`).
+				Body(`{"error":{"description":"invalid delayInMS: strconv.ParseInt: parsing \"yes\": invalid syntax"}}`).
 				End()
 		})
 		It("should err if memory out of bounds", func() {
@@ -37,7 +37,7 @@ var _ = Describe("Responsetime tests", func() {
 				Get("/responsetime/slow/100001010101010249032897287298719874687936483275648273632429479827398798271").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
-				Body(`{"error":{"description":"invalid milliseconds: strconv.ParseInt: parsing \"100001010101010249032897287298719874687936483275648273632429479827398798271\": value out of range"}}`).
+				Body(`{"error":{"description":"invalid delayInMS: strconv.ParseInt: parsing \"100001010101010249032897287298719874687936483275648273632429479827398798271\": value out of range"}}`).
 				End()
 		})
 		It("should err if delay is negative", func() {
@@ -45,7 +45,7 @@ var _ = Describe("Responsetime tests", func() {
 				Get("/responsetime/slow/-1").
 				Expect(GinkgoT()).
 				Status(http.StatusBadRequest).
-				Body(`{"error":{"description":"milliseconds must be >= 0"}}`).
+				Body(`{"error":{"description":"delayInMS must be > 0"}}`).
 				End()
 		})
 
