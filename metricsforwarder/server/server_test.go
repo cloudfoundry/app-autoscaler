@@ -137,7 +137,11 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 		}),
 		Entry("without 'Basic' scheme", func() error {
 			req, err = setupRequest("POST", serverURL, body)
-			return err
+			if err != nil {
+				return err
+			}
+			req.Header.Set("Authorization", "Bearer invalid-token")
+			return nil
 		}),
 		Entry("with wrong credentials", func() error {
 			fakeCredentials.ValidateReturns(false, errors.New("wrong credentials"))
