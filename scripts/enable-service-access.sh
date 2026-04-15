@@ -15,6 +15,8 @@ set -eu -o pipefail
 # Example:
 #   ./enable-service-access.sh autoscaler-mta-922
 
+SEPARATOR="========================================="
+
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <service-name>"
   echo ""
@@ -25,9 +27,9 @@ fi
 
 SERVICE_NAME="$1"
 
-echo "========================================="
+echo "${SEPARATOR}"
 echo "Enabling service access (admin)"
-echo "========================================="
+echo "${SEPARATOR}"
 echo "Service: ${SERVICE_NAME}"
 echo ""
 
@@ -36,7 +38,7 @@ echo "Enabling global service access for '${SERVICE_NAME}'..."
 if cf enable-service-access "${SERVICE_NAME}"; then
   echo "✓ Service access enabled globally"
 else
-  echo "ERROR: Failed to enable service access"
+  echo "ERROR: Failed to enable service access" >&2
   exit 1
 fi
 echo ""
@@ -46,6 +48,6 @@ echo "Verifying service access:"
 cf service-access -e "${SERVICE_NAME}"
 echo ""
 
-echo "========================================="
+echo "${SEPARATOR}"
 echo "✓ Service access enabled!"
-echo "========================================="
+echo "${SEPARATOR}"
