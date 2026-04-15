@@ -22,6 +22,7 @@ function main() {
 	cf bind-security-group "${SECURITY_GROUP_NAME}" "${AUTOSCALER_ORG}" --space "${AUTOSCALER_SPACE}"
 
 	echo "Security group '${SECURITY_GROUP_NAME}' configured successfully for space '${AUTOSCALER_SPACE}'"
+	return 0
 }
 
-[ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"

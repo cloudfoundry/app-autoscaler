@@ -18,6 +18,7 @@ function create_cf_user() {
 
 	cf delete-user -f "${username}" || true
 	cf create-user "${username}" "${password}"
+	return 0
 }
 
 function setup_acceptance_users() {
@@ -34,12 +35,14 @@ function setup_acceptance_users() {
 	create_cf_user "${AUTOSCALER_OTHER_USER}" "${CREDHUB_OTHER_USER_PASSWORD_PATH}"
 
 	step "Setup complete!"
+	return 0
 }
 
 function main() {
 	bbl_login
 	cf_admin_login
 	setup_acceptance_users
+	return 0
 }
 
-[ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
