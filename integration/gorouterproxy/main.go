@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"flag"
@@ -29,6 +30,12 @@ func main() {
 }
 
 func startServer() {
+	// Validate forwardTo parameter - only allow numeric port values
+	if !isValidPort(*forwardTo) {
+		logger.Printf("Invalid forwardTo port: %s (must be numeric)", *forwardTo)
+		return
+	}
+
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", *port),
 		Handler: http.HandlerFunc(forwardHandler),
@@ -53,6 +60,11 @@ func startServer() {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || !os.IsNotExist(err)
+}
+
+func isValidPort(port string) bool {
+	p, err := strconv.Atoi(port)
+	return err == nil && p > 0 && p <= 65535
 }
 
 func forwardHandler(w http.ResponseWriter, inRequest *http.Request) {

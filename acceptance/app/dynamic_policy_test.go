@@ -440,6 +440,7 @@ func concurrentHttpGet(count int, url string) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
+			//#nosec G402 -- acceptance test that uses test foundations without proper certs
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
