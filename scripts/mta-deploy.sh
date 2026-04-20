@@ -35,7 +35,7 @@ fi
 pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
-	cf_org_manager_login
+	cf_deployment_login
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 	make -f metricsforwarder/Makefile set-security-group

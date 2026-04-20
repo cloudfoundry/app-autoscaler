@@ -10,5 +10,5 @@ source "${script_dir}/vars.source.sh"
 source "${script_dir}/common.sh"
 
 bbl_login
-cf_org_manager_login
+cf_deployment_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"

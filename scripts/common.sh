@@ -53,12 +53,22 @@ function cf_admin_login(){
 	return 0
 }
 
-function cf_org_manager_login(){
-	step 'login to cf as org manager'
+# Login to CF with appropriate credentials for deployment operations
+# Uses admin on main branch, org-manager on PR branches
+function cf_deployment_login(){
+	step 'login to cf for deployment operations'
 	cf api "https://api.${system_domain}" --skip-ssl-validation
-	local org_manager_password
-	org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
-	cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "$org_manager_password"
+
+	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
+		# Main branch: use admin user
+		cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
+		cf auth admin "$cf_admin_password"
+	else
+		# PR branch: use org-manager user
+		local org_manager_password
+		org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
+		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "$org_manager_password"
+	fi
 	return 0
 }
 
