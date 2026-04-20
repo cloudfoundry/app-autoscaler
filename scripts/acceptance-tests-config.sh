@@ -27,9 +27,18 @@ then
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 
-autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER:-admin}"
-autoscaler_org_manager_password="${AUTOSCALER_ORG_MANAGER_PASSWORD:-${cf_admin_password}}"
-skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-false}"
+# Use admin user for main branch, org-manager user for PRs
+if [[ "${PR_NUMBER:-main}" == "main" ]]; then
+	autoscaler_org_manager_user="admin"
+	autoscaler_org_manager_password="${cf_admin_password}"
+	skip_service_access_management="false"
+else
+	# For PRs, use dedicated org manager user
+	bbl_login
+	autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
+	autoscaler_org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
+	skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+fi
 
 function write_app_config() {
 	local -r config_path="$1"
