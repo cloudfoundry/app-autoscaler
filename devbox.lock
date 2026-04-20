@@ -514,8 +514,8 @@
       }
     },
     "delve@1.26.1": {
-      "last_modified": "2026-03-21T07:29:51Z",
-      "resolved": "github:NixOS/nixpkgs/09061f748ee21f68a089cd5d91ec1859cd93d0be#delve",
+      "last_modified": "2026-04-08T09:18:10Z",
+      "resolved": "github:NixOS/nixpkgs/456e8a9468b9d46bd8c9524425026c00745bc4d2#delve",
       "source": "devbox-search",
       "version": "1.26.1",
       "systems": {
@@ -523,41 +523,41 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/75lyd1hm8wlpr5a26w5gv68zxhzn1y9i-delve-1.26.1",
+              "path": "/nix/store/s471g7d71ilgjigh1wzwanga93wg74fs-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/75lyd1hm8wlpr5a26w5gv68zxhzn1y9i-delve-1.26.1"
+          "store_path": "/nix/store/s471g7d71ilgjigh1wzwanga93wg74fs-delve-1.26.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1a70y4m69gnv5s446pz9gr07lxj8sy62-delve-1.26.1",
+              "path": "/nix/store/an645gazxd67hdv5v9h8zzpx6gdm3isd-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1a70y4m69gnv5s446pz9gr07lxj8sy62-delve-1.26.1"
+          "store_path": "/nix/store/an645gazxd67hdv5v9h8zzpx6gdm3isd-delve-1.26.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8pkaklbvn7qfxg2fc2aj5p04g9b35vn1-delve-1.26.1",
+              "path": "/nix/store/rpgpby0c953ym50dj4q0sn8kpa4cgypb-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8pkaklbvn7qfxg2fc2aj5p04g9b35vn1-delve-1.26.1"
+          "store_path": "/nix/store/rpgpby0c953ym50dj4q0sn8kpa4cgypb-delve-1.26.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/f2jwgvg2w82rj8nd6pxk3xjjkdz8l38f-delve-1.26.1",
+              "path": "/nix/store/ks4xiahi7m0fm839xkln4lxdk1jpf8w4-delve-1.26.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/f2jwgvg2w82rj8nd6pxk3xjjkdz8l38f-delve-1.26.1"
+          "store_path": "/nix/store/ks4xiahi7m0fm839xkln4lxdk1jpf8w4-delve-1.26.1"
         }
       }
     },
@@ -754,8 +754,8 @@
       }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2026-04-11T06:17:25Z",
-      "resolved": "github:NixOS/nixpkgs/13043924aaa7375ce482ebe2494338e058282925?lastModified=1775888245&narHash=sha256-nwASzrRDD1JBEu%2Fo8ekKYEXm%2FoJW6EMCzCRdrwcLe90%3D"
+      "last_modified": "2026-04-16T08:46:55Z",
+      "resolved": "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b?lastModified=1776329215&narHash=sha256-a8BYi3mzoJ%2FAcJP8UldOx8emoPRLeWqALZWu4ZvjPXw%3D"
     },
     "github:joergdw/prspkgs#cloud-mta-build-tool": {
       "last_modified": "2026-03-03T14:40:14Z",
@@ -794,8 +794,8 @@
       }
     },
     "gnumake@4.4.1": {
-      "last_modified": "2026-04-06T17:08:15Z",
-      "resolved": "github:NixOS/nixpkgs/ff048610a1b698607a66f4671821716c2272dc9f#gnumake",
+      "last_modified": "2026-04-11T06:17:25Z",
+      "resolved": "github:NixOS/nixpkgs/13043924aaa7375ce482ebe2494338e058282925#gnumake",
       "source": "devbox-search",
       "version": "4.4.1",
       "systems": {
@@ -885,16 +885,16 @@
               "default": true
             },
             {
+              "name": "info",
+              "path": "/nix/store/pbs6fhcn3gjr6x9fzdlk0kwqg1m5gk5g-gnumake-4.4.1-info"
+            },
+            {
               "name": "debug",
               "path": "/nix/store/bzap48lhfqcjczhj2ry3gwqjh9klkgxf-gnumake-4.4.1-debug"
             },
             {
               "name": "doc",
               "path": "/nix/store/0jx03f9vis4zp8b7s2ybp9anlgk68ihy-gnumake-4.4.1-doc"
-            },
-            {
-              "name": "info",
-              "path": "/nix/store/pbs6fhcn3gjr6x9fzdlk0kwqg1m5gk5g-gnumake-4.4.1-info"
             }
           ],
           "store_path": "/nix/store/45npani18v2m7sbkrzrv2xyilyghrny9-gnumake-4.4.1"
@@ -1366,8 +1366,8 @@
       }
     },
     "jq@1.8.1": {
-      "last_modified": "2026-04-07T08:05:10Z",
-      "resolved": "github:NixOS/nixpkgs/a3db02183b5da6fbf728203492a5d1b9d109b7f9#jq",
+      "last_modified": "2026-04-09T19:38:50Z",
+      "resolved": "github:NixOS/nixpkgs/b0188973b4b2a5b6bdba8b65381d6cd09a533da0#jq",
       "source": "devbox-search",
       "version": "1.8.1",
       "systems": {
@@ -1411,16 +1411,16 @@
               "default": true
             },
             {
-              "name": "doc",
-              "path": "/nix/store/rr0a4brsd47393640zn9zgw844rbkrsl-jq-1.8.1-doc"
-            },
-            {
               "name": "out",
               "path": "/nix/store/5jf55qkwrnd769ri9wxiy7z9kp5zb4ca-jq-1.8.1"
             },
             {
               "name": "dev",
               "path": "/nix/store/kzsszlf69lndqilpgysw1j9b4hrfwjfx-jq-1.8.1-dev"
+            },
+            {
+              "name": "doc",
+              "path": "/nix/store/rr0a4brsd47393640zn9zgw844rbkrsl-jq-1.8.1-doc"
             }
           ],
           "store_path": "/nix/store/h68aklwk28xbrg7pqaw078w1hvvvf419-jq-1.8.1-bin"
@@ -1438,16 +1438,16 @@
               "default": true
             },
             {
+              "name": "out",
+              "path": "/nix/store/44i56yshwqwgw912idz0m9zx30d1xg8z-jq-1.8.1"
+            },
+            {
               "name": "dev",
               "path": "/nix/store/681w0vijzacwyhcwylkvbppd4kps33fw-jq-1.8.1-dev"
             },
             {
               "name": "doc",
               "path": "/nix/store/2bvvha8apma6crzhsnpjrghnjbjj6hpm-jq-1.8.1-doc"
-            },
-            {
-              "name": "out",
-              "path": "/nix/store/44i56yshwqwgw912idz0m9zx30d1xg8z-jq-1.8.1"
             }
           ],
           "store_path": "/nix/store/y699jyfkqhj7lm51zdxm1df28izg6zgj-jq-1.8.1-bin"
@@ -1465,16 +1465,16 @@
               "default": true
             },
             {
-              "name": "out",
-              "path": "/nix/store/s4w1j16dj8wyriv1ljfypr9s1r39yjwp-jq-1.8.1"
-            },
-            {
               "name": "dev",
               "path": "/nix/store/plinh1rzkh83n4gfpkxl748zgaydpxll-jq-1.8.1-dev"
             },
             {
               "name": "doc",
               "path": "/nix/store/ihgrvb9w91mwbhxx3fi3gcwwx3qlsdfv-jq-1.8.1-doc"
+            },
+            {
+              "name": "out",
+              "path": "/nix/store/s4w1j16dj8wyriv1ljfypr9s1r39yjwp-jq-1.8.1"
             }
           ],
           "store_path": "/nix/store/fc13hvlj7541i1xmwdka7f61qicdzr5a-jq-1.8.1-bin"
@@ -1757,9 +1757,9 @@
       }
     },
     "postgresql@latest": {
-      "last_modified": "2026-04-07T16:32:49Z",
+      "last_modified": "2026-04-11T06:17:25Z",
       "plugin_version": "0.0.2",
-      "resolved": "github:NixOS/nixpkgs/dfd9566f82a6e1d55c30f861879186440614696e#postgresql",
+      "resolved": "github:NixOS/nixpkgs/13043924aaa7375ce482ebe2494338e058282925#postgresql",
       "source": "devbox-search",
       "version": "17.9",
       "systems": {
@@ -1776,8 +1776,8 @@
               "default": true
             },
             {
-              "name": "dev",
-              "path": "/nix/store/yzvwbyh0gqrprnw5rdnhjmcmyvrl9ql4-postgresql-17.9-dev"
+              "name": "doc",
+              "path": "/nix/store/gillzna13al7axbhkqyjf7wwfkfbh4nn-postgresql-17.9-doc"
             },
             {
               "name": "jit",
@@ -1788,12 +1788,8 @@
               "path": "/nix/store/h9xg40fr3hqn9lhckdf1sjp2w7zdl92n-postgresql-17.9-lib"
             },
             {
-              "name": "pltcl",
-              "path": "/nix/store/ya921lh5kkcrdgk09y9580prw5yg27f2-postgresql-17.9-pltcl"
-            },
-            {
-              "name": "doc",
-              "path": "/nix/store/gillzna13al7axbhkqyjf7wwfkfbh4nn-postgresql-17.9-doc"
+              "name": "dev",
+              "path": "/nix/store/yzvwbyh0gqrprnw5rdnhjmcmyvrl9ql4-postgresql-17.9-dev"
             },
             {
               "name": "plperl",
@@ -1802,6 +1798,10 @@
             {
               "name": "plpython3",
               "path": "/nix/store/jzj6b2zw28dxy8jjfvzlfbmdl8mypv2m-postgresql-17.9-plpython3"
+            },
+            {
+              "name": "pltcl",
+              "path": "/nix/store/ya921lh5kkcrdgk09y9580prw5yg27f2-postgresql-17.9-pltcl"
             }
           ],
           "store_path": "/nix/store/rcz8zc21n6rx4igsdgngmkwnln4f7dy5-postgresql-17.9"
@@ -1817,14 +1817,6 @@
               "name": "man",
               "path": "/nix/store/j22nri44hhgyxbg78glds0im2y608cn9-postgresql-17.9-man",
               "default": true
-            },
-            {
-              "name": "debug",
-              "path": "/nix/store/rlk7xis3dfyll5z1fny70ksi3yqh1yy7-postgresql-17.9-debug"
-            },
-            {
-              "name": "lib",
-              "path": "/nix/store/b25khikzni3m8q8nyv3mrxa5v63bqsam-postgresql-17.9-lib"
             },
             {
               "name": "plpython3",
@@ -1849,6 +1841,14 @@
             {
               "name": "plperl",
               "path": "/nix/store/951fcy0jfrwz8rhi8668fqi72wwdj1qa-postgresql-17.9-plperl"
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/rlk7xis3dfyll5z1fny70ksi3yqh1yy7-postgresql-17.9-debug"
+            },
+            {
+              "name": "lib",
+              "path": "/nix/store/b25khikzni3m8q8nyv3mrxa5v63bqsam-postgresql-17.9-lib"
             }
           ],
           "store_path": "/nix/store/bw97pvf1fg3y7yjvw24g83448v8p48m0-postgresql-17.9"
@@ -1866,20 +1866,8 @@
               "default": true
             },
             {
-              "name": "dev",
-              "path": "/nix/store/p99q8ixd6kkw2fr8zpfsmc0m3gwqcjjw-postgresql-17.9-dev"
-            },
-            {
               "name": "doc",
               "path": "/nix/store/87c2fid7ppzyd3n3i5id3iiipybgzcp7-postgresql-17.9-doc"
-            },
-            {
-              "name": "jit",
-              "path": "/nix/store/f6qm2151lg98kmayd1kddmgqv9wh1m4f-postgresql-17.9-jit"
-            },
-            {
-              "name": "lib",
-              "path": "/nix/store/shz3ms0ww02df1k2qrzk0mv3g6ilr33j-postgresql-17.9-lib"
             },
             {
               "name": "plperl",
@@ -1888,6 +1876,18 @@
             {
               "name": "plpython3",
               "path": "/nix/store/6a5lqzcdxiqn5nqlfddjdb921z7a35in-postgresql-17.9-plpython3"
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/p99q8ixd6kkw2fr8zpfsmc0m3gwqcjjw-postgresql-17.9-dev"
+            },
+            {
+              "name": "jit",
+              "path": "/nix/store/f6qm2151lg98kmayd1kddmgqv9wh1m4f-postgresql-17.9-jit"
+            },
+            {
+              "name": "lib",
+              "path": "/nix/store/shz3ms0ww02df1k2qrzk0mv3g6ilr33j-postgresql-17.9-lib"
             },
             {
               "name": "pltcl",
@@ -1909,16 +1909,12 @@
               "default": true
             },
             {
+              "name": "debug",
+              "path": "/nix/store/yhvkyzaxm3lcs7kk8qri3ql34p6h7dmc-postgresql-17.9-debug"
+            },
+            {
               "name": "doc",
               "path": "/nix/store/x41xsx8n2j3l53dr6qfr1w7i9q1pvb3b-postgresql-17.9-doc"
-            },
-            {
-              "name": "jit",
-              "path": "/nix/store/87sz1iy2q7v0fcsrgbkmryrp390v5sl9-postgresql-17.9-jit"
-            },
-            {
-              "name": "lib",
-              "path": "/nix/store/il7gfijl01sxk16h9pffc5yan70vbqfp-postgresql-17.9-lib"
             },
             {
               "name": "plperl",
@@ -1933,12 +1929,16 @@
               "path": "/nix/store/292bd6aqwdsrd3bkvj8yjgwgg5nqlgjv-postgresql-17.9-pltcl"
             },
             {
-              "name": "debug",
-              "path": "/nix/store/yhvkyzaxm3lcs7kk8qri3ql34p6h7dmc-postgresql-17.9-debug"
-            },
-            {
               "name": "dev",
               "path": "/nix/store/w8vci17bmzkbxclrkjxg2bd3aachf5i8-postgresql-17.9-dev"
+            },
+            {
+              "name": "jit",
+              "path": "/nix/store/87sz1iy2q7v0fcsrgbkmryrp390v5sl9-postgresql-17.9-jit"
+            },
+            {
+              "name": "lib",
+              "path": "/nix/store/il7gfijl01sxk16h9pffc5yan70vbqfp-postgresql-17.9-lib"
             }
           ],
           "store_path": "/nix/store/zhaly0y0af2m7wyijyhdanm6a9l5lydv-postgresql-17.9"
