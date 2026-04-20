@@ -28,7 +28,7 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
 fi
 
 bbl_login
-cf_admin_login
+cf_deployment_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"

@@ -56,6 +56,7 @@ jobs:
           make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
 
       - name: Setup org manager user with OrgManager and SpaceDeveloper roles
+        if: github.event.pull_request.number != ''
         shell: bash
         run: |
           make --directory="${AUTOSCALER_DIR}" setup-org-manager-user
