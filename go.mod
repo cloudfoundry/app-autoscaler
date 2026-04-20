@@ -33,7 +33,7 @@ require (
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.6.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
+	github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/xeipuuv/gojsonschema v1.2.0
