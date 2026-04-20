@@ -85,7 +85,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 								Timeout: 5 * time.Second,
 								Transport: &http.Transport{
 									TLSClientConfig: &tls.Config{
-										// #nosec G402
+										// #nosec G402 -- controlled by config, used for dev/test environments
 										InsecureSkipVerify: conf.MetricCollector.UAACreds.SkipSSLValidation,
 									},
 								},

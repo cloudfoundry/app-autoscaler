@@ -52,7 +52,7 @@ func NewCFOauth2HTTPClient(oauth2URL, clientID, clientSecret, username, password
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					// #nosec G402
+					// #nosec G402 -- controlled by config, used for dev/test environments
 					InsecureSkipVerify: skipSSLValidation,
 				},
 			},

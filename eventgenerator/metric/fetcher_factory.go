@@ -53,7 +53,7 @@ func (l *logCacheFetcherFactory) CreateFetcher(logger lager.Logger, conf config.
 					Timeout: 5 * time.Second,
 					Transport: &http.Transport{
 						TLSClientConfig: &tls.Config{
-							// #nosec G402
+							// #nosec G402 -- controlled by config, used for dev/test environments
 							InsecureSkipVerify: uaaCredsConfig.SkipSSLValidation,
 						},
 					},
