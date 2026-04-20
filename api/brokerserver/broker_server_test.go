@@ -42,6 +42,7 @@ var _ = Describe("BrokerServer", func() {
 			req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 			Expect(err).NotTo(HaveOccurred())
 
+			//#nosec G101 -- test credentials, not real secrets
 			req.SetBasicAuth("wrongusername", "wrongpassword")
 			rsp, err = httpClient.Do(req)
 			Expect(err).NotTo(HaveOccurred())

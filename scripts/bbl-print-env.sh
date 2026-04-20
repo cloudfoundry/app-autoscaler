@@ -6,14 +6,14 @@ set -euo pipefail
 
 bbl_state_dir="${1:-}"
 
-if [ -z "${bbl_state_dir}" ] || [ ! -d "${bbl_state_dir}" ]; then
+if [[ -z "${bbl_state_dir}" ]] || [[ ! -d "${bbl_state_dir}" ]]; then
     echo "Error: bbl-state directory not found: ${bbl_state_dir}" >&2
     exit 1
 fi
 
 # Read bbl-state.json for BOSH credentials
 bbl_state_json="${bbl_state_dir}/bbl-state.json"
-if [ ! -f "${bbl_state_json}" ]; then
+if [[ ! -f "${bbl_state_json}" ]]; then
     echo "Error: bbl-state.json not found in ${bbl_state_dir}" >&2
     exit 1
 fi
@@ -29,7 +29,7 @@ director_vars_store="${bbl_state_dir}/vars/director-vars-store.yml"
 director_vars_file="${bbl_state_dir}/vars/director-vars-file.yml"
 jumpbox_vars_store="${bbl_state_dir}/vars/jumpbox-vars-store.yml"
 
-if [ -f "${director_vars_store}" ]; then
+if [[ -f "${director_vars_store}" ]]; then
     credhub_secret=$(yq -r '.credhub_admin_client_secret' "${director_vars_store}")
     credhub_ca=$(yq -r '.credhub_ca.ca' "${director_vars_store}")
 else
@@ -37,7 +37,7 @@ else
     credhub_ca=""
 fi
 
-if [ -f "${director_vars_file}" ]; then
+if [[ -f "${director_vars_file}" ]]; then
     internal_ip=$(yq -r '.internal_ip' "${director_vars_file}")
     external_ip=$(yq -r '.external_ip' "${director_vars_file}")
 else
@@ -48,7 +48,7 @@ fi
 # Extract jumpbox SSH private key using yq
 jumpbox_key_file="${bbl_state_dir}/.jumpbox-ssh-key"
 
-if [ -f "${jumpbox_vars_store}" ]; then
+if [[ -f "${jumpbox_vars_store}" ]]; then
     yq -r '.jumpbox_ssh.private_key' "${jumpbox_vars_store}" > "${jumpbox_key_file}"
     chmod 600 "${jumpbox_key_file}"
 fi
@@ -56,11 +56,11 @@ fi
 jumpbox_proxy="ssh+socks5://jumpbox@${external_ip}:22?private-key=${jumpbox_key_file}"
 
 # Debug: Verify jumpbox key exists and has correct permissions
-if [ ! -f "${jumpbox_key_file}" ]; then
+if [[ ! -f "${jumpbox_key_file}" ]]; then
     echo "Error: Jumpbox key file not found: ${jumpbox_key_file}" >&2
     exit 1
 fi
-if [ "$(stat -f '%A' "${jumpbox_key_file}" 2>/dev/null || stat -c '%a' "${jumpbox_key_file}" 2>/dev/null)" != "600" ]; then
+if [[ "$(stat -f '%A' "${jumpbox_key_file}" 2>/dev/null || stat -c '%a' "${jumpbox_key_file}" 2>/dev/null)" != "600" ]]; then
     echo "Warning: Jumpbox key file has incorrect permissions" >&2
 fi
 
