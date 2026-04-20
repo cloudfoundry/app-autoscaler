@@ -35,8 +35,8 @@ func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.Reproducibl
 			}
 
 			// Clean up all test spaces
+			spaceGuid := GetSpaceGuid(cfg, orgGuid)
 			for _, spaceName := range spaceNames {
-				spaceGuid := GetSpaceGuid(cfg, orgGuid)
 				deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
 				deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
 			}
