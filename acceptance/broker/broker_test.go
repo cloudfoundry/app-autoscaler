@@ -344,8 +344,10 @@ var _ = Describe("AutoScaler Service Broker", func() {
 type ServicePlans []ServicePlan
 
 // BoolOrInt handles CF API inconsistency where plan_updateable field is returned as:
-//   - boolean (true/false) when queried by admin users
-//   - integer (0/1) when queried by org-manager or non-admin users
+//
+//	- boolean (true/false) when queried by admin users
+//	- integer (0/1) when queried by org-manager or non-admin users
+//
 // This type accepts both formats during JSON unmarshaling, converting integers to booleans.
 type BoolOrInt bool
 
