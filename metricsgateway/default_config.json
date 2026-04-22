@@ -11,6 +11,7 @@
     "syslog": {
       "server_address": "log-cache.service.cf.internal",
       "port": 6067
-    }
+    },
+    "valid_org_guids": []
   }
 }
