@@ -91,20 +91,11 @@ func parseCertFromXFCC(r *http.Request) (*x509.Certificate, error) {
 }
 
 func CheckAuth(r *http.Request, org, space string) error {
-	cert, err := parseCertFromXFCC(r)
-	if err != nil {
-		return err
+	var orgs []string
+	if org != "" {
+		orgs = []string{org}
 	}
-
-	if space != "" && getSpaceGuid(cert) != space {
-		return ErrorWrongSpace
-	}
-
-	if org != "" && getOrgGuid(cert) != org {
-		return ErrorWrongOrg
-	}
-
-	return nil
+	return CheckAuthMultiOrg(r, orgs, space)
 }
 
 func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
