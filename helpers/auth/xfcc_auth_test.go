@@ -18,9 +18,23 @@ var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 })
 
+func doRequest(server *httptest.Server, xfccClientCert []byte) *http.Response {
+	server.Start()
+	req, err := http.NewRequest("GET", server.URL+"/some-protected-endpoint", nil)
+	Expect(err).NotTo(HaveOccurred())
+
+	if len(xfccClientCert) > 0 {
+		cert := auth.NewCert(string(xfccClientCert))
+		req.Header.Add("X-Forwarded-Client-Cert", cert.GetXFCCHeader())
+	}
+
+	resp, err := server.Client().Do(req)
+	Expect(err).NotTo(HaveOccurred())
+	return resp
+}
+
 var _ = Describe("XfccAuthMiddleware", func() {
 	var (
-		//server *httptest.Server
 		resp *http.Response
 
 		buffer *gbytes.Buffer
@@ -41,21 +55,10 @@ var _ = Describe("XfccAuthMiddleware", func() {
 		xm = auth.NewXfccAuthMiddleware(logger, models.XFCCAuth{ValidOrgGuid: expectedOrgGuid, ValidSpaceGuid: expectedSpaceGuid})
 
 		server = httptest.NewUnstartedServer(xm.XFCCAuthenticationMiddleware(handler))
-
 	})
 
 	JustBeforeEach(func() {
-		server.Start()
-		req, err := http.NewRequest("GET", server.URL+"/some-protected-endpoint", nil)
-		Expect(err).NotTo(HaveOccurred())
-
-		if len(xfccClientCert) > 0 {
-			cert := auth.NewCert(string(xfccClientCert))
-			req.Header.Add("X-Forwarded-Client-Cert", cert.GetXFCCHeader())
-		}
-
-		resp, err = server.Client().Do(req)
-		Expect(err).NotTo(HaveOccurred())
+		resp = doRequest(server, xfccClientCert)
 	})
 
 	When("xfcc header is not set", func() {
@@ -90,7 +93,6 @@ var _ = Describe("XfccAuthMiddleware", func() {
 			Eventually(buffer).Should(gbytes.Say(auth.ErrorWrongOrg.Error()))
 			Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
 		})
-
 	})
 
 	When("xfcc cert does not match space guid", func() {
@@ -131,17 +133,7 @@ var _ = Describe("MultiOrgXfccAuthMiddleware", func() {
 	})
 
 	JustBeforeEach(func() {
-		server.Start()
-		req, err := http.NewRequest("GET", server.URL+"/some-protected-endpoint", nil)
-		Expect(err).NotTo(HaveOccurred())
-
-		if len(xfccClientCert) > 0 {
-			cert := auth.NewCert(string(xfccClientCert))
-			req.Header.Add("X-Forwarded-Client-Cert", cert.GetXFCCHeader())
-		}
-
-		resp, err = server.Client().Do(req)
-		Expect(err).NotTo(HaveOccurred())
+		resp = doRequest(server, xfccClientCert)
 	})
 
 	When("xfcc header is not set", func() {
