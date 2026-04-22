@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.22
 	code.cloudfoundry.org/cfhttp/v2 v2.74.0
-	code.cloudfoundry.org/clock v1.66.0
+	code.cloudfoundry.org/clock v1.67.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.1
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
 	code.cloudfoundry.org/lager/v3 v3.66.0
@@ -49,7 +49,7 @@ require (
 	google.golang.org/grpc v1.80.0
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260420184626-e10c466a9529
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 // indirect
@@ -111,8 +111,8 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
