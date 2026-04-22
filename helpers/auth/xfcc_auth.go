@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -70,20 +71,29 @@ func (m *xfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) htt
 	})
 }
 
-func CheckAuth(r *http.Request, org, space string) error {
+func parseCertFromXFCC(r *http.Request) (*x509.Certificate, error) {
 	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
 	if xfccHeader == "" {
-		return ErrXFCCHeaderNotFound
+		return nil, ErrXFCCHeaderNotFound
 	}
 
 	data, err := base64.StdEncoding.DecodeString(xfccHeader)
 	if err != nil {
-		return fmt.Errorf("base64 parsing failed: %w", err)
+		return nil, fmt.Errorf("base64 parsing failed: %w", err)
 	}
 
 	cert, err := x509.ParseCertificate(data)
 	if err != nil {
-		return fmt.Errorf("failed to parse certificate: %w", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
+	}
+
+	return cert, nil
+}
+
+func CheckAuth(r *http.Request, org, space string) error {
+	cert, err := parseCertFromXFCC(r)
+	if err != nil {
+		return err
 	}
 
 	if space != "" && getSpaceGuid(cert) != space {
@@ -99,6 +109,48 @@ func CheckAuth(r *http.Request, org, space string) error {
 
 func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
 	return CheckAuth(r, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
+}
+
+func CheckAuthMultiOrg(r *http.Request, orgs []string, space string) error {
+	cert, err := parseCertFromXFCC(r)
+	if err != nil {
+		return err
+	}
+
+	if space != "" && getSpaceGuid(cert) != space {
+		return ErrorWrongSpace
+	}
+
+	if len(orgs) > 0 && !slices.Contains(orgs, getOrgGuid(cert)) {
+		return ErrorWrongOrg
+	}
+
+	return nil
+}
+
+type multiOrgXfccAuthMiddleware struct {
+	logger    lager.Logger
+	orgGuids  []string
+	spaceGuid string
+}
+
+func NewMultiOrgXfccAuthMiddleware(logger lager.Logger, orgGuids []string, spaceGuid string) XFCCAuthMiddleware {
+	return &multiOrgXfccAuthMiddleware{
+		logger:    logger,
+		orgGuids:  append([]string{}, orgGuids...),
+		spaceGuid: spaceGuid,
+	}
+}
+
+func (m *multiOrgXfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := CheckAuthMultiOrg(r, m.orgGuids, m.spaceGuid); err != nil {
+			m.logger.Error("xfcc-auth-error", err)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func getSpaceGuid(cert *x509.Certificate) string {

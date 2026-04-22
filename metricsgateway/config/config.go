@@ -18,6 +18,7 @@ type SyslogConfig struct {
 type Config struct {
 	configutil.BaseConfig `yaml:",inline"`
 	SyslogConfig          SyslogConfig `yaml:"syslog" json:"syslog"`
+	ValidOrgGuids         []string     `yaml:"valid_org_guids" json:"valid_org_guids"`
 }
 
 func defaultConfig() Config {
@@ -65,10 +66,19 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 	}
 	conf.SyslogConfig.TLS = tls
 
+	if len(conf.ValidOrgGuids) == 0 {
+		if orgGuid := vcapReader.GetOrgGuid(); orgGuid != "" {
+			conf.ValidOrgGuids = []string{orgGuid}
+		}
+	}
+
 	return nil
 }
 
 func (c *Config) Validate() error {
+	if len(c.ValidOrgGuids) == 0 {
+		return errors.New("configuration error: valid_org_guids must contain at least one org GUID")
+	}
 	if c.SyslogConfig.ServerAddress == "" {
 		return errors.New("configuration error: syslog server_address is empty")
 	}

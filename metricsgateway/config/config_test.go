@@ -61,6 +61,13 @@ var _ = Describe("Config", func() {
 			Expect(err).ToNot(HaveOccurred())
 			conf, err = config.LoadConfig("", vcapReader)
 			Expect(err).ToNot(HaveOccurred())
+			conf.ValidOrgGuids = []string{"some-org-guid"}
+		})
+
+		It("requires at least one org GUID", func() {
+			conf.ValidOrgGuids = []string{}
+			err = conf.Validate()
+			Expect(err).To(MatchError("configuration error: valid_org_guids must contain at least one org GUID"))
 		})
 
 		It("requires syslog server address", func() {
@@ -75,7 +82,13 @@ var _ = Describe("Config", func() {
 			Expect(err).To(MatchError("configuration error: syslog port is zero"))
 		})
 
-		It("passes validation with defaults", func() {
+		It("passes validation with defaults and org guids set", func() {
+			err = conf.Validate()
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("accepts multiple org GUIDs", func() {
+			conf.ValidOrgGuids = []string{"org-1", "org-2", "org-3"}
 			err = conf.Validate()
 			Expect(err).ToNot(HaveOccurred())
 		})
