@@ -57,9 +57,6 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	// Configure CF instance identity certs for server TLS
-	conf.CFServer.TLS = vcapReader.GetInstanceTLSCerts()
-
 	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
 	if err != nil {
 		return err

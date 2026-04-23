@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -52,7 +53,10 @@ func (e *GatewayEmitter) EmitMetric(metric *models.CustomMetric) {
 		e.logger.Error("failed-to-send-metric-to-gateway", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		e.logger.Error("gateway-returned-error", fmt.Errorf("status %d", resp.StatusCode), lager.Data{"url": e.url})

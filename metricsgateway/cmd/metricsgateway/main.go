@@ -16,7 +16,7 @@ func main() {
 	startup.ExitOnError(err, logger, "failed-to-create-syslog-emitter")
 
 	srv := server.NewServer(logger.Session("http-server"), conf, syslogEmitter)
-	xm := auth.NewMultiOrgXfccAuthMiddleware(logger, conf.ValidOrgGuids, conf.CFServer.XFCC.ValidSpaceGuid)
+	xm := auth.NewMultiOrgXfccAuthMiddleware(logger, conf.ValidOrgGuids, "")
 
 	startup.StartService(logger,
 		startup.Server("cf_server", func() (ifrit.Runner, error) { return srv.CreateCFServer(xm) }),
