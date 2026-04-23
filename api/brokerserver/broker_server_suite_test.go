@@ -13,6 +13,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"github.com/onsi/gomega/ghttp"
@@ -138,7 +139,11 @@ var _ = BeforeSuite(func() {
 			MetricsForwarderUrl:     "someURL",
 			MetricsForwarderMtlsUrl: "Mtls-someURL",
 		},
-		DefaultCustomMetricsCredentialType: "binding-secret",
+		CustomMetricsAuthConfig: &config.CustomMetricsAuthConfig{
+			BasicAuthHandling:           config.BasicAuthHandlingOn,
+			DefaultCustomMetricAuthType: models.BindingSecret,
+			BasicAuthHandlingImplConfig: config.BasicAuthHandlingNative{},
+		},
 	}
 	fakeCfClient := &fakes.FakeCFClient{}
 	fakeBindingDB := &fakes.FakeBindingDB{}
