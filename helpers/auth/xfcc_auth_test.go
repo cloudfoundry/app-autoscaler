@@ -147,38 +147,19 @@ var _ = Describe("MultiOrgXfccAuthMiddleware", func() {
 		})
 	})
 
-	When("xfcc cert matches first org in list", func() {
-		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert("org-1", expectedSpaceGuid)
+	DescribeTable("xfcc cert matches an org in list",
+		func(orgGuid string) {
+			xfccClientCert, err = testhelpers.GenerateClientCert(orgGuid, expectedSpaceGuid)
 			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should return 200", func() {
+			// Create a fresh server for each table entry since doRequest starts it
+			srv := httptest.NewUnstartedServer(xm.XFCCAuthenticationMiddleware(handler))
+			resp = doRequest(srv, xfccClientCert)
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-		})
-	})
-
-	When("xfcc cert matches second org in list", func() {
-		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert("org-2", expectedSpaceGuid)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should return 200", func() {
-			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-		})
-	})
-
-	When("xfcc cert matches last org in list", func() {
-		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert("org-3", expectedSpaceGuid)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should return 200", func() {
-			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-		})
-	})
+		},
+		Entry("first org", "org-1"),
+		Entry("second org", "org-2"),
+		Entry("last org", "org-3"),
+	)
 
 	When("xfcc cert org does not match any in list", func() {
 		BeforeEach(func() {
