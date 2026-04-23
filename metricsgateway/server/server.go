@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -68,18 +67,15 @@ func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
 	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, healthRouter)
 }
 
+const maxRequestBodySize = 1 << 20 // 1 MiB
+
 func (s *Server) handleEnvelopes(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		s.logger.Error("failed-to-read-request-body", err)
-		http.Error(w, "failed to read request body", http.StatusBadRequest)
-		return
-	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodySize)
 	defer r.Body.Close()
 
 	var metrics []*models.CustomMetric
-	if err := json.Unmarshal(body, &metrics); err != nil {
-		s.logger.Error("failed-to-unmarshal-metrics", err)
+	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+		s.logger.Error("failed-to-decode-metrics", err)
 		http.Error(w, "invalid JSON payload", http.StatusBadRequest)
 		return
 	}

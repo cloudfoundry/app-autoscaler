@@ -22,36 +22,20 @@ var _ = Describe("Config", func() {
 		vcapReader configutil.VCAPConfigurationReader
 	)
 
-	Describe("LoadConfig on CF", func() {
+	Describe("LoadConfig off CF", func() {
 		BeforeEach(func() {
-			// Simulate CF environment
-			os.Setenv("VCAP_APPLICATION", `{"application_id":"test-app"}`)
-			os.Setenv("VCAP_SERVICES", `{}`)
-			os.Setenv("CF_INSTANCE_CERT", "/tmp/instance.crt")
-			os.Setenv("CF_INSTANCE_KEY", "/tmp/instance.key")
-			os.Setenv("CF_INSTANCE_CA_CERT", "/tmp/instance_ca.crt")
-
+			os.Unsetenv("VCAP_APPLICATION")
 			vcapReader, err = configutil.NewVCAPConfigurationReader()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		AfterEach(func() {
-			os.Unsetenv("VCAP_APPLICATION")
-			os.Unsetenv("VCAP_SERVICES")
-			os.Unsetenv("CF_INSTANCE_CERT")
-			os.Unsetenv("CF_INSTANCE_KEY")
-			os.Unsetenv("CF_INSTANCE_CA_CERT")
-		})
-
-		It("configures CFServer TLS with instance identity certs", func() {
+		It("loads default config with no file", func() {
 			conf, err = config.LoadConfig("", vcapReader)
-			Expect(err).To(HaveOccurred()) // Will fail due to missing syslog-client binding, but that's OK
-
-			// Verify that instance TLS would be configured if we had all bindings
-			instanceTLS := vcapReader.GetInstanceTLSCerts()
-			Expect(instanceTLS.CertFile).To(Equal("/tmp/instance.crt"))
-			Expect(instanceTLS.KeyFile).To(Equal("/tmp/instance.key"))
-			Expect(instanceTLS.CACertFile).To(Equal("/tmp/instance_ca.crt"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(conf.CFServer.Port).To(Equal(8080))
+			Expect(conf.CFServer.TLS.CertFile).To(BeEmpty())
+			Expect(conf.SyslogConfig.ServerAddress).To(Equal("log-cache.service.cf.internal"))
+			Expect(conf.SyslogConfig.Port).To(Equal(6067))
 		})
 	})
 

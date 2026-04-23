@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
@@ -28,14 +29,15 @@ type SyslogEmitter struct {
 
 type dummyCounter struct{}
 
-// Add is a no-op implementation required by syslog.WriterFactory interface.
-// Metrics counting is handled elsewhere in the application.
 func (c *dummyCounter) Add(_ float64) {}
 
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error) {
 	var writer egress.WriteCloser
 
-	tlsConfig, _ := conf.SyslogConfig.TLS.CreateClientConfig()
+	tlsConfig, err := conf.SyslogConfig.TLS.CreateClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TLS config: %w", err)
+	}
 
 	netConf := syslog.NetworkTimeoutConfig{
 		WriteTimeout: time.Second,
@@ -49,7 +51,10 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error)
 		protocol = "syslog"
 	}
 
-	syslogURL, _ := url.Parse(fmt.Sprintf("%s://%s:%d", protocol, conf.SyslogConfig.ServerAddress, conf.SyslogConfig.Port))
+	syslogURL, err := url.Parse(fmt.Sprintf("%s://%s:%d", protocol, conf.SyslogConfig.ServerAddress, conf.SyslogConfig.Port))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse syslog URL: %w", err)
+	}
 
 	logger.Info("using-syslog-url", lager.Data{"url": syslogURL})
 
@@ -77,6 +82,8 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error)
 			&dummyCounter{},
 			syslog.NewConverter(),
 		)
+	default:
+		return nil, fmt.Errorf("unsupported syslog scheme: %s", binding.URL.Scheme)
 	}
 
 	retryWriter, err := syslog.NewRetryWriter(
@@ -97,7 +104,7 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error)
 
 func EnvelopeForMetric(metric *models.CustomMetric) *loggregator_v2.Envelope {
 	return &loggregator_v2.Envelope{
-		InstanceId: fmt.Sprintf("%d", metric.InstanceIndex),
+		InstanceId: strconv.FormatUint(uint64(metric.InstanceIndex), 10),
 		Timestamp:  time.Now().UnixNano(),
 		SourceId:   metric.AppGUID,
 		Message: &loggregator_v2.Envelope_Gauge{

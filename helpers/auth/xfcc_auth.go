@@ -20,6 +20,7 @@ var (
 	ErrorWrongSpace       = errors.New("space guid is wrong")
 	ErrorWrongOrg         = errors.New("org guid is wrong")
 	ErrXFCCHeaderNotFound = errors.New("xfcc header not found")
+	certFieldRegex        = regexp.MustCompile(`(\w+):((\w+-)*\w+)`)
 )
 
 type XFCCAuthMiddleware interface {
@@ -164,8 +165,7 @@ func getGuidFromCert(cert *x509.Certificate, prefix string) string {
 
 func mapFrom(input string) map[string]string {
 	result := make(map[string]string)
-	r := regexp.MustCompile(`(\w+):((\w+-)*\w+)`)
-	matches := r.FindAllStringSubmatch(input, -1)
+	matches := certFieldRegex.FindAllStringSubmatch(input, -1)
 
 	for _, match := range matches {
 		result[match[1]] = match[2]
