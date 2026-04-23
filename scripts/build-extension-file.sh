@@ -16,13 +16,13 @@ extension_file_path="${DEST}/extension-file-${VERSION}.txt"
 mkdir -p "${DEST}"
 
 # Exit early if extension file already exists
-if [ -f "${extension_file_path}" ]; then
+if [[ -f "${extension_file_path}" ]]; then
   echo "Extension file already exists at: ${extension_file_path}"
   echo "Skipping rebuild. Delete the file to regenerate it."
   exit 0
 fi
 
-if [ -z "${DEPLOYMENT_NAME}" ]; then
+if [[ -z "${DEPLOYMENT_NAME}" ]]; then
   echo "DEPLOYMENT_NAME is not set"
   exit 1
 fi
@@ -39,6 +39,7 @@ credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscal
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password" --length 16 -t password
+credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scheduler_health_password" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue" --length 16 -t password
 credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password" --length 16 -t password
 
@@ -62,6 +63,7 @@ metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscal
 operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
 eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
 scalingengine_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password))
+scheduler_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scheduler_health_password))
 service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue))
 service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
 
@@ -98,6 +100,7 @@ export SCALINGENGINE_INSTANCES="${SCALINGENGINE_INSTANCES:-2}"
 export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
 export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
+export SCHEDULER_HEALTH_PASSWORD="$(yq ".scheduler_health_password" /tmp/mtar-secrets.yml)"
 
 export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
 export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
@@ -190,37 +193,62 @@ modules:
   - name: acceptance-tests
     properties:
       SUITES: ""
-      ACCEPTANCE_CONFIG_JSON: |
-        {
-          "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
-          "apps_domain": "${SYSTEM_DOMAIN}",
-          "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
-          "use_http": false,
-          "service_name": "${DEPLOYMENT_NAME}",
-          "service_plan": "autoscaler-free-plan",
-          "service_broker": "${DEPLOYMENT_NAME}",
-          "aggregate_interval": 120,
-          "default_timeout": 60,
-          "cpu_upper_threshold": ${CPU_UPPER_THRESHOLD:-100},
-          "name_prefix": "${NAME_PREFIX:-ASATS}",
-          "autoscaler_api": "${APISERVER_HOST}.\${default-domain}",
-          "performance": {
-            "app_count": ${PERFORMANCE_APP_COUNT:-100},
-            "app_percentage_to_scale": ${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30},
-            "setup_workers": ${PERFORMANCE_SETUP_WORKERS:-50},
-            "update_existing_org_quota": ${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}
-          }
-        }
+    requires:
+    - name: acceptance-tests-config
 
 resources:
+- name: acceptance-tests-config
+  parameters:
+    config:
+      acceptance-tests-config:
+        api: "api.${SYSTEM_DOMAIN}"
+        admin_user: "admin"
+        admin_password: "${CF_ADMIN_PASSWORD}"
+        apps_domain: "${SYSTEM_DOMAIN}"
+        skip_ssl_validation: ${SKIP_SSL_VALIDATION:-true}
+        use_http: false
+        service_name: "${DEPLOYMENT_NAME}"
+        service_plan: "autoscaler-free-plan"
+        service_broker: "${DEPLOYMENT_NAME}"
+        aggregate_interval: 120
+        default_timeout: 60
+        cpu_upper_threshold: ${CPU_UPPER_THRESHOLD:-100}
+        name_prefix: "${NAME_PREFIX:-ASATS}"
+        autoscaler_api: "${APISERVER_HOST}.\${default-domain}"
+        health_endpoints:
+          eventgenerator:
+            endpoint: "https://${EVENTGENERATOR_CF_HOST}.\${default-domain}/health"
+            username: "monitor-eventgenerator"
+            password: "${EVENTGENERATOR_HEALTH_PASSWORD}"
+          scalingengine:
+            endpoint: "https://${SCALINGENGINE_CF_HOST}.\${default-domain}/health"
+            username: "monitor-scalingengine"
+            password: "${SCALINGENGINE_HEALTH_PASSWORD}"
+          operator:
+            endpoint: "https://${OPERATOR_HOST}.\${default-domain}/health"
+            username: "monitor-operator"
+            password: "${OPERATOR_HEALTH_PASSWORD}"
+          metricsforwarder:
+            endpoint: "https://${METRICSFORWARDER_HOST}.\${default-domain}/health"
+            username: "monitor-metricsforwarder"
+            password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
+          scheduler:
+            endpoint: "https://${SCHEDULER_CF_HOST}.\${default-domain}/health"
+            username: "monitor-scheduler"
+            password: "${SCHEDULER_HEALTH_PASSWORD}"
+        performance:
+          app_count: ${PERFORMANCE_APP_COUNT:-100}
+          app_percentage_to_scale: ${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30}
+          setup_workers: ${PERFORMANCE_SETUP_WORKERS:-50}
+          update_existing_org_quota: ${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}
+
 - name: metricsforwarder-config
   parameters:
     config:
       metricsforwarder-config:
         health:
           basic_auth:
+            username: "monitor-metricsforwarder"
             password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
 
 - name: eventgenerator-config
@@ -239,6 +267,7 @@ resources:
           total_instances: ${EVENTGENERATOR_INSTANCES}
         health:
           basic_auth:
+            username: "monitor-eventgenerator"
             password: "${EVENTGENERATOR_HEALTH_PASSWORD}"
         scalingEngine:
           scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.\${default-domain}
@@ -275,8 +304,8 @@ resources:
     config:
       cfserver:
         healthserver:
-          password: "test-password"
-          username: "test-user"
+          password: "${SCHEDULER_HEALTH_PASSWORD}"
+          username: "monitor-scheduler"
       autoscaler:
         scalingengine:
           url: https://${SCALINGENGINE_HOST}.\${default-domain}
@@ -286,6 +315,7 @@ resources:
       operator-config:
         health:
           basic_auth:
+            username: "monitor-operator"
             password: "${OPERATOR_HEALTH_PASSWORD}"
         cf:
           api:  https://api.\${default-domain}
@@ -301,6 +331,7 @@ resources:
       scalingengine-config:
         health:
           basic_auth:
+            username: "monitor-scalingengine"
             password: "${SCALINGENGINE_HEALTH_PASSWORD}"
         cf:
           api:  https://api.\${default-domain}

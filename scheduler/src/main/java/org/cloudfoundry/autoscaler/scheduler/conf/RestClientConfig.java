@@ -1,6 +1,17 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
+import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -10,6 +21,10 @@ import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.HttpsSupport;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.util.Timeout;
+import org.cloudfoundry.autoscaler.scheduler.util.FipsPemUtils;
+import org.cloudfoundry.autoscaler.scheduler.util.FipsSslContextBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ssl.SslBundle;
@@ -23,12 +38,272 @@ import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class RestClientConfig {
+  private static final Logger logger = LoggerFactory.getLogger(RestClientConfig.class);
   private final SSLContext sslContext;
 
   @Autowired
-  public RestClientConfig(SslBundles sslBundles) {
+  public RestClientConfig(
+      SslBundles sslBundles, @Value("${client.ssl.protocol}") String protocol) {
     SslBundle sslBundle = sslBundles.getBundle("scalingengine");
-    this.sslContext = sslBundle.createSslContext();
+
+    // Load custom CA certificates from SSL bundle if configured (for test environments)
+    X509TrustManager customTrustManager = loadCustomTrustManager(sslBundle);
+
+    // Load client certificate KeyManagers for mutual TLS authentication.
+    // Try SSL bundle first, then fall back to reading CF_INSTANCE_CERT/KEY directly.
+    javax.net.ssl.KeyManager[] keyManagers = loadKeyManagers(sslBundle);
+    if (keyManagers == null) {
+      keyManagers = loadCfInstanceKeyManagers();
+    }
+    keyManagers = wrapWithDebugLogging(keyManagers);
+
+    // In FIPS mode, Bouncy Castle TrustManager doesn't automatically fall back
+    // to system trust, so we explicitly merge system CAs with custom CAs.
+    if (customTrustManager != null) {
+      this.sslContext =
+          FipsSslContextBuilder.buildWithSystemAndCustomTrust(
+              keyManagers, customTrustManager, protocol);
+      logger.info(
+          "RestClientConfig initialized with FIPS-compliant SSLContext using protocol: {} "
+              + "with system CA trust anchors and {} custom CA certificate(s){}",
+          protocol,
+          customTrustManager.getAcceptedIssuers().length,
+          keyManagers != null ? " and client certificate" : "");
+    } else {
+      this.sslContext =
+          FipsSslContextBuilder.buildWithSystemTrust(keyManagers, protocol);
+      logger.info(
+          "RestClientConfig initialized with FIPS-compliant SSLContext using protocol: {} "
+              + "with system CA trust anchors only{}",
+          protocol,
+          keyManagers != null ? " and client certificate" : "");
+    }
+  }
+
+  /**
+   * Loads KeyManagers from SSL bundle for client certificate authentication (mutual TLS).
+   *
+   * @param sslBundle SSL bundle configuration
+   * @return KeyManager array or null if not configured
+   */
+  private javax.net.ssl.KeyManager[] loadKeyManagers(SslBundle sslBundle) {
+    try {
+      KeyStore keyStore = sslBundle.getStores().getKeyStore();
+
+      if (keyStore == null) {
+        logger.info("No keystore configured in SSL bundle");
+        return null;
+      }
+
+      if (keyStore.size() == 0) {
+        logger.info("Keystore from SSL bundle is empty");
+        return null;
+      }
+
+      logger.info("Loaded keystore with {} entry/entries from SSL bundle", keyStore.size());
+
+      return createKeyManagers(keyStore, null);
+
+    } catch (Exception e) {
+      logger.info("Could not load keystore from SSL bundle: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  /**
+   * Loads KeyManagers directly from CF_INSTANCE_CERT and CF_INSTANCE_KEY file paths. This is the
+   * fallback when the Spring SSL bundle doesn't contain the client certificate (e.g., because the
+   * EnvironmentPostProcessor couldn't inject them, or PEM parsing failed under FIPS).
+   *
+   * <p>CF_INSTANCE_CERT and CF_INSTANCE_KEY are file paths set by Diego to give each container a
+   * unique cryptographic identity for mutual TLS.
+   *
+   * @return KeyManager array or null if CF instance identity is not available
+   */
+  private javax.net.ssl.KeyManager[] loadCfInstanceKeyManagers() {
+    String certPath = System.getenv("CF_INSTANCE_CERT");
+    String keyPath = System.getenv("CF_INSTANCE_KEY");
+
+    if (certPath == null || keyPath == null) {
+      logger.info(
+          "CF_INSTANCE_CERT/CF_INSTANCE_KEY not set - no CF instance identity available");
+      return null;
+    }
+
+    try {
+      Path certFile = Paths.get(certPath);
+      Path keyFile = Paths.get(keyPath);
+
+      String certPem = Files.readString(certFile);
+      String keyPem = Files.readString(keyFile);
+
+      logger.info("Loading CF instance identity from {} and {}", certPath, keyPath);
+
+      java.util.List<X509Certificate> certChain = FipsPemUtils.parseCertificateChain(certPem);
+      PrivateKey privateKey = FipsPemUtils.parsePrivateKey(keyPem);
+
+      KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      keyStore.load(null, null);
+      keyStore.setKeyEntry(
+          "cf-instance-identity",
+          privateKey,
+          new char[0],
+          certChain.toArray(new X509Certificate[0]));
+
+      javax.net.ssl.KeyManager[] keyManagers = createKeyManagers(keyStore, new char[0]);
+
+      X509Certificate leaf = certChain.get(0);
+      logger.info(
+          "Loaded CF instance identity chain ({} cert(s)): leaf subject: {}, issuer: {}",
+          certChain.size(),
+          leaf.getSubjectX500Principal().getName(),
+          leaf.getIssuerX500Principal().getName());
+
+      return keyManagers;
+
+    } catch (Exception e) {
+      logger.error("Failed to load CF instance identity certificates", e);
+      return null;
+    }
+  }
+
+  /**
+   * Loads custom TrustManager from SSL bundle if truststore certificates are configured.
+   *
+   * @param sslBundle SSL bundle configuration
+   * @return X509TrustManager with custom CA certificates, or null if not configured
+   */
+  private X509TrustManager loadCustomTrustManager(SslBundle sslBundle) {
+    try {
+      KeyStore trustStore = sslBundle.getStores().getTrustStore();
+
+      if (trustStore == null) {
+        logger.info("No truststore configured in SSL bundle");
+        return null;
+      }
+
+      // Check if the truststore actually has certificates
+      if (trustStore.size() == 0) {
+        logger.info("Truststore from SSL bundle is empty");
+        return null;
+      }
+
+      logger.info("Loaded truststore with {} certificate(s) from SSL bundle", trustStore.size());
+
+      // Create TrustManager from the truststore
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init(trustStore);
+
+      return FipsSslContextBuilder.extractX509TrustManager(tmf);
+
+    } catch (Exception e) {
+      logger.warn(
+          "Could not load custom truststore from SSL bundle, will use system CAs only: {}",
+          e.getMessage());
+      return null;
+    }
+  }
+
+  private javax.net.ssl.KeyManager[] createKeyManagers(KeyStore keyStore, char[] password)
+      throws Exception {
+    javax.net.ssl.KeyManagerFactory kmf =
+        javax.net.ssl.KeyManagerFactory.getInstance(
+            javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+    kmf.init(keyStore, password);
+    logger.info(
+        "KeyManagerFactory initialized with {} KeyManager(s)", kmf.getKeyManagers().length);
+    return kmf.getKeyManagers();
+  }
+
+  /**
+   * Wraps each X509KeyManager in a logging decorator when debug logging is enabled.
+   * Returns the original array unchanged if debug is off, null, or has no X509KeyManager.
+   */
+  private javax.net.ssl.KeyManager[] wrapWithDebugLogging(
+      javax.net.ssl.KeyManager[] keyManagers) {
+    if (keyManagers == null
+        || !LoggerFactory.getLogger(DebuggingX509KeyManager.class).isDebugEnabled()) {
+      return keyManagers;
+    }
+    javax.net.ssl.KeyManager[] wrapped = new javax.net.ssl.KeyManager[keyManagers.length];
+    for (int i = 0; i < keyManagers.length; i++) {
+      if (keyManagers[i] instanceof X509KeyManager) {
+        wrapped[i] = new DebuggingX509KeyManager((X509KeyManager) keyManagers[i]);
+      } else {
+        wrapped[i] = keyManagers[i];
+      }
+    }
+    return wrapped;
+  }
+
+  /**
+   * X509KeyManager decorator that logs alias selection and certificate chain lookup at DEBUG level.
+   */
+  private static class DebuggingX509KeyManager implements X509KeyManager {
+    private static final Logger debugLogger =
+        LoggerFactory.getLogger(DebuggingX509KeyManager.class);
+    private final X509KeyManager delegate;
+
+    DebuggingX509KeyManager(X509KeyManager delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+      String alias = delegate.chooseClientAlias(keyType, issuers, socket);
+      if (debugLogger.isDebugEnabled()) {
+        String issuersStr =
+            (issuers == null || issuers.length == 0)
+                ? "<none – server did not request a client cert>"
+                : java.util.Arrays.toString(issuers);
+        if (alias != null) {
+          X509Certificate[] chain = delegate.getCertificateChain(alias);
+          String subject =
+              (chain != null && chain.length > 0)
+                  ? chain[0].getSubjectX500Principal().getName()
+                  : "<no chain>";
+          debugLogger.debug(
+              "[mTLS] Chose client alias '{}' with subject '{}' for key types {} to {} (server acceptable issuers: {})",
+              alias,
+              subject,
+              java.util.Arrays.toString(keyType),
+              socket != null ? socket.getInetAddress() : "unknown",
+              issuersStr);
+        } else {
+          debugLogger.debug(
+              "[mTLS] No client alias available for key types {} (server acceptable issuers: {}) – no client certificate will be sent",
+              java.util.Arrays.toString(keyType),
+              issuersStr);
+        }
+      }
+      return alias;
+    }
+
+    @Override
+    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+      return delegate.chooseServerAlias(keyType, issuers, socket);
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain(String alias) {
+      return delegate.getCertificateChain(alias);
+    }
+
+    @Override
+    public String[] getClientAliases(String keyType, Principal[] issuers) {
+      return delegate.getClientAliases(keyType, issuers);
+    }
+
+    @Override
+    public PrivateKey getPrivateKey(String alias) {
+      return delegate.getPrivateKey(alias);
+    }
+
+    @Override
+    public String[] getServerAliases(String keyType, Principal[] issuers) {
+      return delegate.getServerAliases(keyType, issuers);
+    }
   }
 
   @Bean

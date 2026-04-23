@@ -46,6 +46,7 @@ type Config struct {
 	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
 	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
+	FipsMode              bool                          `yaml:"fips_mode"`
 }
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
@@ -188,4 +189,9 @@ func (c *Config) UsingSyslog() bool {
 // GetLogging returns the logging configuration
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
+}
+
+// GetFipsMode returns whether FIPS 140-3 mode is configured
+func (c *Config) GetFipsMode() bool {
+	return c.FipsMode
 }

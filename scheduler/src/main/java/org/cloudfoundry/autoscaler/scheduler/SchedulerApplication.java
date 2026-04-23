@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler;
 
+import org.cloudfoundry.autoscaler.scheduler.conf.FipsSecurityProviderConfig;
 import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ import org.springframework.context.event.EventListener;
     })
 public class SchedulerApplication {
 
-  private Logger logger = LoggerFactory.getLogger(this.getClass());
+  private static final Logger logger = LoggerFactory.getLogger(SchedulerApplication.class);
 
   @EventListener
   public void onApplicationReady(ApplicationReadyEvent event) {
@@ -49,6 +50,12 @@ public class SchedulerApplication {
   }
 
   public static void main(String[] args) {
+    if (FipsSecurityProviderConfig.isFipsModeEnabled()) {
+      FipsSecurityProviderConfig.initialize();
+      logger.info("FIPS 140-3 mode enabled");
+    } else {
+      logger.info("FIPS 140-3 mode is not enabled");
+    }
     SpringApplication.run(SchedulerApplication.class, args);
   }
 }

@@ -88,7 +88,7 @@ public class SchedulerHealthEndpointTest {
             .getForEntity(getHealthUrl(), String.class);
 
     assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).contains("\"status\":\"UP\"");
+    assertThat(response.getBody()).contains("autoscaler_fips_enabled");
   }
 
   @Test

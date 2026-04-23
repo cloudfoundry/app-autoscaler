@@ -16,18 +16,19 @@ MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,operator,s
 
 # Compute extension file path
 EXTENSION_FILE="${DEST}/extension-file-${VERSION}.txt"
+FIPS_EXTENSION_FILE="${DEST}/extension-file-fips-${VERSION}.txt"
 
 # Check if mtar file exists
-if [ ! -f "${DEST}/${MTAR_FILENAME}" ]; then
-	echo "ERROR: MTAR file not found at: ${DEST}/${MTAR_FILENAME}"
-	echo "Please run 'make mta-build' first"
+if [[ ! -f "${DEST}/${MTAR_FILENAME}" ]]; then
+	echo "ERROR: MTAR file not found at: ${DEST}/${MTAR_FILENAME}" >&2
+	echo "Please run 'make mta-build' first" >&2
 	exit 1
 fi
 
 # Check if extension file exists
-if [ ! -f "${EXTENSION_FILE}" ]; then
-	echo "ERROR: Extension file not found at: ${EXTENSION_FILE}"
-	echo "Please run 'make build-extension-file' to build the extension file first."
+if [[ ! -f "${EXTENSION_FILE}" ]]; then
+	echo "ERROR: Extension file not found at: ${EXTENSION_FILE}" >&2
+	echo "Please run 'make build-extension-file' to build the extension file first." >&2
 	exit 1
 fi
 
@@ -37,6 +38,11 @@ pushd "${autoscaler_dir}" > /dev/null
 	bbl_login
 	make -f metricsforwarder/Makefile set-security-group
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
-	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
+	EXTENSION_FILES="${EXTENSION_FILE}"
+	if [[ -f "${FIPS_EXTENSION_FILE}" ]]; then
+		echo "FIPS extension file found, including: ${FIPS_EXTENSION_FILE}"
+		EXTENSION_FILES="${EXTENSION_FILES},${FIPS_EXTENSION_FILE}"
+	fi
+	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILES}" -m "${MODULES}"
 
 popd > /dev/null
