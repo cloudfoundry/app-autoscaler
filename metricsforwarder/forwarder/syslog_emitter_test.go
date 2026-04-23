@@ -103,7 +103,7 @@ var _ = Describe("SyslogEmitter", func() {
 	Describe("NewSyslogEmitter", func() {
 		When("tls config is provided", func() {
 			BeforeEach(func() {
-				testCertDir := "../../../../test-certs"
+				testCertDir := "../../test-certs"
 				tlsCerts = models.TLSCerts{
 					KeyFile:    filepath.Join(testCertDir, "cf-app.key"),
 					CertFile:   filepath.Join(testCertDir, "cf-app.crt"),

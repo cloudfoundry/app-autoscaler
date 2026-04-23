@@ -56,6 +56,7 @@ var _ = Describe("MetricForwarder", func() {
 				gatewayConfig = config.MetricsGatewayConfig{}
 				syslogConfig = config.SyslogConfig{
 					ServerAddress: "syslog://some-server-address",
+					Port:          514,
 				}
 			})
 
