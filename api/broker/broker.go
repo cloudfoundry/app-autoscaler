@@ -89,15 +89,8 @@ func New(
 	)
 
 	defaultCustomMetricsCredentialType := &models.X509Certificate
-	if len(conf.DefaultCustomMetricsCredentialType) > 0 {
-		var err error
-		defaultCustomMetricsCredentialType, err = models.ParseCustomMetricsBindingAuthScheme(
-			conf.DefaultCustomMetricsCredentialType)
-		if err != nil {
-			logger.Fatal("parse-default-credential-type", err, lager.Data{
-				"default-credential-type": conf.DefaultCustomMetricsCredentialType,
-			})
-		}
+	if basicAuthAvailable := conf.CustomMetricsAuthConfig != nil; basicAuthAvailable {
+		defaultCustomMetricsCredentialType = &conf.CustomMetricsAuthConfig.DefaultCustomMetricAuthType
 	}
 
 	pathToParserDir, err := filepath.Abs(filepath.Dir(conf.BindingRequestSchemaPath))

@@ -51,7 +51,11 @@ var _ = BeforeSuite(func() {
 		CatalogPath:                        "../exampleconfig/catalog-example.json",
 		DashboardRedirectURI:               dashBoardURL,
 		BindingRequestSchemaPath:           "./binding_request_parser/meta.schema.json",
-		DefaultCustomMetricsCredentialType: "binding-secret",
+		CustomMetricsAuthConfig: &config.CustomMetricsAuthConfig{
+			BasicAuthHandling: config.BasicAuthHandlingOn,
+			DefaultCustomMetricAuthType: models.BindingSecret,
+			BasicAuthHandlingImplConfig: config.BasicAuthHandlingNative{},
+		},
 	}
 
 	catalogBytes, err := os.ReadFile("../exampleconfig/catalog-example.json")
