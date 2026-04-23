@@ -32,39 +32,39 @@ func (f *fakeEmitter) EmitMetric(metric *models.CustomMetric) error {
 
 var _ = Describe("Server", func() {
 	var (
-		srv      *server.Server
-		conf     *config.Config
-		logger   *lagertest.TestLogger
 		fake     *fakeEmitter
 		recorder *httptest.ResponseRecorder
-		reqBody  []byte
 		handler  http.Handler
 	)
 
+	postEnvelopes := func(body []byte) {
+		req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(body))
+		handler.ServeHTTP(recorder, req)
+	}
+
+	marshalMetrics := func(metrics []*models.CustomMetric) []byte {
+		body, err := json.Marshal(metrics)
+		Expect(err).ToNot(HaveOccurred())
+		return body
+	}
+
 	BeforeEach(func() {
-		logger = lagertest.NewTestLogger("metricsgateway-server-test")
+		logger := lagertest.NewTestLogger("metricsgateway-server-test")
 		fake = &fakeEmitter{}
-		conf = &config.Config{}
-		srv = server.NewServer(logger, conf, fake)
+		conf := &config.Config{}
+		srv := server.NewServer(logger, conf, fake)
 		handler = srv.CreateTestRouter()
 		recorder = httptest.NewRecorder()
 	})
 
 	Describe("handleEnvelopes", func() {
 		When("valid metrics are sent", func() {
-			BeforeEach(func() {
-				metrics := []*models.CustomMetric{
+			It("emits all metrics and returns 200", func() {
+				body := marshalMetrics([]*models.CustomMetric{
 					{Name: "cpu_usage", Value: 80.5, Unit: "percent", AppGUID: "app-1", InstanceIndex: 0},
 					{Name: "memory", Value: 1024, Unit: "MB", AppGUID: "app-1", InstanceIndex: 1},
-				}
-				var err error
-				reqBody, err = json.Marshal(metrics)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("emits all metrics and returns 200", func() {
-				req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(reqBody))
-				handler.ServeHTTP(recorder, req)
+				})
+				postEnvelopes(body)
 
 				Expect(recorder.Code).To(Equal(http.StatusOK))
 				Expect(fake.emittedMetrics).To(HaveLen(2))
@@ -74,27 +74,15 @@ var _ = Describe("Server", func() {
 		})
 
 		When("invalid JSON is sent", func() {
-			BeforeEach(func() {
-				reqBody = []byte("not-valid-json")
-			})
-
 			It("returns 400", func() {
-				req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(reqBody))
-				handler.ServeHTTP(recorder, req)
-
+				postEnvelopes([]byte("not-valid-json"))
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
 
 		When("empty metrics array is sent", func() {
-			BeforeEach(func() {
-				reqBody = []byte("[]")
-			})
-
 			It("returns 400", func() {
-				req := httptest.NewRequest(http.MethodPost, envelopesEndpoint, bytes.NewReader(reqBody))
-				handler.ServeHTTP(recorder, req)
-
+				postEnvelopes([]byte("[]"))
 				Expect(recorder.Code).To(Equal(http.StatusBadRequest))
 			})
 		})
@@ -102,18 +90,13 @@ var _ = Describe("Server", func() {
 		When("emitter returns errors", func() {
 			BeforeEach(func() {
 				fake.emitErr = fmt.Errorf("syslog write failed")
-				metrics := []*models.CustomMetric{
-					{Name: "cpu_usage", Value: 80.5, Unit: "percent", AppGUID: "app-1", InstanceIndex: 0},
-				}
-				var err error
-				reqBody, err = json.Marshal(metrics)
-				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("returns 500", func() {
-				req := httptest.NewRequest(http.MethodPost, "/v1/envelopes", bytes.NewReader(reqBody))
-				handler.ServeHTTP(recorder, req)
-
+				body := marshalMetrics([]*models.CustomMetric{
+					{Name: "cpu_usage", Value: 80.5, Unit: "percent", AppGUID: "app-1", InstanceIndex: 0},
+				})
+				postEnvelopes(body)
 				Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
 			})
 		})

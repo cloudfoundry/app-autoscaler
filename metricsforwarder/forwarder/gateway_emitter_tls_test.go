@@ -18,6 +18,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+func metricsReceiverHandler(received *bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var metrics []*models.CustomMetric
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &metrics)
+		*received = len(metrics) > 0
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
 var _ = Describe("GatewayEmitter TLS", func() {
 	var (
 		emitter        forwarder.MetricForwarder
@@ -57,21 +67,11 @@ var _ = Describe("GatewayEmitter TLS", func() {
 	Describe("TLS certificate validation", func() {
 		When("server uses valid cert", func() {
 			BeforeEach(func() {
-				// httptest.NewTLSServer creates self-signed cert
-				// Use its client for validation
-				testServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					var metrics []*models.CustomMetric
-					body, _ := io.ReadAll(r.Body)
-					_ = json.Unmarshal(body, &metrics)
-					receivedMetric = len(metrics) > 0
-					w.WriteHeader(http.StatusOK)
-				}))
+				testServer = httptest.NewTLSServer(metricsReceiverHandler(&receivedMetric))
 
-				// Write server's CA cert for client validation
 				caCertPath := filepath.Join(tempDir, "ca.crt")
 				certFile, err := os.Create(caCertPath)
 				Expect(err).ToNot(HaveOccurred())
-				// httptest server certificate is self-signed, encode as PEM
 				err = pem.Encode(certFile, &pem.Block{
 					Type:  "CERTIFICATE",
 					Bytes: testServer.Certificate().Raw,
@@ -80,7 +80,6 @@ var _ = Describe("GatewayEmitter TLS", func() {
 				err = certFile.Close()
 				Expect(err).ToNot(HaveOccurred())
 
-				// Client validates using server cert as CA
 				tlsCerts = models.TLSCerts{
 					CACertFile: caCertPath,
 				}
@@ -97,42 +96,31 @@ var _ = Describe("GatewayEmitter TLS", func() {
 
 		When("server cert not validated with InsecureSkipVerify", func() {
 			BeforeEach(func() {
-				testServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					var metrics []*models.CustomMetric
-					body, _ := io.ReadAll(r.Body)
-					_ = json.Unmarshal(body, &metrics)
-					receivedMetric = len(metrics) > 0
-					w.WriteHeader(http.StatusOK)
-				}))
+				testServer = httptest.NewTLSServer(metricsReceiverHandler(&receivedMetric))
 
-				// Client with NO CA cert and NO InsecureSkipVerify should fail
 				tlsCerts = models.TLSCerts{}
 				emitter, _ = forwarder.NewGatewayEmitter(logger, testServer.URL, tlsCerts)
 			})
 
 			It("fails cert validation without proper CA", func() {
 				emitter.EmitMetric(metric)
-				// Metric send should fail due to cert validation error
 				Consistently(func() bool { return receivedMetric }).Should(BeFalse())
 			})
 		})
 
 		When("using CF instance identity certs for mutual TLS", func() {
 			BeforeEach(func() {
-				// Skip if no actual CF instance certs available
 				if os.Getenv("CF_INSTANCE_CERT") == "" {
 					Skip("CF instance identity certs not available")
 				}
 
 				testServer = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					// Verify client cert was provided
 					if len(r.TLS.PeerCertificates) > 0 {
 						receivedMetric = true
 					}
 					w.WriteHeader(http.StatusOK)
 				}))
 
-				// Load CF instance CA for client auth
 				caCertPEM, err := os.ReadFile(os.Getenv("CF_INSTANCE_CA_CERT"))
 				Expect(err).ToNot(HaveOccurred())
 				caCertPool := x509.NewCertPool()
