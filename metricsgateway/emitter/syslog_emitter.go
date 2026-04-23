@@ -1,22 +1,14 @@
 package emitter
 
 import (
-	"context"
 	"fmt"
-	"net/url"
-	"os"
-	"strconv"
-	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/syslogutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress"
-	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress/syslog"
 )
-
-const maxRetries int = 22
 
 type Emitter interface {
 	EmitMetric(metric *models.CustomMetric) error
@@ -27,101 +19,26 @@ type SyslogEmitter struct {
 	writer egress.WriteCloser
 }
 
-type dummyCounter struct{}
-
-func (c *dummyCounter) Add(_ float64) {}
-
 func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (Emitter, error) {
-	var writer egress.WriteCloser
-
-	tlsConfig, err := conf.SyslogConfig.TLS.CreateClientConfig()
+	writer, err := syslogutil.NewSyslogWriter(syslogutil.SyslogConfig{
+		ServerAddress: conf.SyslogConfig.ServerAddress,
+		Port:          conf.SyslogConfig.Port,
+		TLS:           conf.SyslogConfig.TLS,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create TLS config: %w", err)
+		return nil, fmt.Errorf("failed to create syslog writer: %w", err)
 	}
 
-	netConf := syslog.NetworkTimeoutConfig{
-		WriteTimeout: time.Second,
-		DialTimeout:  100 * time.Millisecond,
-	}
-
-	var protocol string
-	if conf.SyslogConfig.TLS.CACertFile != "" {
-		protocol = "syslog-tls"
-	} else {
-		protocol = "syslog"
-	}
-
-	syslogURL, err := url.Parse(fmt.Sprintf("%s://%s:%d", protocol, conf.SyslogConfig.ServerAddress, conf.SyslogConfig.Port))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse syslog URL: %w", err)
-	}
-
-	logger.Info("using-syslog-url", lager.Data{"url": syslogURL})
-
-	hostname, _ := os.Hostname()
-
-	binding := &syslog.URLBinding{
-		URL:      syslogURL,
-		Hostname: hostname,
-		Context:  context.Background(),
-	}
-
-	switch binding.URL.Scheme {
-	case "syslog":
-		writer = syslog.NewTCPWriter(
-			binding,
-			netConf,
-			&dummyCounter{},
-			syslog.NewConverter(),
-		)
-	case "syslog-tls":
-		writer = syslog.NewTLSWriter(
-			binding,
-			netConf,
-			tlsConfig,
-			&dummyCounter{},
-			syslog.NewConverter(),
-		)
-	default:
-		return nil, fmt.Errorf("unsupported syslog scheme: %s", binding.URL.Scheme)
-	}
-
-	retryWriter, err := syslog.NewRetryWriter(
-		binding,
-		syslog.ExponentialDuration,
-		maxRetries,
-		writer,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create syslog retry writer: %w", err)
-	}
+	logger.Info("using-syslog-emitter")
 
 	return &SyslogEmitter{
-		writer: retryWriter,
+		writer: writer,
 		logger: logger,
 	}, nil
 }
 
-func EnvelopeForMetric(metric *models.CustomMetric) *loggregator_v2.Envelope {
-	return &loggregator_v2.Envelope{
-		InstanceId: strconv.FormatUint(uint64(metric.InstanceIndex), 10),
-		Timestamp:  time.Now().UnixNano(),
-		SourceId:   metric.AppGUID,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					metric.Name: {
-						Unit:  metric.Unit,
-						Value: metric.Value,
-					},
-				},
-			},
-		},
-	}
-}
-
 func (e *SyslogEmitter) EmitMetric(metric *models.CustomMetric) error {
-	if err := e.writer.Write(EnvelopeForMetric(metric)); err != nil {
+	if err := e.writer.Write(syslogutil.EnvelopeForMetric(metric)); err != nil {
 		e.logger.Error("failed-to-write-metric-to-syslog", err)
 		return fmt.Errorf("failed to write metric to syslog: %w", err)
 	}
