@@ -153,7 +153,7 @@ var _ BasicAuthHandlingImplConfig = BasicAuthHandlingNative{}
 
 // Option configuring a custom handling of “Basic Authentication” via a stored procedure.
 type BasicAuthHandlingStoredProc struct {
-	config models.StoredProcedureConfig
+	Config models.StoredProcedureConfig
 }
 
 func (b BasicAuthHandlingStoredProc) isBasicAuthHandlingImplConfig() {}

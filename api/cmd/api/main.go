@@ -36,8 +36,17 @@ func main() {
 	defer func() { _ = policyDb.Close() }()
 	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
 
-	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, 10*time.Second, 10*time.Minute, logger, policyDb)
-	defer func() { _ = credentialProvider.Close() }()
+	var credentialProvider cred_helper.Credentials
+	if conf.CustomMetricsAuthConfig != nil {
+		credentialProvider = cred_helper.CredentialsProvider(
+			conf.CustomMetricsAuthConfig.BasicAuthHandlingImplConfig,
+			conf.Db, 10*time.Second, 10*time.Minute, logger, policyDb)
+	}
+	defer func() {
+		if credentialProvider != nil {
+			_ = credentialProvider.Close()
+		}
+	}()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
 
