@@ -203,7 +203,8 @@ var _ = Describe("Config", func() {
 							},
 						},
 					))
-					Expect(conf.CredHelperImpl).To(Equal("default"))
+					Expect((*conf.CustomMetricsAuthConfig).BasicAuthHandlingImplConfig).
+						To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 					Expect(conf.ScalingRules.CPU.LowerThreshold).To(Equal(22))
 					Expect(conf.ScalingRules.CPU.UpperThreshold).To(Equal(33))
 					Expect(conf.ScalingRules.CPUUtil.LowerThreshold).To(Equal(22))
@@ -321,7 +322,11 @@ rate_limit:
 				conf.RateLimit.MaxAmount = 10
 				conf.RateLimit.ValidDuration = 1 * time.Second
 
-				conf.CredHelperImpl = "path/to/plugin"
+				conf.CustomMetricsAuthConfig = &CustomMetricsAuthConfig{
+					BasicAuthHandling: BasicAuthHandlingOn,
+					DefaultCustomMetricAuthType: models.X509Certificate,
+					BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+				}
 			})
 			JustBeforeEach(func() {
 				err = conf.Validate()
