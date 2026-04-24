@@ -124,7 +124,7 @@ type CustomMetricsAuthConfig struct {
 	DefaultCustomMetricAuthType models.CustomMetricsBindingAuthScheme
 
 	// Configures how "Basic Authentication" is done.
-	BasicAuthHandlingImplConfig BasicAuthHandlingImplConfig
+	BasicAuthHandlingImplConfig models.BasicAuthHandlingImplConfig
 }
 
 type BasicAuthHandling int
@@ -136,29 +136,6 @@ const (
 	// // The follwing gets encoded by having or not having a `CustomMetricsAuthConfig` at all.
 	// BasicAuthHandlingOff
 )
-
-// Defines how “Basic Authentication” is implemented, via two different constructors. One for the
-// native implementation by “Application Autoscaler”. The other for a custom implementation via a
-// stored procedure.
-type BasicAuthHandlingImplConfig interface {
-	isBasicAuthHandlingImplConfig()
-}
-
-// Option stating that "Basic Authentication" is used as implemented natively by “Application Autoscaler”.
-type BasicAuthHandlingNative struct{}
-
-func (b BasicAuthHandlingNative) isBasicAuthHandlingImplConfig() {}
-
-var _ BasicAuthHandlingImplConfig = BasicAuthHandlingNative{}
-
-// Option configuring a custom handling of “Basic Authentication” via a stored procedure.
-type BasicAuthHandlingStoredProc struct {
-	Config models.StoredProcedureConfig
-}
-
-func (b BasicAuthHandlingStoredProc) isBasicAuthHandlingImplConfig() {}
-
-var _ BasicAuthHandlingImplConfig = BasicAuthHandlingStoredProc{}
 
 func (c *Config) SetLoggingLevel() {
 	c.Logging.Level = strings.ToLower(c.Logging.Level)

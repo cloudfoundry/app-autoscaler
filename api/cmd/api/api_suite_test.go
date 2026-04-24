@@ -209,7 +209,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	conf.CustomMetricsAuthConfig = &config.CustomMetricsAuthConfig{
 		BasicAuthHandling:           config.BasicAuthHandlingOn,
 		DefaultCustomMetricAuthType: models.BindingSecret,
-		BasicAuthHandlingImplConfig: config.BasicAuthHandlingNative{},
+		BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
 	}
 
 	configFile = writeConfig(&conf)

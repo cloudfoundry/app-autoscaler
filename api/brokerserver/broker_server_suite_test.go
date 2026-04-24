@@ -142,7 +142,7 @@ var _ = BeforeSuite(func() {
 		CustomMetricsAuthConfig: &config.CustomMetricsAuthConfig{
 			BasicAuthHandling:           config.BasicAuthHandlingOn,
 			DefaultCustomMetricAuthType: models.BindingSecret,
-			BasicAuthHandlingImplConfig: config.BasicAuthHandlingNative{},
+			BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
 		},
 	}
 	fakeCfClient := &fakes.FakeCFClient{}

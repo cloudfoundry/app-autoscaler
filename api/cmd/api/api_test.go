@@ -235,7 +235,7 @@ var _ = Describe("Api", func() {
 			pluginPathConfig.CustomMetricsAuthConfig = &config.CustomMetricsAuthConfig{
 				BasicAuthHandling:           config.BasicAuthHandlingOn,
 				DefaultCustomMetricAuthType: models.BindingSecret,
-				BasicAuthHandlingImplConfig: config.BasicAuthHandlingNative{},
+				BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
 			}
 			runner.configPath = writeConfig(&pluginPathConfig).Name()
 		})
