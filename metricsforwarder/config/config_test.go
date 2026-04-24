@@ -181,7 +181,8 @@ cred_helper_impl: default
 							MaxIdleConnections:    5,
 							ConnectionMaxLifetime: 60 * time.Second,
 						}))
-					Expect(conf.CredHelperImpl).To(Equal("default"))
+					Expect(conf.CredentialHelperConfig).
+						To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 				})
 
 			})
@@ -244,7 +245,7 @@ health:
 			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
 
-			conf.CredHelperImpl = "path/to/plugin"
+			conf.CredentialHelperConfig = models.BasicAuthHandlingNative{}
 		})
 
 		JustBeforeEach(func() {
