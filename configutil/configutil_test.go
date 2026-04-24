@@ -169,7 +169,7 @@ var _ = Describe("Configutil", func() {
 				vcapApplicationJson = `{}`
 				actualDbs = &map[string]db.DatabaseConfig{}
 			})
-			When("stored procedure implementation is set to stored_procedure", func() {
+				When("stored procedure implementation is set to stored_procedure", func() {
 				var actualProcedureConfig *models.StoredProcedureConfig
 
 				BeforeEach(func() {
@@ -207,7 +207,8 @@ var _ = Describe("Configutil", func() {
 					})
 
 					It("loads the db config from VCAP_SERVICES successfully", func() {
-						err := vcapConfiguration.ConfigureDatabases(actualDbs, actualProcedureConfig, "stored_procedure")
+						var implConfig models.BasicAuthHandlingImplConfig = models.BasicAuthHandlingStoredProc{Config: *actualProcedureConfig}
+						err := vcapConfiguration.ConfigureDatabases(actualDbs, &implConfig)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(*actualDbs).To(Equal(*expectedDbs))
 					})
@@ -238,7 +239,8 @@ var _ = Describe("Configutil", func() {
 							db.SchedulerDb:     {},
 						}
 
-						err := vcapConfiguration.ConfigureDatabases(actualDbs, actualProcedureConfig, "stored_procedure")
+						var implConfig models.BasicAuthHandlingImplConfig = models.BasicAuthHandlingStoredProc{Config: *actualProcedureConfig}
+						err := vcapConfiguration.ConfigureDatabases(actualDbs, &implConfig)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(*actualDbs).To(Equal(*expectedDbs))
 					})
@@ -284,7 +286,7 @@ var _ = Describe("Configutil", func() {
 					})
 
 					It("loads the db config from VCAP_SERVICES successfully", func() {
-						err := vcapConfiguration.ConfigureDatabases(actualDbs, nil, "default")
+						err := vcapConfiguration.ConfigureDatabases(actualDbs, nil)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(*actualDbs).To(Equal(*expectedDbs))
 					})
