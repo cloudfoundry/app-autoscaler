@@ -78,7 +78,7 @@ var _ = Describe("Config", func() {
 
 			When("handling available databases", func() {
 				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
-					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader, conf.CredHelperImpl)
+					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader)
 				})
 			})
 

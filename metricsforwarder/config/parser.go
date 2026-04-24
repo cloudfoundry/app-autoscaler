@@ -57,7 +57,17 @@ func loadVcapConfig(conf *rawConfig, vcapReader configutil.VCAPConfigurationRead
 		return err
 	}
 
-	if err := vcapReader.ConfigureDatabases(&conf.Db, conf.StoredProcedureConfig, conf.CredHelperImpl); err != nil {
+	var basicAuthImplCfg *models.BasicAuthHandlingImplConfig
+	if conf.CredHelperImpl != "" {
+		var impl models.BasicAuthHandlingImplConfig
+		if conf.CredHelperImpl == "stored_procedure" && conf.StoredProcedureConfig != nil {
+			impl = models.BasicAuthHandlingStoredProc{Config: *conf.StoredProcedureConfig}
+		} else {
+			impl = models.BasicAuthHandlingNative{}
+		}
+		basicAuthImplCfg = &impl
+	}
+	if err := vcapReader.ConfigureDatabases(&conf.Db, basicAuthImplCfg); err != nil {
 		return err
 	}
 
