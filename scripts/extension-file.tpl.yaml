@@ -1,0 +1,246 @@
+ID: development
+extends: com.github.cloudfoundry.app-autoscaler-release
+version: 1.0.0
+_schema-version: 3.3.0
+
+modules:
+  - name: apiserver
+    parameters:
+      instances: ${APISERVER_INSTANCES}
+      routes:
+        - route: ${APISERVER_HOST}.${default-domain}
+        - route: ${SERVICEBROKER_HOST}.${default-domain}
+    requires:
+      - name: apiserver-config
+      - name: broker-catalog
+      - name: database
+
+  - name: eventgenerator
+    requires:
+      - name: eventgenerator-config
+      - name: database
+    parameters:
+      instances: ${EVENTGENERATOR_INSTANCES}
+      routes:
+        - route: ${EVENTGENERATOR_CF_HOST}.${default-domain}
+        - route: ${EVENTGENERATOR_HOST}.${default-domain}
+
+  - name: scalingengine
+    requires:
+      - name: scalingengine-config
+      - name: database
+    parameters:
+      instances: ${SCALINGENGINE_INSTANCES}
+      routes:
+        - route: ${SCALINGENGINE_CF_HOST}.${default-domain}
+        - route: ${SCALINGENGINE_HOST}.${default-domain}
+
+  - name: metricsforwarder
+    requires:
+      - name: metricsforwarder-config
+      - name: database
+    parameters:
+      instances: ${METRICSFORWARDER_INSTANCES}
+      routes:
+        - route: ${METRICSFORWARDER_HOST}.${default-domain}
+        - route: ${METRICSFORWARDER_MTLS_HOST}.${default-domain}
+
+  - name: metricsgateway
+    requires:
+      - name: metricsgateway-config
+      - name: syslog-client
+    parameters:
+      instances: ${METRICSGATEWAY_INSTANCES}
+      routes:
+        - route: ${METRICSGATEWAY_HOST}.${default-domain}
+
+  - name: operator
+    requires:
+      - name: operator-config
+      - name: database
+    parameters:
+      instances: ${OPERATOR_INSTANCES}
+      routes:
+        - route: ${OPERATOR_HOST}.${default-domain}
+
+  - name: scheduler
+    requires:
+      - name: scheduler-config
+      - name: database
+    parameters:
+      instances: ${SCHEDULER_INSTANCES}
+      routes:
+        - route: ${SCHEDULER_HOST}.${default-domain}
+        - route: ${SCHEDULER_CF_HOST}.${default-domain}
+
+  - name: acceptance-tests
+    properties:
+      SUITES: ""
+      ACCEPTANCE_CONFIG_JSON: |
+        {
+          "api": "api.${SYSTEM_DOMAIN}",
+          "admin_user": "admin",
+          "admin_password": "${CF_ADMIN_PASSWORD}",
+          "apps_domain": "${SYSTEM_DOMAIN}",
+          "skip_ssl_validation": ${SKIP_SSL_VALIDATION},
+          "use_http": false,
+          "service_name": "${DEPLOYMENT_NAME}",
+          "service_plan": "autoscaler-free-plan",
+          "service_broker": "${DEPLOYMENT_NAME}",
+          "aggregate_interval": 120,
+          "default_timeout": 60,
+          "cpu_upper_threshold": ${CPU_UPPER_THRESHOLD},
+          "name_prefix": "${NAME_PREFIX}",
+          "autoscaler_api": "${APISERVER_HOST}.${default-domain}",
+          "performance": {
+            "app_count": ${PERFORMANCE_APP_COUNT},
+            "app_percentage_to_scale": ${PERFORMANCE_APP_PERCENTAGE_TO_SCALE},
+            "setup_workers": ${PERFORMANCE_SETUP_WORKERS},
+            "update_existing_org_quota": ${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA}
+          }
+        }
+
+resources:
+  - name: metricsforwarder-config
+    parameters:
+      config:
+        metricsforwarder-config:
+          metrics_gateway:
+            url: https://${METRICSGATEWAY_HOST}.${default-domain}
+          health:
+            basic_auth:
+              password: ${METRICSFORWARDER_HEALTH_PASSWORD}
+
+  - name: metricsgateway-config
+    parameters:
+      config:
+        metricsgateway-config:
+          xfcc:
+            valid_org_guid: ${AUTOSCALER_ORG_GUID}
+          health:
+            basic_auth:
+              password: ${METRICSGATEWAY_HEALTH_PASSWORD}
+
+  - name: eventgenerator-config
+    parameters:
+      config:
+        eventgenerator-config:
+          metricCollector:
+            metric_collector_url: https://log-cache.${default-domain}
+            port: ""
+            uaa:
+              client_id: ${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID}
+              client_secret: ${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET}
+              url: https://uaa.${default-domain}
+              skip_ssl_validation: true
+          pool:
+            total_instances: ${EVENTGENERATOR_INSTANCES}
+          health:
+            basic_auth:
+              password: ${EVENTGENERATOR_HEALTH_PASSWORD}
+          scalingEngine:
+            scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
+
+  - name: apiserver-config
+    parameters:
+      config:
+        apiserver-config:
+          scaling_rules:
+            cpu:
+              upper_threshold: ${CPU_LOWER_THRESHOLD}
+          cf:
+            api: https://api.${SYSTEM_DOMAIN}
+            grant_type: client_credentials
+            client_id: autoscaler_client_id
+            secret: autoscaler_client_secret
+          scheduler:
+            scheduler_url: https://${SCHEDULER_CF_HOST}.${default-domain}
+          metrics_forwarder:
+            metrics_forwarder_url: https://${METRICSFORWARDER_HOST}.${default-domain}
+            metrics_forwarder_mtls_url: https://${METRICSFORWARDER_MTLS_HOST}.${default-domain}
+          scaling_engine:
+            scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
+          event_generator:
+            event_generator_url: https://${EVENTGENERATOR_CF_HOST}.${default-domain}
+          broker_credentials:
+            - broker_username: autoscaler-broker-user
+              broker_password: ${SERVICE_BROKER_PASSWORD}
+            - broker_username: autoscaler-broker-user-blue
+              broker_password: ${SERVICE_BROKER_PASSWORD_BLUE}
+
+  - name: scheduler-config
+    parameters:
+      config:
+        cfserver:
+          healthserver:
+            password: test-password
+            username: test-user
+        autoscaler:
+          scalingengine:
+            url: https://${SCALINGENGINE_HOST}.${default-domain}
+
+  - name: operator-config
+    parameters:
+      config:
+        operator-config:
+          health:
+            basic_auth:
+              password: ${OPERATOR_HEALTH_PASSWORD}
+          cf:
+            api: https://api.${default-domain}
+            client_id: ${OPERATOR_CF_CLIENT_ID}
+            secret: ${OPERATOR_CF_CLIENT_SECRET}
+          scaling_engine:
+            scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
+          scheduler:
+            scheduler_url: https://${SCHEDULER_CF_HOST}.${default-domain}
+
+  - name: scalingengine-config
+    parameters:
+      config:
+        scalingengine-config:
+          health:
+            basic_auth:
+              password: ${SCALINGENGINE_HEALTH_PASSWORD}
+          cf:
+            api: https://api.${default-domain}
+            client_id: ${SCALINGENGINE_CF_CLIENT_ID}
+            secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+
+  - name: database
+    parameters:
+      config:
+        uri: ${POSTGRES_URI}
+        client_cert: ${DATABASE_DB_CLIENT_CERT}
+        client_key: ${DATABASE_DB_CLIENT_KEY}
+        server_ca: ${DATABASE_DB_SERVER_CA}
+
+  - name: syslog-client
+    parameters:
+      config:
+        client_cert: ${SYSLOG_CLIENT_CERT}
+        client_key: ${SYSLOG_CLIENT_KEY}
+        server_ca: ${SYSLOG_CLIENT_CA}
+
+  - name: broker-catalog
+    parameters:
+      config:
+        broker-catalog:
+          services:
+            - bindable: true
+              bindings_retrievable: true
+              description: Automatically increase or decrease the number of application instances based on a policy you define.
+              id: autoscaler-guid
+              instances_retrievable: true
+              name: ${DEPLOYMENT_NAME}
+              plans:
+                - description: This is the free service plan for the Auto-Scaling service.
+                  id: autoscaler-free-plan-id
+                  name: autoscaler-free-plan
+                  plan_updateable: true
+                - description: This is the standard service plan for the Auto-Scaling service.
+                  id: acceptance-standard
+                  name: acceptance-standard
+                  plan_updateable: false
+              tags:
+                - app-autoscaler

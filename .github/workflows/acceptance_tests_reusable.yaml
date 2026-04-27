@@ -9,6 +9,10 @@ on:
       deployment_name:
         required: true
         type: string
+      use_metricsgateway:
+        required: false
+        type: boolean
+        default: false
     secrets:
       bbl_ssh_key:
         required: true
@@ -56,6 +60,8 @@ jobs:
 
       - name: Deploy Apps
         shell: bash
+        env:
+          USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build
