@@ -45,12 +45,15 @@ type rawConfig struct {
 }
 
 func toConfig(rawConfig rawConfig) (Config, error) {
+	err := rawConfig.validate()
+	if err != nil {
+		return Config{}, err
+	}
+
 	return Config{}, models.ErrUnimplemented
 }
 
-// 🚧 To-do: Should go to =parser.go=, in particular it should be private and called from
-// `toConfig`.
-func (c *Config) Validate() error {
+func (c *rawConfig) validate() error {
 	err := c.CF.Validate()
 	if err != nil {
 		return err

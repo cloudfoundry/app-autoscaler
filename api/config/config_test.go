@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
@@ -329,7 +330,7 @@ rate_limit:
 				}
 			})
 			JustBeforeEach(func() {
-				err = conf.Validate()
+				_, err = LoadConfig("", &configutil.VCAPConfiguration{}) // 🚧
 			})
 
 			It("should set logging to redacted by default", func() {
