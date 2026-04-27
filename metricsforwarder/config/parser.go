@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
@@ -24,9 +26,102 @@ type rawConfig struct {
 	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
-func toConfig(raw rawConfig) (Config, error) {
+func toConfig(rawConfig rawConfig) (Config, error) {
+	err := rawConfig.validate()
+	if err != nil {
+		return Config{}, fmt.Errorf("input-validation failed: %w", err)
+	}
+
 	return Config{}, models.ErrUnimplemented
 }
+
+func (c *rawConfig) validate() error {
+	if err := c.validateDbConfig(); err != nil {
+		return err
+	}
+	if err := c.validateSyslogOrLoggregator(); err != nil {
+		return err
+	}
+	if err := c.validateRateLimit(); err != nil {
+		return err
+	}
+	if err := c.validateCredHelperImpl(); err != nil {
+		return err
+	}
+	return c.Health.Validate()
+}
+
+func (c *rawConfig) validateDbConfig() error {
+	if c.Db[db.PolicyDb].URL == "" {
+		return errors.New("configuration error: Policy DB url is empty")
+	}
+	if c.Db[db.BindingDb].URL == "" {
+		return errors.New("configuration error: Binding DB url is empty")
+	}
+	if c.usingSyslog() {
+		return c.validateSyslogConfig()
+	}
+	return c.validateLoggregatorConfig()
+}
+func (c *rawConfig) validateSyslogOrLoggregator() error {
+	if c.usingSyslog() {
+		return c.validateSyslogConfig()
+	}
+	return c.validateLoggregatorConfig()
+}
+func (c *rawConfig) validateSyslogConfig() error {
+	if c.SyslogConfig.TLS.CACertFile == "" {
+		return errors.New("SyslogServer Loggregator CACert is empty")
+	}
+	if c.SyslogConfig.TLS.CertFile == "" {
+		return errors.New("SyslogServer ClientCert is empty")
+	}
+	if c.SyslogConfig.TLS.KeyFile == "" {
+		return errors.New("SyslogServer ClientKey is empty")
+	}
+	return nil
+}
+
+func (c *rawConfig) validateLoggregatorConfig() error {
+	if c.LoggregatorConfig.TLS.CACertFile == "" {
+		return errors.New("Loggregator CACert is empty")
+	}
+	if c.LoggregatorConfig.TLS.CertFile == "" {
+		return errors.New("Loggregator ClientCert is empty")
+	}
+	if c.LoggregatorConfig.TLS.KeyFile == "" {
+		return errors.New("Loggregator ClientKey is empty")
+	}
+	return nil
+}
+
+func (c *rawConfig) validateRateLimit() error {
+	if c.RateLimit.MaxAmount <= 0 {
+		return errors.New("RateLimit.MaxAmount is less than or equal to zero")
+	}
+	if c.RateLimit.ValidDuration <= 0 {
+		return errors.New("RateLimit.ValidDuration is less than or equal to zero")
+	}
+	return nil
+}
+
+func (c *rawConfig) validateCredHelperImpl() error {
+	if c.CredHelperImpl == "" {
+		return errors.New("CredHelperImpl is not configured")
+	}
+	return nil
+}
+
+func (c *rawConfig) usingSyslog() bool {
+	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
+}
+
+
+// ================================================================================
+// Legacy parsing-machinery
+// ================================================================================
+//
+// 🏚️ This is legacy spaghetti-code from the migration from "Bosh" to the "Cloud Controller". Afer removing the support for "Bosh", revisiting makes sense. Ideally, a signature like `func FromCFEnv(env map[string]string) (Config, error)` would be best.
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
 	raw := defaultConfig()
@@ -40,11 +135,7 @@ func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) 
 	}
 
 	config, err := toConfig(raw)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
+	return &config, err
 }
 
 func loadVcapConfig(conf *rawConfig, vcapReader configutil.VCAPConfigurationReader) error {

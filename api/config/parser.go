@@ -47,7 +47,7 @@ type rawConfig struct {
 func toConfig(rawConfig rawConfig) (Config, error) {
 	err := rawConfig.validate()
 	if err != nil {
-		return Config{}, err
+		return Config{}, fmt.Errorf("input-validation failed: %w", err)
 	}
 
 	return Config{}, models.ErrUnimplemented
