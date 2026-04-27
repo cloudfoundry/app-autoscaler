@@ -250,3 +250,9 @@ cf logs acceptance-tests --recent
 # Search for specific test results
 cf logs acceptance-tests --recent | grep "SUCCESS\|FAILED"
 ```
+
+## Tracking Deferred Findings
+
+Code review/simplify/analysis find issues we skip in current PR → make GitHub issue. One issue per PR/session for all deferred findings. Include file, line, severity, brief fix description.
+
+No TODO comments in code for deferred findings — GitHub issues only.

@@ -243,8 +243,8 @@ resources:
   parameters:
     config:
       metricsgateway-config:
-        valid_org_guids:
-        - "${AUTOSCALER_ORG_GUID}"
+        xfcc:
+          valid_org_guid: "${AUTOSCALER_ORG_GUID}"
         health:
           basic_auth:
             password: "${METRICSGATEWAY_HEALTH_PASSWORD}"

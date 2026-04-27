@@ -199,7 +199,6 @@ func (c *Config) UsingGateway() bool {
 	return c.MetricsGateway.URL != ""
 }
 
-// GetLogging returns the logging configuration
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
 }

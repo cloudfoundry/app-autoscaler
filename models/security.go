@@ -24,13 +24,11 @@ func (t *TLSCerts) CreateClientConfig() (*tls.Config, error) {
 		return nil, nil
 	}
 
-	// CA-only mode: client trusts server CA but doesn't present client cert
 	if t.CACertFile != "" && t.CertFile == "" && t.KeyFile == "" {
 		clientTls := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults())
 		return clientTls.Client(tlsconfig.WithAuthorityFromFile(t.CACertFile))
 	}
 
-	// mTLS mode: client presents cert and optionally validates server CA
 	if t.CertFile != "" && t.KeyFile != "" {
 		clientTls := tlsconfig.Build(
 			tlsconfig.WithInternalServiceDefaults(),

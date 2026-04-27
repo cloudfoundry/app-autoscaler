@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/syslogutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -165,7 +166,7 @@ var _ = Describe("SyslogEmitter", func() {
 				emitter.EmitMetric(metric)
 				Eventually(writer.ReceivedEnvelope()).Should(HaveLen(1))
 				receivedMetric := writer.ReceivedEnvelope()[0]
-				expectedEnvelope := forwarder.EnvelopeForMetric(metric)
+				expectedEnvelope := syslogutil.EnvelopeForMetric(metric)
 				Expect(receivedMetric.Message).To(Equal(expectedEnvelope.Message))
 				Expect(receivedMetric.SourceId).To(Equal(expectedEnvelope.SourceId))
 				Expect(receivedMetric.InstanceId).To(Equal(expectedEnvelope.InstanceId))

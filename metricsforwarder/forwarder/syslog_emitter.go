@@ -4,7 +4,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/syslogutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/loggregator-agent-release/src/pkg/egress"
 )
@@ -36,10 +35,6 @@ func NewSyslogEmitter(logger lager.Logger, conf *config.Config) (MetricForwarder
 		writer: writer,
 		logger: logger,
 	}, nil
-}
-
-func EnvelopeForMetric(metric *models.CustomMetric) *loggregator_v2.Envelope {
-	return syslogutil.EnvelopeForMetric(metric)
 }
 
 func (mf *SyslogEmitter) EmitMetric(metric *models.CustomMetric) {
