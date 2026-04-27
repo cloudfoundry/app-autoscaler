@@ -124,17 +124,12 @@ func (c *rawConfig) usingSyslog() bool {
 // 🏚️ This is legacy spaghetti-code from the migration from "Bosh" to the "Cloud Controller". Afer removing the support for "Bosh", revisiting makes sense. Ideally, a signature like `func FromCFEnv(env map[string]string) (Config, error)` would be best.
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
-	raw := defaultConfig()
-
-	if err := helpers.LoadYamlFile(filepath, &raw); err != nil {
+	rawConfig, err := configutil.GenericLoadConfig(filepath, vcapReader, defaultConfig, configutil.VCAPConfigurableFunc[rawConfig](loadVcapConfig))
+	if err != nil {
 		return nil, err
 	}
 
-	if err := loadVcapConfig(&raw, vcapReader); err != nil {
-		return nil, err
-	}
-
-	config, err := toConfig(raw)
+	config, err := toConfig(*rawConfig)
 	return &config, err
 }
 
