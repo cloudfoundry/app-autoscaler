@@ -28,7 +28,7 @@ func main() {
 	defer func() { _ = schedulerDB.Closer() }()
 
 	// CF Client
-	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger, clock)
+	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger)
 
 	// Business logic
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDb.DB, scalingEngineDB.DB, clock, conf.DefaultCoolDownSecs, conf.LockSize)

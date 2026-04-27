@@ -55,8 +55,7 @@
       "description": "Disable OpenTelemetry-relevant updates",
       "groupName": "opentelemetry",
       "matchPackageNames": [
-        "/opentelemetry/",
-        "/ogen-go/ogen/"
+        "/opentelemetry/"
       ],
       "enabled": false
     },

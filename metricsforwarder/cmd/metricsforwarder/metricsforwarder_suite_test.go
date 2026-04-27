@@ -44,6 +44,7 @@ var (
 
 const (
 	username = "username"
+	//#nosec G101 -- test credentials, not real secrets
 	password = "password"
 )
 
@@ -157,8 +158,8 @@ func preparePolicyDb(database *db.Database) {
 		AbortSuite(fmt.Sprintf("Failed clean credentials %s", err.Error()))
 	}
 
-	encryptedUsername, _ := bcrypt.GenerateFromPassword([]byte(username), 8)
-	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 8)
+	encryptedUsername, _ := bcrypt.GenerateFromPassword([]byte(username), bcrypt.DefaultCost)
+	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	query = policyDB.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", encryptedUsername, encryptedPassword, "2011-06-18 15:36:38")

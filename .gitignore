@@ -17,6 +17,9 @@ vendor
 .devbox
 devbox.d/
 
+# ==================== 🤖 Claude Code ====================
+.claude/
+
 # ==================== 🏭 Generated api-clients ====================
 acceptance/assets/app/go_app/internal/applicationmetric/oas*gen.go
 acceptance/assets/app/go_app/internal/custommetrics/oas*gen.go
@@ -29,3 +32,6 @@ scalingengine/apis/scalinghistory/oas*gen.go
 # scalingengine/cmd/scalingengine/scalingengine
 # Makefile_*
 #
+#
+.claude
+CLAUDE.md

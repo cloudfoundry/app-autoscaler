@@ -1,0 +1,79 @@
+name: OTel SDK Dynatrace Compatibility Check
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - main
+    paths:
+      - go.mod
+      - .github/workflows/otel-sdk-version-check.yaml
+      - scripts/check_otel_sdk_version.py
+
+concurrency:
+  group: "${{ github.workflow }}/${{ github.ref }}"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check-otel-sdk-version:
+    name: Check OTel SDK Dynatrace compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Check OTel SDK version compatibility
+        id: check
+        run: uv run scripts/check_otel_sdk_version.py go.mod
+        continue-on-error: true
+
+      - name: Request changes on PR
+        if: steps.check.outcome == 'failure' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENT_BODY: ${{ steps.check.outputs.comment_body }}
+        run: |
+          printf '%s\n' "${COMMENT_BODY}" > /tmp/review-body.md
+          gh pr review "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --request-changes \
+            --body-file /tmp/review-body.md
+
+      - name: Dismiss previous review
+        if: steps.check.outcome == 'success' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find and dismiss any previous "request changes" review from github-actions[bot]
+          review_id=$(gh api \
+            "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and .state == "CHANGES_REQUESTED")] | last | .id')
+          if [ -n "${review_id}" ] && [ "${review_id}" != "null" ]; then
+            gh api \
+              --method PUT \
+              "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/${review_id}/dismissals" \
+              -f message="OTel SDK version is now within a supported Dynatrace range." \
+              -f event="DISMISS"
+          fi
+
+      - name: Fail if unsupported
+        if: steps.check.outcome == 'failure'
+        env:
+          COMMENT_BODY: ${{ steps.check.outputs.comment_body }}
+        run: |
+          if [ -n "${COMMENT_BODY}" ]; then
+            echo "::error::${COMMENT_BODY}"
+          fi
+          exit 1

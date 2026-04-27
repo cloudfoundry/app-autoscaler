@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.13</version>
+    <version>3.5.14</version>
     <relativePath/>
   </parent>
 
@@ -47,7 +47,7 @@
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
-      <version>9.6.0</version>
+      <version>9.7.0</version>
     </dependency>
     <!-- Spring Boot -->
 
