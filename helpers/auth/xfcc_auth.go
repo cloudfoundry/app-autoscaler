@@ -100,7 +100,7 @@ func CheckAuth(r *http.Request, org, space string) error {
 		return ErrorWrongSpace
 	}
 
-	if org != "" && getOrgGuid(cert) != org {
+	if getOrgGuid(cert) != org {
 		return ErrorWrongOrg
 	}
 
