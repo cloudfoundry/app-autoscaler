@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"slices"
 	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -92,18 +91,6 @@ func parseCertFromXFCC(r *http.Request) (*x509.Certificate, error) {
 }
 
 func CheckAuth(r *http.Request, org, space string) error {
-	var orgs []string
-	if org != "" {
-		orgs = []string{org}
-	}
-	return CheckAuthMultiOrg(r, orgs, space)
-}
-
-func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
-	return CheckAuth(r, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
-}
-
-func CheckAuthMultiOrg(r *http.Request, orgs []string, space string) error {
 	cert, err := parseCertFromXFCC(r)
 	if err != nil {
 		return err
@@ -113,36 +100,15 @@ func CheckAuthMultiOrg(r *http.Request, orgs []string, space string) error {
 		return ErrorWrongSpace
 	}
 
-	if len(orgs) > 0 && !slices.Contains(orgs, getOrgGuid(cert)) {
+	if org != "" && getOrgGuid(cert) != org {
 		return ErrorWrongOrg
 	}
 
 	return nil
 }
 
-type multiOrgXfccAuthMiddleware struct {
-	logger    lager.Logger
-	orgGuids  []string
-	spaceGuid string
-}
-
-func NewMultiOrgXfccAuthMiddleware(logger lager.Logger, orgGuids []string, spaceGuid string) XFCCAuthMiddleware {
-	return &multiOrgXfccAuthMiddleware{
-		logger:    logger,
-		orgGuids:  append([]string{}, orgGuids...),
-		spaceGuid: spaceGuid,
-	}
-}
-
-func (m *multiOrgXfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := CheckAuthMultiOrg(r, m.orgGuids, m.spaceGuid); err != nil {
-			m.logger.Error("xfcc-auth-error", err)
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
+	return CheckAuth(r, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
 }
 
 func getSpaceGuid(cert *x509.Certificate) string {
