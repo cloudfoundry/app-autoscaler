@@ -3,6 +3,7 @@ package sqldb
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -13,6 +14,20 @@ import (
 )
 
 var _ db.StoredProcedureDB = &StoredProcedureSQLDb{}
+
+// sanitizeDBURL removes sensitive information from database URL for safe logging
+func sanitizeDBURL(dbURL string) string {
+	parsedURL, err := url.Parse(dbURL)
+	if err != nil {
+		return "invalid-url"
+	}
+	// Remove password but keep username, host, port, database
+	if parsedURL.User != nil {
+		//#nosec G101 -- "***" is placeholder for redaction, not actual credential
+		parsedURL.User = url.UserPassword(parsedURL.User.Username(), "***")
+	}
+	return parsedURL.String()
+}
 
 type StoredProcedureSQLDb struct {
 	config   models.StoredProcedureConfig
@@ -26,9 +41,12 @@ func (sdb *StoredProcedureSQLDb) Ping() error {
 }
 
 func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.DatabaseConfig, logger lager.Logger) (*StoredProcedureSQLDb, error) {
+	// Sanitize URL once for logging throughout this function
+	safeURL := sanitizeDBURL(dbConfig.URL)
+
 	poolConfig, err := pgxpool.ParseConfig(dbConfig.URL)
 	if err != nil {
-		logger.Error("parse-procedure-db-url", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("parse-procedure-db-url", err, lager.Data{"url": safeURL})
 		return nil, err
 	}
 
@@ -38,14 +56,14 @@ func NewStoredProcedureSQLDb(config models.StoredProcedureConfig, dbConfig db.Da
 
 	sqldb, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
-		logger.Error("open-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("open-stored-procedure-db", err, lager.Data{"url": safeURL})
 		return nil, err
 	}
 
 	err = sqldb.Ping(context.Background())
 	if err != nil {
 		sqldb.Close()
-		logger.Error("ping-stored-procedure-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("ping-stored-procedure-db", err, lager.Data{"url": safeURL})
 		return nil, err
 	}
 
@@ -123,7 +141,7 @@ func (sdb *StoredProcedureSQLDb) ValidateCredentials(ctx context.Context, creds 
 	if err != nil {
 		sdb.logger.Error(
 			"credential-validation-with-stored-function-errored",
-			err, lager.Data{"query": query, "creds": creds, "appId": appId})
+			err, lager.Data{"query": query, "appId": appId})
 
 		return nil, err
 	}

@@ -115,7 +115,16 @@ function cleanup_apps(){
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 	space_guid="$(cf space --guid "${autoscaler_space}")"
-	mtar_app="$(curl --header "Authorization: $(cf oauth-token)" "deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas"  | jq ". | .[] | .metadata | .id" -r)"
+
+	local deploy_service_url="https://deploy-service.${system_domain}"
+	local mtas_response
+
+	# Fetch MTAs from deploy-service (--insecure for self-signed certs)
+	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "${deploy_service_url}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
+		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}" 2>/dev/null)" || true
+	else
+		echo "Warning: Failed to fetch MTAs from deploy-service, skipping MTA cleanup"
+	fi
 
 	if [ -n "${mtar_app}" ]; then
 		set +e
@@ -124,6 +133,24 @@ function cleanup_apps(){
 	else
 		 echo "No app to undeploy"
 	fi
+
+	# Purge orphaned service instances from all spaces in the org
+	echo "- Purging orphaned service instances from all spaces"
+	set +e
+	cf spaces 2>/dev/null | tail --lines +4 | awk '{print $1}' | while read -r space_name; do
+		if [ -n "${space_name}" ] && [ "${space_name}" != "name" ]; then
+			echo "  - Checking space: ${space_name}"
+			cf target -s "${space_name}" > /dev/null 2>&1
+			# List all service instances (both user-provided and managed)
+			cf services 2>/dev/null | grep --invert-match "^Getting services" | grep --invert-match "^name" | tail --lines +3 | awk '{print $1}' | while read -r service_instance; do
+				if [ -n "${service_instance}" ] && [ "${service_instance}" != "No" ]; then
+					echo "    - Purging service instance: ${service_instance}"
+					cf purge-service-instance "${service_instance}" -f 2>&1 | grep --invert-match "FAILED" || true
+				fi
+			done
+		fi
+	done
+	set -e
 
 	if cf spaces | grep --quiet --regexp="^${AUTOSCALER_SPACE}$"; then
 		cf delete-space -f "${AUTOSCALER_SPACE}"
@@ -142,6 +169,8 @@ function unset_vars() {
 	unset SYSTEM_DOMAIN
 	unset BBL_STATE_PATH
 	unset AUTOSCALER_DIR
+	unset AUTOSCALER_ORG
+	unset AUTOSCALER_SPACE
 	unset SERVICE_NAME
 	unset SERVICE_BROKER_NAME
 	unset NAME_PREFIX

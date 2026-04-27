@@ -7,6 +7,9 @@ GO_NOMOD := GO111MODULE=off go
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
+GOTOOLCHAIN ?= local
+export GOTOOLCHAIN
+
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 
@@ -17,7 +20,8 @@ export GOWORK := off
 
 .PHONY: clean
 clean:
-	rm --recursive --force './vendor'
+	rm --recursive --force './build' './vendor' './ginkgo_v2' './results'
+	@make --directory='./assets/app/go_app' clean
 
 
 .PHONY: go-mod-tidy

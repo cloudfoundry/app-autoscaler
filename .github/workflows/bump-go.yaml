@@ -1,0 +1,54 @@
+# This workflow can be triggered to update the Go version in the devbox and the go.mod file.
+# It can be triggered by a workflow_dispatch and takes as parameters the new Go version.
+
+name: Bump Go
+
+on:
+  workflow_dispatch:
+    inputs:
+      go-version:
+        description: Go version to bump to
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-go:
+    runs-on: ubuntu-latest
+    name: Bump Go
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
+        with:
+          enable-cache: 'true'
+
+      - name: Parse minor version
+        id: parse-go-version
+        env:
+          GO_VERSION: ${{ inputs.go-version }}
+        run: |
+         echo "major-version=$(echo "${GO_VERSION}" | cut --delimiter='.' --field=1)" >> "${GITHUB_OUTPUT}"
+         echo "minor-version=$(echo "${GO_VERSION}" | cut --delimiter='.' --field=2)" >> "${GITHUB_OUTPUT}"         
+
+      - name: Bump Go
+        env:
+          GO_VERSION: ${{ inputs.go-version }}
+          MAJOR_VERSION: ${{ steps.parse-go-version.outputs.major-version }}
+          MINOR_VERSION: ${{ steps.parse-go-version.outputs.minor-version }}
+        run: |
+          devbox add "go@${GO_VERSION}"
+          devbox run -- find . -name go.mod -exec go mod edit "-go=${GO_VERSION}" {} \;
+          devbox run -- find . -name mta.tpl.yaml -exec yq --inplace ".modules[] |= (.properties.GOTOOLCHAIN = \"local\" |.properties.GOVERSION = \"go${MAJOR_VERSION}.${MINOR_VERSION}\")" {} \;
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          commit-message: "Bump Go to ${{ inputs.go-version }}"
+          branch: "bump-go-${{ inputs.go-version }}"
+          title: "Bump Go to ${{ inputs.go-version }}"
+          body: "This PR bumps the Go version to ${{ inputs.go-version }}."
+          labels: dependencies

@@ -90,9 +90,9 @@ var _ = Describe("Gorouterproxy", func() {
 
 		c := &http.Client{
 			Transport: &http.Transport{
+				//#nosec G402 -- test code that uses self-signed certificates
 				TLSClientConfig: &tls.Config{
-					Certificates: []tls.Certificate{tlsCert},
-					//nolint:gosec // #nosec G402 -- due to https://github.com/securego/gosec/issues/1105
+					Certificates:       []tls.Certificate{tlsCert},
 					InsecureSkipVerify: true,
 				},
 			},

@@ -7,10 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	brParser "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser"
+	brParserTypes "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker/binding_request_parser/types"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/plancheck"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/policyvalidator"
@@ -31,7 +34,7 @@ var _ domain.ServiceBroker = &Broker{}
 type Broker struct {
 	logger           lager.Logger
 	conf             *config.Config
-	cfClient         cf.ApiContextClient
+	cfClient         cf.CFClient
 	bindingdb        db.BindingDB
 	policydb         db.PolicyDB
 	policyValidator  *policyvalidator.PolicyValidator
@@ -70,11 +73,11 @@ var _ error = Errors{}
 
 func New(
 	logger lager.Logger, conf *config.Config,
-	cfClient cf.ApiContextClient, bindingDb db.BindingDB, policyDb db.PolicyDB,
+	cfClient cf.CFClient, bindingDb db.BindingDB, policyDb db.PolicyDB,
 	catalog []domain.Service, credentials cred_helper.Credentials,
 ) *Broker {
 	policyValidator := policyvalidator.NewPolicyValidator(
-		conf.PolicySchemaPath,
+		conf.BindingRequestSchemaPath,
 		conf.ScalingRules.CPU.LowerThreshold,
 		conf.ScalingRules.CPU.UpperThreshold,
 		conf.ScalingRules.CPUUtil.LowerThreshold,
@@ -97,8 +100,21 @@ func New(
 		}
 	}
 
-	bindingReqParser := brParser.NewBindRequestParser(
-		policyValidator, *defaultCustomMetricsCredentialType)
+	pathToParserDir, err := filepath.Abs(filepath.Dir(conf.BindingRequestSchemaPath))
+	// We need the absolute path because our json-schema-library "gojsonschema" can not deal with
+	// relative paths in "$ref"s.
+	if err != nil {
+		logger.Fatal("resolve-binding-request-schema-path", err)
+	}
+
+	pathToLegacySchema := fmt.Sprintf("file://%s/legacy/schema.json", pathToParserDir)
+	pathToV0_1Schema := fmt.Sprintf("file://%s/v0_1/meta.schema.json", pathToParserDir)
+	bindingReqParser, err := brParser.New(
+		pathToLegacySchema, pathToV0_1Schema, *defaultCustomMetricsCredentialType)
+
+	if err != nil {
+		logger.Fatal("create-binding-request-parser", err)
+	}
 
 	broker := &Broker{
 		logger:           logger,
@@ -418,16 +434,17 @@ func parseInstanceParameters(rawParameters json.RawMessage) (*models.InstancePar
 
 func (b *Broker) getServiceInstance(ctx context.Context, instanceID string) (*models.ServiceInstance, error) {
 	serviceInstance, err := b.bindingdb.GetServiceInstance(ctx, instanceID)
-	if err != nil {
-		if errors.Is(err, db.ErrDoesNotExist) {
-			b.logger.Error("failed to find service instance to update", err, lager.Data{"instanceID": instanceID})
-			return nil, apiresponses.ErrInstanceDoesNotExist
-		} else {
-			b.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceID": instanceID})
-			return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service instance"), http.StatusInternalServerError, "retrieving-instance-for-update")
-		}
+	if err == nil {
+		return serviceInstance, nil
 	}
-	return serviceInstance, nil
+
+	if errors.Is(err, db.ErrDoesNotExist) {
+		b.logger.Error("failed to find service instance to update", err, lager.Data{"instanceID": instanceID})
+		return nil, apiresponses.ErrInstanceDoesNotExist
+	}
+
+	b.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceID": instanceID})
+	return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service instance"), http.StatusInternalServerError, "retrieving-instance-for-update")
 }
 
 func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolicy *models.PolicyDefinition, updatedDefaultPolicyGuid string, allBoundApps []string, serviceInstance *models.ServiceInstance) error {
@@ -439,15 +456,16 @@ func (b *Broker) setDefaultPolicyOnApps(ctx context.Context, updatedDefaultPolic
 		b.logger.Error("failed to set default policies", err, lager.Data{"instanceID": instanceID})
 		return apiresponses.NewFailureResponse(errors.New("failed to set default policy"), http.StatusInternalServerError, "updating-default-policy")
 	}
+
 	var errs Errors
 	for _, appId := range appIds {
-		err = b.schedulerUtil.CreateOrUpdateSchedule(ctx, appId, updatedDefaultPolicy, updatedDefaultPolicyGuid)
-		if err != nil {
+		if err := b.schedulerUtil.CreateOrUpdateSchedule(ctx, appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
 			b.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
 			errs = append(errs, err)
 		}
 	}
-	if errs != nil {
+
+	if len(errs) > 0 {
 		return errs
 	}
 	return nil
@@ -550,41 +568,19 @@ func (b *Broker) Bind(
 
 	result := domain.Binding{}
 
-	appScalingConfig, err := b.bindingReqParser.Parse(details)
-	var schemaErr *policyvalidator.ValidationErrors
-	var appGuidErr *brParser.BindReqNoAppGuid
-	switch {
-	case errors.As(err, &schemaErr):
-		resultsJson, err := json.Marshal(schemaErr)
-		if err != nil {
-			serialisationErr := &models.InvalidArgumentError{
-				Param: "errResults",
-				Value: schemaErr,
-				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
-			const loggerAction = "failed-serialising-errors"
-			logger.Error(loggerAction, serialisationErr)
-			return result, apiresponses.NewFailureResponse(
-				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
-		}
-		apiErr := apiresponses.NewFailureResponseBuilder(
-			fmt.Errorf("invalid policy provided: %s", resultsJson),
-			http.StatusBadRequest, "failed-to-validate-policy").
-			WithErrorKey("InvalidPolicy").Build()
-
-		return result, apiErr
-	case errors.As(err, &appGuidErr):
-		logger.Error("bind-no-app-guid-provided", err)
-		return result, apiresponses.NewFailureResponseBuilder(
-			err, http.StatusBadRequest, "bind-no-app-guid-provided").
-			WithErrorKey("RequiresApp").Build()
-	case err != nil:
-		logger.Error("parse-binding-request", err)
-		return result, apiresponses.NewFailureResponse(
-			err, http.StatusBadRequest, "parse-binding-request")
+	appGuidFromCloudCtl := models.GUID("") // No app-guid provided by the cloudcontroller
+	if details.AppGUID != "" {
+		appGuidFromCloudCtl = models.GUID(details.AppGUID)
+	} else if details.BindResource != nil && details.BindResource.AppGuid != "" {
+		appGuidFromCloudCtl = models.GUID(details.BindResource.AppGuid)
 	}
 
-	isServiceKeyRequest := (details.BindResource == nil || details.BindResource.AppGuid == "") && details.AppGUID == ""
-	if isServiceKeyRequest {
+	appScalingConfig, err := b.bindingReqParser.Parse(string(details.RawParameters), appGuidFromCloudCtl)
+	if err != nil {
+		return result, handleParsingError(err, logger)
+	}
+
+	if isServiceKeyRequest := appGuidFromCloudCtl == ""; isServiceKeyRequest {
 		err := b.checkAppInSpace(logger, ctx, instanceID, details, appScalingConfig)
 		if err != nil {
 			return result, err
@@ -660,6 +656,60 @@ func (b *Broker) Bind(
 		CustomMetrics: *customMetricsCredentials,
 	}
 	return result, nil
+}
+
+func handleParsingError(err error, logger lager.Logger) error {
+	var schemaErr *policyvalidator.ValidationErrors // 🚧 To-do: Check when we can remove this!
+	var jsonSchemaErr *brParserTypes.JsonSchemaError
+	var appGuidErr *brParserTypes.BindReqNoAppGuid
+	switch {
+	case errors.As(err, &schemaErr): // 🚧 To-do: Check when we can remove this!
+		resultsJson, err := json.Marshal(schemaErr)
+		if err != nil {
+			serialisationErr := &models.InvalidArgumentError{
+				Param: "errResults",
+				Value: schemaErr,
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
+		}
+		apiErr := apiresponses.NewFailureResponseBuilder(
+			fmt.Errorf("invalid policy provided: %s", resultsJson),
+			http.StatusBadRequest, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
+
+		return apiErr
+	case errors.As(err, &jsonSchemaErr):
+		resultsJson, err := json.Marshal(jsonSchemaErr)
+		if err != nil {
+			serialisationErr := &models.InvalidArgumentError{
+				Param: "errResults",
+				Value: jsonSchemaErr,
+				Msg:   "⛔ Failed to serialise validation results into json; This should never happen."}
+			const loggerAction = "failed-serialising-errors"
+			logger.Error(loggerAction, serialisationErr)
+			return apiresponses.NewFailureResponse(
+				fmt.Errorf("⛔ Internal server error"), http.StatusInternalServerError, loggerAction)
+		}
+		apiErr := apiresponses.NewFailureResponseBuilder(
+			fmt.Errorf("invalid policy provided: %s", resultsJson),
+			http.StatusBadRequest, "failed-to-validate-policy").
+			WithErrorKey("InvalidPolicy").Build()
+
+		return apiErr
+	case errors.As(err, &appGuidErr):
+		logger.Error("bind-no-app-guid-provided", err)
+		return apiresponses.NewFailureResponseBuilder(
+			err, http.StatusBadRequest, "bind-no-app-guid-provided").
+			WithErrorKey("RequiresApp").Build()
+	case err != nil:
+		logger.Error("parse-binding-request", err)
+		return apiresponses.NewFailureResponse(
+			err, http.StatusBadRequest, "parse-binding-request")
+	}
+	return nil
 }
 
 // ☢️ This is an important check! Without doing it, users may define scaling-policies to apps of
@@ -893,16 +943,17 @@ func (b *Broker) getServiceBinding(ctx context.Context, bindingID string) (*mode
 	logger := b.logger.Session("get-service-binding", lager.Data{"bindingID": bindingID})
 
 	serviceBinding, err := b.bindingdb.GetServiceBinding(ctx, bindingID)
-	if err != nil {
-		if errors.Is(err, db.ErrDoesNotExist) {
-			logger.Error("failed to find service binding", err)
-			return nil, apiresponses.ErrBindingDoesNotExist
-		} else {
-			logger.Error("failed to retrieve service binding", err)
-			return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service binding"), http.StatusInternalServerError, "retrieving-service-binding")
-		}
+	if err == nil {
+		return serviceBinding, nil
 	}
-	return serviceBinding, nil
+
+	if errors.Is(err, db.ErrDoesNotExist) {
+		logger.Error("failed to find service binding", err)
+		return nil, apiresponses.ErrBindingDoesNotExist
+	}
+
+	logger.Error("failed to retrieve service binding", err)
+	return nil, apiresponses.NewFailureResponse(errors.New("failed to retrieve service binding"), http.StatusInternalServerError, "retrieving-service-binding")
 }
 
 // LastBindingOperation fetches last operation state for a service binding

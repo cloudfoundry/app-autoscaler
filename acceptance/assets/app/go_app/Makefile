@@ -9,6 +9,9 @@ MAKEFLAGS =
 
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
+GOTOOLCHAIN ?= local
+export GOTOOLCHAIN
+
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 CGO_ENABLED := 0
@@ -22,7 +25,7 @@ test_dirs = $(shell find . -name "*_test.go" -exec dirname {} \; \
 GINKGO_OPTS := -r --race --require-suite --randomize-all --cover ${OPTS}
 export CONFIG ?= ../../../../acceptance_config.json
 
-openapi-spec-path := ../../../../../api
+openapi-spec-path := ../../../../openapi
 openapi-specs-list = $(wildcard ${openapi-spec-path}/*.openapi.yaml)
 
 # The presence of the subsequent directory indicates wheather the fakes still need to be generated
@@ -30,12 +33,29 @@ openapi-specs-list = $(wildcard ${openapi-spec-path}/*.openapi.yaml)
 app-fakes-dir := ./internal/app/appfakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 go_deps_without_fakes = $(shell find . -type f -name '*.go' \
-																| grep --invert-match --regexp='${app-fakes-dir}')
+									| grep --invert-match --regexp='${app-fakes-dir}')
+
+.PHONY: help
+help: ## Show this help
+	@grep --extended-regexp --no-filename '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+
+openapi-generated-clients-dir := ./internal/custommetrics
+openapi-generated-clients-files = $(wildcard ${openapi-generated-clients-dir}/*.go)
+
+.PHONY: generate-openapi-clients
+generate-openapi-clients: ${openapi-generated-clients-dir} ${openapi-generated-clients-files}
+${openapi-generated-clients-dir} ${openapi-generated-clients-files} &: ./go.mod ./go.sum ./internal/generate.go ${openapi-specs-list}
+	# Fail gracefully, when the openapi-specifications are not where expected.
+	@test -n '${openapi-specs-list}' || { echo 'ERROR: No OpenAPI specs found at ${openapi-spec-path}/' >&2; exit 1; }
+	go generate ./internal/generate.go
+	@touch '${openapi-generated-clients-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: generate-fakes
 generate-fakes: ${app-fakes-dir} ${app-fakes-files}
-${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/generate.go ${openapi-specs-list}
-	go generate ./...
+${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/app/generate.go generate-openapi-clients ## generate Go code (fakes, clients from OpenAPI specs)
+	go generate ./internal/app/generate.go
+	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 
 
@@ -50,7 +70,7 @@ ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ./internal/generate.go 
 #  3. `make go-mod-tidy`
 #  4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
-go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
+go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes} ## run go mod tidy
 	@echo -ne '${aes_terminal_font_yellow}' \
 		'⚠️ Warning: The client-fakes generated from the openapi-specification may be\n' \
 		'outdated. Please consider re-generating them, if this is relevant.' \
@@ -60,7 +80,7 @@ go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes}
 
 
 .PHONY: build
-build: ./build/app ./build/manifest.yml
+build: ./build/app ./build/manifest.yml ## build the app
 ./build/app ./build/manifest.yml: ./go.mod ${app-fakes-dir} ${app-fakes-files}
 	echo '# building  test-app'
 	mkdir -p build
@@ -88,36 +108,36 @@ build_test-%: ${app-fakes-dir} ${app-fakes-files}
 
 
 .PHONY: check lint lint-fix test
-check: lint build test
+check: lint build test ## run linting, build and tests
 
-test: generate-fakes
+test: generate-fakes ## run tests
 	@echo 'Running tests'
 	ginkgo run ${GINKGO_OPTS} './...'
 
 lint: generate-fakes
 	golangci-lint run
 
-lint-fix: generate-fakes
+lint-fix: generate-fakes ## run linting with auto-fix
 	golangci-lint run --fix
 
 
 
 .PHONY: start
-start: build
+start: build ## start the app locally in a cflinuxfs5 container
 	docker run --interactive --tty --name go_app --volume="$${PWD}/build/:/cf/bin" \
-						 --publish '8080:8080' --rm 'cloudfoundry/cflinuxfs4' '/cf/bin/app'
+				--publish '8080:8080' --rm 'cloudfoundry/cflinuxfs4' '/cf/bin/app'
 
 
 
 .PHONY: deploy
-deploy: build
+deploy: build ## Deploy the app to Cloud Foundry, requires the CONFIG env variable to be pointing to the acceptance test config file
 	./deploy.sh
 
 
 
 .PHONY: clean
-clean:
+clean: ## clean up build artifacts
 	@echo "# cleaning go_app"
 	@go clean -cache -testcache
-	@rm --force --recursive './build'
-	@rm --force --recursive './internal/app/appfakes'
+	@rm --force --recursive './build' './internal/app/appfakes'
+	@rm --force --recursive internal/**/oas*

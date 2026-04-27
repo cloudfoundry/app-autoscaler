@@ -1,5 +1,7 @@
 name: Acceptance Tests - MTA
 on:
+  push:
+    branches: [ main ]
   workflow_call:
   workflow_dispatch:
   pull_request:
@@ -14,6 +16,6 @@ jobs:
     name: "${{ github.workflow }}"
     uses: ./.github/workflows/acceptance_tests_reusable.yaml
     with:
-      deployment_name: "autoscaler-mta-${{ github.event.pull_request.number }}"
+      deployment_name: "autoscaler-mta-${{ github.event.pull_request.number || 'main' }}"
     secrets:
       bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"

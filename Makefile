@@ -8,6 +8,7 @@ DEST ?= /tmp/build
 TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
+AUTOSCALER_PLUGIN_VERSION ?= $(shell cf plugins --checksum 2>/dev/null | awk '/^AutoScaler/ {print $$2}')
 CI ?= false
 
 DEBUG := false
@@ -15,6 +16,9 @@ MYSQL_TAG := 8
 POSTGRES_TAG := 16
 GO_VERSION = $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES = $(shell find . -type f -name '*.go')
+GOTOOLCHAIN ?= local
+export GOTOOLCHAIN
+
 PACKAGE_DIRS = $(shell go list './...' | grep --invert-match --regexp='/vendor/' \
 								 | grep --invert-match --regexp='e2e')
 MVN_OPTS ?= -Dmaven.test.skip=true
@@ -105,7 +109,9 @@ autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
 	mkdir -p '${app-fakes-dir}'
-	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './...'
+	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
+	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './generate-fakes.go'
+	rm '${app-fakes-dir}/doc.go' # Now other files are there.
 	@touch '${app-fakes-dir}' # Ensure that the folder-modification-timestamp gets updated.
 
 .PHONY: test-app.generate-fakes
@@ -116,17 +122,21 @@ go_deps_without_generated_sources = $(shell find . -type f -name '*.go' \
 																| grep --invert-match --extended-regexp \
 																		--regexp='${app-fakes-dir}|${openapi-generated-clients-and-servers-api-dir}|${openapi-generated-clients-and-servers-scalingengine-dir}')
 
-
-# This target should depend additionally on `${app-fakes-dir}` and on `${app-fakes-files}`. However
-# this is not defined here. The reason is, that for `go-mod-tidy` the generated fakes need to be
-# present but fortunately not necessarily up-to-date. This is fortunate because the generation of
-# the fake requires the files `go.mod` and `go.sum` to be already tidied up, introducing a cyclic
-# dependency otherwise. But that would make any modification to `go.mod` or `go.sum`
-# impossible. This definition now makes it possible to update `go.mod` and `go.sum` as follows:
-#  1. `make generate-fakes`
-#  2. Update `go.mod` and/or `go.sum`
-#  3. `make go-mod-tidy`
-#  4. Optionally: `make generate-fakes` to update the fakes as well.
+# This target should depend additionally on `${app-fakes-dir}, `${app-fakes-files}`,
+# `${openapi-generated-clients-and-servers-scalingengine-dir}`,
+# `${openapi-generated-clients-and-servers-api-dir}`,
+# `${openapi-generated-clients-and-servers-scalingengine-files}`,
+# `${openapi-generated-clients-and-servers-api-files}`. However this is not defined here. The reason
+# is, that for `go-mod-tidy` the generated files need to be present but fortunately not necessarily
+# up-to-date. This is fortunate because their generation require the files `go.mod` and
+# `go.sum` to be already tidied up, introducing a cyclic dependency otherwise. But that would make
+# any modification to `go.mod` or `go.sum` impossible. This definition now makes it possible to
+# update `go.mod` and `go.sum` as follows:
+#
+# 1. `make generate-openapi-generated-clients-and-servers generate-fakes`
+# 2. Update `go.mod` and/or `go.sum`
+# 3. `make go-mod-tidy`
+# 4. Optionally: `make generate-fakes` to update the fakes as well.
 .PHONY: go-mod-tidy
 go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_generated_sources} acceptance.go-mod-tidy test-app.go-mod-tidy
 	@echo -ne '${aes_terminal_font_yellow}' \
@@ -161,8 +171,10 @@ build-%: generate-openapi-generated-clients-and-servers
 	@echo "# building $*"
 	@CGO_ENABLED=1 go build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
+.PHONY: build
 build: $(addprefix build-,$(binaries))
 
+.PHONY: build_tests
 build_tests: $(addprefix build_test-,$(test_dirs))
 
 build_test-%: generate-fakes
@@ -177,18 +189,23 @@ build_test-%: generate-fakes
 		 go test -c -o $${test_file} $${package};\
 	 done;
 
+.PHONY: check
 check: fmt lint build test
 
+.PHONY: test
 test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 
-autoscaler.test: check-db_type init-db test-certs generate-fakes build-gorouterproxy
+.PHONY: autoscaler.test
+autoscaler.test: check-db_type init-db test-certs generate-openapi-generated-clients-and-servers generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
 
+.PHONY: test-autoscaler-suite
 test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
 	@echo " - using DBURL=${DBURL} TEST=${TEST}"
 	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} ${TEST}
 
+.PHONY: test-acceptance-unit
 test-acceptance-unit:
 	@make --directory=acceptance test-unit
 
@@ -243,21 +260,21 @@ vendor-changelogs:
 	cp $(MAKEFILE_DIR)/scalingengine/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/scheduler/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
-clean: dbtasks.clean scheduler.clean
+clean: dbtasks.clean mta-build-clean scheduler.clean
 	@echo "# cleaning autoscaler"
+	@go clean -cache -testcache
 	@rm --force --recursive "${openapi-generated-clients-and-servers-api-dir}"
 	@rm --force --recursive "${openapi-generated-clients-and-servers-scalingengine-dir}"
-	@go clean -cache -testcache
-	@rm --force --recursive 'fakes'
-	@rm --force --recursive 'test-certs'
-	@rm --force --recursive 'target'
-	@rm --force --recursive 'vendor'
+	@rm --force --recursive './build' 'fakes' 'test-certs' 'target' 'vendor'
+	@rm --force --recursive coverprofile.out*
+	@rm --force --recursive dbtasks/src/main/resources/*.db.changelog.y*ml
+	@make --directory='./acceptance' clean
 
 dbtasks.clean:
 	pushd dbtasks; mvn -B clean; popd
 
 scheduler.clean:
-	pushd scheduler; mvn -B --quiet clean; popd
+	@make --directory='scheduler' clean
 
 schema-files := $(shell find ./api/policyvalidator -type f -name '*.json')
 flattened-schema-file := ${DEST}/bind-request.schema.json
@@ -265,7 +282,11 @@ BIND_REQ_SCHEMA_VERSION ?= v0.1
 bind-request-schema: ${flattened-schema-file}
 ${flattened-schema-file}: ${schema-files}
 	mkdir -p "$$(dirname ${flattened-schema-file})"
-	flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+
+	# # 🚸 Use me again in the future, to publish a configurable schema.
+	# flatten_json-schema './api/policyvalidator/json-schema/${BIND_REQ_SCHEMA_VERSION}/meta.schema.json' \
+
+	flatten_json-schema './api/policyvalidator/json-schema/legacy.schema.json' \
 	> '${flattened-schema-file}'
 	echo '🔨 File created: ${flattened-schema-file}'
 
@@ -283,11 +304,18 @@ mta-logs:
 	cf dmol --mta com.github.cloudfoundry.app-autoscaler-release --last 1
 	vim mta-*
 
-mta-build: mta-build-clean
+# 🚧 To-do: Get "mta-build-clean" away from here as it is not strictly guaranteed to run before
+# the other dependencies. Instead we should rely on the dependencies being complete and updated
+# as needed.
+.PHONY: mta-build
+mta-build: mta-build-clean go-mod-vendor-mta vendor-changelogs
 	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
+.PHONY: mta-build-clean
 mta-build-clean:
-	rm -rf mta_archives
+	@rm --force --recursive mta_archives
+	@rm --force --recursive './mta.yaml'
+	@rm --force '${DEST}/${MTAR_FILENAME}'
 
 .PHONY: clean-build
 clean-build: ## Clean the build directory
@@ -307,7 +335,7 @@ release-promote: create-assets ## Promote draft release to final and upload asse
 		PROMOTE_DRAFT=true ./scripts/release.sh
 
 .PHONY: acceptance-release
-acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor build-test-app
+acceptance-release: clean-acceptance generate-openapi-generated-clients-and-servers generate-fakes go-mod-tidy go-mod-vendor build-test-app
 	@echo " - building acceptance test release '${VERSION}' to dir: '${DEST}' "
 	@mkdir -p ${DEST}
 	# Build for linux_amd64 by default (CF tasks platform)
@@ -324,6 +352,14 @@ acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor bu
 	@tar -xzf /tmp/cf-cli.tgz -C build/acceptance/bin/
 	@chmod +x build/acceptance/bin/cf
 	@rm /tmp/cf-cli.tgz
+	# Download and bundle app-autoscaler-cli-plugin for linux_amd64
+	@if [ -z "$(AUTOSCALER_PLUGIN_VERSION)" ]; then \
+		echo "ERROR: AUTOSCALER_PLUGIN_VERSION is empty. Please install the AutoScaler CF plugin: cf install-plugin app-autoscaler-cli-plugin"; \
+		exit 1; \
+	fi
+	@echo "Downloading app-autoscaler-cli-plugin v$(AUTOSCALER_PLUGIN_VERSION) for linux_amd64..."
+	@curl -fsSL "https://github.com/cloudfoundry/app-autoscaler-cli-plugin/releases/download/v$(AUTOSCALER_PLUGIN_VERSION)/ascli-linux-amd64-$(AUTOSCALER_PLUGIN_VERSION)-release%2B0" -o build/acceptance/bin/app-autoscaler-plugin || { echo "ERROR: Failed to download app-autoscaler-plugin"; exit 1; }
+	@chmod +x build/acceptance/bin/app-autoscaler-plugin
 	# Create tarball
 	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
 
@@ -332,6 +368,7 @@ acceptance-release: generate-fakes clean-acceptance go-mod-tidy go-mod-vendor bu
 mta-release: generate-fakes mta-build
 	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
 
+.PHONY: clean-acceptance
 clean-acceptance:
 	@echo ' - cleaning acceptance (⚠️ This keeps the file “acceptance/acceptance_config.json” if present!)'
 	@rm acceptance/ginkgo* &> /dev/null || true
@@ -472,7 +509,7 @@ scheduler.test-certificates:
 
 lint: lint-go lint-actions lint-markdown
 .PHONY: lint-go
-lint-go: generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
+lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\
 	export GOVERSION ;\
 	echo "Linting with Golang $${GOVERSION}" ;\

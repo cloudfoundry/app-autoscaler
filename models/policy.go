@@ -325,14 +325,6 @@ func (pd PolicyDefinition) ToRawJSON() (json.RawMessage, error) {
 	return data, nil
 }
 
-func FromRawJSON(data json.RawMessage) (PolicyDefinition, error) {
-	var scalingPolicy PolicyDefinition
-	if err := json.Unmarshal(data, &scalingPolicy); err != nil {
-		return PolicyDefinition{}, fmt.Errorf("failed to unmarshal ScalingPolicy: %w", err)
-	}
-	return scalingPolicy, nil
-}
-
 func (pd PolicyDefinition) String() string {
 	aJson, _ := pd.ToRawJSON()
 	return string(aJson)

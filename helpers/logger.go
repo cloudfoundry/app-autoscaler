@@ -64,6 +64,6 @@ func createRedactedSink(logLevel lager.LogLevel) lager.Sink {
 }
 
 func handleError(message string, err error) {
-	fmt.Fprintf(os.Stderr, "%s: %s\n", message, err.Error())
+	fmt.Fprintf(os.Stderr, "%s: %s\n", message, err.Error()) // #nosec G705 -- output to stderr, not HTTP response
 	os.Exit(1)
 }
