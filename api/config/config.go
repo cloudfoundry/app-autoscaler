@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
@@ -115,8 +114,6 @@ type Config struct {
 
 	CustomMetricsAuthConfig *CustomMetricsAuthConfig
 }
-
-var _ startup.ConfigValidator = Config{}
 
 type CustomMetricsAuthConfig struct {
 	// Configures if "Basic Authentication" is generally available or only available for already

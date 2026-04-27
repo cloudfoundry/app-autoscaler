@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
@@ -25,8 +26,9 @@ func main() {
 
 	vcapConfiguration, _ := startup.LoadVCAPConfiguration()
 
-	conf, err := startup.LoadAndValidateConfig(path, vcapConfiguration, config.LoadConfig)
+	conf, err := config.LoadConfig(path, vcapConfiguration)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read/validate config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 

@@ -7,7 +7,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 )
 
 var (
@@ -49,8 +48,6 @@ type Config struct {
 	// nil means no credential helper is configured (Basic Auth disabled).
 	CredentialHelperConfig models.BasicAuthHandlingImplConfig
 }
-
-var _ startup.ConfigValidator = Config{}
 
 // GetLogging returns the logging configuration
 func (c *Config) GetLogging() *helpers.LoggingConfig {
