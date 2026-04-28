@@ -24,7 +24,7 @@ type SyslogConfig struct {
 
 type noopCounter struct{}
 
-func (c *noopCounter) Add(_ float64) {}
+func (c *noopCounter) Add(_ float64) {} // intentionally empty: satisfies the counter interface but discards the value
 
 func NewSyslogWriter(conf SyslogConfig) (egress.WriteCloser, error) {
 	tlsConfig, err := conf.TLS.CreateClientConfig()
