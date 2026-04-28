@@ -211,16 +211,16 @@ resources:
     parameters:
       config:
         uri: ${POSTGRES_URI}
-        client_cert: ${DATABASE_DB_CLIENT_CERT}
-        client_key: ${DATABASE_DB_CLIENT_KEY}
-        server_ca: ${DATABASE_DB_SERVER_CA}
+        client_cert: "${DATABASE_DB_CLIENT_CERT}"
+        client_key: "${DATABASE_DB_CLIENT_KEY}"
+        server_ca: "${DATABASE_DB_SERVER_CA}"
 
   - name: syslog-client
     parameters:
       config:
-        client_cert: ${SYSLOG_CLIENT_CERT}
-        client_key: ${SYSLOG_CLIENT_KEY}
-        server_ca: ${SYSLOG_CLIENT_CA}
+        client_cert: "${SYSLOG_CLIENT_CERT}"
+        client_key: "${SYSLOG_CLIENT_KEY}"
+        server_ca: "${SYSLOG_CLIENT_CA}"
 
   - name: broker-catalog
     parameters:
