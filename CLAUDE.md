@@ -57,6 +57,11 @@ make generate-fakes          # Generate test mocks with Counterfeiter
 make generate-openapi-generated-clients-and-servers  # Generate OpenAPI clients/servers
 ```
 
+**After any `.sh` file change, run shellcheck before committing:**
+```bash
+devbox run -- shellcheck scripts/<changed-file>.sh
+```
+
 ### Deployment
 ```bash
 make mta-deploy              # Deploy to Cloud Foundry using MTA
