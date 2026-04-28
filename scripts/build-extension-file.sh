@@ -41,6 +41,7 @@ generate_deployment_secrets() {
   credhub generate --no-overwrite -n "${prefix}/autoscaler_scalingengine_health_password"    --length 16 -t password
   credhub generate --no-overwrite -n "${prefix}/service_broker_password_blue"                --length 16 -t password
   credhub generate --no-overwrite -n "${prefix}/service_broker_password"                     --length 16 -t password
+  return
 }
 
 load_secrets() {
@@ -67,10 +68,11 @@ load_secrets() {
     "export SERVICE_BROKER_PASSWORD_BLUE=" + (.service_broker_password_blue | @sh),
     "export SERVICE_BROKER_PASSWORD=" + (.service_broker_password | @sh)
   ' "${secrets_file}")"
+  return
 }
 
 # PEM certs contain real newlines; escape them to \n for inline YAML embedding
-escape_newlines() { printf '%s' "${1//$'\n'/\\n}"; }
+escape_newlines() { printf '%s' "${1//$'\n'/\\n}"; return; }
 
 generate_deployment_secrets
 
