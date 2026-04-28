@@ -46,28 +46,30 @@ generate_deployment_secrets() {
 
 load_secrets() {
   local secrets_file="$1"
-  # yq emits one `export VAR=value` line per secret; eval sets them all in a single pass
-  eval "$(yq '
-    "export EVENTGENERATOR_HEALTH_PASSWORD=" + (.eventgenerator_health_password | @sh),
-    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID=" + (.eventgenerator_log_cache_uaa_client_id | @sh),
+  # Map YAML keys → shell variable names, emitting `export VAR=value` lines
+  local exports
+  exports="$(yq '
+    "export EVENTGENERATOR_HEALTH_PASSWORD="          + (.eventgenerator_health_password          | @sh),
+    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="  + (.eventgenerator_log_cache_uaa_client_id  | @sh),
     "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET=" + (.eventgenerator_log_cache_uaa_client_secret | @sh),
-    "export METRICSFORWARDER_HEALTH_PASSWORD=" + (.metricsforwarder_health_password | @sh),
-    "export METRICSGATEWAY_HEALTH_PASSWORD=" + (.metricsgateway_health_password | @sh),
-    "export SCALINGENGINE_HEALTH_PASSWORD=" + (.scalingengine_health_password | @sh),
-    "export OPERATOR_HEALTH_PASSWORD=" + (.operator_health_password | @sh),
-    "export CF_ADMIN_PASSWORD=" + (.cf_admin_password | @sh),
-    "export POSTGRES_IP=" + (.postgres_ip | @sh),
-    "export DATABASE_DB_USERNAME=" + (.database_username | @sh),
-    "export DATABASE_DB_PASSWORD=" + (.database_password | @sh),
-    "export DATABASE_DB_SERVER_CA=" + (.database_server_ca | @sh),
-    "export DATABASE_DB_CLIENT_CERT=" + (.database_client_cert | @sh),
-    "export DATABASE_DB_CLIENT_KEY=" + (.database_client_key | @sh),
-    "export SYSLOG_CLIENT_CA=" + (.syslog_client_ca | @sh),
-    "export SYSLOG_CLIENT_CERT=" + (.syslog_client_cert | @sh),
-    "export SYSLOG_CLIENT_KEY=" + (.syslog_client_key | @sh),
-    "export SERVICE_BROKER_PASSWORD_BLUE=" + (.service_broker_password_blue | @sh),
-    "export SERVICE_BROKER_PASSWORD=" + (.service_broker_password | @sh)
+    "export METRICSFORWARDER_HEALTH_PASSWORD="        + (.metricsforwarder_health_password        | @sh),
+    "export METRICSGATEWAY_HEALTH_PASSWORD="          + (.metricsgateway_health_password          | @sh),
+    "export SCALINGENGINE_HEALTH_PASSWORD="           + (.scalingengine_health_password           | @sh),
+    "export OPERATOR_HEALTH_PASSWORD="                + (.operator_health_password                | @sh),
+    "export CF_ADMIN_PASSWORD="                       + (.cf_admin_password                       | @sh),
+    "export POSTGRES_IP="                             + (.postgres_ip                             | @sh),
+    "export DATABASE_DB_USERNAME="                    + (.database_username                       | @sh),
+    "export DATABASE_DB_PASSWORD="                    + (.database_password                       | @sh),
+    "export DATABASE_DB_SERVER_CA="                   + (.database_server_ca                      | @sh),
+    "export DATABASE_DB_CLIENT_CERT="                 + (.database_client_cert                    | @sh),
+    "export DATABASE_DB_CLIENT_KEY="                  + (.database_client_key                     | @sh),
+    "export SYSLOG_CLIENT_CA="                        + (.syslog_client_ca                        | @sh),
+    "export SYSLOG_CLIENT_CERT="                      + (.syslog_client_cert                      | @sh),
+    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh),
+    "export SERVICE_BROKER_PASSWORD_BLUE="            + (.service_broker_password_blue            | @sh),
+    "export SERVICE_BROKER_PASSWORD="                 + (.service_broker_password                 | @sh)
   ' "${secrets_file}")"
+  eval "${exports}"
   return
 }
 
@@ -106,49 +108,59 @@ EOF
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
 load_secrets /tmp/mtar-secrets.yml
 
+# --- API server & broker ---
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
+# --- Event generator ---
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
 export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
 
+# --- Metrics forwarder ---
 export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 
+# --- Metrics gateway ---
 export USE_METRICSGATEWAY="${USE_METRICSGATEWAY:-true}"
 export METRICSGATEWAY_HOST="${METRICSGATEWAY_HOST:-"${DEPLOYMENT_NAME}-metricsgateway"}"
 export METRICSGATEWAY_INSTANCES="${METRICSGATEWAY_INSTANCES:-2}"
 AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
 export AUTOSCALER_ORG_GUID
 
+# --- Scaling engine ---
 export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
 export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
 export SCALINGENGINE_INSTANCES="${SCALINGENGINE_INSTANCES:-2}"
 
+# --- Scheduler ---
 export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
 export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
+# --- Operator ---
 export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
 export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
+# --- Database ---
 # Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
 export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
-
 DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
 DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
 DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
-SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")";           export SYSLOG_CLIENT_CERT
-SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";             export SYSLOG_CLIENT_KEY
-SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";               export SYSLOG_CLIENT_CA
 
+# --- Syslog client ---
+SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
+SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
+SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
+
+# --- Acceptance tests ---
 export SKIP_SSL_VALIDATION="${SKIP_SSL_VALIDATION:-true}"
 export NAME_PREFIX="${NAME_PREFIX:-ASATS}"
 export CPU_UPPER_THRESHOLD="${CPU_UPPER_THRESHOLD:-100}"
