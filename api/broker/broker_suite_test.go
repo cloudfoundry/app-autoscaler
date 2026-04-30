@@ -51,7 +51,7 @@ var _ = BeforeSuite(func() {
 		CatalogPath:                        "../exampleconfig/catalog-example.json",
 		DashboardRedirectURI:               dashBoardURL,
 		BindingRequestSchemaPath:           "./binding_request_parser/meta.schema.json",
-		CustomMetricsAuthConfig: &config.CustomMetricsAuthConfig{
+		CustomMetricsAuthConfig: &config.CustomMetricsBasicAuthCfg{
 			BasicAuthHandling: config.BasicAuthHandlingOn,
 			DefaultCustomMetricAuthType: models.BindingSecret,
 			BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},

@@ -165,6 +165,9 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 		policyJson = parameters.DefaultPolicy
 	}
 
+	// 🚧 To-do: This function here makes use of the legacy-parsing-logic. This blocks the removal
+	// of the old legacy-parsing-code and simultaneously introduces the risk of divergence between
+	// default-policy-schema and policy-schema.
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		// The input may be not parsable, hence we use the original string.

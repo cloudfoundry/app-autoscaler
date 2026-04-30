@@ -206,7 +206,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	conf.RateLimit.MaxAmount = 10
 	conf.RateLimit.ValidDuration = 1 * time.Second
 
-	conf.CustomMetricsAuthConfig = &config.CustomMetricsAuthConfig{
+	conf.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
 		BasicAuthHandling:           config.BasicAuthHandlingOn,
 		DefaultCustomMetricAuthType: models.BindingSecret,
 		BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},

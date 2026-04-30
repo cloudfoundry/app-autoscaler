@@ -52,7 +52,6 @@ var _ = Describe("BrokerHandler", func() {
 		fakeCredentials = &fakes.FakeCredentials{}
 		fakePlanChecker = nil
 	})
-
 	JustBeforeEach(func() {
 		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf,
 			cfClient, bindingdb, policydb,
@@ -75,16 +74,10 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
-
 	Describe("CreateServiceInstance", func() {
 		var err error
 		var instanceCreationReqBody *models.InstanceCreationRequestBody
 		var body []byte
-		JustBeforeEach(func() {
-			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-			req.SetPathValue("instance_id", testInstanceId)
-			handler.Provision(resp, req)
-		})
 		BeforeEach(func() {
 			instanceCreationReqBody = &models.InstanceCreationRequestBody{
 				OrgGUID:   testOrgId,
@@ -98,6 +91,11 @@ var _ = Describe("BrokerHandler", func() {
 					},
 				},
 			}
+		})
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			req.SetPathValue("instance_id", testInstanceId)
+			handler.Provision(resp, req)
 		})
 		Context("When request body is not a valid json", func() {
 			BeforeEach(func() {
@@ -293,10 +291,8 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
 				})
 			})
-
 		})
 	})
-
 	Describe("UpdateServiceInstance", func() {
 		var err error
 		var instanceUpdateRequestBody *models.InstanceUpdateRequestBody

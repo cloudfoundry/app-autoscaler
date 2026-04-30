@@ -112,10 +112,11 @@ type Config struct {
 	RateLimit                models.RateLimitConfig
 	ScalingRules             ScalingRulesConfig
 
-	CustomMetricsAuthConfig *CustomMetricsAuthConfig
+	CustomMetricsAuthConfig *CustomMetricsBasicAuthCfg
 }
 
-type CustomMetricsAuthConfig struct {
+// Configures "Basic Authentication" for the submission of custom metrics by apps.
+type CustomMetricsBasicAuthCfg struct {
 	// Configures if "Basic Authentication" is generally available or only available for already
 	// bound apps.
 	BasicAuthHandling BasicAuthHandling

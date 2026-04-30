@@ -232,7 +232,7 @@ var _ = Describe("Api", func() {
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
 			pluginPathConfig := conf
-			pluginPathConfig.CustomMetricsAuthConfig = &config.CustomMetricsAuthConfig{
+			pluginPathConfig.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
 				BasicAuthHandling:           config.BasicAuthHandlingOn,
 				DefaultCustomMetricAuthType: models.BindingSecret,
 				BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
