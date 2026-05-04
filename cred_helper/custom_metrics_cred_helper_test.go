@@ -189,3 +189,26 @@ var _ = Describe("CustomMetricCredHelper", func() {
 		})
 	})
 })
+
+var _ = Describe("CredentialsProvider", func() {
+	var (
+		policyDB *fakes.FakePolicyDB
+		logger   lager.Logger
+	)
+
+	BeforeEach(func() {
+		policyDB = &fakes.FakePolicyDB{}
+		logger = lager.NewLogger("credentials_provider_test")
+		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
+	})
+
+	DescribeTable("should return a non-nil Credentials for valid implConfig",
+		func(implConfig models.BasicAuthHandlingImplConfig) {
+			result := cred_helper.CredentialsProvider(
+				implConfig,
+				nil, 10*time.Minute, 6*time.Hour, logger, policyDB)
+			Expect(result).NotTo(BeNil())
+		},
+		Entry("BasicAuthHandlingNative", models.BasicAuthHandlingNative{}),
+	)
+})
