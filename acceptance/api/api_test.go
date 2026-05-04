@@ -82,7 +82,8 @@ var _ = Describe("AutoScaler Public API", func() {
 	When("no scaling policy is set", func() {
 		BeforeEach(func() {
 			response, status := deletePolicy()
-			Expect(status).To(Or(Equal(200), Equal(404)), fmt.Sprintf("failed to delete policy, received response: %s", string(response)))
+			// Admin users get 404 for unbound apps, org-manager users get 403 (permission check fails before existence check)
+			Expect(status).To(Or(Equal(200), Equal(404), Equal(403)), fmt.Sprintf("failed to delete policy, received response: %s", string(response)))
 		})
 		It("should fail with 404 when retrieve policy", func() {
 			response, status := getPolicy()
