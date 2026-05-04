@@ -209,6 +209,9 @@ var _ = Describe("CredentialsProvider", func() {
 				nil, 10*time.Minute, 6*time.Hour, logger, policyDB)
 			Expect(result).NotTo(BeNil())
 		},
+		// 🚸 In theory we should test as well the case of using a stored procedure. However this
+		// would require a real and functional database-connection which we want to avoid in
+		// unit-tests.
 		Entry("BasicAuthHandlingNative", models.BasicAuthHandlingNative{}),
 	)
 })
