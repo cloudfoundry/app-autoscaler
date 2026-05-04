@@ -1,0 +1,8 @@
+[
+  {
+    "protocol": "tcp",
+    "destination": "10.0.1.0/24",
+    "ports": "6067",
+    "description": "Allow syslog traffic to log-cache"
+  }
+]

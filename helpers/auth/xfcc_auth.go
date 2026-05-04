@@ -19,6 +19,7 @@ var (
 	ErrorWrongSpace       = errors.New("space guid is wrong")
 	ErrorWrongOrg         = errors.New("org guid is wrong")
 	ErrXFCCHeaderNotFound = errors.New("xfcc header not found")
+	certFieldRegex        = regexp.MustCompile(`(\w+):((\w+-)*\w+)`)
 )
 
 type XFCCAuthMiddleware interface {
@@ -70,23 +71,32 @@ func (m *xfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) htt
 	})
 }
 
-func CheckAuth(r *http.Request, org, space string) error {
+func parseCertFromXFCC(r *http.Request) (*x509.Certificate, error) {
 	xfccHeader := r.Header.Get("X-Forwarded-Client-Cert")
 	if xfccHeader == "" {
-		return ErrXFCCHeaderNotFound
+		return nil, ErrXFCCHeaderNotFound
 	}
 
 	data, err := base64.StdEncoding.DecodeString(xfccHeader)
 	if err != nil {
-		return fmt.Errorf("base64 parsing failed: %w", err)
+		return nil, fmt.Errorf("base64 parsing failed: %w", err)
 	}
 
 	cert, err := x509.ParseCertificate(data)
 	if err != nil {
-		return fmt.Errorf("failed to parse certificate: %w", err)
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
-	if getSpaceGuid(cert) != space {
+	return cert, nil
+}
+
+func CheckAuth(r *http.Request, org, space string) error {
+	cert, err := parseCertFromXFCC(r)
+	if err != nil {
+		return err
+	}
+
+	if space != "" && getSpaceGuid(cert) != space {
 		return ErrorWrongSpace
 	}
 
@@ -121,8 +131,7 @@ func getGuidFromCert(cert *x509.Certificate, prefix string) string {
 
 func mapFrom(input string) map[string]string {
 	result := make(map[string]string)
-	r := regexp.MustCompile(`(\w+):((\w+-)*\w+)`)
-	matches := r.FindAllStringSubmatch(input, -1)
+	matches := certFieldRegex.FindAllStringSubmatch(input, -1)
 
 	for _, match := range matches {
 		result[match[1]] = match[2]

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2155,SC2034,SC2086
+# shellcheck disable=SC1091
 
 set -euo pipefail
 
@@ -11,11 +11,9 @@ source "${script_dir}/common.sh"
 DEST="${DEST:-/tmp/build}"
 
 echo "Building extension file for autoscaler deployment with version ${VERSION}"
-# Compute extension file path
 extension_file_path="${DEST}/extension-file-${VERSION}.txt"
 mkdir -p "${DEST}"
 
-# Exit early if extension file already exists
 if [ -f "${extension_file_path}" ]; then
   echo "Extension file already exists at: ${extension_file_path}"
   echo "Skipping rebuild. Delete the file to regenerate it."
@@ -32,15 +30,53 @@ cf_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
-
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
-credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password" --length 16 -t password
-credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password" --length 16 -t password
-credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password" --length 16 -t password
-credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password" --length 16 -t password
-credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue" --length 16 -t password
-credhub generate --no-overwrite -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password" --length 16 -t password
+generate_deployment_secrets() {
+  local prefix="/bosh-autoscaler/${DEPLOYMENT_NAME}"
+  credhub generate --no-overwrite -n "${prefix}/autoscaler_metricsforwarder_health_password" --length 16 -t password
+  credhub generate --no-overwrite -n "${prefix}/autoscaler_metricsgateway_health_password"   --length 16 -t password
+  credhub generate --no-overwrite -n "${prefix}/autoscaler_operator_health_password"         --length 16 -t password
+  credhub generate --no-overwrite -n "${prefix}/autoscaler_eventgenerator_health_password"   --length 16 -t password
+  credhub generate --no-overwrite -n "${prefix}/autoscaler_scalingengine_health_password"    --length 16 -t password
+  credhub generate --no-overwrite -n "${prefix}/service_broker_password_blue"                --length 16 -t password
+  credhub generate --no-overwrite -n "${prefix}/service_broker_password"                     --length 16 -t password
+  return
+}
+
+load_secrets() {
+  local secrets_file="$1"
+  # Map YAML keys → shell variable names, emitting `export VAR=value` lines
+  local exports
+  exports="$(yq '
+    "export EVENTGENERATOR_HEALTH_PASSWORD="          + (.eventgenerator_health_password          | @sh),
+    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="  + (.eventgenerator_log_cache_uaa_client_id  | @sh),
+    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET=" + (.eventgenerator_log_cache_uaa_client_secret | @sh),
+    "export METRICSFORWARDER_HEALTH_PASSWORD="        + (.metricsforwarder_health_password        | @sh),
+    "export METRICSGATEWAY_HEALTH_PASSWORD="          + (.metricsgateway_health_password          | @sh),
+    "export SCALINGENGINE_HEALTH_PASSWORD="           + (.scalingengine_health_password           | @sh),
+    "export OPERATOR_HEALTH_PASSWORD="                + (.operator_health_password                | @sh),
+    "export CF_ADMIN_PASSWORD="                       + (.cf_admin_password                       | @sh),
+    "export POSTGRES_IP="                             + (.postgres_ip                             | @sh),
+    "export DATABASE_DB_USERNAME="                    + (.database_username                       | @sh),
+    "export DATABASE_DB_PASSWORD="                    + (.database_password                       | @sh),
+    "export DATABASE_DB_SERVER_CA="                   + (.database_server_ca                      | @sh),
+    "export DATABASE_DB_CLIENT_CERT="                 + (.database_client_cert                    | @sh),
+    "export DATABASE_DB_CLIENT_KEY="                  + (.database_client_key                     | @sh),
+    "export SYSLOG_CLIENT_CA="                        + (.syslog_client_ca                        | @sh),
+    "export SYSLOG_CLIENT_CERT="                      + (.syslog_client_cert                      | @sh),
+    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh),
+    "export SERVICE_BROKER_PASSWORD_BLUE="            + (.service_broker_password_blue            | @sh),
+    "export SERVICE_BROKER_PASSWORD="                 + (.service_broker_password                 | @sh)
+  ' "${secrets_file}")"
+  eval "${exports}"
+  return
+}
+
+# PEM certs contain real newlines; escape them to \n for inline YAML embedding
+escape_newlines() { printf '%s' "${1//$'\n'/\\n}"; return; }
+
+generate_deployment_secrets
 
 cat << EOF > /tmp/extension-file-secrets.yml.tpl
 postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))
@@ -59,6 +95,7 @@ database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
 database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 
 metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
+metricsgateway_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsgateway_health_password))
 operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
 eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
 scalingengine_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password))
@@ -69,281 +106,85 @@ cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
+load_secrets /tmp/mtar-secrets.yml
 
+# --- API server & broker ---
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
-export EVENTGENERATOR_HEALTH_PASSWORD="$(yq ".eventgenerator_health_password" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="$(yq ".eventgenerator_log_cache_uaa_client_id" /tmp/mtar-secrets.yml)"
-export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET="$(yq ".eventgenerator_log_cache_uaa_client_secret" /tmp/mtar-secrets.yml)"
+# --- Event generator ---
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
 export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
 export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
 
-export METRICSFORWARDER_UAA_SKIP_SSL_VALIDATION="$(yq ".metricsforwarder_uaa_skip_ssl_validation" /tmp/mtar-secrets.yml)"
-export METRICSFORWARDER_APPNAME="${METRICSFORWARDER_APPNAME:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
-export METRICSFORWARDER_HEALTH_PASSWORD="$(yq ".metricsforwarder_health_password" /tmp/mtar-secrets.yml)"
+# --- Metrics forwarder ---
 export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 
+# --- Metrics gateway ---
+export USE_METRICSGATEWAY="${USE_METRICSGATEWAY:-true}"
+export METRICSGATEWAY_HOST="${METRICSGATEWAY_HOST:-"${DEPLOYMENT_NAME}-metricsgateway"}"
+export METRICSGATEWAY_INSTANCES="${METRICSGATEWAY_INSTANCES:-2}"
+AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
+export AUTOSCALER_ORG_GUID
+
+# --- Scaling engine ---
 export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
 export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
-export SCALINGENGINE_HEALTH_PASSWORD="$(yq ".scalingengine_health_password" /tmp/mtar-secrets.yml)"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
 export SCALINGENGINE_INSTANCES="${SCALINGENGINE_INSTANCES:-2}"
 
+# --- Scheduler ---
 export SCHEDULER_HOST="${SCHEDULER_HOST:-"${DEPLOYMENT_NAME}-scheduler"}"
 export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"}"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
+# --- Operator ---
 export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
 export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
-export OPERATOR_HEALTH_PASSWORD="$(yq ".operator_health_password" /tmp/mtar-secrets.yml)"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
-export CF_ADMIN_PASSWORD="$(yq ".cf_admin_password" /tmp/mtar-secrets.yml)"
-
-export POSTGRES_IP="$(yq ".postgres_ip" /tmp/mtar-secrets.yml)"
-
-export DATABASE_DB_USERNAME="$(yq ".database_username" /tmp/mtar-secrets.yml)"
-export DATABASE_DB_PASSWORD="$(yq ".database_password" /tmp/mtar-secrets.yml)"
-export DATABASE_DB_SERVER_CA="$(yq ".database_server_ca" /tmp/mtar-secrets.yml)"
-export DATABASE_DB_CLIENT_CERT="$(yq ".database_client_cert" /tmp/mtar-secrets.yml)"
-export DATABASE_DB_CLIENT_KEY="$(yq ".database_client_key" /tmp/mtar-secrets.yml)"
-
-export SYSLOG_CLIENT_CA="$(yq ".syslog_client_ca" /tmp/mtar-secrets.yml)"
-export SYSLOG_CLIENT_CERT="$(yq ".syslog_client_cert" /tmp/mtar-secrets.yml)"
-export SYSLOG_CLIENT_KEY="$(yq ".syslog_client_key" /tmp/mtar-secrets.yml)"
-
-export SERVICE_BROKER_PASSWORD_BLUE="$(yq ".service_broker_password_blue" /tmp/mtar-secrets.yml)"
-export SERVICE_BROKER_PASSWORD="$(yq ".service_broker_password" /tmp/mtar-secrets.yml)"
-
+# --- Database ---
+# Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
 export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
+DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
+DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
+DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
 
-cat <<EOF > "${extension_file_path}"
-ID: development
-extends: com.github.cloudfoundry.app-autoscaler-release
-version: 1.0.0
-_schema-version: 3.3.0
+# --- Syslog client ---
+SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
+SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
+SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
 
-modules:
-  - name: apiserver
-    parameters:
-      instances: ${APISERVER_INSTANCES}
-      routes:
-      - route: ${APISERVER_HOST}.\${default-domain}
-      - route: ${SERVICEBROKER_HOST}.\${default-domain}
-    requires:
-      - name: apiserver-config
-      - name: broker-catalog
-      - name: database
-  - name: eventgenerator
-    requires:
-    - name: eventgenerator-config
-    - name: database
-    parameters:
-      instances: ${EVENTGENERATOR_INSTANCES}
-      routes:
-      - route: ${EVENTGENERATOR_CF_HOST}.\${default-domain}
-      - route: ${EVENTGENERATOR_HOST}.\${default-domain}
-  - name: scalingengine
-    requires:
-    - name: scalingengine-config
-    - name: database
-    parameters:
-      instances: ${SCALINGENGINE_INSTANCES}
-      routes:
-      - route: ${SCALINGENGINE_CF_HOST}.\${default-domain}
-      - route: ${SCALINGENGINE_HOST}.\${default-domain}
-  - name: metricsforwarder
-    requires:
-    - name: metricsforwarder-config
-    - name: syslog-client
-    - name: database
-    parameters:
-      instances: ${METRICSFORWARDER_INSTANCES}
-      routes:
-      - route: ${METRICSFORWARDER_HOST}.\${default-domain}
-      - route: ${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
-  - name: operator
-    requires:
-    - name: operator-config
-    - name: database
-    parameters:
-      instances: ${OPERATOR_INSTANCES}
-      routes:
-      - route: ${OPERATOR_HOST}.\${default-domain}
-  - name: scheduler
-    requires:
-    - name: scheduler-config
-    - name: database
-    parameters:
-      instances: ${SCHEDULER_INSTANCES}
-      routes:
-      - route: ${SCHEDULER_HOST}.\${default-domain}
-      - route: ${SCHEDULER_CF_HOST}.\${default-domain}
+# --- Acceptance tests ---
+export SKIP_SSL_VALIDATION="${SKIP_SSL_VALIDATION:-true}"
+export NAME_PREFIX="${NAME_PREFIX:-ASATS}"
+export CPU_UPPER_THRESHOLD="${CPU_UPPER_THRESHOLD:-100}"
+export PERFORMANCE_APP_COUNT="${PERFORMANCE_APP_COUNT:-100}"
+export PERFORMANCE_APP_PERCENTAGE_TO_SCALE="${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30}"
+export PERFORMANCE_SETUP_WORKERS="${PERFORMANCE_SETUP_WORKERS:-50}"
+export PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA="${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}"
 
-  - name: acceptance-tests
-    properties:
-      SUITES: ""
-      ACCEPTANCE_CONFIG_JSON: |
-        {
-          "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
-          "apps_domain": "${SYSTEM_DOMAIN}",
-          "skip_ssl_validation": ${SKIP_SSL_VALIDATION:-true},
-          "use_http": false,
-          "service_name": "${DEPLOYMENT_NAME}",
-          "service_plan": "autoscaler-free-plan",
-          "service_broker": "${DEPLOYMENT_NAME}",
-          "aggregate_interval": 120,
-          "default_timeout": 60,
-          "cpu_upper_threshold": ${CPU_UPPER_THRESHOLD:-100},
-          "name_prefix": "${NAME_PREFIX:-ASATS}",
-          "autoscaler_api": "${APISERVER_HOST}.\${default-domain}",
-          "performance": {
-            "app_count": ${PERFORMANCE_APP_COUNT:-100},
-            "app_percentage_to_scale": ${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30},
-            "setup_workers": ${PERFORMANCE_SETUP_WORKERS:-50},
-            "update_existing_org_quota": ${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}
-          }
-        }
+# ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
+envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
 
-resources:
-- name: metricsforwarder-config
-  parameters:
-    config:
-      metricsforwarder-config:
-        health:
-          basic_auth:
-            password: "${METRICSFORWARDER_HEALTH_PASSWORD}"
-
-- name: eventgenerator-config
-  parameters:
-    config:
-      eventgenerator-config:
-        metricCollector:
-          metric_collector_url: https://log-cache.\${default-domain}
-          port: ''
-          uaa:
-            client_id: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID}"
-            client_secret: "${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET}"
-            url: https://uaa.\${default-domain}
-            skip_ssl_validation: true
-        pool:
-          total_instances: ${EVENTGENERATOR_INSTANCES}
-        health:
-          basic_auth:
-            password: "${EVENTGENERATOR_HEALTH_PASSWORD}"
-        scalingEngine:
-          scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.\${default-domain}
-
-- name: apiserver-config
-  parameters:
-    config:
-      apiserver-config:
-        scaling_rules:
-          cpu:
-            upper_threshold: $CPU_LOWER_THRESHOLD
-        cf:
-          api: https://api.$SYSTEM_DOMAIN
-          grant_type: client_credentials
-          client_id: autoscaler_client_id
-          secret: autoscaler_client_secret
-        scheduler:
-          scheduler_url: https://${SCHEDULER_CF_HOST}.\${default-domain}
-        metrics_forwarder:
-          metrics_forwarder_url: https://${METRICSFORWARDER_HOST}.\${default-domain}
-          metrics_forwarder_mtls_url: https://${METRICSFORWARDER_MTLS_HOST}.\${default-domain}
-        scaling_engine:
-          scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.\${default-domain}
-        event_generator:
-          event_generator_url: https://${EVENTGENERATOR_CF_HOST}.\${default-domain}
-        broker_credentials:
-          - broker_username: 'autoscaler-broker-user'
-            broker_password: $SERVICE_BROKER_PASSWORD
-          - broker_username: 'autoscaler-broker-user-blue'
-            broker_password: $SERVICE_BROKER_PASSWORD_BLUE
-
-- name: scheduler-config
-  parameters:
-    config:
-      cfserver:
-        healthserver:
-          password: "test-password"
-          username: "test-user"
-      autoscaler:
-        scalingengine:
-          url: https://${SCALINGENGINE_HOST}.\${default-domain}
-- name: operator-config
-  parameters:
-    config:
-      operator-config:
-        health:
-          basic_auth:
-            password: "${OPERATOR_HEALTH_PASSWORD}"
-        cf:
-          api:  https://api.\${default-domain}
-          client_id: ${OPERATOR_CF_CLIENT_ID}
-          secret: ${OPERATOR_CF_CLIENT_SECRET}
-        scaling_engine:
-          scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.\${default-domain}
-        scheduler:
-          scheduler_url: https://${SCHEDULER_CF_HOST}.\${default-domain}
-- name: scalingengine-config
-  parameters:
-    config:
-      scalingengine-config:
-        health:
-          basic_auth:
-            password: "${SCALINGENGINE_HEALTH_PASSWORD}"
-        cf:
-          api:  https://api.\${default-domain}
-          client_id: ${SCALINGENGINE_CF_CLIENT_ID}
-          secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
-
-- name: database
-  parameters:
-    config:
-      uri: "${POSTGRES_URI}"
-      client_cert: "${DATABASE_DB_CLIENT_CERT//$'\n'/\\n}"
-      client_key: "${DATABASE_DB_CLIENT_KEY//$'\n'/\\n}"
-      server_ca: "${DATABASE_DB_SERVER_CA//$'\n'/\\n}"
-
-- name: syslog-client
-  parameters:
-    config:
-      client_cert: "${SYSLOG_CLIENT_CERT//$'\n'/\\n}"
-      client_key: "${SYSLOG_CLIENT_KEY//$'\n'/\\n}"
-      server_ca: "${SYSLOG_CLIENT_CA//$'\n'/\\n}"
-
-- name: broker-catalog
-  parameters:
-    config:
-      broker-catalog:
-        services:
-          - bindable: true
-            bindings_retrievable: true
-            description: Automatically increase or decrease the number of application instances based on a policy you define.
-            id: autoscaler-guid
-            instances_retrievable: true
-            name: ${DEPLOYMENT_NAME}
-            plans:
-              - description: This is the free service plan for the Auto-Scaling service.
-                id: autoscaler-free-plan-id
-                name: autoscaler-free-plan
-                plan_updateable: true
-              - description: This is the standard service plan for the Auto-Scaling service.
-                id: acceptance-standard
-                name: acceptance-standard
-                plan_updateable: false
-            tags:
-              - app-autoscaler
-EOF
+# When not using the metricsgateway, patch the generated file:
+# - metricsforwarder gets syslog-client binding (direct syslog path)
+# - metricsgateway is set to 0 instances and its config resource is removed
+if [[ "${USE_METRICSGATEWAY}" != "true" ]]; then
+  yq --inplace '
+    (.modules[] | select(.name == "metricsforwarder") | .requires) =
+      [{"name": "metricsforwarder-config"}, {"name": "syslog-client"}, {"name": "database"}] |
+    (.modules[] | select(.name == "metricsgateway")) =
+      {"name": "metricsgateway", "parameters": {"instances": 0}} |
+    del(.resources[] | select(.name == "metricsgateway-config")) |
+    del(.resources[] | select(.name == "metricsforwarder-config") |
+      .parameters.config."metricsforwarder-config".metrics_gateway)
+  ' "${extension_file_path}"
+fi
 
 echo "MTA Extension file created at: ${extension_file_path}"
