@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -305,6 +306,232 @@ var _ = Describe("rawConfig validation", func() {
 		})
 		It("should err", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
+		})
+	})
+})
+
+var _ = Describe("toConfig credential helper and basic auth conversion", func() {
+	var (
+		conf   rawConfig
+		result Config
+		err    error
+	)
+
+	BeforeEach(func() {
+		conf = rawConfig{}
+		conf.Db = make(map[string]db.DatabaseConfig)
+		conf.Db[db.BindingDb] = db.DatabaseConfig{
+			URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 60 * time.Second,
+		}
+		conf.Db[db.PolicyDb] = db.DatabaseConfig{
+			URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 60 * time.Second,
+		}
+
+		conf.BrokerCredentials = []BrokerCredentialsConfig{{
+			BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"),
+			BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"),
+		}}
+
+		conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
+		conf.CatalogPath = "../exampleconfig/catalog-example.json"
+		conf.BindingRequestSchemaPath = "../exampleconfig/policy.schema.json"
+		conf.Scheduler.SchedulerURL = "https://localhost:8083"
+		conf.ScalingEngine.ScalingEngineUrl = "https://localhost:8084"
+		conf.EventGenerator.EventGeneratorUrl = "https://localhost:8085"
+		conf.MetricsForwarder.MetricsForwarderUrl = "https://localhost:8088"
+		conf.CF.API = "https://api.bosh-lite.com"
+		conf.CF.ClientID = "client-id"
+		conf.CF.Secret = "secret"
+		conf.InfoFilePath = "../exampleconfig/info-file.json"
+		conf.RateLimit.MaxAmount = 10
+		conf.RateLimit.ValidDuration = 1 * time.Second
+
+		// Default valid state
+		conf.CredHelperImpl = "default"
+		conf.BasicAuthForCustomMetrics = "on"
+		conf.DefaultCustomMetricsCredentialType = "x509"
+	})
+
+	JustBeforeEach(func() {
+		result, err = toConfig(conf)
+	})
+
+	// --- cred_helper_impl tests (same as metricsforwarder) ---
+
+	When("cred_helper_impl is set to 'default'", func() {
+		BeforeEach(func() {
+			conf.CredHelperImpl = "default"
+			conf.StoredProcedureConfig = nil
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set BasicAuthHandlingImplConfig to BasicAuthHandlingNative", func() {
+			Expect(result.CustomMetricsAuthConfig).NotTo(BeNil())
+			Expect(result.CustomMetricsAuthConfig.BasicAuthHandlingImplConfig).To(
+				BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
+		})
+	})
+
+	When("cred_helper_impl is set to 'stored_procedure' with full config", func() {
+		BeforeEach(func() {
+			conf.CredHelperImpl = "stored_procedure"
+			conf.StoredProcedureConfig = &models.StoredProcedureConfig{
+				SchemaName:                             "test_schema",
+				CreateBindingCredentialProcedureName:   "create_binding",
+				DropBindingCredentialProcedureName:     "drop_binding",
+				DropAllBindingCredentialProcedureName:  "drop_all_bindings",
+				ValidateBindingCredentialProcedureName: "validate_binding",
+			}
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set BasicAuthHandlingImplConfig to BasicAuthHandlingStoredProc", func() {
+			Expect(result.CustomMetricsAuthConfig).NotTo(BeNil())
+			Expect(result.CustomMetricsAuthConfig.BasicAuthHandlingImplConfig).To(
+				BeAssignableToTypeOf(models.BasicAuthHandlingStoredProc{}))
+		})
+
+		It("should carry the StoredProcedureConfig with all fields", func() {
+			storedProc := result.CustomMetricsAuthConfig.BasicAuthHandlingImplConfig.(models.BasicAuthHandlingStoredProc)
+			Expect(storedProc.Config.SchemaName).To(Equal("test_schema"))
+			Expect(storedProc.Config.CreateBindingCredentialProcedureName).To(Equal("create_binding"))
+			Expect(storedProc.Config.DropBindingCredentialProcedureName).To(Equal("drop_binding"))
+			Expect(storedProc.Config.DropAllBindingCredentialProcedureName).To(Equal("drop_all_bindings"))
+		})
+	})
+
+	When("cred_helper_impl is 'stored_procedure' but StoredProcedureConfig is nil", func() {
+		BeforeEach(func() {
+			conf.CredHelperImpl = "stored_procedure"
+			conf.StoredProcedureConfig = nil
+		})
+
+		It("should return an error", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	When("cred_helper_impl is set to an invalid value", func() {
+		BeforeEach(func() {
+			conf.CredHelperImpl = "some_unknown_impl"
+		})
+
+		It("should return an error", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// --- basic_auth_for_custom_metrics tests ---
+
+	When("basic_auth_for_custom_metrics is set to an invalid value", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "invalid_value"
+		})
+
+		It("should return an error", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	When("basic_auth_for_custom_metrics is 'off'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "off"
+			conf.CredHelperImpl = ""
+			conf.StoredProcedureConfig = nil
+			conf.DefaultCustomMetricsCredentialType = ""
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set CustomMetricsAuthConfig to nil", func() {
+			Expect(result.CustomMetricsAuthConfig).To(BeNil())
+		})
+	})
+
+	When("basic_auth_for_custom_metrics is 'off' but cred_helper_impl is set", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "off"
+			conf.CredHelperImpl = "default"
+		})
+
+		It("should return an error (contradictory config)", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	When("basic_auth_for_custom_metrics is 'off' but default_credential_type is set", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "off"
+			conf.CredHelperImpl = ""
+			conf.DefaultCustomMetricsCredentialType = "binding-secret"
+		})
+
+		It("should return an error (contradictory config)", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	When("basic_auth_for_custom_metrics is 'on'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "on"
+			conf.CredHelperImpl = "default"
+			conf.DefaultCustomMetricsCredentialType = "binding-secret"
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set CustomMetricsAuthConfig with BasicAuthHandlingOn", func() {
+			Expect(result.CustomMetricsAuthConfig).NotTo(BeNil())
+			Expect(result.CustomMetricsAuthConfig.BasicAuthHandling).To(Equal(BasicAuthHandlingOn))
+		})
+
+		It("should set the DefaultCustomMetricAuthType correctly", func() {
+			Expect(result.CustomMetricsAuthConfig.DefaultCustomMetricAuthType).To(Equal(models.BindingSecret))
+		})
+	})
+
+	When("basic_auth_for_custom_metrics is 'only_existing_bindings' with default_credential_type 'x509'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "only_existing_bindings"
+			conf.CredHelperImpl = "default"
+			conf.DefaultCustomMetricsCredentialType = "x509"
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set CustomMetricsAuthConfig with BasicAuthHandlingOnlyExistingBindings", func() {
+			Expect(result.CustomMetricsAuthConfig).NotTo(BeNil())
+			Expect(result.CustomMetricsAuthConfig.BasicAuthHandling).To(Equal(BasicAuthHandlingOnlyExistingBindings))
+		})
+	})
+
+	When("basic_auth_for_custom_metrics is 'only_existing_bindings' with default_credential_type 'binding-secret'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "only_existing_bindings"
+			conf.CredHelperImpl = "default"
+			conf.DefaultCustomMetricsCredentialType = "binding-secret"
+		})
+
+		It("should return an error (contradictory: new bindings would use binding-secret which is not allowed)", func() {
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
