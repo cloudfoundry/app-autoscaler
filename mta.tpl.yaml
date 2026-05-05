@@ -193,7 +193,7 @@ modules:
       build-result: scheduler/target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:
-      JBP_CONFIG_OPEN_JDK_JRE: '{ "version": "21.+", "jre": { "version": "21.+", "java_home": ".java-buildpack/java_home" } }'
+      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.+" } }'
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       DEBUG:
       GOTOOLCHAIN: local

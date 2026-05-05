@@ -3,12 +3,13 @@
 
 set -euo pipefail
 
+JAVA_BIN=${JAVA_BIN:-"${JAVA_HOME:+$JAVA_HOME/bin/java}"}
 JAVA_BIN=${JAVA_BIN:-"/home/vcap/app/.java-buildpack/open_jdk_jre/bin/java"}
 CERTS_DIR="$(mktemp -d)"
 mkdir -p "$CERTS_DIR"
 
 if [ ! -f "$JAVA_BIN" ]; then
-	echo "Java binary not found at $JAVA_BIN"
+	echo "Java binary not found. Set JAVA_HOME or JAVA_BIN explicitly."
 	exit 1
 fi
 
