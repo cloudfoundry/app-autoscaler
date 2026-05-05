@@ -243,8 +243,11 @@ func DefaultGolangAPITestConfig() apiConfig.Config {
 		MetricsForwarder: apiConfig.MetricsForwarderConfig{
 			MetricsForwarderUrl: "https://127.0.0.1:8888",
 		},
-		CredHelperImpl:                     "default",
-		DefaultCustomMetricsCredentialType: "binding-secret",
+		CustomMetricsAuthConfig: &apiConfig.CustomMetricsBasicAuthCfg{
+			BasicAuthHandling:           apiConfig.BasicAuthHandlingOn,
+			DefaultCustomMetricAuthType: models.BindingSecret,
+			BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+		},
 	}
 }
 

@@ -169,7 +169,7 @@ var _ = Describe("Configutil", func() {
 				vcapApplicationJson = `{}`
 				actualDbs = &map[string]db.DatabaseConfig{}
 			})
-				When("stored procedure implementation is set to stored_procedure", func() {
+			When("stored procedure implementation is set to stored_procedure", func() {
 				var actualProcedureConfig *models.StoredProcedureConfig
 
 				BeforeEach(func() {

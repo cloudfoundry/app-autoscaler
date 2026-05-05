@@ -116,7 +116,6 @@ func (c *rawConfig) usingSyslog() bool {
 	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
 }
 
-
 // ================================================================================
 // Legacy parsing-machinery
 // ================================================================================
