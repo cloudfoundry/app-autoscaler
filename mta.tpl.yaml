@@ -17,6 +17,7 @@ modules:
     path: .
     properties:
       JBP_LOG_LEVEL:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.+" } }'
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       LOG_LEVEL: INFO
       DEBUG:

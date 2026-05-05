@@ -111,14 +111,13 @@ function main() {
 
   JDBCDBURL=$(build_jdbc_url "$host" "$port" "$dbname" "$client_cert" "$client_key" "$server_ca")
 
+  local PASSWORD
+  local DB_USER
   PASSWORD=$(parse_uri "$uri" "password")
-  USER=$(parse_uri "$uri" "user")
-
-
-
+  DB_USER=$(parse_uri "$uri" "user")
 
   for changelog in "${changelogs[@]}"; do
-    run_liquibase "$JDBCDBURL" "$USER" "$PASSWORD" "$changelog"
+    run_liquibase "$JDBCDBURL" "$DB_USER" "$PASSWORD" "$changelog"
   done
 }
 
