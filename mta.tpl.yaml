@@ -17,7 +17,7 @@ modules:
     path: .
     properties:
       JBP_LOG_LEVEL:
-      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.+" } }'
+      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.0.+" } }'
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       LOG_LEVEL: INFO
       DEBUG:
@@ -194,7 +194,7 @@ modules:
       build-result: scheduler/target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:
-      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.+" } }'
+      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.0.+" } }'
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       DEBUG:
       GOTOOLCHAIN: local
