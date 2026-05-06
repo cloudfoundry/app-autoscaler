@@ -32,7 +32,27 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		return Config{}, fmt.Errorf("input-validation failed: %w", err)
 	}
 
-	return Config{}, models.ErrUnimplemented
+	result := Config {
+		Logging: rawConfig.Logging,
+		Server: rawConfig.Server,
+		LoggregatorConfig: rawConfig.LoggregatorConfig,
+		SyslogConfig: rawConfig.SyslogConfig,
+		Db: rawConfig.Db,
+		CacheTTL: rawConfig.CacheTTL,
+		CacheCleanupInterval: rawConfig.CacheCleanupInterval,
+		PolicyPollerInterval: rawConfig.PolicyPollerInterval,
+		Health: rawConfig.Health,
+		RateLimit: rawConfig.RateLimit,
+	}
+
+	switch rawConfig.CredHelperImpl {
+	case "stored_procedure":
+		result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc {
+			Config: *rawConfig.StoredProcedureConfig,
+		}
+	}
+
+	return result, nil
 }
 
 func (c *rawConfig) validate() error {

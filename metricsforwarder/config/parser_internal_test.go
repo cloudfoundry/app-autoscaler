@@ -204,7 +204,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 		conf.RateLimit.MaxAmount = 10
 		conf.RateLimit.ValidDuration = 1 * time.Second
 	})
-
 	JustBeforeEach(func() {
 		result, err = toConfig(conf)
 	})
@@ -223,7 +222,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
 	})
-
 	When("cred_helper_impl is empty (not set)", func() {
 		BeforeEach(func() {
 			conf.CredHelperImpl = ""
@@ -238,7 +236,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
 	})
-
 	When("cred_helper_impl is set to 'stored_procedure'", func() {
 		BeforeEach(func() {
 			conf.CredHelperImpl = "stored_procedure"
@@ -267,7 +264,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 			Expect(storedProc.Config.DropAllBindingCredentialProcedureName).To(Equal("drop_all_bindings"))
 		})
 	})
-
 	When("cred_helper_impl is set to 'stored_procedure' but StoredProcedureConfig is nil", func() {
 		BeforeEach(func() {
 			conf.CredHelperImpl = "stored_procedure"
@@ -278,7 +274,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-
 	When("cred_helper_impl is set to an invalid value", func() {
 		BeforeEach(func() {
 			conf.CredHelperImpl = "some_unknown_impl"
