@@ -179,7 +179,7 @@ modules:
       - route: ${OPERATOR_HOST}.\${default-domain}
   - name: scheduler
     properties:
-      JBP_CONFIG_OPEN_JDK_JRE: '{ "jre": { "version": "21.0.+" } }'
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
     requires:
     - name: scheduler-config
     - name: database
