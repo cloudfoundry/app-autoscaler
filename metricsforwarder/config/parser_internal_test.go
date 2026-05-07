@@ -231,7 +231,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 		It("should not error", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
-
 		It("should set CredentialHelperConfig to BasicAuthHandlingNative", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
@@ -247,10 +246,12 @@ var _ = Describe("toConfig credential helper conversion", func() {
 				ValidateBindingCredentialProcedureName: "validate_binding",
 			}
 		})
+
 		It("should not error", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("should set CredentialHelperConfig to BasicAuthHandlingStoredProc", func() {
+			Expect(result.CredentialHelperConfig).NotTo(BeNil())
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingStoredProc{}))
 		})
 		It("should carry the StoredProcedureConfig with all fields", func() {

@@ -146,16 +146,8 @@ func (c *rawConfig) validateCredHelperImpl() error {
 			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the DropBindingCredentialProcedureName"
 			return errors.New(msg)
 		}
-		if c.StoredProcedureConfig.Password == "" {
-			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the Password"
-			return errors.New(msg)
-		}
 		if c.StoredProcedureConfig.SchemaName == "" {
 			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the SchemaName"
-			return errors.New(msg)
-		}
-		if c.StoredProcedureConfig.Username == "" {
-			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the Username"
 			return errors.New(msg)
 		}
 		if c.StoredProcedureConfig.ValidateBindingCredentialProcedureName == "" {
