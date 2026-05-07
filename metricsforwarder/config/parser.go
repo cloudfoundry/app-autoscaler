@@ -50,6 +50,8 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc{
 			Config: *rawConfig.StoredProcedureConfig,
 		}
+	case "default", "":
+		result.CredentialHelperConfig = models.BasicAuthHandlingNative{}
 	}
 
 	return result, nil
@@ -126,12 +128,8 @@ func (c *rawConfig) validateRateLimit() error {
 }
 
 func (c *rawConfig) validateCredHelperImpl() error {
-	// // 🚧 To-do: This probably should be removed as the service can now be configured to run without
-	// // basic-auth at all.
-	// if c.CredHelperImpl == "" {
-	//	return errors.New("CredHelperImpl is not configured")
-	// }
-	if c.CredHelperImpl == "stored_procedure" {
+	switch c.CredHelperImpl {
+	case "stored_procedure":
 		if c.StoredProcedureConfig == nil {
 			msg := "CredHelperImpl is set to stored_procedure but there is no StoredProcedureConfig"
 			return errors.New(msg)
@@ -164,6 +162,14 @@ func (c *rawConfig) validateCredHelperImpl() error {
 			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the ValidateBindingCredentialProcedureName"
 			return errors.New(msg)
 		}
+	case "", "default":
+		if c.StoredProcedureConfig != nil {
+			msg := "CredHelperImpl is set to the default but there is a StoredProcedureConfig"
+			return errors.New(msg)
+		}
+	default:
+		msg := fmt.Sprintf("CredHelperImpl is set to %s which is not a supported value", c.CredHelperImpl)
+		return errors.New(msg)
 	}
 
 	return nil
