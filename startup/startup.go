@@ -43,13 +43,7 @@ func LoadAndValidateConfig[T ConfigWithLogging](path string, vcapConfig configut
 	var zero T
 	conf, err := loader(path, vcapConfig)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
-		return zero, err
-	}
-
-	err = conf.Validate()
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read/validate config file '%s' : %s\n", path, err.Error())
 		return zero, err
 	}
 

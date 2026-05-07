@@ -36,15 +36,11 @@ func (c *customMetricsCredentials) Close() error {
 	return c.policyDB.Close()
 }
 
-func CredentialsProvider(credHelperImpl string, storedProcedureConfig *models.StoredProcedureConfig, dbConf map[string]db.DatabaseConfig, cacheTTL time.Duration, cacheCleanupInterval time.Duration, logger lager.Logger, policyDB db.PolicyDB) Credentials {
+func CredentialsProvider(implConfig models.BasicAuthHandlingImplConfig, dbConf map[string]db.DatabaseConfig, cacheTTL time.Duration, cacheCleanupInterval time.Duration, logger lager.Logger, policyDB db.PolicyDB) Credentials {
 	var credentials Credentials
-	switch credHelperImpl {
-	case "stored_procedure":
-		if storedProcedureConfig == nil {
-			logger.Fatal("cannot create a storedProcedureCredHelper without StoredProcedureConfig", nil)
-			os.Exit(1)
-		}
-		storedProcedureDb, err := sqldb.NewStoredProcedureSQLDb(*storedProcedureConfig, dbConf[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
+	switch impl := implConfig.(type) {
+	case models.BasicAuthHandlingStoredProc:
+		storedProcedureDb, err := sqldb.NewStoredProcedureSQLDb(impl.Config, dbConf[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
 		if err != nil {
 			logger.Fatal("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": dbConf[db.StoredProcedureDb]})
 			os.Exit(1)

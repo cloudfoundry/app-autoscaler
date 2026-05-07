@@ -25,6 +25,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/testhelpers"
 )
@@ -116,7 +117,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 
-	cfg.CredHelperImpl = "default"
+	cfg.CredentialHelperConfig = models.BasicAuthHandlingNative{}
 
 	configFile = writeConfig(&cfg)
 

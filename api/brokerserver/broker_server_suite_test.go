@@ -13,6 +13,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"github.com/onsi/gomega/ghttp"
@@ -60,32 +61,32 @@ func TestServer(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	testDefaultPolicy = `
-						{
-							"instance_min_count":1,
-							"instance_max_count":5,
-							"scaling_rules":[
-							{
-								"metric_type":"memoryused",
-								"threshold":30,
-								"operator":"<",
-								"adjustment":"-1"
-							}],
-							"schedules": {
-								"timezone": "Asia/Shanghai",
-								"recurring_schedule": [{
-									  "start_time": "10:00",
-									  "end_time": "18:00",
-									  "days_of_week": [
-										1,
-										2,
-										3
-									  ],
-									  "instance_min_count": 1,
-									  "instance_max_count": 10,
-									  "initial_min_instance_count": 5
-									}]
-							}
-						}`
+    {
+        "instance_min_count":1,
+        "instance_max_count":5,
+        "scaling_rules":[
+        {
+            "metric_type":"memoryused",
+            "threshold":30,
+            "operator":"<",
+            "adjustment":"-1"
+        }],
+        "schedules": {
+            "timezone": "Asia/Shanghai",
+            "recurring_schedule": [{
+                "start_time": "10:00",
+                "end_time": "18:00",
+                "days_of_week": [
+                  1,
+                  2,
+                  3
+                ],
+                "instance_min_count": 1,
+                "instance_max_count": 10,
+                "initial_min_instance_count": 5
+            }]
+        }
+    }`
 	testDefaultGuid = "a-not-so-guid"
 
 	schedulerServer = ghttp.NewServer()
@@ -138,7 +139,11 @@ var _ = BeforeSuite(func() {
 			MetricsForwarderUrl:     "someURL",
 			MetricsForwarderMtlsUrl: "Mtls-someURL",
 		},
-		DefaultCustomMetricsCredentialType: "binding-secret",
+		CustomMetricsAuthConfig: &config.CustomMetricsBasicAuthCfg{
+			BasicAuthHandling:           config.BasicAuthHandlingOn,
+			DefaultCustomMetricAuthType: models.BindingSecret,
+			BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+		},
 	}
 	fakeCfClient := &fakes.FakeCFClient{}
 	fakeBindingDB := &fakes.FakeBindingDB{}

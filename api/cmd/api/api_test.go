@@ -13,6 +13,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -231,7 +232,11 @@ var _ = Describe("Api", func() {
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
 			pluginPathConfig := conf
-			pluginPathConfig.CredHelperImpl = "default"
+			pluginPathConfig.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
+				BasicAuthHandling:           config.BasicAuthHandlingOn,
+				DefaultCustomMetricAuthType: models.BindingSecret,
+				BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+			}
 			runner.configPath = writeConfig(&pluginPathConfig).Name()
 		})
 		AfterEach(func() {

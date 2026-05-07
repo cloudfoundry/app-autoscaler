@@ -13,6 +13,7 @@ import (
 	"net/url"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/broker"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 
 	"code.cloudfoundry.org/brokerapi/v13/handlers"
 	"github.com/go-logr/logr"
@@ -52,7 +53,6 @@ var _ = Describe("BrokerHandler", func() {
 		fakeCredentials = &fakes.FakeCredentials{}
 		fakePlanChecker = nil
 	})
-
 	JustBeforeEach(func() {
 		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf,
 			cfClient, bindingdb, policydb,
@@ -75,16 +75,10 @@ var _ = Describe("BrokerHandler", func() {
 			})
 		})
 	})
-
 	Describe("CreateServiceInstance", func() {
 		var err error
 		var instanceCreationReqBody *models.InstanceCreationRequestBody
 		var body []byte
-		JustBeforeEach(func() {
-			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-			req.SetPathValue("instance_id", testInstanceId)
-			handler.Provision(resp, req)
-		})
 		BeforeEach(func() {
 			instanceCreationReqBody = &models.InstanceCreationRequestBody{
 				OrgGUID:   testOrgId,
@@ -98,6 +92,11 @@ var _ = Describe("BrokerHandler", func() {
 					},
 				},
 			}
+		})
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			req.SetPathValue("instance_id", testInstanceId)
+			handler.Provision(resp, req)
 		})
 		Context("When request body is not a valid json", func() {
 			BeforeEach(func() {
@@ -293,10 +292,8 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
 				})
 			})
-
 		})
 	})
-
 	Describe("UpdateServiceInstance", func() {
 		var err error
 		var instanceUpdateRequestBody *models.InstanceUpdateRequestBody
@@ -770,6 +767,34 @@ var _ = Describe("BrokerHandler", func() {
 				ctx, appid := policydb.DeletePolicyArgsForCall(0)
 				Expect(ctx).To(Not(BeNil()))
 				Expect(appid, testAppId)
+			})
+		})
+
+		Context("basic_auth_for_custom_metrics controls credential deletion during deprovision", func() {
+			BeforeEach(func() {
+				var bindingIds []string
+				bindingIds = append(bindingIds, testBindingId)
+				bindingdb.GetBindingIdsByInstanceIdReturns(bindingIds, nil)
+				bindingdb.GetAppIdByBindingIdReturnsOnCall(0, testAppId, nil)
+				verifyScheduleIsDeletedInScheduler(testAppId)
+			})
+
+			Context("when credential-helper is set (basic auth active)", func() {
+				It("should call credentials.Delete for the bound app", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+					Expect(fakeCredentials.DeleteCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("when credential-helper is not set (basic auth off)", func() {
+				BeforeEach(func() {
+					conf.CustomMetricsAuthConfig = nil
+					fakeCredentials = nil
+				})
+
+				It("should succeed without calling credentials.Delete", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+				})
 			})
 		})
 
@@ -1373,6 +1398,151 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(creds.Credentials.CustomMetrics.Password).To(Equal("test-password"))
 				Expect(*creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
 				Expect(creds.Credentials.CustomMetrics.MtlsUrl).To(Equal("Mtls-someURL"))
+			})
+		})
+		Context("basic_auth_for_custom_metrics controls binding-secret acceptance", func() {
+			const bindingSecretPolicy = `{
+				"credential-type": "binding-secret",
+				"instance_max_count":3,
+				"instance_min_count":1,
+				"scaling_rules":[{
+					"metric_type":"memoryused",
+					"threshold":99,
+					"operator":"<",
+					"adjustment":"-1"
+				}]
+			}`
+			const x509Policy = `{
+				"credential-type": "x509",
+				"instance_max_count":3,
+				"instance_min_count":1,
+				"scaling_rules":[{
+					"metric_type":"memoryused",
+					"threshold":99,
+					"operator":"<",
+					"adjustment":"-1"
+				}]
+			}`
+			const noCredTypePolicy = `{
+				"instance_max_count":3,
+				"instance_min_count":1,
+				"scaling_rules":[{
+					"metric_type":"memoryused",
+					"threshold":99,
+					"operator":"<",
+					"adjustment":"-1"
+				}]
+			}`
+
+			Context("when basic_auth_for_custom_metrics is 'only_existing_bindings'", func() {
+				BeforeEach(func() {
+					conf.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
+						BasicAuthHandling:           config.BasicAuthHandlingOnlyExistingBindings,
+						DefaultCustomMetricAuthType: models.X509Certificate,
+						BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+					}
+				})
+
+				Context("and credential-type is 'binding-secret'", func() {
+					BeforeEach(func() {
+						bindingRequestBody = &models.BindingRequestBody{
+							AppID: testAppId,
+							BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+								ServiceID: "autoscaler-guid",
+								PlanID:    "autoscaler-free-plan-id",
+							},
+							Policy: json.RawMessage(bindingSecretPolicy),
+						}
+						body, err = json.Marshal(bindingRequestBody)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should reject with 400", func() {
+						Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					})
+				})
+
+				Context("and credential-type is 'x509'", func() {
+					BeforeEach(func() {
+						bindingRequestBody = &models.BindingRequestBody{
+							AppID: testAppId,
+							BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+								ServiceID: "autoscaler-guid",
+								PlanID:    "autoscaler-free-plan-id",
+							},
+							Policy: json.RawMessage(x509Policy),
+						}
+						body, err = json.Marshal(bindingRequestBody)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should return 201", func() {
+						Expect(resp.Code).To(Equal(http.StatusCreated))
+					})
+				})
+
+				Context("and credential-type is not provided (default is x509)", func() {
+					BeforeEach(func() {
+						bindingRequestBody = &models.BindingRequestBody{
+							AppID: testAppId,
+							BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+								ServiceID: "autoscaler-guid",
+								PlanID:    "autoscaler-free-plan-id",
+							},
+							Policy: json.RawMessage(noCredTypePolicy),
+						}
+						body, err = json.Marshal(bindingRequestBody)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should return 201", func() {
+						Expect(resp.Code).To(Equal(http.StatusCreated))
+					})
+				})
+			})
+
+			Context("when basic_auth_for_custom_metrics is 'off' (CustomMetricsAuthConfig is nil)", func() {
+				BeforeEach(func() {
+					conf.CustomMetricsAuthConfig = nil
+				})
+
+				Context("and credential-type is 'binding-secret'", func() {
+					BeforeEach(func() {
+						bindingRequestBody = &models.BindingRequestBody{
+							AppID: testAppId,
+							BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+								ServiceID: "autoscaler-guid",
+								PlanID:    "autoscaler-free-plan-id",
+							},
+							Policy: json.RawMessage(bindingSecretPolicy),
+						}
+						body, err = json.Marshal(bindingRequestBody)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should reject with 400", func() {
+						Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					})
+				})
+
+				Context("and credential-type is 'x509'", func() {
+					BeforeEach(func() {
+						bindingRequestBody = &models.BindingRequestBody{
+							AppID: testAppId,
+							BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+								ServiceID: "autoscaler-guid",
+								PlanID:    "autoscaler-free-plan-id",
+							},
+							Policy: json.RawMessage(x509Policy),
+						}
+						body, err = json.Marshal(bindingRequestBody)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should return 201", func() {
+						Expect(resp.Code).To(Equal(http.StatusCreated))
+					})
+				})
 			})
 		})
 		Context("When a default policy was provided when creating the service instance", func() {

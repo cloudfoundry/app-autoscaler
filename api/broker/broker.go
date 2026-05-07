@@ -89,15 +89,8 @@ func New(
 	)
 
 	defaultCustomMetricsCredentialType := &models.X509Certificate
-	if len(conf.DefaultCustomMetricsCredentialType) > 0 {
-		var err error
-		defaultCustomMetricsCredentialType, err = models.ParseCustomMetricsBindingAuthScheme(
-			conf.DefaultCustomMetricsCredentialType)
-		if err != nil {
-			logger.Fatal("parse-default-credential-type", err, lager.Data{
-				"default-credential-type": conf.DefaultCustomMetricsCredentialType,
-			})
-		}
+	if basicAuthAvailable := conf.CustomMetricsAuthConfig != nil; basicAuthAvailable {
+		defaultCustomMetricsCredentialType = &conf.CustomMetricsAuthConfig.DefaultCustomMetricAuthType
 	}
 
 	pathToParserDir, err := filepath.Abs(filepath.Dir(conf.BindingRequestSchemaPath))
@@ -172,6 +165,9 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 		policyJson = parameters.DefaultPolicy
 	}
 
+	// 🚧 To-do: This function here makes use of the legacy-parsing-logic. This blocks the removal
+	// of the old legacy-parsing-code and simultaneously introduces the risk of divergence between
+	// default-policy-schema and policy-schema.
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		// The input may be not parsable, hence we use the original string.

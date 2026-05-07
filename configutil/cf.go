@@ -37,7 +37,7 @@ type VCAPConfigurationReader interface {
 	GetInstanceIndex() int
 	IsRunningOnCF() bool
 
-	ConfigureDatabases(confDb *map[string]db.DatabaseConfig, storedProcedureConfig *models.StoredProcedureConfig, credHelperImpl string) error
+	ConfigureDatabases(confDb *map[string]db.DatabaseConfig, basicAuthImplCfg *models.BasicAuthHandlingImplConfig) error
 }
 
 type VCAPConfiguration struct {
@@ -305,16 +305,19 @@ func LoadConfig[T any](conf *T, vcapReader VCAPConfigurationReader, credentialNa
 	return yaml.Unmarshal(data, conf)
 }
 
-func (vc *VCAPConfiguration) ConfigureDatabases(confDb *map[string]db.DatabaseConfig, storedProcedureConfig *models.StoredProcedureConfig, credHelperImpl string) error {
+func (vc *VCAPConfiguration) ConfigureDatabases(confDb *map[string]db.DatabaseConfig, basicAuthImplCfg *models.BasicAuthHandlingImplConfig) error {
 	for _, dbName := range AvailableDatabases {
 		if err := vc.configureDb(dbName, confDb); err != nil {
 			return err
 		}
 	}
 
-	if storedProcedureConfig != nil && credHelperImpl == "stored_procedure" {
-		if err := vc.configureStoredProcedureDb(db.StoredProcedureDb, confDb, storedProcedureConfig); err != nil {
-			return err
+	if basicAuthAvailable := basicAuthImplCfg != nil; basicAuthAvailable {
+		impl, isWithStoredProc := (*basicAuthImplCfg).(models.BasicAuthHandlingStoredProc)
+		if isWithStoredProc {
+			if err := vc.configureStoredProcedureDb(db.StoredProcedureDb, confDb, &impl.Config); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -394,7 +397,7 @@ func ApplyCommonVCAPConfiguration[T any, PT interface {
 		return err
 	}
 
-	if err := vcapReader.ConfigureDatabases(conf.GetDatabaseConfig(), nil, ""); err != nil {
+	if err := vcapReader.ConfigureDatabases(conf.GetDatabaseConfig(), nil); err != nil {
 		return err
 	}
 

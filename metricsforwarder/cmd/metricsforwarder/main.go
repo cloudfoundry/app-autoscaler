@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
@@ -25,8 +26,9 @@ func main() {
 
 	vcapConfiguration, _ := startup.LoadVCAPConfiguration()
 
-	conf, err := startup.LoadAndValidateConfig(path, vcapConfiguration, config.LoadConfig)
+	conf, err := config.LoadConfig(path, vcapConfiguration)
 	if err != nil {
+		_, _ = fmt.Fprintf(os.Stdout, "failed to read/validate config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
 
@@ -41,8 +43,17 @@ func main() {
 	bindingDB := sqldb.CreateBindingDB(conf.Db[db.BindingDb], logger)
 	defer func() { _ = bindingDB.Close() }()
 
-	credentialProvider := cred_helper.CredentialsProvider(conf.CredHelperImpl, conf.StoredProcedureConfig, conf.Db, conf.CacheTTL, conf.CacheCleanupInterval, logger, policyDb)
-	defer func() { _ = credentialProvider.Close() }()
+	var credentialProvider cred_helper.Credentials
+	if conf.CredentialHelperConfig != nil {
+		credentialProvider = cred_helper.CredentialsProvider(
+			conf.CredentialHelperConfig,
+			conf.Db, conf.CacheTTL, conf.CacheCleanupInterval, logger, policyDb)
+	}
+	defer func() {
+		if credentialProvider != nil {
+			_ = credentialProvider.Close()
+		}
+	}()
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 

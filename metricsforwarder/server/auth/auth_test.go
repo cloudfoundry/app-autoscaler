@@ -40,7 +40,6 @@ var _ = Describe("Authentication", func() {
 		testAppId = "an-app-id"
 		resp = httptest.NewRecorder()
 	})
-
 	JustBeforeEach(func() {
 		logger := lager.NewLogger("auth-test")
 		var err error
@@ -107,7 +106,6 @@ var _ = Describe("Authentication", func() {
 
 		})
 	})
-
 	Describe("MTLS Auth tests for publish metrics endpoint", func() {
 		const validClientCert1 = "../../../test-certs/validmtls_client-1.crt"
 		Context("correct xfcc header with correct CA is supplied for cert 1", func() {
@@ -230,7 +228,34 @@ var _ = Describe("Authentication", func() {
 
 		})
 	})
+	Describe("CheckAuth with credentials present (basic auth 'on' or 'only_existing_bindings')", func() {
+		Context("when mTLS fails (no XFCC header) and Basic Auth credentials are provided", func() {
+			BeforeEach(func() {
+				fakeCredentials.ValidateReturns(true, nil)
+			})
 
+			It("should call credentials.Validate as fallback", func() {
+				req = CreateRequest(body, testAppId)
+				req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+
+				err := authTest.CheckAuth(req, testAppId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeCredentials.ValidateCallCount()).To(Equal(1))
+				_, appID, cred := fakeCredentials.ValidateArgsForCall(0)
+				Expect(appID).To(Equal(testAppId))
+				Expect(cred.Username).To(Equal("username"))
+				Expect(cred.Password).To(Equal("password"))
+			})
+		})
+		Context("when mTLS fails and no Basic Auth credentials are provided", func() {
+			It("should return an error", func() {
+				req = CreateRequest(body, testAppId)
+
+				err := authTest.CheckAuth(req, testAppId)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })
 
 func MustReadXFCCcert(fileName string) string {
