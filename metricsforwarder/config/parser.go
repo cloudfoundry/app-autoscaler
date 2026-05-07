@@ -32,22 +32,22 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		return Config{}, fmt.Errorf("input-validation failed: %w", err)
 	}
 
-	result := Config {
-		Logging: rawConfig.Logging,
-		Server: rawConfig.Server,
-		LoggregatorConfig: rawConfig.LoggregatorConfig,
-		SyslogConfig: rawConfig.SyslogConfig,
-		Db: rawConfig.Db,
-		CacheTTL: rawConfig.CacheTTL,
+	result := Config{
+		Logging:              rawConfig.Logging,
+		Server:               rawConfig.Server,
+		LoggregatorConfig:    rawConfig.LoggregatorConfig,
+		SyslogConfig:         rawConfig.SyslogConfig,
+		Db:                   rawConfig.Db,
+		CacheTTL:             rawConfig.CacheTTL,
 		CacheCleanupInterval: rawConfig.CacheCleanupInterval,
 		PolicyPollerInterval: rawConfig.PolicyPollerInterval,
-		Health: rawConfig.Health,
-		RateLimit: rawConfig.RateLimit,
+		Health:               rawConfig.Health,
+		RateLimit:            rawConfig.RateLimit,
 	}
 
 	switch rawConfig.CredHelperImpl {
 	case "stored_procedure":
-		result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc {
+		result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc{
 			Config: *rawConfig.StoredProcedureConfig,
 		}
 	}
@@ -126,9 +126,46 @@ func (c *rawConfig) validateRateLimit() error {
 }
 
 func (c *rawConfig) validateCredHelperImpl() error {
-	if c.CredHelperImpl == "" {
-		return errors.New("CredHelperImpl is not configured")
+	// // 🚧 To-do: This probably should be removed as the service can now be configured to run without
+	// // basic-auth at all.
+	// if c.CredHelperImpl == "" {
+	//	return errors.New("CredHelperImpl is not configured")
+	// }
+	if c.CredHelperImpl == "stored_procedure" {
+		if c.StoredProcedureConfig == nil {
+			msg := "CredHelperImpl is set to stored_procedure but there is no StoredProcedureConfig"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.CreateBindingCredentialProcedureName == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the CreateBindingCredentialProcedureName"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.DropAllBindingCredentialProcedureName == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the DeleteBindingCredentialProcedureName"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.DropBindingCredentialProcedureName == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the DropBindingCredentialProcedureName"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.Password == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the Password"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.SchemaName == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the SchemaName"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.Username == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the Username"
+			return errors.New(msg)
+		}
+		if c.StoredProcedureConfig.ValidateBindingCredentialProcedureName == "" {
+			msg := "CredHelperImpl is set to stored_procedure but the StoredProcedureConfig does not contain the ValidateBindingCredentialProcedureName"
+			return errors.New(msg)
+		}
 	}
+
 	return nil
 }
 
