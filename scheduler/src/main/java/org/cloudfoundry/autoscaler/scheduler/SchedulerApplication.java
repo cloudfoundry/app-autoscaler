@@ -18,8 +18,10 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.event.EventListener;
 
 @ConfigurationPropertiesScan(basePackageClasses = MetricsConfig.class)
@@ -39,9 +41,14 @@ import org.springframework.context.event.EventListener;
       HibernateJpaAutoConfiguration.class,
       JpaRepositoriesAutoConfiguration.class
     })
-public class SchedulerApplication {
+public class SchedulerApplication extends SpringBootServletInitializer {
 
   private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+  @Override
+  protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+    return builder.sources(SchedulerApplication.class);
+  }
 
   @EventListener
   public void onApplicationReady(ApplicationReadyEvent event) {
