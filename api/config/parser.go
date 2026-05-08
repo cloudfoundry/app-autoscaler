@@ -107,7 +107,7 @@ func parseCMBasicAuthCfg(rawConfig rawConfig) *CustomMetricsBasicAuthCfg {
 				Param: "DefaultCustomMetricsCredentialType",
 				Value: rawConfig.DefaultCustomMetricsCredentialType,
 				Msg: fmt.Errorf(
-					"An error occured during api-service-configuration: %w\nThis is a programming error.",
+					"An error occurred during api-service-configuration: %w\nThis is a programming error.",
 					err).Error(),
 			}
 			panic(err)
