@@ -34,6 +34,31 @@ var _ = Describe("Config", func() {
 		When("config is read from env", func() {
 			var expectedDbUrl string
 
+			BeforeEach(func() {
+				mockVCAPConfigurationReader.ConfigureDatabasesCalls(
+					func(confDb *map[string]db.DatabaseConfig, _ *models.BasicAuthHandlingImplConfig) error {
+						(*confDb)[db.PolicyDb] = db.DatabaseConfig{URL: "postgres://localhost/policy"}
+						(*confDb)[db.BindingDb] = db.DatabaseConfig{URL: "postgres://localhost/binding"}
+						return nil
+					})
+				mockVCAPConfigurationReader.MaterializeTLSConfigFromServiceReturns(models.TLSCerts{
+					CertFile:   "/tmp/client_cert.sslcert",
+					KeyFile:    "/tmp/client_key.sslkey",
+					CACertFile: "/tmp/server_ca.sslrootcert",
+				}, nil)
+				mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{
+                    "cred_helper_impl": "default",
+                    "loggregator": {
+                        "metron_address": "127.0.0.1:3458",
+                        "tls": {
+                            "ca_file": "/tmp/ca.crt",
+                            "cert_file": "/tmp/client.crt",
+                            "key_file": "/tmp/client.key"
+                        }
+                    }
+                }`), nil)
+			})
+
 			JustBeforeEach(func() {
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
 				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
@@ -79,12 +104,18 @@ var _ = Describe("Config", func() {
 			})
 			When("handling available databases", func() {
 				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
-					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(mockVCAPConfigurationReader.ConfigureDatabasesCallCount()).To(Equal(1))
+					receivedDbConfig, receivedBasicAuthImplCfg :=
+						mockVCAPConfigurationReader.ConfigureDatabasesArgsForCall(0)
+					Expect(receivedDbConfig).NotTo(BeNil())
+					Expect(receivedBasicAuthImplCfg).NotTo(BeNil())
+					Expect(*receivedBasicAuthImplCfg).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 				})
 			})
 			When("VCAP_SERVICES has metricsforwarder config", func() {
 				BeforeEach(func() {
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(` {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
                                     "cache_cleanup_interval":"10h",
                                     "cache_ttl":"90s",
                                     "cred_helper_impl": "default",
@@ -94,6 +125,11 @@ var _ = Describe("Config", func() {
                                     },
                                     "loggregator": {
                                         "metron_address": "metron-vcap-addrs:3457",
+                                        "tls": {
+                                            "ca_file": "/tmp/ca.crt",
+                                            "cert_file": "/tmp/client.crt",
+                                            "key_file": "/tmp/client.key"
+                                        }
                                     }
                                 }`), nil) // #nosec G101
 				})
@@ -177,7 +213,6 @@ cred_helper_impl: default
 					Expect(conf.CredentialHelperConfig).
 						To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 				})
-
 			})
 			Context("with partial config", func() {
 				BeforeEach(func() {

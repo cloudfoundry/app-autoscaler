@@ -45,8 +45,30 @@ var _ = Describe("Config", func() {
 				mockVCAPConfigurationReader.GetInstanceTLSCertsReturns(expectedTLSConfig)
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
 				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
+				mockVCAPConfigurationReader.ConfigureDatabasesCalls(
+					func(confDb *map[string]db.DatabaseConfig, _ *models.BasicAuthHandlingImplConfig) error {
+						(*confDb)[db.PolicyDb] = db.DatabaseConfig{URL: "postgres://localhost/policy"}
+						(*confDb)[db.BindingDb] = db.DatabaseConfig{URL: "postgres://localhost/binding"}
+						return nil
+					})
+				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
+					"cred_helper_impl": "default",
+					"default_credential_type": "x509",
+					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
+					"catalog_schema_path": "../schemas/catalog.schema.json",
+					"info_file_path": "../exampleconfig/info-file.json",
+					"scaling_engine": {"scaling_engine_url": "https://localhost:8084"},
+					"scheduler": {"scheduler_url": "https://localhost:8083"},
+					"event_generator": {"event_generator_url": "https://localhost:8085"},
+					"metrics_forwarder": {"metrics_forwarder_url": "https://localhost:8088"},
+					"cf": {"api": "https://api.example.com", "client_id": "client-id", "secret": "secret"},
+					"rate_limit": {"max_amount": 10, "valid_duration": "1s"},
+					"broker_credentials": [{"broker_username": "user", "broker_password": "pass"}]
+				}`), nil)
+				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(`{
+					"services": [{"id":"1","name":"autoscaler","description":"Autoscaler service","bindable":true,"plans":[{"id":"1","name":"standard","description":"Standard plan"}]}]
+				}`), nil)
 			})
-
 			JustBeforeEach(func() {
 				conf, err = LoadConfig("", mockVCAPConfigurationReader)
 			})
@@ -55,7 +77,6 @@ var _ = Describe("Config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.Logging.PlainTextSink).To(BeTrue())
 			})
-
 			It("send certs to scalingengineScalingEngine TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.ScalingEngine.TLSClientCerts).To(Equal(expectedTLSConfig))
@@ -64,12 +85,10 @@ var _ = Describe("Config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.Scheduler.TLSClientCerts).To(Equal(expectedTLSConfig))
 			})
-
 			It("sets EventGenerator TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.EventGenerator.TLSClientCerts).To(Equal(expectedTLSConfig))
 			})
-
 			It("sets env variable over config file", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.CFServer.Port).To(Equal(3333))
@@ -78,10 +97,15 @@ var _ = Describe("Config", func() {
 
 			When("handling available databases", func() {
 				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
-					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(mockVCAPConfigurationReader.ConfigureDatabasesCallCount()).To(Equal(1))
+					receivedDbConfig, receivedBasicAuthImplCfg :=
+						mockVCAPConfigurationReader.ConfigureDatabasesArgsForCall(0)
+					Expect(receivedDbConfig).NotTo(BeNil())
+					Expect(receivedBasicAuthImplCfg).NotTo(BeNil())
+					Expect(*receivedBasicAuthImplCfg).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 				})
 			})
-
 			When("service is empty", func() {
 				var expectedErr error
 				BeforeEach(func() {
@@ -93,16 +117,13 @@ var _ = Describe("Config", func() {
 					Expect(err).To(MatchError(MatchRegexp("publicapiserver config service not found")))
 				})
 			})
-
 			When("VCAP_SERVICES has catalog", func() {
 				var expectedCatalogContent string
 
 				BeforeEach(func() {
 					expectedCatalogContent = `{"services":[{"id":"1","name":"autoscaler","description":"Autoscaler service","bindable":true,"plans":[{"id":"1","name":"standard","description":"Standard plan"}]}]}` // #nosec G101
-					expectedPublicapiConfigContent := `{ "cred_helper_impl": "default" }`
 
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(expectedPublicapiConfigContent), nil) // #nosec G101
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(expectedCatalogContent), nil)         // #nosec G101
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(expectedCatalogContent), nil) // #nosec G101
 				})
 
 				It("loads the db config from VCAP_SERVICES successfully", func() {
