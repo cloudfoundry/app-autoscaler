@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
@@ -100,17 +101,23 @@ func parseCMBasicAuthCfg(rawConfig rawConfig) *CustomMetricsBasicAuthCfg {
 	}
 
 	if basicAuthHandlingNeeded {
-		defaultCMAuthType, err := models.ParseCustomMetricsBindingAuthScheme(rawConfig.DefaultCustomMetricsCredentialType)
-		if err != nil {
-			// We are at the service-startup and therefore can still panic without service-degredation.
-			err := models.InvalidArgumentError{
-				Param: "DefaultCustomMetricsCredentialType",
-				Value: rawConfig.DefaultCustomMetricsCredentialType,
-				Msg: fmt.Errorf(
-					"An error occurred during api-service-configuration: %w\nThis is a programming error.",
-					err).Error(),
+		var defaultCMAuthType *models.CustomMetricsBindingAuthScheme
+		if rawConfig.DefaultCustomMetricsCredentialType == "" {
+			defaultCMAuthType = &models.X509Certificate
+		} else {
+			var err error
+			defaultCMAuthType, err = models.ParseCustomMetricsBindingAuthScheme(rawConfig.DefaultCustomMetricsCredentialType)
+			if err != nil {
+				// We are at the service-startup and therefore can still panic without service-degredation.
+				err := models.InvalidArgumentError{
+					Param: "DefaultCustomMetricsCredentialType",
+					Value: rawConfig.DefaultCustomMetricsCredentialType,
+					Msg: fmt.Errorf(
+						"An error occurred during api-service-configuration: %w\nThis is a programming error.",
+						err).Error(),
+				}
+				panic(err)
 			}
-			panic(err)
 		}
 
 		var basicAuthImplCfg models.BasicAuthHandlingImplConfig
@@ -215,6 +222,10 @@ func (c *rawConfig) validate() error {
 	}
 	if c.CatalogPath == "" {
 		return fmt.Errorf("Configuration error: CatalogPath is empty")
+	}
+
+	if ba4cmCfgIsValid := slices.Contains([]string{"on", "off", "only_existing_bindings"}, c.BasicAuthForCustomMetrics); !ba4cmCfgIsValid {
+		return fmt.Errorf("Configuration error: BasicAuthForCustomMetrics is invalid: \"%s\"", c.BasicAuthForCustomMetrics)
 	}
 	// // Temporarily commented – after adaption still required.
 	// if c.CredHelperImpl == "" {

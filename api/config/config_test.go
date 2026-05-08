@@ -223,6 +223,7 @@ var _ = Describe("Config", func() {
 							},
 						},
 					))
+					Expect(conf.CustomMetricsAuthConfig).NotTo(BeNil())
 					Expect((*conf.CustomMetricsAuthConfig).BasicAuthHandlingImplConfig).
 						To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 					Expect(conf.ScalingRules.CPU.LowerThreshold).To(Equal(22))
@@ -235,7 +236,6 @@ var _ = Describe("Config", func() {
 					Expect(conf.ScalingRules.Disk.UpperThreshold).To(Equal(33))
 				})
 			})
-
 			Context("with partial config", func() {
 				BeforeEach(func() {
 					configBytes = []byte(testhelpers.LoadFile("partial_config.yml"))
@@ -274,7 +274,6 @@ var _ = Describe("Config", func() {
 					Expect(conf.ScalingRules.Disk.UpperThreshold).To(Equal(2 * 1024))
 				})
 			})
-
 			Context("when max_amount of rate_limit is not an integer", func() {
 				BeforeEach(func() {
 					configBytes = []byte(`
@@ -286,7 +285,6 @@ rate_limit:
 					Expect(err).To(MatchError(MatchRegexp("failed to read config file")))
 				})
 			})
-
 			Context("when valid_duration of rate_limit is not a time duration", func() {
 				BeforeEach(func() {
 					configBytes = []byte(`
@@ -299,7 +297,6 @@ rate_limit:
 					Expect(err).To(MatchError(MatchRegexp("failed to read config file")))
 				})
 			})
-
 		})
 	})
 })
