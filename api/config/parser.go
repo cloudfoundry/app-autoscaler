@@ -21,25 +21,26 @@ type rawConfig struct {
 
 	CFServer helpers.ServerConfig `yaml:"cf_server" json:"cf_server"`
 
-	Db                                 map[string]db.DatabaseConfig  `yaml:"db" json:"db,omitempty"`
-	BrokerCredentials                  []BrokerCredentialsConfig     `yaml:"broker_credentials" json:"broker_credentials"`
-	APIClientId                        string                        `yaml:"api_client_id" json:"api_client_id"`
-	PlanCheck                          *PlanCheckConfig              `yaml:"plan_check" json:"plan_check"`
-	CatalogPath                        string                        `yaml:"catalog_path" json:"catalog_path"`
-	CatalogSchemaPath                  string                        `yaml:"catalog_schema_path" json:"catalog_schema_path"`
-	DashboardRedirectURI               string                        `yaml:"dashboard_redirect_uri" json:"dashboard_redirect_uri"`
-	BindingRequestSchemaPath           string                        `yaml:"policy_schema_path" json:"policy_schema_path"`
-	Scheduler                          SchedulerConfig               `yaml:"scheduler" json:"scheduler"`
-	ScalingEngine                      ScalingEngineConfig           `yaml:"scaling_engine" json:"scaling_engine"`
-	EventGenerator                     EventGeneratorConfig          `yaml:"event_generator" json:"event_generator"`
-	CF                                 cf.Config                     `yaml:"cf" json:"cf"`
-	InfoFilePath                       string                        `yaml:"info_file_path" json:"info_file_path"`
-	MetricsForwarder                   MetricsForwarderConfig        `yaml:"metrics_forwarder" json:"metrics_forwarder"`
-	Health                             helpers.HealthConfig          `yaml:"health" json:"health"`
-	RateLimit                          models.RateLimitConfig        `yaml:"rate_limit" json:"rate_limit,omitempty"`
+	Db                       map[string]db.DatabaseConfig `yaml:"db" json:"db,omitempty"`
+	BrokerCredentials        []BrokerCredentialsConfig    `yaml:"broker_credentials" json:"broker_credentials"`
+	APIClientId              string                       `yaml:"api_client_id" json:"api_client_id"`
+	PlanCheck                *PlanCheckConfig             `yaml:"plan_check" json:"plan_check"`
+	CatalogPath              string                       `yaml:"catalog_path" json:"catalog_path"`
+	CatalogSchemaPath        string                       `yaml:"catalog_schema_path" json:"catalog_schema_path"`
+	DashboardRedirectURI     string                       `yaml:"dashboard_redirect_uri" json:"dashboard_redirect_uri"`
+	BindingRequestSchemaPath string                       `yaml:"policy_schema_path" json:"policy_schema_path"`
+	Scheduler                SchedulerConfig              `yaml:"scheduler" json:"scheduler"`
+	ScalingEngine            ScalingEngineConfig          `yaml:"scaling_engine" json:"scaling_engine"`
+	EventGenerator           EventGeneratorConfig         `yaml:"event_generator" json:"event_generator"`
+	CF                       cf.Config                    `yaml:"cf" json:"cf"`
+	InfoFilePath             string                       `yaml:"info_file_path" json:"info_file_path"`
+	MetricsForwarder         MetricsForwarderConfig       `yaml:"metrics_forwarder" json:"metrics_forwarder"`
+	Health                   helpers.HealthConfig         `yaml:"health" json:"health"`
+	RateLimit                models.RateLimitConfig       `yaml:"rate_limit" json:"rate_limit,omitempty"`
+	ScalingRules             ScalingRulesConfig           `yaml:"scaling_rules" json:"scaling_rules"`
+
 	CredHelperImpl                     string                        `yaml:"cred_helper_impl" json:"cred_helper_impl"`
 	StoredProcedureConfig              *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config" json:"stored_procedure_binding_credential_config"`
-	ScalingRules                       ScalingRulesConfig            `yaml:"scaling_rules" json:"scaling_rules"`
 	DefaultCustomMetricsCredentialType string                        `yaml:"default_credential_type" json:"default_credential_type"`
 	BasicAuthForCustomMetrics          string                        `yaml:"basic_auth_for_custom_metrics" json:"basic_auth_for_custom_metrics"`
 }
@@ -50,7 +51,86 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		return Config{}, fmt.Errorf("input-validation failed: %w", err)
 	}
 
-	return Config{}, models.ErrUnimplemented
+	result := Config{
+		Logging:      rawConfig.Logging,
+		BrokerServer: rawConfig.BrokerServer,
+		Server:       rawConfig.Server,
+
+		CFServer: rawConfig.CFServer,
+
+		Db:                       rawConfig.Db,
+		BrokerCredentials:        rawConfig.BrokerCredentials,
+		APIClientId:              rawConfig.APIClientId,
+		PlanCheck:                rawConfig.PlanCheck,
+		CatalogPath:              rawConfig.CatalogPath,
+		CatalogSchemaPath:        rawConfig.CatalogSchemaPath,
+		DashboardRedirectURI:     rawConfig.DashboardRedirectURI,
+		BindingRequestSchemaPath: rawConfig.BindingRequestSchemaPath,
+		Scheduler:                rawConfig.Scheduler,
+		ScalingEngine:            rawConfig.ScalingEngine,
+		EventGenerator:           rawConfig.EventGenerator,
+		CF:                       rawConfig.CF,
+		InfoFilePath:             rawConfig.InfoFilePath,
+		MetricsForwarder:         rawConfig.MetricsForwarder,
+		Health:                   rawConfig.Health,
+		RateLimit:                rawConfig.RateLimit,
+		ScalingRules:             rawConfig.ScalingRules,
+	}
+
+	cmBasicAuthCfg := parseCMBasicAuthCfg(rawConfig)
+	result.CustomMetricsAuthConfig = cmBasicAuthCfg
+
+	return result, nil
+}
+
+func parseCMBasicAuthCfg(rawConfig rawConfig) *CustomMetricsBasicAuthCfg {
+	var result *CustomMetricsBasicAuthCfg = nil
+
+	var basicAuthHandlingNeeded bool
+	var bah BasicAuthHandling
+	switch rawConfig.BasicAuthForCustomMetrics {
+	case "on":
+		basicAuthHandlingNeeded = true
+		bah = BasicAuthHandlingOn
+	case "only_existing_bindings":
+		basicAuthHandlingNeeded = true
+		bah = BasicAuthHandlingOnlyExistingBindings
+	case "off":
+		basicAuthHandlingNeeded = false
+	}
+
+	if basicAuthHandlingNeeded {
+		defaultCMAuthType, err := models.ParseCustomMetricsBindingAuthScheme(rawConfig.DefaultCustomMetricsCredentialType)
+		if err != nil {
+			// We are at the service-startup and therefore can still panic without service-degredation.
+			err := models.InvalidArgumentError{
+				Param: "DefaultCustomMetricsCredentialType",
+				Value: rawConfig.DefaultCustomMetricsCredentialType,
+				Msg: fmt.Errorf(
+					"An error occured during api-service-configuration: %w\nThis is a programming error.",
+					err).Error(),
+			}
+			panic(err)
+		}
+
+		var basicAuthImplCfg models.BasicAuthHandlingImplConfig
+		switch rawConfig.CredHelperImpl {
+		case "stored_procedure":
+			basicAuthImplCfg = models.BasicAuthHandlingStoredProc{
+				Config: *rawConfig.StoredProcedureConfig,
+			}
+		case "default", "":
+			basicAuthImplCfg = models.BasicAuthHandlingNative{}
+		}
+
+		result = &CustomMetricsBasicAuthCfg{
+			BasicAuthHandling:           bah,
+			DefaultCustomMetricAuthType: *defaultCMAuthType,
+			BasicAuthHandlingImplConfig: basicAuthImplCfg,
+		}
+	}
+
+	return result
 }
 
 func (c *rawConfig) validate() error {
