@@ -108,7 +108,12 @@ func parseCMBasicAuthCfg(rawConfig rawConfig) *CustomMetricsBasicAuthCfg {
 			var err error
 			defaultCMAuthType, err = models.ParseCustomMetricsBindingAuthScheme(rawConfig.DefaultCustomMetricsCredentialType)
 			if err != nil {
-				// We are at the service-startup and therefore can still panic without service-degredation.
+				// This error must never occur because it should be excluded already in the
+				// validation-step before. This does not apply anymore when we omit the validation
+				// step and switch to proper parsing of the sub-structures.
+				//
+				// We are at the service-startup and therefore can still panic without
+				// service-degradation.
 				err := models.InvalidArgumentError{
 					Param: "DefaultCustomMetricsCredentialType",
 					Value: rawConfig.DefaultCustomMetricsCredentialType,
@@ -224,13 +229,26 @@ func (c *rawConfig) validate() error {
 		return fmt.Errorf("Configuration error: CatalogPath is empty")
 	}
 
-	if ba4cmCfgIsValid := slices.Contains([]string{"on", "off", "only_existing_bindings"}, c.BasicAuthForCustomMetrics); !ba4cmCfgIsValid {
+	validBasicAuthSwitches := []string{"on", "off", "only_existing_bindings"}
+	if ba4cmCfgIsValid := slices.Contains(validBasicAuthSwitches, c.BasicAuthForCustomMetrics); !ba4cmCfgIsValid {
 		return fmt.Errorf("Configuration error: BasicAuthForCustomMetrics is invalid: \"%s\"", c.BasicAuthForCustomMetrics)
 	}
+
 	// // Temporarily commented – after adaption still required.
 	// if c.CredHelperImpl == "" {
 	//	return fmt.Errorf("Configuration error: CredHelperImpl is empty")
 	// }
+
+	if c.CredHelperImpl == "stored_procedure" && c.StoredProcedureConfig == nil {
+		return fmt.Errorf("Configuration error: basic-auth activated via stored procedures but StoredProcedureConfig is empty!")
+	}
+
+	validCustomMetricsTypes := []string{"x509", "binding-secret", ""}
+	if defCMCredTypeIsValid := slices.Contains(validCustomMetricsTypes, c.DefaultCustomMetricsCredentialType); ! defCMCredTypeIsValid {
+		return fmt.Errorf(
+			"Configuration error: DefaultCustomMetricsCredentialType is invalid: \"%s\"",
+			c.DefaultCustomMetricsCredentialType)
+	}
 
 	catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
 	catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
