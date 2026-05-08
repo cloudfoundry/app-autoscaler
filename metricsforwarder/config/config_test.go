@@ -192,11 +192,19 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
+  binding_db:
+    url: "postgres://pqgotest:password@localhost/pqgotest"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 health:
   server_config:
     port: 9999
 cred_helper_impl: default
 `)
+				})
+				JustBeforeEach(func() {
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns the config", func() {
@@ -224,6 +232,11 @@ loggregator:
     key_file: "../testcerts/client.key"
 db:
   policy_db:
+    url: "postgres://pqgotest:password@localhost/pqgotest"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  binding_db:
     url: "postgres://pqgotest:password@localhost/pqgotest"
     max_open_connections: 10
     max_idle_connections: 5
