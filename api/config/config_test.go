@@ -110,7 +110,7 @@ var _ = Describe("Config", func() {
 				var expectedErr error
 				BeforeEach(func() {
 					expectedErr = fmt.Errorf("publicapiserver config service not found")
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(""), expectedErr)
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(""), expectedErr)
 				})
 
 				It("should error with config service not found", func() {
@@ -135,7 +135,6 @@ var _ = Describe("Config", func() {
 				})
 			})
 		})
-
 		When("config is read from file", func() {
 			JustBeforeEach(func() {
 				configFile = testhelpers.BytesToFile(configBytes)
