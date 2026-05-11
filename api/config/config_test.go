@@ -52,7 +52,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
-					"basic_auth_for_custom_metrics": "only_existing_bindings",
+					"basic_auth_for_custom_metrics": "off",
 
 					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
 					"catalog_schema_path": "../schemas/catalog.schema.json",
@@ -95,17 +95,6 @@ var _ = Describe("Config", func() {
 				Expect(conf.Server.Port).To(Equal(0))
 			})
 
-			When("handling available databases", func() {
-				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(mockVCAPConfigurationReader.ConfigureDatabasesCallCount()).To(Equal(1))
-					receivedDbConfig, receivedBasicAuthImplCfg :=
-						mockVCAPConfigurationReader.ConfigureDatabasesArgsForCall(0)
-					Expect(receivedDbConfig).NotTo(BeNil())
-					Expect(receivedBasicAuthImplCfg).NotTo(BeNil())
-					Expect(*receivedBasicAuthImplCfg).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
-				})
-			})
 			When("service is empty", func() {
 				var expectedErr error
 				BeforeEach(func() {
@@ -133,6 +122,13 @@ var _ = Describe("Config", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(actualCatalogContent)).To(Equal(expectedCatalogContent))
 				})
+			})
+			It("does not pass a BasicAuthHandlingImplConfig to ConfigureDatabases when basic auth is off", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mockVCAPConfigurationReader.ConfigureDatabasesCallCount()).To(Equal(1))
+				_, receivedBasicAuthImplCfg :=
+					mockVCAPConfigurationReader.ConfigureDatabasesArgsForCall(0)
+				Expect(receivedBasicAuthImplCfg).To(BeNil())
 			})
 		})
 		When("config is read from file", func() {
