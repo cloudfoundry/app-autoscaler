@@ -10,15 +10,14 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/brokerapi/v13/domain"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
+
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/brokerserver"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"github.com/onsi/gomega/ghttp"
-
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"code.cloudfoundry.org/lager/v3"
 
@@ -41,7 +40,7 @@ const (
 )
 
 var (
-	serverProcess     ifrit.Process
+	serverProcess     *testrunner.Process
 	serverUrl         *url.URL
 	httpClient        *http.Client
 	conf              *config.Config
@@ -153,7 +152,7 @@ var _ = BeforeSuite(func() {
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))
 	Expect(err).NotTo(HaveOccurred())
 
-	serverProcess = ginkgomon_v2.Invoke(httpServer)
+	serverProcess = testrunner.Invoke(httpServer)
 
 	httpClient = &http.Client{}
 
@@ -179,5 +178,5 @@ var _ = AfterSuite(func() {
 	for _, server := range servers {
 		server.Close()
 	}
-	ginkgomon_v2.Interrupt(serverProcess)
+	serverProcess.Interrupt()
 })

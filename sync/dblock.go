@@ -1,15 +1,14 @@
 package sync
 
 import (
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-
-	"os"
+	"context"
 	"time"
 
-	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"github.com/tedsuo/ifrit"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 const (
@@ -29,8 +28,8 @@ func NewDatabaseLock(logger lager.Logger) *DatabaseLock {
 	}
 }
 
-func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl time.Duration, owner string, lockDB db.LockDB, callbackOnAcquiredLock func(), callbackOnLostLock func()) ifrit.Runner {
-	dbLockMaintainer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl time.Duration, owner string, lockDB db.LockDB, callbackOnAcquiredLock func(), callbackOnLostLock func()) runner.Runner {
+	return runner.RunFunc(func(ctx context.Context, ready chan<- struct{}) error {
 		lockTicker := time.NewTicker(retryInterval)
 		readyToAcquireLock := true
 		if owner == "" {
@@ -51,7 +50,7 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 		}
 		for {
 			select {
-			case <-signals:
+			case <-ctx.Done():
 				dblock.logger.Info("received-interrupt-signal", lager.Data{"owner": owner})
 				lockTicker.Stop()
 				releaseErr := lockDB.Release(owner)
@@ -64,37 +63,38 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 				return nil
 
 			case <-lockTicker.C:
-				dblock.logger.Debug("retry-acquiring-lock", lager.Data{"owner": owner})
-				lock := &models.Lock{Owner: owner, Ttl: ttl}
-				isLockAcquired, lockErr := lockDB.Lock(lock)
-				if lockErr != nil {
-					dblock.logger.Error("failed-to-acquire-lock", lockErr)
-					releaseErr := lockDB.Release(owner)
-					if releaseErr != nil {
-						dblock.logger.Error("failed-to-release-lock ", releaseErr)
-					} else {
-						dblock.lockStatus = LockStatusLost
-						dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
-					}
-					callbackOnLostLock()
-				}
-				if !isLockAcquired {
-					previousLockStatus := dblock.lockStatus
-					if previousLockStatus == LockStatusHeld {
-						dblock.logger.Info("lock-has-been-acquired-by-competitor")
-						dblock.lockStatus = LockStatusLost
-						callbackOnLostLock()
-					}
-				}
-				if isLockAcquired && readyToAcquireLock {
-					readyToAcquireLock = false
-					dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
-					dblock.lockStatus = LockStatusHeld
-					callbackOnAcquiredLock()
-					close(ready)
-				}
+				readyToAcquireLock = dblock.handleLockTick(owner, ttl, lockDB, callbackOnAcquiredLock, callbackOnLostLock, readyToAcquireLock, ready)
 			}
 		}
 	})
-	return dbLockMaintainer
+}
+
+func (dblock *DatabaseLock) handleLockTick(owner string, ttl time.Duration, lockDB db.LockDB, callbackOnAcquiredLock func(), callbackOnLostLock func(), readyToAcquireLock bool, ready chan<- struct{}) bool {
+	dblock.logger.Debug("retry-acquiring-lock", lager.Data{"owner": owner})
+	lock := &models.Lock{Owner: owner, Ttl: ttl}
+	isLockAcquired, lockErr := lockDB.Lock(lock)
+	if lockErr != nil {
+		dblock.logger.Error("failed-to-acquire-lock", lockErr)
+		releaseErr := lockDB.Release(owner)
+		if releaseErr != nil {
+			dblock.logger.Error("failed-to-release-lock ", releaseErr)
+		} else {
+			dblock.lockStatus = LockStatusLost
+			dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
+		}
+		callbackOnLostLock()
+	}
+	if !isLockAcquired && dblock.lockStatus == LockStatusHeld {
+		dblock.logger.Info("lock-has-been-acquired-by-competitor")
+		dblock.lockStatus = LockStatusLost
+		callbackOnLostLock()
+	}
+	if isLockAcquired && readyToAcquireLock {
+		dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
+		dblock.lockStatus = LockStatusHeld
+		callbackOnAcquiredLock()
+		close(ready)
+		return false
+	}
+	return readyToAcquireLock
 }

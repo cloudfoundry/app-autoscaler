@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
@@ -14,8 +15,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"bytes"
 	"encoding/json"
@@ -28,7 +27,7 @@ var _ = Describe("Server", func() {
 	var (
 		serverUrl     *url.URL
 		server        *Server
-		serverProcess ifrit.Process
+		serverProcess *testrunner.Process
 
 		conf *config.Config
 
@@ -69,7 +68,7 @@ var _ = Describe("Server", func() {
 	})
 
 	AfterEach(func() {
-		ginkgomon_v2.Interrupt(serverProcess)
+		serverProcess.Interrupt()
 	})
 
 	JustBeforeEach(func() {
@@ -82,7 +81,7 @@ var _ = Describe("Server", func() {
 		BeforeEach(func() {
 			httpServer, err := server.CreateMtlsServer()
 			Expect(err).NotTo(HaveOccurred())
-			serverProcess = ginkgomon_v2.Invoke(httpServer)
+			serverProcess = testrunner.Invoke(httpServer)
 			serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.Server.Port))
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -279,7 +278,7 @@ var _ = Describe("Server", func() {
 			}))
 			httpServer, err := server.CreateCFServer(xfccAuthMiddleware)
 			Expect(err).NotTo(HaveOccurred())
-			serverProcess = ginkgomon_v2.Invoke(httpServer)
+			serverProcess = testrunner.Invoke(httpServer)
 
 			serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(conf.CFServer.Port))
 			Expect(err).ToNot(HaveOccurred())

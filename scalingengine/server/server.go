@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/apis/scalinghistory"
@@ -16,7 +17,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tedsuo/ifrit"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"fmt"
@@ -59,7 +59,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, s
 	}
 }
 
-func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
+func (s *Server) CreateHealthServer() (runner.Runner, error) {
 	if err := s.createHealthRouter(); err != nil {
 		return nil, fmt.Errorf("failed to create health router: %w", err)
 	}
@@ -67,7 +67,7 @@ func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
 	return helpers.NewHTTPServer(s.logger, s.conf.Health.ServerConfig, s.healthRouter)
 }
 
-func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
+func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (runner.Runner, error) {
 	scalingEngine, err := s.createScalingEngineRoutes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scaling engine routes: %w", err)
@@ -85,7 +85,7 @@ func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error
 	return helpers.NewHTTPServer(s.logger, s.conf.CFServer, s.autoscalerRouter.GetRouter())
 }
 
-func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
+func (s *Server) CreateMtlsServer() (runner.Runner, error) {
 	r, err := s.createScalingEngineRoutes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scaling engine routes: %w", err)

@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
@@ -16,7 +17,6 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tedsuo/ifrit/grouper"
 )
 
 func main() {
@@ -66,7 +66,7 @@ func main() {
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	// Service members
-	members := grouper.Members{
+	members := []runner.Member{
 		{Name: "appmetrics-dbpruner", Runner: appMetricsDBOperatorRunner},
 		{Name: "scalingEngine-dbpruner", Runner: scalingEngineDBOperatorRunner},
 		{Name: "scalingEngine-sync", Runner: scalingEngineSyncRunner},
@@ -81,15 +81,13 @@ func main() {
 	defer func() { _ = lockDB.Closer() }()
 
 	prdl := sync.NewDatabaseLock(logger)
-	dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB.DB, func() {
-		// Empty callback for lock acquisition - no special action needed when lock is obtained
-		// The operator services will start normally once the lock is acquired
-	}, func() {
-		os.Exit(1)
-	})
+	dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB.DB,
+		func() { /* no action needed on lock acquisition */ },
+		func() { os.Exit(1) },
+	)
 
 	members = append(
-		grouper.Members{{Name: "db-lock-maintainer", Runner: dbLockMaintainer}},
+		[]runner.Member{{Name: "db-lock-maintainer", Runner: dbLockMaintainer}},
 		members...,
 	)
 
@@ -102,7 +100,7 @@ func main() {
 	startup.ExitOnError(err, logger, "failed to create health server")
 
 	members = append(
-		grouper.Members{{Name: "health_server", Runner: healthServer}},
+		[]runner.Member{{Name: "health_server", Runner: healthServer}},
 		members...,
 	)
 

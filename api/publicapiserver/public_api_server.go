@@ -16,13 +16,13 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tedsuo/ifrit"
 )
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
@@ -70,7 +70,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policyDB db.Po
 	}
 }
 
-func (s *PublicApiServer) CreateHealthServer() (ifrit.Runner, error) {
+func (s *PublicApiServer) CreateHealthServer() (runner.Runner, error) {
 	if err := s.setupHealthRouter(); err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (s *PublicApiServer) setupBrokerRouter() error {
 	return nil
 }
 
-func (s *PublicApiServer) CreateCFServer() (ifrit.Runner, error) {
+func (s *PublicApiServer) CreateCFServer() (runner.Runner, error) {
 	if err := s.setupBrokerRouter(); err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (s *PublicApiServer) CreateCFServer() (ifrit.Runner, error) {
 	return helpers.NewHTTPServer(s.logger.Session("CfServer"), s.conf.CFServer, r)
 }
 
-func (s *PublicApiServer) CreateMtlsServer() (ifrit.Runner, error) {
+func (s *PublicApiServer) CreateMtlsServer() (runner.Runner, error) {
 	if err := s.setupApiRoutes(); err != nil {
 		return nil, err
 	}

@@ -17,6 +17,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 	"github.com/google/uuid"
@@ -27,9 +28,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
-	"github.com/tedsuo/ifrit/grouper"
 )
 
 const (
@@ -50,7 +48,7 @@ var (
 	dbHelper              *sqlx.DB
 	fakeCCNOAAUAA         *mocks.Server
 	testUserScope         = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
-	processMap            = map[string]ifrit.Process{}
+	processMap            = map[string]*testrunner.Process{}
 	mockLogCache          = &MockLogCache{}
 
 	defaultHttpClientTimeout = 10 * time.Second
@@ -154,47 +152,33 @@ func PreparePorts() Ports {
 
 func startGolangApiServer(golangApiServerConfPath string) {
 	GinkgoHelper()
-	processMap[GolangAPIServer] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{GolangAPIServer, components.GolangAPIServer(golangApiServerConfPath)},
-	}))
+	processMap[GolangAPIServer] = testrunner.Invoke(components.GolangAPIServer(golangApiServerConfPath))
 }
 
 func startGolangApiCFServer() {
 	GinkgoHelper()
-	processMap[GolangAPIServer] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{GolangAPIServer, components.GolangAPICFServer()},
-	}))
+	processMap[GolangAPIServer] = testrunner.Invoke(components.GolangAPICFServer())
 }
 
 func startGoRouterProxyTo(portToForward int) {
-	processMap[GoRouterProxy] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{"gorouter-proxy", components.GoRouterProxy(portToForward)},
-	}))
+	processMap[GoRouterProxy] = testrunner.Invoke(components.GoRouterProxy(portToForward))
 }
 
 func startScheduler() {
-	processMap[Scheduler] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{Scheduler, components.Scheduler(schedulerConfPath)},
-	}))
+	processMap[Scheduler] = testrunner.Invoke(components.Scheduler(schedulerConfPath))
 }
 
 func startEventGenerator(eventGeneratorConfPath string) {
 	GinkgoHelper()
-	processMap[EventGenerator] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{EventGenerator, components.EventGenerator(eventGeneratorConfPath)},
-	}))
+	processMap[EventGenerator] = testrunner.Invoke(components.EventGenerator(eventGeneratorConfPath))
 }
 
 func startScalingEngine() {
-	processMap[ScalingEngine] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ScalingEngine, components.ScalingEngine(scalingEngineConfPath)},
-	}))
+	processMap[ScalingEngine] = testrunner.Invoke(components.ScalingEngine(scalingEngineConfPath))
 }
 
 func startOperator() {
-	processMap[Operator] = ginkgomon_v2.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{Operator, components.Operator(operatorConfPath)},
-	}))
+	processMap[Operator] = testrunner.Invoke(components.Operator(operatorConfPath))
 }
 
 func startMockLogCache() {
@@ -212,27 +196,27 @@ func startMockLogCache() {
 }
 
 func stopGolangApiServer() {
-	ginkgomon_v2.Kill(processMap[GolangAPIServer], 5*time.Second)
+	processMap[GolangAPIServer].Kill(5 * time.Second)
 }
 
 func stopGoRouterProxy() {
-	ginkgomon_v2.Kill(processMap[GoRouterProxy], 5*time.Second)
+	processMap[GoRouterProxy].Kill(5 * time.Second)
 }
 
 func stopScheduler() {
-	ginkgomon_v2.Kill(processMap[Scheduler], 5*time.Second)
+	processMap[Scheduler].Kill(5 * time.Second)
 }
 
 func stopScalingEngine() {
-	ginkgomon_v2.Kill(processMap[ScalingEngine], 5*time.Second)
+	processMap[ScalingEngine].Kill(5 * time.Second)
 }
 
 func stopEventGenerator() {
-	ginkgomon_v2.Kill(processMap[EventGenerator], 5*time.Second)
+	processMap[EventGenerator].Kill(5 * time.Second)
 }
 
 func stopOperator() {
-	ginkgomon_v2.Kill(processMap[Operator], 5*time.Second)
+	processMap[Operator].Kill(5 * time.Second)
 }
 
 func stopMockLogCache() {

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -12,13 +13,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 )
 
 var _ = Describe("Operator", func() {
 	var (
-		proc           ifrit.Process
+		proc           *testrunner.Process
 		fclock         *fakeclock.FakeClock
 		buffer         *gbytes.Buffer
 		fakeOperator   *fakes.FakeOperator
@@ -36,13 +35,13 @@ var _ = Describe("Operator", func() {
 	})
 
 	JustBeforeEach(func() {
-		proc = ifrit.Invoke(operatorRunner)
+		proc = testrunner.Invoke(operatorRunner)
 		Eventually(buffer).Should(gbytes.Say("started"))
 	})
 
 	AfterEach(func() {
-		ginkgomon_v2.Kill(proc)
-		Eventually(proc.Wait()).Should(Receive(BeNil()))
+		proc.Kill(5 * time.Second)
+		<-proc.Wait()
 	})
 
 	Context("when pruning", func() {
@@ -62,8 +61,8 @@ var _ = Describe("Operator", func() {
 			fclock.Increment(TestRefreshInterval)
 			Eventually(fakeOperator.OperateCallCount).Should(Equal(2))
 
-			ginkgomon_v2.Kill(proc)
-			Eventually(proc.Wait()).Should(Receive(BeNil()))
+			proc.Kill(5 * time.Second)
+			<-proc.Wait()
 
 			Eventually(buffer).Should(gbytes.Say("stopped"))
 
