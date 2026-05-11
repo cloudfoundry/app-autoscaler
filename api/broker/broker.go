@@ -579,7 +579,7 @@ func (b *Broker) Bind(
 	allowBasicAuthForNewBindings := b.conf.CustomMetricsAuthConfig != nil &&
 		b.conf.CustomMetricsAuthConfig.BasicAuthHandling == config.BasicAuthHandlingOn
 	hasRequestedBasicAuth := *appScalingConfig.GetConfiguration().GetCustomMetricsBindingAuth() == models.BindingSecret
-	if ! allowBasicAuthForNewBindings && hasRequestedBasicAuth {
+	if !allowBasicAuthForNewBindings && hasRequestedBasicAuth {
 		err := errors.New("Requested binding with basic-authentication for custom metrics, but the server does not allow this.")
 		return result, apiresponses.NewFailureResponseBuilder(
 			err, http.StatusBadRequest, "forbidden_binding-secret-request").Build()
@@ -1077,11 +1077,19 @@ func (b *Broker) deleteBinding(ctx context.Context, bindingId string, serviceIns
 		return ErrDeleteServiceBinding
 	}
 
-	err = b.credentials.Delete(ctx, appId)
-	if err != nil {
-		logger.Error("failed to delete custom metrics credential for unbinding", err)
-		return ErrCredentialNotDeleted
+	// Actually you probably want to test this: `isBasicAuthAvailable := b.credentials != nil`
+	// However this may not work under some circumstances, where b.credentials may have a
+	// runtime-type and is therefore a typed nil, see: <https://go.dev/doc/faq#nil_error>
+	// Therefore we check it differently:
+	isBasicAuthAvailable := b.conf.CustomMetricsAuthConfig != nil
+	if isBasicAuthAvailable {
+		err = b.credentials.Delete(ctx, appId)
+		if err != nil {
+			logger.Error("failed to delete custom metrics credential for unbinding", err)
+			return ErrCredentialNotDeleted
+		}
 	}
+
 	return nil
 }
 

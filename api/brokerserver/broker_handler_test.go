@@ -705,7 +705,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusGone))
 			})
 		})
-
 		Context("When database DeleteServiceInstance call returns error other than ErrDoesnotExist", func() {
 			BeforeEach(func() {
 				bindingdb.DeleteServiceInstanceReturns(fmt.Errorf("error"))
@@ -715,13 +714,11 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(MatchJSON(`{"description":"error deleting service instance"}`))
 			})
 		})
-
 		Context("When all mandatory parameters are present", func() {
 			It("succeeds with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
-
 		Context("When service bindings are present", func() {
 			BeforeEach(func() {
 				var bindingIds []string
@@ -745,7 +742,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(appid, testAppId)
 			})
 		})
-
 		Context("When service bindings are present", func() {
 			BeforeEach(func() {
 				var bindingIds []string
@@ -769,7 +765,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(appid, testAppId)
 			})
 		})
-
 		Context("basic_auth_for_custom_metrics controls credential deletion during deprovision", func() {
 			BeforeEach(func() {
 				var bindingIds []string
