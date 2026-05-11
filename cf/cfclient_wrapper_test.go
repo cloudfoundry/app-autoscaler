@@ -62,7 +62,7 @@ var _ = Describe("CFClientWrapper", func() {
 			createClient = false
 		})
 
-		It("creates a client successfully", func() {
+		It("creates a client successfully with client credentials", func() {
 			mockServer.Add().OauthToken("test-access-token")
 			mockServer.Add().Info(mockServer.URL())
 
@@ -70,6 +70,26 @@ var _ = Describe("CFClientWrapper", func() {
 			client, err = cf.NewCFClient(conf, logger, cf.WithHTTPClient(mockServer.HTTPTestServer.Client()))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(client).NotTo(BeNil())
+		})
+
+		It("creates a client successfully with password grant", func() {
+			conf.GrantType = cf.GrantTypePassword
+			conf.Username = "test-user"
+			conf.Password = "test-password"
+			conf.ClientID = "cf"
+			conf.Secret = ""
+
+			mockServer.Add().OauthToken("test-password-grant-token")
+			mockServer.Add().Info(mockServer.URL())
+
+			var err error
+			client, err = cf.NewCFClient(conf, logger, cf.WithHTTPClient(mockServer.HTTPTestServer.Client()))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(client).NotTo(BeNil())
+
+			// Verify the client can login (which validates the token was obtained)
+			err = client.Login(ctx)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns error for invalid API URL", func() {

@@ -3,6 +3,11 @@
 #
 # This file is intended to be loaded via the source command.
 
+# Enable debug output if DEBUG=true
+if [[ "${DEBUG:-false}" == "true" ]]; then
+	set -x
+fi
+
 function step(){
 	echo "# $1"
 }
@@ -40,11 +45,31 @@ function bbl_login() {
 	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }
 
-function cf_login(){
-	step 'login to cf'
+function cf_admin_login(){
+	step 'login to cf as admin'
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 	cf auth admin "$cf_admin_password"
+	return 0
+}
+
+# Login to CF with appropriate credentials for deployment operations
+# Uses admin on main branch, org-manager on PR branches
+function cf_deployment_login(){
+	step 'login to cf for deployment operations'
+	cf api "https://api.${system_domain}" --skip-ssl-validation
+
+	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
+		# Main branch: use admin user
+		cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
+		cf auth admin "$cf_admin_password"
+	else
+		# PR branch: use org-manager user
+		local org_manager_password
+		org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
+		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "$org_manager_password"
+	fi
+	return 0
 }
 
 function uaa_login(){
@@ -69,6 +94,110 @@ function cleanup_service_broker(){
 		echo "- Service Broker exists, deleting broker '${deployment_name}'"
 		retry 3 cf delete-service-broker "${deployment_name}" -f
 	fi
+}
+
+# Returns GUIDs of autoscaler service instances (one per line)
+function get_autoscaler_service_instance_guids(){
+	cf curl "/v3/service_instances" | jq -r \
+		'.resources[] | select(.relationships.service_plan.data != null) |
+		select(.name | contains("autoscaler")) | .guid' || true
+	return 0
+}
+
+# Deletes all bindings for a service instance
+function delete_service_instance_bindings(){
+	local instance_guid="$1"
+	local bindings
+	bindings=$(cf curl "/v3/service_credential_bindings?service_instance_guids=${instance_guid}" | jq -r '.resources[].guid' || true)
+
+	for binding_guid in ${bindings}; do
+		echo "     - deleting binding: ${binding_guid}"
+		cf curl -X DELETE "/v3/service_credential_bindings/${binding_guid}" || true
+	done
+	return 0
+}
+
+# Deletes a single service instance (with fallback to purge)
+function delete_service_instance(){
+	local instance_guid="$1"
+	local instance_name
+	instance_name=$(cf curl "/v3/service_instances/${instance_guid}" | jq -r '.name')
+
+	echo "   - processing: ${instance_name} (${instance_guid})"
+	delete_service_instance_bindings "${instance_guid}"
+
+	echo "     - deleting instance: ${instance_name}"
+	if ! cf delete-service -f "${instance_name}"; then
+		echo "     - standard delete failed, attempting purge"
+		cf purge-service-instance -f "${instance_name}" || echo "     - purge failed for ${instance_name}"
+	fi
+	return 0
+}
+
+# Waits for all autoscaler service instances to be deleted
+function wait_for_service_instance_deletion(){
+	local max_wait_seconds="${1:-60}"
+	local poll_interval=5
+	local max_iterations=$((max_wait_seconds / poll_interval))
+
+	echo " - waiting for service instance deletions to complete (max ${max_wait_seconds}s)"
+
+	for ((attempt=1; attempt<=max_iterations; attempt++)); do
+		local remaining
+		remaining=$(get_autoscaler_service_instance_guids | wc -l | tr -d ' ')
+
+		if [[ ${remaining} -eq 0 ]]; then
+			echo " - all service instances deleted"
+			return 0
+		fi
+
+		echo " - ${remaining} instances remaining, waiting..."
+		sleep "${poll_interval}"
+	done
+
+	echo " - timeout waiting for service instance deletion"
+	return 1
+}
+
+# Deletes all autoscaler service instances and their bindings
+function delete_autoscaler_service_instances(){
+	echo " - finding autoscaler service instances"
+	local service_instances
+	service_instances=$(get_autoscaler_service_instance_guids)
+
+	if [[ -z "${service_instances}" ]]; then
+		echo " - no autoscaler service instances found"
+		return 0
+	fi
+
+	echo " - deleting service bindings and instances"
+	for instance_guid in ${service_instances}; do
+		delete_service_instance "${instance_guid}"
+	done
+
+	wait_for_service_instance_deletion 180
+}
+
+# Deletes a service broker (with fallback to purge offerings)
+function delete_service_broker(){
+	local broker_name="$1"
+
+	echo " - deleting broker '${broker_name}'"
+	if cf delete-service-broker -f "${broker_name}"; then
+		return 0
+	fi
+
+	echo " - failed to delete broker, attempting force cleanup"
+	local offerings
+	offerings=$(cf service-access | grep "${broker_name}" | awk '{print $1}' | sort -u || true)
+
+	for offering in ${offerings}; do
+		echo "   - purging service offering: ${offering}"
+		cf purge-service-offering -f "${offering}" || true
+	done
+
+	cf delete-service-broker -f "${broker_name}" || echo " - ERROR: Could not delete broker ${broker_name}" >&2
+	return 0
 }
 
 function cleanup_bosh_deployment(){
@@ -107,6 +236,16 @@ function cleanup_credhub(){
 	retry 3 credhub delete --path="/bosh-autoscaler/${deployment_name}"
 }
 
+function cleanup_test_user(){
+	step "cleaning up test user '${AUTOSCALER_ORG_MANAGER_USER}'"
+	if cf delete-user -f "${AUTOSCALER_ORG_MANAGER_USER}" &> /dev/null; then
+		log "✓ Test user deleted successfully"
+	else
+		log "Test user does not exist or already deleted"
+	fi
+	return 0
+}
+
 function cleanup_apps(){
 	step "cleaning up apps"
 	local mtar_app
@@ -115,16 +254,7 @@ function cleanup_apps(){
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 	space_guid="$(cf space --guid "${autoscaler_space}")"
-
-	local deploy_service_url="https://deploy-service.${system_domain}"
-	local mtas_response
-
-	# Fetch MTAs from deploy-service (--insecure for self-signed certs)
-	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "${deploy_service_url}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
-		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}" 2>/dev/null)" || true
-	else
-		echo "Warning: Failed to fetch MTAs from deploy-service, skipping MTA cleanup"
-	fi
+	mtar_app="$(curl --header "Authorization: $(cf oauth-token)" "deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas"  | jq ". | .[] | .metadata | .id" -r)"
 
 	if [ -n "${mtar_app}" ]; then
 		set +e
