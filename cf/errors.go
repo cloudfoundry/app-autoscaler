@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
@@ -126,9 +127,21 @@ func MapCFClientError(err error) error {
 		return nil
 	}
 
+	var cfHTTPErr resource.CloudFoundryHTTPError
+	if errors.As(err, &cfHTTPErr) {
+		return &CfError{
+			StatusCode: cfHTTPErr.StatusCode,
+			Errors: []CfErrorItem{{
+				Title:  cfHTTPErr.Status,
+				Detail: string(cfHTTPErr.Body),
+			}},
+		}
+	}
+
 	var cfClientErr resource.CloudFoundryError
 	if errors.As(err, &cfClientErr) {
 		return &CfError{
+			StatusCode: httpStatusFromCFCode(cfClientErr.Code),
 			Errors: []CfErrorItem{{
 				Code:   cfClientErr.Code,
 				Title:  cfClientErr.Title,
@@ -140,15 +153,32 @@ func MapCFClientError(err error) error {
 	var cfClientErrs resource.CloudFoundryErrors
 	if errors.As(err, &cfClientErrs) {
 		items := make([]CfErrorItem, len(cfClientErrs.Errors))
+		statusCode := 0
 		for i, e := range cfClientErrs.Errors {
 			items[i] = CfErrorItem{
 				Code:   e.Code,
 				Title:  e.Title,
 				Detail: e.Detail,
 			}
+			if statusCode == 0 {
+				statusCode = httpStatusFromCFCode(e.Code)
+			}
 		}
-		return &CfError{Errors: items}
+		return &CfError{StatusCode: statusCode, Errors: items}
 	}
 
 	return err
+}
+
+func httpStatusFromCFCode(cfCode int) int {
+	switch cfCode {
+	case cfResourceNotFound:
+		return http.StatusNotFound
+	case cfNotAuthenticated:
+		return http.StatusUnauthorized
+	case cfNotAuthorised:
+		return http.StatusForbidden
+	default:
+		return http.StatusInternalServerError
+	}
 }
