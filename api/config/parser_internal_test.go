@@ -17,7 +17,9 @@ var _ = Describe("rawConfig validation", func() {
 	)
 
 	BeforeEach(func() {
-		conf = &rawConfig{}
+		conf = &rawConfig{
+			BasicAuthForCustomMetrics: "off",
+		}
 		conf.Db = make(map[string]db.DatabaseConfig)
 		conf.Db[db.BindingDb] = db.DatabaseConfig{
 			URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -58,15 +60,12 @@ var _ = Describe("rawConfig validation", func() {
 
 		conf.RateLimit.MaxAmount = 10
 		conf.RateLimit.ValidDuration = 1 * time.Second
-
-		conf.CredHelperImpl = "default"
 	})
-
 	JustBeforeEach(func() {
 		err = conf.validate()
 	})
 
-	Context("when all the configs are valid", func() {
+	When("all the configs are valid", func() {
 		It("should not error", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -80,7 +79,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: BindingDB URL is empty")))
 		})
 	})
-
 	Context("when policydb url is not set", func() {
 		BeforeEach(func() {
 			conf.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
@@ -89,7 +87,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicyDB URL is empty")))
 		})
 	})
-
 	Context("when scheduler url is not set", func() {
 		BeforeEach(func() {
 			conf.Scheduler.SchedulerURL = ""
@@ -98,7 +95,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: scheduler.scheduler_url is empty")))
 		})
 	})
-
 	Context("when neither the broker username nor its hash is set", func() {
 		BeforeEach(func() {
 			brokerCred1 := BrokerCredentialsConfig{
@@ -113,7 +109,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")))
 		})
 	})
-
 	Context("when both the broker username and its hash are set", func() {
 		BeforeEach(func() {
 			brokerCred1 := BrokerCredentialsConfig{
@@ -128,7 +123,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")))
 		})
 	})
-
 	Context("when just the broker username is set", func() {
 		BeforeEach(func() {
 			conf.BrokerCredentials[0].BrokerUsername = "broker_username"
@@ -138,7 +132,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
-
 	Context("when the broker username hash is set to an invalid value", func() {
 		BeforeEach(func() {
 			conf.BrokerCredentials[0].BrokerUsernameHash = []byte("not a bcrypt hash")
@@ -147,7 +140,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_username_hash is not a valid bcrypt hash")))
 		})
 	})
-
 	Context("when neither the broker password nor its hash is set", func() {
 		BeforeEach(func() {
 			conf.BrokerCredentials[0].BrokerPassword = ""
@@ -157,7 +149,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")))
 		})
 	})
-
 	Context("when both the broker password and its hash are set", func() {
 		BeforeEach(func() {
 			conf.BrokerCredentials[0].BrokerPassword = "broker_password"
@@ -166,7 +157,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")))
 		})
 	})
-
 	Context("when just the broker password is set", func() {
 		BeforeEach(func() {
 			conf.BrokerCredentials[0].BrokerPassword = "broker_password"
@@ -176,7 +166,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
-
 	Context("when the broker password hash is set to an invalid value", func() {
 		BeforeEach(func() {
 			brokerCred1 := BrokerCredentialsConfig{
@@ -191,7 +180,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_password_hash is not a valid bcrypt hash")))
 		})
 	})
-
 	Context("when eventgenerator url is not set", func() {
 		BeforeEach(func() {
 			conf.EventGenerator.EventGeneratorUrl = ""
@@ -200,7 +188,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: event_generator.event_generator_url is empty")))
 		})
 	})
-
 	Context("when scalingengine url is not set", func() {
 		BeforeEach(func() {
 			conf.ScalingEngine.ScalingEngineUrl = ""
@@ -209,7 +196,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: scaling_engine.scaling_engine_url is empty")))
 		})
 	})
-
 	Context("when metricsforwarder url is not set", func() {
 		BeforeEach(func() {
 			conf.MetricsForwarder.MetricsForwarderUrl = ""
@@ -218,7 +204,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: metrics_forwarder.metrics_forwarder_url is empty")))
 		})
 	})
-
 	Context("when catalog schema path is not set", func() {
 		BeforeEach(func() {
 			conf.CatalogSchemaPath = ""
@@ -227,7 +212,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: CatalogSchemaPath is empty")))
 		})
 	})
-
 	Context("when catalog path is not set", func() {
 		BeforeEach(func() {
 			conf.CatalogPath = ""
@@ -236,7 +220,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: CatalogPath is empty")))
 		})
 	})
-
 	Context("when policy schema path is not set", func() {
 		BeforeEach(func() {
 			conf.BindingRequestSchemaPath = ""
@@ -245,7 +228,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicySchemaPath is empty")))
 		})
 	})
-
 	Context("when catalog is not valid json", func() {
 		BeforeEach(func() {
 			conf.CatalogPath = "../exampleconfig/catalog-invalid-json-example.json"
@@ -254,7 +236,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError("invalid character '[' after object key"))
 		})
 	})
-
 	Context("when catalog is missing required fields", func() {
 		BeforeEach(func() {
 			conf.CatalogPath = "../exampleconfig/catalog-missing-example.json"
@@ -263,7 +244,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("{\"name is required\"}")))
 		})
 	})
-
 	Context("when catalog has invalid type fields", func() {
 		BeforeEach(func() {
 			conf.CatalogPath = "../exampleconfig/catalog-invalid-example.json"
@@ -272,7 +252,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("{\"Invalid type. Expected: boolean, given: integer\"}")))
 		})
 	})
-
 	Context("when info_file_path is not set", func() {
 		BeforeEach(func() {
 			conf.InfoFilePath = ""
@@ -281,7 +260,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: InfoFilePath is empty")))
 		})
 	})
-
 	Context("when cf.client_id is not set", func() {
 		BeforeEach(func() {
 			conf.CF.ClientID = ""
@@ -290,7 +268,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: client_id is empty")))
 		})
 	})
-
 	Context("when rate_limit.max_amount is <= zero", func() {
 		BeforeEach(func() {
 			conf.RateLimit.MaxAmount = 0
@@ -299,7 +276,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
 		})
 	})
-
 	Context("when rate_limit.valid_duration is <= 0 ns", func() {
 		BeforeEach(func() {
 			conf.RateLimit.ValidDuration = 0 * time.Nanosecond
