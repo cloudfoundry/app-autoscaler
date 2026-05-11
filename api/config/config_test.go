@@ -52,7 +52,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
-					"basic_auth_for_custom_metrics": "off",
+					"basic_auth_for_custom_metrics": "only_existing_bindings",
 
 					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
 					"catalog_schema_path": "../schemas/catalog.schema.json",
