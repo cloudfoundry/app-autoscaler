@@ -234,20 +234,30 @@ func (c *rawConfig) validate() error {
 		return fmt.Errorf("Configuration error: BasicAuthForCustomMetrics is invalid: \"%s\"", c.BasicAuthForCustomMetrics)
 	}
 
-	// // Temporarily commented – after adaption still required.
-	// if c.CredHelperImpl == "" {
-	//	return fmt.Errorf("Configuration error: CredHelperImpl is empty")
-	// }
+	if noBasicAuthNeeded := c.BasicAuthForCustomMetrics == "off"; noBasicAuthNeeded {
+		if c.CredHelperImpl != "" {
+			return fmt.Errorf("Configuration error: CredHelperImpl is set but basic authentication is switched off.")
+		}
+		if c.DefaultCustomMetricsCredentialType != "" {
+			return fmt.Errorf("Configuration error: DefaltCustomMetricsCredentialType is set but basic authentication is switched off.")
+		}
+	} else {
+		validCustomMetricsTypes := []string{"x509", "binding-secret", ""}
+		if defCMCredTypeIsValid := slices.Contains(validCustomMetricsTypes, c.DefaultCustomMetricsCredentialType); !defCMCredTypeIsValid {
+			return fmt.Errorf(
+				"Configuration error: DefaultCustomMetricsCredentialType is invalid: \"%s\"",
+				c.DefaultCustomMetricsCredentialType)
+		}
 
-	if c.CredHelperImpl == "stored_procedure" && c.StoredProcedureConfig == nil {
-		return fmt.Errorf("Configuration error: basic-auth activated via stored procedures but StoredProcedureConfig is empty!")
-	}
+		validCredHelperImpls := []string{"default", "stored_procedure"}
+		if credHelperImplIsValid := slices.Contains(validCredHelperImpls, c.CredHelperImpl); !credHelperImplIsValid {
+			return fmt.Errorf("Configuration error: CredHelperImpl is required (basic auth is enabled) but no properly configured: %s",
+				c.CredHelperImpl)
+		}
 
-	validCustomMetricsTypes := []string{"x509", "binding-secret", ""}
-	if defCMCredTypeIsValid := slices.Contains(validCustomMetricsTypes, c.DefaultCustomMetricsCredentialType); ! defCMCredTypeIsValid {
-		return fmt.Errorf(
-			"Configuration error: DefaultCustomMetricsCredentialType is invalid: \"%s\"",
-			c.DefaultCustomMetricsCredentialType)
+		if c.CredHelperImpl == "stored_procedure" && c.StoredProcedureConfig == nil {
+			return fmt.Errorf("Configuration error: basic-auth activated via stored procedures but StoredProcedureConfig is empty!")
+		}
 	}
 
 	catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
