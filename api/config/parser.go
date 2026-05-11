@@ -249,6 +249,11 @@ func (c *rawConfig) validate() error {
 				c.DefaultCustomMetricsCredentialType)
 		}
 
+		if c.BasicAuthForCustomMetrics == "only_existing_bindings" &&
+			c.DefaultCustomMetricsCredentialType == "binding-secret" {
+				return fmt.Errorf("Configuration error: contradictory: new bindings would use binding-secret which is not allowed")
+		}
+
 		validCredHelperImpls := []string{"default", "stored_procedure"}
 		if credHelperImplIsValid := slices.Contains(validCredHelperImpls, c.CredHelperImpl); !credHelperImplIsValid {
 			return fmt.Errorf("Configuration error: CredHelperImpl is required (basic auth is enabled) but no properly configured: %s",
