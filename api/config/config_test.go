@@ -52,8 +52,8 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
-					"cred_helper_impl": "default",
-					"default_credential_type": "x509",
+					"basic_auth_for_custom_metrics": "off",
+
 					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
 					"catalog_schema_path": "../schemas/catalog.schema.json",
 					"info_file_path": "../exampleconfig/info-file.json",
