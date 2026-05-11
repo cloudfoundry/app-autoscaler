@@ -576,6 +576,15 @@ func (b *Broker) Bind(
 		return result, handleParsingError(err, logger)
 	}
 
+	allowBasicAuthForNewBindings := b.conf.CustomMetricsAuthConfig != nil &&
+		b.conf.CustomMetricsAuthConfig.BasicAuthHandling == config.BasicAuthHandlingOn
+	hasRequestedBasicAuth := *appScalingConfig.GetConfiguration().GetCustomMetricsBindingAuth() == models.BindingSecret
+	if ! allowBasicAuthForNewBindings && hasRequestedBasicAuth {
+		err := errors.New("Requested binding with basic-authentication for custom metrics, but the server does not allow this.")
+		return result, apiresponses.NewFailureResponseBuilder(
+			err, http.StatusBadRequest, "forbidden_binding-secret-request").Build()
+	}
+
 	if isServiceKeyRequest := appGuidFromCloudCtl == ""; isServiceKeyRequest {
 		err := b.checkAppInSpace(logger, ctx, instanceID, details, appScalingConfig)
 		if err != nil {
