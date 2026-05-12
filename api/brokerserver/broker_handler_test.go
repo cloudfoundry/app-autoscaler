@@ -52,6 +52,11 @@ var _ = Describe("BrokerHandler", func() {
 		resp = httptest.NewRecorder()
 		fakeCredentials = &fakes.FakeCredentials{}
 		fakePlanChecker = nil
+		conf.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
+			BasicAuthHandling:           config.BasicAuthHandlingOn,
+			DefaultCustomMetricAuthType: models.BindingSecret,
+			BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+		}
 	})
 	JustBeforeEach(func() {
 		autoscalerBroker = broker.New(lagertest.NewTestLogger("testbroker"), conf,
