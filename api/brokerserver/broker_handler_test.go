@@ -1339,31 +1339,30 @@ var _ = Describe("BrokerHandler", func() {
 		})
 		Context("credential-type is not provided as part of binding request parameters", func() {
 			const testBindingPolicy = `{
-							"instance_max_count":3,
-							"instance_min_count":1,
-							"scaling_rules":[
-							{
-								"metric_type":"memoryused",
-								"threshold":99,
-								"operator":"<",
-								"adjustment":"-1"
-							}],
-							"schedules": {
-								"timezone": "Asia/Shanghai",
-								"recurring_schedule": [{
-									  "start_time": "10:00",
-									  "end_time": "18:00",
-									  "days_of_week": [
-										1,
-										2,
-										3
-									  ],
-									  "instance_min_count": 1,
-									  "instance_max_count": 10,
-									  "initial_min_instance_count": 5
-									}]
-							}
-						}`
+				"instance_max_count":3,
+				"instance_min_count":1,
+				"scaling_rules":[{
+					"metric_type":"memoryused",
+					"threshold":99,
+					"operator":"<",
+					"adjustment":"-1"
+				}],
+				"schedules": {
+					"timezone": "Asia/Shanghai",
+					"recurring_schedule": [{
+						"start_time": "10:00",
+						"end_time": "18:00",
+						"days_of_week": [
+						  1,
+						  2,
+						  3
+						],
+						"instance_min_count": 1,
+						"instance_max_count": 10,
+						"initial_min_instance_count": 5
+					}]
+				}
+			}`
 			BeforeEach(func() {
 				bindingRequestBody = &models.BindingRequestBody{
 					AppID: testAppId,
@@ -1389,6 +1388,7 @@ var _ = Describe("BrokerHandler", func() {
 				responseString := resp.Body.String()
 				err := json.Unmarshal([]byte(responseString), creds)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(creds.Credentials).NotTo(BeNil())
 				Expect(creds.Credentials.CustomMetrics.Username).To(Equal("test-username"))
 				Expect(creds.Credentials.CustomMetrics.Password).To(Equal("test-password"))
 				Expect(*creds.Credentials.CustomMetrics.URL).To(Equal("someURL"))
