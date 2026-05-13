@@ -35,9 +35,6 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		// app baseline + kernel overhead within the container memory limit.
 		maxSafeHeapAllocationMb = 80
 
-		// Thresholds are set below actual values to avoid flaking on metric jitter.
-		thresholdSafetyFactor = 0.9
-
 		// How long the test app holds resource usage before releasing (minutes).
 		holdMinutes = 5
 
@@ -54,16 +51,17 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		throughputScaleInHigh         = 15
 
 		// disk tests: the test app writes N*1000*1000 bytes (decimal MB) but CF
-		// reports disk in binary MiB (bytes÷1024²). 700 decimal MB ≈ 668 MiB.
-		diskUsageMb      = 700
+		// reports disk in binary MiB (bytes÷1024²). 550 decimal MB ≈ 524 MiB.
+		diskUsageMb      = 550
 		diskScaleInMb    = 300
-		diskScaleOutMb   = 600
+		diskScaleOutMb   = 500
 		diskUtilScaleIn  = 30
-		diskUtilScaleOut = 60
+		diskUtilScaleOut = 45
 
 		// memoryutil thresholds (percentage of memory quota).
-		memoryUtilScaleIn  = 50
-		memoryUtilScaleOut = 65
+		// 80MB heap on 128MB container → ~56% utilization reported by cgroup v2.
+		memoryUtilScaleIn  = 30
+		memoryUtilScaleOut = 50
 	)
 
 	When("an ordinary service-binding is used", func() {
@@ -92,10 +90,15 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				var heapToUse float64
 				BeforeEach(func() {
 					heapToUse = float64(min(maxHeapLimitMb, maxSafeHeapAllocationMb))
-					expectedAverageUsageAfterScaling := float64(heapToUse)/2 + minimalMemoryUsage
+					// On cgroup v2, 80 decimal MB heap → ~72 MiB reported (Anon memory).
+					// With 2 instances after scale-out: avg = (72 + baseline ~10) / 2 ≈ 41 MiB.
+					// Scale-in threshold must be between baseline (10) and post-scale avg (41).
+					// Scale-out threshold must be below single-instance value (72).
+					scaleInThreshold := int64(25)
+					scaleOutThreshold := int64(55)
 					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryused",
-						int64(thresholdSafetyFactor*expectedAverageUsageAfterScaling),
-						int64(thresholdSafetyFactor*heapToUse))
+						scaleInThreshold,
+						scaleOutThreshold)
 					initialInstanceCount = 1
 				})
 
