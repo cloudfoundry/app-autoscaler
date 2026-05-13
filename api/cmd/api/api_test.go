@@ -96,7 +96,6 @@ var _ = Describe("Api", func() {
 				Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
 			})
 		})
-
 		Context("with missing configuration", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
@@ -117,7 +116,7 @@ var _ = Describe("Api", func() {
 
 			It("should fail validation", func() {
 				Eventually(runner.Session).Should(Exit(1))
-				Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
+				Expect(runner.Session.Buffer()).To(Say("input-validation failed"))
 			})
 		})
 	})

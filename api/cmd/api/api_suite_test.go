@@ -3,7 +3,6 @@ package main_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"time"
@@ -166,17 +165,6 @@ func writeConfigValue(c YamlValue) *os.File {
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = f.Write(bytes)
-	Expect(err).NotTo(HaveOccurred())
-
-	return f
-}
-
-func writeConfigString(yamlContent string) *os.File {
-	f, err := os.CreateTemp("", "ap")
-	Expect(err).NotTo(HaveOccurred())
-	defer func() { _ = f.Close() }()
-
-	_, err = fmt.Fprint(f, yamlContent)
 	Expect(err).NotTo(HaveOccurred())
 
 	return f
