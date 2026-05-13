@@ -26,7 +26,9 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		maxHeapLimitMb int
 	)
 
-	const minimalMemoryUsage = 17 // observed minimal memory usage by the test app
+	// cgroup v2 (Noble stemcell) counts kernel memory against the container limit,
+	// unlike cgroup v1 which tracked it separately. This requires more headroom.
+	const minimalMemoryUsage = 35
 
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
@@ -53,7 +55,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			Context("There is a scale out and scale in policy", func() {
 				var heapToUse float64
 				BeforeEach(func() {
-					heapToUse = float64(min(maxHeapLimitMb, 200))
+					heapToUse = float64(min(maxHeapLimitMb, 80))
 					expectedAverageUsageAfterScaling := float64(heapToUse)/2 + minimalMemoryUsage
 					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryused", int64(0.9*expectedAverageUsageAfterScaling), int64(0.9*heapToUse))
 					initialInstanceCount = 1
@@ -78,13 +80,13 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 			Context("when memoryutil", func() {
 				BeforeEach(func() {
-					//current app resident size is 66mb so 66/128mb is 55%
-					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryutil", 58, 63)
+					// 80MB heap + ~17MB baseline = ~97MB reported; 97/128 = ~76% utilization
+					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryutil", 50, 65)
 					initialInstanceCount = 1
 				})
 
 				It("should scale out and back in", func() {
-					heapToUse := min(maxHeapLimitMb, int(float64(cfg.NodeMemoryLimit)*0.80))
+					heapToUse := min(maxHeapLimitMb, 80)
 					By(fmt.Sprintf("use 80%% or %d MB of memory in app", heapToUse))
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/5", heapToUse))
 
