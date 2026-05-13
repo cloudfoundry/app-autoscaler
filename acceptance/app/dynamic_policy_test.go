@@ -319,7 +319,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			It("should scale out and in", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
-				helpers.StartDiskUsage(cfg, appToScaleName, 550, 5)
+				// 700 decimal MB ≈ 668 MiB reported by CF (bytes÷1024²); 668/1024 ≈ 65% > 60% threshold
+				helpers.StartDiskUsage(cfg, appToScaleName, 700, 5)
 				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
@@ -336,7 +337,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			It("should scale out and in", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
-				helpers.StartDiskUsage(cfg, appToScaleName, 550, 5)
+				// 700 decimal MB ≈ 668 MiB reported by CF (bytes÷1024²); 668 > 600 threshold
+				helpers.StartDiskUsage(cfg, appToScaleName, 700, 5)
 				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
@@ -416,7 +418,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 				// Part-validation setup
 				By("Starting disk usage to trigger scale out")
-				helpers.StartDiskUsage(cfg, appToScaleName, 550, 6)
+				// 700 decimal MB ≈ 668 MiB reported; threshold is 500 MiB
+				helpers.StartDiskUsage(cfg, appToScaleName, 700, 6)
 
 				// Validation
 				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
