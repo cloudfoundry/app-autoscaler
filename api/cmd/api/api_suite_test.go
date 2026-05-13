@@ -114,13 +114,13 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// Load base config from YAML file and override dynamic values
 	conf = loadBaseConfig()
-	conf["broker_server"].(map[string]any)["port"] = brokerPort
-	conf["public_api_server"].(map[string]any)["port"] = publicApiPort
-	conf["health"].(map[string]any)["server_config"].(map[string]any)["port"] = healthport
-	conf["db"].(map[string]any)["binding_db"].(map[string]any)["url"] = GetDbUrl()
-	conf["db"].(map[string]any)["policy_db"].(map[string]any)["url"] = GetDbUrl()
-	conf["scheduler"].(map[string]any)["scheduler_url"] = schedulerServer.URL()
-	conf["cf"].(map[string]any)["api"] = ccServer.URL()
+	conf["broker_server"].(YamlValue)["port"] = brokerPort
+	conf["public_api_server"].(YamlValue)["port"] = publicApiPort
+	conf["health"].(YamlValue)["server_config"].(YamlValue)["port"] = healthport
+	conf["db"].(YamlValue)["binding_db"].(YamlValue)["url"] = GetDbUrl()
+	conf["db"].(YamlValue)["policy_db"].(YamlValue)["url"] = GetDbUrl()
+	conf["scheduler"].(YamlValue)["scheduler_url"] = schedulerServer.URL()
+	conf["cf"].(YamlValue)["api"] = ccServer.URL()
 
 	configFile = writeConfigValue(conf)
 })

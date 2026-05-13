@@ -53,8 +53,8 @@ var _ = Describe("Metricsforwarder", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingConfig := copyConfig(cfg)
-				missingConfig["db"] = map[string]any{
-					"policy_db": map[string]any{"url": ""},
+				missingConfig["db"] = YamlValue{
+					"policy_db": YamlValue{"url": ""},
 				}
 				runner.configPath = writeConfigValue(missingConfig).Name()
 				runner.Start()
@@ -98,7 +98,7 @@ var _ = Describe("Metricsforwarder", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					reqURL := fmt.Sprintf(
-						"http://127.0.0.1:%d/v1/apps/an-app-id/metrics", cfg["server"].(map[string]any)["port"])
+						"http://127.0.0.1:%d/v1/apps/an-app-id/metrics", cfg["server"].(YamlValue)["port"])
 					req, err = http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(body))
 					Expect(err).NotTo(HaveOccurred())
 

@@ -30,7 +30,7 @@ import (
 
 var (
 	mfPath                string
-	cfg                   map[string]any
+	cfg                   YamlValue
 	healthport            int
 	healthHttpClient      *http.Client
 	configFile            *os.File
@@ -84,20 +84,20 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// Load base config and override dynamic values
 	cfg = loadBaseConfig()
-	loggregator := cfg["loggregator"].(map[string]any)
-	loggregatorTLS := loggregator["tls"].(map[string]any)
+	loggregator := cfg["loggregator"].(YamlValue)
+	loggregatorTLS := loggregator["tls"].(YamlValue)
 	loggregatorTLS["ca_file"] = filepath.Join(testCertDir, "loggregator-ca.crt")
 	loggregatorTLS["cert_file"] = filepath.Join(testCertDir, "metron.crt")
 	loggregatorTLS["key_file"] = filepath.Join(testCertDir, "metron.key")
 	loggregator["metron_address"] = grpcIngressTestServer.GetAddr()
 
-	cfg["server"].(map[string]any)["port"] = 10000 + GinkgoParallelProcess()
+	cfg["server"].(YamlValue)["port"] = 10000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
-	cfg["health"].(map[string]any)["server_config"].(map[string]any)["port"] = healthport
+	cfg["health"].(YamlValue)["server_config"].(YamlValue)["port"] = healthport
 
 	dbUrl := testhelpers2.GetDbUrl()
-	cfg["db"].(map[string]any)["policy_db"].(map[string]any)["url"] = dbUrl
-	cfg["db"].(map[string]any)["binding_db"].(map[string]any)["url"] = dbUrl
+	cfg["db"].(YamlValue)["policy_db"].(YamlValue)["url"] = dbUrl
+	cfg["db"].(YamlValue)["binding_db"].(YamlValue)["url"] = dbUrl
 
 	configFile = writeConfigValue(cfg)
 
@@ -175,25 +175,27 @@ var _ = SynchronizedAfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
-func loadBaseConfig() map[string]any {
+type YamlValue = map[string]any
+
+func loadBaseConfig() YamlValue {
 	baseBytes, err := os.ReadFile("testdata/base_config.yml")
 	Expect(err).NotTo(HaveOccurred())
-	var base map[string]any
+	var base YamlValue
 	err = yaml.Unmarshal(baseBytes, &base)
 	Expect(err).NotTo(HaveOccurred())
 	return base
 }
 
-func copyConfig(src map[string]any) map[string]any {
+func copyConfig(src YamlValue) YamlValue {
 	bytes, err := yaml.Marshal(src)
 	Expect(err).NotTo(HaveOccurred())
-	var dst map[string]any
+	var dst YamlValue
 	err = yaml.Unmarshal(bytes, &dst)
 	Expect(err).NotTo(HaveOccurred())
 	return dst
 }
 
-func writeConfigValue(c map[string]any) *os.File {
+func writeConfigValue(c YamlValue) *os.File {
 	f, err := os.CreateTemp("", "mf")
 	Expect(err).NotTo(HaveOccurred())
 	defer f.Close()

@@ -49,13 +49,13 @@ var _ = Describe("Api", func() {
 		apiHttpClient = testhelpers.NewPublicApiClient()
 		cfServerHttpClient = &http.Client{}
 
-		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["public_api_server"].(map[string]any)["port"]))
+		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["public_api_server"].(YamlValue)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
-		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["broker_server"].(map[string]any)["port"]))
+		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["broker_server"].(YamlValue)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
-		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf["health"].(map[string]any)["server_config"].(map[string]any)["port"]))
+		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf["health"].(YamlValue)["server_config"].(YamlValue)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
 		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
@@ -100,13 +100,13 @@ var _ = Describe("Api", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingConfig := copyConfig(conf)
-				missingConfig["db"] = map[string]any{
-					"policy_db":  map[string]any{"url": ""},
-					"binding_db": map[string]any{"url": ""},
+				missingConfig["db"] = YamlValue{
+					"policy_db":  YamlValue{"url": ""},
+					"binding_db": YamlValue{"url": ""},
 				}
 				missingConfig["broker_credentials"] = []any{}
-				missingConfig["broker_server"].(map[string]any)["port"] = 7000 + GinkgoParallelProcess()
-				missingConfig["logging"] = map[string]any{"level": "debug"}
+				missingConfig["broker_server"].(YamlValue)["port"] = 7000 + GinkgoParallelProcess()
+				missingConfig["logging"] = YamlValue{"level": "debug"}
 				runner.configPath = writeConfigValue(missingConfig).Name()
 			})
 
@@ -184,7 +184,7 @@ var _ = Describe("Api", func() {
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
 			healthConfig := copyConfig(conf)
-			healthConfig["health"].(map[string]any)["basic_auth"] = map[string]any{
+			healthConfig["health"].(YamlValue)["basic_auth"] = YamlValue{
 				"username": "",
 				"password": "",
 			}
