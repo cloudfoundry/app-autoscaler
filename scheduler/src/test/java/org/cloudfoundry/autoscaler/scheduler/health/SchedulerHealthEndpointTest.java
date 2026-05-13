@@ -2,8 +2,8 @@ package org.cloudfoundry.autoscaler.scheduler.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.prometheus.client.exporter.HTTPServer;
 import org.cloudfoundry.autoscaler.scheduler.conf.CfHttpConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,7 +21,7 @@ public class SchedulerHealthEndpointTest {
 
   @Autowired private TestRestTemplate restTemplate;
 
-  @Autowired private MetricsConfiguration metricsConfig;
+  @Autowired private HTTPServer metricsServer;
 
   @Autowired private CfHttpConfiguration cfHttpConfiguration;
 
@@ -61,7 +61,7 @@ public class SchedulerHealthEndpointTest {
   }
 
   private String metricsUrl() {
-    return "http://localhost:" + metricsConfig.getPort() + "/metrics";
+    return "http://localhost:" + metricsServer.getPort() + "/metrics";
   }
 
   @Test

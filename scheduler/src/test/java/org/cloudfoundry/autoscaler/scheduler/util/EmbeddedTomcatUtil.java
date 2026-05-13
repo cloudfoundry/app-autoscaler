@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,7 +46,7 @@ public class EmbeddedTomcatUtil {
   public void start() {
     try {
       tomcat.start();
-      appContext = tomcat.addWebapp("/", applicationDir.getAbsolutePath());
+      appContext = tomcat.addContext("/", applicationDir.getAbsolutePath());
     } catch (LifecycleException e) {
       throw new RuntimeException(e);
     }
@@ -65,15 +64,15 @@ public class EmbeddedTomcatUtil {
   }
 
   public void addScalingEngineMockForAppAndScheduleId(
-      String appId, Long scheduleId, int statusCode, String message) throws ServletException {
+      String appId, Long scheduleId, int statusCode, String message) {
     String url = "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
-    tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
+    Tomcat.addServlet(appContext, appId, new ScalingEngineMock(statusCode, message));
     appContext.addServletMappingDecoded(url, appId);
   }
 
   public void addScalingEngineMockForAppId(String appId, int statusCode, String message) {
     String url = "/v1/apps/" + appId + "/active_schedules/*";
-    tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
+    Tomcat.addServlet(appContext, appId, new ScalingEngineMock(statusCode, message));
     appContext.addServletMappingDecoded(url, appId);
   }
 
