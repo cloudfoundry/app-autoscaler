@@ -317,7 +317,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			It("should scale out and in", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
-				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
+				helpers.StartDiskUsage(cfg, appToScaleName, 550, 5)
 				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
@@ -334,7 +334,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			It("should scale out and in", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
-				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
+				helpers.StartDiskUsage(cfg, appToScaleName, 550, 5)
 				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
@@ -414,7 +414,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 				// Part-validation setup
 				By("Starting disk usage to trigger scale out")
-				helpers.StartDiskUsage(cfg, appToScaleName, 800, 6)
+				helpers.StartDiskUsage(cfg, appToScaleName, 550, 6)
 
 				// Validation
 				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
