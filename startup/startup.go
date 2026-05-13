@@ -47,6 +47,12 @@ func LoadAndValidateConfig[T ConfigWithLogging](path string, vcapConfig configut
 		return zero, err
 	}
 
+	err = conf.Validate()
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		return zero, err
+	}
+
 	return conf, nil
 }
 

@@ -49,14 +49,13 @@ var _ = Describe("Eventgenerator", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 	})
-
 	JustBeforeEach(func() {
 		runner.Start()
 	})
-
 	AfterEach(func() {
 		runner.KillWithFire()
 	})
+
 	Context("with a valid config file", func() {
 		It("Starts successfully, retrives metrics and  generates events", func() {
 			Consistently(runner.Session).ShouldNot(Exit())
@@ -64,7 +63,6 @@ var _ = Describe("Eventgenerator", func() {
 			Eventually(func() bool { return len(mockScalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 		})
 	})
-
 	Context("with a missing config file", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
@@ -76,7 +74,6 @@ var _ = Describe("Eventgenerator", func() {
 			Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
 		})
 	})
-
 	Context("with an invalid config file", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
@@ -97,7 +94,6 @@ var _ = Describe("Eventgenerator", func() {
 			Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
 		})
 	})
-
 	Context("with missing configuration", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
@@ -122,7 +118,6 @@ var _ = Describe("Eventgenerator", func() {
 			configFile := writeConfig(conf)
 			runner.configPath = configFile.Name()
 		})
-
 		AfterEach(func() {
 			os.Remove(runner.configPath)
 		})
@@ -132,14 +127,12 @@ var _ = Describe("Eventgenerator", func() {
 			Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
 		})
 	})
-
 	When("an interrupt is sent", func() {
 		It("should stop", func() {
 			runner.Session.Interrupt()
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 	})
-
 	Describe("EventGenerator REST API", func() {
 		When("a request for aggregated metrics history comes", func() {
 			BeforeEach(func() {
@@ -154,7 +147,6 @@ var _ = Describe("Eventgenerator", func() {
 			})
 		})
 	})
-
 	Describe("EventGenerator Health endpoint", func() {
 
 		BeforeEach(func() {
@@ -204,7 +196,6 @@ var _ = Describe("Eventgenerator", func() {
 			})
 		})
 	})
-
 	When("running CF server", func() {
 		Context("Get /v1/liveness", func() {
 			It("should return 200", func() {
