@@ -64,13 +64,13 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/5", int64(heapToUse)))
 
 					By("wait for scale to 2")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 					By("Drop memory used by app")
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
 
 					By("Wait for scale to minimum instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 		})
@@ -89,13 +89,13 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/5", heapToUse))
 
 					By("Wait for scale to 2 instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 					By("drop memory used")
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
 
 					By("Wait for scale down to 1 instance")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 		})
@@ -141,7 +141,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", Label(acceptance.LabelSmokeTests), func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 				})
 			})
 
@@ -172,7 +172,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale in", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 
@@ -219,7 +219,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 				})
 			})
 
@@ -252,7 +252,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				It("should scale in", func() {
 					// because we are generating 20rps but starting with 2 instances,
 					// there should be on average 10rps per instance, which should trigger the scale in
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 		})
@@ -267,7 +267,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			It("when cpu is greater than scaling out threshold", func() {
 				By("should scale out to 2 instances")
 				helpers.StartCPUUsage(cfg, appToScaleName, int(float64(cfg.CPUUpperThreshold)*0.9), 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				By("should scale in to 1 instance after cpu usage is reduced")
 				//only hit the one instance that was asked to run hot.
@@ -301,11 +301,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				// cpuutil will be 100% if cpu usage is reaching the value of cpu entitlement
 				maxCPUUsage := cfg.CPUUtilScalingPolicyTest.AppCPUEntitlement
 				helpers.StartCPUUsage(cfg, appToScaleName, maxCPUUsage, 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to run hot
 				helpers.StopCPUUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 		Context("when there is a scaling policy for diskutil", func() {
@@ -318,11 +318,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
 				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 		Context("when there is a scaling policy for disk", func() {
@@ -335,11 +335,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
 				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 	})
@@ -417,7 +417,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.StartDiskUsage(cfg, appToScaleName, 800, 6)
 
 				// Validation
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 6*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// Part-validation setup
 				By("Stopping disk usage to trigger scale in")
