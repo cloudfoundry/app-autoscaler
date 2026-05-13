@@ -108,7 +108,7 @@ var _ = Describe("Api", func() {
 				missingConfig["broker_credentials"] = []any{}
 				missingConfig["broker_server"].(map[string]any)["port"] = 7000 + GinkgoParallelProcess()
 				missingConfig["logging"] = map[string]any{"level": "debug"}
-				runner.configPath = writeConfig(missingConfig).Name()
+				runner.configPath = writeConfigValue(missingConfig).Name()
 			})
 
 			AfterEach(func() {
@@ -189,7 +189,7 @@ var _ = Describe("Api", func() {
 				"username": "",
 				"password": "",
 			}
-			runner.configPath = writeConfig(healthConfig).Name()
+			runner.configPath = writeConfigValue(healthConfig).Name()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
@@ -228,7 +228,7 @@ var _ = Describe("Api", func() {
 			pluginConfig := copyConfig(conf)
 			pluginConfig["basic_auth_for_custom_metrics"] = "on"
 			pluginConfig["cred_helper_impl"] = "default"
-			runner.configPath = writeConfig(pluginConfig).Name()
+			runner.configPath = writeConfigValue(pluginConfig).Name()
 		})
 		AfterEach(func() {
 			runner.Interrupt()

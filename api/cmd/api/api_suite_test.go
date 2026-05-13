@@ -34,7 +34,7 @@ const (
 
 var (
 	apPath          string
-	conf            map[string]any
+	conf            YamlValue
 	configFile      *os.File
 	schedulerServer *ghttp.Server
 	catalogBytes    string
@@ -123,7 +123,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	conf["scheduler"].(map[string]any)["scheduler_url"] = schedulerServer.URL()
 	conf["cf"].(map[string]any)["api"] = ccServer.URL()
 
-	configFile = writeConfig(conf)
+	configFile = writeConfigValue(conf)
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -137,25 +137,27 @@ var _ = SynchronizedAfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
-func loadBaseConfig() map[string]any {
+type YamlValue = map[string]any
+
+func loadBaseConfig() YamlValue {
 	baseBytes, err := os.ReadFile("testdata/base_config.yml")
 	Expect(err).NotTo(HaveOccurred())
-	var base map[string]any
+	var base YamlValue
 	err = yaml.Unmarshal(baseBytes, &base)
 	Expect(err).NotTo(HaveOccurred())
 	return base
 }
 
-func copyConfig(src map[string]any) map[string]any {
+func copyConfig(src YamlValue) YamlValue {
 	bytes, err := yaml.Marshal(src)
 	Expect(err).NotTo(HaveOccurred())
-	var dst map[string]any
+	var dst YamlValue
 	err = yaml.Unmarshal(bytes, &dst)
 	Expect(err).NotTo(HaveOccurred())
 	return dst
 }
 
-func writeConfig(c map[string]any) *os.File {
+func writeConfigValue(c YamlValue) *os.File {
 	f, err := os.CreateTemp("", "ap")
 	Expect(err).NotTo(HaveOccurred())
 	defer func() { _ = f.Close() }()
@@ -169,7 +171,7 @@ func writeConfig(c map[string]any) *os.File {
 	return f
 }
 
-func writeConfigBytes(yamlContent string) *os.File {
+func writeConfigString(yamlContent string) *os.File {
 	f, err := os.CreateTemp("", "ap")
 	Expect(err).NotTo(HaveOccurred())
 	defer func() { _ = f.Close() }()
