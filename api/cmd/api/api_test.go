@@ -10,10 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -52,13 +49,13 @@ var _ = Describe("Api", func() {
 		apiHttpClient = testhelpers.NewPublicApiClient()
 		cfServerHttpClient = &http.Client{}
 
-		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf.Server.Port))
+		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["public_api_server"].(map[string]any)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
-		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf.BrokerServer.Port))
+		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["broker_server"].(map[string]any)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
-		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf.Health.ServerConfig.Port))
+		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf["health"].(map[string]any)["server_config"].(map[string]any)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
 		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
@@ -79,7 +76,6 @@ var _ = Describe("Api", func() {
 				Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
 			})
 		})
-
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
@@ -104,18 +100,15 @@ var _ = Describe("Api", func() {
 		Context("with missing configuration", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				missingConfig := conf
-
-				missingConfig.Db = make(map[string]db.DatabaseConfig)
-				missingConfig.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
-				missingConfig.Db[db.BindingDb] = db.DatabaseConfig{URL: ""}
-
-				var brokerCreds []config.BrokerCredentialsConfig
-				missingConfig.BrokerCredentials = brokerCreds
-
-				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelProcess()
-				missingConfig.Logging.Level = "debug"
-				runner.configPath = writeConfig(&missingConfig).Name()
+				missingConfig := copyConfig(conf)
+				missingConfig["db"] = map[string]any{
+					"policy_db":  map[string]any{"url": ""},
+					"binding_db": map[string]any{"url": ""},
+				}
+				missingConfig["broker_credentials"] = []any{}
+				missingConfig["broker_server"].(map[string]any)["port"] = 7000 + GinkgoParallelProcess()
+				missingConfig["logging"] = map[string]any{"level": "debug"}
+				runner.configPath = writeConfig(missingConfig).Name()
 			})
 
 			AfterEach(func() {
@@ -127,7 +120,6 @@ var _ = Describe("Api", func() {
 				Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
 			})
 		})
-
 	})
 	Describe("when interrupt is sent", func() {
 		It("should stop", func() {
@@ -192,10 +184,12 @@ var _ = Describe("Api", func() {
 	})
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
-			basicAuthConfig := conf
-			basicAuthConfig.Health.BasicAuth.Username = ""
-			basicAuthConfig.Health.BasicAuth.Password = ""
-			runner.configPath = writeConfig(&basicAuthConfig).Name()
+			healthConfig := copyConfig(conf)
+			healthConfig["health"].(map[string]any)["basic_auth"] = map[string]any{
+				"username": "",
+				"password": "",
+			}
+			runner.configPath = writeConfig(healthConfig).Name()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
@@ -224,20 +218,17 @@ var _ = Describe("Api", func() {
 			})
 			When("username and password are correct for basic authentication during health check", func() {
 				It("should return 200", func() {
-					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password, http.StatusOK)
+					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), "healthcheckuser", "healthcheckpassword", http.StatusOK)
 				})
 			})
 		})
 	})
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
-			pluginPathConfig := conf
-			pluginPathConfig.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
-				BasicAuthHandling:           config.BasicAuthHandlingOn,
-				DefaultCustomMetricAuthType: models.BindingSecret,
-				BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
-			}
-			runner.configPath = writeConfig(&pluginPathConfig).Name()
+			pluginConfig := copyConfig(conf)
+			pluginConfig["basic_auth_for_custom_metrics"] = "on"
+			pluginConfig["cred_helper_impl"] = "default"
+			runner.configPath = writeConfig(pluginConfig).Name()
 		})
 		AfterEach(func() {
 			runner.Interrupt()

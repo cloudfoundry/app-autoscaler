@@ -3,17 +3,14 @@ package main_test
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"github.com/onsi/gomega/ghttp"
 
@@ -37,7 +34,7 @@ const (
 
 var (
 	apPath          string
-	conf            config.Config
+	conf            map[string]any
 	configFile      *os.File
 	schedulerServer *ghttp.Server
 	catalogBytes    string
@@ -114,106 +111,19 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	publicApiPort = 9000 + GinkgoParallelProcess()
 	healthport = 7000 + GinkgoParallelProcess()
 
-	conf.BrokerServer = helpers.ServerConfig{
-		Port: brokerPort,
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
-			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.Server = helpers.ServerConfig{
-		Port: publicApiPort,
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "api.key"),
-			CertFile:   filepath.Join(testCertDir, "api.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.Logging.Level = "info"
-	conf.Db = make(map[string]db.DatabaseConfig)
-	dbUrl := GetDbUrl()
-	conf.Db[db.BindingDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-	conf.Db[db.PolicyDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-
-	brokerCred1 := config.BrokerCredentialsConfig{
-		BrokerUsername:     "broker_username",
-		BrokerUsernameHash: nil,
-		BrokerPassword:     "broker_password",
-		BrokerPasswordHash: nil,
-	}
-	brokerCred2 := config.BrokerCredentialsConfig{
-		BrokerUsername:     "broker_username2",
-		BrokerUsernameHash: nil,
-		BrokerPassword:     "broker_password2",
-		BrokerPasswordHash: nil,
-	}
-	var brokerCreds []config.BrokerCredentialsConfig
-	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
-	conf.BrokerCredentials = brokerCreds
-
-	conf.CatalogPath = "../../exampleconfig/catalog-example.json"
-	conf.CatalogSchemaPath = "../../schemas/catalog.schema.json"
-	conf.BindingRequestSchemaPath = "../../broker/binding_request_parser/meta.schema.json"
-
 	schedulerServer = ghttp.NewServer()
-	conf.Scheduler.SchedulerURL = schedulerServer.URL()
-	conf.InfoFilePath = "../../exampleconfig/info-file.json"
 
-	conf.EventGenerator = config.EventGeneratorConfig{
-		EventGeneratorUrl: "http://localhost:8084",
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-			CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.ScalingEngine = config.ScalingEngineConfig{
-		ScalingEngineUrl: "http://localhost:8085",
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-			CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.MetricsForwarder = config.MetricsForwarderConfig{
-		MetricsForwarderUrl: "http://localhost:8088",
-	}
+	// Load base config from YAML file and override dynamic values
+	conf = loadBaseConfig()
+	conf["broker_server"].(map[string]any)["port"] = brokerPort
+	conf["public_api_server"].(map[string]any)["port"] = publicApiPort
+	conf["health"].(map[string]any)["server_config"].(map[string]any)["port"] = healthport
+	conf["db"].(map[string]any)["binding_db"].(map[string]any)["url"] = GetDbUrl()
+	conf["db"].(map[string]any)["policy_db"].(map[string]any)["url"] = GetDbUrl()
+	conf["scheduler"].(map[string]any)["scheduler_url"] = schedulerServer.URL()
+	conf["cf"].(map[string]any)["api"] = ccServer.URL()
 
-	conf.CF.API = ccServer.URL()
-	conf.CF.ClientID = "client-id"
-	conf.CF.Secret = "client-secret"
-	conf.CF.SkipSSLValidation = true
-	conf.Health = helpers.HealthConfig{
-		ServerConfig: helpers.ServerConfig{
-			Port: healthport,
-		},
-		BasicAuth: models.BasicAuth{
-			Username: "healthcheckuser",
-			Password: "healthcheckpassword",
-		},
-	}
-	conf.RateLimit.MaxAmount = 10
-	conf.RateLimit.ValidDuration = 1 * time.Second
-
-	conf.CustomMetricsAuthConfig = &config.CustomMetricsBasicAuthCfg{
-		BasicAuthHandling:           config.BasicAuthHandlingOn,
-		DefaultCustomMetricAuthType: models.BindingSecret,
-		BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
-	}
-
-	configFile = writeConfig(&conf)
-
+	configFile = writeConfig(conf)
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -227,18 +137,47 @@ var _ = SynchronizedAfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
-func writeConfig(c *config.Config) *os.File {
-	conf, err := os.CreateTemp("", "ap")
+func loadBaseConfig() map[string]any {
+	baseBytes, err := os.ReadFile("testdata/base_config.yml")
 	Expect(err).NotTo(HaveOccurred())
-	defer func() { _ = conf.Close() }()
+	var base map[string]any
+	err = yaml.Unmarshal(baseBytes, &base)
+	Expect(err).NotTo(HaveOccurred())
+	return base
+}
+
+func copyConfig(src map[string]any) map[string]any {
+	bytes, err := yaml.Marshal(src)
+	Expect(err).NotTo(HaveOccurred())
+	var dst map[string]any
+	err = yaml.Unmarshal(bytes, &dst)
+	Expect(err).NotTo(HaveOccurred())
+	return dst
+}
+
+func writeConfig(c map[string]any) *os.File {
+	f, err := os.CreateTemp("", "ap")
+	Expect(err).NotTo(HaveOccurred())
+	defer func() { _ = f.Close() }()
 
 	bytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = conf.Write(bytes)
+	_, err = f.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
-	return conf
+	return f
+}
+
+func writeConfigBytes(yamlContent string) *os.File {
+	f, err := os.CreateTemp("", "ap")
+	Expect(err).NotTo(HaveOccurred())
+	defer func() { _ = f.Close() }()
+
+	_, err = fmt.Fprint(f, yamlContent)
+	Expect(err).NotTo(HaveOccurred())
+
+	return f
 }
 
 type ApiRunner struct {

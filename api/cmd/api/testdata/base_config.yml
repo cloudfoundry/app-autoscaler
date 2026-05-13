@@ -1,0 +1,66 @@
+logging:
+  level: info
+broker_server:
+  port: 0  # overridden at runtime
+  tls:
+    key_file: ../../../test-certs/servicebroker.key
+    cert_file: ../../../test-certs/servicebroker.crt
+    ca_file: ../../../test-certs/autoscaler-ca.crt
+public_api_server:
+  port: 0  # overridden at runtime
+  tls:
+    key_file: ../../../test-certs/api.key
+    cert_file: ../../../test-certs/api.crt
+    ca_file: ../../../test-certs/autoscaler-ca.crt
+db:
+  binding_db:
+    url: ""  # overridden at runtime
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 10s
+  policy_db:
+    url: ""  # overridden at runtime
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 10s
+broker_credentials:
+  - broker_username: broker_username
+    broker_password: broker_password
+  - broker_username: broker_username2
+    broker_password: broker_password2
+catalog_path: ../../exampleconfig/catalog-example.json
+catalog_schema_path: ../../schemas/catalog.schema.json
+policy_schema_path: ../../broker/binding_request_parser/meta.schema.json
+scheduler:
+  scheduler_url: ""  # overridden at runtime
+info_file_path: ../../exampleconfig/info-file.json
+event_generator:
+  event_generator_url: http://localhost:8084
+  tls:
+    key_file: ../../../test-certs/eventgenerator.key
+    cert_file: ../../../test-certs/eventgenerator.crt
+    ca_file: ../../../test-certs/autoscaler-ca.crt
+scaling_engine:
+  scaling_engine_url: http://localhost:8085
+  tls:
+    key_file: ../../../test-certs/scalingengine.key
+    cert_file: ../../../test-certs/scalingengine.crt
+    ca_file: ../../../test-certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: http://localhost:8088
+cf:
+  api: ""  # overridden at runtime
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: true
+health:
+  server_config:
+    port: 0  # overridden at runtime
+  basic_auth:
+    username: healthcheckuser
+    password: healthcheckpassword
+rate_limit:
+  max_amount: 10
+  valid_duration: 1s
+basic_auth_for_custom_metrics: "on"
+cred_helper_impl: default
