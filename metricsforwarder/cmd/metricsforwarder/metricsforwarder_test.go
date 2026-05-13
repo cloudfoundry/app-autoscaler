@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	. "github.com/onsi/gomega/gbytes"
@@ -53,12 +52,11 @@ var _ = Describe("Metricsforwarder", func() {
 		Context("with missing configuration", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				missingConfig := cfg
-
-				missingConfig.Db = make(map[string]db.DatabaseConfig)
-				missingConfig.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
-
-				runner.configPath = writeConfig(&missingConfig).Name()
+				missingConfig := copyConfig(cfg)
+				missingConfig["db"] = map[string]any{
+					"policy_db": map[string]any{"url": ""},
+				}
+				runner.configPath = writeConfigValue(missingConfig).Name()
 				runner.Start()
 			})
 
@@ -68,7 +66,7 @@ var _ = Describe("Metricsforwarder", func() {
 
 			It("should fail validation", func() {
 				Eventually(runner.Session).Should(Exit(1))
-				Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
+				Expect(runner.Session.Buffer()).To(Say("input-validation failed"))
 			})
 		})
 	})
@@ -100,7 +98,7 @@ var _ = Describe("Metricsforwarder", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					reqURL := fmt.Sprintf(
-						"http://127.0.0.1:%d/v1/apps/an-app-id/metrics", cfg.Server.Port)
+						"http://127.0.0.1:%d/v1/apps/an-app-id/metrics", cfg["server"].(map[string]any)["port"])
 					req, err = http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(body))
 					Expect(err).NotTo(HaveOccurred())
 

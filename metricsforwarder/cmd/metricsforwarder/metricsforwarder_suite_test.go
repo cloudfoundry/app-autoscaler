@@ -24,15 +24,13 @@ import (
 	yaml "go.yaml.in/yaml/v4"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/testhelpers"
 )
 
 var (
 	mfPath                string
-	cfg                   config.Config
+	cfg                   map[string]any
 	healthport            int
 	healthHttpClient      *http.Client
 	configFile            *os.File
@@ -84,42 +82,24 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	err = grpcIngressTestServer.Start()
 	Expect(err).NotTo(HaveOccurred())
 
-	cfg.LoggregatorConfig.TLS.CACertFile = filepath.Join(testCertDir, "loggregator-ca.crt")
-	cfg.LoggregatorConfig.TLS.CertFile = filepath.Join(testCertDir, "metron.crt")
-	cfg.LoggregatorConfig.TLS.KeyFile = filepath.Join(testCertDir, "metron.key")
-	cfg.LoggregatorConfig.MetronAddress = grpcIngressTestServer.GetAddr()
+	// Load base config and override dynamic values
+	cfg = loadBaseConfig()
+	loggregator := cfg["loggregator"].(map[string]any)
+	loggregatorTLS := loggregator["tls"].(map[string]any)
+	loggregatorTLS["ca_file"] = filepath.Join(testCertDir, "loggregator-ca.crt")
+	loggregatorTLS["cert_file"] = filepath.Join(testCertDir, "metron.crt")
+	loggregatorTLS["key_file"] = filepath.Join(testCertDir, "metron.key")
+	loggregator["metron_address"] = grpcIngressTestServer.GetAddr()
 
-	cfg.RateLimit.MaxAmount = 10
-	cfg.RateLimit.ValidDuration = 1 * time.Second
-	cfg.Logging.Level = "debug"
-
-	cfg.Health.BasicAuth.Username = "metricsforwarderhealthcheckuser"
-	cfg.Health.BasicAuth.Password = "metricsforwarderhealthcheckpassword"
-	cfg.Health.ReadinessCheckEnabled = true
-
-	cfg.Server.Port = 10000 + GinkgoParallelProcess()
+	cfg["server"].(map[string]any)["port"] = 10000 + GinkgoParallelProcess()
 	healthport = 8000 + GinkgoParallelProcess()
-	cfg.Health.ServerConfig.Port = healthport
-	cfg.CacheCleanupInterval = 10 * time.Minute
-	cfg.PolicyPollerInterval = 40 * time.Second
-	cfg.Db = make(map[string]db.DatabaseConfig)
+	cfg["health"].(map[string]any)["server_config"].(map[string]any)["port"] = healthport
+
 	dbUrl := testhelpers2.GetDbUrl()
-	cfg.Db[db.PolicyDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-	cfg.Db[db.BindingDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
+	cfg["db"].(map[string]any)["policy_db"].(map[string]any)["url"] = dbUrl
+	cfg["db"].(map[string]any)["binding_db"].(map[string]any)["url"] = dbUrl
 
-	cfg.CredentialHelperConfig = models.BasicAuthHandlingNative{}
-
-	configFile = writeConfig(&cfg)
+	configFile = writeConfigValue(cfg)
 
 	httpClient = &http.Client{}
 	healthHttpClient = &http.Client{}
@@ -195,18 +175,36 @@ var _ = SynchronizedAfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
-func writeConfig(c *config.Config) *os.File {
-	cfg, err := os.CreateTemp("", "mf")
+func loadBaseConfig() map[string]any {
+	baseBytes, err := os.ReadFile("testdata/base_config.yml")
 	Expect(err).NotTo(HaveOccurred())
-	defer cfg.Close()
+	var base map[string]any
+	err = yaml.Unmarshal(baseBytes, &base)
+	Expect(err).NotTo(HaveOccurred())
+	return base
+}
+
+func copyConfig(src map[string]any) map[string]any {
+	bytes, err := yaml.Marshal(src)
+	Expect(err).NotTo(HaveOccurred())
+	var dst map[string]any
+	err = yaml.Unmarshal(bytes, &dst)
+	Expect(err).NotTo(HaveOccurred())
+	return dst
+}
+
+func writeConfigValue(c map[string]any) *os.File {
+	f, err := os.CreateTemp("", "mf")
+	Expect(err).NotTo(HaveOccurred())
+	defer f.Close()
 
 	bytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = cfg.Write(bytes)
+	_, err = f.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
-	return cfg
+	return f
 }
 
 type MetricsForwarderRunner struct {
