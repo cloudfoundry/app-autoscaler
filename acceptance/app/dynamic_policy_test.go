@@ -26,7 +26,43 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		maxHeapLimitMb int
 	)
 
-	const minimalMemoryUsage = 17 // observed minimal memory usage by the test app
+	const (
+		// cgroup v2 (Noble stemcell) counts kernel memory against the container limit,
+		// unlike cgroup v1 which tracked it separately. This requires more headroom.
+		minimalMemoryUsage = 35
+
+		// Maximum heap the test app should allocate (MB). Must leave room for
+		// app baseline + kernel overhead within the container memory limit.
+		maxSafeHeapAllocationMb = 80
+
+		// How long the test app holds resource usage before releasing (minutes).
+		holdMinutes = 5
+
+		// responsetime test: app sleeps 100ms per request, threshold at 50ms triggers scale-out.
+		responseTimeSlowDelayMs   = 100
+		responseTimeScaleOutMs    = 50
+		responseTimeScaleInLowMs  = 50
+		responseTimeScaleInHighMs = 150
+
+		// throughput test: generate 20 rps, scale-out at 15 rps per instance.
+		throughputRps                 = 20
+		throughputScaleOutPerInstance = 15
+		throughputScaleInLow          = 5
+		throughputScaleInHigh         = 15
+
+		// disk tests: the test app writes N*1000*1000 bytes (decimal MB) but CF
+		// reports disk in binary MiB (bytes÷1024²). 550 decimal MB ≈ 524 MiB.
+		diskUsageMb      = 550
+		diskScaleInMb    = 300
+		diskScaleOutMb   = 500
+		diskUtilScaleIn  = 30
+		diskUtilScaleOut = 45
+
+		// memoryutil thresholds (percentage of memory quota).
+		// 80MB heap on 128MB container → ~56% utilization reported by cgroup v2.
+		memoryUtilScaleIn  = 30
+		memoryUtilScaleOut = 50
+	)
 
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
@@ -53,24 +89,31 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			Context("There is a scale out and scale in policy", func() {
 				var heapToUse float64
 				BeforeEach(func() {
-					heapToUse = float64(min(maxHeapLimitMb, 200))
-					expectedAverageUsageAfterScaling := float64(heapToUse)/2 + minimalMemoryUsage
-					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryused", int64(0.9*expectedAverageUsageAfterScaling), int64(0.9*heapToUse))
+					heapToUse = float64(min(maxHeapLimitMb, maxSafeHeapAllocationMb))
+					// On cgroup v2, 80 decimal MB heap → ~72 MiB reported (Anon memory).
+					// With 2 instances after scale-out: avg = (72 + baseline ~10) / 2 ≈ 41 MiB.
+					// Scale-in threshold must be between baseline (10) and post-scale avg (41).
+					// Scale-out threshold must be below single-instance value (72).
+					scaleInThreshold := int64(25)
+					scaleOutThreshold := int64(55)
+					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryused",
+						scaleInThreshold,
+						scaleOutThreshold)
 					initialInstanceCount = 1
 				})
 
 				It("should scale out and then back in.", func() {
 					By(fmt.Sprintf("Use heap %d MB of heap on app", int64(heapToUse)))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/5", int64(heapToUse)))
+					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", int64(heapToUse), holdMinutes))
 
 					By("wait for scale to 2")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 					By("Drop memory used by app")
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
 
 					By("Wait for scale to minimum instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 		})
@@ -78,24 +121,23 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 			Context("when memoryutil", func() {
 				BeforeEach(func() {
-					//current app resident size is 66mb so 66/128mb is 55%
-					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryutil", 58, 63)
+					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryutil", memoryUtilScaleIn, memoryUtilScaleOut)
 					initialInstanceCount = 1
 				})
 
 				It("should scale out and back in", func() {
-					heapToUse := min(maxHeapLimitMb, int(float64(cfg.NodeMemoryLimit)*0.80))
-					By(fmt.Sprintf("use 80%% or %d MB of memory in app", heapToUse))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/5", heapToUse))
+					heapToUse := min(maxHeapLimitMb, maxSafeHeapAllocationMb)
+					By(fmt.Sprintf("use %d MB of memory in app", heapToUse))
+					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", heapToUse, holdMinutes))
 
 					By("Wait for scale to 2 instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 					By("drop memory used")
 					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
 
 					By("Wait for scale down to 1 instance")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 		})
@@ -117,12 +159,12 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			Context("when responsetime is greater than scaling out threshold", func() {
 
 				BeforeEach(func() {
-					policy = helpers.GenerateDynamicScaleOutPolicy(1, 2, "responsetime", 50)
+					policy = helpers.GenerateDynamicScaleOutPolicy(1, 2, "responsetime", responseTimeScaleOutMs)
 					initialInstanceCount = 1
 				})
 
 				JustBeforeEach(func() {
-					appUri := cfh.AppUri(appToScaleName, "/responsetime/slow/100", cfg)
+					appUri := cfh.AppUri(appToScaleName, fmt.Sprintf("/responsetime/slow/%d", responseTimeSlowDelayMs), cfg)
 					ticker = time.NewTicker(1 * time.Second)
 					rps := 5
 					go func(chan bool) {
@@ -141,19 +183,19 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", Label(acceptance.LabelSmokeTests), func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 				})
 			})
 
 			Context("when responsetime is in range of scaling in threshold", func() {
 
 				BeforeEach(func() {
-					policy = helpers.GenerateDynamicScaleInPolicyBetween("responsetime", 50, 150)
+					policy = helpers.GenerateDynamicScaleInPolicyBetween("responsetime", responseTimeScaleInLowMs, responseTimeScaleInHighMs)
 					initialInstanceCount = 2
 				})
 
 				JustBeforeEach(func() {
-					appUri := cfh.AppUri(appToScaleName, "/responsetime/slow/100", cfg)
+					appUri := cfh.AppUri(appToScaleName, fmt.Sprintf("/responsetime/slow/%d", responseTimeSlowDelayMs), cfg)
 					ticker = time.NewTicker(1 * time.Second)
 					rps := 5
 					go func(chan bool) {
@@ -172,7 +214,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale in", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 
@@ -195,14 +237,14 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			Context("when throughput is greater than scaling out threshold", func() {
 
 				BeforeEach(func() {
-					policy = helpers.GenerateDynamicScaleOutPolicy(1, 2, "throughput", 15)
+					policy = helpers.GenerateDynamicScaleOutPolicy(1, 2, "throughput", throughputScaleOutPerInstance)
 					initialInstanceCount = 1
 				})
 
 				JustBeforeEach(func() {
 					appUri := cfh.AppUri(appToScaleName, "/responsetime/fast", cfg)
 					ticker = time.NewTicker(1 * time.Second)
-					rps := 20
+					rps := throughputRps
 					go func(chan bool) {
 						defer GinkgoRecover()
 						for {
@@ -219,21 +261,21 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 				})
 			})
 
 			Context("when throughput is in range of scaling in threshold", func() {
 
 				BeforeEach(func() {
-					policy = helpers.GenerateDynamicScaleInPolicyBetween("throughput", 5, 15)
+					policy = helpers.GenerateDynamicScaleInPolicyBetween("throughput", throughputScaleInLow, throughputScaleInHigh)
 					initialInstanceCount = 2
 				})
 
 				JustBeforeEach(func() {
 					appUri := cfh.AppUri(appToScaleName, "/responsetime/fast", cfg)
 					ticker = time.NewTicker(1 * time.Second)
-					rps := 20
+					rps := throughputRps
 					go func(chan bool) {
 						defer GinkgoRecover()
 						for {
@@ -252,7 +294,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				It("should scale in", func() {
 					// because we are generating 20rps but starting with 2 instances,
 					// there should be on average 10rps per instance, which should trigger the scale in
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 				})
 			})
 		})
@@ -260,14 +302,17 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		// To check existing aggregated cpu metrics do: cf asm APP_NAME cpu
 		Context("when scaling by cpu", func() {
 			BeforeEach(func() {
-				policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "cpu", int64(float64(cfg.CPUUpperThreshold)*0.2), int64(float64(cfg.CPUUpperThreshold)*0.4))
+				scaleInThreshold := int64(float64(cfg.CPUUpperThreshold) * 0.2)
+				scaleOutThreshold := int64(float64(cfg.CPUUpperThreshold) * 0.4)
+				policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "cpu", scaleInThreshold, scaleOutThreshold)
 				initialInstanceCount = 1
 			})
 
 			It("when cpu is greater than scaling out threshold", func() {
 				By("should scale out to 2 instances")
-				helpers.StartCPUUsage(cfg, appToScaleName, int(float64(cfg.CPUUpperThreshold)*0.9), 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				cpuUsage := int(float64(cfg.CPUUpperThreshold) * 0.9)
+				helpers.StartCPUUsage(cfg, appToScaleName, cpuUsage, holdMinutes)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				By("should scale in to 1 instance after cpu usage is reduced")
 				//only hit the one instance that was asked to run hot.
@@ -300,46 +345,46 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 				// cpuutil will be 100% if cpu usage is reaching the value of cpu entitlement
 				maxCPUUsage := cfg.CPUUtilScalingPolicyTest.AppCPUEntitlement
-				helpers.StartCPUUsage(cfg, appToScaleName, maxCPUUsage, 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.StartCPUUsage(cfg, appToScaleName, maxCPUUsage, holdMinutes)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to run hot
 				helpers.StopCPUUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 		Context("when there is a scaling policy for diskutil", func() {
 			BeforeEach(func() {
-				policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "diskutil", 30, 60)
+				policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "diskutil", diskUtilScaleIn, diskUtilScaleOut)
 				initialInstanceCount = 1
 			})
 
 			It("should scale out and in", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
-				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.StartDiskUsage(cfg, appToScaleName, diskUsageMb, holdMinutes)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 		Context("when there is a scaling policy for disk", func() {
 			BeforeEach(func() {
-				policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "disk", 300, 600)
+				policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "disk", diskScaleInMb, diskScaleOutMb)
 				initialInstanceCount = 1
 			})
 
 			It("should scale out and in", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
-				helpers.StartDiskUsage(cfg, appToScaleName, 800, 5)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 5*time.Minute)
+				helpers.StartDiskUsage(cfg, appToScaleName, diskUsageMb, holdMinutes)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// only hit the one instance that was asked to occupy disk space
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 5*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 	})
@@ -414,10 +459,10 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 				// Part-validation setup
 				By("Starting disk usage to trigger scale out")
-				helpers.StartDiskUsage(cfg, appToScaleName, 800, 6)
+				helpers.StartDiskUsage(cfg, appToScaleName, diskUsageMb, holdMinutes+1)
 
 				// Validation
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 6*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
 
 				// Part-validation setup
 				By("Stopping disk usage to trigger scale in")
