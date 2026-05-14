@@ -14,12 +14,12 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 	"code.cloudfoundry.org/brokerapi/v13"
 	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/go-chi/chi/v5"
-	"github.com/tedsuo/ifrit"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -63,7 +63,7 @@ func (am *AuthMiddleware) authenticate(r *http.Request) bool {
 }
 
 type BrokerServer interface {
-	CreateServer() (ifrit.Runner, error)
+	CreateServer() (runner.Runner, error)
 	GetRouter() (*chi.Mux, error)
 }
 
@@ -89,7 +89,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingDB db.Bind
 	}
 }
 
-func (s *brokerServer) CreateServer() (ifrit.Runner, error) {
+func (s *brokerServer) CreateServer() (runner.Runner, error) {
 	router, err := s.GetRouter()
 	if err != nil {
 		return nil, err

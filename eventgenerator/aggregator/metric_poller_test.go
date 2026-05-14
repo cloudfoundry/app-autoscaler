@@ -72,10 +72,7 @@ var _ = Describe("MetricPoller", func() {
 		It("logs an error", func() {
 			//TODO this should be a prometheus counter not a log statement check
 
-			// Subsequently disabling linting, because there is nothing wrong with using whitespaces
-			// to separate two multiplicands from the operation-symbol.
-			// (Actually it is more readable.)
-			Eventually(logger.Buffer, 10 * time.Second).Should(Say("retrieveMetric Failed")) //nolint
+			Eventually(logger.Buffer, 10*time.Second).Should(Say("retrieveMetric Failed"))
 
 		})
 

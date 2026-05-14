@@ -1,16 +1,15 @@
 package startup
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/grouper"
-	"github.com/tedsuo/ifrit/sigmon"
 )
 
 type ConfigValidator interface {
@@ -64,10 +63,10 @@ func InitLogger(loggingConfig *helpers.LoggingConfig, serviceName string) lager.
 	return helpers.InitLoggerFromConfig(loggingConfig, serviceName)
 }
 
-func StartServices(logger lager.Logger, members grouper.Members) error {
-	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
-	logger.Info("started")
-	err := <-monitor.Wait()
+func StartServices(logger lager.Logger, members []runner.Member) error {
+	err := runner.StartOrdered(context.Background(), members, runner.WithOnReady(func() {
+		logger.Info("started")
+	}))
 	if err != nil {
 		logger.Error("exited-with-failure", err)
 		return err

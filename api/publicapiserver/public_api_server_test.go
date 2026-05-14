@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/publicapiserver"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
 	internalscalinghistory "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/apis/scalinghistory"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 )
 
 var _ = Describe("PublicApiServer", func() {
@@ -82,7 +82,7 @@ var _ = Describe("PublicApiServer", func() {
 	})
 
 	AfterEach(func() {
-		ginkgomon_v2.Interrupt(serverProcess)
+		serverProcess.Interrupt()
 	})
 
 	Describe("CreateMtlsServer", func() {
@@ -103,7 +103,7 @@ var _ = Describe("PublicApiServer", func() {
 
 			httpServer, err := publicApiServer.CreateMtlsServer()
 			Expect(err).NotTo(HaveOccurred())
-			serverProcess = ginkgomon_v2.Invoke(httpServer)
+			serverProcess = testrunner.Invoke(httpServer)
 		})
 
 		Context("when calling health endpoint", func() {
@@ -464,7 +464,7 @@ var _ = Describe("PublicApiServer", func() {
 
 			httpServer, err := publicApiServer.CreateHealthServer()
 			Expect(err).NotTo(HaveOccurred())
-			serverProcess = ginkgomon_v2.Invoke(httpServer)
+			serverProcess = testrunner.Invoke(httpServer)
 		})
 
 		It("should succeed", func() {
@@ -491,7 +491,7 @@ var _ = Describe("PublicApiServer", func() {
 
 			httpServer, err := publicApiServer.CreateCFServer()
 			Expect(err).NotTo(HaveOccurred())
-			serverProcess = ginkgomon_v2.Invoke(httpServer)
+			serverProcess = testrunner.Invoke(httpServer)
 		})
 
 		Context("when calling info endpoint", func() {

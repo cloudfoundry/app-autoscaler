@@ -8,6 +8,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -16,14 +17,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/patrickmn/go-cache"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
 	"testing"
 )
 
 var (
-	serverProcess   ifrit.Process
+	serverProcess   *testrunner.Process
 	serverUrl       string
 	policyDB        *fakes.FakePolicyDB
 	fakeBindingDB   *fakes.FakeBindingDB
@@ -87,10 +86,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		fakeCredentials, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
-	serverProcess = ginkgomon_v2.Invoke(httpServer)
+	serverProcess = testrunner.Invoke(httpServer)
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	ginkgomon_v2.Interrupt(serverProcess)
+	serverProcess.Interrupt()
 }, func() {
 })

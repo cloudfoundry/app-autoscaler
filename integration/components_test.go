@@ -18,13 +18,14 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	egConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner/testrunner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	opConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/config"
 	seConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit/ginkgomon_v2"
 	"go.yaml.in/yaml/v4"
 )
 
@@ -84,10 +85,9 @@ type ServiceBrokerClient struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 
-func (components *Components) GoRouterProxy(portToForward int) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) GoRouterProxy(portToForward int) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              GoRouterProxy,
-		AnsiColorCode:     "32m",
 		StartCheck:        "gorouter-proxy.started",
 		StartCheckTimeout: 20 * time.Second,
 		// #nosec G204
@@ -102,10 +102,9 @@ func (components *Components) GoRouterProxy(portToForward int) *ginkgomon_v2.Run
 		),
 	})
 }
-func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) GolangAPIServer(confPath string, argv ...string) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              GolangAPIServer,
-		AnsiColorCode:     "33m",
 		StartCheck:        "api.started",
 		StartCheckTimeout: 20 * time.Second,
 		// #nosec G204
@@ -118,10 +117,9 @@ func (components *Components) GolangAPIServer(confPath string, argv ...string) *
 	})
 }
 
-func (components *Components) GolangAPICFServer(argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) GolangAPICFServer(argv ...string) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              GolangAPIServer,
-		AnsiColorCode:     "33m",
 		StartCheck:        "api.started",
 		StartCheckTimeout: 120 * time.Second,
 		// #nosec G204
@@ -129,25 +127,21 @@ func (components *Components) GolangAPICFServer(argv ...string) *ginkgomon_v2.Ru
 	})
 }
 
-func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) Scheduler(confPath string, argv ...string) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              Scheduler,
-		AnsiColorCode:     "34m",
 		StartCheck:        "Scheduler is ready to start",
 		StartCheckTimeout: 120 * time.Second,
 		// #nosec G204
 		Command: exec.Command(
 			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, components.Executables[Scheduler]}, argv...)...,
 		),
-		Cleanup: func() {
-		},
 	})
 }
 
-func (components *Components) EventGenerator(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) EventGenerator(confPath string, argv ...string) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              EventGenerator,
-		AnsiColorCode:     "36m",
 		StartCheck:        `"eventgenerator.started"`,
 		StartCheckTimeout: 20 * time.Second,
 		// #nosec G204
@@ -160,10 +154,9 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 	})
 }
 
-func (components *Components) ScalingEngine(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) ScalingEngine(confPath string, argv ...string) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              ScalingEngine,
-		AnsiColorCode:     "31m",
 		StartCheck:        `"scalingengine.started"`,
 		StartCheckTimeout: 20 * time.Second,
 		// #nosec G204
@@ -176,10 +169,9 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 	})
 }
 
-func (components *Components) Operator(confPath string, argv ...string) *ginkgomon_v2.Runner {
-	return ginkgomon_v2.New(ginkgomon_v2.Config{
+func (components *Components) Operator(confPath string, argv ...string) runner.Runner {
+	return testrunner.NewCmdRunner(testrunner.CmdConfig{
 		Name:              Operator,
-		AnsiColorCode:     "38m",
 		StartCheck:        `"operator.started"`,
 		StartCheckTimeout: 40 * time.Second,
 		// #nosec G204

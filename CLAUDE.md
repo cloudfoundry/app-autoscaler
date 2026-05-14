@@ -57,6 +57,17 @@ make generate-fakes          # Generate test mocks with Counterfeiter
 make generate-openapi-generated-clients-and-servers  # Generate OpenAPI clients/servers
 ```
 
+### Verifying Bigger Changes
+
+Always run these two steps to verify bigger changes (refactors, dependency replacements, new packages):
+
+```bash
+make clean check             # Clean, lint, build, and run all unit tests (no DB needed)
+make integration             # Run integration tests (requires PostgreSQL: make start-db first)
+```
+
+`make clean check` is the primary gate — it runs a full clean build plus all non-DB unit tests with the race detector. `make integration` catches DB-dependent behaviour and inter-service contracts.
+
 ### Deployment
 ```bash
 make mta-deploy              # Deploy to Cloud Foundry using MTA

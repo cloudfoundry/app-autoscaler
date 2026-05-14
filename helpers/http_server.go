@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/http_server"
 )
 
 type ServerConfig struct {
@@ -17,7 +16,7 @@ type ServerConfig struct {
 	XFCC models.XFCCAuth `yaml:"xfcc" json:"xfcc"`
 }
 
-func NewHTTPServer(logger lager.Logger, conf ServerConfig, handler http.Handler) (ifrit.Runner, error) {
+func NewHTTPServer(logger lager.Logger, conf ServerConfig, handler http.Handler) (runner.Runner, error) {
 	var addr string
 	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
 		addr = fmt.Sprintf("localhost:%d", conf.Port)
@@ -33,8 +32,8 @@ func NewHTTPServer(logger lager.Logger, conf ServerConfig, handler http.Handler)
 			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.TLS})
 			return nil, fmt.Errorf("server tls config error: %w", err)
 		}
-		return http_server.NewTLSServer(addr, handler, tlsConfig), nil
+		return runner.HTTPServer(addr, handler, tlsConfig), nil
 	}
 
-	return http_server.New(addr, handler), nil
+	return runner.HTTPServer(addr, handler, nil), nil
 }

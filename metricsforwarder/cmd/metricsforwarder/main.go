@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/manager"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
@@ -16,8 +18,6 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/patrickmn/go-cache"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/grouper"
 )
 
 func main() {
@@ -48,11 +48,11 @@ func main() {
 
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	customMetricsServer := createCustomMetricsServer(conf, logger, policyDb, bindingDB, credentialProvider, allowedMetricCache, httpStatusCollector)
-	cacheUpdater := cacheUpdater(logger, mfClock, conf, policyDb, allowedMetricCache)
+	cacheUpdater := createCacheUpdater(logger, mfClock, conf, policyDb, allowedMetricCache)
 
-	members := grouper.Members{
-		{"cacheUpdater", cacheUpdater},
-		{"custom_metrics_server", customMetricsServer},
+	members := []runner.Member{
+		{Name: "cacheUpdater", Runner: cacheUpdater},
+		{Name: "custom_metrics_server", Runner: customMetricsServer},
 	}
 
 	err = startup.StartServices(logger, members)
@@ -61,19 +61,18 @@ func main() {
 	}
 }
 
-func cacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config, policyDB *sqldb.PolicySQLDB, allowedMetricCache *cache.Cache) ifrit.RunFunc {
+func createCacheUpdater(logger lager.Logger, mfClock clock.Clock, conf *config.Config, policyDB *sqldb.PolicySQLDB, allowedMetricCache *cache.Cache) runner.RunFunc {
 	policyManager := manager.NewPolicyManager(logger, mfClock, conf.PolicyPollerInterval, policyDB, *allowedMetricCache, conf.CacheTTL)
-	cacheUpdater := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+	return runner.RunFunc(func(ctx context.Context, ready chan<- struct{}) error {
 		policyManager.Start()
 		close(ready)
-		<-signals
+		<-ctx.Done()
 		policyManager.Stop()
 		return nil
 	})
-	return cacheUpdater
 }
 
-func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyDB *sqldb.PolicySQLDB, bindingDB *sqldb.BindingSQLDB, credentialProvider cred_helper.Credentials, allowedMetricCache *cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) ifrit.Runner {
+func createCustomMetricsServer(conf *config.Config, logger lager.Logger, policyDB *sqldb.PolicySQLDB, bindingDB *sqldb.BindingSQLDB, credentialProvider cred_helper.Credentials, allowedMetricCache *cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) runner.Runner {
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
 	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, bindingDB, credentialProvider, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	startup.ExitOnError(err, logger, "Failed to create client to custom metrics server")

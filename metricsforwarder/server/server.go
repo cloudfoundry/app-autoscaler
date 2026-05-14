@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
@@ -20,10 +21,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tedsuo/ifrit"
 )
 
-func NewServer(logger lager.Logger, conf *config.Config, policyDb db.PolicyDB, bindingDB db.BindingDB, credentials cred_helper.Credentials, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, policyDb db.PolicyDB, bindingDB db.BindingDB, credentials cred_helper.Credentials, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (runner.Runner, error) {
 	metricForwarder, err := createMetricForwarder(logger, conf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create metric forwarder: %w", err)

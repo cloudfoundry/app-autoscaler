@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	"context"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
@@ -12,6 +12,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,7 +20,6 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/tedsuo/ifrit"
 )
 
 func main() {
@@ -65,7 +65,7 @@ func main() {
 	anAggregator, err := aggregator.NewAggregator(logger, clock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.SaveInterval, appMonitorsChan, appManager.GetPolicies, appManager.SaveMetricToCache, conf.DefaultStatWindowSecs, appMetricChan, appMetricDB.DB)
 	startup.ExitOnError(err, logger, "failed to create Aggregator")
 
-	eventGenerator := ifrit.RunFunc(runFunc(appManager, evaluators, evaluationManager, metricPollers, anAggregator))
+	eventGenerator := runner.RunFunc(runFunc(appManager, evaluators, evaluationManager, metricPollers, anAggregator))
 
 	// Server setup
 	eventgeneratorServer := server.NewServer(logger.Session("http_server"), conf, appMetricDB.DB, policyDb.DB, appManager.QueryAppMetrics, httpStatusCollector)
@@ -73,15 +73,15 @@ func main() {
 
 	// Start services
 	startup.StartService(logger,
-		startup.Server("eventGenerator", func() (ifrit.Runner, error) { return eventGenerator, nil }),
+		startup.Server("eventGenerator", func() (runner.Runner, error) { return eventGenerator, nil }),
 		startup.Server("https_server", eventgeneratorServer.CreateMtlsServer),
 		startup.Server("health_server", eventgeneratorServer.CreateHealthServer),
-		startup.Server("cf_server", func() (ifrit.Runner, error) { return eventgeneratorServer.CreateCFServer(xm) }),
+		startup.Server("cf_server", func() (runner.Runner, error) { return eventgeneratorServer.CreateCFServer(xm) }),
 	)
 }
 
-func runFunc(appManager *aggregator.AppManager, evaluators []*generator.Evaluator, evaluationManager *generator.AppEvaluationManager, metricPollers []*aggregator.MetricPoller, anAggregator *aggregator.Aggregator) func(signals <-chan os.Signal, ready chan<- struct{}) error {
-	return func(signals <-chan os.Signal, ready chan<- struct{}) error {
+func runFunc(appManager *aggregator.AppManager, evaluators []*generator.Evaluator, evaluationManager *generator.AppEvaluationManager, metricPollers []*aggregator.MetricPoller, anAggregator *aggregator.Aggregator) func(ctx context.Context, ready chan<- struct{}) error {
+	return func(ctx context.Context, ready chan<- struct{}) error {
 		appManager.Start()
 
 		for _, evaluator := range evaluators {
@@ -96,7 +96,7 @@ func runFunc(appManager *aggregator.AppManager, evaluators []*generator.Evaluato
 
 		close(ready)
 
-		<-signals
+		<-ctx.Done()
 		anAggregator.Stop()
 		evaluationManager.Stop()
 		appManager.Stop()

@@ -3,13 +3,13 @@ package main
 import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/schedule"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 	"code.cloudfoundry.org/clock"
-	"github.com/tedsuo/ifrit"
 )
 
 func main() {
@@ -42,6 +42,6 @@ func main() {
 	startup.StartService(logger,
 		startup.Server("http_server", srv.CreateMtlsServer),
 		startup.Server("health_server", srv.CreateHealthServer),
-		startup.Server("cf_server", func() (ifrit.Runner, error) { return srv.CreateCFServer(xm) }),
+		startup.Server("cf_server", func() (runner.Runner, error) { return srv.CreateCFServer(xm) }),
 	)
 }

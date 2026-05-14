@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/aggregator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/config"
@@ -18,7 +19,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tedsuo/ifrit"
 )
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
@@ -69,14 +69,14 @@ func NewServer(logger lager.Logger, conf *config.Config, appMetricDB db.AppMetri
 	}
 }
 
-func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
+func (s *Server) CreateHealthServer() (runner.Runner, error) {
 	if err := s.setupHealthRouter(); err != nil {
 		return nil, err
 	}
 	return helpers.NewHTTPServer(s.logger.Session("HealthServer"), s.conf.Health.ServerConfig, s.healthRouter)
 }
 
-func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
+func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (runner.Runner, error) {
 	eventgenerator := s.createEventGeneratorRoutes()
 	eventgenerator.Use(am.XFCCAuthenticationMiddleware)
 
@@ -102,7 +102,7 @@ func (s *Server) setupHealthRouter() error {
 	return nil
 }
 
-func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
+func (s *Server) CreateMtlsServer() (runner.Runner, error) {
 	eventgenerator := s.createEventGeneratorRoutes()
 
 	return helpers.NewHTTPServer(s.logger, s.conf.Server, eventgenerator)

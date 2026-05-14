@@ -1,9 +1,10 @@
 package sync_test
 
 import (
-	"os"
+	"context"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -13,7 +14,6 @@ import (
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
 )
 
 var _ = Describe("Dblock", func() {
@@ -21,8 +21,8 @@ var _ = Describe("Dblock", func() {
 	var (
 		lock1       *DatabaseLock
 		lock2       *DatabaseLock
-		lockRunner1 ifrit.Runner
-		lockRunner2 ifrit.Runner
+		lockRunner1 runner.Runner
+		lockRunner2 runner.Runner
 		lockOwner1  = "owner1"
 		lockOwner2  = "owner2"
 		resultOwner string
@@ -38,9 +38,9 @@ var _ = Describe("Dblock", func() {
 		}
 		retryInterval          = 5 * time.Second
 		lockTTL                = 15 * time.Second
-		signalsChan1           chan os.Signal
+		cancelFunc1            context.CancelFunc
 		readyChan1             chan struct{}
-		signalsChan2           chan os.Signal
+		cancelFunc2            context.CancelFunc
 		readyChan2             chan struct{}
 		lostLockChan1          chan struct{}
 		lostLockChan2          chan struct{}
@@ -61,8 +61,6 @@ var _ = Describe("Dblock", func() {
 		logger2 = lagertest.NewTestLogger(lockOwner2)
 		lock1 = NewDatabaseLock(logger1)
 		lock2 = NewDatabaseLock(logger2)
-		signalsChan1 = make(chan os.Signal, 5)
-		signalsChan2 = make(chan os.Signal, 5)
 		readyChan1 = make(chan struct{}, 5)
 		readyChan2 = make(chan struct{}, 5)
 		callbackOnAcquireLock1 = emptyCallback
@@ -74,8 +72,11 @@ var _ = Describe("Dblock", func() {
 	JustBeforeEach(func() {
 		lockRunner1 = lock1.InitDBLockRunner(retryInterval, lockTTL, lockOwner1, ldb, callbackOnAcquireLock1, callbackOnLostLock1)
 		lockRunner2 = lock2.InitDBLockRunner(retryInterval, lockTTL, lockOwner2, ldb, callbackOnAcquireLock2, callbackOnLostLock2)
-		go func() { _ = lockRunner1.Run(signalsChan1, readyChan1) }()
-		go func() { _ = lockRunner2.Run(signalsChan2, readyChan2) }()
+		var ctx1, ctx2 context.Context
+		ctx1, cancelFunc1 = context.WithCancel(context.Background())
+		ctx2, cancelFunc2 = context.WithCancel(context.Background())
+		go func() { _ = lockRunner1.Run(ctx1, readyChan1) }()
+		go func() { _ = lockRunner2.Run(ctx2, readyChan2) }()
 		select {
 
 		case <-logger1.Buffer().Detect("lock-acquired-in-first-attempt"):
@@ -88,8 +89,8 @@ var _ = Describe("Dblock", func() {
 		logger2.Buffer().CancelDetects()
 	})
 	AfterEach(func() {
-		signalsChan1 <- os.Kill
-		signalsChan2 <- os.Kill
+		cancelFunc1()
+		cancelFunc2()
 		if ldb != nil {
 			err := ldb.Close()
 			Expect(err).NotTo(HaveOccurred())

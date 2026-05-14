@@ -11,11 +11,11 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db/sqldb"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/runner"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/ratelimiter"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
 
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/tedsuo/ifrit/grouper"
 )
 
 func main() {
@@ -72,13 +72,12 @@ func main() {
 	unifiedServer, err := publicApiServer.CreateCFServer()
 	startup.ExitOnError(err, logger, "failed to create public api http server")
 
-	members := grouper.Members{}
-	members = append(members,
-		grouper.Member{Name: "public_api_http_server", Runner: mtlsServer},
-		grouper.Member{Name: "broker", Runner: brokerHttpServer},
-		grouper.Member{Name: "health_server", Runner: healthServer},
-		grouper.Member{Name: "unified_server", Runner: unifiedServer},
-	)
+	members := []runner.Member{
+		{Name: "public_api_http_server", Runner: mtlsServer},
+		{Name: "broker", Runner: brokerHttpServer},
+		{Name: "health_server", Runner: healthServer},
+		{Name: "unified_server", Runner: unifiedServer},
+	}
 
 	err = startup.StartServices(logger, members)
 	if err != nil {
