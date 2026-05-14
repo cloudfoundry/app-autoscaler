@@ -139,7 +139,7 @@ func CreateTestApp(cfg *config.Config, appType string, initialInstanceCount int)
 	return appName
 }
 func CreateDroplet(cfg *config.Config) string {
-	appName := "deleteme"
+	appName := generator.PrefixedRandomName(cfg.Prefix, "droplet-cache")
 	tmpDir, err := os.CreateTemp("", "droplet")
 	dropletPath := fmt.Sprintf("%s.tgz", tmpDir.Name())
 	Expect(err).NotTo(HaveOccurred())
