@@ -67,6 +67,7 @@ var _ = BeforeSuite(func() {
 	setup.Setup()
 
 	EnableServiceAccess(setup, cfg, setup.GetOrganizationName())
+	InitDropletCache(cfg)
 
 	appName = CreateTestApp(cfg, "apitest", 1)
 	appGUID, err = GetAppGuid(cfg, appName)
@@ -106,6 +107,7 @@ var _ = AfterSuite(func() {
 	if os.Getenv("SKIP_TEARDOWN") == "true" {
 		fmt.Println("Skipping Teardown...")
 	} else {
+		CleanupDropletCache()
 		DeleteService(cfg, instanceName, appName)
 		DeleteTestApp(appName, cfg.DefaultTimeoutDuration())
 		DisableServiceAccess(cfg, setup)

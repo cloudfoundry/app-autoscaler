@@ -86,7 +86,8 @@ type Config struct {
 
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
 
-	Performance PerformanceConfig `json:"performance"`
+	Performance     PerformanceConfig `json:"performance"`
+	UseDropletCache bool              `json:"use_droplet_cache"`
 }
 
 type CPUUtilScalingPolicyTest struct {
@@ -143,6 +144,7 @@ var defaults = Config{
 		ExpectedMedianScaleOutSeconds: 100, // Replace with educated guesses base on test run
 		UpdateExistingOrgQuota:        true,
 	},
+	UseDropletCache: true,
 }
 
 // TerminateSuite allows to pass different suite termination behaviours,

@@ -16,10 +16,9 @@ import (
 )
 
 var (
-	cfg                *config.Config
-	setup              *workflowhelpers.ReproducibleTestSuiteSetup
-	originalOrgQuota   OrgQuota
-	nodeAppDropletPath string
+	cfg              *config.Config
+	setup            *workflowhelpers.ReproducibleTestSuiteSetup
+	originalOrgQuota OrgQuota
 )
 
 func TestSetup(t *testing.T) {
@@ -49,9 +48,7 @@ var _ = BeforeSuite(func() {
 
 	CheckServiceExists(cfg, setup.TestSpace.SpaceName(), cfg.ServiceName)
 
-	fmt.Print("\ncreating droplet...")
-	nodeAppDropletPath = CreateDroplet(cfg)
-	fmt.Printf("done and downloaded to %s\n", nodeAppDropletPath)
+	InitDropletCache(cfg)
 })
 
 func updateOrgQuotaForPerformanceTest(orgGuid string) {

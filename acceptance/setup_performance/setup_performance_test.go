@@ -85,7 +85,7 @@ func appHandler(ch <-chan string, runningAppsCount *int32, pendingApps *sync.Map
 }
 
 func pushAppAndBindService(appName string, runningApps *int32, pendingApps *sync.Map, errors *sync.Map) {
-	err := helpers.CreateTestAppFromDropletByName(cfg, nodeAppDropletPath, appName, 1)
+	err := helpers.CreateTestAppFromDropletByName(cfg, helpers.GetCachedDropletPath(), appName, 1)
 	if err != nil {
 		errors.Store(appName, err)
 		return
