@@ -251,7 +251,7 @@ func (c *rawConfig) validate() error {
 
 		if c.BasicAuthForCustomMetrics == "only_existing_bindings" &&
 			c.DefaultCustomMetricsCredentialType == "binding-secret" {
-				return fmt.Errorf("Configuration error: contradictory: new bindings would use binding-secret which is not allowed")
+			return fmt.Errorf("Configuration error: contradictory: new bindings would use binding-secret which is not allowed")
 		}
 
 		validCredHelperImpls := []string{"default", "stored_procedure"}

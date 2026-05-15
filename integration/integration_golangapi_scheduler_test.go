@@ -504,10 +504,16 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		BeforeEach(func() {
 			golangConf := DefaultGolangAPITestConfig()
 
-			golangConf.Scheduler.SchedulerURL = fmt.Sprintf("https://127.0.0.1:%d", components.Ports[GoRouterProxy])
-			golangConf.EventGenerator.EventGeneratorUrl = fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator])
-			golangConf.ScalingEngine.ScalingEngineUrl = fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine])
-			golangConf.CF.API = fakeCCNOAAUAA.URL()
+			golangConf["scheduler"] = YamlValue{
+				"scheduler_url": fmt.Sprintf("https://127.0.0.1:%d", components.Ports[GoRouterProxy]),
+			}
+			golangConf["event_generator"] = YamlValue{
+				"event_generator_url": fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]),
+			}
+			golangConf["scaling_engine"] = YamlValue{
+				"scaling_engine_url": fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
+			}
+			golangConf["cf"].(YamlValue)["api"] = fakeCCNOAAUAA.URL()
 
 			certTmpDir := os.TempDir()
 
