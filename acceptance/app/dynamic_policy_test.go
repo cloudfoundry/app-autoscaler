@@ -57,22 +57,12 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		diskUtilScaleOut = 45
 
 		// memoryutil scale-in threshold (% quota); must stay below post-scale-out avg utilisation.
-		memoryUtilScaleIn = 30
-
-		// heapFractionOfLimit: fraction of NodeMemoryLimit to allocate as heap (0.80 leaves room for cgroup v2 kernel overhead).
-		heapFractionOfLimit = 0.80
-
-		// decimalMBToMiB: cgroup v2 reports Anon memory in binary MiB while Go allocates in decimal MB.
-		decimalMBToMiB = 1_000_000.0 / 1_048_576.0
-
-		// memoryUtilSafetyFactor: scale-out threshold as fraction of expected util peak, absorbs measurement jitter.
-		memoryUtilSafetyFactor = 0.90
-
-		// memoryUsedScaleOutFactor: memoryused scale-out threshold as fraction of single-instance reportedMiB.
+		memoryUtilScaleIn        = 30
+		heapFractionOfLimit      = 0.80
+		decimalMBToMiB           = 1_000_000.0 / 1_048_576.0 // cgroup v2 reports binary MiB, Go allocates decimal MB
+		memoryUtilSafetyFactor   = 0.90
 		memoryUsedScaleOutFactor = 0.85
-
-		// baselineMemoryMiB: approximate idle memory of one app instance, used to estimate post-scale-out average.
-		baselineMemoryMiB = 10
+		baselineMemoryMiB        = 10
 	)
 	BeforeEach(func() {
 		maxHeapLimitMb = int(float64(cfg.NodeMemoryLimit)*heapFractionOfLimit) - minimalMemoryUsage
