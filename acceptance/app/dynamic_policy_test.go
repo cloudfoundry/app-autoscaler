@@ -24,7 +24,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		doneAcceptChan     chan bool
 		ticker             *time.Ticker
 		maxHeapLimitMb     int
-		memoryUtilScaleOut int
+		memoryUtilScaleOut int64
 		reportedMiB        float64
 	)
 
@@ -87,7 +87,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		// On cgroup v2, Go allocates decimal MB but CF reports binary MiB (Anon memory).
 		// Scale-out threshold set to memoryUtilSafetyFactor of expected util — safely below actual, above baseline.
 		expectedUtilPct := reportedMiB / float64(cfg.NodeMemoryLimit) * 100
-		memoryUtilScaleOut = int(expectedUtilPct * memoryUtilSafetyFactor)
+		memoryUtilScaleOut = int64(expectedUtilPct * memoryUtilSafetyFactor)
 	})
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
