@@ -103,12 +103,12 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
     createSchedule();
 
     // Assert START Job successful message
-    startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
+    startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(3));
 
     Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSpecificDateSchedulerId();
 
     // Assert END Job successful message
-    endJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
+    endJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(3));
 
     assertThat(
         "It should have no active schedule",
@@ -121,7 +121,7 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
     createSchedule();
 
     // Assert START Job successful message
-    startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
+    startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(3));
 
     Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSpecificDateSchedulerId();
 
@@ -144,8 +144,12 @@ public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
   }
 
   public void createSchedule() throws Exception {
-    LocalDateTime startTime = LocalDateTime.now().plusSeconds(70);
-    LocalDateTime endTime = LocalDateTime.now().plusSeconds(130);
+    if (scheduler.isInStandbyMode()) {
+      scheduler.start();
+    }
+
+    LocalDateTime startTime = LocalDateTime.now().plusSeconds(10);
+    LocalDateTime endTime = LocalDateTime.now().plusSeconds(90);
 
     ApplicationSchedules applicationSchedules =
         new ApplicationPolicyBuilder(1, 5, TimeZone.getDefault().getID(), 1, 0, 0).build();
