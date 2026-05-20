@@ -18,22 +18,20 @@ import (
 
 var _ = Describe("AutoScaler dynamic policy", func() {
 	var (
-		policy         string
-		err            error
-		doneChan       chan bool
-		doneAcceptChan chan bool
-		ticker         *time.Ticker
-		maxHeapLimitMb int
+		policy             string
+		err                error
+		doneChan           chan bool
+		doneAcceptChan     chan bool
+		ticker             *time.Ticker
+		maxHeapLimitMb     int
+		memoryUtilScaleOut int64
+		reportedMiB        float64
 	)
 
 	const (
 		// cgroup v2 (Noble stemcell) counts kernel memory against the container limit,
 		// unlike cgroup v1 which tracked it separately. This requires more headroom.
 		minimalMemoryUsage = 35
-
-		// Maximum heap the test app should allocate (MB). Must leave room for
-		// app baseline + kernel overhead within the container memory limit.
-		maxSafeHeapAllocationMb = 80
 
 		// How long the test app holds resource usage before releasing (minutes).
 		holdMinutes = 5
@@ -58,12 +56,20 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		diskUtilScaleIn  = 30
 		diskUtilScaleOut = 45
 
-		// memoryutil thresholds (percentage of memory quota).
-		// 80MB heap on 128MB container → ~56% utilization reported by cgroup v2.
-		memoryUtilScaleIn  = 30
-		memoryUtilScaleOut = 50
+		// memoryutil scale-in threshold (% quota); must stay below post-scale-out avg utilisation.
+		memoryUtilScaleIn        = 30
+		heapFractionOfLimit      = 0.80
+		decimalMBToMiB           = 1_000_000.0 / 1_048_576.0 // cgroup v2 reports binary MiB, Go allocates decimal MB
+		memoryUtilSafetyFactor   = 0.90
+		memoryUsedScaleOutFactor = 0.85
+		baselineMemoryMiB        = 10
 	)
-
+	BeforeEach(func() {
+		maxHeapLimitMb = int(float64(cfg.NodeMemoryLimit)*heapFractionOfLimit) - minimalMemoryUsage
+		reportedMiB = float64(maxHeapLimitMb) * decimalMBToMiB
+		expectedUtilPct := reportedMiB / float64(cfg.NodeMemoryLimit) * 100
+		memoryUtilScaleOut = int64(expectedUtilPct * memoryUtilSafetyFactor)
+	})
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
 			appToScaleName = helpers.CreateTestApp(cfg, "dynamic-policy", initialInstanceCount)
@@ -72,9 +78,6 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 			Expect(err).NotTo(HaveOccurred())
 			helpers.StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
 			instanceName = helpers.CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)
-		})
-		BeforeEach(func() {
-			maxHeapLimitMb = cfg.NodeMemoryLimit - minimalMemoryUsage
 		})
 
 		AfterEach(func() {
@@ -87,15 +90,10 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		Context("when scaling by memoryused", func() {
 
 			Context("There is a scale out and scale in policy", func() {
-				var heapToUse float64
 				BeforeEach(func() {
-					heapToUse = float64(min(maxHeapLimitMb, maxSafeHeapAllocationMb))
-					// On cgroup v2, 80 decimal MB heap → ~72 MiB reported (Anon memory).
-					// With 2 instances after scale-out: avg = (72 + baseline ~10) / 2 ≈ 41 MiB.
-					// Scale-in threshold must be between baseline (10) and post-scale avg (41).
-					// Scale-out threshold must be below single-instance value (72).
-					scaleInThreshold := int64(25)
-					scaleOutThreshold := int64(55)
+					// Scale-in: between baseline and post-scale avg; scale-out: below single-instance reportedMiB.
+					scaleInThreshold := int64(reportedMiB/4) + baselineMemoryMiB
+					scaleOutThreshold := int64(reportedMiB * memoryUsedScaleOutFactor)
 					policy = helpers.GenerateDynamicScaleOutAndInPolicy(1, 2, "memoryused",
 						scaleInThreshold,
 						scaleOutThreshold)
@@ -103,8 +101,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out and then back in.", func() {
-					By(fmt.Sprintf("Use heap %d MB of heap on app", int64(heapToUse)))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", int64(heapToUse), holdMinutes))
+					By(fmt.Sprintf("Use heap %d MB of heap on app", maxHeapLimitMb))
+					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", maxHeapLimitMb, holdMinutes))
 
 					By("wait for scale to 2")
 					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
@@ -126,9 +124,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out and back in", func() {
-					heapToUse := min(maxHeapLimitMb, maxSafeHeapAllocationMb)
-					By(fmt.Sprintf("use %d MB of memory in app", heapToUse))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", heapToUse, holdMinutes))
+					By(fmt.Sprintf("use %d MB of memory in app", maxHeapLimitMb))
+					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", maxHeapLimitMb, holdMinutes))
 
 					By("Wait for scale to 2 instances")
 					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
@@ -390,7 +387,6 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	})
 	When("a service-key is used", func() {
 		BeforeEach(func() {
-			maxHeapLimitMb = cfg.NodeMemoryLimit - minimalMemoryUsage
 			initialInstanceCount = 1
 
 			appToScaleName = helpers.CreateTestApp(cfg, "dyn_policy_with_sk", initialInstanceCount)

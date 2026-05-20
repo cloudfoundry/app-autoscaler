@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfiguration;
+import io.prometheus.client.exporter.HTTPServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +18,7 @@ public class SchedulerHealthDefaultEndpointTest {
 
   @Autowired private TestRestTemplate restTemplate;
 
-  @Autowired private MetricsConfiguration metricsConfig;
+  @Autowired private HTTPServer metricsServer;
 
   @Test
   public void metricsShouldBeAvailable() {
@@ -29,6 +29,6 @@ public class SchedulerHealthDefaultEndpointTest {
   }
 
   private String metricsUrl() {
-    return "http://localhost:" + metricsConfig.getPort() + "/metrics";
+    return "http://localhost:" + metricsServer.getPort() + "/metrics";
   }
 }
