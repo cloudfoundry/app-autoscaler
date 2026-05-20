@@ -19,6 +19,28 @@ import (
 
 const AppResidentSize = 55
 
+var cachedDropletPath string
+
+func InitDropletCache(cfg *config.Config) {
+	if !cfg.UseDropletCache {
+		return
+	}
+	fmt.Fprint(GinkgoWriter, "\ncreating droplet cache...")
+	cachedDropletPath = CreateDroplet(cfg)
+	fmt.Fprintf(GinkgoWriter, "done and downloaded to %s\n", cachedDropletPath)
+}
+
+func GetCachedDropletPath() string {
+	return cachedDropletPath
+}
+
+func CleanupDropletCache() {
+	if cachedDropletPath != "" {
+		os.Remove(cachedDropletPath)
+		cachedDropletPath = ""
+	}
+}
+
 type AppInfo struct {
 	Name  string
 	Guid  string
@@ -117,7 +139,7 @@ func CreateTestApp(cfg *config.Config, appType string, initialInstanceCount int)
 	return appName
 }
 func CreateDroplet(cfg *config.Config) string {
-	appName := "deleteme"
+	appName := generator.PrefixedRandomName(cfg.Prefix, "droplet-cache")
 	tmpDir, err := os.CreateTemp("", "droplet")
 	dropletPath := fmt.Sprintf("%s.tgz", tmpDir.Name())
 	Expect(err).NotTo(HaveOccurred())
@@ -202,7 +224,12 @@ func createTestApp(cfg *config.Config, appName string, initialInstanceCount int,
 }
 
 func CreateTestAppByName(cfg *config.Config, appName string, initialInstanceCount int) {
-	err := createTestApp(cfg, appName, initialInstanceCount, "-p", config.GO_APP, "--buildpack", cfg.BinaryBuildpackName)
+	var err error
+	if cachedDropletPath != "" {
+		err = CreateTestAppFromDropletByName(cfg, cachedDropletPath, appName, initialInstanceCount)
+	} else {
+		err = createTestApp(cfg, appName, initialInstanceCount, "-p", config.GO_APP, "--buildpack", cfg.BinaryBuildpackName)
+	}
 	Expect(err).ToNot(HaveOccurred())
 }
 

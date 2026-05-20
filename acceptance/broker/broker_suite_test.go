@@ -37,10 +37,12 @@ var _ = BeforeSuite(func() {
 
 	EnableServiceAccess(setup, cfg, setup.GetOrganizationName())
 	CheckServiceExists(cfg, setup.TestSpace.SpaceName(), cfg.ServiceName)
+	InitDropletCache(cfg)
 	DeferCleanup(func() {
 		if os.Getenv("SKIP_TEARDOWN") == "true" {
 			fmt.Println("Skipping Teardown...")
 		} else {
+			CleanupDropletCache()
 			DisableServiceAccess(cfg, setup)
 			setup.Teardown()
 		}

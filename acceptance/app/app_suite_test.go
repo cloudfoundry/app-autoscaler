@@ -55,6 +55,7 @@ var _ = BeforeSuite(func() {
 	setup.Setup()
 	EnableServiceAccess(setup, cfg, setup.GetOrganizationName())
 	CheckServiceExists(cfg, setup.TestSpace.SpaceName(), cfg.ServiceName)
+	InitDropletCache(cfg)
 	interval = cfg.AggregateInterval
 	client = GetHTTPClient(cfg)
 })
@@ -80,6 +81,7 @@ var _ = AfterSuite(func() {
 	if os.Getenv("SKIP_TEARDOWN") == "true" {
 		fmt.Println("Skipping Teardown...")
 	} else {
+		CleanupDropletCache()
 		DisableServiceAccess(cfg, setup)
 		setup.Teardown()
 	}
