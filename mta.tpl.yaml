@@ -126,13 +126,36 @@ modules:
     requires:
       - name: metricsforwarder-config
       - name: database
-      - name: syslog-client
       - name: app-autoscaler-application-logs
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
+  - name: metricsgateway
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/cmd/metricsgateway
+      GOTOOLCHAIN: local
+      GOVERSION: go1.25
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler and dbtasks" > /dev/null
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+    requires:
+      - name: metricsgateway-config
+      - name: syslog-client
+      - name: app-autoscaler-application-logs
+      - name: app-autoscaler-dynatrace
+    parameters:
+      instances: 0 # overridden in build-extension-file.sh
+      memory: 256M
+      disk-quota: 512M
       stack: cflinuxfs4
       routes:
   - name: operator
@@ -250,6 +273,12 @@ resources:
       service-tags:
         - metricsforwarder-config
       path: metricsforwarder/default_config.json
+  - name: metricsgateway-config
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - metricsgateway-config
+      path: metricsgateway/default_config.json
   - name: eventgenerator-config
     type: org.cloudfoundry.user-provided-service
     parameters:

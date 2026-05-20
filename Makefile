@@ -35,7 +35,7 @@ test-certs: target/autoscaler_test_certs scheduler/src/test/resources/certs
 build_all: build_programs build_tests
 build_programs: build db.java-libs scheduler.build build-test-app
 
-MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine,acceptance-tests
+MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,acceptance-tests
 
 db_type ?= postgres
 DB_HOST ?= localhost
