@@ -1,18 +1,22 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.listeners.JobListenerSupport;
 
 public class TestJobListener extends JobListenerSupport {
-  private String name = UUID.randomUUID().toString();
-  private int expectedNumOfJobFired;
-  private volatile AtomicInteger currentNumOfFire = new AtomicInteger(0);
+  private final String name = UUID.randomUUID().toString();
+  private final CountDownLatch latch;
+  private final int expectedNumOfJobFired;
+  private final AtomicInteger currentNumOfFire = new AtomicInteger(0);
 
   public TestJobListener(int expectedNumOfJobFired) {
     this.expectedNumOfJobFired = expectedNumOfJobFired;
+    this.latch = new CountDownLatch(expectedNumOfJobFired);
   }
 
   @Override
@@ -22,21 +26,15 @@ public class TestJobListener extends JobListenerSupport {
 
   @Override
   public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-    synchronized (this) {
-      if (currentNumOfFire.addAndGet(1) < expectedNumOfJobFired) {
-        return;
-      }
-
-      notify();
-    }
+    currentNumOfFire.incrementAndGet();
+    latch.countDown();
   }
 
-  public synchronized void waitForJobToFinish(long timeoutMillis) throws InterruptedException {
-    wait(timeoutMillis);
-    if (currentNumOfFire.get() < expectedNumOfJobFired) {
+  public void waitForJobToFinish(long timeoutMillis) throws InterruptedException {
+    if (!latch.await(timeoutMillis, TimeUnit.MILLISECONDS)) {
       throw new RuntimeException(
           "Waiting for job time out. Number of times job fired: "
-              + currentNumOfFire
+              + currentNumOfFire.get()
               + " expected: "
               + expectedNumOfJobFired);
     }
