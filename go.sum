@@ -75,7 +75,7 @@ cloud.google.com/go/aiplatform v1.125.0/go.mod h1:yWTZiCunYDnyxeWWD14tDo6+BMlvAU
 cloud.google.com/go/analytics v0.35.0/go.mod h1:V9Qef2N0y8GDqQ9FTlmM2XpDEMYonZJRPSUNGZlPCcc=
 cloud.google.com/go/apigateway v1.12.0/go.mod h1:f3Sk8Tdh1Ty5HR7kgbWB6Yu1M82LM+nIr5DTMZnLZWk=
 cloud.google.com/go/apigeeconnect v1.12.0/go.mod h1:mYJekCKZHc2ia5yZX5lwtexTn9CzsOfb6+sh/2hi42Q=
-cloud.google.com/go/apigeeregistry v0.15.0/go.mod h1:o+j6eA8hYhTWX5gEqMMBVDWY+/QQFrYe/YJBsO19pn0=
+cloud.google.com/go/apigeeregistry v1.0.0/go.mod h1:o+j6eA8hYhTWX5gEqMMBVDWY+/QQFrYe/YJBsO19pn0=
 cloud.google.com/go/appengine v1.14.0/go.mod h1:JMjrVFg+YgfksZCWbtA3TgbKbPfZZtapB9cGL/5WVnM=
 cloud.google.com/go/area120 v0.15.0/go.mod h1:jD1fw9W4xxIZMY68g7PpbCPleoeGddFs5jPcdhfg3+Y=
 cloud.google.com/go/artifactregistry v1.25.0/go.mod h1:aMmdtqKVmbuxCCb/NGDJYZHsK6AtqlcyvD05ACzs1n8=
@@ -186,7 +186,7 @@ cloud.google.com/go/containeranalysis v0.19.0/go.mod h1:Zq0XHzUIa0oTa7H6aSR8HWqe
 cloud.google.com/go/datacatalog v1.27.0/go.mod h1:YTI11pFlC5HCj4CphEf+qWCy/z9udd7o0HVN6c2Povg=
 cloud.google.com/go/datacatalog v1.32.0/go.mod h1:DE272tynQUwheJeQAyVfV+nO8yrdkuDyOgH2LtOrkWM=
 cloud.google.com/go/dataflow v0.16.0/go.mod h1:BWhSrIGmsMfuYj3J+nJ2Tw7tplRR6r28kvRiqCD3WlQ=
-cloud.google.com/go/dataform v0.19.0/go.mod h1:i1a0zkS751kvrY1IIPpUQZ77H5doxx7cs0AP3hnXTMk=
+cloud.google.com/go/dataform v1.0.0/go.mod h1:i1a0zkS751kvrY1IIPpUQZ77H5doxx7cs0AP3hnXTMk=
 cloud.google.com/go/datafusion v1.13.0/go.mod h1:MQdANs3I/4gitzY+mTBx27rrQyMiUg8uc2Z4TPLWWfc=
 cloud.google.com/go/datalabeling v0.14.0/go.mod h1:DYjvP4RhQ0332YgO22APYlBjCebb+SCaS0e2KApDq/Q=
 cloud.google.com/go/dataplex v1.34.0/go.mod h1:sOazL+Bs/PTxiMHQ5yBboBvEW9qPrpGogx3+RAgfIt8=
@@ -209,7 +209,7 @@ cloud.google.com/go/filestore v1.15.0/go.mod h1:oD+PvCWu4HqfEdNv65yk2XaLIiP7h4Au
 cloud.google.com/go/firestore v1.22.0/go.mod h1:PaM4i7i7ruALSKmlpHXXZaPObcZw0W7ie5UOPr72iTU=
 cloud.google.com/go/functions v1.24.0/go.mod h1:t40GeqBAQNuqKlHCxmV/pxhyYJnImLcvRa3GBv4tAy0=
 cloud.google.com/go/gkebackup v1.13.0/go.mod h1:D2MDbHW4V/uKCmS9TnT8hNKX2tPkE/pWp9nSm0TQ9hY=
-cloud.google.com/go/gkeconnect v0.16.0/go.mod h1:5iWSBQzMIRLwUHUWVhxxcNK45ZPE8ntyBgE0MkavlqQ=
+cloud.google.com/go/gkeconnect v1.0.0/go.mod h1:5iWSBQzMIRLwUHUWVhxxcNK45ZPE8ntyBgE0MkavlqQ=
 cloud.google.com/go/gkehub v0.21.0/go.mod h1:xKePlMrI8LpKErzKMWdH/yQv+GDV60ypCNfTTdT+BN0=
 cloud.google.com/go/gkemulticloud v1.11.0/go.mod h1:OtfHtgqOgDrXfcdFw8eUkCUI154Q51vvdqZYZV4c4qM=
 cloud.google.com/go/grafeas v0.3.17/go.mod h1:MLYFFap01tm1Rbcd0AT6V2NW1ho45dbX+AxNEcprExY=
@@ -277,7 +277,7 @@ cloud.google.com/go/longrunning v0.6.6/go.mod h1:hyeGJUrPHcx0u2Uu1UFSoYZLn4lkMrc
 cloud.google.com/go/longrunning v0.6.7/go.mod h1:EAFV3IZAKmM56TyiE6VAP3VoTzhZzySwI/YI1s/nRsY=
 cloud.google.com/go/longrunning v0.8.0/go.mod h1:UmErU2Onzi+fKDg2gR7dusz11Pe26aknR4kHmJJqIfk=
 cloud.google.com/go/longrunning v0.9.0/go.mod h1:pkTz846W7bF4o2SzdWJ40Hu0Re+UoNT6Q5t+igIcb8E=
-cloud.google.com/go/longrunning v0.13.0/go.mod h1:8nqFBPOO1U/XkhWl0I19AMZEphrHi73VNABIpKYaTwM=
+cloud.google.com/go/longrunning v1.0.0/go.mod h1:8nqFBPOO1U/XkhWl0I19AMZEphrHi73VNABIpKYaTwM=
 cloud.google.com/go/managedidentities v1.12.0/go.mod h1:rm72jf/v//0NG73VQNZM1JlV2E95uhJymmSXlgi6hMA=
 cloud.google.com/go/maps v1.35.0/go.mod h1:HH1V8tduMn+b9oRMCdl3vok98uvHco/wElZXyJQ/9kU=
 cloud.google.com/go/mediatranslation v0.13.0/go.mod h1:kjZrowuigFr+Bf1HM1TCtp1a3E3kfG1ovPK5VEuaNAQ=
@@ -2518,7 +2518,7 @@ google.golang.org/appengine v1.6.5/go.mod h1:8WjMMxjGQR8xUklV/ARdw2HLXBOI7O7uCID
 google.golang.org/appengine v1.6.6/go.mod h1:8WjMMxjGQR8xUklV/ARdw2HLXBOI7O7uCIDZVag1xfc=
 google.golang.org/appengine v1.6.7/go.mod h1:8WjMMxjGQR8xUklV/ARdw2HLXBOI7O7uCIDZVag1xfc=
 google.golang.org/appengine v1.6.8/go.mod h1:1jJ3jBArFh5pcgW8gCtRJnepW8FzD1V44FJffLiz/Ds=
-google.golang.org/genproto v0.0.0-20260518230821-037a81a441c8/go.mod h1:g3MCceAeri6gKr+i5PIr8gv3oLdhjkGF4JkO7B/q0So=
+google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94/go.mod h1:RRHjglSYABVCWpQ7USCpdfhcd9t4PkajvVwyynZizTc=
 google.golang.org/genproto/googleapis/api v0.0.0-20230525234035-dd9d682886f9/go.mod h1:vHYtlOoi6TsQ3Uk2yxR7NI5z8uoV+3pZtR4jmHIkRig=
 google.golang.org/genproto/googleapis/api v0.0.0-20230526203410-71b5a4ffd15e/go.mod h1:vHYtlOoi6TsQ3Uk2yxR7NI5z8uoV+3pZtR4jmHIkRig=
 google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc/go.mod h1:vHYtlOoi6TsQ3Uk2yxR7NI5z8uoV+3pZtR4jmHIkRig=
