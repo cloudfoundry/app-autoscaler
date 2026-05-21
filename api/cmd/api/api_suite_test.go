@@ -5,15 +5,11 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"github.com/onsi/gomega/ghttp"
 
@@ -37,7 +33,7 @@ const (
 
 var (
 	apPath          string
-	conf            config.Config
+	conf            YamlValue
 	configFile      *os.File
 	schedulerServer *ghttp.Server
 	catalogBytes    string
@@ -114,102 +110,19 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	publicApiPort = 9000 + GinkgoParallelProcess()
 	healthport = 7000 + GinkgoParallelProcess()
 
-	conf.BrokerServer = helpers.ServerConfig{
-		Port: brokerPort,
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
-			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.Server = helpers.ServerConfig{
-		Port: publicApiPort,
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "api.key"),
-			CertFile:   filepath.Join(testCertDir, "api.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.Logging.Level = "info"
-	conf.Db = make(map[string]db.DatabaseConfig)
-	dbUrl := GetDbUrl()
-	conf.Db[db.BindingDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-	conf.Db[db.PolicyDb] = db.DatabaseConfig{
-		URL:                   dbUrl,
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-
-	brokerCred1 := config.BrokerCredentialsConfig{
-		BrokerUsername:     "broker_username",
-		BrokerUsernameHash: nil,
-		BrokerPassword:     "broker_password",
-		BrokerPasswordHash: nil,
-	}
-	brokerCred2 := config.BrokerCredentialsConfig{
-		BrokerUsername:     "broker_username2",
-		BrokerUsernameHash: nil,
-		BrokerPassword:     "broker_password2",
-		BrokerPasswordHash: nil,
-	}
-	var brokerCreds []config.BrokerCredentialsConfig
-	brokerCreds = append(brokerCreds, brokerCred1, brokerCred2)
-	conf.BrokerCredentials = brokerCreds
-
-	conf.CatalogPath = "../../exampleconfig/catalog-example.json"
-	conf.CatalogSchemaPath = "../../schemas/catalog.schema.json"
-	conf.BindingRequestSchemaPath = "../../broker/binding_request_parser/meta.schema.json"
-
 	schedulerServer = ghttp.NewServer()
-	conf.Scheduler.SchedulerURL = schedulerServer.URL()
-	conf.InfoFilePath = "../../exampleconfig/info-file.json"
 
-	conf.EventGenerator = config.EventGeneratorConfig{
-		EventGeneratorUrl: "http://localhost:8084",
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-			CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.ScalingEngine = config.ScalingEngineConfig{
-		ScalingEngineUrl: "http://localhost:8085",
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-			CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	conf.MetricsForwarder = config.MetricsForwarderConfig{
-		MetricsForwarderUrl: "http://localhost:8088",
-	}
+	// Load base config from YAML file and override dynamic values
+	conf = loadBaseConfig()
+	conf["broker_server"].(YamlValue)["port"] = brokerPort
+	conf["public_api_server"].(YamlValue)["port"] = publicApiPort
+	conf["health"].(YamlValue)["server_config"].(YamlValue)["port"] = healthport
+	conf["db"].(YamlValue)["binding_db"].(YamlValue)["url"] = GetDbUrl()
+	conf["db"].(YamlValue)["policy_db"].(YamlValue)["url"] = GetDbUrl()
+	conf["scheduler"].(YamlValue)["scheduler_url"] = schedulerServer.URL()
+	conf["cf"].(YamlValue)["api"] = ccServer.URL()
 
-	conf.CF.API = ccServer.URL()
-	conf.CF.ClientID = "client-id"
-	conf.CF.Secret = "client-secret"
-	conf.CF.SkipSSLValidation = true
-	conf.Health = helpers.HealthConfig{
-		ServerConfig: helpers.ServerConfig{
-			Port: healthport,
-		},
-		BasicAuth: models.BasicAuth{
-			Username: "healthcheckuser",
-			Password: "healthcheckpassword",
-		},
-	}
-	conf.RateLimit.MaxAmount = 10
-	conf.RateLimit.ValidDuration = 1 * time.Second
-
-	conf.CredHelperImpl = "default"
-
-	configFile = writeConfig(&conf)
-
+	configFile = writeConfigValue(conf)
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -223,18 +136,38 @@ var _ = SynchronizedAfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
-func writeConfig(c *config.Config) *os.File {
-	conf, err := os.CreateTemp("", "ap")
+type YamlValue = map[string]any
+
+func loadBaseConfig() YamlValue {
+	baseBytes, err := os.ReadFile("testdata/base_config.yml")
 	Expect(err).NotTo(HaveOccurred())
-	defer func() { _ = conf.Close() }()
+	var base YamlValue
+	err = yaml.Unmarshal(baseBytes, &base)
+	Expect(err).NotTo(HaveOccurred())
+	return base
+}
+
+func copyConfig(src YamlValue) YamlValue {
+	bytes, err := yaml.Marshal(src)
+	Expect(err).NotTo(HaveOccurred())
+	var dst YamlValue
+	err = yaml.Unmarshal(bytes, &dst)
+	Expect(err).NotTo(HaveOccurred())
+	return dst
+}
+
+func writeConfigValue(c YamlValue) *os.File {
+	f, err := os.CreateTemp("", "ap")
+	Expect(err).NotTo(HaveOccurred())
+	defer func() { _ = f.Close() }()
 
 	bytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = conf.Write(bytes)
+	_, err = f.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
-	return conf
+	return f
 }
 
 type ApiRunner struct {

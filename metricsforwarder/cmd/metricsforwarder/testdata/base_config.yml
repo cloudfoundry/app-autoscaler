@@ -1,0 +1,34 @@
+logging:
+  level: debug
+server:
+  port: 0  # overridden at runtime
+loggregator:
+  metron_address: ""  # overridden at runtime
+  tls:
+    ca_file: ""  # overridden at runtime
+    cert_file: ""  # overridden at runtime
+    key_file: ""  # overridden at runtime
+db:
+  policy_db:
+    url: ""  # overridden at runtime
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 10s
+  binding_db:
+    url: ""  # overridden at runtime
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 10s
+health:
+  server_config:
+    port: 0  # overridden at runtime
+  basic_auth:
+    username: metricsforwarderhealthcheckuser
+    password: metricsforwarderhealthcheckpassword
+  readiness_enabled: true
+rate_limit:
+  max_amount: 10
+  valid_duration: 1s
+cache_cleanup_interval: 10m
+policy_poller_interval: 40s
+cred_helper_impl: default

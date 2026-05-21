@@ -10,9 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -51,13 +49,13 @@ var _ = Describe("Api", func() {
 		apiHttpClient = testhelpers.NewPublicApiClient()
 		cfServerHttpClient = &http.Client{}
 
-		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf.Server.Port))
+		serverURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["public_api_server"].(YamlValue)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
-		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf.BrokerServer.Port))
+		brokerURL, err = url.Parse(fmt.Sprintf("https://127.0.0.1:%d", conf["broker_server"].(YamlValue)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
-		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf.Health.ServerConfig.Port))
+		healthURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", conf["health"].(YamlValue)["server_config"].(YamlValue)["port"]))
 		Expect(err).NotTo(HaveOccurred())
 
 		cfServerURL, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d", vcapPort))
@@ -78,7 +76,6 @@ var _ = Describe("Api", func() {
 				Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
 			})
 		})
-
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
@@ -99,22 +96,18 @@ var _ = Describe("Api", func() {
 				Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
 			})
 		})
-
 		Context("with missing configuration", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				missingConfig := conf
-
-				missingConfig.Db = make(map[string]db.DatabaseConfig)
-				missingConfig.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
-				missingConfig.Db[db.BindingDb] = db.DatabaseConfig{URL: ""}
-
-				var brokerCreds []config.BrokerCredentialsConfig
-				missingConfig.BrokerCredentials = brokerCreds
-
-				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelProcess()
-				missingConfig.Logging.Level = "debug"
-				runner.configPath = writeConfig(&missingConfig).Name()
+				missingConfig := copyConfig(conf)
+				missingConfig["db"] = YamlValue{
+					"policy_db":  YamlValue{"url": ""},
+					"binding_db": YamlValue{"url": ""},
+				}
+				missingConfig["broker_credentials"] = []any{}
+				missingConfig["broker_server"].(YamlValue)["port"] = 7000 + GinkgoParallelProcess()
+				missingConfig["logging"] = YamlValue{"level": "debug"}
+				runner.configPath = writeConfigValue(missingConfig).Name()
 			})
 
 			AfterEach(func() {
@@ -123,10 +116,9 @@ var _ = Describe("Api", func() {
 
 			It("should fail validation", func() {
 				Eventually(runner.Session).Should(Exit(1))
-				Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
+				Expect(runner.Session.Buffer()).To(Say("input-validation failed"))
 			})
 		})
-
 	})
 	Describe("when interrupt is sent", func() {
 		It("should stop", func() {
@@ -191,10 +183,12 @@ var _ = Describe("Api", func() {
 	})
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
-			basicAuthConfig := conf
-			basicAuthConfig.Health.BasicAuth.Username = ""
-			basicAuthConfig.Health.BasicAuth.Password = ""
-			runner.configPath = writeConfig(&basicAuthConfig).Name()
+			healthConfig := copyConfig(conf)
+			healthConfig["health"].(YamlValue)["basic_auth"] = YamlValue{
+				"username": "",
+				"password": "",
+			}
+			runner.configPath = writeConfigValue(healthConfig).Name()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
@@ -223,16 +217,17 @@ var _ = Describe("Api", func() {
 			})
 			When("username and password are correct for basic authentication during health check", func() {
 				It("should return 200", func() {
-					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), conf.Health.BasicAuth.Username, conf.Health.BasicAuth.Password, http.StatusOK)
+					testhelpers.CheckHealthAuth(GinkgoT(), healthHttpClient, healthURL.String(), "healthcheckuser", "healthcheckpassword", http.StatusOK)
 				})
 			})
 		})
 	})
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
-			pluginPathConfig := conf
-			pluginPathConfig.CredHelperImpl = "default"
-			runner.configPath = writeConfig(&pluginPathConfig).Name()
+			pluginConfig := copyConfig(conf)
+			pluginConfig["basic_auth_for_custom_metrics"] = "on"
+			pluginConfig["cred_helper_impl"] = "default"
+			runner.configPath = writeConfigValue(pluginConfig).Name()
 		})
 		AfterEach(func() {
 			runner.Interrupt()
