@@ -47,7 +47,7 @@ require (
 	golang.org/x/crypto v0.51.0
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a
 	golang.org/x/time v0.15.0
-	google.golang.org/grpc v1.81.0
+	google.golang.org/grpc v1.81.1
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94
