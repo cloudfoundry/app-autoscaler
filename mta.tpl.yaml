@@ -230,7 +230,7 @@ modules:
       builder: custom
       commands:
         - echo "Building acceptance tests for version ${version}"
-        - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
+        - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make --jobs=1 acceptance-release"
       build-result: build/acceptance
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
     requires:
