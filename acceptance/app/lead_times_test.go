@@ -15,7 +15,7 @@ var _ = Describe("Autoscaler lead times for scaling", func() {
 	)
 	BeforeEach(func() {
 		policy = GenerateDynamicScaleOutAndInPolicy(1, 2, "test_metric", 500, 500)
-		appToScaleName = CreateTestApp(cfg, "labeled-go_app", 1)
+		appToScaleName = CreateTestAppFromDroplet(cfg, dropletPath, "labeled-go_app", 1)
 		appToScaleGUID, err = GetAppGuid(cfg, appToScaleName)
 		Expect(err).NotTo(HaveOccurred())
 		instanceName = CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)

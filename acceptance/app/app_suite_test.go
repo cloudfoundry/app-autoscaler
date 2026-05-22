@@ -35,6 +35,10 @@ var (
 	metricProducerAppName string
 
 	metricProducerAppGUID string
+
+	// dropletPath holds the pre-built app droplet created once in BeforeSuite.
+	// All tests reuse it via CreateTestAppFromDropletByName instead of a full cf push.
+	dropletPath string
 )
 
 const componentName = "Application Scale Suite"
@@ -57,6 +61,7 @@ var _ = BeforeSuite(func() {
 	CheckServiceExists(cfg, setup.TestSpace.SpaceName(), cfg.ServiceName)
 	interval = cfg.AggregateInterval
 	client = GetHTTPClient(cfg)
+	dropletPath = CreateDroplet(cfg)
 })
 
 func AppAfterEach() {

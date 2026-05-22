@@ -73,7 +73,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	})
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
-			appToScaleName = helpers.CreateTestApp(cfg, "dynamic-policy", initialInstanceCount)
+			appToScaleName = helpers.CreateTestAppFromDroplet(cfg, dropletPath, "dynamic-policy", initialInstanceCount)
 
 			appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
 			Expect(err).NotTo(HaveOccurred())
@@ -316,7 +316,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				//only hit the one instance that was asked to run hot.
 				helpers.StopCPUUsage(cfg, appToScaleName, 0)
 
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 10*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
 			})
 		})
 		Context("when there is a scaling policy for cpuutil", func() {
@@ -390,7 +390,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		BeforeEach(func() {
 			initialInstanceCount = 1
 
-			appToScaleName = helpers.CreateTestApp(cfg, "dyn_policy_with_sk", initialInstanceCount)
+			appToScaleName = helpers.CreateTestAppFromDroplet(cfg, dropletPath, "dyn_policy_with_sk", initialInstanceCount)
 			appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
 			Expect(err).NotTo(HaveOccurred())
 			helpers.StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
