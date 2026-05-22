@@ -1173,51 +1173,51 @@
         }
       }
     },
-    "gopls@0.21.1": {
-      "last_modified": "2026-04-23T13:07:47Z",
-      "resolved": "github:NixOS/nixpkgs/01fbdeef22b76df85ea168fbfe1bfd9e63681b30#gopls",
+    "gopls@0.22.0": {
+      "last_modified": "2026-05-20T06:38:13Z",
+      "resolved": "github:NixOS/nixpkgs/d99b013d5d1931ad77fe3912ed218170dec5d9a4#gopls",
       "source": "devbox-search",
-      "version": "0.21.1",
+      "version": "0.22.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/413m3ilc7h6p38ir6f8fyvws4mk71sr7-gopls-0.21.1",
+              "path": "/nix/store/r86iin75nk5khfy3czlj9rky1bliwq84-gopls-0.22.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/413m3ilc7h6p38ir6f8fyvws4mk71sr7-gopls-0.21.1"
+          "store_path": "/nix/store/r86iin75nk5khfy3czlj9rky1bliwq84-gopls-0.22.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/zwnkabv87612v262575kq9pcafmydk9p-gopls-0.21.1",
+              "path": "/nix/store/rjbwjh6n8pg1hm9s8x4xs571yhwb9d77-gopls-0.22.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/zwnkabv87612v262575kq9pcafmydk9p-gopls-0.21.1"
+          "store_path": "/nix/store/rjbwjh6n8pg1hm9s8x4xs571yhwb9d77-gopls-0.22.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/and1sz88c9grpndnwb19dwhd1qfxb32m-gopls-0.21.1",
+              "path": "/nix/store/sl7xds0hj0z9a7cbci8fs13jyih6rfll-gopls-0.22.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/and1sz88c9grpndnwb19dwhd1qfxb32m-gopls-0.21.1"
+          "store_path": "/nix/store/sl7xds0hj0z9a7cbci8fs13jyih6rfll-gopls-0.22.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/27awffybla1vqpjj2g8qmsgd1imj2w5l-gopls-0.21.1",
+              "path": "/nix/store/h3867z0fqfr9660igd03fpqqzy5mqaxc-gopls-0.22.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/27awffybla1vqpjj2g8qmsgd1imj2w5l-gopls-0.21.1"
+          "store_path": "/nix/store/h3867z0fqfr9660igd03fpqqzy5mqaxc-gopls-0.22.0"
         }
       }
     },
