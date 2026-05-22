@@ -9,6 +9,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
 	code.cloudfoundry.org/lager/v3 v3.66.0
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260401205800-83519ee8128e
 	code.cloudfoundry.org/tlsconfig v0.52.0
 	github.com/apache/thrift v0.23.0
 	github.com/cenkalti/backoff/v5 v5.0.3
