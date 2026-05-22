@@ -107,3 +107,47 @@ var _ = Describe("XfccAuthMiddleware", func() {
 		})
 	})
 })
+
+var _ = Describe("XfccAuthMiddleware org-only mode", func() {
+	var (
+		err            error
+		xfccClientCert []byte
+
+		logBuffer *gbytes.Buffer
+		xm        auth.XFCCAuthMiddleware
+		server    *httptest.Server
+
+		orgGuid = "validorg"
+	)
+
+	BeforeEach(func() {
+		logger := lagertest.NewTestLogger("xfcc-auth-test-org-only")
+		logBuffer = logger.Buffer()
+		// ValidSpaceGuid is empty: any space in the org should be accepted.
+		xm = auth.NewXfccAuthMiddleware(logger, models.XFCCAuth{ValidOrgGuid: orgGuid, ValidSpaceGuid: ""})
+		server = httptest.NewUnstartedServer(xm.XFCCAuthenticationMiddleware(handler))
+	})
+
+	When("xfcc cert matches org but has any space guid", func() {
+		BeforeEach(func() {
+			xfccClientCert, err = testhelpers.GenerateClientCert(orgGuid, "any-space-guid")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return 200", func() {
+			Expect(doRequest(server, xfccClientCert).StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
+	When("xfcc cert does not match org guid", func() {
+		BeforeEach(func() {
+			xfccClientCert, err = testhelpers.GenerateClientCert("wrong-org-guid", "any-space-guid")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return 401", func() {
+			Expect(doRequest(server, xfccClientCert).StatusCode).To(Equal(http.StatusUnauthorized))
+			Eventually(logBuffer).Should(gbytes.Say(auth.ErrorWrongOrg.Error()))
+		})
+	})
+})
