@@ -49,7 +49,7 @@
     "temurin-bin-21":       "21.0.3",
     "which":                "latest",
     "xq-xml":               "1.4.0",
-    "yq-go":                "4.52.5",
+    "yq-go":                "4.53.2",
     "go":                   "1.25.5"
   },
   "shell": {
