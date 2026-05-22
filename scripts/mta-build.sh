@@ -36,8 +36,8 @@ pushd "${autoscaler_dir}" > /dev/null
 	# Create destination directory
 	mkdir --parents "${DEST}"
 
-	# Build the mtar file
-	mbt build --target="${DEST}" --mtar="${MTAR_FILENAME}"
+	# Build the mtar file; --mode verbose enables parallel module builds (-j CPUs, max 8)
+	mbt build --target="${DEST}" --mtar="${MTAR_FILENAME}" --mode verbose
 
 	echo "⚠️ The mta build is done. The mtar file is available at: ${DEST}/${MTAR_FILENAME}"
 	du --human-readable "${DEST}/${MTAR_FILENAME}"
