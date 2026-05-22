@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/lager/v3"
 )
@@ -19,20 +20,11 @@ type GatewayEmitter struct {
 }
 
 func NewGatewayEmitter(logger lager.Logger, gatewayURL string, tlsCerts models.TLSCerts) (MetricForwarder, error) {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-
-	tlsConfig, err := tlsCerts.CreateClientConfig()
+	client, err := helpers.CreateHTTPSClient(&tlsCerts, helpers.DefaultClientConfig(), logger)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create TLS config for gateway: %w", err)
+		return nil, fmt.Errorf("failed to create TLS client for gateway: %w", err)
 	}
-	if tlsConfig != nil {
-		transport.TLSClientConfig = tlsConfig
-	}
-
-	client := &http.Client{
-		Transport: transport,
-		Timeout:   10 * time.Second,
-	}
+	client.Timeout = 10 * time.Second
 
 	return &GatewayEmitter{
 		logger: logger,
