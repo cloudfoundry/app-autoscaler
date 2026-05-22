@@ -34,8 +34,8 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		minimalMemoryUsage = 35
 
 		// How long the test app holds resource usage before releasing (minutes).
-		// Minimum needed: breach duration (60s) + aggregate interval (120s) = 3 min.
-		holdMinutes = 3
+		// Needs: aggregate_interval (120s) + breach_duration (60s) + metric lag buffer = ~4 min.
+		holdMinutes = 4
 
 		// responsetime test: app sleeps 100ms per request, threshold at 50ms triggers scale-out.
 		responseTimeSlowDelayMs   = 100
