@@ -181,7 +181,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", Label(acceptance.LabelSmokeTests), func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 4*time.Minute)
 				})
 			})
 
@@ -212,7 +212,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale in", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 4*time.Minute)
 				})
 			})
 
@@ -259,7 +259,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 4*time.Minute)
 				})
 			})
 
@@ -292,7 +292,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				It("should scale in", func() {
 					// because we are generating 20rps but starting with 2 instances,
 					// there should be on average 10rps per instance, which should trigger the scale in
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 4*time.Minute)
 				})
 			})
 		})
