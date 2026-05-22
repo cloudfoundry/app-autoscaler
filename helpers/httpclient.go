@@ -53,8 +53,9 @@ func (t *TLSReloadTransport) certificateExpiringWithin(dur time.Duration) bool {
 }
 
 func (t *TLSReloadTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	// skips if no tls config to reload
-	if t.tlsClientConfig() == nil {
+	// skips if no tls config or no client cert to reload
+	cfg := t.tlsClientConfig()
+	if cfg == nil || len(cfg.Certificates) == 0 {
 		return t.Base.RoundTrip(req)
 	}
 
