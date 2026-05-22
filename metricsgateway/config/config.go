@@ -56,6 +56,8 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
+	conf.SetXFCCValidation(vcapReader.GetSpaceGuid(), vcapReader.GetOrgGuid())
+
 	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
 	if err != nil {
 		return err
