@@ -56,6 +56,8 @@ jobs:
 
       - name: Deploy Apps
         shell: bash
+        env:
+          DEPLOY_STRATEGY: ${{ github.event.pull_request.number && '' || 'blue-green' }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build
