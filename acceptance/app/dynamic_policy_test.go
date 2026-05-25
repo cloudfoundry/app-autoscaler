@@ -181,7 +181,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", Label(acceptance.LabelSmokeTests), func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 4*time.Minute)
+					waitForScaling(appToScaleGUID, 2)
 				})
 			})
 
@@ -212,7 +212,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale in", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 4*time.Minute)
+					waitForScaling(appToScaleGUID, 1)
 				})
 			})
 
@@ -259,7 +259,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 4*time.Minute)
+					waitForScaling(appToScaleGUID, 2)
 				})
 			})
 
@@ -292,7 +292,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				It("should scale in", func() {
 					// because we are generating 20rps but starting with 2 instances,
 					// there should be on average 10rps per instance, which should trigger the scale in
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 4*time.Minute)
+					waitForScaling(appToScaleGUID, 1)
 				})
 			})
 		})
@@ -477,6 +477,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 // ================================================================================
 // Helpers
 // ================================================================================
+
+func waitForScaling(appGUID string, instances int) {
+	GinkgoHelper()
+	helpers.WaitForNInstancesRunning(appGUID, instances, 4*time.Minute)
+}
 
 func concurrentHttpGet(count int, url string) {
 	client := &http.Client{
