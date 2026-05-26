@@ -76,7 +76,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
       - name: broker-catalog
@@ -101,7 +101,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: eventgenerator-config
       - name: database
@@ -125,10 +125,11 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsforwarder-config
       - name: database
+      - name: syslog-client
       - name: app-autoscaler-application-logs
       - name: app-autoscaler-dynatrace
     parameters:
@@ -149,7 +150,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsgateway-config
       - name: syslog-client
@@ -173,7 +174,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: operator-config
       - name: database
@@ -197,7 +198,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: scalingengine-config
       - name: database
@@ -255,7 +256,7 @@ modules:
         - echo "Building acceptance tests for version ${version}"
         - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
       build-result: build/acceptance
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: app-autoscaler-application-logs
     parameters:
