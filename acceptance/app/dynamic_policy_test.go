@@ -480,7 +480,9 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 func waitForScaling(appGUID string, instances int) {
 	GinkgoHelper()
-	helpers.WaitForNInstancesRunning(appGUID, instances, 4*time.Minute)
+	waitForCustomMetricScaling(func() (int, error) {
+		return helpers.RunningInstances(appGUID, 5*time.Second)
+	}, instances)
 }
 
 func concurrentHttpGet(count int, url string) {

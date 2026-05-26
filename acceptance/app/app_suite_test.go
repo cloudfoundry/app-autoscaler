@@ -101,6 +101,14 @@ func getStartAndEndTime(location *time.Location, offset, duration time.Duration)
 	return startTime, endTime
 }
 
+func waitForCustomMetricScaling(fn func() (int, error), instances int) {
+	GinkgoHelper()
+	Eventually(fn).
+		WithTimeout(5 * time.Minute).
+		WithPolling(5 * time.Second).
+		Should(Equal(instances))
+}
+
 func DeletePolicyWithAPI(appGUID string) {
 	By(fmt.Sprintf("Deleting policy using api for appguid :'%s'", appGUID))
 	oauthToken := OauthToken(cfg)

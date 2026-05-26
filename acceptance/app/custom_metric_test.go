@@ -116,11 +116,3 @@ func sendMetricToAutoscaler(config *config.Config, appToScaleGUID string, metric
 		return RunningInstances(appToScaleGUID, 5*time.Second)
 	}
 }
-
-func waitForCustomMetricScaling(fn func() (int, error), instances int) {
-	GinkgoHelper()
-	Eventually(fn).
-		WithTimeout(5 * time.Minute).
-		WithPolling(5 * time.Second).
-		Should(Equal(instances))
-}
