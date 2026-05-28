@@ -51,12 +51,17 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 
 		var cfApiClientErrTypeProxy *cf.CfError
 		if errors.As(err, &cfApiClientErrTypeProxy) {
+			statusCode := cfApiClientErrTypeProxy.StatusCode
+			if statusCode == 0 {
+				statusCode = http.StatusInternalServerError
+			}
+
 			errorDescription, err := json.Marshal(cfApiClientErrTypeProxy)
 			if err != nil {
 				logger.Error("failed-to-serialize cf-api-error", err)
 			}
 
-			handlers.WriteJSONResponse(w, cfApiClientErrTypeProxy.StatusCode, models.ErrorResponse{
+			handlers.WriteJSONResponse(w, statusCode, models.ErrorResponse{
 				Code:    "Error on request to the cloud-controller via a cf-client",
 				Message: fmt.Sprintf("Error taking scaling action:\n%s", string(errorDescription))})
 		} else {

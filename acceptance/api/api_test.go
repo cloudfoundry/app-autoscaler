@@ -230,6 +230,9 @@ var _ = Describe("AutoScaler Public API", func() {
 			BeforeEach(func() {
 				UnbindServiceFromApp(cfg, appName, instanceName)
 			})
+			AfterEach(func() {
+				BindServiceToApp(cfg, appName, instanceName)
+			})
 			It("should not be possible to get information from the API", func() {
 				By("getting the policy")
 				_, status := getPolicy()

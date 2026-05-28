@@ -11,12 +11,14 @@ copyright: Apache License 2.0
 version: MTA_VERSION
 parameters:
   enable-parallel-deployments: true
+  java-buildpack: java_buildpack_v5
 modules:
   - name: dbtasks
     type: java
     path: .
     properties:
       JBP_LOG_LEVEL:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       LOG_LEVEL: INFO
       DEBUG:
@@ -32,6 +34,7 @@ modules:
     parameters:
       no-route: true
       no-start: true
+      buildpack: ${java-buildpack}
       tasks:
         - name: apply-api-changelog
           command: |
@@ -73,7 +76,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
       - name: broker-catalog
@@ -98,7 +101,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: eventgenerator-config
       - name: database
@@ -122,7 +125,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsforwarder-config
       - name: database
@@ -133,6 +136,30 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
+  - name: metricsgateway
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/cmd/metricsgateway
+      GOTOOLCHAIN: local
+      GOVERSION: go1.25
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler and dbtasks" > /dev/null
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+    requires:
+      - name: metricsgateway-config
+      - name: syslog-client
+      - name: app-autoscaler-application-logs
+      - name: app-autoscaler-dynatrace
+    parameters:
+      instances: 0 # overridden in build-extension-file.sh
+      memory: 256M
+      disk-quota: 512M
       stack: cflinuxfs4
       routes:
   - name: operator
@@ -147,7 +174,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: operator-config
       - name: database
@@ -171,7 +198,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: scalingengine-config
       - name: database
@@ -193,7 +220,7 @@ modules:
       build-result: scheduler/target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:
-      JBP_CONFIG_OPEN_JDK_JRE: '{ "version": "21.+", "jre": { "version": "21.+", "java_home": ".java-buildpack/java_home" } }'
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       DEBUG:
       GOTOOLCHAIN: local
@@ -208,6 +235,7 @@ modules:
       memory: 1G
       disk-quota: 1G
       stack: cflinuxfs4
+      buildpack: ${java-buildpack}
       routes:
   - name: acceptance-tests
     type: application
@@ -228,7 +256,7 @@ modules:
         - echo "Building acceptance tests for version ${version}"
         - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
       build-result: build/acceptance
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: app-autoscaler-application-logs
     parameters:
@@ -250,6 +278,12 @@ resources:
       service-tags:
         - metricsforwarder-config
       path: metricsforwarder/default_config.json
+  - name: metricsgateway-config
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - metricsgateway-config
+      path: metricsgateway/default_config.json
   - name: eventgenerator-config
     type: org.cloudfoundry.user-provided-service
     parameters:

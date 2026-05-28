@@ -16,6 +16,8 @@ type rawConfig struct {
 	Server                helpers.ServerConfig          `yaml:"server"`
 	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
 	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
+	MetricsGateway        MetricsGatewayConfig          `yaml:"metrics_gateway" json:"metrics_gateway"`
+	InstanceTLSCerts      models.TLSCerts               `yaml:"-" json:"-"`
 	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
 	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
 	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
@@ -37,6 +39,8 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		Server:               rawConfig.Server,
 		LoggregatorConfig:    rawConfig.LoggregatorConfig,
 		SyslogConfig:         rawConfig.SyslogConfig,
+		MetricsGateway:       rawConfig.MetricsGateway,
+		InstanceTLSCerts:     rawConfig.InstanceTLSCerts,
 		Db:                   rawConfig.Db,
 		CacheTTL:             rawConfig.CacheTTL,
 		CacheCleanupInterval: rawConfig.CacheCleanupInterval,
@@ -80,12 +84,12 @@ func (c *rawConfig) validateDbConfig() error {
 	if c.Db[db.BindingDb].URL == "" {
 		return errors.New("configuration error: Binding DB url is empty")
 	}
-	if c.usingSyslog() {
-		return c.validateSyslogConfig()
-	}
-	return c.validateLoggregatorConfig()
+	return nil
 }
 func (c *rawConfig) validateSyslogOrLoggregator() error {
+	if c.usingGateway() {
+		return nil
+	}
 	if c.usingSyslog() {
 		return c.validateSyslogConfig()
 	}
@@ -171,6 +175,10 @@ func (c *rawConfig) usingSyslog() bool {
 	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
 }
 
+func (c *rawConfig) usingGateway() bool {
+	return c.MetricsGateway.URL != ""
+}
+
 // ================================================================================
 // Legacy parsing-machinery
 // ================================================================================
@@ -211,11 +219,15 @@ func loadVcapConfig(conf *rawConfig, vcapReader configutil.VCAPConfigurationRead
 		return err
 	}
 
-	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
-	if err != nil {
-		return err
+	if conf.usingGateway() {
+		conf.InstanceTLSCerts = vcapReader.GetInstanceTLSCerts()
+	} else {
+		tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
+		if err != nil {
+			return err
+		}
+		conf.SyslogConfig.TLS = tls
 	}
-	conf.SyslogConfig.TLS = tls
 
 	return nil
 }

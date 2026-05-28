@@ -32,11 +32,17 @@ type SyslogConfig struct {
 	TLS           models.TLSCerts `yaml:"tls"`
 }
 
+type MetricsGatewayConfig struct {
+	URL string `yaml:"url" json:"url"`
+}
+
 type Config struct {
 	Logging              helpers.LoggingConfig
 	Server               helpers.ServerConfig
 	LoggregatorConfig    LoggregatorConfig
 	SyslogConfig         SyslogConfig
+	MetricsGateway       MetricsGatewayConfig
+	InstanceTLSCerts     models.TLSCerts
 	Db                   map[string]db.DatabaseConfig
 	CacheTTL             time.Duration
 	CacheCleanupInterval time.Duration
@@ -49,7 +55,14 @@ type Config struct {
 	CredentialHelperConfig models.BasicAuthHandlingImplConfig
 }
 
-// GetLogging returns the logging configuration
+func (c *Config) UsingSyslog() bool {
+	return c.SyslogConfig.ServerAddress != "" && c.SyslogConfig.Port != 0
+}
+
+func (c *Config) UsingGateway() bool {
+	return c.MetricsGateway.URL != ""
+}
+
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
 }

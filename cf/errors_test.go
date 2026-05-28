@@ -3,8 +3,10 @@ package cf_test
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"github.com/cloudfoundry/go-cfclient/v3/resource"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -122,6 +124,71 @@ var _ = Describe("Errors test", func() {
 			It("Should return false for IsNotFound()", func() {
 				Expect(cfError.IsNotFound()).To(BeFalse())
 			})
+		})
+	})
+
+	Context("MapCFClientError", func() {
+		It("returns nil for nil error", func() {
+			Expect(cf.MapCFClientError(nil)).To(BeNil())
+		})
+
+		It("maps CloudFoundryError with not-found code to 404", func() {
+			err := resource.CloudFoundryError{Code: 10010, Title: "CF-ResourceNotFound", Detail: "App not found"}
+			result := cf.MapCFClientError(err)
+			var cfErr *cf.CfError
+			Expect(errors.As(result, &cfErr)).To(BeTrue())
+			Expect(cfErr.StatusCode).To(Equal(http.StatusNotFound))
+			Expect(cfErr.Errors[0].Code).To(Equal(10010))
+		})
+
+		It("maps CloudFoundryError with not-authenticated code to 401", func() {
+			err := resource.CloudFoundryError{Code: 10002, Title: "CF-NotAuthenticated", Detail: "No auth token"}
+			result := cf.MapCFClientError(err)
+			var cfErr *cf.CfError
+			Expect(errors.As(result, &cfErr)).To(BeTrue())
+			Expect(cfErr.StatusCode).To(Equal(http.StatusUnauthorized))
+		})
+
+		It("maps CloudFoundryError with not-authorized code to 403", func() {
+			err := resource.CloudFoundryError{Code: 10003, Title: "CF-NotAuthorized", Detail: "No permission"}
+			result := cf.MapCFClientError(err)
+			var cfErr *cf.CfError
+			Expect(errors.As(result, &cfErr)).To(BeTrue())
+			Expect(cfErr.StatusCode).To(Equal(http.StatusForbidden))
+		})
+
+		It("maps unknown CloudFoundryError code to 500", func() {
+			err := resource.CloudFoundryError{Code: 99999, Title: "CF-Unknown", Detail: "Something"}
+			result := cf.MapCFClientError(err)
+			var cfErr *cf.CfError
+			Expect(errors.As(result, &cfErr)).To(BeTrue())
+			Expect(cfErr.StatusCode).To(Equal(http.StatusInternalServerError))
+		})
+
+		It("maps CloudFoundryHTTPError preserving status code", func() {
+			err := resource.CloudFoundryHTTPError{StatusCode: 503, Status: "Service Unavailable", Body: []byte("down")}
+			result := cf.MapCFClientError(err)
+			var cfErr *cf.CfError
+			Expect(errors.As(result, &cfErr)).To(BeTrue())
+			Expect(cfErr.StatusCode).To(Equal(503))
+		})
+
+		It("maps CloudFoundryErrors taking status from first error", func() {
+			err := resource.CloudFoundryErrors{Errors: []resource.CloudFoundryError{
+				{Code: 10010, Title: "CF-ResourceNotFound", Detail: "Not found"},
+				{Code: 10002, Title: "CF-NotAuthenticated", Detail: "No auth"},
+			}}
+			result := cf.MapCFClientError(err)
+			var cfErr *cf.CfError
+			Expect(errors.As(result, &cfErr)).To(BeTrue())
+			Expect(cfErr.StatusCode).To(Equal(http.StatusNotFound))
+			Expect(cfErr.Errors).To(HaveLen(2))
+		})
+
+		It("returns original error if not a CF client error", func() {
+			err := errors.New("some random error")
+			result := cf.MapCFClientError(err)
+			Expect(result).To(Equal(err))
 		})
 	})
 })
