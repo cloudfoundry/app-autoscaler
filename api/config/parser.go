@@ -336,19 +336,6 @@ func LoadVcapConfig(conf *rawConfig, vcapReader configutil.VCAPConfigurationRead
 		return err
 	}
 
-	// var storedProcConfig *models.StoredProcedureConfig
-	// var credHelperImpl string
-	// switch authImpl := conf.CustomMetricsAuthConfig.BasicAuthHandlingImplConfig.(type) {
-	// case BasicAuthHandlingStoredProc:
-	//	storedProcConfig = &authImpl.config
-	//	credHelperImpl = "stored_procedure"
-	// default:
-	// storedProcConfig = nil
-	// }
-	// if err := vcapReader.ConfigureDatabases(&conf.Db, storedProcConfig, credHelperImpl); err != nil {
-	//	return err
-	// }
-
 	if err := configureCatalog(conf, vcapReader); err != nil {
 		return err
 	}

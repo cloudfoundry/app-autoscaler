@@ -89,7 +89,8 @@ func New(
 	)
 
 	defaultCustomMetricsCredentialType := &models.X509Certificate
-	if basicAuthAvailable := conf.CustomMetricsAuthConfig != nil; basicAuthAvailable {
+	isBasicAuthAvailable := conf.CustomMetricsAuthConfig != nil
+	if isBasicAuthAvailable {
 		defaultCustomMetricsCredentialType = &conf.CustomMetricsAuthConfig.DefaultCustomMetricAuthType
 	}
 
@@ -580,7 +581,11 @@ func (b *Broker) Bind(
 		b.conf.CustomMetricsAuthConfig.BasicAuthHandling == config.BasicAuthHandlingOn
 	hasRequestedBasicAuth := *appScalingConfig.GetConfiguration().GetCustomMetricsBindingAuth() == models.BindingSecret
 	if !allowBasicAuthForNewBindings && hasRequestedBasicAuth {
-		err := errors.New("Requested binding with basic-authentication for custom metrics, but the server does not allow this.")
+		msg := fmt.Sprintf("%s%s\n\t%s",
+			"🚫 Requested binding with basic-authentication for custom metrics",
+			", but the server does not allow basic authentication for new bindings.",
+			"🚸 Please use mTLS.")
+		err := errors.New(msg)
 		return result, apiresponses.NewFailureResponseBuilder(
 			err, http.StatusBadRequest, "forbidden_binding-secret-request").Build()
 	}
