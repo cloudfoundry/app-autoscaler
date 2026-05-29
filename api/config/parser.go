@@ -87,12 +87,13 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 func parseCMBasicAuthCfg(rawConfig rawConfig) *CustomMetricsBasicAuthCfg {
 	var result *CustomMetricsBasicAuthCfg = nil
 
-	var basicAuthHandlingNeeded bool
-	var bah BasicAuthHandling
+	var basicAuthHandlingNeeded bool = true
+	var bah BasicAuthHandling = BasicAuthHandlingOn
 	switch rawConfig.BasicAuthForCustomMetrics {
 	case "on":
-		basicAuthHandlingNeeded = true
-		bah = BasicAuthHandlingOn
+		// This is the default case and the variables above already are set to:
+		// basicAuthHandlingNeeded = true
+		// bah = BasicAuthHandlingOn
 	case "only_existing_bindings":
 		basicAuthHandlingNeeded = true
 		bah = BasicAuthHandlingOnlyExistingBindings
