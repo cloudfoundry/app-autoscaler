@@ -561,51 +561,51 @@
         }
       }
     },
-    "fly@8.2.1": {
-      "last_modified": "2026-05-20T06:38:13Z",
-      "resolved": "github:NixOS/nixpkgs/d99b013d5d1931ad77fe3912ed218170dec5d9a4#fly",
+    "fly@8.2.2": {
+      "last_modified": "2026-05-27T10:28:13Z",
+      "resolved": "github:NixOS/nixpkgs/4100e830e085863741bc69b156ec4ccd53ab5be0#fly",
       "source": "devbox-search",
-      "version": "8.2.1",
+      "version": "8.2.2",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2ii04jj27sg6caza6q0qmaj7d29yrlbl-fly-8.2.1",
+              "path": "/nix/store/zrnzs7wd601pal9yinsi46nha5wp3iqd-fly-8.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2ii04jj27sg6caza6q0qmaj7d29yrlbl-fly-8.2.1"
+          "store_path": "/nix/store/zrnzs7wd601pal9yinsi46nha5wp3iqd-fly-8.2.2"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1v5fwk5050pdc6jxgw5hblgxwg1grjbd-fly-8.2.1",
+              "path": "/nix/store/svlfvyqghp2f4ih5a7wmya80nwfal266-fly-8.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1v5fwk5050pdc6jxgw5hblgxwg1grjbd-fly-8.2.1"
+          "store_path": "/nix/store/svlfvyqghp2f4ih5a7wmya80nwfal266-fly-8.2.2"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/wia57cmraiwhkjqkl8arayvsy32mm8wf-fly-8.2.1",
+              "path": "/nix/store/qvgq0kkf0jfvvqgziw6jqavdv1nxjdy2-fly-8.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/wia57cmraiwhkjqkl8arayvsy32mm8wf-fly-8.2.1"
+          "store_path": "/nix/store/qvgq0kkf0jfvvqgziw6jqavdv1nxjdy2-fly-8.2.2"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/7pqm3zf8pmslhbx8qk8dn0aswfxc3zv4-fly-8.2.1",
+              "path": "/nix/store/ympfdgsg7zxdmy2pdg1gs04bc4ig0ir9-fly-8.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/7pqm3zf8pmslhbx8qk8dn0aswfxc3zv4-fly-8.2.1"
+          "store_path": "/nix/store/ympfdgsg7zxdmy2pdg1gs04bc4ig0ir9-fly-8.2.2"
         }
       }
     },
