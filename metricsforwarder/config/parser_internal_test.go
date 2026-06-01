@@ -42,7 +42,6 @@ var _ = Describe("rawConfig validation", func() {
 
 		conf.CredHelperImpl = "default"
 	})
-
 	JustBeforeEach(func() {
 		err = conf.validate()
 	})
@@ -52,7 +51,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
-
 	When("syslog is available", func() {
 		BeforeEach(func() {
 			conf.SyslogConfig = SyslogConfig{
@@ -101,7 +99,6 @@ var _ = Describe("rawConfig validation", func() {
 			})
 		})
 	})
-
 	When("policy db url is not set", func() {
 		BeforeEach(func() {
 			conf.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
@@ -111,7 +108,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("configuration error: Policy DB url is empty")))
 		})
 	})
-
 	When("binding db url is not set", func() {
 		BeforeEach(func() {
 			conf.Db[db.BindingDb] = db.DatabaseConfig{URL: ""}
@@ -121,7 +117,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("configuration error: Binding DB url is empty")))
 		})
 	})
-
 	When("Loggregator CACert is not set", func() {
 		BeforeEach(func() {
 			conf.LoggregatorConfig.TLS.CACertFile = ""
@@ -131,7 +126,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Loggregator CACert is empty")))
 		})
 	})
-
 	When("Loggregator ClientCert is not set", func() {
 		BeforeEach(func() {
 			conf.LoggregatorConfig.TLS.CertFile = ""
@@ -141,7 +135,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Loggregator ClientCert is empty")))
 		})
 	})
-
 	When("Loggregator ClientKey is not set", func() {
 		BeforeEach(func() {
 			conf.LoggregatorConfig.TLS.KeyFile = ""
@@ -151,7 +144,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("Loggregator ClientKey is empty")))
 		})
 	})
-
 	When("rate_limit.max_amount is <= zero", func() {
 		BeforeEach(func() {
 			conf.RateLimit.MaxAmount = 0
@@ -161,7 +153,6 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("RateLimit.MaxAmount is less than or equal to zero")))
 		})
 	})
-
 	When("rate_limit.valid_duration is <= 0 ns", func() {
 		BeforeEach(func() {
 			conf.RateLimit.ValidDuration = 0 * time.Nanosecond
@@ -220,6 +211,18 @@ var _ = Describe("toConfig credential helper conversion", func() {
 
 		It("should set CredentialHelperConfig to BasicAuthHandlingNative", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
+		})
+	})
+	When("cred_helper_impl is set to 'disabled'", func() {
+		BeforeEach(func() {
+			conf.CredHelperImpl = "disabled"
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should set CredentialHelperConfig to nil", func() {
+			Expect(result.CredentialHelperConfig).To(BeNil())
 		})
 	})
 	When("cred_helper_impl is empty (not set)", func() {
