@@ -411,6 +411,20 @@ var _ = Describe("toConfig credential helper and basic auth conversion", func() 
 
 	// --- basic_auth_for_custom_metrics tests ---
 
+	When("basic_auth_for_custom_metrics is not set", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = ""
+		})
+
+		It("should succeed", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should map to the default-value (which is \"on\")", func() {
+			Expect(result.CustomMetricsAuthConfig).NotTo(BeNil())
+			Expect(result.CustomMetricsAuthConfig.BasicAuthHandling).To(Equal(BasicAuthHandlingOn))
+		})
+	})
+
 	When("basic_auth_for_custom_metrics is set to an invalid value", func() {
 		BeforeEach(func() {
 			conf.BasicAuthForCustomMetrics = "invalid_value"
