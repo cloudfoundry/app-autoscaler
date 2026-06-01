@@ -141,7 +141,7 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return err
 	}
 
-	if err := vcapReader.ConfigureDatabases(&conf.Db, nil, ""); err != nil {
+	if err := vcapReader.ConfigureDatabases(&conf.Db, nil); err != nil {
 		return err
 	}
 

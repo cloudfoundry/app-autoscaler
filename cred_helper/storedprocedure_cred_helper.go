@@ -33,6 +33,7 @@ func NewStoredProcedureCredHelper(storedProcedureDb db.StoredProcedureDB, maxRet
 	}
 }
 
+// 🪧 The variable ~userProvidedCredential~ is completely unused.
 func (c *storedProcedureCredentials) Create(ctx context.Context, appId string, userProvidedCredential *models.Credential) (*models.Credential, error) {
 	logger := c.logger.Session("create-stored-procedure-credential", lager.Data{"appId": appId})
 	var err error
