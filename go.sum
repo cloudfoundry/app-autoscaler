@@ -404,8 +404,8 @@ code.cloudfoundry.org/lager/v3 v3.71.0 h1:Jm2vkbp2daadOwWrDWmdRqFN0lPy6fkEicAEP1
 code.cloudfoundry.org/lager/v3 v3.71.0/go.mod h1:4ZEDdXpEDs64bd5kTxQwQMCNeWSFd+5bnL9UeDObNug=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260601174356-abaecf66353a h1:sx6V93w+Tuc16YURQr+Tnc9V4TalIFdcHEypfFhUzzU=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260601174356-abaecf66353a/go.mod h1:8e9oOVkdIHwZ1TdjgFbFnn9+4pml2JPb4Wxtz1ZPfh0=
-code.cloudfoundry.org/tlsconfig v0.56.0 h1:e14srEFrmPLKZ72Ypt9UHU0ugeUNwPbEMNfQKPW4RFE=
-code.cloudfoundry.org/tlsconfig v0.56.0/go.mod h1:ndDtw7ix5kZp8GR/AO/7E6BrhGaAA7HJ49Gkl8hkO/g=
+code.cloudfoundry.org/tlsconfig v0.57.0 h1:Kq+K4FNb/jDZxJ7E+l619c7ekDrNV6EYv3r6AszRMOU=
+code.cloudfoundry.org/tlsconfig v0.57.0/go.mod h1:C7+gD2NiT/00LliHJOGJhpjO9myczswc3uvv2++payw=
 codeberg.org/go-fonts/dejavu v0.4.0/go.mod h1:abni088lmhQJvso2Lsb7azCKzwkfcnttl6tL1UTWKzg=
 codeberg.org/go-fonts/latin-modern v0.4.0/go.mod h1:BF68mZznJ9QHn+hic9ks2DaFl4sR5YhfM6xTYaP9vNw=
 codeberg.org/go-fonts/liberation v0.4.1/go.mod h1:Gu6FTZHMMpGxPBfc8WFL8RfwMYFTvG7TIFOMx8oM4B8=
