@@ -230,7 +230,8 @@ func (c *rawConfig) validate() error {
 		return fmt.Errorf("Configuration error: CatalogPath is empty")
 	}
 
-	validBasicAuthSwitches := []string{"on", "off", "only_existing_bindings"}
+	// We allow as well the configuration to be not set. "" is mapped to the default-value "on".
+	validBasicAuthSwitches := []string{"", "on", "off", "only_existing_bindings"}
 	if ba4cmCfgIsValid := slices.Contains(validBasicAuthSwitches, c.BasicAuthForCustomMetrics); !ba4cmCfgIsValid {
 		return fmt.Errorf("Configuration error: BasicAuthForCustomMetrics is invalid: \"%s\"", c.BasicAuthForCustomMetrics)
 	}

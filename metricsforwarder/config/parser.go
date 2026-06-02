@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
@@ -56,6 +57,8 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		}
 	case "default", "":
 		result.CredentialHelperConfig = models.BasicAuthHandlingNative{}
+	case "disabled":
+		result.CredentialHelperConfig = nil
 	}
 
 	return result, nil
@@ -163,6 +166,8 @@ func (c *rawConfig) validateCredHelperImpl() error {
 			msg := "CredHelperImpl is set to the default but there is a StoredProcedureConfig"
 			return errors.New(msg)
 		}
+	case "disabled":
+	// Nothing to validate if the credential helper is disabled.
 	default:
 		msg := fmt.Sprintf("CredHelperImpl is set to %s which is not a supported value", c.CredHelperImpl)
 		return errors.New(msg)
@@ -207,13 +212,16 @@ func loadVcapConfig(conf *rawConfig, vcapReader configutil.VCAPConfigurationRead
 
 	var basicAuthImplCfg *models.BasicAuthHandlingImplConfig
 	if conf.CredHelperImpl != "" {
-		var impl models.BasicAuthHandlingImplConfig
+		var impl models.BasicAuthHandlingImplConfig = nil
 		if conf.CredHelperImpl == "stored_procedure" && conf.StoredProcedureConfig != nil {
 			impl = models.BasicAuthHandlingStoredProc{Config: *conf.StoredProcedureConfig}
-		} else {
+			basicAuthImplCfg = &impl
+		} else if slices.Contains([]string{"", "default"}, conf.CredHelperImpl) {
 			impl = models.BasicAuthHandlingNative{}
+			basicAuthImplCfg = &impl
+		} else {
+			basicAuthImplCfg = nil
 		}
-		basicAuthImplCfg = &impl
 	}
 	if err := vcapReader.ConfigureDatabases(&conf.Db, basicAuthImplCfg); err != nil {
 		return err
