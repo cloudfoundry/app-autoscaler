@@ -13,20 +13,22 @@ import (
 )
 
 type rawConfig struct {
-	Logging               helpers.LoggingConfig         `yaml:"logging"`
-	Server                helpers.ServerConfig          `yaml:"server"`
-	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
-	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
-	MetricsGateway        MetricsGatewayConfig          `yaml:"metrics_gateway" json:"metrics_gateway"`
-	InstanceTLSCerts      models.TLSCerts               `yaml:"-" json:"-"`
-	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
-	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
-	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
-	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`
-	Health                helpers.HealthConfig          `yaml:"health"`
-	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
-	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
+	Logging              helpers.LoggingConfig        `yaml:"logging"`
+	Server               helpers.ServerConfig         `yaml:"server"`
+	LoggregatorConfig    LoggregatorConfig            `yaml:"loggregator"`
+	SyslogConfig         SyslogConfig                 `yaml:"syslog"`
+	MetricsGateway       MetricsGatewayConfig         `yaml:"metrics_gateway" json:"metrics_gateway"`
+	InstanceTLSCerts     models.TLSCerts              `yaml:"-" json:"-"`
+	Db                   map[string]db.DatabaseConfig `yaml:"db"`
+	CacheTTL             time.Duration                `yaml:"cache_ttl"`
+	CacheCleanupInterval time.Duration                `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval time.Duration                `yaml:"policy_poller_interval"`
+	Health               helpers.HealthConfig         `yaml:"health"`
+	RateLimit            models.RateLimitConfig       `yaml:"rate_limit"`
+
+	BasicAuthForCustomMetrics string                        `yaml:"basic_auth_for_custom_metrics" json:"basic_auth_for_custom_metrics"`
+	CredHelperImpl            string                        `yaml:"cred_helper_impl"`
+	StoredProcedureConfig     *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
 func toConfig(rawConfig rawConfig) (Config, error) {
