@@ -101,6 +101,16 @@ func getStartAndEndTime(location *time.Location, offset, duration time.Duration)
 	return startTime, endTime
 }
 
+func setupCustomMetricTestApp() {
+	policy := GenerateDynamicScaleOutAndInPolicy(1, 2, "test_metric", 500, 500)
+	appToScaleName = CreateTestAppFromDroplet(cfg, dropletPath, "labeled-go_app", 1)
+	var err error
+	appToScaleGUID, err = GetAppGuid(cfg, appToScaleName)
+	Expect(err).NotTo(HaveOccurred())
+	instanceName = CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)
+	StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
+}
+
 func waitForCustomMetricScaling(fn func() (int, error), instances int) {
 	GinkgoHelper()
 	Eventually(fn).
