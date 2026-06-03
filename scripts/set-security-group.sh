@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154
 
 set -euo pipefail
 
@@ -8,20 +9,21 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-SECURITY_GROUP_NAME="metricsforwarder"
-SECURITY_GROUP_FILE="${autoscaler_dir}/metricsforwarder/security-group.json"
+function setup_security_group() {
+	local name="$1"
+	local file="$2"
+	echo "Setting up security group '${name}' for org '${AUTOSCALER_ORG}' space '${AUTOSCALER_SPACE}'"
+	cf create-security-group "${name}" "${file}" || true
+	cf update-security-group "${name}" "${file}"
+	cf bind-security-group "${name}" "${AUTOSCALER_ORG}" --space "${AUTOSCALER_SPACE}"
+	echo "Security group '${name}' configured successfully for space '${AUTOSCALER_SPACE}'"
+}
 
 function main() {
 	bbl_login
 	cf_admin_login
-	echo "Setting up security group '${SECURITY_GROUP_NAME}' for org '${AUTOSCALER_ORG}' space '${AUTOSCALER_SPACE}'"
-
-	# Create or update security group (space-scoped, not global)
-	cf create-security-group "${SECURITY_GROUP_NAME}" "${SECURITY_GROUP_FILE}" || true
-	cf update-security-group "${SECURITY_GROUP_NAME}" "${SECURITY_GROUP_FILE}"
-	cf bind-security-group "${SECURITY_GROUP_NAME}" "${AUTOSCALER_ORG}" --space "${AUTOSCALER_SPACE}"
-
-	echo "Security group '${SECURITY_GROUP_NAME}' configured successfully for space '${AUTOSCALER_SPACE}'"
+	setup_security_group "metricsforwarder" "${autoscaler_dir}/metricsforwarder/security-group.json"
+	setup_security_group "metricsgateway"   "${autoscaler_dir}/metricsgateway/security-group.json"
 	return 0
 }
 

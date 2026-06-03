@@ -38,8 +38,6 @@ pushd "${autoscaler_dir}" > /dev/null
 	cf_deployment_login
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
-	make -f metricsforwarder/Makefile set-security-group
-	make -f metricsgateway/Makefile set-security-group
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
 	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
 
