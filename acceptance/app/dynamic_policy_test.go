@@ -433,3 +433,35 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	})
 })
 
+func concurrentHttpGet(count int, url string) {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			//#nosec G402 -- acceptance test that uses test foundations without proper certs
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	for i := 0; i < count; i++ {
+		go func() {
+			GinkgoWriter.Printf("[http] [get] [request] url: %s\n", url)
+
+			resp, err := client.Get(url)
+
+			if err != nil {
+				GinkgoWriter.Printf("[http] [get] [response] error: %s\n", err.Error())
+			}
+
+			if resp != nil {
+				GinkgoWriter.Printf("[http] [get] [response] status-code: %d\n", resp.StatusCode)
+				err = resp.Body.Close()
+				if err != nil {
+					GinkgoWriter.Printf("[http] [get] [response] error closing response body: %s\n", err.Error())
+				}
+			}
+		}()
+	}
+}
+
