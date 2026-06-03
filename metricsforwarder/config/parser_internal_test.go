@@ -167,7 +167,6 @@ var _ = Describe("rawConfig validation", func() {
 	When("basic_auth_for_custom_metrics is not set", func() {
 		BeforeEach(func() {
 			conf.BasicAuthForCustomMetrics = ""
-			conf.CredHelperImpl = "default"
 		})
 
 		It("should succeed (default-value 'on' is assumed)", func() {
@@ -326,7 +325,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 	})
 
 	// --- basic_auth_for_custom_metrics tests ---
-
 	When("basic_auth_for_custom_metrics is 'off'", func() {
 		BeforeEach(func() {
 			conf.BasicAuthForCustomMetrics = "off"
@@ -337,12 +335,10 @@ var _ = Describe("toConfig credential helper conversion", func() {
 		It("should not error", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
-
 		It("should set CredentialHelperConfig to nil", func() {
 			Expect(result.CredentialHelperConfig).To(BeNil())
 		})
 	})
-
 	When("basic_auth_for_custom_metrics is 'on' with cred_helper_impl 'default'", func() {
 		BeforeEach(func() {
 			conf.BasicAuthForCustomMetrics = "on"
@@ -353,12 +349,10 @@ var _ = Describe("toConfig credential helper conversion", func() {
 		It("should not error", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
-
 		It("should set CredentialHelperConfig to BasicAuthHandlingNative", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
 	})
-
 	When("basic_auth_for_custom_metrics is empty (default 'on')", func() {
 		BeforeEach(func() {
 			conf.BasicAuthForCustomMetrics = ""
@@ -369,7 +363,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 		It("should not error", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
-
 		It("should set CredentialHelperConfig to BasicAuthHandlingNative (default-value 'on' is assumed)", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
