@@ -141,7 +141,7 @@ func (c *rawConfig) validateRateLimit() error {
 
 func (c *rawConfig) validateBasicAuthConfig() error {
 	validBasicAuthValues := []string{"", "on", "off"}
-	if ! slices.Contains(validBasicAuthValues, c.BasicAuthForCustomMetrics) {
+	if !slices.Contains(validBasicAuthValues, c.BasicAuthForCustomMetrics) {
 		msg := fmt.Sprintf("basic_auth_for_custom_metrics is set to %s which is not a supported value", c.BasicAuthForCustomMetrics)
 		return errors.New(msg)
 	}
