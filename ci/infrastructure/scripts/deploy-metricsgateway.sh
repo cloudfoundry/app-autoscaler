@@ -25,7 +25,9 @@ function build_extension_file() {
 
   health_password="$(credhub get -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsgateway_health_password" -q)"
   syslog_json="$(credhub get -n /bosh-autoscaler/cf/syslog_agent_log_cache_tls --output-json)"
-  read -r syslog_ca syslog_cert syslog_key <<< "$(echo "${syslog_json}" | jq -r '[.value.ca, .value.certificate, .value.private_key] | map(rtrimstr("\n")) | @tsv')"
+  syslog_ca="$(echo "${syslog_json}"   | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['value']['ca'].rstrip())")"
+  syslog_cert="$(echo "${syslog_json}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['value']['certificate'].rstrip())")"
+  syslog_key="$(echo "${syslog_json}"  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['value']['private_key'].rstrip())")"
 
   valid_org_guid="$(cf org "${VALID_ORG}" --guid)"
 
