@@ -13,6 +13,10 @@ on:
         required: false
         type: boolean
         default: false
+      autoscaler_org:
+        required: false
+        type: string
+        default: ""
     secrets:
       bbl_ssh_key:
         required: true
@@ -77,6 +81,7 @@ jobs:
         shell: bash
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
+          AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build
