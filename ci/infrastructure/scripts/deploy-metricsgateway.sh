@@ -9,11 +9,7 @@ source "${script_dir}/utils.source.sh"
 MTAR_PATH="${MTAR_PATH:-$(ls app-autoscaler-mtar/app-autoscaler-release-*.mtar 2>/dev/null | head -1)}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-app-autoscaler}"
 
-# Override default org/space from vars.source.sh
-export CF_ORG="${CF_ORG:-SAP_autoscaler_tests_OSS}"
-export CF_SPACE="${CF_SPACE:-SAP_autoscaler_tests_OSS}"
-export cf_org="${CF_ORG}"
-export cf_space="${CF_SPACE}"
+VALID_ORG="${VALID_ORG:-SAP_autoscaler_tests_OSS}"
 
 function generate_secrets() {
   credhub generate --no-overwrite \
@@ -25,13 +21,15 @@ function build_extension_file() {
   local ext_file
   ext_file="$(mktemp)"
 
-  local health_password syslog_json syslog_ca syslog_cert syslog_key
+  local health_password syslog_json syslog_ca syslog_cert syslog_key valid_org_guid
 
   health_password="$(credhub get -n "/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsgateway_health_password" -q)"
   syslog_json="$(credhub get -n /bosh-autoscaler/cf/syslog_agent_log_cache_tls --output-json)"
   syslog_ca="$(echo "${syslog_json}"   | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['value']['ca'].rstrip())")"
   syslog_cert="$(echo "${syslog_json}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['value']['certificate'].rstrip())")"
   syslog_key="$(echo "${syslog_json}"  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['value']['private_key'].rstrip())")"
+
+  valid_org_guid="$(cf org "${VALID_ORG}" --guid)"
 
   local syslog_ca_inline syslog_cert_inline syslog_key_inline
   syslog_ca_inline="$(echo "${syslog_ca}"   | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')"
@@ -54,6 +52,9 @@ resources:
     parameters:
       config:
         metricsgateway-config:
+          cf_server:
+            xfcc:
+              valid_org_guid: "${valid_org_guid}"
           health:
             basic_auth:
               password: "${health_password}"
