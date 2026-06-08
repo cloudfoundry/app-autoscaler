@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+func lookupCurl() string {
+	path, err := exec.LookPath("curl")
+	if err != nil {
+		return "curl"
+	}
+	return path
+}
+
 type Curler struct {
 	NumAllowedErrors int
 	NumActualErrors int
@@ -31,7 +39,7 @@ func (a *Curler) Curl(args ...string) string {
 	defer cancel() // The cancel should be deferred so resources are cleaned up
 
 	// Create the command with our context
-	cmd := exec.CommandContext(ctx, "curl", curlArgs...)
+	cmd := exec.CommandContext(ctx, lookupCurl(), curlArgs...)
 
 	// log the command
 	fmt.Printf("CURL> curl %s\n", strings.Join(curlArgs, " "))

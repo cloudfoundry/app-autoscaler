@@ -26,6 +26,11 @@ resource "google_storage_bucket" "app_autoscaler_oss_blobstore" {
   requester_pays              = "false"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = "true"
+
+  logging {
+    log_bucket        = "app-autoscaler-oss-blobstore"
+    log_object_prefix = "access-logs/"
+  }
 }
 
 resource "google_storage_bucket" "app_autoscaler_releases" {
@@ -38,4 +43,9 @@ resource "google_storage_bucket" "app_autoscaler_releases" {
   requester_pays              = "false"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = "true"
+
+  logging {
+    log_bucket        = "app-autoscaler-releases"
+    log_object_prefix = "access-logs/"
+  }
 }
