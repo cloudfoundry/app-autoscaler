@@ -39,17 +39,14 @@ pushd "bbl-state/${BBL_STATE_DIR}"
 
   lb_flags="--lb-type=cf --lb-cert=${bbl_cert_path} --lb-key=${bbl_key_path} --lb-domain=${LB_DOMAIN}"
 
-  drain=">"
-  if [ "${DEBUG_MODE}" == "true" ]; then
-    drain="| tee"
-  fi
-
   # Step 1: bbl plan (generates bbl-template.tf)
   echo "=== Running bbl plan ==="
   # shellcheck disable=SC2086
-  eval bbl plan --debug \
-    ${name_flag} \
-    ${lb_flags} "2>&1" ${drain} "${ROOT_DIR}/bbl_plan.log"
+  if [ "${DEBUG_MODE}" == "true" ]; then
+    bbl plan --debug ${name_flag} ${lb_flags} 2>&1 | tee "${ROOT_DIR}/bbl_plan.log"
+  else
+    bbl plan --debug ${name_flag} ${lb_flags} > "${ROOT_DIR}/bbl_plan.log" 2>&1
+  fi
 
   # Step 2: Patch bbl-template.tf to use regional network LB
   echo "=== Patching bbl-template.tf for regional network LB ==="
@@ -58,9 +55,11 @@ pushd "bbl-state/${BBL_STATE_DIR}"
   # Step 3: bbl up (terraform apply + bosh create-env)
   echo "=== Running bbl up ==="
   # shellcheck disable=SC2086
-  eval bbl --debug up \
-    ${name_flag} \
-    ${lb_flags} "2>&1" ${drain} "${ROOT_DIR}/bbl_up.log"
+  if [ "${DEBUG_MODE}" == "true" ]; then
+    bbl --debug up ${name_flag} ${lb_flags} 2>&1 | tee "${ROOT_DIR}/bbl_up.log"
+  else
+    bbl --debug up ${name_flag} ${lb_flags} > "${ROOT_DIR}/bbl_up.log" 2>&1
+  fi
 
   echo "=== Setup complete ==="
   bbl outputs | grep -i "router_lb_ip\|system_domain"
