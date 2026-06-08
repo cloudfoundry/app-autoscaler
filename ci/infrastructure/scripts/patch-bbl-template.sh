@@ -9,8 +9,8 @@ TERRAFORM_DIR="${1:?Usage: patch-bbl-template.sh <terraform-dir>}"
 
 cd "${TERRAFORM_DIR}"
 
-if [ ! -f bbl-template.tf ]; then
-  echo "ERROR: bbl-template.tf not found in ${TERRAFORM_DIR}"
+if [[ ! -f bbl-template.tf ]]; then
+  echo "ERROR: bbl-template.tf not found in ${TERRAFORM_DIR}" >&2
   exit 1
 fi
 

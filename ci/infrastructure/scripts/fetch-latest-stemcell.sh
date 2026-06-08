@@ -10,4 +10,4 @@ function main(){
 	bosh upload-stemcell --sha1 "sha256:$(cat gcp-noble-stemcell/sha256)" "$(cat gcp-noble-stemcell/url)"
 }
 
-[ "${BASH_SOURCE[0]}" == "${0}" ] && main "$@"
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"

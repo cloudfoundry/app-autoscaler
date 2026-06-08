@@ -2,7 +2,7 @@
 # Source this file please.
 # NOTE: to turn on debug use DEBUG=true
 # shellcheck disable=SC2155
-if [ -z "${BASH_SOURCE[0]}" ]; then
+if [[ -z "${BASH_SOURCE[0]}" ]]; then
   echo  "### Source this from inside a script only! "
   echo  "### ======================================="
   echo
@@ -10,7 +10,7 @@ if [ -z "${BASH_SOURCE[0]}" ]; then
 fi
 
 debug=${DEBUG:-}
-if [ -n "${debug}" ]; then
+if [[ -n "${debug}" ]]; then
   function debug(){ echo "  -> $1"; }
 else
   function debug(){ :; }
@@ -18,14 +18,17 @@ fi
 
 function warn(){
   echo " - WARN: $1"
+  return 0
 }
 
 function log(){
   echo " - $1"
+  return 0
 }
 
 function step(){
   echo "# $1"
+  return 0
 }
 
 script_dir="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -108,4 +111,5 @@ function unset_vars() {
   unset BBL_ENV_NAME
   unset BBL_GCP_REGION
   unset BBL_GCP_ZONE
+  return 0
 }

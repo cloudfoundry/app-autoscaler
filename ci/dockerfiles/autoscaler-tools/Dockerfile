@@ -1,5 +1,5 @@
-FROM ubuntu:noble@sha256:66460d557b25769b102175144d538d88219c077c678a49af4afca6fbfc1b5252
-MAINTAINER autoscaler-team
+FROM ubuntu@sha256:66460d557b25769b102175144d538d88219c077c678a49af4afca6fbfc1b5252
+LABEL maintainer="autoscaler-team"
 
 ENV DEBIAN_FRONTEND="noninteractive" TZ="Europe/London"
 
@@ -44,8 +44,8 @@ RUN <<EOF
 	apt-get clean
 EOF
 
-RUN wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O- | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg
-RUN echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/postgresql.list
+RUN wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O- | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg && \
+	echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/postgresql.list
 
 # install golang
 # renovate: datasource=golang-version depName=golang
@@ -143,10 +143,8 @@ RUN curl -sL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" | bash - \
 	&& apt install nodejs -y \
 	&& apt-get clean \
 	&& npm --version \
-	&& node -v
-
-# Install swagger-cli as described on <https://apitools.dev/swagger-cli>
-RUN npm install --global --ignore-scripts 'https://github.com/empire-medical/swagger-cli'
+	&& node -v \
+	&& npm install --global --ignore-scripts 'https://github.com/empire-medical/swagger-cli'
 
 # install MBT
 #renovate: datasource=github-releases depName=mbt lookupName=SAP/cloud-mta-build-tool
