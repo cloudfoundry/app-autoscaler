@@ -150,6 +150,7 @@ export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 # --- Database ---
 # Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
+export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
 DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
 DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
 DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
