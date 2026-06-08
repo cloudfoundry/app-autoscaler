@@ -57,7 +57,12 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 	}
 
 	// Allow any space within the org — only the org is enforced.
-	conf.SetXFCCValidation("", vcapReader.GetOrgGuid())
+	// Use org GUID from config if explicitly set, otherwise fall back to the deployment org.
+	orgGuid := conf.CFServer.XFCC.ValidOrgGuid
+	if orgGuid == "" {
+		orgGuid = vcapReader.GetOrgGuid()
+	}
+	conf.SetXFCCValidation("", orgGuid)
 
 	tls, err := vcapReader.MaterializeTLSConfigFromService("syslog-client")
 	if err != nil {
