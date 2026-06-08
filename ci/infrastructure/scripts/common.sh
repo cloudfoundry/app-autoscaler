@@ -11,7 +11,11 @@ function bosh_login(){
   fi
 
   pushd "${bbl_state_path}" > /dev/null
-    eval "$(bbl print-env)" # NOSONAR - bbl print-env outputs only safe env var exports
+    bbl_env_file="$(mktemp)"
+    bbl print-env > "${bbl_env_file}"
+    # shellcheck disable=SC1090
+    source "${bbl_env_file}"
+    rm -f "${bbl_env_file}"
   popd > /dev/null
 }
 
