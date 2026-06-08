@@ -1,0 +1,84 @@
+name: Create and publish a Docker image
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'ci/dockerfiles/**'
+      - '.github/workflows/image.yaml'
+  pull_request:
+    paths:
+      - 'ci/dockerfiles/**'
+      - '.github/workflows/image.yaml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Keep image name consistent with app-autoscaler-release-tools convention
+  IMAGE_NAME: cloudfoundry/app-autoscaler-release-tools
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    strategy:
+      matrix:
+        image_suffix: ["tools"]
+    name: Build and Push app-autoscaler-release-${{ matrix.image_suffix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.image_suffix }}
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+
+      - name: Get ginkgo version from autoscaler-release
+        id: ginkgo
+        run: |
+          version=$(devbox info ginkgo | head --lines=1 | cut --field=2 --delimiter=" ")
+          echo "GINKGO version from devbox: '${version}'"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Get Go version from devbox.json
+        id: get-golang-version
+        uses: jannekem/run-python-script-action@bbfca66c612a28f3eeca0ae40e1f810265e2ea68 # v1
+        with:
+          script: |
+            import json
+            import os
+            with open('devbox.json', 'r') as f:
+                devbox_config = json.load(f)
+            go_version = devbox_config['packages']['go']
+            print(f"Go version from devbox.json: '{go_version}'")
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as hf:
+                print(f"version={go_version}", file=hf)
+
+      - name: Build and push
+        id: build-and-push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+        with:
+          context: ci/dockerfiles/autoscaler-${{ matrix.image_suffix }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.image_suffix }}:main
+          build-args: |
+            GINKGO_VERSION=v${{ steps.ginkgo.outputs.version }}
+            GO_VERSION=${{ steps.get-golang-version.outputs.version }}
