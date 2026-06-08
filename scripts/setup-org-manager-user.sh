@@ -32,6 +32,13 @@ function setup_acceptance_users() {
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
+	# Grant access to the existing org used by acceptance tests (may differ from the deployment org)
+	local existing_org="${EXISTING_ORGANIZATION:-}"
+	if [[ -n "${existing_org}" && "${existing_org}" != "${AUTOSCALER_ORG}" ]]; then
+		log "Granting OrgAuditor role to ${AUTOSCALER_ORG_MANAGER_USER} in existing org: ${existing_org}"
+		cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${existing_org}" OrgAuditor
+	fi
+
 	create_cf_user "${AUTOSCALER_OTHER_USER}" "${CREDHUB_OTHER_USER_PASSWORD_PATH}"
 
 	step "Setup complete!"

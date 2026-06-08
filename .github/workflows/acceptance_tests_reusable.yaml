@@ -66,6 +66,8 @@ jobs:
       - name: Setup org manager user with OrgManager and SpaceDeveloper roles
         if: github.event.pull_request.number != ''
         shell: bash
+        env:
+          EXISTING_ORGANIZATION: ${{ inputs.existing_organization }}
         run: |
           make --directory="${AUTOSCALER_DIR}" setup-org-manager-user
 
