@@ -1,0 +1,328 @@
+---
+groups:
+- name: infrastructure
+  jobs:
+  - setup-infrastructure
+  - deploy-cf
+  - deploy-postgres
+  - delete-cf
+  - destroy-infrastructure
+  - bosh-cleanup
+  - fetch-latest-stemcell
+  - deploy-multiapps-controller
+  - deploy-metricsgateway
+
+- name: others
+  jobs:
+  - set-pipeline
+
+resource_types:
+- name: file-url
+  type: registry-image
+  source:
+    repository: pivotalservices/concourse-curl-resource
+    tag: latest
+
+resources:
+- name: app-autoscaler-mtar
+  type: github-release
+  icon: github
+  source:
+    owner: cloudfoundry
+    repository: app-autoscaler
+    access_token: ((autoscaler_access_token))
+    release: true
+    tag_filter: "v(.*)"
+
+- name: multiapps-controller-web-war
+  type: file-url
+  source:
+    url: https://repo.maven.apache.org/maven2/org/cloudfoundry/multiapps/multiapps-controller-web/1.174.0/multiapps-controller-web-1.174.0.war
+    filename: multiapps-controller-web-1.174.0.war
+
+- name: multiapps-controller-web-manifest
+  type: file-url
+  source:
+    url: https://repo.maven.apache.org/maven2/org/cloudfoundry/multiapps/multiapps-controller-web/1.174.0/multiapps-controller-web-1.174.0-manifest.yml
+    filename: multiapps-controller-web-1.174.0-manifest.yml
+
+- name: ci
+  type: git
+  icon: github
+  source:
+    uri: git@github.com:cloudfoundry/app-autoscaler
+    private_key: ((autoscaler-deploy-key-private))
+    branch: main
+    fetch_tags: true
+    paths:
+      - ci/infrastructure
+      - ci/operations
+
+  # start/stop/days of this resource fall into the timeframe where the CI related VMs are awake. see also .github/workflows/resume-ci-vms.yml
+- name: every-morning-monday-till-friday
+  type: time
+  source:
+    start: 06:30 AM
+    stop: 07:30 AM
+    days: [Monday, Tuesday, Wednesday, Thursday, Friday]
+    location: "UTC"
+
+- name: postgres-repo
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/cloudfoundry/postgres-release.git
+    branch: v52
+
+- name: postgres-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/postgres-release
+    version: v52
+
+- name: bbl-state
+  type: git
+  icon: github
+  source:
+    uri: git@github.com:cloudfoundry/app-autoscaler-env-bbl-state
+    private_key: ((autoscaler_bbl_git_key))
+    branch: main
+
+- name: autoscaler-env-vars-store
+  type: git
+  icon: github
+  source:
+    uri: git@github.com:cloudfoundry/app-autoscaler-env-bbl-state
+    private_key: ((autoscaler_bbl_git_key))
+    branch: main
+    paths:
+    - deployment-vars.yml
+
+- name: cf-deployment
+  type: git
+  icon: github
+
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment.git
+    branch: main
+    tag_filter: v*
+
+- name: cf-deployment-concourse-tasks
+  type: git
+  icon: github
+  source:
+    branch: main
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
+    tag_filter: v20.*
+
+- name: gcp-noble-stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-google-kvm-ubuntu-noble
+
+jobs:
+- name: set-pipeline
+  public: true
+  plan:
+  - get: ci
+    trigger: true
+  - set_pipeline: self
+    file: ci/ci/infrastructure/pipeline.yml
+
+
+- name: setup-infrastructure
+  serial_groups: [infra]
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: cf-deployment-concourse-tasks
+    - get: ci
+    - get: bbl-state
+  - task: setup-infrastructure
+    file: ci/ci/infrastructure/tasks/setup-infrastructure.yml
+    params:
+      BBL_IAAS: gcp
+      BBL_ENV_NAME: autoscaler
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((autoscaler_app_runtime_interfaces_key))
+      BBL_GCP_PROJECT_ID: app-runtime-interfaces-wg
+      BBL_GCP_REGION: europe-west3
+      BBL_GCP_ZONE: europe-west3-a
+      DEBUG_MODE: true
+      LB_DOMAIN: autoscaler.app-runtime-interfaces.ci.cloudfoundry.org
+      BBL_LB_CERT: ((autoscaler_lb_cert))
+      BBL_LB_KEY: ((autoscaler_lb_key))
+      TF_VAR_parent_dns_zone: app-runtime-interfaces
+    ensure:
+      put: bbl-state
+      params:
+        repository: updated-bbl-state
+        rebase: true
+
+- name: delete-cf
+  serial_groups: [infra]
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: bbl-state
+    - get: cf-deployment-concourse-tasks
+  - task: delete-cf
+    file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+    params:
+      DEPLOYMENT_NAME: cf
+    input_mapping:
+      bbl-state: bbl-state
+
+- name: destroy-infrastructure
+  serial_groups: [infra]
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: bbl-state
+    - get: cf-deployment-concourse-tasks
+    - get: ci
+  - task: check-for-exisiting-deployments
+    file: ci/ci/infrastructure/tasks/check-for-existing-deployments.yml
+  - task: destroy-infrastructure
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    params:
+      BBL_IAAS: gcp
+      BBL_ENV_NAME: autoscaler
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((autoscaler_app_runtime_interfaces_key))
+      BBL_GCP_PROJECT_ID: app-runtime-interfaces-wg
+      TF_VAR_parent_dns_zone: app-runtime-interfaces
+    input_mapping:
+      bbl-state: bbl-state
+    ensure:
+      put: bbl-state
+      params:
+        repository: updated-bbl-state
+        rebase: true
+
+- name: bosh-cleanup
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: bbl-state
+    - get: cf-deployment-concourse-tasks
+    - get: every-morning-monday-till-friday
+      trigger: true
+  - task: bosh-cleanup
+    file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
+
+- name: fetch-latest-stemcell
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+    - in_parallel:
+        - get: bbl-state
+        - get: ci
+        - get: every-morning-monday-till-friday
+          passed: [ bosh-cleanup ]
+          trigger: true
+        - get: gcp-noble-stemcell
+    - task: fetch-latest-stemcell
+      file: ci/ci/infrastructure/tasks/fetch-latest-stemcell.yml
+
+- name: deploy-cf
+  serial_groups: [infra]
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: cf-deployment-concourse-tasks
+    - get: cf-deployment
+      trigger: true
+    - get: bbl-state
+      trigger: true
+      passed: [setup-infrastructure]
+    - get: autoscaler-env-vars-store
+    - get: ci
+  - task: combine-ops-files
+    file: ci/ci/infrastructure/tasks/combine-ops.yml
+    input_mapping:
+      app-autoscaler-release: ci
+    output_mapping:
+      combined-ops: ops-files
+  - task: deploy-cf
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      vars-files: autoscaler-env-vars-store
+    params:
+      SYSTEM_DOMAIN: autoscaler.app-runtime-interfaces.ci.cloudfoundry.org
+      OPS_FILES: "operations/cf/scale-to-one-az.yml operations/autoscaler/scale_out_cf_for_app-autoscaler.yaml operations/autoscaler/set-cpu-entitlement-per-share.yaml operations/autoscaler/add-trusted-certs.yaml operations/cf/use-compiled-releases.yml operations/autoscaler/enable_mtls.yml operations/autoscaler/add-eventgenerator-log-cache-uaa-client.yml operations/cf/experimental/disable-v2-api.yml operations/autoscaler/tag-vms-and-disks.yml operations/autoscaler/set-blobstore-disk.yml"
+      BOSH_DEPLOY_ARGS: "-v diego_cell_instances=3 -v grafana_redirect_uri=https://grafana.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org/login/generic_oauth"
+    ensure:
+      put: autoscaler-env-vars-store
+      params:
+        repository: autoscaler-env-vars-store
+        rebase: true
+  - task: smoke-tests
+    file: cf-deployment-concourse-tasks/run-errand/task.yml
+    input_mapping:
+      bbl-state: bbl-state
+    params:
+      ERRAND_NAME: smoke-tests
+
+- name: deploy-postgres
+  serial_groups: [infra]
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: bbl-state
+      trigger: true
+      passed: [setup-infrastructure, deploy-cf]
+    - get: ci
+    - get: postgres-repo
+    - get: postgres-release
+  - task: deploy-postgres
+    file: ci/ci/infrastructure/tasks/deploy-postgres.yml
+    params:
+      BBL_GCP_REGION: europe-west3
+      BBL_GCP_ZONE: europe-west3-a
+
+- name: deploy-multiapps-controller
+  serial_groups: [infra]
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: bbl-state
+      trigger: true
+      passed: [deploy-postgres]
+    - get: ci
+    - get: multiapps-controller-web-war
+    - get: multiapps-controller-web-manifest
+    - get: every-morning-monday-till-friday
+      trigger: true
+  - task: deploy-multiapps-controller
+    attempts: 3
+    timeout: 3h
+    file: ci/ci/infrastructure/tasks/deploy-multiapps-controller.yml
+
+- name: deploy-metricsgateway
+  public: true
+  build_log_retention:
+    builds: 100
+  plan:
+  - in_parallel:
+    - get: bbl-state
+    - get: ci
+    - get: app-autoscaler-mtar
+      trigger: true
+  - task: deploy-metricsgateway
+    attempts: 3
+    timeout: 3h
+    file: ci/ci/infrastructure/tasks/deploy-metricsgateway.yml

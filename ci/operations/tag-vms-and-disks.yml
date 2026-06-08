@@ -1,0 +1,5 @@
+# this ops-file adds custom tags to all VMs and disks of a deployment, see also https://bosh.io/docs/manifest-v2/#tags
+- type: replace
+  path: /tags?
+  value:
+    belongs-to: autoscaler
