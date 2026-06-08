@@ -31,6 +31,10 @@ resource "google_storage_bucket" "app_autoscaler_oss_blobstore" {
     log_bucket        = "app-autoscaler-oss-blobstore"
     log_object_prefix = "access-logs/"
   }
+
+  versioning {
+    enabled = true
+  }
 }
 
 resource "google_storage_bucket" "app_autoscaler_releases" {
@@ -47,5 +51,9 @@ resource "google_storage_bucket" "app_autoscaler_releases" {
   logging {
     log_bucket        = "app-autoscaler-releases"
     log_object_prefix = "access-logs/"
+  }
+
+  versioning {
+    enabled = true
   }
 }
