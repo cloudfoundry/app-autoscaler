@@ -10,7 +10,7 @@ bbl_state_path="${BBL_STATE_PATH:-bbl-state/bbl-state}"
 
 
 pushd "${bbl_state_path}" > /dev/null
-  eval "$(bbl print-env)"
+  eval "$(bbl print-env)" # NOSONAR - bbl print-env outputs only safe env var exports
 popd > /dev/null
 
 
