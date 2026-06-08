@@ -1,0 +1,46 @@
+project: app-runtime-interfaces-wg
+region: europe-west3
+zone: europe-west3-a
+
+# gcs_prefix is build by terragrunt with `github-arc-team-<team_name>`
+gcs_bucket: terraform-wg-ci
+
+team_name: app-autoscaler
+
+# Your GKE cluster (assumes one already exists)
+gke_name: wg-ci
+
+arc_webhook_server_domain: app-runtime-interfaces.ci.cloudfoundry.org
+
+# Please adjust resource requests/limits for desired amount of runners per gke node
+# 4 runners on 8 core / 16g machine requests - cpu "1600m" memory: "3000Mi"
+# 8 runners on 8 core / 16g machine requests - cpu "800m" memory: "1500Mi"
+# resource limits must be equal or greater to requests
+gke_arc_node_pool_machine_type: n2-custom-8-16384
+
+github_repos:
+  - name: app-autoscaler-release
+    owner: cloudfoundry
+    hpa_scaleup_trigger_duration: 10m
+    hpa_scaledown_delay_seconds: 120
+    runners_min_replicas: 1
+    runners_max_replicas: 16
+    runnerset_resource_request_cpu: 1600m
+    runnerset_resource_request_mem: 3000Mi
+    runnerset_resource_limits_cpu: 2500m
+    runnerset_resource_limits_mem: 3000Mi
+    var_lib_docker_size: 30Gi
+
+
+# Github ARC runners node-pool config
+gke_arc_node_pool_disk_size_gb: 128
+gke_arc_node_pool_count: 1
+gke_arc_node_pool_autoscaling_max: 10
+gke_arc_node_pool_ssd_count: 0
+
+# Regional storage class type for runners PVs
+# see https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#create_a_storageclass
+gke_arc_runner_storage_type: pd-ssd
+
+tf_modules:
+  github_arc: "git@github.com:cloudfoundry/app-runtime-interfaces-infrastructure.git//terraform-modules/actions_runner_controller/team?ref=1.4.0"
