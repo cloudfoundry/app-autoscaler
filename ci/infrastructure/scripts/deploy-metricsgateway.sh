@@ -6,7 +6,7 @@ script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source "${script_dir}/vars.source.sh"
 source "${script_dir}/utils.source.sh"
 
-MTAR_PATH="${MTAR_PATH:-$(ls app-autoscaler-mtar/app-autoscaler-release-*.mtar 2>/dev/null | head -1)}"
+MTAR_PATH="${MTAR_PATH:-$(find app-autoscaler-mtar -name 'app-autoscaler-release-*.mtar' 2>/dev/null | head -1)}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-app-autoscaler}"
 
 VALID_ORG="${VALID_ORG:-SAP_autoscaler_tests_OSS}"

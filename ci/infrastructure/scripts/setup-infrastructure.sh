@@ -46,6 +46,7 @@ pushd "bbl-state/${BBL_STATE_DIR}"
 
   # Step 1: bbl plan (generates bbl-template.tf)
   echo "=== Running bbl plan ==="
+  # shellcheck disable=SC2086
   eval bbl plan --debug \
     ${name_flag} \
     ${lb_flags} "2>&1" ${drain} "${ROOT_DIR}/bbl_plan.log"
@@ -56,6 +57,7 @@ pushd "bbl-state/${BBL_STATE_DIR}"
 
   # Step 3: bbl up (terraform apply + bosh create-env)
   echo "=== Running bbl up ==="
+  # shellcheck disable=SC2086
   eval bbl --debug up \
     ${name_flag} \
     ${lb_flags} "2>&1" ${drain} "${ROOT_DIR}/bbl_up.log"
