@@ -9,6 +9,7 @@ source "${script_dir}/utils.source.sh"
 function create_postgres_service() {
   postgres_username="pgadmin"
   postgres_database_name="multiapps_controller"
+  local postgres_hostname postgres_password
   postgres_hostname="$(credhub get -n /bosh-autoscaler/postgres/postgres_host_or_ip -q)"
   postgres_password="$(credhub get -n /bosh-autoscaler/postgres/pgadmin_database_password -q)"
 

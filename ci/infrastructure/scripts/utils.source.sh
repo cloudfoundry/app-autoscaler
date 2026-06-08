@@ -75,8 +75,7 @@ function cf_login(){
   local system_domain=$1
 
   cf api "https://api.${system_domain}" --skip-ssl-validation
-  CF_ADMIN_PASSWORD=$(credhub get -n /bosh-autoscaler/cf/cf_admin_password -q)
-  cf auth admin "$CF_ADMIN_PASSWORD"
+  cf auth admin "$(credhub get -n /bosh-autoscaler/cf/cf_admin_password -q)"
 
   if [ -n "${CF_ORG}" ]; then
     cf create-org "${CF_ORG}"

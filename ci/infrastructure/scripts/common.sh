@@ -21,6 +21,5 @@ function bosh_login(){
 
 function cf_login(){
   cf api "https://api.${system_domain}" --skip-ssl-validation
-  CF_ADMIN_PASSWORD=$(credhub get -n /bosh-autoscaler/cf/cf_admin_password -q)
-  cf auth admin "$CF_ADMIN_PASSWORD"
+  cf auth admin "$(credhub get -n /bosh-autoscaler/cf/cf_admin_password -q)"
 }
