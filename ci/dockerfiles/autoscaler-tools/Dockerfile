@@ -60,8 +60,7 @@ RUN wget -q https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz -P /tmp 
 
 ARG POSTGRES_VERSION=12
 RUN apt-get update && \
-	apt-get install -y postgresql-${POSTGRES_VERSION} && \
-	apt-get install -y libjson-perl && \
+	apt-get install -y postgresql-${POSTGRES_VERSION} libjson-perl && \
 	apt-get clean
 
 # Install bosh_cli

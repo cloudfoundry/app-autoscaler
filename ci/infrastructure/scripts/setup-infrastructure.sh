@@ -10,6 +10,15 @@ ROOT_DIR="${PWD}"
 # shellcheck disable=SC1091
 source cf-deployment-concourse-tasks/shared-functions
 
+function run_bbl() {
+  local log_file="$1"; shift
+  if [[ "${DEBUG_MODE:-}" == "true" ]]; then
+    bbl "$@" 2>&1 | tee "${log_file}"
+  else
+    bbl "$@" > "${log_file}" 2>&1
+  fi
+}
+
 pushd "bbl-state"
   write_gcp_service_account_key
 popd
@@ -42,11 +51,7 @@ pushd "bbl-state/${BBL_STATE_DIR}"
   # Step 1: bbl plan (generates bbl-template.tf)
   echo "=== Running bbl plan ==="
   # shellcheck disable=SC2086
-  if [[ "${DEBUG_MODE}" == "true" ]]; then
-    bbl plan --debug ${name_flag} ${lb_flags} 2>&1 | tee "${ROOT_DIR}/bbl_plan.log"
-  else
-    bbl plan --debug ${name_flag} ${lb_flags} > "${ROOT_DIR}/bbl_plan.log" 2>&1
-  fi
+  run_bbl "${ROOT_DIR}/bbl_plan.log" plan --debug ${name_flag} ${lb_flags}
 
   # Step 2: Patch bbl-template.tf to use regional network LB
   echo "=== Patching bbl-template.tf for regional network LB ==="
@@ -55,11 +60,7 @@ pushd "bbl-state/${BBL_STATE_DIR}"
   # Step 3: bbl up (terraform apply + bosh create-env)
   echo "=== Running bbl up ==="
   # shellcheck disable=SC2086
-  if [[ "${DEBUG_MODE}" == "true" ]]; then
-    bbl --debug up ${name_flag} ${lb_flags} 2>&1 | tee "${ROOT_DIR}/bbl_up.log"
-  else
-    bbl --debug up ${name_flag} ${lb_flags} > "${ROOT_DIR}/bbl_up.log" 2>&1
-  fi
+  run_bbl "${ROOT_DIR}/bbl_up.log" --debug up ${name_flag} ${lb_flags}
 
   echo "=== Setup complete ==="
   bbl outputs | grep -i "router_lb_ip\|system_domain"
