@@ -50,11 +50,11 @@ RUN echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.
 # install golang
 # renovate: datasource=golang-version depName=golang
 ARG GO_VERSION=1.24.5
-ENV GOPATH $HOME/go
-ENV PATH $HOME/go/bin:/usr/local/go/bin:$PATH
+ENV GOPATH /usr/local/go-workspace
+ENV PATH /usr/local/go-workspace/bin:/usr/local/go/bin:$PATH
 RUN wget -q https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz -P /tmp &&\
 	tar xzvf /tmp/go${GO_VERSION}.linux-amd64.tar.gz -C /usr/local &&\
-	mkdir $GOPATH &&\
+	mkdir -p $GOPATH &&\
 	rm -rf /tmp/* &&\
 	go version
 
@@ -165,3 +165,9 @@ RUN mkdir -p "${CF_PLUGIN_HOME}" \
 	&& echo "${CF_PLUGIN_HOME}" \
 	&& ls -la "${CF_PLUGIN_HOME}" \
 	&& cf plugins
+
+RUN useradd --create-home --shell /bin/bash vcap \
+	&& chmod -R a+rwx "${CF_PLUGIN_HOME}" \
+	&& chmod -R a+rwx "${GOPATH}"
+USER vcap
+WORKDIR /home/vcap
