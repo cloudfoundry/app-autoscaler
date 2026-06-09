@@ -39,7 +39,7 @@ pushd "${autoscaler_dir}" > /dev/null
 	make -f metricsforwarder/Makefile set-security-group
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
 	strategy_flag=""
-	[ -n "${DEPLOY_STRATEGY}" ] && strategy_flag="--strategy ${DEPLOY_STRATEGY}"
+	[[ -n "${DEPLOY_STRATEGY}" ]] && strategy_flag="--strategy ${DEPLOY_STRATEGY}"
 	# shellcheck disable=SC2086
 	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}" ${strategy_flag}
 
