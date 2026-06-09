@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	apiConfig "code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -192,105 +191,103 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 	})
 }
 
-func DefaultGolangAPITestConfig() apiConfig.Config {
-	return apiConfig.Config{
-		Logging: helpers.LoggingConfig{
-			Level: LOGLEVEL,
-		},
-		Server: helpers.ServerConfig{
-			Port: components.Ports[GolangAPIServer],
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "api.key"),
-				CertFile:   filepath.Join(testCertDir, "api.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		BrokerServer: helpers.ServerConfig{
-			Port: components.Ports[GolangServiceBroker],
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
-				CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		CFServer: helpers.ServerConfig{
-			Port: components.Ports[GolangAPICFServer],
-		},
-		BrokerCredentials: []apiConfig.BrokerCredentialsConfig{
-			{
-				BrokerUsername: "broker_username",
-				//BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
-				BrokerPassword: "broker_password",
-				//BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
-			},
-			{
-				BrokerUsername: "broker_username2",
-				//	BrokerUsernameHash: []byte("$2a$10$NK76ms9n/oeD1.IumovhIu2fiiQ/4FIVc81o4rdNS8beJMxYvhTqG"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username2")'
-				BrokerPassword: "broker_password2",
-				//	BrokerPasswordHash: []byte("$2a$10$HZOfLweDfjNfe2h3KItdg.26BxNU6TVKMDwhJMNPPIWpj7T2HCVbW"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password2")'
-			},
-		},
-		CatalogPath:              "../servicebroker/config/catalog.json",
-		CatalogSchemaPath:        "../api/schemas/catalog.schema.json",
-		BindingRequestSchemaPath: "../api/broker/binding_request_parser/meta.schema.json",
-		InfoFilePath:             "../api/exampleconfig/catalog-example.json",
-		DashboardRedirectURI:     "",
-		CF: cf.Config{
-			ClientID: "admin",
-			Secret:   "admin",
-		},
+type YamlValue = map[string]any
 
-		MetricsForwarder: apiConfig.MetricsForwarderConfig{
-			MetricsForwarderUrl: "https://127.0.0.1:8888",
+func DefaultGolangAPITestConfig() YamlValue {
+	return YamlValue{
+		"logging": YamlValue{"level": LOGLEVEL},
+		"public_api_server": YamlValue{
+			"port": components.Ports[GolangAPIServer],
+			"tls": YamlValue{
+				"key_file":  filepath.Join(testCertDir, "api.key"),
+				"cert_file": filepath.Join(testCertDir, "api.crt"),
+				"ca_file":   filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
 		},
-		CredHelperImpl:                     "default",
-		DefaultCustomMetricsCredentialType: "binding-secret",
+		"broker_server": YamlValue{
+			"port": components.Ports[GolangServiceBroker],
+			"tls": YamlValue{
+				"key_file":  filepath.Join(testCertDir, "servicebroker.key"),
+				"cert_file": filepath.Join(testCertDir, "servicebroker.crt"),
+				"ca_file":   filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		"cf_server": YamlValue{
+			"port": components.Ports[GolangAPICFServer],
+		},
+		"broker_credentials": []YamlValue{
+			{
+				"broker_username": "broker_username",
+				// broker_username_hash: "$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu" // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
+				"broker_password": "broker_password",
+				// broker_password_hash: "$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu" // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
+			},
+			{
+				"broker_username": "broker_username2",
+				// broker_username_hash: "$2a$10$NK76ms9n/oeD1.IumovhIu2fiiQ/4FIVc81o4rdNS8beJMxYvhTqG" // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username2")'
+				"broker_password": "broker_password2",
+				// broker_password_hash: "$2a$10$HZOfLweDfjNfe2h3KItdg.26BxNU6TVKMDwhJMNPPIWpj7T2HCVbW" // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password2")'
+			},
+		},
+		"catalog_path":           "../servicebroker/config/catalog.json",
+		"catalog_schema_path":    "../api/schemas/catalog.schema.json",
+		"policy_schema_path":     "../api/broker/binding_request_parser/meta.schema.json",
+		"info_file_path":         "../api/exampleconfig/catalog-example.json",
+		"dashboard_redirect_uri": "",
+		"cf": YamlValue{
+			"client_id": "admin",
+			"secret":    "admin",
+		},
+		"metrics_forwarder": YamlValue{
+			"metrics_forwarder_url": "https://127.0.0.1:8888",
+		},
+		"basic_auth_for_custom_metrics": "on",
+		"cred_helper_impl":              "default",
 	}
 }
 
 func (components *Components) PrepareGolangApiServerConfig(dbURI string, cfApi string, schedulerUri string, scalingEngineUri string, eventGeneratorUri string, tmpDir string) string {
 	cfg := DefaultGolangAPITestConfig()
 
-	cfg.RateLimit = models.RateLimitConfig{
-		MaxAmount:     10,
-		ValidDuration: 1 * time.Second,
+	cfg["rate_limit"] = YamlValue{
+		"max_amount":     10,
+		"valid_duration": "1s",
 	}
 
-	cfg.Scheduler = apiConfig.SchedulerConfig{
-		SchedulerURL: schedulerUri,
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
-			CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+	cfg["scheduler"] = YamlValue{
+		"scheduler_url": schedulerUri,
+		"tls": YamlValue{
+			"key_file":  filepath.Join(testCertDir, "scheduler.key"),
+			"cert_file": filepath.Join(testCertDir, "scheduler.crt"),
+			"ca_file":   filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
 
-	cfg.ScalingEngine = apiConfig.ScalingEngineConfig{
-		ScalingEngineUrl: scalingEngineUri,
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-			CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+	cfg["scaling_engine"] = YamlValue{
+		"scaling_engine_url": scalingEngineUri,
+		"tls": YamlValue{
+			"key_file":  filepath.Join(testCertDir, "scalingengine.key"),
+			"cert_file": filepath.Join(testCertDir, "scalingengine.crt"),
+			"ca_file":   filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
 
-	cfg.EventGenerator = apiConfig.EventGeneratorConfig{
-		TLSClientCerts: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-			CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+	cfg["event_generator"] = YamlValue{
+		"event_generator_url": eventGeneratorUri,
+		"tls": YamlValue{
+			"key_file":  filepath.Join(testCertDir, "eventgenerator.key"),
+			"cert_file": filepath.Join(testCertDir, "eventgenerator.crt"),
+			"ca_file":   filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
 
-	cfg.Db = map[string]db.DatabaseConfig{
-		"policy_db":  {URL: dbURI},
-		"binding_db": {URL: dbURI},
+	cfg["db"] = YamlValue{
+		"policy_db":  YamlValue{"url": dbURI},
+		"binding_db": YamlValue{"url": dbURI},
 	}
-	cfg.ScalingEngine.ScalingEngineUrl = scalingEngineUri
-	cfg.EventGenerator.EventGeneratorUrl = eventGeneratorUri
-	cfg.CF.API = cfApi
+	cfg["cf"].(YamlValue)["api"] = cfApi
 
-	return WriteYmlConfig(tmpDir, GolangAPIServer, &cfg)
+	return WriteYmlConfig(tmpDir, GolangAPIServer, cfg)
 }
 
 func (components *Components) PrepareSchedulerConfig(dbURI string, scalingEngineUri string, tmpDir string, httpClientTimeout time.Duration) string {

@@ -12,7 +12,7 @@ source "${script_dir}/common.sh"
 
 DEST="${DEST:-/tmp/build}"
 MTAR_FILENAME="${MTAR_FILENAME:-app-autoscaler-release-v${VERSION}.mtar}"
-MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,operator,scheduler,scalingengine,acceptance-tests}"
+MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,acceptance-tests}"
 DEPLOY_STRATEGY="${DEPLOY_STRATEGY:-}"
 
 # Compute extension file path
@@ -37,6 +37,7 @@ pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
 	make -f metricsforwarder/Makefile set-security-group
+	make -f metricsgateway/Makefile set-security-group
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
 	strategy_flag=""
 	[[ -n "${DEPLOY_STRATEGY}" ]] && strategy_flag="--strategy ${DEPLOY_STRATEGY}"

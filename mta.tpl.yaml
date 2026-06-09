@@ -76,7 +76,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
       - name: broker-catalog
@@ -101,7 +101,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: eventgenerator-config
       - name: database
@@ -125,7 +125,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsforwarder-config
       - name: database
@@ -136,6 +136,30 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
+  - name: metricsgateway
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/cmd/metricsgateway
+      GOTOOLCHAIN: local
+      GOVERSION: go1.25
+    build-parameters:
+      builder: custom
+      commands:
+        - echo "ignoring scheduler and dbtasks" > /dev/null
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+    requires:
+      - name: metricsgateway-config
+      - name: syslog-client
+      - name: app-autoscaler-application-logs
+      - name: app-autoscaler-dynatrace
+    parameters:
+      instances: 0 # overridden in build-extension-file.sh
+      memory: 256M
+      disk-quota: 512M
       stack: cflinuxfs4
       routes:
   - name: operator
@@ -150,7 +174,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: operator-config
       - name: database
@@ -174,7 +198,7 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github"]
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: scalingengine-config
       - name: database
@@ -232,7 +256,7 @@ modules:
         - echo "Building acceptance tests for version ${version}"
         - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make --jobs=1 acceptance-release"
       build-result: build/acceptance
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github"]
+      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: app-autoscaler-application-logs
     parameters:
@@ -254,6 +278,12 @@ resources:
       service-tags:
         - metricsforwarder-config
       path: metricsforwarder/default_config.json
+  - name: metricsgateway-config
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - metricsgateway-config
+      path: metricsgateway/default_config.json
   - name: eventgenerator-config
     type: org.cloudfoundry.user-provided-service
     parameters:

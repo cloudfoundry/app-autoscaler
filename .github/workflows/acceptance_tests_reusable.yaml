@@ -9,6 +9,10 @@ on:
       deployment_name:
         required: true
         type: string
+      use_metricsgateway:
+        required: false
+        type: boolean
+        default: false
     secrets:
       bbl_ssh_key:
         required: true
@@ -22,7 +26,7 @@ env:
   DEPLOYMENT_NAME: "${{ inputs.deployment_name }}"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
   GINKGO_OPTS: "--fail-fast"
-  NODES: 4
+  NODES: 8
   AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
   CPU_UPPER_THRESHOLD: 200
 
@@ -32,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           path: app-autoscaler
       - name: Install devbox
@@ -58,6 +62,7 @@ jobs:
         shell: bash
         env:
           DEPLOY_STRATEGY: ${{ github.event.pull_request.number && '' || 'blue-green' }}
+          USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build
@@ -77,7 +82,7 @@ jobs:
         suite: ${{ fromJson(inputs.suites) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           path: app-autoscaler
       - name: Install devbox
@@ -107,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           path: app-autoscaler
       - name: Install devbox

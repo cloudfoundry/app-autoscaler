@@ -89,15 +89,9 @@ func New(
 	)
 
 	defaultCustomMetricsCredentialType := &models.X509Certificate
-	if len(conf.DefaultCustomMetricsCredentialType) > 0 {
-		var err error
-		defaultCustomMetricsCredentialType, err = models.ParseCustomMetricsBindingAuthScheme(
-			conf.DefaultCustomMetricsCredentialType)
-		if err != nil {
-			logger.Fatal("parse-default-credential-type", err, lager.Data{
-				"default-credential-type": conf.DefaultCustomMetricsCredentialType,
-			})
-		}
+	isBasicAuthAvailable := conf.CustomMetricsAuthConfig != nil
+	if isBasicAuthAvailable {
+		defaultCustomMetricsCredentialType = &conf.CustomMetricsAuthConfig.DefaultCustomMetricAuthType
 	}
 
 	pathToParserDir, err := filepath.Abs(filepath.Dir(conf.BindingRequestSchemaPath))
@@ -172,6 +166,9 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 		policyJson = parameters.DefaultPolicy
 	}
 
+	// 🚧 To-do: This function here makes use of the legacy-parsing-logic. This blocks the removal
+	// of the old legacy-parsing-code and simultaneously introduces the risk of divergence between
+	// default-policy-schema and policy-schema.
 	policy, err := b.getPolicyFromJsonRawMessage(policyJson, instanceID, details.PlanID)
 	if err != nil {
 		// The input may be not parsable, hence we use the original string.
@@ -578,6 +575,19 @@ func (b *Broker) Bind(
 	appScalingConfig, err := b.bindingReqParser.Parse(string(details.RawParameters), appGuidFromCloudCtl)
 	if err != nil {
 		return result, handleParsingError(err, logger)
+	}
+
+	allowBasicAuthForNewBindings := b.conf.CustomMetricsAuthConfig != nil &&
+		b.conf.CustomMetricsAuthConfig.BasicAuthHandling == config.BasicAuthHandlingOn
+	hasRequestedBasicAuth := *appScalingConfig.GetConfiguration().GetCustomMetricsBindingAuth() == models.BindingSecret
+	if !allowBasicAuthForNewBindings && hasRequestedBasicAuth {
+		msg := fmt.Sprintf("%s%s\n\t%s",
+			"🚫 Requested binding with basic-authentication for custom metrics",
+			", but the server does not allow basic authentication for new bindings.",
+			"🚸 Please use mTLS.")
+		err := errors.New(msg)
+		return result, apiresponses.NewFailureResponseBuilder(
+			err, http.StatusBadRequest, "forbidden_binding-secret-request").Build()
 	}
 
 	if isServiceKeyRequest := appGuidFromCloudCtl == ""; isServiceKeyRequest {
@@ -1072,11 +1082,19 @@ func (b *Broker) deleteBinding(ctx context.Context, bindingId string, serviceIns
 		return ErrDeleteServiceBinding
 	}
 
-	err = b.credentials.Delete(ctx, appId)
-	if err != nil {
-		logger.Error("failed to delete custom metrics credential for unbinding", err)
-		return ErrCredentialNotDeleted
+	// Actually you probably want to test this: `isBasicAuthAvailable := b.credentials != nil`
+	// However this may not work under some circumstances, where b.credentials may have a
+	// runtime-type and is therefore a typed nil, see: <https://go.dev/doc/faq#nil_error>
+	// Therefore we check it differently:
+	isBasicAuthAvailable := b.conf.CustomMetricsAuthConfig != nil
+	if isBasicAuthAvailable {
+		err = b.credentials.Delete(ctx, appId)
+		if err != nil {
+			logger.Error("failed to delete custom metrics credential for unbinding", err)
+			return ErrCredentialNotDeleted
+		}
 	}
+
 	return nil
 }
 

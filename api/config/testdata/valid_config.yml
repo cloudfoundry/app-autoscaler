@@ -60,6 +60,7 @@ cf:
   skip_ssl_validation: false
   max_retries: 3
   max_retry_wait_ms: 27
+basic_auth_for_custom_metrics: "on"
 cred_helper_impl: default
 scaling_rules:
   cpu:

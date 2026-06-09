@@ -1,0 +1,16 @@
+{
+  "metricsgateway-config": {
+    "health": {
+      "basic_auth": {
+        "username": "metricsgateway"
+      }
+    },
+    "logging": {
+      "level": "info"
+    },
+    "syslog": {
+      "server_address": "log-cache.service.cf.internal",
+      "port": 6067
+    }
+  }
+}

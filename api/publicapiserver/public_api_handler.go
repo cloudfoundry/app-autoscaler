@@ -30,7 +30,6 @@ type PublicApiHandler struct {
 	eventGeneratorClient *http.Client
 	policyValidator      *policyvalidator.PolicyValidator
 	schedulerUtil        *schedulerclient.Client
-	credentials          cred_helper.Credentials
 }
 
 const (
@@ -56,7 +55,6 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		eventGeneratorClient: egClient,
 		policyValidator:      createPolicyValidator(conf),
 		schedulerUtil:        schedulerclient.New(conf, logger),
-		credentials:          credentials,
 	}
 }
 

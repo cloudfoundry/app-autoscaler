@@ -17,12 +17,11 @@ func GetDbUrl() string {
 	return dbUrl
 }
 
-func ExpectConfigureDatabasesCalledOnce(err error, fakeVcapReader *fakes.FakeVCAPConfigurationReader, expectedCredHelperImpl string) {
+func ExpectConfigureDatabasesCalledOnce(err error, fakeVcapReader *fakes.FakeVCAPConfigurationReader) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(fakeVcapReader.ConfigureDatabasesCallCount()).To(Equal(1))
-	receivedDbConfig, receivedStoredProcedureConfig, receivedCredHelperImpl :=
+	receivedDbConfig, receivedBasicAuthImplCfg :=
 		fakeVcapReader.ConfigureDatabasesArgsForCall(0)
 	Expect(*receivedDbConfig).To(Equal(map[string]db.DatabaseConfig{}))
-	Expect(receivedStoredProcedureConfig).To(BeNil())
-	Expect(receivedCredHelperImpl).To(Equal(expectedCredHelperImpl))
+	Expect(receivedBasicAuthImplCfg).To(BeNil())
 }

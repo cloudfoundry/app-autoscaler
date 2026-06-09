@@ -80,6 +80,8 @@ linters:
         - -ST1001
         - -ST1003
         - -ST1005
+        - -ST1023
+        - -QF1011
       dot-import-whitelist:
         - github.com/onsi/ginkgo/v2
         - github.com/onsi/gomega
