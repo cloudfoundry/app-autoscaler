@@ -172,16 +172,25 @@ export PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA="${PERFORMANCE_UPDATE_EXISTING_ORG_
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
 
-# When not using the metricsgateway, patch the generated file:
-# - metricsforwarder gets syslog-client binding (direct syslog path)
-# - metricsgateway is set to 0 instances and its config resource is removed
+# Without metricsgateway: metricsforwarder uses direct syslog path instead
 if [[ "${USE_METRICSGATEWAY}" != "true" ]]; then
+  # metricsforwarder binds syslog-client directly instead of via metricsgateway
   yq --inplace '
     (.modules[] | select(.name == "metricsforwarder") | .requires) =
-      [{"name": "metricsforwarder-config"}, {"name": "syslog-client"}, {"name": "database"}] |
+      [{"name": "metricsforwarder-config"}, {"name": "syslog-client"}, {"name": "database"}]
+  ' "${extension_file_path}"
+
+  # disable metricsgateway module (0 instances, drop all other config)
+  yq --inplace '
     (.modules[] | select(.name == "metricsgateway")) =
-      {"name": "metricsgateway", "parameters": {"instances": 0}} |
-    del(.resources[] | select(.name == "metricsgateway-config")) |
+      {"name": "metricsgateway", "parameters": {"instances": 0}}
+  ' "${extension_file_path}"
+
+  # remove metricsgateway config resource entirely
+  yq --inplace 'del(.resources[] | select(.name == "metricsgateway-config"))' "${extension_file_path}"
+
+  # remove metrics_gateway key from metricsforwarder config
+  yq --inplace '
     del(.resources[] | select(.name == "metricsforwarder-config") |
       .parameters.config."metricsforwarder-config".metrics_gateway)
   ' "${extension_file_path}"
