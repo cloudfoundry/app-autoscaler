@@ -84,6 +84,13 @@ type Config struct {
 
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
 
+	// MinLoadDurationMinutes is how long the test app sustains artificial load (CPU/disk/memory).
+	// Must exceed aggregate_interval + breach_duration to guarantee autoscaler detects the breach.
+	MinLoadDurationMinutes int `json:"min_load_duration_minutes"`
+
+	// ScaleEventTimeoutMinutes is how long tests wait for autoscaler to detect and execute a scaling decision.
+	ScaleEventTimeoutMinutes int `json:"scale_event_timeout_minutes"`
+
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
 
 	Performance PerformanceConfig `json:"performance"`
@@ -120,6 +127,8 @@ var defaults = Config{
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
 	CPUUpperThreshold:               100,
+	MinLoadDurationMinutes:          4, // aggregate_interval(120s) + breach_duration(60s) + buffer
+	ScaleEventTimeoutMinutes:        8, // time for autoscaler to detect breach and execute scaling
 
 	UseExistingOrganization: false,
 	ExistingOrganization:    "",
@@ -318,6 +327,14 @@ func (c *Config) BrokerStartTimeoutDuration() time.Duration {
 
 func (c *Config) AsyncServiceOperationTimeoutDuration() time.Duration {
 	return time.Duration(c.AsyncServiceOperationTimeout) * time.Minute
+}
+
+func (c *Config) MinLoadDuration() int {
+	return c.MinLoadDurationMinutes
+}
+
+func (c *Config) ScaleEventTimeout() time.Duration {
+	return time.Duration(c.ScaleEventTimeoutMinutes) * time.Minute
 }
 
 func (c *Config) CFJavaTimeoutDuration() time.Duration {
