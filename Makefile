@@ -108,6 +108,7 @@ fake-relevant-go-files = $(shell find . -type f -name '*.go' \
 autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
+	go mod download
 	mkdir -p '${app-fakes-dir}'
 	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './generate-fakes.go'
