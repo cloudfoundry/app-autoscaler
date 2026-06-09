@@ -25,7 +25,7 @@ This directory contains the terragrunt managed stacks of resouces in account app
 
 ## Deploy pipeline
 
-__Setup__
+### Setup
 
 ```
 make set-target
