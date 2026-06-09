@@ -110,6 +110,8 @@ jobs:
     name: Acceptance Tests - ${{ matrix.suite }}
     needs: [ deploy_autoscaler ]
     runs-on: ubuntu-latest
+    env:
+      AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
     strategy:
       fail-fast: false
       matrix:
