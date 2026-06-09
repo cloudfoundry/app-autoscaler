@@ -100,17 +100,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out and then back in.", func() {
-					By(fmt.Sprintf("Use heap %d MB of heap on app", maxHeapLimitMb))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", maxHeapLimitMb, holdMinutes))
-
-					By("wait for scale to 2")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
-
-					By("Drop memory used by app")
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
-
-					By("Wait for scale to minimum instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
+					waitForMemoryScaling(appToScaleName, appToScaleGUID, maxHeapLimitMb, holdMinutes)
 				})
 			})
 		})
@@ -123,17 +113,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out and back in", func() {
-					By(fmt.Sprintf("use %d MB of memory in app", maxHeapLimitMb))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", maxHeapLimitMb, holdMinutes))
-
-					By("Wait for scale to 2 instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
-
-					By("drop memory used")
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
-
-					By("Wait for scale down to 1 instance")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
+					waitForMemoryScaling(appToScaleName, appToScaleGUID, maxHeapLimitMb, holdMinutes)
 				})
 			})
 		})
@@ -480,6 +460,18 @@ func waitForScaling(appGUID string, instances int) {
 	waitForCustomMetricScaling(func() (int, error) {
 		return helpers.RunningInstances(appGUID, 5*time.Second)
 	}, instances)
+}
+
+func waitForMemoryScaling(appName string, appGUID string, heapMB int, holdMins int) {
+	GinkgoHelper()
+	By(fmt.Sprintf("allocate %d MB heap in app", heapMB))
+	helpers.CurlAppInstance(cfg, appName, 0, fmt.Sprintf("/memory/%d/%d", heapMB, holdMins))
+	By("wait for scale out to 2")
+	helpers.WaitForNInstancesRunning(appGUID, 2, cfg.ScaleEventTimeout())
+	By("release memory")
+	helpers.CurlAppInstance(cfg, appName, 0, "/memory/close")
+	By("wait for scale in to 1")
+	helpers.WaitForNInstancesRunning(appGUID, 1, cfg.ScaleEventTimeout())
 }
 
 func concurrentHttpGet(count int, url string) {
