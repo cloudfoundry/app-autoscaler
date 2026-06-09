@@ -150,6 +150,8 @@ jobs:
     if: "!contains(github.event.pull_request.labels.*.name, 'skip-cleanup')"
     name: Cleanup
     runs-on: ubuntu-latest
+    env:
+      AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
