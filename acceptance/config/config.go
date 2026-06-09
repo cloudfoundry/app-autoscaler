@@ -127,7 +127,7 @@ var defaults = Config{
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
 	CPUUpperThreshold:               100,
-	MinLoadDurationMinutes:          4, // aggregate_interval(120s) + breach_duration(60s) + buffer
+	MinLoadDurationMinutes:          5, // conservative default; our CI uses 4 via min_load_duration_minutes
 	ScaleEventTimeoutMinutes:        8, // time for autoscaler to detect breach and execute scaling
 
 	UseExistingOrganization: false,
