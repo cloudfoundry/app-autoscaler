@@ -39,6 +39,12 @@ var (
 	// dropletPath holds the pre-built app droplet created once in BeforeSuite.
 	// All tests reuse it via CreateTestAppFromDropletByName instead of a full cf push.
 	dropletPath string
+
+	// Derived from cfg at suite-setup time; constant for all tests in this suite.
+	holdMinutes        int
+	maxHeapLimitMb     int
+	reportedMiB        float64
+	memoryUtilScaleOut int64
 )
 
 const componentName = "Application Scale Suite"
@@ -62,6 +68,18 @@ var _ = BeforeSuite(func() {
 	interval = cfg.AggregateInterval
 	client = GetHTTPClient(cfg)
 	dropletPath = CreateDroplet(cfg)
+
+	const (
+		minimalMemoryUsage     = 35
+		heapFractionOfLimit    = 0.80
+		decimalMBToMiB         = 1_000_000.0 / 1_048_576.0
+		memoryUtilSafetyFactor = 0.90
+	)
+	holdMinutes = cfg.MinLoadDuration()
+	maxHeapLimitMb = int(float64(cfg.NodeMemoryLimit)*heapFractionOfLimit) - minimalMemoryUsage
+	reportedMiB = float64(maxHeapLimitMb) * decimalMBToMiB
+	expectedUtilPct := reportedMiB / float64(cfg.NodeMemoryLimit) * 100
+	memoryUtilScaleOut = int64(expectedUtilPct * memoryUtilSafetyFactor)
 })
 
 func AppAfterEach() {

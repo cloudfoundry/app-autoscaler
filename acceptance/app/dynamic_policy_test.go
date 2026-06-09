@@ -18,22 +18,14 @@ import (
 
 var _ = Describe("AutoScaler dynamic policy", func() {
 	var (
-		policy             string
-		err                error
-		doneChan           chan bool
-		doneAcceptChan     chan bool
-		ticker             *time.Ticker
-		maxHeapLimitMb     int
-		memoryUtilScaleOut int64
-		reportedMiB        float64
-		holdMinutes        int
+		policy         string
+		err            error
+		doneChan       chan bool
+		doneAcceptChan chan bool
+		ticker         *time.Ticker
 	)
 
 	const (
-		// cgroup v2 (Noble stemcell) counts kernel memory against the container limit,
-		// unlike cgroup v1 which tracked it separately. This requires more headroom.
-		minimalMemoryUsage = 35
-
 		// responsetime test: app sleeps 100ms per request, threshold at 50ms triggers scale-out.
 		responseTimeSlowDelayMs   = 100
 		responseTimeScaleOutMs    = 50
@@ -56,19 +48,9 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 		// memoryutil scale-in threshold (% quota); must stay below post-scale-out avg utilisation.
 		memoryUtilScaleIn        = 30
-		heapFractionOfLimit      = 0.80
-		decimalMBToMiB           = 1_000_000.0 / 1_048_576.0 // cgroup v2 reports binary MiB, Go allocates decimal MB
-		memoryUtilSafetyFactor   = 0.90
 		memoryUsedScaleOutFactor = 0.85
 		baselineMemoryMiB        = 10
 	)
-	BeforeEach(func() {
-		holdMinutes = cfg.MinLoadDuration()
-		maxHeapLimitMb = int(float64(cfg.NodeMemoryLimit)*heapFractionOfLimit) - minimalMemoryUsage
-		reportedMiB = float64(maxHeapLimitMb) * decimalMBToMiB
-		expectedUtilPct := reportedMiB / float64(cfg.NodeMemoryLimit) * 100
-		memoryUtilScaleOut = int64(expectedUtilPct * memoryUtilSafetyFactor)
-	})
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
 			appToScaleName = helpers.CreateTestAppFromDroplet(cfg, dropletPath, "dynamic-policy", initialInstanceCount)
