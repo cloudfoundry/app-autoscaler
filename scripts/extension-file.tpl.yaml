@@ -118,7 +118,7 @@ resources:
       config:
         metricsforwarder-config:
           metrics_gateway:
-            url: https://${METRICSGATEWAY_HOST}.${default-domain}
+            url: ${METRICSFORWARDER_METRICS_GATEWAY_URL}
           health:
             basic_auth:
               password: ${METRICSFORWARDER_HEALTH_PASSWORD}

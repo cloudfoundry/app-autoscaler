@@ -18,6 +18,7 @@ jobs:
     with:
       deployment_name: "autoscaler-mta-${{ github.event.pull_request.number || 'main' }}"
       use_metricsgateway: ${{ github.event_name == 'pull_request' }}
+      metricsforwarder_metrics_gateway_url: ${{ github.event_name == 'pull_request' && vars.METRICSFORWARDER_METRICS_GATEWAY_URL || '' }}
       existing_organization: ${{ github.event_name == 'pull_request' && 'SAP_autoscaler_tests_OSS' || '' }}
     secrets:
       bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"
