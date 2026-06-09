@@ -127,7 +127,7 @@ var defaults = Config{
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
 	CPUUpperThreshold:               100,
-	MinLoadDurationMinutes:          5, // conservative default; our CI uses 4 via min_load_duration_minutes
+	MinLoadDurationMinutes:          5,  // conservative default; our CI uses 4 via min_load_duration_minutes
 	ScaleEventTimeoutMinutes:        10, // conservative default; our CI uses 8 via scale_event_timeout_minutes
 
 	UseExistingOrganization: false,
