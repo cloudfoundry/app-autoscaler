@@ -22,7 +22,7 @@ var _ = Describe("AutoScaler recurring schedule policy", func() {
 	BeforeEach(func() {
 		instanceName = CreateService(cfg)
 		initialInstanceCount = 1
-		appToScaleName = CreateTestApp(cfg, "recurring-schedule", initialInstanceCount)
+		appToScaleName = CreateTestAppFromDroplet(cfg, dropletPath, "recurring-schedule", initialInstanceCount)
 		appToScaleGUID, err = GetAppGuid(cfg, appToScaleName)
 		Expect(err).NotTo(HaveOccurred())
 	})

@@ -21,7 +21,7 @@ var _ = Describe("AutoScaler specific date schedule policy", func() {
 	BeforeEach(func() {
 		instanceName = CreateService(cfg)
 		initialInstanceCount = 1
-		appToScaleName = CreateTestApp(cfg, "date-schedule", initialInstanceCount)
+		appToScaleName = CreateTestAppFromDroplet(cfg, dropletPath, "date-schedule", initialInstanceCount)
 		appToScaleGUID, err = GetAppGuid(cfg, appToScaleName)
 		Expect(err).NotTo(HaveOccurred())
 	})
