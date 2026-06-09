@@ -52,7 +52,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/app-autoscaler
     private_key: ((autoscaler-deploy-key-private))
-    branch: main
+    branch: worktree-APPAUTOSCALER-1033-move-ci-pipelines
     fetch_tags: true
     paths:
       - ci/infrastructure
