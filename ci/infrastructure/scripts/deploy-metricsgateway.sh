@@ -78,10 +78,10 @@ EOF
 function setup_security_group() {
   local sg_file
   sg_file="$(dirname "${BASH_SOURCE[0]}")/../security-groups/metricsgateway.json"
-  log "Binding metricsgateway security group to org '${cf_org}' space '${cf_space}'"
+  log "Binding metricsgateway security group to org '${cf_org}'"
   cf create-security-group metricsgateway "${sg_file}" || true
   cf update-security-group metricsgateway "${sg_file}"
-  cf bind-security-group metricsgateway "${cf_org}" --space "${cf_space}"
+  cf bind-security-group metricsgateway "${cf_org}"
 }
 
 function deploy_metricsgateway() {
