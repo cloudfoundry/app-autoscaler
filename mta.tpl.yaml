@@ -78,7 +78,6 @@ modules:
         - echo "ignoring scheduler and dbtasks" > /dev/null
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
-        "eventgenerator", "metricsforwarder", "metricsgateway", "operator",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -113,7 +112,6 @@ modules:
         - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
-        "api", "metricsforwarder", "metricsgateway", "operator", "scalingengine",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -147,7 +145,6 @@ modules:
         - echo "ignoring scheduler and dbtasks" > /dev/null
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
-        "api", "eventgenerator", "metricsgateway", "operator", "scalingengine",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -182,7 +179,6 @@ modules:
         - echo "ignoring scheduler and dbtasks" > /dev/null
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
-        "api", "eventgenerator", "metricsforwarder", "operator", "scalingengine",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -216,7 +212,6 @@ modules:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
-        "api", "eventgenerator", "metricsforwarder", "metricsgateway", "scalingengine",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -250,7 +245,6 @@ modules:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
-        "api", "eventgenerator", "metricsforwarder", "metricsgateway", "operator",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
