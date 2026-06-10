@@ -13,8 +13,7 @@ inputs:
 - name: app-autoscaler-mtar
 
 params:
-  CF_ORG: SAP_autoscaler_tests_OSS
-  CF_SPACE: SAP_autoscaler_tests_OSS
+  CF_ORG: system
 
 run:
   path: ci/ci/infrastructure/scripts/deploy-metricsgateway.sh
