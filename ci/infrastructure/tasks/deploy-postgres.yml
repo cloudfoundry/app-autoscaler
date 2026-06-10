@@ -9,7 +9,6 @@ image_resource:
 
 params:
   SLACK_WEBHOOK:
-  CF_ORG: SAP_autoscaler_tests_OSS
 
 inputs:
 - name: bbl-state
