@@ -79,7 +79,6 @@ modules:
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
         "eventgenerator", "metricsforwarder", "metricsgateway", "operator",
-        "collection", "envelopeprocessor", "sync",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -115,7 +114,6 @@ modules:
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
         "api", "metricsforwarder", "metricsgateway", "operator", "scalingengine",
-        "cf", "cred_helper", "ratelimiter", "servicebroker", "sync",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -150,7 +148,6 @@ modules:
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
         "api", "eventgenerator", "metricsgateway", "operator", "scalingengine",
-        "collection", "envelopeprocessor", "sync",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -186,7 +183,6 @@ modules:
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
         "api", "eventgenerator", "metricsforwarder", "operator", "scalingengine",
-        "cf", "collection", "cred_helper", "envelopeprocessor", "ratelimiter", "servicebroker", "sync",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -221,7 +217,6 @@ modules:
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
         "api", "eventgenerator", "metricsforwarder", "metricsgateway", "scalingengine",
-        "collection", "cred_helper", "envelopeprocessor", "ratelimiter", "servicebroker",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
@@ -256,7 +251,6 @@ modules:
       ignore: [
         "acceptance", "build", "dbtasks", "scheduler",
         "api", "eventgenerator", "metricsforwarder", "metricsgateway", "operator",
-        "collection", "cred_helper", "envelopeprocessor", "ratelimiter", "servicebroker", "sync",
         "fakes", "testhelpers", "integration",
         "docs", "openapi", "scripts", "style-guide", "nix",
         ".devbox", ".git", ".github", ".venv", ".claude",
