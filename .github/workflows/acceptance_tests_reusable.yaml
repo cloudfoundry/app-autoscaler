@@ -81,6 +81,16 @@ jobs:
         run: |
           make --directory="${AUTOSCALER_DIR}" setup-org-manager-user
 
+      - name: Rebind postgres security group after space recreation
+        shell: bash
+        run: |
+          source "${AUTOSCALER_DIR}/scripts/vars.source.sh"
+          source "${AUTOSCALER_DIR}/scripts/common.sh"
+          bbl_login
+          cf_admin_login
+          cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+          cf bind-security-group postgres "${AUTOSCALER_ORG}" --space "${AUTOSCALER_SPACE}"
+
       - name: Provision DB
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" provision-db
