@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: ghcr.io/cloudfoundry/app-autoscaler-release-tools
+    tag: main
+
+inputs:
+- name: ci
+- name: bbl-state
+- name: gcp-noble-stemcell
+outputs:
+
+run:
+  path: ci/ci/infrastructure/scripts/fetch-latest-stemcell.sh
