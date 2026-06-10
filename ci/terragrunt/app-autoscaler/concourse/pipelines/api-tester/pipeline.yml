@@ -1,0 +1,36 @@
+# https://concourse-ci.org/hello-world-example.html
+---
+resources:
+- name: app-autoscaler-release
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/cloudfoundry/app-autoscaler-release.git
+    branch: main
+
+
+jobs:
+- name: api-test
+  public: true
+  build_logs_to_retain: 100
+  serial: true
+  plan:
+  - get: app-autoscaler-release
+    trigger: true
+  - task: run-api-test
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: ghcr.io/cloudfoundry/app-autoscaler-ci-test
+          tag: master
+      inputs:
+      - { name: app-autoscaler-release }
+      run:
+        path: sh
+        args:
+          - -ce
+          - |
+            cd app-autoscaler-release/ci/terragrunt/app-autoscaler/concourse/pipelines/api-tester/src
+            go test -v ./...

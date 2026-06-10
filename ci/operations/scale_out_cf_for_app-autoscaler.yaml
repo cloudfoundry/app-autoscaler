@@ -1,0 +1,28 @@
+---
+# Based on/doubles https://github.com/cloudfoundry/cf-deployment/blob/a1ff77e8957e1d2c44572e50a3265e40b50934cb/operations/test/scale-to-one-az-addon-parallel-cats.yml
+- type: replace
+  path: /instance_groups/name=diego-cell/instances
+  value: ((diego_cell_instances))
+- type: replace
+  path: /instance_groups/name=diego-cell/vm_type
+  value: large
+- type: replace
+  path: /instance_groups/name=api/instances
+  value: 4
+- type: replace
+  path: /instance_groups/name=diego-cell/vm_extensions
+  value:
+  - 500GB_ephemeral_disk
+
+
+- type: replace
+  path: /instance_groups/name=cc-worker/jobs/name=cloud_controller_worker/properties/cc/maximum_app_disk_in_mb?
+  value: 4096
+
+- type: replace
+  path: /instance_groups/name=api/jobs/name=cloud_controller_ng/properties/cc/maximum_app_disk_in_mb?
+  value: 4096
+
+- type: replace
+  path: /instance_groups/name=diego-cell/jobs/name=rep/properties/diego/executor/memory_capacity_mb?
+  value: 64536
