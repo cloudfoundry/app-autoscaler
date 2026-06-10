@@ -294,9 +294,6 @@ ${flattened-schema-file}: ${schema-files}
 mta-deploy:
 	$(MAKEFILE_DIR)/scripts/mta-deploy.sh
 
-set-security-group:
-	$(MAKEFILE_DIR)/scripts/set-security-group.sh
-
 mta-undeploy:
 	@cf undeploy com.github.cloudfoundry.app-autoscaler-release -f
 
