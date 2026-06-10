@@ -23,7 +23,6 @@ function main() {
 	bbl_login
 	cf_admin_login
 	setup_security_group "metricsforwarder" "${autoscaler_dir}/metricsforwarder/security-group.json"
-	setup_security_group "metricsgateway"   "${autoscaler_dir}/metricsgateway/security-group.json"
 	return 0
 }
 
