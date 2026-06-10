@@ -76,7 +76,18 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "build", "dbtasks", "scheduler",
+        "eventgenerator", "metricsforwarder", "metricsgateway", "operator",
+        "collection", "envelopeprocessor", "sync",
+        "fakes", "testhelpers", "integration",
+        "docs", "openapi", "scripts", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: apiserver-config
       - name: broker-catalog
@@ -101,7 +112,18 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "build", "dbtasks", "scheduler",
+        "api", "metricsforwarder", "metricsgateway", "operator", "scalingengine",
+        "cf", "cred_helper", "ratelimiter", "servicebroker", "sync",
+        "fakes", "testhelpers", "integration",
+        "docs", "openapi", "scripts", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: eventgenerator-config
       - name: database
@@ -125,7 +147,18 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "build", "dbtasks", "scheduler",
+        "api", "eventgenerator", "metricsgateway", "operator", "scalingengine",
+        "collection", "envelopeprocessor", "sync",
+        "fakes", "testhelpers", "integration",
+        "docs", "openapi", "scripts", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: metricsforwarder-config
       - name: database
@@ -150,7 +183,18 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler and dbtasks" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "build", "dbtasks", "scheduler",
+        "api", "eventgenerator", "metricsforwarder", "operator", "scalingengine",
+        "cf", "collection", "cred_helper", "envelopeprocessor", "ratelimiter", "servicebroker", "sync",
+        "fakes", "testhelpers", "integration",
+        "docs", "openapi", "scripts", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: metricsgateway-config
       - name: syslog-client
@@ -174,7 +218,18 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "build", "dbtasks", "scheduler",
+        "api", "eventgenerator", "metricsforwarder", "metricsgateway", "scalingengine",
+        "collection", "cred_helper", "envelopeprocessor", "ratelimiter", "servicebroker",
+        "fakes", "testhelpers", "integration",
+        "docs", "openapi", "scripts", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: operator-config
       - name: database
@@ -198,7 +253,18 @@ modules:
       builder: custom
       commands:
         - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
-      ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "build", "dbtasks", "scheduler",
+        "api", "eventgenerator", "metricsforwarder", "metricsgateway", "operator",
+        "collection", "cred_helper", "envelopeprocessor", "ratelimiter", "servicebroker", "sync",
+        "fakes", "testhelpers", "integration",
+        "docs", "openapi", "scripts", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: scalingengine-config
       - name: database
@@ -256,7 +322,19 @@ modules:
         - echo "Building acceptance tests for version ${version}"
         - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make --jobs=1 acceptance-release"
       build-result: build/acceptance
-      ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+      ignore: [
+        "acceptance", "dbtasks", "scheduler",
+        "api", "eventgenerator", "metricsforwarder", "metricsgateway", "operator", "scalingengine",
+        "cf", "collection", "configutil", "cred_helper", "db", "envelopeprocessor",
+        "fakes", "healthendpoint", "helpers", "integration", "models",
+        "ratelimiter", "routes", "servicebroker", "startup", "sync", "testhelpers",
+        "vendor", "openapi", "docs", "style-guide", "nix",
+        ".devbox", ".git", ".github", ".venv", ".claude",
+        "devbox.json", "devbox.lock", "flake.lock", "flake.nix",
+        "Makefile", "Makefile.mta", "mta.tpl.yaml", "mta.yaml",
+        "generate-fakes.go", "tools.go", "renovate.json", "go.mod", "go.sum",
+        "sonar-project.properties", "README.md"
+      ]
     requires:
       - name: app-autoscaler-application-logs
     parameters:
