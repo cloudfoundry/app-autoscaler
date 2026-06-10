@@ -433,6 +433,29 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 	})
 })
 
+// ================================================================================
+// Helpers
+// ================================================================================
+
+func waitForScaling(appGUID string, instances int) {
+	GinkgoHelper()
+	waitForCustomMetricScaling(func() (int, error) {
+		return helpers.RunningInstances(appGUID, 5*time.Second)
+	}, instances)
+}
+
+func waitForMemoryScaling(appName string, appGUID string, heapMB int, holdMins int) {
+	GinkgoHelper()
+	By(fmt.Sprintf("allocate %d MB heap in app", heapMB))
+	helpers.CurlAppInstance(cfg, appName, 0, fmt.Sprintf("/memory/%d/%d", heapMB, holdMins))
+	By("wait for scale out to 2")
+	helpers.WaitForNInstancesRunning(appGUID, 2, cfg.ScaleEventTimeout())
+	By("release memory")
+	helpers.CurlAppInstance(cfg, appName, 0, "/memory/close")
+	By("wait for scale in to 1")
+	helpers.WaitForNInstancesRunning(appGUID, 1, cfg.ScaleEventTimeout())
+}
+
 func concurrentHttpGet(count int, url string) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
