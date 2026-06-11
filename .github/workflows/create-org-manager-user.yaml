@@ -10,7 +10,7 @@ on:
       existing_organization:
         required: false
         type: string
-        default: ""
+        default: "SAP_autoscaler_tests_OSS"
         description: "Additional CF org to grant OrgManager role in (if different from autoscaler_org)"
 
 defaults:
