@@ -560,6 +560,10 @@ deploy-register-cf:
 deploy-cleanup:
 	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
 
+.PHONY: create-org-manager-user
+create-org-manager-user:
+	DEBUG="${DEBUG}" ./scripts/create-org-manager-user.sh
+
 .PHONY: deploy-apps
 deploy-apps:
 	DEBUG="${DEBUG}" ./scripts/deploy-apps.sh
