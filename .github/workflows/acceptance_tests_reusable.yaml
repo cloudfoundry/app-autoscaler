@@ -67,10 +67,6 @@ jobs:
           make --directory="${AUTOSCALER_DIR}" mta-build
           make --directory="${AUTOSCALER_DIR}" mta-deploy
 
-      - name: Register autoscaler
-        shell: bash
-        run: make --directory="${AUTOSCALER_DIR}" deploy-register-cf
-
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}
     needs: [ deploy_autoscaler ]
