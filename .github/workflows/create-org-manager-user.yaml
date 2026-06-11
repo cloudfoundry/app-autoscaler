@@ -47,6 +47,6 @@ jobs:
 
       - name: Create org manager user and store credentials
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
         run: |
           make --directory="${AUTOSCALER_DIR}" create-org-manager-user
