@@ -20,12 +20,6 @@ function create_org_manager_user() {
 	cf create-user "${AUTOSCALER_ORG_MANAGER_USER}" "${password}"
 	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
 
-	local existing_org="${EXISTING_ORGANIZATION:-}"
-	if [[ -n "${existing_org}" && "${existing_org}" != "${AUTOSCALER_ORG}" ]]; then
-		log "Granting OrgManager role in existing org: ${existing_org}"
-		cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${existing_org}" OrgManager
-	fi
-
 	local repo
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
 

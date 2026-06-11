@@ -3,15 +3,11 @@ name: Create Org Manager User
 on:
   workflow_dispatch:
     inputs:
-      autoscaler_org:
-        required: true
-        type: string
-        description: "CF org to grant OrgManager role in"
-      existing_organization:
+      org:
         required: false
         type: string
         default: "SAP_autoscaler_tests_OSS"
-        description: "Additional CF org to grant OrgManager role in (if different from autoscaler_org)"
+        description: "CF org to create the org manager user in"
 
 defaults:
   run:
@@ -20,7 +16,7 @@ defaults:
 env:
   AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
-  AUTOSCALER_ORG: "${{ inputs.autoscaler_org }}"
+  AUTOSCALER_ORG: "${{ inputs.org }}"
 
 jobs:
   create_org_manager_user:
@@ -51,7 +47,6 @@ jobs:
 
       - name: Create org manager user and store credentials
         env:
-          EXISTING_ORGANIZATION: ${{ inputs.existing_organization }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           make --directory="${AUTOSCALER_DIR}" create-org-manager-user
