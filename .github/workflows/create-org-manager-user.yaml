@@ -17,6 +17,7 @@ env:
   AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
   AUTOSCALER_ORG: "${{ inputs.org }}"
+  PR_NUMBER: "main"
 
 jobs:
   create_org_manager_user:
