@@ -28,6 +28,8 @@ on:
     secrets:
       bbl_ssh_key:
         required: true
+      autoscaler_org_manager_password:
+        required: false
 
 defaults:
   run:
@@ -78,6 +80,7 @@ jobs:
         shell: bash
         env:
           EXISTING_ORGANIZATION: ${{ inputs.existing_organization }}
+          AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
         run: |
           make --directory="${AUTOSCALER_DIR}" setup-org-manager-user
 
