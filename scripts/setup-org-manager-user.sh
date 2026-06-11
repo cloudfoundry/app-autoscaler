@@ -7,48 +7,27 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
-function create_cf_user() {
-	local username="$1"
-	local credhub_path="$2"
-
-	log "Creating user: ${username}"
-	credhub generate --no-overwrite -n "${credhub_path}" --length 32 -t password > /dev/null
-	local password
-	password=$(credhub get --quiet --name="${credhub_path}")
-
-	cf delete-user -f "${username}" || true
-	cf create-user "${username}" "${password}"
-	return 0
+function cf_org_manager_login() {
+	step "login to cf as org manager"
+	# shellcheck disable=SC2154 # system_domain sourced from vars.source.sh
+	cf api "https://api.${system_domain}" --skip-ssl-validation
+	cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 }
 
-function setup_acceptance_users() {
-	step "Setting up acceptance test users"
-	log "Organization: ${AUTOSCALER_ORG}"
+function setup_space_roles_as_org_manager() {
+	step "Granting space roles as org manager"
 
+	cf_org_manager_login
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-
-	create_cf_user "${AUTOSCALER_ORG_MANAGER_USER}" "${CREDHUB_ORG_MANAGER_PASSWORD_PATH}"
-	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 	cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
-	# Grant access to the existing org used by acceptance tests (may differ from the deployment org)
-	local existing_org="${EXISTING_ORGANIZATION:-}"
-	if [[ -n "${existing_org}" && "${existing_org}" != "${AUTOSCALER_ORG}" ]]; then
-		log "Granting OrgManager role to ${AUTOSCALER_ORG_MANAGER_USER} in existing org: ${existing_org}"
-		cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${existing_org}" OrgManager
-	fi
-
-	create_cf_user "${AUTOSCALER_OTHER_USER}" "${CREDHUB_OTHER_USER_PASSWORD_PATH}"
-
 	step "Setup complete!"
-	return 0
 }
 
 function main() {
 	bbl_login
-	cf_admin_login
-	setup_acceptance_users
+	setup_space_roles_as_org_manager
 	return 0
 }
 

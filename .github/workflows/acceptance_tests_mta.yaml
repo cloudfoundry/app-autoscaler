@@ -23,3 +23,4 @@ jobs:
       autoscaler_org: ${{ github.event_name == 'pull_request' && vars.ACCEPTANCE_TESTS_EXISTING_ORG || 'system' }}
     secrets:
       bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"
+      autoscaler_org_manager_password: "${{ secrets.AUTOSCALER_ORG_MANAGER_PASSWORD }}"
