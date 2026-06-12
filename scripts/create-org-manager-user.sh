@@ -7,6 +7,8 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
+AUTOSCALER_ORG_MANAGER_USER="${AUTOSCALER_ORG_MANAGER_USER:-org-manager-user}"
+
 function create_org_manager_user() {
 	step "Creating org manager CF user"
 	log "Organization: ${AUTOSCALER_ORG}"
