@@ -25,6 +25,9 @@ function create_org_manager_user() {
 	local repo
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
 
+	log "Writing username to GitHub repo variable AUTOSCALER_ORG_MANAGER_USER"
+	gh variable set AUTOSCALER_ORG_MANAGER_USER --body "${AUTOSCALER_ORG_MANAGER_USER}" --repo "${repo}"
+
 	log "Writing password to GitHub repo secret AUTOSCALER_ORG_MANAGER_PASSWORD"
 	gh secret set AUTOSCALER_ORG_MANAGER_PASSWORD --body "${password}" --repo "${repo}"
 
