@@ -29,6 +29,11 @@ bbl_login
 cf_deployment_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
+# On PR branches, ensure org-manager-user has SpaceDeveloper (needed for cf deploy)
+if [[ "${PR_NUMBER:-main}" != "main" ]]; then
+  cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
+fi
+
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
