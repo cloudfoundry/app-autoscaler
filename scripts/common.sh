@@ -64,10 +64,8 @@ function cf_deployment_login(){
 		cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 		cf auth admin "$cf_admin_password"
 	else
-		# PR branch: use org-manager user
-		local org_manager_password
-		org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
-		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "$org_manager_password"
+		# PR branch: use org-manager user (password from GH secret)
+		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 	fi
 	return 0
 }

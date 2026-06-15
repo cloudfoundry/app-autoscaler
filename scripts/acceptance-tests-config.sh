@@ -33,10 +33,9 @@ if [[ "${PR_NUMBER:-main}" == "main" ]]; then
 	autoscaler_org_manager_password="${cf_admin_password}"
 	skip_service_access_management="false"
 else
-	# For PRs, use dedicated org manager user
-	bbl_login
+	# For PRs, use dedicated org manager user (password from GH secret)
 	autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
-	autoscaler_org_manager_password="$(credhub get --quiet --name="${CREDHUB_ORG_MANAGER_PASSWORD_PATH}")"
+	autoscaler_org_manager_password="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 	skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
 fi
 
