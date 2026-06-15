@@ -169,11 +169,17 @@ export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
 export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
 export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
 export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
-# Let cf-test-helpers create a fresh space as the existing user (org-manager-user).
-# This ensures the user automatically gets SpaceDeveloper in the test space.
-export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-false}"
-export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-false}"
-export EXISTING_SPACE="${EXISTING_SPACE:-}"
+# When using a shared existing org (not the deployment org), don't reuse a space from the
+# deployment org — let cf-test-helpers create a fresh space in the existing org instead.
+if [[ "${EXISTING_ORGANIZATION}" != "${AUTOSCALER_ORG}" ]]; then
+  export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-false}"
+  export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-false}"
+  export EXISTING_SPACE="${EXISTING_SPACE:-}"
+else
+  export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
+  export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-true}"
+  export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
+fi
 
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
