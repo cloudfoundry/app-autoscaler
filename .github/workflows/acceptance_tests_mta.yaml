@@ -24,3 +24,4 @@ jobs:
     secrets:
       bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"
       autoscaler_org_manager_password: "${{ secrets.AUTOSCALER_ORG_MANAGER_PASSWORD }}"
+      autoscaler_other_user_password: "${{ secrets.AUTOSCALER_OTHER_USER_PASSWORD }}"
