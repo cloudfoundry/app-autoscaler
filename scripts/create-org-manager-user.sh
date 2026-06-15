@@ -10,58 +10,35 @@ source "${script_dir}/common.sh"
 AUTOSCALER_ORG_MANAGER_USER="${AUTOSCALER_ORG_MANAGER_USER:-org-manager-user}"
 AUTOSCALER_OTHER_USER="${AUTOSCALER_OTHER_USER:-other-user}"
 
-function create_org_manager_user() {
-	local repo="$1"
-	step "Creating org manager CF user"
-	log "Organization: ${AUTOSCALER_ORG}"
-
-	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-
-	local password
-	password="$(openssl rand -base64 32)"
-
-	cf delete-user -f "${AUTOSCALER_ORG_MANAGER_USER}" || true
-	cf create-user "${AUTOSCALER_ORG_MANAGER_USER}" "${password}"
-	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
-
-	log "Writing username to GitHub repo variable AUTOSCALER_ORG_MANAGER_USER"
-	gh variable set AUTOSCALER_ORG_MANAGER_USER --body "${AUTOSCALER_ORG_MANAGER_USER}" --repo "${repo}"
-
-	log "Writing password to GitHub repo secret AUTOSCALER_ORG_MANAGER_PASSWORD"
-	gh secret set AUTOSCALER_ORG_MANAGER_PASSWORD --body "${password}" --repo "${repo}"
-
-	step "Org manager user created and credentials stored!"
-}
-
-function create_other_user() {
-	local repo="$1"
-	step "Creating other-user for acceptance tests"
+function create_cf_test_user() {
+	local repo="$1" username="$2" var_name="$3" secret_name="$4" step_msg="$5"
+	step "${step_msg}"
 	log "Organization: ${AUTOSCALER_ORG}"
 
 	local password
 	password="$(openssl rand -base64 32)"
 
-	cf delete-user -f "${AUTOSCALER_OTHER_USER}" || true
-	cf create-user "${AUTOSCALER_OTHER_USER}" "${password}"
-	cf set-org-role "${AUTOSCALER_OTHER_USER}" "${AUTOSCALER_ORG}" OrgManager
+	cf delete-user -f "${username}" || true
+	cf create-user "${username}" "${password}"
+	cf set-org-role "${username}" "${AUTOSCALER_ORG}" OrgManager
 
-	log "Writing username to GitHub repo variable AUTOSCALER_OTHER_USER"
-	gh variable set AUTOSCALER_OTHER_USER --body "${AUTOSCALER_OTHER_USER}" --repo "${repo}"
+	log "Writing username to GitHub repo variable ${var_name}"
+	gh variable set "${var_name}" --body "${username}" --repo "${repo}"
 
-	log "Writing password to GitHub repo secret AUTOSCALER_OTHER_USER_PASSWORD"
-	gh secret set AUTOSCALER_OTHER_USER_PASSWORD --body "${password}" --repo "${repo}"
+	log "Writing password to GitHub repo secret ${secret_name}"
+	gh secret set "${secret_name}" --body "${password}" --repo "${repo}"
 
-	step "Other user created and credentials stored!"
+	step "User ${username} created and credentials stored!"
 }
 
 function main() {
 	bbl_login
 	cf_login
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	local repo
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
-	create_org_manager_user "${repo}"
-	create_other_user "${repo}"
-	return 0
+	create_cf_test_user "${repo}" "${AUTOSCALER_ORG_MANAGER_USER}" AUTOSCALER_ORG_MANAGER_USER AUTOSCALER_ORG_MANAGER_PASSWORD "Creating org manager CF user"
+	create_cf_test_user "${repo}" "${AUTOSCALER_OTHER_USER}" AUTOSCALER_OTHER_USER AUTOSCALER_OTHER_USER_PASSWORD "Creating other-user for acceptance tests"
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
