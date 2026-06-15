@@ -92,7 +92,6 @@ database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
 database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
-other_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/other_user_password))
 EOF
 
 credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
