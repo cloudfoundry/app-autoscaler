@@ -40,9 +40,26 @@ generate_deployment_secrets() {
   SCALINGENGINE_HEALTH_PASSWORD="$(openssl rand -base64 12)"
   SERVICE_BROKER_PASSWORD_BLUE="$(openssl rand -base64 12)"
   SERVICE_BROKER_PASSWORD="$(openssl rand -base64 12)"
+  AUTOSCALER_OTHER_USER_PASSWORD="$(openssl rand -base64 12)"
   export METRICSFORWARDER_HEALTH_PASSWORD METRICSGATEWAY_HEALTH_PASSWORD
   export OPERATOR_HEALTH_PASSWORD EVENTGENERATOR_HEALTH_PASSWORD
   export SCALINGENGINE_HEALTH_PASSWORD SERVICE_BROKER_PASSWORD_BLUE SERVICE_BROKER_PASSWORD
+  export AUTOSCALER_OTHER_USER_PASSWORD
+}
+
+# Create the "other user" for acceptance tests (tests cross-user permission checks)
+# Requires admin since cf create-user is a privileged operation
+create_other_user() {
+  step "Creating other-user for acceptance tests"
+  cf_admin_login
+  cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+  cf delete-user -f "${AUTOSCALER_OTHER_USER}" || true
+  cf create-user "${AUTOSCALER_OTHER_USER}" "${AUTOSCALER_OTHER_USER_PASSWORD}"
+  cf set-org-role "${AUTOSCALER_OTHER_USER}" "${AUTOSCALER_ORG}" OrgManager
+  log "✓ other-user created"
+  # Restore deployment login
+  cf_deployment_login
+  cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 }
 
 load_secrets() {
@@ -74,6 +91,7 @@ load_secrets() {
 escape_newlines() { printf '%s' "${1//$'\n'/\\n}"; return; }
 
 generate_deployment_secrets
+create_other_user
 
 cat << EOF > /tmp/extension-file-secrets.yml.tpl
 postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))

@@ -78,8 +78,6 @@ autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
 
 export AUTOSCALER_OTHER_USER="${AUTOSCALER_OTHER_USER:-other-user}"
 debug "AUTOSCALER_OTHER_USER: ${AUTOSCALER_OTHER_USER}"
-log "set up vars: AUTOSCALER_OTHER_USER=${AUTOSCALER_OTHER_USER}"
-autoscaler_other_user="${AUTOSCALER_OTHER_USER}"
 
 export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-"autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"}"
 debug "SYSTEM_DOMAIN: ${SYSTEM_DOMAIN}"
