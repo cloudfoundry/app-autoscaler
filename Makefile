@@ -382,21 +382,6 @@ cf-login:
 		  'The necessary changes to the environment get lost when make exits its process.'
 	@${MAKEFILE_DIR}/scripts/os-infrastructure-login.sh
 
-.PHONY: cf-org-manager-login
-cf-org-manager-login:
-	@echo '⚠️ Please note that this login only works for cf and concourse,' \
-		  'in spite of performing a login as well on bosh and credhub.' \
-		  'The necessary changes to the environment get lost when make exits its process.'
-	@${MAKEFILE_DIR}/scripts/org-manager-login.sh
-
-.PHONY: create-org-manager-user
-create-org-manager-user:
-	DEBUG="${DEBUG}" ./scripts/create-org-manager-user.sh
-
-.PHONY: setup-org-manager-user
-setup-org-manager-user:
-	DEBUG="${DEBUG}" ./scripts/setup-org-manager-user.sh
-
 .PHONY: register-broker
 register-broker:
 	DEBUG="${DEBUG}" ./scripts/register-broker.sh
