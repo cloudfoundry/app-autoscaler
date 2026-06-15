@@ -60,9 +60,7 @@ function cf_deployment_login(){
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 
 	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
-		# Main branch: use admin user
-		cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
-		cf auth admin "$cf_admin_password"
+		cf_admin_login
 	else
 		# PR branch: use org-manager user (password from GH secret)
 		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
