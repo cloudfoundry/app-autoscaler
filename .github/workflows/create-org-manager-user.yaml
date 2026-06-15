@@ -17,7 +17,7 @@ env:
   AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
   AUTOSCALER_ORG: "${{ inputs.org }}"
-  PR_NUMBER: "main"
+  DEPLOYMENT_NAME: "autoscaler-mta-main"
 
 jobs:
   create_org_manager_user:
@@ -48,6 +48,6 @@ jobs:
 
       - name: Create org manager user and store credentials
         env:
-          GH_ADMIN_TOKEN: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
+          GH_TOKEN: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
         run: |
           make --directory="${AUTOSCALER_DIR}" create-org-manager-user

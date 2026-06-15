@@ -12,8 +12,6 @@ AUTOSCALER_ORG_MANAGER_USER="${AUTOSCALER_ORG_MANAGER_USER:-org-manager-user}"
 function create_org_manager_user() {
 	step "Creating org manager CF user"
 	log "Organization: ${AUTOSCALER_ORG}"
-	GH_TOKEN="${GH_ADMIN_TOKEN:-${GH_TOKEN}}"
-	export GH_TOKEN
 
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
