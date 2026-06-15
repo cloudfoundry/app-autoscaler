@@ -64,7 +64,6 @@ load_secrets() {
     "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh),
     "export SERVICE_BROKER_PASSWORD_BLUE="            + (.service_broker_password_blue            | @sh),
     "export SERVICE_BROKER_PASSWORD="                 + (.service_broker_password                 | @sh),
-    "export AUTOSCALER_ORG_MANAGER_PASSWORD="         + (.org_manager_password                    | @sh),
     "export AUTOSCALER_OTHER_USER_PASSWORD="          + (.other_user_password                     | @sh)
   ' "${secrets_file}")"
   eval "${exports}"
@@ -93,7 +92,6 @@ database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
 database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
-org_manager_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/org_manager_password))
 other_user_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/other_user_password))
 EOF
 
