@@ -47,7 +47,7 @@ popd > /dev/null
 # Extract broker password from the generated extension file (baked in by build-extension-file.sh)
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
-cf_login
+cf_deployment_login
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
