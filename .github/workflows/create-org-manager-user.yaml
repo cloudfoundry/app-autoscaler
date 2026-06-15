@@ -42,7 +42,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -v '^GH_TOKEN=' >> "$GITHUB_ENV"
 
       - name: Setup environment
         uses: ./app-autoscaler/.github/actions/setup-environment
