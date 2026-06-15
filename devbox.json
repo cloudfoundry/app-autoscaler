@@ -10,7 +10,7 @@
 
     "act": "0.2.88",
     "apple-sdk": {
-      "version": "latest",
+      "version": "14.4",
       "platforms": [
         "aarch64-darwin"
       ]
@@ -19,7 +19,7 @@
     "bash-language-server": "5.6.0",
     "bosh-cli":             "7.3.1",
     "cloudfoundry-cli":     "8.18.3",
-    "coreutils":            "latest",
+    "coreutils":            "9.11",
     "credhub-cli":          "2.9.54",
     "curl":                 "8.17.0",
     "delve":                "1.26.3",
@@ -27,8 +27,8 @@
     "gh":                   "2.92.0",
     "ginkgo":               "2.28.1",
     "gnumake":              "4.4.1",
-    "gnused":               "latest",
-    "gnutar":               "latest",
+    "gnused":               "4.9",
+    "gnutar":               "1.35",
     "go-tools":             "2025.1.1",
     "golangci-lint":        "2.12.2",
     "gopls":                "0.22.0",
@@ -41,13 +41,13 @@
     "mysql":                "10.6.12",
     "oha":                  "1.14.0",
     "openssl":              "3.6.0",
-    "postgresql":           "latest",
+    "postgresql":           "17.10",
     "python":               "3.14.4",
     "redocly":              "2.17.0",
     "ripgrep":              "15.1.0",
     "shellcheck":           "0.11.0",
     "temurin-bin-21":       "21.0.3",
-    "which":                "latest",
+    "which":                "2.23",
     "xq-xml":               "1.4.0",
     "yq-go":                "4.53.2",
     "go":                   "1.25.5"
