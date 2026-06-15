@@ -21,6 +21,7 @@ function create_cf_test_user() {
 	cf delete-user -f "${username}" || true
 	cf create-user "${username}" "${password}"
 	cf set-org-role "${username}" "${AUTOSCALER_ORG}" OrgManager
+	cf set-space-role "${username}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
 	log "Writing username to GitHub repo variable ${var_name}"
 	gh variable set "${var_name}" --body "${username}" --repo "${repo}"
