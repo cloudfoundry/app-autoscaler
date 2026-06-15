@@ -12,6 +12,8 @@ AUTOSCALER_ORG_MANAGER_USER="${AUTOSCALER_ORG_MANAGER_USER:-org-manager-user}"
 function create_org_manager_user() {
 	step "Creating org manager CF user"
 	log "Organization: ${AUTOSCALER_ORG}"
+	GH_TOKEN="${GH_ADMIN_TOKEN:-${GH_TOKEN}}"
+	export GH_TOKEN
 
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
@@ -26,10 +28,10 @@ function create_org_manager_user() {
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
 
 	log "Writing username to GitHub repo variable AUTOSCALER_ORG_MANAGER_USER"
-	GH_TOKEN="${GH_ADMIN_TOKEN:-${GH_TOKEN}}" gh variable set AUTOSCALER_ORG_MANAGER_USER --body "${AUTOSCALER_ORG_MANAGER_USER}" --repo "${repo}"
+	gh variable set AUTOSCALER_ORG_MANAGER_USER --body "${AUTOSCALER_ORG_MANAGER_USER}" --repo "${repo}"
 
 	log "Writing password to GitHub repo secret AUTOSCALER_ORG_MANAGER_PASSWORD"
-	GH_TOKEN="${GH_ADMIN_TOKEN:-${GH_TOKEN}}" gh secret set AUTOSCALER_ORG_MANAGER_PASSWORD --body "${password}" --repo "${repo}"
+	gh secret set AUTOSCALER_ORG_MANAGER_PASSWORD --body "${password}" --repo "${repo}"
 
 	step "Org manager user created and credentials stored!"
 }

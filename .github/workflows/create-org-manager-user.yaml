@@ -23,8 +23,6 @@ jobs:
   create_org_manager_user:
     name: Create Org Manager User
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -41,7 +39,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv | grep -v '^GH_TOKEN=' >> "$GITHUB_ENV"
+          printenv >> "$GITHUB_ENV"
 
       - name: Setup environment
         uses: ./app-autoscaler/.github/actions/setup-environment
