@@ -10,6 +10,7 @@ source "${script_dir}/common.sh"
 AUTOSCALER_ORG_MANAGER_USER="${AUTOSCALER_ORG_MANAGER_USER:-org-manager-user}"
 
 function create_org_manager_user() {
+	local repo="$1"
 	step "Creating org manager CF user"
 	log "Organization: ${AUTOSCALER_ORG}"
 
@@ -21,9 +22,6 @@ function create_org_manager_user() {
 	cf delete-user -f "${AUTOSCALER_ORG_MANAGER_USER}" || true
 	cf create-user "${AUTOSCALER_ORG_MANAGER_USER}" "${password}"
 	cf set-org-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" OrgManager
-
-	local repo
-	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
 
 	log "Writing username to GitHub repo variable AUTOSCALER_ORG_MANAGER_USER"
 	gh variable set AUTOSCALER_ORG_MANAGER_USER --body "${AUTOSCALER_ORG_MANAGER_USER}" --repo "${repo}"
@@ -37,7 +35,9 @@ function create_org_manager_user() {
 function main() {
 	bbl_login
 	cf_login
-	create_org_manager_user
+	local repo
+	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
+	create_org_manager_user "${repo}"
 	return 0
 }
 
