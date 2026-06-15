@@ -1,4 +1,4 @@
-name: Create Org Manager User
+name: Create CI Test Users
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
         required: false
         type: string
         default: "SAP_autoscaler_tests_OSS"
-        description: "CF org to create the org manager user in"
+        description: "CF org to create the CI test users in"
 
 defaults:
   run:
@@ -20,8 +20,8 @@ env:
   DEPLOYMENT_NAME: "autoscaler-mta-main"
 
 jobs:
-  create_org_manager_user:
-    name: Create Org Manager User
+  create_ci_test_users:
+    name: Create CI Test Users
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -46,7 +46,7 @@ jobs:
         with:
           ssh-key: ${{ secrets.BBL_SSH_KEY }}
 
-      - name: Create org manager user and store credentials
+      - name: Create CI test users and store credentials
         env:
           GH_TOKEN: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
         run: |
