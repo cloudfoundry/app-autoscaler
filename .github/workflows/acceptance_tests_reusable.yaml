@@ -79,15 +79,14 @@ jobs:
         run: |
           make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
 
-      - name: Rebind postgres security group and grant space roles after space recreation
+      - name: Grant space roles after space recreation
         shell: bash
         run: |
           source "${AUTOSCALER_DIR}/scripts/vars.source.sh"
           source "${AUTOSCALER_DIR}/scripts/common.sh"
           bbl_login
-          cf_admin_login
+          cf_deployment_login
           cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
-          cf bind-security-group postgres "${AUTOSCALER_ORG}" --space "${AUTOSCALER_SPACE}"
           cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
           cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 
