@@ -66,6 +66,10 @@ if [[ -n "${existing_service_broker}" ]]; then
 fi
 
 echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
-cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}"
+space_scoped_flag=""
+if [[ "${PR_NUMBER:-main}" != "main" ]]; then
+	space_scoped_flag="--space-scoped"
+fi
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}" ${space_scoped_flag}
 
 cf logout
