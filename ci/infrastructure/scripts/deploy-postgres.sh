@@ -45,12 +45,9 @@ function deploy () {
 function setup_postgres_security_group() {
   local sg_file="${script_dir}/../security-groups/postgres.json"
   cf_login "${system_domain}"
-  cf create-security-group postgres "${sg_file}" || true
-  cf update-security-group postgres "${sg_file}"
-  for org in system SAP_autoscaler_tests_OSS; do
-    log "Binding postgres security group to org '${org}'"
-    cf bind-security-group postgres "${org}"
-  done
+  cf create-security-group postgres "${security_group_json_path}" || true
+  cf update-security-group postgres "${security_group_json_path}"
+  cf bind-running-security-group postgres
 }
 
 load_bbl_vars
