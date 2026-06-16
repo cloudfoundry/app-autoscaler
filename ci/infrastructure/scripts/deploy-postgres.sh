@@ -42,9 +42,31 @@ function deploy () {
     ${bosh_deploy_opts}
 }
 
+function setup_postgres_security_group() {
+  postgres_ip="$(credhub get -n /bosh-autoscaler/postgres/postgres_host_or_ip --quiet)"
+
+  security_group_json_path="$(mktemp)"
+  cat <<EOF > "${security_group_json_path}"
+[
+  {
+    "protocol": "tcp",
+    "destination": "${postgres_ip}/32",
+    "ports": "5524",
+    "description": "allow egress to the internal postgres IP"
+  }
+]
+EOF
+
+  cf_login "${system_domain}"
+  cf create-security-group postgres "${security_group_json_path}" || true
+  cf update-security-group postgres "${security_group_json_path}"
+  cf bind-security-group postgres --global
+}
+
 load_bbl_vars
 find_or_upload_stemcell_from "${deployment_manifest}"
 
 upload_release "${release_dir}"
 deploy
+setup_postgres_security_group
 
