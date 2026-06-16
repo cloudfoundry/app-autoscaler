@@ -48,6 +48,7 @@ popd > /dev/null
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
 cf_deployment_login
+cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
