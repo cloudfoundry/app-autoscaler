@@ -75,6 +75,15 @@ EOF
   echo "${ext_file}"
 }
 
+function setup_security_group() {
+  local sg_file
+  sg_file="$(dirname "${BASH_SOURCE[0]}")/../security-groups/metricsgateway.json"
+  log "Binding metricsgateway security group to org '${cf_org}'"
+  cf create-security-group metricsgateway "${sg_file}" || true
+  cf update-security-group metricsgateway "${sg_file}"
+  cf bind-security-group metricsgateway "${cf_org}"
+}
+
 function deploy_metricsgateway() {
   local ext_file
   ext_file="$(build_extension_file)"
@@ -94,6 +103,7 @@ cf_login "${system_domain}"
 cf target -o "${cf_org}" -s "${cf_space}"
 generate_secrets
 deploy_metricsgateway
+setup_security_group
 
 log "metricsgateway deployed:"
 cf app metricsgateway

@@ -1,4 +1,4 @@
-name: Create CI Test Users
+name: Create Org Manager User
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
         required: false
         type: string
         default: "SAP_autoscaler_tests_OSS"
-        description: "CF org to create the CI test users in"
+        description: "CF org to create the org manager user in"
 
 defaults:
   run:
@@ -17,11 +17,10 @@ env:
   AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
   BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
   AUTOSCALER_ORG: "${{ inputs.org }}"
-  DEPLOYMENT_NAME: "autoscaler-mta-main"
 
 jobs:
-  create_ci_test_users:
-    name: Create CI Test Users
+  create_org_manager_user:
+    name: Create Org Manager User
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,14 +38,14 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -v '^GH_TOKEN=' >> "$GITHUB_ENV"
 
       - name: Setup environment
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
           ssh-key: ${{ secrets.BBL_SSH_KEY }}
 
-      - name: Create CI test users and store credentials
+      - name: Create org manager user and store credentials
         env:
           GH_TOKEN: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
         run: |

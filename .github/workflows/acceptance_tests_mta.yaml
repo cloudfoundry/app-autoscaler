@@ -18,5 +18,10 @@ jobs:
     with:
       deployment_name: "autoscaler-mta-${{ github.event.pull_request.number || 'main' }}"
       use_metricsgateway: ${{ github.event_name == 'pull_request' }}
+      metricsforwarder_metrics_gateway_url: ${{ github.event_name == 'pull_request' && vars.METRICSFORWARDER_METRICS_GATEWAY_URL || '' }}
+      existing_organization: ${{ github.event_name == 'pull_request' && vars.ACCEPTANCE_TESTS_EXISTING_ORG || 'system' }}
+      autoscaler_org: ${{ github.event_name == 'pull_request' && vars.ACCEPTANCE_TESTS_EXISTING_ORG || 'system' }}
     secrets:
       bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"
+      autoscaler_org_manager_password: "${{ secrets.AUTOSCALER_ORG_MANAGER_PASSWORD }}"
+      autoscaler_other_user_password: "${{ secrets.AUTOSCALER_OTHER_USER_PASSWORD }}"
