@@ -25,6 +25,10 @@ on:
         required: false
         type: string
         default: ""
+      autoscaler_org_manager_user:
+        required: false
+        type: string
+        default: ""
     secrets:
       bbl_ssh_key:
         required: true
@@ -48,6 +52,7 @@ env:
   AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
   AUTOSCALER_OTHER_USER_PASSWORD: ${{ secrets.autoscaler_other_user_password }}
   AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
+  AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
 
 jobs:
   deploy_autoscaler:
