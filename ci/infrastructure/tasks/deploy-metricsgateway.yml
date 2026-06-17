@@ -14,6 +14,7 @@ inputs:
 
 params:
   CF_ORG: system
+  CF_SPACE: production
 
 run:
   path: ci/ci/infrastructure/scripts/deploy-metricsgateway.sh
