@@ -247,6 +247,7 @@ var _ = Describe("Disk write timing", func() {
 		It("completes within 25 seconds", func() {
 			filePath := filepath.Join(GinkgoT().TempDir(), "disk-timing-test")
 			occupier := app.NewDefaultDiskOccupier(filePath)
+			DeferCleanup(occupier.Stop)
 
 			spaceInBytes := int64(650) * 1000 * 1000 // matches acceptance test: 650 * 1000 * 1000
 
@@ -262,7 +263,6 @@ var _ = Describe("Disk write timing", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fStat.Size()).To(Equal(spaceInBytes))
 
-			occupier.Stop()
 			GinkgoWriter.Printf("650MB write completed in %v\n", elapsed)
 		})
 	})

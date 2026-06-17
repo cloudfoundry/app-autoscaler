@@ -25,7 +25,11 @@ type Space struct {
 
 func GetSpaceGuid(cfg *config.Config, orgGuid string) string {
 	testSpace := GetTestSpaces(orgGuid, cfg)[0]
-	spaceGuidByte := cf.Cf("space", testSpace, "--guid").Wait(cfg.DefaultTimeoutDuration())
+	return getSpaceGuidByName(testSpace, cfg.DefaultTimeoutDuration())
+}
+
+func getSpaceGuidByName(spaceName string, timeout time.Duration) string {
+	spaceGuidByte := cf.Cf("space", spaceName, "--guid").Wait(timeout)
 	return strings.TrimSuffix(string(spaceGuidByte.Out.Contents()), "\n")
 }
 

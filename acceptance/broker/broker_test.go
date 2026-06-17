@@ -409,8 +409,10 @@ func GetServicePlans(cfg *config.Config) ServicePlans {
 }
 
 func (p ServicePlan) isUpdatable() bool {
-	return bool(p.BrokerCatalog.Features.PlanUpdateable)
+	return p.BrokerCatalog.Features.PlanUpdateable.Bool()
 }
+
+func (b BoolOrInt) Bool() bool { return bool(b) }
 
 func (p ServicePlans) getSourceAndTargetForPlanUpdate() (source, target ServicePlan, err error) {
 	if p.length() < 2 {
