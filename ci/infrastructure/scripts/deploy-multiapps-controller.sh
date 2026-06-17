@@ -49,9 +49,7 @@ function add_postrgres_security_group() {
 EOF
 
   cf create-security-group multiapps-postgres-security-group "${security_group_json_path}"
-  cf update-security-group multiapps-postgres-security-group "${security_group_json_path}"
-  cf unbind-security-group multiapps-postgres-security-group ${cf_org} ${cf_space}
-  cf bind-security-group multiapps-postgres-security-group ${cf_org} --space ${cf_space}
+  update_and_bind_security_group multiapps-postgres-security-group "${security_group_json_path}" space "${cf_org}" "${cf_space}"
 }
 
 function cleanup_multiapps_controller() {

@@ -74,6 +74,28 @@ function add_var_to_bosh_deploy_opts() {
   return 0
 }
 
+# update_and_bind_security_group <name> <json_file> <bind_mode> [org] [space]
+# Updates an existing security group and binds it. Callers are responsible for
+# creating the group first (with or without error suppression as appropriate).
+# bind_mode: "running" = bind-running-security-group (global)
+#            "org"     = bind-security-group <name> <org>
+#            "space"   = unbind + bind-security-group <name> <org> --space <space>
+function update_and_bind_security_group() {
+  local name=$1 json_file=$2 bind_mode=$3 org=${4:-} space=${5:-}
+
+  cf update-security-group "${name}" "${json_file}"
+
+  case "${bind_mode}" in
+    running) cf bind-running-security-group "${name}" ;;
+    org)     cf bind-security-group "${name}" "${org}" ;;
+    space)
+      cf unbind-security-group "${name}" "${org}" "${space}"
+      cf bind-security-group "${name}" "${org}" --space "${space}"
+      ;;
+    *) echo "ERROR: unknown bind_mode '${bind_mode}'" >&2; return 1 ;;
+  esac
+}
+
 function cf_login(){
   local system_domain=$1
 

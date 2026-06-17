@@ -89,11 +89,20 @@ function deploy_metricsgateway() {
   rm -f "${ext_file}"
 }
 
+function setup_security_group() {
+  local sg_file
+  sg_file="$(dirname "${BASH_SOURCE[0]}")/../security-groups/metricsgateway.json"
+  log "Binding metricsgateway security group to org '${cf_org}'"
+  cf create-security-group metricsgateway "${sg_file}" || true
+  update_and_bind_security_group metricsgateway "${sg_file}" org "${cf_org}"
+}
+
 load_bbl_vars
 cf_login "${system_domain}"
 cf target -o "${cf_org}" -s "${cf_space}"
 generate_secrets
 deploy_metricsgateway
+setup_security_group
 
 log "metricsgateway deployed:"
 cf app metricsgateway

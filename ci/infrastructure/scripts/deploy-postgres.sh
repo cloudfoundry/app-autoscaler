@@ -59,8 +59,7 @@ EOF
 
   cf_login "${system_domain}"
   cf create-security-group postgres "${security_group_json_path}" || true
-  cf update-security-group postgres "${security_group_json_path}"
-  cf bind-running-security-group postgres
+  update_and_bind_security_group postgres "${security_group_json_path}" running
 }
 
 load_bbl_vars
