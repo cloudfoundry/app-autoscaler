@@ -27,6 +27,18 @@ then
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 
+# Use admin user for main branch, org-manager user for PRs
+if [[ "${PR_NUMBER:-main}" == "main" ]]; then
+	autoscaler_org_manager_user="admin"
+	autoscaler_org_manager_password="${cf_admin_password}"
+	skip_service_access_management="false"
+else
+	# For PRs, use dedicated org manager user (password from GH secret)
+	autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
+	autoscaler_org_manager_password="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+	skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+fi
+
 function write_app_config() {
 	local -r config_path="$1"
 	local -r use_existing_organization="$2"
@@ -37,8 +49,8 @@ function write_app_config() {
 	cat > "${config_path}" << EOF
 {
 	"api": "api.${system_domain}",
-	"admin_user": "admin",
-	"admin_password": "${cf_admin_password}",
+	"admin_user": "${autoscaler_org_manager_user}",
+	"admin_password": "${autoscaler_org_manager_password}",
 	"apps_domain": "${system_domain}",
 	"skip_ssl_validation": ${skip_ssl_validation},
 	"use_http": false,
@@ -49,6 +61,7 @@ function write_app_config() {
 	"existing_organization": "${existing_org}",
 	"use_existing_space": ${use_existing_space},
 	"existing_space": "${existing_space}",
+	"skip_service_access_management": ${skip_service_access_management},
 	"aggregate_interval": 120,
 	"default_timeout": 60,
 	"cpu_upper_threshold": ${cpu_upper_threshold},

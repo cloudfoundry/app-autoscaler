@@ -35,8 +35,9 @@ fi
 pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
-	make -f metricsforwarder/Makefile set-security-group
-	make -f metricsgateway/Makefile set-security-group
+	cf_deployment_login
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
 	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
 
@@ -46,7 +47,8 @@ popd > /dev/null
 # Extract broker password from the generated extension file (baked in by build-extension-file.sh)
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
-cf_login
+cf_deployment_login
+cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
@@ -65,6 +67,10 @@ if [[ -n "${existing_service_broker}" ]]; then
 fi
 
 echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
-cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}"
+space_scoped_flag=""
+if [[ "${PR_NUMBER:-main}" != "main" ]]; then
+	space_scoped_flag="--space-scoped"
+fi
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}" ${space_scoped_flag}
 
 cf logout

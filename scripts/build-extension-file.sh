@@ -26,7 +26,7 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
 fi
 
 bbl_login
-cf_login
+cf_deployment_login
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
@@ -99,6 +99,14 @@ export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
+# --- CF credentials for components using password grant ---
+for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
+  export "${component}_CF_GRANT_TYPE=password"
+  export "${component}_CF_USERNAME=${AUTOSCALER_ORG_MANAGER_USER}"
+  export "${component}_CF_PASSWORD=${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+  export "${component}_CF_CLIENT_ID=cf"
+done
+
 # --- Event generator ---
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
 export EVENTGENERATOR_HOST="${EVENTGENERATOR_HOST:-"${DEPLOYMENT_NAME}-eventgenerator"}"
@@ -113,12 +121,11 @@ export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 export USE_METRICSGATEWAY="${USE_METRICSGATEWAY:-true}"
 export METRICSGATEWAY_HOST="${METRICSGATEWAY_HOST:-"${DEPLOYMENT_NAME}-metricsgateway"}"
 export METRICSGATEWAY_INSTANCES="${METRICSGATEWAY_INSTANCES:-2}"
+export METRICSFORWARDER_METRICS_GATEWAY_URL="${METRICSFORWARDER_METRICS_GATEWAY_URL:-}"
 AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
 export AUTOSCALER_ORG_GUID
 
 # --- Scaling engine ---
-export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
-export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
 export SCALINGENGINE_INSTANCES="${SCALINGENGINE_INSTANCES:-2}"
@@ -129,8 +136,6 @@ export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
 # --- Operator ---
-export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
-export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
@@ -154,6 +159,24 @@ export PERFORMANCE_APP_COUNT="${PERFORMANCE_APP_COUNT:-100}"
 export PERFORMANCE_APP_PERCENTAGE_TO_SCALE="${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30}"
 export PERFORMANCE_SETUP_WORKERS="${PERFORMANCE_SETUP_WORKERS:-50}"
 export PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA="${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}"
+export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
+export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
+export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
+export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
+# When using a shared existing org (not the deployment org), don't reuse a space from the
+# deployment org — let cf-test-helpers create a fresh space in the existing org instead.
+if [[ "${EXISTING_ORGANIZATION}" != "${AUTOSCALER_ORG}" ]]; then
+  export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-false}"
+  export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-false}"
+  export EXISTING_SPACE="${EXISTING_SPACE:-}"
+else
+  export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
+  export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-true}"
+  export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
+fi
 
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"

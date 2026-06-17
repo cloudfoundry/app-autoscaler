@@ -382,6 +382,14 @@ cf-login:
 		  'The necessary changes to the environment get lost when make exits its process.'
 	@${MAKEFILE_DIR}/scripts/os-infrastructure-login.sh
 
+.PHONY: register-broker
+register-broker:
+	DEBUG="${DEBUG}" ./scripts/register-broker.sh
+
+.PHONY: deploy-cleanup
+deploy-cleanup:
+	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
+
 
 .PHONY: start-db
 start-db: check-db_type target/start-db-${db_type}_CI_${CI} waitfor_${db_type}_CI_${CI}
