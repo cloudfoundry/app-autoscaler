@@ -279,7 +279,6 @@ var _ = Describe("CFClientWrapper", func() {
 			Expect(capturedAuth).To(Equal("Basic " + expectedCreds))
 		})
 
-
 		It("returns false when token is inactive", func() {
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",
 				RespondWithJSON(http.StatusOK, map[string]any{
