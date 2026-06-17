@@ -209,9 +209,10 @@ var _ = Describe("Config", func() {
 					Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 					Expect(conf.CF).To(Equal(
 						cf.Config{
-							API:      "https://api.example.com",
-							ClientID: "client-id",
-							Secret:   "client-secret",
+							API:       "https://api.example.com",
+							ClientID:  "client-id",
+							Secret:    "client-secret",
+							GrantType: "client_credentials",
 							ClientConfig: cf.ClientConfig{
 								SkipSSLValidation: false,
 								MaxRetries:        3,
