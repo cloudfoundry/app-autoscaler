@@ -2,6 +2,7 @@ package cf_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -259,6 +260,25 @@ var _ = Describe("CFClientWrapper", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(isAuthorized).To(BeFalse())
 		})
+
+		It("sends Basic auth header with client credentials to introspect", func() {
+			var capturedAuth string
+			mockServer.RouteToHandler(http.MethodPost, "/introspect",
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					capturedAuth = r.Header.Get("Authorization")
+					RespondWithJSON(http.StatusOK, map[string]any{
+						"active":    true,
+						"client_id": "expected-client",
+					})(w, r)
+				}))
+
+			_, err := client.IsTokenAuthorized(ctx, "some-token", "expected-client")
+			Expect(err).NotTo(HaveOccurred())
+
+			expectedCreds := base64.StdEncoding.EncodeToString([]byte(conf.ClientID + ":" + conf.Secret))
+			Expect(capturedAuth).To(Equal("Basic " + expectedCreds))
+		})
+
 
 		It("returns false when token is inactive", func() {
 			mockServer.RouteToHandler(http.MethodPost, "/introspect",

@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 // CFOauth2HTTPClient is an OAuth2 HTTP client that uses Basic auth header
@@ -18,12 +20,10 @@ import (
 // This is necessary because the go-log-cache library sends client credentials
 // in the request body, but the "cf" client requires Basic auth header.
 type CFOauth2HTTPClient struct {
-	oauth2URL         string
-	clientID          string
-	clientSecret      string
-	username          string
-	password          string
-	skipSSLValidation bool
+	tokenURL        string
+	basicAuthHeader string
+	username        string
+	password        string
 
 	httpClient *http.Client
 
@@ -41,13 +41,18 @@ type tokenResponse struct {
 // NewCFOauth2HTTPClient creates a new OAuth2 HTTP client that is compatible
 // with CF's "cf" UAA client by using Basic auth header for authentication.
 func NewCFOauth2HTTPClient(oauth2URL, clientID, clientSecret, username, password string, skipSSLValidation bool) *CFOauth2HTTPClient {
+	tokenURL := oauth2URL
+	if !strings.HasSuffix(tokenURL, "/oauth/token") {
+		tokenURL = strings.TrimSuffix(tokenURL, "/") + "/oauth/token"
+	}
+
+	basicAuthHeader := "Basic " + base64.StdEncoding.EncodeToString([]byte(clientID+":"+clientSecret))
+
 	return &CFOauth2HTTPClient{
-		oauth2URL:         oauth2URL,
-		clientID:          clientID,
-		clientSecret:      clientSecret,
-		username:          username,
-		password:          password,
-		skipSSLValidation: skipSSLValidation,
+		tokenURL:        tokenURL,
+		basicAuthHeader: basicAuthHeader,
+		username:        username,
+		password:        password,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
@@ -136,26 +141,19 @@ func (c *CFOauth2HTTPClient) refreshToken() (string, error) {
 
 // doRefreshToken performs the actual token refresh. Must be called with lock held.
 func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
-	tokenURL := c.oauth2URL
-	if !strings.HasSuffix(tokenURL, "/oauth/token") {
-		tokenURL = strings.TrimSuffix(tokenURL, "/") + "/oauth/token"
-	}
-
 	data := url.Values{}
-	data.Set("grant_type", "password")
+	data.Set("grant_type", models.GrantTypePassword)
 	data.Set("username", c.username)
 	data.Set("password", c.password)
 
-	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPost, c.tokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("failed to create token request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
 	// Use Basic auth header for client credentials (required by CF's "cf" client)
-	basicAuth := base64.StdEncoding.EncodeToString([]byte(c.clientID + ":" + c.clientSecret))
-	req.Header.Set("Authorization", "Basic "+basicAuth)
+	req.Header.Set("Authorization", c.basicAuthHeader)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
