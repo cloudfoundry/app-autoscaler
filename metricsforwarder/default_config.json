@@ -2,6 +2,7 @@
   "metricsforwarder-config": {
     "cache_cleanup_interval": "6h",
     "cache_ttl": "900s",
+    "basic_auth_for_custom_metrics": "on",
     "cred_helper_impl": "default",
     "health": {
       "basic_auth": {

@@ -34,7 +34,7 @@ var _ = Describe("AutoScaler custom metrics", func() {
 			instanceName = CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)
 			StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
 		})
-		Context("when scaling by custom metrics", func() {
+		Context("when scaling by custom metrics via basic-auth", func() {
 			BeforeEach(func() {
 				credentialType := "binding-secret"
 				policy = GeneratePolicyWithCredentialType(
