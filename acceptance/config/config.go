@@ -82,6 +82,11 @@ type Config struct {
 
 	HealthEndpointsBasicAuthEnabled bool `json:"health_endpoints_basic_auth_enabled"`
 
+	// BasicAuthForCustomMetrics mirrors the apiserver/metricsforwarder option of
+	// the same name. Allowed values: "on", "only_existing_bindings", "off".
+	// An empty string is treated as "on" for backwards compatibility.
+	BasicAuthForCustomMetrics string `json:"basic_auth_for_custom_metrics"`
+
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
 
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
@@ -119,6 +124,7 @@ var defaults = Config{
 	NodeMemoryLimit:                 128, // MB
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
+	BasicAuthForCustomMetrics:       "on",
 	CPUUpperThreshold:               100,
 
 	UseExistingOrganization: false,
@@ -248,6 +254,18 @@ func validate(c *Config, terminateSuite TerminateSuite) {
 		c.SchedulerHealthEndpoint = normalizeURL(
 			c.SchedulerHealthEndpoint,
 			c.UseHttp,
+		)
+	}
+
+	switch c.BasicAuthForCustomMetrics {
+	case "":
+		c.BasicAuthForCustomMetrics = "on"
+	case "on", "only_existing_bindings", "off":
+		// allowed
+	default:
+		terminateSuite(
+			"invalid 'basic_auth_for_custom_metrics': " + c.BasicAuthForCustomMetrics +
+				" (allowed: on, only_existing_bindings, off)",
 		)
 	}
 }
@@ -426,4 +444,11 @@ func (c *Config) GetExistingClient() string {
 
 func (c *Config) GetExistingClientSecret() string {
 	return c.ExistingClientSecret
+}
+
+// BasicAuthForCustomMetricsAllowedForFreshBinding reports whether a fresh
+// service binding may declare credential-type=binding-secret. This is true
+// only for the "on" mode of the basic_auth_for_custom_metrics switch.
+func (c *Config) BasicAuthForCustomMetricsAllowedForFreshBinding() bool {
+	return c.BasicAuthForCustomMetrics == "on"
 }
