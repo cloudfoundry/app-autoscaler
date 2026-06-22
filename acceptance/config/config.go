@@ -13,6 +13,13 @@ import (
 const NODE_APP = "../assets/app/nodeApp"
 const GO_APP = "../assets/app/go_app/build"
 
+// BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT is the default value applied when
+// "basic_auth_for_custom_metrics" is absent from the acceptance configuration
+// (or explicitly empty). The corresponding switch on the autoscaler side
+// controls whether fresh service bindings may declare
+// credential-type=binding-secret.
+const BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT = "on"
+
 type PerformanceConfig struct {
 	AppCount                      int  `json:"app_count"`
 	PercentageToScale             int  `json:"app_percentage_to_scale"`
@@ -124,7 +131,7 @@ var defaults = Config{
 	NodeMemoryLimit:                 128, // MB
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
-	BasicAuthForCustomMetrics:       "on",
+	BasicAuthForCustomMetrics:       BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT,
 	CPUUpperThreshold:               100,
 
 	UseExistingOrganization: false,
@@ -259,7 +266,7 @@ func validate(c *Config, terminateSuite TerminateSuite) {
 
 	switch c.BasicAuthForCustomMetrics {
 	case "":
-		c.BasicAuthForCustomMetrics = "on"
+		c.BasicAuthForCustomMetrics = BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT
 	case "on", "only_existing_bindings", "off":
 		// allowed
 	default:
