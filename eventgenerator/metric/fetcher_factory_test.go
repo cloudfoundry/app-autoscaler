@@ -30,6 +30,21 @@ var _ = Describe("logCacheFetcherFactory", func() {
 		metricFetcherFactory             metric.FetcherFactory
 	)
 
+	verifyFetcherCreation := func(expectedLogCacheClient metric.LogCacheClient) {
+		mockLogCacheMetricFetcherCreator.NewLogCacheFetcherReturns(mockMetricFetcher)
+
+		metricFetcher, err := metricFetcherFactory.CreateFetcher(testLogger, conf)
+
+		Expect(err).ToNot(HaveOccurred())
+		Expect(metricFetcher).To(Equal(mockMetricFetcher))
+		Expect(mockLogCacheMetricFetcherCreator.NewLogCacheFetcherCallCount()).To(Equal(1))
+		logger, logCacheClient, envelopeProcessor, collectionInterval := mockLogCacheMetricFetcherCreator.NewLogCacheFetcherArgsForCall(0)
+		Expect(logger).To(Equal(testLogger))
+		Expect(logCacheClient).To(Equal(expectedLogCacheClient))
+		Expect(envelopeProcessor).ToNot(BeNil())
+		Expect(collectionInterval).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
+	}
+
 	BeforeEach(func() {
 		testLogger = lagertest.NewTestLogger("testLogger")
 
@@ -40,7 +55,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 	})
 
 	Describe("CreateFetcher", func() {
-		When("UAACreds are configured", func() {
+		When("UAACreds are configured with client credentials", func() {
 			BeforeEach(func() {
 				conf = config.Config{
 					Aggregator: &config.AggregatorConfig{
@@ -58,7 +73,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 				}
 			})
 
-			It("creates a log cache client that uses an HTTP-client", func() {
+			It("creates a log cache client that uses an HTTP-client with client credentials", func() {
 				expectedLogCacheClient := logcache.NewClient(
 					conf.MetricCollector.MetricCollectorURL,
 					logcache.WithHTTPClient(
@@ -70,7 +85,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 								Timeout: 5 * time.Second,
 								Transport: &http.Transport{
 									TLSClientConfig: &tls.Config{
-										// #nosec G402
+										// #nosec G402 -- controlled by config, used for dev/test environments
 										InsecureSkipVerify: conf.MetricCollector.UAACreds.SkipSSLValidation,
 									},
 								},
@@ -78,6 +93,33 @@ var _ = Describe("logCacheFetcherFactory", func() {
 						),
 					),
 				)
+				verifyFetcherCreation(expectedLogCacheClient)
+			})
+		})
+
+		When("UAACreds are configured with password grant", func() {
+			BeforeEach(func() {
+				conf = config.Config{
+					Aggregator: &config.AggregatorConfig{
+						AggregatorExecuteInterval: 40 * time.Second,
+					},
+					MetricCollector: config.MetricCollectorConfig{
+						MetricCollectorURL: "foo",
+						UAACreds: models.UAACreds{
+							URL:               "foo",
+							ClientID:          "cf",
+							GrantType:         models.GrantTypePassword,
+							Username:          "test-user",
+							Password:          "test-password",
+							SkipSSLValidation: true,
+						},
+					},
+				}
+			})
+
+			It("creates a log cache client that uses a custom CF OAuth2 HTTP client for password grant", func() {
+				// For password grant, we use our custom CFOauth2HTTPClient that sends
+				// client credentials via Basic auth header (required by CF's "cf" UAA client)
 				mockLogCacheMetricFetcherCreator.NewLogCacheFetcherReturns(mockMetricFetcher)
 
 				metricFetcher, err := metricFetcherFactory.CreateFetcher(testLogger, conf)
@@ -87,7 +129,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 				Expect(mockLogCacheMetricFetcherCreator.NewLogCacheFetcherCallCount()).To(Equal(1))
 				logger, logCacheClient, envelopeProcessor, collectionInterval := mockLogCacheMetricFetcherCreator.NewLogCacheFetcherArgsForCall(0)
 				Expect(logger).To(Equal(testLogger))
-				Expect(logCacheClient).To(Equal(expectedLogCacheClient))
+				Expect(logCacheClient).ToNot(BeNil())
 				Expect(envelopeProcessor).ToNot(BeNil())
 				Expect(collectionInterval).To(Equal(conf.Aggregator.AggregatorExecuteInterval))
 			})
