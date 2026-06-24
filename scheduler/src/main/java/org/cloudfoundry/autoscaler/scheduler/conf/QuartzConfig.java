@@ -4,7 +4,8 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import org.cloudfoundry.autoscaler.scheduler.quartz.QuartzJobFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.quartz.QuartzProperties;
+import org.springframework.boot.quartz.autoconfigure.QuartzProperties;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,7 @@ public class QuartzConfig {
   }
 
   @Bean
+  @DependsOnDatabaseInitialization
   public SchedulerFactoryBean quartzScheduler(@Qualifier("primary") DataSource primaryDataSource)
       throws Exception {
 
