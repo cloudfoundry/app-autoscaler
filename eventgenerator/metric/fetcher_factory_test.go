@@ -121,6 +121,7 @@ var _ = Describe("logCacheFetcherFactory", func() {
 				// For password grant, we use our custom CFOauth2HTTPClient that sends
 				// client credentials via Basic auth header (required by CF's "cf" UAA client)
 				expectedHTTPClient := metric.NewCFOauth2HTTPClient(
+					testLogger,
 					conf.MetricCollector.UAACreds.URL,
 					conf.MetricCollector.UAACreds.ClientID,
 					conf.MetricCollector.UAACreds.ClientSecret,
