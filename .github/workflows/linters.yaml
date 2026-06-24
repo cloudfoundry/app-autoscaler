@@ -55,7 +55,7 @@ jobs:
           }
           EOF
       - name: alex
-        uses: reviewdog/action-alex@b6673b547eeb6d430c87ef02dc3524bdf34e324d # v1
+        uses: reviewdog/action-alex@347481655add010a2ae302df34b57c9bcfa0d6e4 # v1
         with:
           reporter: github-pr-review
       - name: markdownlint
