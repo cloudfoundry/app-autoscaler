@@ -50,22 +50,18 @@ function cf_admin_login(){
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 	cf auth admin "$cf_admin_password"
-	return 0
 }
 
 # Login to CF with appropriate credentials for deployment operations
 # Uses admin on main branch, org-manager on PR branches
 function cf_deployment_login(){
 	step 'login to cf for deployment operations'
-	cf api "https://api.${system_domain}" --skip-ssl-validation
-
 	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
 		cf_admin_login
 	else
-		# PR branch: use org-manager user (password from GH secret)
+		cf api "https://api.${system_domain}" --skip-ssl-validation
 		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 	fi
-	return 0
 }
 
 function uaa_login(){
@@ -97,7 +93,6 @@ function get_autoscaler_service_instance_guids(){
 	cf curl "/v3/service_instances" | jq -r \
 		'.resources[] | select(.relationships.service_plan.data != null) |
 		select(.name | contains("autoscaler")) | .guid' || true
-	return 0
 }
 
 # Deletes all bindings for a service instance
@@ -110,7 +105,6 @@ function delete_service_instance_bindings(){
 		echo "     - deleting binding: ${binding_guid}"
 		cf curl -X DELETE "/v3/service_credential_bindings/${binding_guid}" || true
 	done
-	return 0
 }
 
 # Deletes a single service instance (with fallback to purge)
@@ -127,7 +121,6 @@ function delete_service_instance(){
 		echo "     - standard delete failed, attempting purge"
 		cf purge-service-instance -f "${instance_name}" || echo "     - purge failed for ${instance_name}"
 	fi
-	return 0
 }
 
 # Waits for all autoscaler service instances to be deleted
@@ -140,7 +133,7 @@ function wait_for_service_instance_deletion(){
 
 	for ((attempt=1; attempt<=max_iterations; attempt++)); do
 		local remaining
-		remaining=$(get_autoscaler_service_instance_guids | wc -l | tr -d ' ')
+		remaining=$(get_autoscaler_service_instance_guids | wc -l)
 
 		if [[ ${remaining} -eq 0 ]]; then
 			echo " - all service instances deleted"
@@ -193,7 +186,6 @@ function delete_service_broker(){
 	done
 
 	cf delete-service-broker -f "${broker_name}" || echo " - ERROR: Could not delete broker ${broker_name}" >&2
-	return 0
 }
 
 function cleanup_bosh_deployment(){
@@ -239,7 +231,6 @@ function cleanup_test_user(){
 	else
 		log "Test user does not exist or already deleted"
 	fi
-	return 0
 }
 
 function cleanup_apps(){
@@ -250,7 +241,12 @@ function cleanup_apps(){
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 	space_guid="$(cf space --guid "${autoscaler_space}")"
-	mtar_app="$(curl --header "Authorization: $(cf oauth-token)" "deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas"  | jq ". | .[] | .metadata | .id" -r)"
+	local mtas_response
+	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
+		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}")" || true
+	else
+		echo "Warning: Failed to fetch MTAs from deploy-service, skipping MTA cleanup"
+	fi
 
 	if [ -n "${mtar_app}" ]; then
 		set +e
@@ -322,11 +318,12 @@ function find_or_create_org(){
 function find_or_create_space(){
 	step "finding or creating space"
 	local space_name="$1"
+	local org_name="$2"
 	# Use v3 API instead of `cf spaces` — the latter only lists spaces where the
 	# current user has a space role, excluding spaces visible only via OrgManager role.
 	# Filter by org GUID to avoid matching same-named spaces in other orgs.
 	local org_guid
-	org_guid=$(cf org "$(cf target | awk '/^org:/{print $2}')" --guid 2>/dev/null || echo "")
+	org_guid=$(cf org "${org_name}" --guid 2>/dev/null || echo "")
 	if [[ -z "${org_guid}" ]] || cf curl "/v3/spaces?names=${space_name}&organization_guids=${org_guid}" 2>/dev/null \
 		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
 		cf create-space "${space_name}"
@@ -340,7 +337,7 @@ function cf_target(){
 	local space_name="$2"
 
 	find_or_create_org "${org_name}"
-	find_or_create_space "${space_name}"
+	find_or_create_space "${space_name}" "${org_name}"
 }
 
 function check_database_exists(){
