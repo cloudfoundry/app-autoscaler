@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 // CFOauth2HTTPClient is an OAuth2 HTTP client that uses Basic auth header
@@ -25,6 +26,7 @@ type CFOauth2HTTPClient struct {
 	password        string
 
 	httpClient *http.Client
+	logger     lager.Logger
 
 	mu        sync.RWMutex
 	token     string
@@ -39,7 +41,7 @@ type tokenResponse struct {
 
 // NewCFOauth2HTTPClient creates a new OAuth2 HTTP client that is compatible
 // with CF's "cf" UAA client by using Basic auth header for authentication.
-func NewCFOauth2HTTPClient(oauth2URL, clientID, clientSecret, username, password string, skipSSLValidation bool) *CFOauth2HTTPClient {
+func NewCFOauth2HTTPClient(logger lager.Logger, oauth2URL, clientID, clientSecret, username, password string, skipSSLValidation bool) *CFOauth2HTTPClient {
 	tokenURL := oauth2URL
 	if !strings.HasSuffix(tokenURL, "/oauth/token") {
 		tokenURL = strings.TrimSuffix(tokenURL, "/") + "/oauth/token"
@@ -52,6 +54,7 @@ func NewCFOauth2HTTPClient(oauth2URL, clientID, clientSecret, username, password
 		basicAuthHeader: basicAuthHeader,
 		username:        username,
 		password:        password,
+		logger:          logger.Session("cf-oauth2-client"),
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
@@ -82,6 +85,7 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 	// If we get 401, force refresh the token and retry once
 	if resp.StatusCode == http.StatusUnauthorized {
 		resp.Body.Close()
+		c.logger.Info("received-401-refreshing-token", lager.Data{"url": req.URL.Path})
 
 		token, err = c.forceRefreshToken(token)
 		if err != nil {
@@ -90,7 +94,11 @@ func (c *CFOauth2HTTPClient) Do(req *http.Request) (*http.Response, error) {
 
 		req.Header.Set("Authorization", "Bearer "+token)
 		// #nosec G704 -- URL comes from user-configured metrics endpoint
-		return c.httpClient.Do(req)
+		resp, err = c.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("retry request after token refresh failed: %w", err)
+		}
+		return resp, nil
 	}
 
 	return resp, nil
@@ -113,7 +121,9 @@ func (c *CFOauth2HTTPClient) getValidToken() (string, error) {
 // forceRefreshToken refreshes the token after a 401 response.
 // The rejectedToken parameter is the token that was rejected by the server.
 // If another goroutine has already refreshed the token (i.e., the cached token
-// differs from the rejected one), the new token is returned without re-fetching.
+// differs from the rejected one) and the new token is still valid, the new token
+// is returned without re-fetching. If the cached token has changed but is itself
+// invalid (empty or expired), a fresh token is fetched regardless.
 func (c *CFOauth2HTTPClient) forceRefreshToken(rejectedToken string) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -121,6 +131,7 @@ func (c *CFOauth2HTTPClient) forceRefreshToken(rejectedToken string) (string, er
 	// If the token has changed since we got the 401, another goroutine already refreshed it
 	if c.token != rejectedToken {
 		if c.token != "" && time.Now().Before(c.expiresAt) {
+			c.logger.Debug("token-already-refreshed-by-another-goroutine")
 			return c.token, nil
 		}
 		// Cached token is invalid, refresh anyway
@@ -165,7 +176,15 @@ func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		// Do not log response body — it may contain sensitive information (tokens, client IDs)
+		// Parse only non-sensitive error metadata from UAA response
+		var errResp struct {
+			Error       string `json:"error"`
+			Description string `json:"error_description"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
+		if errResp.Error != "" {
+			return "", fmt.Errorf("token request failed with status %d: %s - %s", resp.StatusCode, errResp.Error, errResp.Description)
+		}
 		return "", fmt.Errorf("token request failed with status %d", resp.StatusCode)
 	}
 
@@ -174,8 +193,15 @@ func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 		return "", fmt.Errorf("failed to decode token response: %w", err)
 	}
 
+	if tokenResp.AccessToken == "" {
+		return "", fmt.Errorf("token response contained empty access_token")
+	}
+	if tokenResp.ExpiresIn <= 0 {
+		return "", fmt.Errorf("token response contained invalid expires_in: %d", tokenResp.ExpiresIn)
+	}
+
 	c.token = tokenResp.AccessToken
-	// Calculate expiration time with 30 second buffer for clock skew,
+	// Refresh proactively before expiry (accounts for clock skew and network latency),
 	// but use at least half the token lifetime to avoid tight refresh loops
 	// for short-lived tokens (expires_in <= 30).
 	bufferSecs := 30
@@ -183,5 +209,6 @@ func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 		bufferSecs = tokenResp.ExpiresIn / 2
 	}
 	c.expiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn-bufferSecs) * time.Second)
+	c.logger.Info("token-refreshed", lager.Data{"expires_in": tokenResp.ExpiresIn})
 	return c.token, nil
 }

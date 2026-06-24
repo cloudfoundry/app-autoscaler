@@ -38,6 +38,7 @@ func (l *logCacheFetcherFactory) CreateFetcher(logger lager.Logger, conf config.
 			// which is required by CF's "cf" UAA client. The go-log-cache library sends
 			// credentials in the request body which doesn't work with the "cf" client.
 			oauth2HTTPClient := NewCFOauth2HTTPClient(
+				logger,
 				uaaCredsConfig.URL,
 				uaaCredsConfig.ClientID,
 				uaaCredsConfig.ClientSecret,

@@ -44,9 +44,9 @@
     },
     "uaa": {
       "url": "",
-      "client_id": "cf",
+      "client_id": "",
       "client_secret": "",
-      "grant_type": "password",
+      "grant_type": "",
       "username": "",
       "password": "",
       "skip_ssl_validation": false

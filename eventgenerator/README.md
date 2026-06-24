@@ -8,7 +8,7 @@ The Event Generator needs to authenticate with CF's Log Cache to read applicatio
 
 ### Client Credentials (default)
 
-Uses a UAA client with `client_credentials` grant. The client needs the `logs.admin` authority.
+Uses a UAA client with `client_credentials` grant. The client needs the `logs.admin` authority. This mode uses the standard go-log-cache OAuth2 client internally.
 
 ```yaml
 uaa:
@@ -36,7 +36,7 @@ uaa:
 ```
 
 **Required fields for password grant:**
-- `url` — UAA token endpoint
+- `url` — UAA base URL (e.g., `https://uaa.sys.example.com`); `/oauth/token` is appended automatically
 - `grant_type` — must be `password`
 - `username` — CF user with access to app metrics via Log Cache
 - `password` — user password
@@ -50,8 +50,8 @@ uaa:
 
 The password grant OAuth2 client:
 1. Authenticates using HTTP Basic auth header (`client_id:client_secret`) with username/password in the request body
-2. Caches the access token until 30 seconds before expiry
-3. Automatically refreshes on 401 responses with compare-and-swap to prevent thundering herd
+2. Caches the access token until shortly before expiry (30-second buffer, or half the token lifetime for short-lived tokens)
+3. Automatically refreshes on 401 responses with stale-token detection under lock to prevent thundering herd
 4. Retries once after a forced token refresh
 
 ## Configuration
