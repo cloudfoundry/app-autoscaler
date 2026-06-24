@@ -121,7 +121,11 @@ func (c *CFOauth2HTTPClient) forceRefreshToken(rejectedToken string) (string, er
 
 	// If the token has changed since we got the 401, another goroutine already refreshed it
 	if c.token != rejectedToken {
-		return c.token, nil
+		if c.token != "" && time.Now().Before(c.expiresAt) {
+			return c.token, nil
+		}
+		// Cached token is invalid, refresh anyway
+		return c.doRefreshToken()
 	}
 
 	return c.doRefreshToken()
