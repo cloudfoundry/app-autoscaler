@@ -201,6 +201,15 @@ func (c *Config) validateMetricCollector() error {
 	if c.MetricCollector.MetricCollectorURL == "" {
 		return fmt.Errorf("Configuration error: metricCollector.metric_collector_url is empty")
 	}
+	uaa := c.MetricCollector.UAACreds
+	if uaa.IsNotEmpty() && uaa.IsPasswordGrant() {
+		if uaa.Username == "" {
+			return fmt.Errorf("Configuration error: metricCollector.uaa.username is empty for password grant")
+		}
+		if uaa.Password == "" {
+			return fmt.Errorf("Configuration error: metricCollector.uaa.password is empty for password grant")
+		}
+	}
 	return nil
 }
 
