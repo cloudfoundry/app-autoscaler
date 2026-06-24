@@ -324,7 +324,10 @@ function find_or_create_space(){
 	local space_name="$1"
 	# Use v3 API instead of `cf spaces` — the latter only lists spaces where the
 	# current user has a space role, excluding spaces visible only via OrgManager role.
-	if cf curl "/v3/spaces?names=${space_name}" 2>/dev/null \
+	# Filter by org GUID to avoid matching same-named spaces in other orgs.
+	local org_guid
+	org_guid=$(cf org "$(cf target | awk '/^org:/{print $2}')" --guid 2>/dev/null || echo "")
+	if [[ -z "${org_guid}" ]] || cf curl "/v3/spaces?names=${space_name}&organization_guids=${org_guid}" 2>/dev/null \
 		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
 		cf create-space "${space_name}"
 	fi
