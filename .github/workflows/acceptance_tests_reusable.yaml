@@ -54,6 +54,22 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
 
+      - name: Cleanup previous deployment
+        shell: bash
+        run: |
+          make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
+
+      - name: Grant space roles after space recreation
+        shell: bash
+        run: |
+          source "${AUTOSCALER_DIR}/scripts/vars.source.sh"
+          source "${AUTOSCALER_DIR}/scripts/common.sh"
+          bbl_login
+          cf_admin_login
+          cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+          cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
+          cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
+
       - name: Provision DB
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" provision-db
