@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -166,8 +165,8 @@ func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("token request failed with status %d: %s", resp.StatusCode, string(body))
+		// Do not log response body — it may contain sensitive information (tokens, client IDs)
+		return "", fmt.Errorf("token request failed with status %d", resp.StatusCode)
 	}
 
 	var tokenResp tokenResponse
