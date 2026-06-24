@@ -44,6 +44,19 @@ validate_app() {
 	[[ -n "${APP_GUID}" ]] || { echo "ERROR: acceptance-tests app not found. Run: make mta-deploy"; exit 1; }
 
 	echo "  ✓ App found (GUID: ${APP_GUID:0:8})"
+
+	# Diagnostic: check app state and droplet
+	local app_state
+	app_state=$(cf curl "/v3/apps/${APP_GUID}" 2>/dev/null | jq -r '.state // "UNKNOWN"')
+	echo "  App state: ${app_state}"
+
+	local droplet
+	droplet=$(cf curl "/v3/apps/${APP_GUID}/droplets/current" 2>/dev/null | jq -r '.guid // empty')
+	if [[ -n "${droplet}" ]]; then
+		echo "  ✓ Current droplet: ${droplet:0:8}"
+	else
+		echo "  ✗ WARNING: No current droplet assigned"
+	fi
 }
 
 launch_task() {
@@ -55,13 +68,18 @@ launch_task() {
 
 	local guid
 	local cf_output
-	cf_output=$(cf curl "/v3/apps/${APP_GUID}/tasks" -X POST -d "$(jq -n --arg n "${task_name}" --arg c "${cmd}" \
-		'{name:$n,command:$c,memory_in_mb:2048,disk_in_mb:2048}')" 2>&1)
-	guid=$(echo "$cf_output" | jq -r '.guid // empty')
+	local payload
+	payload=$(jq -n --arg n "${task_name}" --arg c "${cmd}" \
+		'{name:$n,command:$c,memory_in_mb:2048,disk_in_mb:2048}')
+	cf_output=$(cf curl "/v3/apps/${APP_GUID}/tasks" -X POST -d "${payload}" 2>&1)
+	guid=$(echo "$cf_output" | jq -r '.guid // empty' 2>/dev/null)
 	if [[ -n "${guid}" ]]; then
 		echo "${guid}"
 	else
 		echo "ERROR: Failed to launch task for ${suite}" >&2
+		echo "  API response: ${cf_output}" >&2
+		echo "  APP_GUID: ${APP_GUID}" >&2
+		echo "  Payload: ${payload}" >&2
 		echo "FAILED"
 	fi
 }
@@ -176,6 +194,18 @@ main() {
 	bbl_login
 	cf_deployment_login
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
+
+	# On PR branches, ensure org-manager-user has SpaceDeveloper (may have been lost
+	# between deploy and test execution if another workflow recreated the space).
+	if [[ "${PR_NUMBER:-main}" != "main" ]]; then
+		step "Ensuring space roles for ${AUTOSCALER_ORG_MANAGER_USER}"
+		cf_admin_login
+		cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${autoscaler_org}" "${autoscaler_space}" SpaceDeveloper 2>/dev/null || true
+		# Switch back to org-manager-user for task operations
+		cf_deployment_login
+		cf target -o "${autoscaler_org}" -s "${autoscaler_space}"
+	fi
+
 	validate_app
 
 	# Launch tasks
