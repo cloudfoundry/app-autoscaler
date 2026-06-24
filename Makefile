@@ -508,7 +508,11 @@ scheduler.test: check-db_type scheduler.test-certificates init-db
 scheduler.test-certificates:
 	make --directory=scheduler test-certificates
 
-lint: lint-go lint-actions lint-markdown
+lint: lint-go lint-actions lint-markdown scheduler.lint
+
+.PHONY: scheduler.lint
+scheduler.lint:
+	@make --directory=scheduler check-format check-style check-deprecations
 .PHONY: lint-go
 lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\
