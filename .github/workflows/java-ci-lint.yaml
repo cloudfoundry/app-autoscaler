@@ -32,3 +32,6 @@ jobs:
       - name: Check Code Formatting
         run: |
           make --directory=scheduler check-format check-style
+      - name: Check for deprecated API usage
+        run: |
+          make --directory=scheduler check-deprecations
