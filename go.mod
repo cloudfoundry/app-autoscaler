@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/app-autoscaler/src/autoscaler
 
-go 1.25.5
+go 1.26.2
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
@@ -43,7 +43,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
-	go.yaml.in/yaml/v4 v4.0.0-rc.4
+	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/crypto v0.52.0
 	golang.org/x/exp v0.0.0-20260603202125-055de637280b
 	golang.org/x/time v0.15.0
