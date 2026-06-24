@@ -170,7 +170,7 @@ loggregator
 				})
 
 				It("returns an error", func() {
-					Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
+					Expect(err).To(MatchError(MatchRegexp("(yaml: |go-yaml ).*")))
 				})
 			})
 			Context("with valid yaml", func() {
