@@ -41,6 +41,15 @@
       "back_off_initial_interval": "5m",
       "back_off_max_interval": "120m",
       "consecutive_failure_count": 3
+    },
+    "uaa": {
+      "url": "",
+      "client_id": "cf",
+      "client_secret": "",
+      "grant_type": "password",
+      "username": "",
+      "password": "",
+      "skip_ssl_validation": false
     }
   }
 }
