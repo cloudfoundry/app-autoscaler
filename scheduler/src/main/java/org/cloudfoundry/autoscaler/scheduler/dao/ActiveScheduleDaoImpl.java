@@ -9,12 +9,12 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.support.JdbcDaoSupport;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @DependsOnDatabaseInitialization
 @Repository("activeScheduleDao")
-public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveScheduleDao {
+public class ActiveScheduleDaoImpl implements ActiveScheduleDao {
 
   private static final String TABLE_NAME = "app_scaling_active_schedule";
 
@@ -34,20 +34,18 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
   private static final String SELECT_BY_APPID_SQL =
       "SELECT * FROM " + TABLE_NAME + " WHERE app_id=?";
 
+  private JdbcTemplate jdbcTemplate;
+
   @Resource(name = "dataSource")
   private void setupDataSource(DataSource dataSource) {
-    setDataSource(dataSource);
+    jdbcTemplate = new JdbcTemplate(dataSource);
   }
 
   @Override
   public ActiveScheduleEntity find(Long id) {
     try {
-      return getJdbcTemplate()
-          .queryForObject(
-              SELECT_SQL,
-              new Object[] {id},
-              new int[] {SqlTypes.BIGINT},
-              new ActiveScheduleEntity());
+      return jdbcTemplate.queryForObject(
+          SELECT_SQL, new Object[] {id}, new int[] {SqlTypes.BIGINT}, new ActiveScheduleEntity());
     } catch (EmptyResultDataAccessException ex) {
       return null;
     } catch (DataAccessException e) {
@@ -67,7 +65,7 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
           activeScheduleEntity.getInitialMinInstanceCount()
         };
     try {
-      getJdbcTemplate().update(INSERT_SQL, objects);
+      jdbcTemplate.update(INSERT_SQL, objects);
     } catch (DataAccessException e) {
       throw new DatabaseValidationException("Create failed", e);
     }
@@ -76,7 +74,7 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
   @Override
   public int delete(Long id, Long startJobIdentifier) {
     try {
-      return getJdbcTemplate().update(DELETE_SQL, id, startJobIdentifier);
+      return jdbcTemplate.update(DELETE_SQL, id, startJobIdentifier);
 
     } catch (DataAccessException e) {
       throw new DatabaseValidationException("Delete failed", e);
@@ -86,7 +84,7 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
   @Override
   public int deleteActiveSchedulesByAppId(String appId) {
     try {
-      return getJdbcTemplate().update(DELETE_BY_APPID_SQL, appId);
+      return jdbcTemplate.update(DELETE_BY_APPID_SQL, appId);
     } catch (DataAccessException e) {
       throw new DatabaseValidationException(
           "Delete active schedules by Application Id:" + appId + " failed", e);
@@ -96,12 +94,11 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
   @Override
   public List<ActiveScheduleEntity> findByAppId(String appId) {
     try {
-      return getJdbcTemplate()
-          .query(
-              SELECT_BY_APPID_SQL,
-              new Object[] {appId},
-              new int[] {SqlTypes.VARCHAR},
-              new ActiveScheduleEntity());
+      return jdbcTemplate.query(
+          SELECT_BY_APPID_SQL,
+          new Object[] {appId},
+          new int[] {SqlTypes.VARCHAR},
+          new ActiveScheduleEntity());
     } catch (DataAccessException e) {
       throw new DatabaseValidationException(
           "Select active schedules by Application Id:" + appId + " failed", e);

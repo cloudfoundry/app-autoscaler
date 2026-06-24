@@ -30,7 +30,10 @@ import tools.jackson.databind.annotation.JsonSerialize;
     query = RecurringScheduleEntity.jpql_findDistinctAppIdAndGuidFromRecurringSchedule)
 public class RecurringScheduleEntity extends ScheduleEntity {
 
-  @Schema(example = DateHelper.TIME_FORMAT, type = "java.lang.String", required = true)
+  @Schema(
+      example = DateHelper.TIME_FORMAT,
+      type = "java.lang.String",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonDeserialize(using = TimeDeserializer.class)
   @JsonSerialize(using = TimeSerializer.class)
   @NotNull
@@ -38,7 +41,10 @@ public class RecurringScheduleEntity extends ScheduleEntity {
   @JsonProperty(value = "start_time")
   private LocalTime startTime;
 
-  @Schema(example = DateHelper.TIME_FORMAT, type = "java.lang.String", required = true)
+  @Schema(
+      example = DateHelper.TIME_FORMAT,
+      type = "java.lang.String",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonDeserialize(using = TimeDeserializer.class)
   @JsonSerialize(using = TimeSerializer.class)
   @NotNull
