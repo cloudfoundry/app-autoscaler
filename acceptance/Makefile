@@ -20,7 +20,8 @@ export GOWORK := off
 
 .PHONY: clean
 clean:
-	rm --recursive --force './vendor'
+	rm --recursive --force './build' './vendor' './ginkgo_v2' './results'
+	@make --directory='./assets/app/go_app' clean
 
 
 .PHONY: go-mod-tidy
