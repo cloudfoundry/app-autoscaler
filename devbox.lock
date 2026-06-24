@@ -1531,7 +1531,7 @@
     },
     "mysql@10.6.12": {
       "last_modified": "2023-02-24T09:01:09Z",
-      "plugin_version": "0.0.4",
+      "plugin_version": "0.0.5",
       "resolved": "github:NixOS/nixpkgs/7d0ed7f2e5aea07ab22ccb338d27fbe347ed2f11#mysql",
       "source": "devbox-search",
       "version": "10.6.12"
@@ -1915,7 +1915,7 @@
     },
     "python@3.14.4": {
       "last_modified": "2026-05-21T08:15:18Z",
-      "plugin_version": "0.0.4",
+      "plugin_version": "0.0.5",
       "resolved": "github:NixOS/nixpkgs/4a29d733e8a7d5b824c3d8c958a946a9867b3eb2#python314",
       "source": "devbox-search",
       "version": "3.14.4",
