@@ -309,8 +309,10 @@ function unset_vars() {
 function find_or_create_org(){
 	step "finding or creating org"
 	local org_name="$1"
-	if ! cf orgs | grep --quiet --regexp="^${org_name}$"
-	then
+	# Use v3 API instead of `cf orgs` — the latter only lists orgs where the
+	# current user has a direct membership, excluding orgs visible via OrgManager role.
+	if cf curl "/v3/organizations?names=${org_name}" 2>/dev/null \
+		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
 		cf create-org "${org_name}"
 	fi
 	echo "targeting org ${org_name}"
@@ -320,8 +322,10 @@ function find_or_create_org(){
 function find_or_create_space(){
 	step "finding or creating space"
 	local space_name="$1"
-	if ! cf spaces | grep --quiet --regexp="^${space_name}$"
-	then
+	# Use v3 API instead of `cf spaces` — the latter only lists spaces where the
+	# current user has a space role, excluding spaces visible only via OrgManager role.
+	if cf curl "/v3/spaces?names=${space_name}" 2>/dev/null \
+		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
 		cf create-space "${space_name}"
 	fi
 	echo "targeting space ${space_name}"
