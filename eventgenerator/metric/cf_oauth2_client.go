@@ -175,7 +175,13 @@ func (c *CFOauth2HTTPClient) doRefreshToken() (string, error) {
 	}
 
 	c.token = tokenResp.AccessToken
-	// Calculate expiration time with 30 second buffer for clock skew
-	c.expiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn-30) * time.Second)
+	// Calculate expiration time with 30 second buffer for clock skew,
+	// but use at least half the token lifetime to avoid tight refresh loops
+	// for short-lived tokens (expires_in <= 30).
+	bufferSecs := 30
+	if tokenResp.ExpiresIn <= bufferSecs {
+		bufferSecs = tokenResp.ExpiresIn / 2
+	}
+	c.expiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn-bufferSecs) * time.Second)
 	return c.token, nil
 }
