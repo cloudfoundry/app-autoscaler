@@ -41,8 +41,11 @@ function create_org_manager_user() {
 function main() {
 	bbl_login
 	cf_admin_login
-	create_org_manager_user
-	return 0
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+	local repo
+	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
+	create_cf_test_user "${repo}" "${AUTOSCALER_ORG_MANAGER_USER}" AUTOSCALER_ORG_MANAGER_USER AUTOSCALER_ORG_MANAGER_PASSWORD "Creating org manager CF user"
+	create_cf_test_user "${repo}" "${AUTOSCALER_OTHER_USER}" AUTOSCALER_OTHER_USER AUTOSCALER_OTHER_USER_PASSWORD "Creating other-user for acceptance tests"
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
