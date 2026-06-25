@@ -34,7 +34,7 @@ function create_org_manager_user() {
 
 function main() {
 	bbl_login
-	cf_admin_login
+	cf_login
 	create_org_manager_user
 	return 0
 }
