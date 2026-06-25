@@ -21,6 +21,9 @@ new_cmd = (
     "/acceptance-tests/build/acceptance/data.zip').extractall('build/acceptance/')\\\"\""
 )
 
+GO_SBOM_MODULE = "apiserver"
+CYCLONEDX_GOMOD_CMD = "cyclonedx-gomod mod -output bom-mta.xml -output-version 1.4 ."
+
 with open("mta.tpl.yaml") as f:
     raw = f.read()
 
@@ -31,9 +34,11 @@ raw = raw.replace("MTA_VERSION", version)
 data = yaml.safe_load(raw)
 
 for module in data.get("modules", []):
-    if module.get("name") == "acceptance-tests":
+    name = module.get("name")
+    if name == "acceptance-tests":
         module["build-parameters"]["commands"] = [new_cmd]
-        break
+    elif name == GO_SBOM_MODULE:
+        module["build-parameters"]["commands"].append(CYCLONEDX_GOMOD_CMD)
 
 with open("mta.yaml", "w") as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=10000)

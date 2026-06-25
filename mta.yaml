@@ -53,6 +53,7 @@ modules:
     builder: custom
     commands:
     - echo "ignoring scheduler and dbtasks" > /dev/null
+    - cyclonedx-gomod mod -output bom-mta.xml -output-version 1.4 .
     ignore:
     - acceptance
     - build
