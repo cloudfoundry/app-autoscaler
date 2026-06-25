@@ -242,7 +242,7 @@ function cleanup_apps(){
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 	space_guid="$(cf space --guid "${autoscaler_space}")"
-	mtar_app="$(curl --header "Authorization: $(cf oauth-token)" "deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas"  | jq ". | .[] | .metadata | .id" -r)"
+	mtar_app="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas"  | jq ". | .[] | .metadata | .id" -r)"
 
 	if [ -n "${mtar_app}" ]; then
 		set +e
