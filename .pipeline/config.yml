@@ -1,0 +1,24 @@
+general:
+  buildTool: 'mta'
+  productiveBranch: 'main'
+  vaultPath: 'piper/PIPELINE-GROUP-1724'
+  vaultBasePath: 'piper/PIPELINE-GROUP-1724'
+  vaultPipelineName: 'app-autoscaler'
+  vaultServerUrl: 'https://vault.tools.sap'
+  vaultNamespace: 'ies/hyperspace/pipelines'
+  nativeBuild: true
+stages:
+  Release:
+    sapDownloadArtifact: false
+  Post:
+    # Secret rotation handled by Hyperspace Portal, enabling it back might cause unintended behavior
+    vaultRotateSecretId: false
+steps:
+  mtaBuild:
+    mtaBuildTool: cloudMbt
+    mtarGroup: 'com.sap.hyperspace'
+  sapCallStagingService:
+    url: 'https://staging.repositories.cloud.sap/stage/api'
+    profile: 'group-1724-default'
+  sapCumulusUpload:
+    pipelineId: '0a0a9ac2-ed98-4dc1-a0de-79bcc34874ad'
