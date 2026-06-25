@@ -249,7 +249,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - bash -c "curl -fsSL -o /tmp/upstream.mtar https://github.com/cloudfoundry/app-autoscaler/releases/download/v15.16.0/app-autoscaler-release-v15.16.0.mtar && unzip -o /tmp/upstream.mtar 'acceptance-tests/build/acceptance/data.zip' -d /tmp/upstream-mtar && mkdir -p build/acceptance && unzip -o /tmp/upstream-mtar/acceptance-tests/build/acceptance/data.zip -d build/acceptance/"
+        - bash -c "curl -fsSL -o /tmp/upstream.mtar https://github.com/cloudfoundry/app-autoscaler/releases/download/v15.16.0/app-autoscaler-release-v15.16.0.mtar && python3 -c \"import zipfile; zipfile.ZipFile('/tmp/upstream.mtar').extract('acceptance-tests/build/acceptance/data.zip', '/tmp/upstream-mtar')\" && mkdir -p build/acceptance && python3 -c \"import zipfile; zipfile.ZipFile('/tmp/upstream-mtar/acceptance-tests/build/acceptance/data.zip').extractall('build/acceptance/')\""
       build-result: build/acceptance
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
