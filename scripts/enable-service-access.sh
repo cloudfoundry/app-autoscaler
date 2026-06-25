@@ -32,6 +32,14 @@ echo "Enabling service access (admin)"
 echo "${SEPARATOR}"
 echo "Service: ${SERVICE_NAME}"
 echo ""
+# Validate service exists in marketplace
+echo "Validating service '${SERVICE_NAME}' exists..."
+if ! cf service-brokers | grep -q "${SERVICE_NAME}"; then
+  echo "ERROR: Service '${SERVICE_NAME}' not found in registered brokers" >&2
+  echo "       Available brokers:" >&2
+  cf service-brokers >&2
+  exit 1
+fi
 
 # Enable service access globally
 echo "Enabling global service access for '${SERVICE_NAME}'..."
