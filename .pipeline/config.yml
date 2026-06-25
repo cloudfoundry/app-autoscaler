@@ -16,7 +16,7 @@ stages:
 steps:
   mtaBuild:
     mtaBuildTool: cloudMbt
-    mtarGroup: 'com.sap.hyperspace'
+    mtarGroup: 'com.sap.tools.github.autoscaler'
   sapCallStagingService:
     url: 'https://staging.repositories.cloud.sap/stage/api'
     profile: 'group-1724-default'
