@@ -162,13 +162,19 @@ function cleanup_apps(){
 	# Don't use cf_target here — cleanup must not create the space if it doesn't exist.
 	# If we create the space as admin, org-manager-user never becomes the creator and
 	# loses direct space role visibility, breaking subsequent find_or_create_space calls.
-	cf target -o "${autoscaler_org}" 2>/dev/null || true
-	if ! cf target -s "${autoscaler_space}" 2>/dev/null; then
+	# Use v3 API for existence check — `cf target -s` requires a direct space role,
+	# but OrgManager (admin or org-manager-user) can query /v3/spaces without one.
+	local org_guid
+	org_guid=$(cf org "${autoscaler_org}" --guid 2>/dev/null || echo "")
+	if [[ -z "${org_guid}" ]] || ! cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>/dev/null \
+		| jq -e '.pagination.total_results > 0' >/dev/null 2>&1; then
 		echo "Space ${autoscaler_space} does not exist, nothing to clean up"
 		return 0
 	fi
-
-	space_guid="$(cf space --guid "${autoscaler_space}")"
+	# Get space_guid via v3 API — avoids requiring a direct space role (which OrgManager lacks).
+	space_guid=$(cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>/dev/null \
+		| jq -r '.resources[0].guid')
+	cf target -o "${autoscaler_org}" 2>/dev/null || true
 	local mtas_response
 	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
 		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}")" || true
