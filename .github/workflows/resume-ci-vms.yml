@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '30 4 * * 1-5'  # 04:30 UTC / 05:30 CET / 06:30 CEST, Monday to Friday
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY:
+        required: true
+      BBL_SSH_KEY:
+        required: true
 
 jobs:
   resume:
