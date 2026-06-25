@@ -249,8 +249,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "Building acceptance tests for version ${version}"
-        - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
+        - bash -c "curl -fsSL -o /tmp/upstream.mtar https://github.com/cloudfoundry/app-autoscaler/releases/download/v${version}/app-autoscaler-release-v${version}.mtar && unzip -o /tmp/upstream.mtar 'acceptance-tests/build/acceptance/data.zip' -d /tmp/upstream-mtar && mkdir -p build/acceptance && unzip -o /tmp/upstream-mtar/acceptance-tests/build/acceptance/data.zip -d build/acceptance/"
       build-result: build/acceptance
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
