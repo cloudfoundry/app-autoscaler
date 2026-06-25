@@ -62,8 +62,7 @@ jobs:
         env:
           UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
         run: |
-          version="${UPSTREAM_TAG#v}"
-          sed "/^# /d" mta.tpl.yaml | sed "s/MTA_VERSION/${version}/" > mta.yaml
+          uv run .github/scripts/generate-mta-yaml.py "${UPSTREAM_TAG#v}"
           git add -f mta.yaml
           git diff --cached --quiet || git commit -m "chore: generate mta.yaml for release ${UPSTREAM_TAG}"
 
