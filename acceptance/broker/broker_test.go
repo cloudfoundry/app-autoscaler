@@ -352,19 +352,21 @@ type ServicePlans []ServicePlan
 type BoolOrInt bool
 
 func (b *BoolOrInt) UnmarshalJSON(data []byte) error {
-	var boolVal bool
-	if err := json.Unmarshal(data, &boolVal); err == nil {
+	if len(data) > 0 && (data[0] == 't' || data[0] == 'f') {
+		var boolVal bool
+		if err := json.Unmarshal(data, &boolVal); err != nil {
+			return err
+		}
 		*b = BoolOrInt(boolVal)
 		return nil
 	}
 
 	var intVal int
-	if err := json.Unmarshal(data, &intVal); err == nil {
-		*b = BoolOrInt(intVal != 0)
-		return nil
+	if err := json.Unmarshal(data, &intVal); err != nil {
+		return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
 	}
-
-	return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
+	*b = BoolOrInt(intVal != 0)
+	return nil
 }
 
 type (

@@ -36,12 +36,10 @@ func getSpaceGuidByName(spaceName string, timeout time.Duration) string {
 
 func GetTestSpaces(orgGuid string, cfg *config.Config) []string {
 	rawSpaces := GetRawSpaces(orgGuid, cfg.DefaultTimeoutDuration())
-
-	var spaceNames []string
-	for _, space := range rawSpaces {
-		if strings.HasPrefix(space.Name, cfg.NamePrefix) {
-			spaceNames = append(spaceNames, space.Name)
-		}
+	filtered := filterTestSpaces(rawSpaces, cfg.NamePrefix)
+	spaceNames := make([]string, len(filtered))
+	for i, space := range filtered {
+		spaceNames[i] = space.Name
 	}
 	ginkgo.GinkgoWriter.Printf("\nGot spaces: %s\n", spaceNames)
 	return spaceNames
