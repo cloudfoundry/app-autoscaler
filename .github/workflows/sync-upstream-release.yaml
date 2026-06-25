@@ -17,7 +17,7 @@ jobs:
         id: check
         env:
           GITHUB_COM_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_COM_TOKEN }}
-          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
           GH_HOST: github.tools.sap
         run: |
           upstream_tag=$(GH_TOKEN="${GITHUB_COM_TOKEN}" GH_HOST="github.com" gh release view --repo cloudfoundry/app-autoscaler --json tagName --jq '.tagName')
