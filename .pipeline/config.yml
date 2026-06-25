@@ -17,6 +17,7 @@ steps:
   mtaBuild:
     mtaBuildTool: cloudMbt
     mtarGroup: 'com.sap.tools.github.autoscaler'
+    dockerImage: devxci/mbtci-java21-node22:latest@sha256:1f76a8031a9d1fcec4ff0c71cbcd648768c76712b2aa304356ffd212b820b477
   sapCallStagingService:
     url: 'https://staging.repositories.cloud.sap/stage/api'
     profile: 'group-1724-default'
