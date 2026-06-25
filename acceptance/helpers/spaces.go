@@ -25,21 +25,34 @@ type Space struct {
 
 func GetSpaceGuid(cfg *config.Config, orgGuid string) string {
 	testSpace := GetTestSpaces(orgGuid, cfg)[0]
-	spaceGuidByte := cf.Cf("space", testSpace, "--guid").Wait(cfg.DefaultTimeoutDuration())
-	return strings.TrimSuffix(string(spaceGuidByte.Out.Contents()), "\n")
+	return getSpaceGuidByName(testSpace, cfg.DefaultTimeoutDuration())
+}
+
+func getSpaceGuidByName(spaceName string, timeout time.Duration) string {
+	spaceGuidCmd := cf.Cf("space", spaceName, "--guid").Wait(timeout)
+	Expect(spaceGuidCmd).To(Exit(0), fmt.Sprintf("failed to get GUID for space %s: %s", spaceName, string(spaceGuidCmd.Err.Contents())))
+	return strings.TrimSuffix(string(spaceGuidCmd.Out.Contents()), "\n")
 }
 
 func GetTestSpaces(orgGuid string, cfg *config.Config) []string {
 	rawSpaces := GetRawSpaces(orgGuid, cfg.DefaultTimeoutDuration())
-
-	var spaceNames []string
-	for _, space := range rawSpaces {
-		if strings.HasPrefix(space.Name, cfg.NamePrefix) {
-			spaceNames = append(spaceNames, space.Name)
-		}
+	filtered := filterTestSpaces(rawSpaces, cfg.NamePrefix)
+	spaceNames := make([]string, len(filtered))
+	for i, space := range filtered {
+		spaceNames[i] = space.Name
 	}
 	ginkgo.GinkgoWriter.Printf("\nGot spaces: %s\n", spaceNames)
 	return spaceNames
+}
+
+func filterTestSpaces(spaces []Space, namePrefix string) []Space {
+	var result []Space
+	for _, space := range spaces {
+		if strings.HasPrefix(space.Name, namePrefix) {
+			result = append(result, space)
+		}
+	}
+	return result
 }
 
 func GetRawSpaces(orgGuid string, timeout time.Duration) []Space {
