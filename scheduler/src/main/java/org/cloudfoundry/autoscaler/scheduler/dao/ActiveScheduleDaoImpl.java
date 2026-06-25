@@ -6,11 +6,13 @@ import javax.sql.DataSource;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.hibernate.type.SqlTypes;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Repository;
 
+@DependsOnDatabaseInitialization
 @Repository("activeScheduleDao")
 public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveScheduleDao {
 

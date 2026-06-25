@@ -1,51 +1,51 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "act@0.2.88": {
-      "last_modified": "2026-05-21T08:15:18Z",
-      "resolved": "github:NixOS/nixpkgs/4a29d733e8a7d5b824c3d8c958a946a9867b3eb2#act",
+    "act@0.2.89": {
+      "last_modified": "2026-06-06T02:11:57Z",
+      "resolved": "github:NixOS/nixpkgs/f3ce60d5372cbb1490033766bdd4748dc0128e86#act",
       "source": "devbox-search",
-      "version": "0.2.88",
+      "version": "0.2.89",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/fmhnq6fn426v0crip0mkbqns2lv9251j-act-0.2.88",
+              "path": "/nix/store/h4dq1lrf47b35lpbnp2faqpxyicbn29d-act-0.2.89",
               "default": true
             }
           ],
-          "store_path": "/nix/store/fmhnq6fn426v0crip0mkbqns2lv9251j-act-0.2.88"
+          "store_path": "/nix/store/h4dq1lrf47b35lpbnp2faqpxyicbn29d-act-0.2.89"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pdp7yd81ryadh5whbcmdnq87l732jc7b-act-0.2.88",
+              "path": "/nix/store/yciwf350knkkrs27ga35qs8gki836dql-act-0.2.89",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pdp7yd81ryadh5whbcmdnq87l732jc7b-act-0.2.88"
+          "store_path": "/nix/store/yciwf350knkkrs27ga35qs8gki836dql-act-0.2.89"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/cxphgb801n8smiqy4a64bnq6fz0dggyc-act-0.2.88",
+              "path": "/nix/store/zfkd6hwj5d6db4ljlj0d80ai1mxs5f56-act-0.2.89",
               "default": true
             }
           ],
-          "store_path": "/nix/store/cxphgb801n8smiqy4a64bnq6fz0dggyc-act-0.2.88"
+          "store_path": "/nix/store/zfkd6hwj5d6db4ljlj0d80ai1mxs5f56-act-0.2.89"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1h0krxwvbs1s4vpvdlv9snlpsylzwdka-act-0.2.88",
+              "path": "/nix/store/q9wh1f9ygjvwpa9k1lyb9jy05nynxdna-act-0.2.89",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1h0krxwvbs1s4vpvdlv9snlpsylzwdka-act-0.2.88"
+          "store_path": "/nix/store/q9wh1f9ygjvwpa9k1lyb9jy05nynxdna-act-0.2.89"
         }
       }
     },
@@ -561,51 +561,51 @@
         }
       }
     },
-    "fly@8.2.2": {
-      "last_modified": "2026-05-27T10:28:13Z",
-      "resolved": "github:NixOS/nixpkgs/4100e830e085863741bc69b156ec4ccd53ab5be0#fly",
+    "fly@8.2.3": {
+      "last_modified": "2026-06-05T19:07:58Z",
+      "resolved": "github:NixOS/nixpkgs/891eaa77f0eed53352194677991bd30978f9b0ad#fly",
       "source": "devbox-search",
-      "version": "8.2.2",
+      "version": "8.2.3",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/zrnzs7wd601pal9yinsi46nha5wp3iqd-fly-8.2.2",
+              "path": "/nix/store/yjf8rqay7q11issdl9k4m77wkwgpp2pn-fly-8.2.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/zrnzs7wd601pal9yinsi46nha5wp3iqd-fly-8.2.2"
+          "store_path": "/nix/store/yjf8rqay7q11issdl9k4m77wkwgpp2pn-fly-8.2.3"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/svlfvyqghp2f4ih5a7wmya80nwfal266-fly-8.2.2",
+              "path": "/nix/store/z05b9kjgn3zzw1wzbiys8wk9m0a18vab-fly-8.2.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/svlfvyqghp2f4ih5a7wmya80nwfal266-fly-8.2.2"
+          "store_path": "/nix/store/z05b9kjgn3zzw1wzbiys8wk9m0a18vab-fly-8.2.3"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qvgq0kkf0jfvvqgziw6jqavdv1nxjdy2-fly-8.2.2",
+              "path": "/nix/store/31i3wb99x8ddzrj5fx4ryiai8cxdak1j-fly-8.2.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qvgq0kkf0jfvvqgziw6jqavdv1nxjdy2-fly-8.2.2"
+          "store_path": "/nix/store/31i3wb99x8ddzrj5fx4ryiai8cxdak1j-fly-8.2.3"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ympfdgsg7zxdmy2pdg1gs04bc4ig0ir9-fly-8.2.2",
+              "path": "/nix/store/jr4il9bxf4prbr94qv978pfc28drys2f-fly-8.2.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ympfdgsg7zxdmy2pdg1gs04bc4ig0ir9-fly-8.2.2"
+          "store_path": "/nix/store/jr4il9bxf4prbr94qv978pfc28drys2f-fly-8.2.3"
         }
       }
     },

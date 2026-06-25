@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.usertype.UserType;
 
 /**
@@ -20,10 +21,7 @@ public class BitsetUserType implements UserType<int[]> {
 
   @Override
   public int[] nullSafeGet(
-      ResultSet resultSet,
-      int columnIndex,
-      SharedSessionContractImplementor sharedSessionContractImplementor,
-      Object o)
+      ResultSet resultSet, int columnIndex, WrapperOptions sharedSessionContractImplementor)
       throws SQLException {
     int value = resultSet.getInt(columnIndex);
 

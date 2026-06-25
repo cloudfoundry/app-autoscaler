@@ -4,10 +4,12 @@ import jakarta.annotation.Resource;
 import java.util.List;
 import javax.sql.DataSource;
 import org.cloudfoundry.autoscaler.scheduler.entity.PolicyJsonEntity;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+@DependsOnDatabaseInitialization
 @Repository("policyJsonDao")
 public class PolicyJsonDaoImpl extends JdbcDaoSupport implements PolicyJsonDao {
 

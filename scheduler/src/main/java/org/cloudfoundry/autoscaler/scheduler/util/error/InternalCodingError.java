@@ -1,5 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.util.error;
 
+import java.io.Serial;
+
 /**
  * An exception thrown when coding errors that can't be avoided by design occur at runtime.
  *
@@ -11,7 +13,7 @@ package org.cloudfoundry.autoscaler.scheduler.util.error;
  */
 public class InternalCodingError extends RuntimeException {
 
-  private static final long serialVersionUID = 1L;
+  @Serial private static final long serialVersionUID = 1L;
 
   /**
    * @param message - the message indicating the application coding problem that has occurred
