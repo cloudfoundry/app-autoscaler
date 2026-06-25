@@ -2350,51 +2350,51 @@
         }
       }
     },
-    "yq-go@4.53.2": {
-      "last_modified": "2026-05-21T08:15:18Z",
-      "resolved": "github:NixOS/nixpkgs/4a29d733e8a7d5b824c3d8c958a946a9867b3eb2#yq-go",
+    "yq-go@4.53.3": {
+      "last_modified": "2026-06-14T16:21:05Z",
+      "resolved": "github:NixOS/nixpkgs/9eac87a12312b8f60dd52e1c6e1a265f6fc7f5fc#yq-go",
       "source": "devbox-search",
-      "version": "4.53.2",
+      "version": "4.53.3",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/6fgh5bnsfx5abbdvr1ncd6r11yrm5cw2-yq-go-4.53.2",
+              "path": "/nix/store/ra25hniwf2q0wgk8qsngzinjjy0d2zfk-yq-go-4.53.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/6fgh5bnsfx5abbdvr1ncd6r11yrm5cw2-yq-go-4.53.2"
+          "store_path": "/nix/store/ra25hniwf2q0wgk8qsngzinjjy0d2zfk-yq-go-4.53.3"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/3hsajqhhm8m9nx306jh09m1qz4idwmxk-yq-go-4.53.2",
+              "path": "/nix/store/44mvgs3i53zr64y7mffxynd12z5r1rx9-yq-go-4.53.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/3hsajqhhm8m9nx306jh09m1qz4idwmxk-yq-go-4.53.2"
+          "store_path": "/nix/store/44mvgs3i53zr64y7mffxynd12z5r1rx9-yq-go-4.53.3"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nyb7m5nd3qpx4y50sd8l86796hglwrfg-yq-go-4.53.2",
+              "path": "/nix/store/2i52idac46kyqia6630pjc09nad8jvsc-yq-go-4.53.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nyb7m5nd3qpx4y50sd8l86796hglwrfg-yq-go-4.53.2"
+          "store_path": "/nix/store/2i52idac46kyqia6630pjc09nad8jvsc-yq-go-4.53.3"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pibhm258wp416plqdaxym4z6lis8ksla-yq-go-4.53.2",
+              "path": "/nix/store/jrkwx3ylr1aid4c3kpjcpwrsv2l5baj5-yq-go-4.53.3",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pibhm258wp416plqdaxym4z6lis8ksla-yq-go-4.53.2"
+          "store_path": "/nix/store/jrkwx3ylr1aid4c3kpjcpwrsv2l5baj5-yq-go-4.53.3"
         }
       }
     }
