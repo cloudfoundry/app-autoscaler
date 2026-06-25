@@ -156,9 +156,14 @@ function cleanup_apps(){
 		cf delete-space -f "${AUTOSCALER_SPACE}"
 	fi
 
-	if cf orgs | grep --quiet --regexp="^${AUTOSCALER_ORG}$"
-	then
-		cf delete-org -f "${AUTOSCALER_ORG}"
+	# Only delete the org if this deployment owns it (i.e. the org was created for this deployment).
+	# When deploying into a shared org (AUTOSCALER_ORG != DEPLOYMENT_NAME), leave the org intact.
+	# Context: multiple PRs share SAP_autoscaler_tests_OSS — if one PR's cleanup deletes it,
+	# all other running PR deployments lose their space and service broker registrations.
+	if [[ "${AUTOSCALER_ORG:-}" == "${DEPLOYMENT_NAME:-}" ]]; then
+		if cf orgs | grep --quiet --regexp="^${AUTOSCALER_ORG}$"; then
+			cf delete-org -f "${AUTOSCALER_ORG}"
+		fi
 	fi
 }
 
