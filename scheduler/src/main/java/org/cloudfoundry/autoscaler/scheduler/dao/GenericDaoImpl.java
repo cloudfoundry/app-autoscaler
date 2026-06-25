@@ -1,12 +1,12 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
+import org.hibernate.Session;
 
 class GenericDaoImpl<T> implements GenericDao<T> {
 
-  @PersistenceContext EntityManager entityManager;
+  @PersistenceContext Session entityManager;
   private Class<T> entityClass;
 
   GenericDaoImpl() {}
