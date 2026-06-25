@@ -53,7 +53,7 @@ jobs:
           git config user.name "aas-serviceuser"
 
           git remote add upstream https://github.com/cloudfoundry/app-autoscaler.git
-          git fetch upstream --tags
+          git fetch upstream --tags --force
 
           git merge "${UPSTREAM_TAG}" --no-edit -m "chore: merge upstream release ${UPSTREAM_TAG}"
 
