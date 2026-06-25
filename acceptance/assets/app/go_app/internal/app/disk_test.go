@@ -238,6 +238,36 @@ var _ = Describe("DefaultDiskOccupier", func() {
 	})
 })
 
+var _ = Describe("Disk write timing", func() {
+	// This test validates that writing 650MB (the amount used by acceptance tests)
+	// completes well within the 30s HTTP curl timeout used by StartDiskUsage.
+	// On CI (GitHub Actions) I/O can be slower, so we use FlakeAttempts and a generous
+	// local ceiling of 25s (leaving 5s headroom vs the 30s curl timeout).
+	Context("writing 650MB to disk", FlakeAttempts(3), func() {
+		It("completes within 25 seconds", func() {
+			filePath := filepath.Join(GinkgoT().TempDir(), "disk-timing-test")
+			occupier := app.NewDefaultDiskOccupier(filePath)
+			DeferCleanup(occupier.Stop)
+
+			spaceInBytes := int64(650) * 1000 * 1000 // matches acceptance test: 650 * 1000 * 1000
+
+			start := time.Now()
+			err := occupier.Occupy(spaceInBytes, 1*time.Minute)
+			elapsed := time.Since(start)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(elapsed).To(BeNumerically("<", 25*time.Second),
+				"writing 650MB took %v which exceeds the 25s budget (30s curl timeout minus 5s headroom)", elapsed)
+
+			fStat, err := os.Stat(filePath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fStat.Size()).To(Equal(spaceInBytes))
+
+			GinkgoWriter.Printf("650MB write completed in %v\n", elapsed)
+		})
+	})
+})
+
 func isGone(filePath string) bool {
 	gone := false
 	if _, err := os.Stat(filePath); err != nil && errors.Is(err, os.ErrNotExist) {
