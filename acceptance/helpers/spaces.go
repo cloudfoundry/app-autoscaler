@@ -29,8 +29,9 @@ func GetSpaceGuid(cfg *config.Config, orgGuid string) string {
 }
 
 func getSpaceGuidByName(spaceName string, timeout time.Duration) string {
-	spaceGuidByte := cf.Cf("space", spaceName, "--guid").Wait(timeout)
-	return strings.TrimSuffix(string(spaceGuidByte.Out.Contents()), "\n")
+	spaceGuidCmd := cf.Cf("space", spaceName, "--guid").Wait(timeout)
+	Expect(spaceGuidCmd).To(Exit(0), fmt.Sprintf("failed to get GUID for space %s: %s", spaceName, string(spaceGuidCmd.Err.Contents())))
+	return strings.TrimSuffix(string(spaceGuidCmd.Out.Contents()), "\n")
 }
 
 func GetTestSpaces(orgGuid string, cfg *config.Config) []string {
@@ -44,6 +45,16 @@ func GetTestSpaces(orgGuid string, cfg *config.Config) []string {
 	}
 	ginkgo.GinkgoWriter.Printf("\nGot spaces: %s\n", spaceNames)
 	return spaceNames
+}
+
+func filterTestSpaces(spaces []Space, namePrefix string) []Space {
+	var result []Space
+	for _, space := range spaces {
+		if strings.HasPrefix(space.Name, namePrefix) {
+			result = append(result, space)
+		}
+	}
+	return result
 }
 
 func GetRawSpaces(orgGuid string, timeout time.Duration) []Space {
