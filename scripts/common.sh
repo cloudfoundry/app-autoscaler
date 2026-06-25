@@ -59,6 +59,7 @@ function cf_deployment_login(){
 	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
 		cf_admin_login
 	else
+		step "login to cf as ${AUTOSCALER_ORG_MANAGER_USER}"
 		cf api "https://api.${system_domain}" --skip-ssl-validation
 		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 	fi
