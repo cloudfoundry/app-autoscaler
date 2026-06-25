@@ -67,7 +67,7 @@ jobs:
           bbl_login
 
           # Admin ensures org exists and grants OrgManager (needed for space creation)
-          cf_admin_login
+          cf_login
           find_or_create_org "${AUTOSCALER_ORG}"
 
           # org-manager-user creates the space — creator auto-gets SpaceManager+SpaceDeveloper
@@ -78,7 +78,7 @@ jobs:
           cf target -s "${AUTOSCALER_SPACE}"
 
           # Grant admin SpaceDeveloper too (needed for cleanup operations)
-          cf_admin_login
+          cf_login
           cf set-space-role admin "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
           cf set-space-role admin "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 
