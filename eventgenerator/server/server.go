@@ -114,6 +114,7 @@ func createPrometheusRegistry(appMetricDB db.AppMetricDB, policyDb db.PolicyDB, 
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDb),
 		httpStatusCollector,
+		helpers.FipsEnabledGauge,
 	}, true, logger.Session("eventgenerator-prometheus"))
 	return promRegistry
 }

@@ -3,9 +3,14 @@ package org.cloudfoundry.autoscaler.scheduler.conf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
@@ -735,5 +740,59 @@ public class CloudFoundryConfigurationProcessorTest {
 
     assertNull(environment.getProperty("cfserver.validOrgGuid"));
     assertNull(environment.getProperty("cfserver.validSpaceGuid"));
+  }
+
+  @Test
+  public void testCfInstanceCertificatesReadFromFilePaths(@TempDir Path tempDir) throws IOException {
+    // CF_INSTANCE_CERT, CF_INSTANCE_KEY, CF_INSTANCE_CA_CERT are file paths, not PEM content
+    String caCertPem = "-----BEGIN CERTIFICATE-----\nFakeCACert\n-----END CERTIFICATE-----";
+    String instanceCertPem =
+        "-----BEGIN CERTIFICATE-----\nFakeInstanceCert\n-----END CERTIFICATE-----";
+    String instanceKeyPem = "-----BEGIN PRIVATE KEY-----\nFakeInstanceKey\n-----END PRIVATE KEY-----";
+
+    Path caCertFile = tempDir.resolve("ca.crt");
+    Path instanceCertFile = tempDir.resolve("instance.crt");
+    Path instanceKeyFile = tempDir.resolve("instance.key");
+
+    Files.writeString(caCertFile, caCertPem);
+    Files.writeString(instanceCertFile, instanceCertPem);
+    Files.writeString(instanceKeyFile, instanceKeyPem);
+
+    String vcapServices = """
+        {
+          "user-provided": []
+        }
+        """;
+
+    environment
+        .getPropertySources()
+        .addLast(
+            new org.springframework.core.env.MapPropertySource(
+                "test",
+                java.util.Map.of(
+                    "VCAP_SERVICES", vcapServices,
+                    "CF_INSTANCE_CA_CERT", caCertFile.toString(),
+                    "CF_INSTANCE_CERT", instanceCertFile.toString(),
+                    "CF_INSTANCE_KEY", instanceKeyFile.toString())));
+
+    processor.postProcessEnvironment(environment, application);
+
+    // Verify the FILE CONTENTS (not the file paths) end up as property values
+    String certValue =
+        environment.getProperty("spring.ssl.bundle.pem.scalingengine.keystore.certificate");
+    String keyValue =
+        environment.getProperty("spring.ssl.bundle.pem.scalingengine.keystore.private-key");
+    String caCertValue =
+        environment.getProperty("spring.ssl.bundle.pem.scalingengine.truststore.certificate");
+
+    assertNotNull(certValue, "Client certificate should be set");
+    assertNotNull(keyValue, "Client key should be set");
+    assertNotNull(caCertValue, "CA certificate should be set");
+
+    // Values should be the PEM content, not the file paths
+    assertTrue(certValue.contains("BEGIN CERTIFICATE"), "Should contain PEM content, not file path");
+    assertEquals(instanceCertPem, certValue);
+    assertEquals(instanceKeyPem, keyValue);
+    assertEquals(caCertPem, caCertValue);
   }
 }
