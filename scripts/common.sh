@@ -160,7 +160,14 @@ function cleanup_apps(){
 	local mtar_app
 	local space_guid
 
-	cf_target "${autoscaler_org}" "${autoscaler_space}"
+	# Don't use cf_target here — cleanup must not create the space if it doesn't exist.
+	# If we create the space as admin, org-manager-user never becomes the creator and
+	# loses direct space role visibility, breaking subsequent find_or_create_space calls.
+	cf target -o "${autoscaler_org}" 2>/dev/null || true
+	if ! cf target -s "${autoscaler_space}" 2>/dev/null; then
+		echo "Space ${autoscaler_space} does not exist, nothing to clean up"
+		return 0
+	fi
 
 	space_guid="$(cf space --guid "${autoscaler_space}")"
 	mtar_app="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas"  | jq ". | .[] | .metadata | .id" -r)"
