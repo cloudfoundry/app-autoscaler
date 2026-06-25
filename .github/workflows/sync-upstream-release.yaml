@@ -86,7 +86,6 @@ jobs:
         run: |
           echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
           gh release create "${UPSTREAM_TAG}" \
-            --hostname github.tools.sap \
             --title "${UPSTREAM_TAG}" \
             --notes "Synced from upstream cloudfoundry/app-autoscaler release ${UPSTREAM_TAG}." \
             --target main
