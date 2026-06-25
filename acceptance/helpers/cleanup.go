@@ -44,15 +44,6 @@ func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.Reproducibl
 			// Delete all test spaces
 			DeleteSpaces(cfg.ExistingOrganization, spaceNames, cfg.DefaultTimeoutDuration())
 		}
-
-		spaceNames := make([]string, 0, len(spaces))
-		for _, space := range spaces {
-			spaceNames = append(spaceNames, space.Name)
-			deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), space.Guid, space.Name)
-			deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), space.Guid, space.Name)
-		}
-
-		DeleteSpaces(cfg.ExistingOrganization, spaceNames, cfg.DefaultTimeoutDuration())
 	})
 }
 
