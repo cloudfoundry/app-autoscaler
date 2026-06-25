@@ -108,7 +108,7 @@ RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download
 
 # get maven
 # renovate: datasource=maven depName=org.apache.maven:maven-core
-ARG MAVEN_VERSION=3.9.11
+ARG MAVEN_VERSION=3.9.16
 ENV MAVEN_HOME /opt/maven
 RUN wget --no-verbose -O /tmp/apache-maven-${MAVEN_VERSION}.tar.gz http://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
 	tar xzf /tmp/apache-maven-${MAVEN_VERSION}.tar.gz -C /opt/ && \
