@@ -45,8 +45,30 @@ var _ = Describe("Config", func() {
 				mockVCAPConfigurationReader.GetInstanceTLSCertsReturns(expectedTLSConfig)
 				mockVCAPConfigurationReader.IsRunningOnCFReturns(true)
 				mockVCAPConfigurationReader.MaterializeDBFromServiceReturns(expectedDbUrl, nil)
-			})
+				mockVCAPConfigurationReader.ConfigureDatabasesCalls(
+					func(confDb *map[string]db.DatabaseConfig, _ *models.BasicAuthHandlingImplConfig) error {
+						(*confDb)[db.PolicyDb] = db.DatabaseConfig{URL: "postgres://localhost/policy"}
+						(*confDb)[db.BindingDb] = db.DatabaseConfig{URL: "postgres://localhost/binding"}
+						return nil
+					})
+				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
+					"basic_auth_for_custom_metrics": "off",
 
+					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
+					"catalog_schema_path": "../schemas/catalog.schema.json",
+					"info_file_path": "../exampleconfig/info-file.json",
+					"scaling_engine": {"scaling_engine_url": "https://localhost:8084"},
+					"scheduler": {"scheduler_url": "https://localhost:8083"},
+					"event_generator": {"event_generator_url": "https://localhost:8085"},
+					"metrics_forwarder": {"metrics_forwarder_url": "https://localhost:8088"},
+					"cf": {"api": "https://api.example.com", "client_id": "client-id", "secret": "secret"},
+					"rate_limit": {"max_amount": 10, "valid_duration": "1s"},
+					"broker_credentials": [{"broker_username": "user", "broker_password": "pass"}]
+				}`), nil)
+				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(`{
+					"services": [{"id":"1","name":"autoscaler","description":"Autoscaler service","bindable":true,"plans":[{"id":"1","name":"standard","description":"Standard plan"}]}]
+				}`), nil)
+			})
 			JustBeforeEach(func() {
 				conf, err = LoadConfig("", mockVCAPConfigurationReader)
 			})
@@ -55,7 +77,6 @@ var _ = Describe("Config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.Logging.PlainTextSink).To(BeTrue())
 			})
-
 			It("send certs to scalingengineScalingEngine TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.ScalingEngine.TLSClientCerts).To(Equal(expectedTLSConfig))
@@ -64,45 +85,34 @@ var _ = Describe("Config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.Scheduler.TLSClientCerts).To(Equal(expectedTLSConfig))
 			})
-
 			It("sets EventGenerator TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.EventGenerator.TLSClientCerts).To(Equal(expectedTLSConfig))
 			})
-
 			It("sets env variable over config file", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.CFServer.Port).To(Equal(3333))
 				Expect(conf.Server.Port).To(Equal(0))
 			})
 
-			When("handling available databases", func() {
-				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
-					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader, conf.CredHelperImpl)
-				})
-			})
-
 			When("service is empty", func() {
 				var expectedErr error
 				BeforeEach(func() {
 					expectedErr = fmt.Errorf("publicapiserver config service not found")
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(""), expectedErr)
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(""), expectedErr)
 				})
 
 				It("should error with config service not found", func() {
 					Expect(err).To(MatchError(MatchRegexp("publicapiserver config service not found")))
 				})
 			})
-
 			When("VCAP_SERVICES has catalog", func() {
 				var expectedCatalogContent string
 
 				BeforeEach(func() {
 					expectedCatalogContent = `{"services":[{"id":"1","name":"autoscaler","description":"Autoscaler service","bindable":true,"plans":[{"id":"1","name":"standard","description":"Standard plan"}]}]}` // #nosec G101
-					expectedPublicapiConfigContent := `{ "cred_helper_impl": "default" }`
 
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(expectedPublicapiConfigContent), nil) // #nosec G101
-					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(expectedCatalogContent), nil)         // #nosec G101
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(expectedCatalogContent), nil) // #nosec G101
 				})
 
 				It("loads the db config from VCAP_SERVICES successfully", func() {
@@ -113,8 +123,14 @@ var _ = Describe("Config", func() {
 					Expect(string(actualCatalogContent)).To(Equal(expectedCatalogContent))
 				})
 			})
+			It("does not pass a BasicAuthHandlingImplConfig to ConfigureDatabases when basic auth is off", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mockVCAPConfigurationReader.ConfigureDatabasesCallCount()).To(Equal(1))
+				_, receivedBasicAuthImplCfg :=
+					mockVCAPConfigurationReader.ConfigureDatabasesArgsForCall(0)
+				Expect(receivedBasicAuthImplCfg).To(BeNil())
+			})
 		})
-
 		When("config is read from file", func() {
 			JustBeforeEach(func() {
 				configFile = testhelpers.BytesToFile(configBytes)
@@ -203,7 +219,9 @@ var _ = Describe("Config", func() {
 							},
 						},
 					))
-					Expect(conf.CredHelperImpl).To(Equal("default"))
+					Expect(conf.CustomMetricsAuthConfig).NotTo(BeNil())
+					Expect((*conf.CustomMetricsAuthConfig).BasicAuthHandlingImplConfig).
+						To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 					Expect(conf.ScalingRules.CPU.LowerThreshold).To(Equal(22))
 					Expect(conf.ScalingRules.CPU.UpperThreshold).To(Equal(33))
 					Expect(conf.ScalingRules.CPUUtil.LowerThreshold).To(Equal(22))
@@ -214,10 +232,13 @@ var _ = Describe("Config", func() {
 					Expect(conf.ScalingRules.Disk.UpperThreshold).To(Equal(33))
 				})
 			})
-
 			Context("with partial config", func() {
 				BeforeEach(func() {
 					configBytes = []byte(testhelpers.LoadFile("partial_config.yml"))
+				})
+				It("should set logging to redacted by default", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Logging.PlainTextSink).To(BeFalse())
 				})
 				It("It returns the default values", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -249,7 +270,6 @@ var _ = Describe("Config", func() {
 					Expect(conf.ScalingRules.Disk.UpperThreshold).To(Equal(2 * 1024))
 				})
 			})
-
 			Context("when max_amount of rate_limit is not an integer", func() {
 				BeforeEach(func() {
 					configBytes = []byte(`
@@ -261,7 +281,6 @@ rate_limit:
 					Expect(err).To(MatchError(MatchRegexp("failed to read config file")))
 				})
 			})
-
 			Context("when valid_duration of rate_limit is not a time duration", func() {
 				BeforeEach(func() {
 					configBytes = []byte(`
@@ -272,306 +291,6 @@ rate_limit:
 
 				It("should error", func() {
 					Expect(err).To(MatchError(MatchRegexp("failed to read config file")))
-				})
-			})
-
-		})
-
-		Describe("Validate", func() {
-			BeforeEach(func() {
-				conf = &Config{}
-				conf.Db = make(map[string]db.DatabaseConfig)
-				conf.Db[db.BindingDb] = db.DatabaseConfig{
-					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
-					MaxOpenConnections:    10,
-					MaxIdleConnections:    5,
-					ConnectionMaxLifetime: 60 * time.Second,
-				}
-				conf.Db[db.PolicyDb] = db.DatabaseConfig{
-					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
-					MaxOpenConnections:    10,
-					MaxIdleConnections:    5,
-					ConnectionMaxLifetime: 60 * time.Second,
-				}
-
-				brokerCred1 := BrokerCredentialsConfig{
-					BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_username")'
-					BrokerPasswordHash: []byte("$2a$10$evLviRLcIPKnWQqlBl3DJOvBZir9vJ4gdEeyoGgvnK/CGBnxIAFRu"), // ruby -r bcrypt -e 'puts BCrypt::Password.create("broker_password")'
-				}
-				var brokerCreds []BrokerCredentialsConfig
-				brokerCreds = append(brokerCreds, brokerCred1)
-				conf.BrokerCredentials = brokerCreds
-
-				conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
-				conf.CatalogPath = "../exampleconfig/catalog-example.json"
-				conf.BindingRequestSchemaPath = "../exampleconfig/policy.schema.json"
-
-				conf.Scheduler.SchedulerURL = "https://localhost:8083"
-
-				conf.ScalingEngine.ScalingEngineUrl = "https://localhost:8084"
-				conf.EventGenerator.EventGeneratorUrl = "https://localhost:8085"
-				conf.MetricsForwarder.MetricsForwarderUrl = "https://localhost:8088"
-
-				conf.CF.API = "https://api.bosh-lite.com"
-				conf.CF.ClientID = "client-id"
-				conf.CF.Secret = "secret"
-
-				conf.InfoFilePath = "../exampleconfig/info-file.json"
-
-				conf.RateLimit.MaxAmount = 10
-				conf.RateLimit.ValidDuration = 1 * time.Second
-
-				conf.CredHelperImpl = "path/to/plugin"
-			})
-			JustBeforeEach(func() {
-				err = conf.Validate()
-			})
-
-			It("should set logging to redacted by default", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Logging.PlainTextSink).To(BeFalse())
-			})
-
-			Context("When all the configs are valid", func() {
-				It("should not error", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("when bindingdb url is not set", func() {
-				BeforeEach(func() {
-					conf.Db[db.BindingDb] = db.DatabaseConfig{URL: ""}
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: BindingDB URL is empty")))
-				})
-			})
-
-			Context("when policydb url is not set", func() {
-				BeforeEach(func() {
-					conf.Db[db.PolicyDb] = db.DatabaseConfig{URL: ""}
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicyDB URL is empty")))
-				})
-			})
-
-			Context("when scheduler url is not set", func() {
-				BeforeEach(func() {
-					conf.Scheduler.SchedulerURL = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: scheduler.scheduler_url is empty")))
-				})
-			})
-
-			Context("when neither the broker username nor its hash is set", func() {
-				BeforeEach(func() {
-					brokerCred1 := BrokerCredentialsConfig{
-						BrokerPasswordHash: []byte(""),
-						BrokerPassword:     "",
-					}
-					var brokerCreds []BrokerCredentialsConfig
-					brokerCreds = append(brokerCreds, brokerCred1)
-					conf.BrokerCredentials = brokerCreds
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")))
-				})
-			})
-
-			Context("when both the broker username and its hash are set", func() {
-				BeforeEach(func() {
-					brokerCred1 := BrokerCredentialsConfig{
-						BrokerUsername:     "broker_username",
-						BrokerUsernameHash: []byte("$2a$10$WNO1cPko4iDAT6MkhaDojeJMU8ZdNH6gt.SapsFOsC0OF4cQ9qQwu"),
-					}
-					var brokerCreds []BrokerCredentialsConfig
-					brokerCreds = append(brokerCreds, brokerCred1)
-					conf.BrokerCredentials = brokerCreds
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")))
-				})
-			})
-
-			Context("when just the broker username is set", func() {
-				BeforeEach(func() {
-					conf.BrokerCredentials[0].BrokerUsername = "broker_username"
-					conf.BrokerCredentials[0].BrokerUsernameHash = []byte("")
-				})
-				It("should not error", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("when the broker username hash is set to an invalid value", func() {
-				BeforeEach(func() {
-					conf.BrokerCredentials[0].BrokerUsernameHash = []byte("not a bcrypt hash")
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_username_hash is not a valid bcrypt hash")))
-				})
-			})
-
-			Context("when neither the broker password nor its hash is set", func() {
-				BeforeEach(func() {
-					conf.BrokerCredentials[0].BrokerPassword = ""
-					conf.BrokerCredentials[0].BrokerPasswordHash = []byte("")
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")))
-				})
-			})
-
-			Context("when both the broker password and its hash are set", func() {
-				BeforeEach(func() {
-					conf.BrokerCredentials[0].BrokerPassword = "broker_password"
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")))
-				})
-			})
-
-			Context("when just the broker password is set", func() {
-				BeforeEach(func() {
-					conf.BrokerCredentials[0].BrokerPassword = "broker_password"
-					conf.BrokerCredentials[0].BrokerPasswordHash = []byte("")
-				})
-				It("should not error", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("when the broker password hash is set to an invalid value", func() {
-				BeforeEach(func() {
-					brokerCred1 := BrokerCredentialsConfig{
-						BrokerUsername:     "broker_username",
-						BrokerPasswordHash: []byte("not a bcrypt hash"),
-					}
-					var brokerCreds []BrokerCredentialsConfig
-					brokerCreds = append(brokerCreds, brokerCred1)
-					conf.BrokerCredentials = brokerCreds
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_password_hash is not a valid bcrypt hash")))
-				})
-			})
-
-			Context("when eventgenerator url is not set", func() {
-				BeforeEach(func() {
-					conf.EventGenerator.EventGeneratorUrl = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: event_generator.event_generator_url is empty")))
-				})
-			})
-
-			Context("when scalingengine url is not set", func() {
-				BeforeEach(func() {
-					conf.ScalingEngine.ScalingEngineUrl = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: scaling_engine.scaling_engine_url is empty")))
-				})
-			})
-
-			Context("when metricsforwarder url is not set", func() {
-				BeforeEach(func() {
-					conf.MetricsForwarder.MetricsForwarderUrl = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: metrics_forwarder.metrics_forwarder_url is empty")))
-				})
-			})
-
-			Context("when catalog schema path is not set", func() {
-				BeforeEach(func() {
-					conf.CatalogSchemaPath = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: CatalogSchemaPath is empty")))
-				})
-			})
-
-			Context("when catalog path is not set", func() {
-				BeforeEach(func() {
-					conf.CatalogPath = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: CatalogPath is empty")))
-				})
-			})
-
-			Context("when policy schema path is not set", func() {
-				BeforeEach(func() {
-					conf.BindingRequestSchemaPath = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicySchemaPath is empty")))
-				})
-			})
-
-			Context("when catalog is not valid json", func() {
-				BeforeEach(func() {
-					conf.CatalogPath = "../exampleconfig/catalog-invalid-json-example.json"
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError("invalid character '[' after object key"))
-				})
-			})
-
-			Context("when catalog is missing required fields", func() {
-				BeforeEach(func() {
-					conf.CatalogPath = "../exampleconfig/catalog-missing-example.json"
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("{\"name is required\"}")))
-				})
-			})
-
-			Context("when catalog has invalid type fields", func() {
-				BeforeEach(func() {
-					conf.CatalogPath = "../exampleconfig/catalog-invalid-example.json"
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("{\"Invalid type. Expected: boolean, given: integer\"}")))
-				})
-			})
-
-			Context("when info_file_path is not set", func() {
-				BeforeEach(func() {
-					conf.InfoFilePath = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: InfoFilePath is empty")))
-				})
-			})
-
-			Context("when cf.client_id is not set", func() {
-				BeforeEach(func() {
-					conf.CF.ClientID = ""
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: client_id is empty")))
-				})
-			})
-
-			Context("when rate_limit.max_amount is <= zero", func() {
-				BeforeEach(func() {
-					conf.RateLimit.MaxAmount = 0
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
-				})
-			})
-
-			Context("when rate_limit.valid_duration is <= 0 ns", func() {
-				BeforeEach(func() {
-					conf.RateLimit.ValidDuration = 0 * time.Nanosecond
-				})
-				It("should err", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
 				})
 			})
 		})

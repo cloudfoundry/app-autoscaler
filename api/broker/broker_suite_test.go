@@ -48,10 +48,14 @@ var _ = BeforeSuite(func() {
 	testDefaultGuid = "a-not-so-guid"
 
 	conf = &config.Config{
-		CatalogPath:                        "../exampleconfig/catalog-example.json",
-		DashboardRedirectURI:               dashBoardURL,
-		BindingRequestSchemaPath:           "./binding_request_parser/meta.schema.json",
-		DefaultCustomMetricsCredentialType: "binding-secret",
+		CatalogPath:              "../exampleconfig/catalog-example.json",
+		DashboardRedirectURI:     dashBoardURL,
+		BindingRequestSchemaPath: "./binding_request_parser/meta.schema.json",
+		CustomMetricsAuthConfig: &config.CustomMetricsBasicAuthCfg{
+			BasicAuthHandling:           config.BasicAuthHandlingOn,
+			DefaultCustomMetricAuthType: models.BindingSecret,
+			BasicAuthHandlingImplConfig: models.BasicAuthHandlingNative{},
+		},
 	}
 
 	catalogBytes, err := os.ReadFile("../exampleconfig/catalog-example.json")
