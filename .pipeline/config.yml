@@ -8,6 +8,8 @@ general:
   vaultNamespace: 'ies/hyperspace/pipelines'
   nativeBuild: true
 stages:
+  Build:
+    sonarExecuteScan: false
   Release:
     sapDownloadArtifact: false
   Post:
