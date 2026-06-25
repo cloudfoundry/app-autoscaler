@@ -243,7 +243,11 @@ function find_or_create_space(){
 	org_guid=$(cf org "$(cf target | awk '/^org:/{print $2}')" --guid 2>/dev/null || echo "")
 	if [[ -z "${org_guid}" ]] || cf curl "/v3/spaces?names=${space_name}&organization_guids=${org_guid}" 2>/dev/null \
 		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
-		cf create-space "${space_name}"
+		# The space may already exist but not be visible to the current user (e.g.
+		# org-manager-user has OrgManager role but no direct space role yet). Treat
+		# "not authorised" and "already exists" failures as non-fatal — the real
+		# success gate is whether `cf target -s` succeeds below.
+		cf create-space "${space_name}" || true
 	fi
 	echo "targeting space ${space_name}"
 	cf target -s "${space_name}"
