@@ -53,7 +53,7 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 	}
 
 	switch rawConfig.BasicAuthForCustomMetrics {
-	case "on", "":
+	case "enabled", "":
 		switch rawConfig.CredHelperImpl {
 		case "stored_procedure":
 			result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc{
@@ -62,7 +62,7 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		case "default", "":
 			result.CredentialHelperConfig = models.BasicAuthHandlingNative{}
 		}
-	case "off":
+	case "disabled":
 		result.CredentialHelperConfig = nil
 	}
 
@@ -140,13 +140,13 @@ func (c *rawConfig) validateRateLimit() error {
 }
 
 func (c *rawConfig) validateBasicAuthConfig() error {
-	validBasicAuthValues := []string{"", "on", "off"}
+	validBasicAuthValues := []string{"", "enabled", "disabled"}
 	if !slices.Contains(validBasicAuthValues, c.BasicAuthForCustomMetrics) {
 		msg := fmt.Sprintf("basic_auth_for_custom_metrics is set to %s which is not a supported value", c.BasicAuthForCustomMetrics)
 		return errors.New(msg)
 	}
 
-	if c.BasicAuthForCustomMetrics == "off" && c.CredHelperImpl != "" {
+	if c.BasicAuthForCustomMetrics == "disabled" && c.CredHelperImpl != "" {
 		msg := "Configuration error: CredHelperImpl is set but basic authentication is switched off."
 		return errors.New(msg)
 	}

@@ -33,8 +33,8 @@ var _ = Describe("AutoScaler custom metrics", func() {
 			basic-authentication support is fully retired.
 
 			It is therefore only relevant when the autoscaler is deployed with
-			basic_auth_for_custom_metrics="on". The "only_existing_bindings" and
-			"off" modes are covered by unit tests:
+			basic_auth_for_custom_metrics="enabled". The "only_existing_bindings"
+			and "disabled" modes are covered by unit tests:
 			  - api/brokerserver/broker_handler_test.go
 			  - metricsforwarder/server/auth/auth_test.go
 			  - api/config/parser_internal_test.go

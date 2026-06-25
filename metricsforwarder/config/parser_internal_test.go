@@ -182,9 +182,9 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	When("basic_auth_for_custom_metrics is 'off' and cred_helper_impl is empty", func() {
+	When("basic_auth_for_custom_metrics is 'disabled' and cred_helper_impl is empty", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "off"
+			conf.BasicAuthForCustomMetrics = "disabled"
 			conf.CredHelperImpl = ""
 			conf.StoredProcedureConfig = nil
 		})
@@ -193,9 +193,9 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
-	When("basic_auth_for_custom_metrics is 'off' but cred_helper_impl is set", func() {
+	When("basic_auth_for_custom_metrics is 'disabled' but cred_helper_impl is set", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "off"
+			conf.BasicAuthForCustomMetrics = "disabled"
 			conf.CredHelperImpl = "default"
 		})
 
@@ -203,9 +203,9 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	When("basic_auth_for_custom_metrics is 'on'", func() {
+	When("basic_auth_for_custom_metrics is 'enabled'", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "on"
+			conf.BasicAuthForCustomMetrics = "enabled"
 			conf.CredHelperImpl = "default"
 		})
 
@@ -325,9 +325,9 @@ var _ = Describe("toConfig credential helper conversion", func() {
 	})
 
 	// --- basic_auth_for_custom_metrics tests ---
-	When("basic_auth_for_custom_metrics is 'off'", func() {
+	When("basic_auth_for_custom_metrics is 'disabled'", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "off"
+			conf.BasicAuthForCustomMetrics = "disabled"
 			conf.CredHelperImpl = ""
 			conf.StoredProcedureConfig = nil
 		})
@@ -339,9 +339,9 @@ var _ = Describe("toConfig credential helper conversion", func() {
 			Expect(result.CredentialHelperConfig).To(BeNil())
 		})
 	})
-	When("basic_auth_for_custom_metrics is 'on' with cred_helper_impl 'default'", func() {
+	When("basic_auth_for_custom_metrics is 'enabled' with cred_helper_impl 'default'", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "on"
+			conf.BasicAuthForCustomMetrics = "enabled"
 			conf.CredHelperImpl = "default"
 			conf.StoredProcedureConfig = nil
 		})
@@ -353,7 +353,7 @@ var _ = Describe("toConfig credential helper conversion", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
 	})
-	When("basic_auth_for_custom_metrics is empty (default 'on')", func() {
+	When("basic_auth_for_custom_metrics is empty (default 'enabled')", func() {
 		BeforeEach(func() {
 			conf.BasicAuthForCustomMetrics = ""
 			conf.CredHelperImpl = "default"

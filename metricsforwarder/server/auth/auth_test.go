@@ -228,7 +228,7 @@ var _ = Describe("Authentication", func() {
 
 		})
 	})
-	Describe("CheckAuth with credentials present (basic auth 'on' or 'only_existing_bindings')", func() {
+	Describe("CheckAuth with credentials present (basic auth 'enabled' or 'only_existing_bindings')", func() {
 		Context("when mTLS fails (no XFCC header) and Basic Auth credentials are provided", func() {
 			BeforeEach(func() {
 				fakeCredentials.ValidateReturns(true, nil)
@@ -256,7 +256,7 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 	})
-	Describe("CheckAuth with credentials nil (basic auth 'off')", func() {
+	Describe("CheckAuth with credentials nil (basic auth 'disabled')", func() {
 		// Override the outer JustBeforeEach to construct an Auth with a nil credentials provider,
 		// mimicking how main.go leaves the provider unset when basic-auth is globally disabled.
 		JustBeforeEach(func() {

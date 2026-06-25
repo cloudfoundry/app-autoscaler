@@ -18,7 +18,7 @@ const GO_APP = "../assets/app/go_app/build"
 // (or explicitly empty). The corresponding switch on the autoscaler side
 // controls whether fresh service bindings may declare
 // credential-type=binding-secret.
-const BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT = "on"
+const BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT = "enabled"
 
 type PerformanceConfig struct {
 	AppCount                      int  `json:"app_count"`
@@ -90,8 +90,8 @@ type Config struct {
 	HealthEndpointsBasicAuthEnabled bool `json:"health_endpoints_basic_auth_enabled"`
 
 	// BasicAuthForCustomMetrics mirrors the apiserver/metricsforwarder option of
-	// the same name. Allowed values: "on", "only_existing_bindings", "off".
-	// An empty string is treated as "on" for backwards compatibility.
+	// the same name. Allowed values: "enabled", "only_existing_bindings", "disabled".
+	// An empty string is treated as "enabled" for backwards compatibility.
 	BasicAuthForCustomMetrics string `json:"basic_auth_for_custom_metrics"`
 
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
@@ -267,12 +267,12 @@ func validate(c *Config, terminateSuite TerminateSuite) {
 	switch c.BasicAuthForCustomMetrics {
 	case "":
 		c.BasicAuthForCustomMetrics = BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT
-	case "on", "only_existing_bindings", "off":
+	case "enabled", "only_existing_bindings", "disabled":
 		// allowed
 	default:
 		terminateSuite(
 			"invalid 'basic_auth_for_custom_metrics': " + c.BasicAuthForCustomMetrics +
-				" (allowed: on, only_existing_bindings, off)",
+				" (allowed: enabled, only_existing_bindings, disabled)",
 		)
 	}
 }
@@ -455,7 +455,7 @@ func (c *Config) GetExistingClientSecret() string {
 
 // BasicAuthForCustomMetricsAllowedForFreshBinding reports whether a fresh
 // service binding may declare credential-type=binding-secret. This is true
-// only for the "on" mode of the basic_auth_for_custom_metrics switch.
+// only for the "enabled" mode of the basic_auth_for_custom_metrics switch.
 func (c *Config) BasicAuthForCustomMetricsAllowedForFreshBinding() bool {
-	return c.BasicAuthForCustomMetrics == "on"
+	return c.BasicAuthForCustomMetrics == "enabled"
 }
