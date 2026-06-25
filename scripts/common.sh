@@ -45,7 +45,7 @@ function bbl_login() {
 	eval "$("${script_dir}/bbl-print-env.sh" "${bbl_state_path}")"
 }
 
-function cf_admin_login(){
+function cf_login(){
 	step 'login to cf as admin'
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
@@ -57,7 +57,7 @@ function cf_admin_login(){
 function cf_deployment_login(){
 	step 'login to cf for deployment operations'
 	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
-		cf_admin_login
+		cf_login
 	else
 		cf api "https://api.${system_domain}" --skip-ssl-validation
 		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
