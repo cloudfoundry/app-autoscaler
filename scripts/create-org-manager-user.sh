@@ -40,7 +40,7 @@ function create_org_manager_user() {
 
 function main() {
 	bbl_login
-	cf_admin_login
+	cf_login
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	local repo
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"

@@ -199,7 +199,7 @@ main() {
 	# between deploy and test execution if another workflow recreated the space).
 	if [[ "${PR_NUMBER:-main}" != "main" ]]; then
 		step "Ensuring space roles for ${AUTOSCALER_ORG_MANAGER_USER}"
-		cf_admin_login
+		cf_login
 		cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${autoscaler_org}" "${autoscaler_space}" SpaceDeveloper 2>/dev/null || true
 		# Switch back to org-manager-user for task operations
 		cf_deployment_login
