@@ -11,27 +11,37 @@ import (
 )
 
 func CleanupOrgs(cfg *config.Config, wfh *workflowhelpers.ReproducibleTestSuiteSetup) {
-	By("Clearing down existing test orgs/spaces...")
-	workflowhelpers.AsUser(wfh.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
-		DeleteOrgs(GetTestOrgs(cfg), cfg.DefaultTimeoutDuration())
-	})
-	By("Clearing down existing test orgs/spaces... Complete")
+	if cfg.UseExistingOrganization {
+		By("Cleaning up test spaces in existing organization...")
+		CleanupInExistingOrg(cfg, wfh)
+		By("Cleaning up test spaces in existing organization... Complete")
+	} else {
+		By("Clearing down existing test orgs/spaces...")
+		workflowhelpers.AsUser(wfh.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
+			DeleteOrgs(GetTestOrgs(cfg), cfg.DefaultTimeoutDuration())
+		})
+		By("Clearing down existing test orgs/spaces... Complete")
+	}
 }
 
 func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.ReproducibleTestSuiteSetup) {
 	workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
-		if cfg.UseExistingOrganization {
-			targetOrgWithSpace(setup.GetOrganizationName(), "", cfg.DefaultTimeoutDuration())
-			orgGuid := GetOrgGuid(cfg, cfg.ExistingOrganization)
-			spaceNames := GetTestSpaces(orgGuid, cfg)
-			if len(spaceNames) == 0 {
-				return
-			}
-			spaceName := spaceNames[0]
-			deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), GetSpaceGuid(cfg, orgGuid), spaceName)
-			deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), GetSpaceGuid(cfg, orgGuid), spaceName)
-			DeleteSpaces(cfg.ExistingOrganization, GetTestSpaces(orgGuid, cfg), cfg.DefaultTimeoutDuration())
+		targetOrgWithSpace(setup.GetOrganizationName(), "", cfg.DefaultTimeoutDuration())
+		orgGuid := GetOrgGuid(cfg, cfg.ExistingOrganization)
+		rawSpaces := GetRawSpaces(orgGuid, cfg.DefaultTimeoutDuration())
+		spaces := filterTestSpaces(rawSpaces, cfg.NamePrefix)
+		if len(spaces) == 0 {
+			return
 		}
+
+		spaceNames := make([]string, 0, len(spaces))
+		for _, space := range spaces {
+			spaceNames = append(spaceNames, space.Name)
+			deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), space.Guid, space.Name)
+			deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), space.Guid, space.Name)
+		}
+
+		DeleteSpaces(cfg.ExistingOrganization, spaceNames, cfg.DefaultTimeoutDuration())
 	})
 }
 
