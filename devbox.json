@@ -8,7 +8,7 @@
     "path:.#uaa-cli":                   "",
     "path:.#flatten_json-schema":       "",
 
-    "act": "0.2.88",
+    "act": "0.2.89",
     "apple-sdk": {
       "version": "14.4",
       "platforms": [
