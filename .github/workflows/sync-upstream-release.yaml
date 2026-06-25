@@ -20,8 +20,9 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
           GH_HOST: github.tools.sap
         run: |
+          echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
           upstream_tag=$(GH_TOKEN="${GITHUB_COM_TOKEN}" GH_HOST="github.com" gh release view --repo cloudfoundry/app-autoscaler --json tagName --jq '.tagName')
-          internal_tag=$(gh release view --repo ${{ github.repository }} --json tagName --jq '.tagName' 2>/dev/null || echo "none")
+          internal_tag=$(gh release view --repo ${{ github.repository }} --hostname github.tools.sap --json tagName --jq '.tagName' 2>/dev/null || echo "none")
 
           echo "upstream_tag=${upstream_tag}" >> "$GITHUB_OUTPUT"
           echo "internal_tag=${internal_tag}" >> "$GITHUB_OUTPUT"
@@ -81,10 +82,11 @@ jobs:
         if: steps.check.outputs.up_to_date == 'false'
         env:
           GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
-          GH_HOST: github.tools.sap
           UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
         run: |
+          echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
           gh release create "${UPSTREAM_TAG}" \
+            --hostname github.tools.sap \
             --title "${UPSTREAM_TAG}" \
             --notes "Synced from upstream cloudfoundry/app-autoscaler release ${UPSTREAM_TAG}." \
             --target main
