@@ -8,6 +8,8 @@ general:
   vaultNamespace: 'ies/hyperspace/pipelines'
   nativeBuild: true
 stages:
+  Build:
+    sonarExecuteScan: false
   Release:
     sapDownloadArtifact: false
   Post:
@@ -16,9 +18,12 @@ stages:
 steps:
   mtaBuild:
     mtaBuildTool: cloudMbt
-    mtarGroup: 'com.sap.tools.github.autoscaler'
+    mtarGroup: 'com.sap.hyperspace'
+    dockerImage: devxci/mbtci-java21-node22:latest@sha256:1f76a8031a9d1fcec4ff0c71cbcd648768c76712b2aa304356ffd212b820b477
   sapCallStagingService:
     url: 'https://staging.repositories.cloud.sap/stage/api'
     profile: 'group-1724-default'
   sapCumulusUpload:
     pipelineId: '0a0a9ac2-ed98-4dc1-a0de-79bcc34874ad'
+  sonarExecuteScan:
+    serverUrl: 'https://sonar.tools.sap'
