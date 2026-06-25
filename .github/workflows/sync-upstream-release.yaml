@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.AUTOSCALER_GITHUB_TOKEN }}
+          token: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
 
       - name: Merge upstream release into main
         if: steps.check.outputs.up_to_date == 'false'
@@ -56,6 +56,23 @@ jobs:
 
           git merge "${UPSTREAM_TAG}" --no-edit -m "chore: merge upstream release ${UPSTREAM_TAG}"
 
+      - name: Disable renovate
+        if: steps.check.outputs.up_to_date == 'false'
+        run: |
+          echo '{ "$schema": "https://docs.renovatebot.com/renovate-schema.json", "enabled": false }' > renovate.json
+          git diff --quiet renovate.json || git commit -am "chore: disable renovate on internal repo"
+
+      - name: Remove upstream workflows
+        if: steps.check.outputs.up_to_date == 'false'
+        run: |
+          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
+            [ -f "$f" ] || continue
+            if ! grep -q 'runs-on:.*self-hosted.*solinas' "$f"; then
+              git rm "$f"
+            fi
+          done
+          git diff --cached --quiet || git commit -m "chore: remove upstream workflows not targeting internal runners"
+
       - name: Push to main
         if: steps.check.outputs.up_to_date == 'false'
         run: git push origin main
@@ -63,7 +80,7 @@ jobs:
       - name: Create internal release
         if: steps.check.outputs.up_to_date == 'false'
         env:
-          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
           GH_HOST: github.tools.sap
           UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
         run: |
