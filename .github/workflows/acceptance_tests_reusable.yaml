@@ -107,11 +107,6 @@ jobs:
           make --directory="${AUTOSCALER_DIR}" mta-build
           make --directory="${AUTOSCALER_DIR}" mta-deploy
 
-      - name: Register autoscaler
-        shell: bash
-        env:
-          EXISTING_ORGANIZATION: ${{ inputs.existing_organization }}
-        run: make --directory="${AUTOSCALER_DIR}" register-broker
 
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}
