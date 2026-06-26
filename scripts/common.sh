@@ -64,14 +64,6 @@ function cf_deployment_login(){
 	fi
 }
 
-function uaa_login(){
-	step "login to uaa"
-	local uaa_client_secret
-	uaa_client_secret="$(credhub get --quiet --name='/bosh-autoscaler/cf/uaa_admin_client_secret')"
-	uaa target "https://uaa.${system_domain}" --skip-ssl-validation
-	uaa get-client-credentials-token admin -s "${uaa_client_secret}"
-}
-
 function cleanup_acceptance_run(){
 	step "cleaning up from acceptance tests"
 	pushd "${autoscaler_acceptance_dir}" > /dev/null
@@ -88,24 +80,6 @@ function cleanup_service_broker(){
 	fi
 }
 
-function cleanup_bosh_deployment(){
-	step "deleting bosh deployment '${deployment_name}'"
-	retry 3 bosh delete-deployment -d "${deployment_name}" -n
-}
-
-function delete_releases(){
-	step "deleting releases"
-	if [ -n "${deployment_name}" ]
-	then
-		for release in $(bosh releases | grep -E "${deployment_name}\s+"  | awk '{print $2}')
-		do
-			 echo "- Deleting bosh release '${release}'"
-			 bosh delete-release -n "app-autoscaler/${release}" &
-		done
-		wait
-	fi
-}
-
 function cleanup_db(){
 	local script_dir
 	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -113,11 +87,6 @@ function cleanup_db(){
 	"${script_dir}/deprovision_db.sh" || echo " - could not deprovision db '${deployment_name}'"
 }
 
-
-function cleanup_bosh(){
-	step "cleaning up bosh"
-	retry 3 bosh clean-up --all -n
-}
 
 function cleanup_credhub(){
 	step "cleaning up credhub: '/bosh-autoscaler/${deployment_name}/*'"
