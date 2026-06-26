@@ -114,14 +114,17 @@ function cleanup_apps(){
 	# but OrgManager (admin or org-manager-user) can query /v3/spaces without one.
 	local org_guid
 	org_guid=$(cf org "${autoscaler_org}" --guid 2>/dev/null || echo "")
-	if [[ -z "${org_guid}" ]] || ! cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>/dev/null \
-		| jq -e '.pagination.total_results > 0' >/dev/null 2>&1; then
+	if [[ -z "${org_guid}" ]]; then
+		echo "Org ${autoscaler_org} does not exist, nothing to clean up"
+		return 0
+	fi
+	local spaces_response
+	spaces_response=$(cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>/dev/null)
+	space_guid=$(echo "${spaces_response}" | jq -r '.resources[0].guid // empty')
+	if [[ -z "${space_guid}" ]]; then
 		echo "Space ${autoscaler_space} does not exist, nothing to clean up"
 		return 0
 	fi
-	# Get space_guid via v3 API — avoids requiring a direct space role (which OrgManager lacks).
-	space_guid=$(cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>/dev/null \
-		| jq -r '.resources[0].guid')
 	cf target -o "${autoscaler_org}" 2>/dev/null || true
 	local mtas_response
 	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
