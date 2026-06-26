@@ -93,11 +93,7 @@ get_pr_tasks() {
 	guid_list="${LAUNCHED_TASK_GUIDS[*]}"
 
 	local tasks_json
-	if ! cf curl "/v3/tasks?guids=${guid_list}" >/dev/null 2>&1; then
-		return 0
-	fi
-
-	tasks_json=$(cf curl "/v3/tasks?guids=${guid_list}" 2>/dev/null)
+	tasks_json=$(cf curl "/v3/tasks?guids=${guid_list}" 2>/dev/null) || return 0
 	echo "$tasks_json" | jq -r '.resources[]? | "\(.name):\(.state)"' 2>/dev/null || true
 }
 
@@ -192,8 +188,6 @@ main() {
 	step "Running MTA acceptance tests: ${SUITES}"
 	validate
 	bbl_login
-	cf_deployment_login
-	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 	# On PR branches, ensure org-manager-user has SpaceDeveloper (may have been lost
 	# between deploy and test execution if another workflow recreated the space).
@@ -201,10 +195,10 @@ main() {
 		step "Ensuring space roles for ${AUTOSCALER_ORG_MANAGER_USER}"
 		cf_login
 		cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${autoscaler_org}" "${autoscaler_space}" SpaceDeveloper 2>/dev/null || true
-		# Switch back to org-manager-user for task operations
-		cf_deployment_login
-		cf target -o "${autoscaler_org}" -s "${autoscaler_space}"
 	fi
+
+	cf_deployment_login
+	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 	validate_app
 
