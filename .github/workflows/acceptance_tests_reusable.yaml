@@ -86,21 +86,11 @@ jobs:
           source "${AUTOSCALER_DIR}/scripts/common.sh"
           bbl_login
 
-          # Admin ensures org exists and grants OrgManager (needed for space creation)
-          cf_login
-          find_or_create_org "${AUTOSCALER_ORG}"
-
           # org-manager-user creates the space — creator auto-gets SpaceManager+SpaceDeveloper
           cf api "https://api.${system_domain}" --skip-ssl-validation
           cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
           cf target -o "${AUTOSCALER_ORG}"
           cf create-space "${AUTOSCALER_SPACE}" || echo "Space already exists"
-          cf target -s "${AUTOSCALER_SPACE}"
-
-          # Grant admin SpaceDeveloper too (needed for cleanup operations)
-          cf_login
-          cf set-space-role admin "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
-          cf set-space-role admin "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceManager
 
       - name: Provision DB
         shell: bash
