@@ -45,8 +45,8 @@ function deploy () {
 function setup_postgres_security_group() {
   local sg_file="${script_dir}/../security-groups/postgres.json"
   cf_login "${system_domain}"
-  cf create-security-group postgres "${security_group_json_path}" || true
-  cf update-security-group postgres "${security_group_json_path}"
+  cf create-security-group postgres "${sg_file}" || true
+  cf update-security-group postgres "${sg_file}"
   cf bind-running-security-group postgres
 }
 
