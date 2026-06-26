@@ -79,18 +79,18 @@ jobs:
         run: |
           make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
 
-      - name: Create space as org-manager-user (ensures inherent SpaceDeveloper role)
+      - name: Create space and assign SpaceDeveloper role to org-manager-user
         shell: bash
         run: |
           source "${AUTOSCALER_DIR}/scripts/vars.source.sh"
           source "${AUTOSCALER_DIR}/scripts/common.sh"
           bbl_login
 
-          # org-manager-user creates the space — creator auto-gets SpaceManager+SpaceDeveloper
           cf api "https://api.${system_domain}" --skip-ssl-validation
           cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
           cf target -o "${AUTOSCALER_ORG}"
           cf create-space "${AUTOSCALER_SPACE}" || echo "Space already exists"
+          cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
       - name: Provision DB
         shell: bash
