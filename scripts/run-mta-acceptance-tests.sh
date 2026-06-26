@@ -114,7 +114,7 @@ has_unfinished_tasks() {
 
 has_failed_tasks() {
 	local tasks="${FINAL_TASK_STATE:-$(get_pr_tasks)}"
-	[[ -n "$tasks" ]] && echo "$tasks" | grep -qvE ":SUCCEEDED$"
+	echo "$tasks" | grep -v '^[[:space:]]*$' | grep -qvE ":SUCCEEDED$"
 }
 
 format_time() { printf "%dm%02ds" $(($1/60)) $(($1%60)); }
