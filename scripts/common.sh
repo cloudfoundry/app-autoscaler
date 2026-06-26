@@ -88,27 +88,6 @@ function cleanup_service_broker(){
 	fi
 }
 
-# Deletes a service broker (with fallback to purge offerings)
-function delete_service_broker(){
-	local broker_name="$1"
-
-	echo " - deleting broker '${broker_name}'"
-	if cf delete-service-broker -f "${broker_name}"; then
-		return 0
-	fi
-
-	echo " - failed to delete broker, attempting force cleanup"
-	local offerings
-	offerings=$(cf service-access | grep "${broker_name}" | awk '{print $1}' | sort -u || true)
-
-	for offering in ${offerings}; do
-		echo "   - purging service offering: ${offering}"
-		cf purge-service-offering -f "${offering}" || true
-	done
-
-	cf delete-service-broker -f "${broker_name}" || echo " - ERROR: Could not delete broker ${broker_name}" >&2
-}
-
 function cleanup_bosh_deployment(){
 	step "deleting bosh deployment '${deployment_name}'"
 	retry 3 bosh delete-deployment -d "${deployment_name}" -n

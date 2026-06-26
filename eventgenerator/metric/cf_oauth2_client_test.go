@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/metric"
+	"code.cloudfoundry.org/lager/v3"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -69,6 +70,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 
 		// Create client with mock servers
 		client = metric.NewCFOauth2HTTPClient(
+			lager.NewLogger("cf-oauth2-client-test"),
 			tokenServer.URL,
 			"cf",
 			"cf-secret",
@@ -164,6 +166,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer failingTokenServer.Close()
 
 			failingClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				failingTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -189,16 +192,17 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 				tokenCallsMutex.Unlock()
 
 				w.Header().Set("Content-Type", "application/json")
-				// Return token that expires in 1 second (minus 30s buffer = already expired)
+				// Return token with expires_in=31: buffer=30s, effective lifetime=1s
 				fmt.Fprintf(w, `{
 					"access_token": "expired-token-%d",
 					"token_type": "Bearer",
-					"expires_in": 1
+					"expires_in": 31
 				}`, currentCount)
 			}))
 			defer expiringTokenServer.Close()
 
 			expiringClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				expiringTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -216,8 +220,8 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			Expect(resp1.StatusCode).To(Equal(http.StatusOK))
 			Expect(tokenCallCount).To(Equal(1))
 
-			// Wait for token to expire (it's already expired due to 30s buffer)
-			time.Sleep(100 * time.Millisecond)
+			// Wait for token to expire (effective lifetime is 1s after 30s buffer)
+			time.Sleep(1100 * time.Millisecond)
 
 			// Second request - should refresh token automatically
 			req2, err := http.NewRequest("GET", metricsServer.URL, nil)
@@ -250,6 +254,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer longLivedTokenServer.Close()
 
 			longLivedClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				longLivedTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -312,6 +317,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer captureServer.Close()
 
 			testClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				captureServer.URL,
 				"cf",
 				"cf-secret",
@@ -343,6 +349,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer urlTestServer.Close()
 
 			testClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				urlTestServer.URL,
 				"cf", "cf-secret", "test-user", "test-password", true,
 			)
@@ -366,6 +373,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer urlTestServer.Close()
 
 			testClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				urlTestServer.URL+"/oauth/token",
 				"cf", "cf-secret", "test-user", "test-password", true,
 			)
@@ -404,6 +412,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer concurrentServer.Close()
 
 			testClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				concurrentServer.URL,
 				"cf",
 				"cf-secret",
@@ -454,6 +463,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 			defer badTokenServer.Close()
 
 			badClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				badTokenServer.URL,
 				"cf",
 				"cf-secret",
@@ -472,6 +482,7 @@ var _ = Describe("CFOauth2HTTPClient", func() {
 
 		It("should handle network errors during token fetch", func() {
 			testClient := metric.NewCFOauth2HTTPClient(
+				lager.NewLogger("cf-oauth2-client-test"),
 				"https://invalid-host-that-does-not-exist.local",
 				"cf",
 				"cf-secret",
