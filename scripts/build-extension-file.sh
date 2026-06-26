@@ -61,10 +61,7 @@ load_secrets() {
     "export DATABASE_DB_CLIENT_KEY="                  + (.database_client_key                     | @sh),
     "export SYSLOG_CLIENT_CA="                        + (.syslog_client_ca                        | @sh),
     "export SYSLOG_CLIENT_CERT="                      + (.syslog_client_cert                      | @sh),
-    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh),
-    "export SERVICE_BROKER_PASSWORD_BLUE="            + (.service_broker_password_blue            | @sh),
-    "export SERVICE_BROKER_PASSWORD="                 + (.service_broker_password                 | @sh),
-    "export AUTOSCALER_OTHER_USER_PASSWORD="          + (.other_user_password                     | @sh)
+    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh)
   ' "${secrets_file}")"
   eval "${exports}"
   return
