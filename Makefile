@@ -499,9 +499,6 @@ build-test-app:
 acceptance.build_tests:
 	@make --directory=acceptance build_tests
 
-.PHONY: acceptance.tests-cleanup
-acceptance.tests-cleanup:
-	@make --directory=acceptance acceptance-tests-cleanup
 
 # This target is defined here rather than directly in the component “scheduler” itself, because it depends on targets outside that component. In the future, it will be moved back to that component and reference a dependency to a Makefile on the same level – the one for the component it depends on.
 .PHONY: scheduler.test
@@ -541,9 +538,6 @@ build-acceptance-tests:
 acceptance-tests: build-test-app acceptance-tests-config ## Run acceptance tests against OSS dev environment (requrires a previous deployment of the autoscaler)
 	@make --directory='acceptance' run-acceptance-tests
 
-.PHONY: acceptance-cleanup
-acceptance-cleanup:
-	@make --directory='acceptance' acceptance-tests-cleanup
 
 .PHONY: acceptance-tests-config
 acceptance-tests-config:

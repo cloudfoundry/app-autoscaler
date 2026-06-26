@@ -68,7 +68,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -vE '^(AUTOSCALER_ORG_MANAGER_PASSWORD|AUTOSCALER_OTHER_USER_PASSWORD|GH_TOKEN)=' >> "$GITHUB_ENV"
       - name: Setup environment for deployment
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -80,6 +80,7 @@ jobs:
           make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "Cleanup warnings expected if nothing exists"
 
       - name: Create space and assign SpaceDeveloper role to org-manager-user
+        if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         run: |
           source "${AUTOSCALER_DIR}/scripts/vars.source.sh"
@@ -132,7 +133,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -vE '^(AUTOSCALER_ORG_MANAGER_PASSWORD|AUTOSCALER_OTHER_USER_PASSWORD|GH_TOKEN)=' >> "$GITHUB_ENV"
       - name: Setup environment for acceptance tests
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -164,7 +165,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -vE '^(AUTOSCALER_ORG_MANAGER_PASSWORD|AUTOSCALER_OTHER_USER_PASSWORD|GH_TOKEN)=' >> "$GITHUB_ENV"
       - name: Setup environment for deployment cleanup
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:

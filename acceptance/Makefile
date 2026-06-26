@@ -85,6 +85,3 @@ run-acceptance-tests: acceptance-tests-config
 	@${MAKEFILE_DIR}/../scripts/run-acceptance-tests.sh
 
 
-.PHONY: acceptance-tests-cleanup
-acceptance-tests-cleanup: acceptance-tests-config
-	@${MAKEFILE_DIR}/../scripts/cleanup-acceptance.sh

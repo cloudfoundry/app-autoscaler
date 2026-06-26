@@ -93,25 +93,14 @@ function cleanup_credhub(){
 	retry 3 credhub delete --path="/bosh-autoscaler/${deployment_name}"
 }
 
-function cleanup_test_user(){
-	step "cleaning up test user '${AUTOSCALER_ORG_MANAGER_USER}'"
-	if cf delete-user -f "${AUTOSCALER_ORG_MANAGER_USER}" &> /dev/null; then
-		log "✓ Test user deleted successfully"
-	else
-		log "Test user does not exist or already deleted"
-	fi
-}
 
 function cleanup_apps(){
 	step "cleaning up apps"
 	local mtar_app
 	local space_guid
 
-	# Don't use cf_target here — cleanup must not create the space if it doesn't exist.
-	# If we create the space as admin, org-manager-user never becomes the creator and
-	# loses direct space role visibility, breaking subsequent find_or_create_space calls.
-	# Use v3 API for existence check — `cf target -s` requires a direct space role,
-	# but OrgManager (admin or org-manager-user) can query /v3/spaces without one.
+	# Don't use cf_target here — cleanup must not fail if the space doesn't exist yet.
+	# Use v3 API for existence check — OrgManager can query /v3/spaces without a direct space role.
 	local org_guid
 	org_guid=$(cf org "${autoscaler_org}" --guid 2>/dev/null || echo "")
 	if [[ -z "${org_guid}" ]]; then
@@ -187,46 +176,11 @@ function unset_vars() {
 	unset GINKGO_OPTS
 }
 
-function find_or_create_org(){
-	step "finding or creating org"
-	local org_name="$1"
-	# Use v3 API instead of `cf orgs` — the latter only lists orgs where the
-	# current user has a direct membership, excluding orgs visible via OrgManager role.
-	if cf curl "/v3/organizations?names=${org_name}" 2>/dev/null \
-		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
-		cf create-org "${org_name}"
-	fi
-	echo "targeting org ${org_name}"
-	cf target -o "${org_name}"
-}
-
-function find_or_create_space(){
-	step "finding or creating space"
-	local space_name="$1"
-	local org_name="$2"
-	# Use v3 API instead of `cf spaces` — the latter only lists spaces where the
-	# current user has a space role, excluding spaces visible only via OrgManager role.
-	# Filter by org GUID to avoid matching same-named spaces in other orgs.
-	local org_guid
-	org_guid=$(cf org "${org_name}" --guid 2>/dev/null || echo "")
-	if [[ -z "${org_guid}" ]] || cf curl "/v3/spaces?names=${space_name}&organization_guids=${org_guid}" 2>/dev/null \
-		| jq -e '.pagination.total_results == 0' >/dev/null 2>&1; then
-		# The space may already exist but not be visible to the current user (e.g.
-		# org-manager-user has OrgManager role but no direct space role yet). Treat
-		# "not authorised" and "already exists" failures as non-fatal — the real
-		# success gate is whether `cf target -s` succeeds below.
-		cf create-space "${space_name}" || true
-	fi
-	echo "targeting space ${space_name}"
-	cf target -s "${space_name}"
-}
-
 function cf_target(){
 	local org_name="$1"
 	local space_name="$2"
 
-	find_or_create_org "${org_name}"
-	find_or_create_space "${space_name}" "${org_name}"
+	cf target -o "${org_name}" -s "${space_name}"
 }
 
 function check_database_exists(){
