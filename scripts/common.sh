@@ -59,6 +59,10 @@ function cf_deployment_login(){
 	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
 		cf_login
 	else
+		if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
+			echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is not set" >&2
+			return 1
+		fi
 		cf api "https://api.${system_domain}" --skip-ssl-validation
 		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 	fi
