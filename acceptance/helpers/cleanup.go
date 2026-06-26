@@ -28,19 +28,19 @@ func CleanupInExistingOrg(cfg *config.Config, setup *workflowhelpers.Reproducibl
 	workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
 		targetOrgWithSpace(setup.GetOrganizationName(), "", cfg.DefaultTimeoutDuration())
 		orgGuid := GetOrgGuid(cfg, cfg.ExistingOrganization)
-		spaceNames := GetTestSpaces(orgGuid, cfg)
-		if len(spaceNames) == 0 {
+		rawSpaces := GetRawSpaces(orgGuid, cfg.DefaultTimeoutDuration())
+		spaces := filterTestSpaces(rawSpaces, cfg.NamePrefix)
+		if len(spaces) == 0 {
 			return
 		}
 
-		// Clean up all test spaces
-		for _, spaceName := range spaceNames {
-			spaceGuid := getSpaceGuidByName(spaceName, cfg.DefaultTimeoutDuration())
-			deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
-			deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), spaceGuid, spaceName)
+		spaceNames := make([]string, 0, len(spaces))
+		for _, space := range spaces {
+			spaceNames = append(spaceNames, space.Name)
+			deleteAllServices(cfg, orgGuid, setup.GetOrganizationName(), space.Guid, space.Name)
+			deleteAllApps(cfg, orgGuid, setup.GetOrganizationName(), space.Guid, space.Name)
 		}
 
-		// Delete all test spaces
 		DeleteSpaces(cfg.ExistingOrganization, spaceNames, cfg.DefaultTimeoutDuration())
 	})
 }
