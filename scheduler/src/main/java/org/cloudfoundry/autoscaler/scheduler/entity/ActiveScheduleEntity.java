@@ -18,11 +18,11 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
   @JsonIgnore private Long startJobIdentifier;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty(value = "instance_min_count")
   private Integer instanceMinCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty(value = "instance_max_count")
   private Integer instanceMaxCount;
 
