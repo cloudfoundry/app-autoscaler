@@ -1433,51 +1433,51 @@
         }
       }
     },
-    "markdownlint-cli2@0.21.0": {
-      "last_modified": "2026-05-21T08:15:18Z",
-      "resolved": "github:NixOS/nixpkgs/4a29d733e8a7d5b824c3d8c958a946a9867b3eb2#markdownlint-cli2",
+    "markdownlint-cli2@0.22.1": {
+      "last_modified": "2026-05-31T16:57:23Z",
+      "resolved": "github:NixOS/nixpkgs/3109eaae18e09d0b8aef23dc2579e7d94b8d4b4e#markdownlint-cli2",
       "source": "devbox-search",
-      "version": "0.21.0",
+      "version": "0.22.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5lgjl77s2wj8jdd1pb0ymaj8ii03wk2c-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/bwiszpj6037wzzlilkbyc4fir9i06lcg-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5lgjl77s2wj8jdd1pb0ymaj8ii03wk2c-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/bwiszpj6037wzzlilkbyc4fir9i06lcg-markdownlint-cli2-0.22.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/dwanbdfwzq5pry4brn8vlrl8dxn9jiml-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/0lz5gg9643x3yh23znqp4bmk8nz24nl1-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/dwanbdfwzq5pry4brn8vlrl8dxn9jiml-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/0lz5gg9643x3yh23znqp4bmk8nz24nl1-markdownlint-cli2-0.22.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/88fczhx8rv1gc1iy1ax56n7r6wkryalh-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/wsj40m8nqnpd80i9g5spdp8wi97743ms-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/88fczhx8rv1gc1iy1ax56n7r6wkryalh-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/wsj40m8nqnpd80i9g5spdp8wi97743ms-markdownlint-cli2-0.22.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/dnpp3hka3lgg13wbwbi325wyapwzkr0v-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/8jk1k1d9kv2rmwqmqdz5f24in9sh1ai6-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/dnpp3hka3lgg13wbwbi325wyapwzkr0v-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/8jk1k1d9kv2rmwqmqdz5f24in9sh1ai6-markdownlint-cli2-0.22.1"
         }
       }
     },
