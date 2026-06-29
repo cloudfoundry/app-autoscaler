@@ -76,7 +76,7 @@ function cf_deployment_login(){
 			return 1
 		fi
 		cf api "https://api.${system_domain}" --skip-ssl-validation
-		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}" --origin uaa
 	fi
 }
 
