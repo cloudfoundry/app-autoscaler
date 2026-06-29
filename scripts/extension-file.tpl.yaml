@@ -142,6 +142,7 @@ resources:
             port: ""
             uaa:
               client_id: ${EVENTGENERATOR_CF_CLIENT_ID}
+              client_secret: ${EVENTGENERATOR_CF_SECRET}
               grant_type: ${EVENTGENERATOR_CF_GRANT_TYPE}
               username: ${EVENTGENERATOR_CF_USERNAME}
               password: ${EVENTGENERATOR_CF_PASSWORD}
@@ -204,6 +205,7 @@ resources:
             api: https://api.${default-domain}
             grant_type: ${OPERATOR_CF_GRANT_TYPE}
             client_id: ${OPERATOR_CF_CLIENT_ID}
+            secret: ${OPERATOR_CF_SECRET}
             username: ${OPERATOR_CF_USERNAME}
             password: ${OPERATOR_CF_PASSWORD}
           scaling_engine:
@@ -222,6 +224,7 @@ resources:
             api: https://api.${default-domain}
             grant_type: ${SCALINGENGINE_CF_GRANT_TYPE}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
+            secret: ${SCALINGENGINE_CF_SECRET}
             username: ${SCALINGENGINE_CF_USERNAME}
             password: ${SCALINGENGINE_CF_PASSWORD}
 

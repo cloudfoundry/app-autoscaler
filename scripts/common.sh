@@ -8,6 +8,14 @@ if [[ "${DEBUG:-false}" == "true" ]]; then
 	set -x
 fi
 
+function is_pr_deployment() {
+	[[ -n "${PR_NUMBER:-}" && "${PR_NUMBER}" != "main" ]]
+}
+
+function is_main_deployment() {
+	[[ -z "${PR_NUMBER:-}" || "${PR_NUMBER}" == "main" ]]
+}
+
 function step(){
 	echo "# $1"
 }
@@ -56,7 +64,7 @@ function cf_login(){
 # Uses admin on main branch, org-manager on PR branches
 function cf_deployment_login(){
 	step 'login to cf for deployment operations'
-	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
+	if is_main_deployment; then
 		cf_login
 	else
 		if [[ -z "${AUTOSCALER_ORG_MANAGER_USER:-}" ]]; then
@@ -107,7 +115,7 @@ function cleanup_apps(){
 	local mtar_app
 	local space_guid
 
-	# Don't use cf_target here — cleanup must not fail if the space doesn't exist yet.
+	# Don't use cf_target() here — cleanup must not create the space if it doesn't exist.
 	# Use v3 API for existence check — OrgManager can query /v3/spaces without a direct space role.
 	local org_guid
 	local org_output
