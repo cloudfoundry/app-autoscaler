@@ -13,6 +13,10 @@ on:
         required: false
         type: boolean
         default: false
+      system_domain:
+        required: false
+        type: string
+        default: ""
       autoscaler_org_manager_user:
         required: false
         type: string
@@ -74,6 +78,7 @@ jobs:
         shell: bash
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
+          SYSTEM_DOMAIN: ${{ inputs.system_domain }}
           AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
           AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
           AUTOSCALER_OTHER_USER: ${{ inputs.autoscaler_other_user }}
@@ -114,6 +119,7 @@ jobs:
         shell: bash
         env:
           SUITES: ${{ matrix.suite }}
+          SYSTEM_DOMAIN: ${{ inputs.system_domain }}
           AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
           AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
           AUTOSCALER_OTHER_USER: ${{ inputs.autoscaler_other_user }}
