@@ -49,6 +49,10 @@ function write_app_config() {
 	local -r use_existing_space="$3"
 	local -r existing_org="$4"
 	local -r existing_space="$5"
+	local -r existing_user="$6"
+	local -r existing_user_password="$7"
+	local -r other_existing_user="$8"
+	local -r other_existing_user_password="$9"
 
 	cat > "${config_path}" << EOF
 {
@@ -65,6 +69,10 @@ function write_app_config() {
 	"existing_organization": "${existing_org}",
 	"use_existing_space": ${use_existing_space},
 	"existing_space": "${existing_space}",
+	"existing_user": "${existing_user}",
+	"existing_user_password": "${existing_user_password}",
+	"other_existing_user": "${other_existing_user}",
+	"other_existing_user_password": "${other_existing_user_password}",
 	"skip_service_access_management": ${skip_service_access_management},
 	"aggregate_interval": 120,
 	"default_timeout": 60,
@@ -84,4 +92,6 @@ EOF
 
 write_app_config \
 	"${ACCEPTANCE_CONFIG_PATH}" \
-	"${use_existing_organization}" "${use_existing_space}" "${existing_organization}" "${existing_space}"
+	"${use_existing_organization}" "${use_existing_space}" "${existing_organization}" "${existing_space}" \
+	"${AUTOSCALER_ORG_MANAGER_USER:-}" "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" \
+	"${AUTOSCALER_OTHER_USER:-}" "${AUTOSCALER_OTHER_USER_PASSWORD:-}"

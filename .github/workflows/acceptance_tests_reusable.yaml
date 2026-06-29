@@ -13,11 +13,11 @@ on:
         required: false
         type: boolean
         default: false
-      metricsforwarder_metrics_gateway_url:
+      autoscaler_org_manager_user:
         required: false
         type: string
         default: ""
-      autoscaler_org:
+      autoscaler_other_user:
         required: false
         type: string
         default: ""
@@ -41,9 +41,6 @@ env:
   NODES: 8
   AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
   CPU_UPPER_THRESHOLD: 200
-  AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
-  AUTOSCALER_OTHER_USER_PASSWORD: ${{ secrets.autoscaler_other_user_password }}
-  AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
 
 jobs:
   deploy_autoscaler:
@@ -63,38 +60,11 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          # SECURITY: Filter secrets from GITHUB_ENV. Add new secrets to this regex when introduced.
-          printenv | grep -vE '^(AUTOSCALER_ORG_MANAGER_PASSWORD|AUTOSCALER_OTHER_USER_PASSWORD|GH_TOKEN)=' >> "$GITHUB_ENV"
+          printenv >> "$GITHUB_ENV"
       - name: Setup environment for deployment
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
-
-      - name: Cleanup previous deployment
-        shell: bash
-        run: |
-          make --directory="${AUTOSCALER_DIR}" deploy-cleanup || echo "WARNING: deploy-cleanup exited $? — may be expected on first run"
-
-      - name: Create space and assign SpaceDeveloper role to org-manager-user
-        if: ${{ github.event_name == 'pull_request' }}
-        shell: bash
-        run: |
-          source "${AUTOSCALER_DIR}/scripts/vars.source.sh"
-          source "${AUTOSCALER_DIR}/scripts/common.sh"
-          bbl_login
-
-          cf api "https://api.${system_domain}" --skip-ssl-validation
-          cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
-          cf target -o "${AUTOSCALER_ORG}"
-          cf create-space "${AUTOSCALER_SPACE}" || {
-            if cf space "${AUTOSCALER_SPACE}" --guid >/dev/null 2>&1; then
-              echo "Space already exists"
-            else
-              echo "ERROR: Failed to create space ${AUTOSCALER_SPACE}" >&2
-              exit 1
-            fi
-          }
-          cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
 
       - name: Provision DB
         shell: bash
@@ -104,12 +74,10 @@ jobs:
         shell: bash
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
-          METRICSFORWARDER_METRICS_GATEWAY_URL: ${{ inputs.metricsforwarder_metrics_gateway_url }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build
           make --directory="${AUTOSCALER_DIR}" mta-deploy
-
 
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}
@@ -133,8 +101,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          # SECURITY: Filter secrets from GITHUB_ENV. Add new secrets to this regex when introduced.
-          printenv | grep -vE '^(AUTOSCALER_ORG_MANAGER_PASSWORD|AUTOSCALER_OTHER_USER_PASSWORD|GH_TOKEN)=' >> "$GITHUB_ENV"
+          printenv >> "$GITHUB_ENV"
       - name: Setup environment for acceptance tests
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -143,6 +110,10 @@ jobs:
         shell: bash
         env:
           SUITES: ${{ matrix.suite }}
+          AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
+          AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
+          AUTOSCALER_OTHER_USER: ${{ inputs.autoscaler_other_user }}
+          AUTOSCALER_OTHER_USER_PASSWORD: ${{ secrets.autoscaler_other_user_password }}
         run: make --directory="${AUTOSCALER_DIR}" mta-acceptance-tests
 
   deployment_cleanup:
@@ -164,8 +135,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          # SECURITY: Filter secrets from GITHUB_ENV. Add new secrets to this regex when introduced.
-          printenv | grep -vE '^(AUTOSCALER_ORG_MANAGER_PASSWORD|AUTOSCALER_OTHER_USER_PASSWORD|GH_TOKEN)=' >> "$GITHUB_ENV"
+          printenv >> "$GITHUB_ENV"
       - name: Setup environment for deployment cleanup
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
