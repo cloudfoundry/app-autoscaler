@@ -18,6 +18,7 @@ jobs:
     with:
       deployment_name: "autoscaler-mta-${{ github.event.pull_request.number || 'main' }}"
       use_metricsgateway: ${{ github.event_name == 'pull_request' }}
+      system_domain: "${{ vars.SYSTEM_DOMAIN }}"
       autoscaler_org_manager_user: "${{ vars.AUTOSCALER_ORG_MANAGER_USER }}"
       autoscaler_other_user: "${{ vars.AUTOSCALER_OTHER_USER }}"
     secrets:
