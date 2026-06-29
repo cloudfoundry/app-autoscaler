@@ -13,16 +13,20 @@ source "${script_dir}/common.sh"
 # These orgs are long-lived and other deployments depend on them existing.
 PROTECTED_ORGS=("SAP_autoscaler_tests_OSS")
 
-function get_autoscaler_deployments(){
-	local jq_filter
-	# Build jq filter that excludes protected orgs
-	jq_filter='.resources[] | select(.name | contains("autoscaler"))'
+function is_protected_org(){
+	local name="$1"
+	local org
 	for org in "${PROTECTED_ORGS[@]}"; do
-		jq_filter="${jq_filter} | select(.name != \"${org}\")"
+		[[ "${name}" == "${org}" ]] && return 0
 	done
-	jq_filter="${jq_filter} | .name"
+	return 1
+}
 
-	cf curl /v3/organizations | jq -r "${jq_filter}"
+function get_autoscaler_deployments(){
+	cf curl /v3/organizations | jq -r '.resources[] | select(.name | contains("autoscaler")) | .name' \
+		| while IFS= read -r org; do
+			is_protected_org "${org}" || echo "${org}"
+		done
 }
 
 function main(){
