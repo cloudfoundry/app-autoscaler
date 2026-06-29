@@ -165,9 +165,11 @@ resources:
               upper_threshold: ${CPU_LOWER_THRESHOLD}
           cf:
             api: https://api.${SYSTEM_DOMAIN}
-            grant_type: client_credentials
-            client_id: autoscaler_client_id
-            secret: autoscaler_client_secret
+            grant_type: ${APISERVER_CF_GRANT_TYPE}
+            client_id: ${APISERVER_CF_CLIENT_ID}
+            secret: ${APISERVER_CF_SECRET}
+            username: ${APISERVER_CF_USERNAME}
+            password: ${APISERVER_CF_PASSWORD}
           scheduler:
             scheduler_url: https://${SCHEDULER_CF_HOST}.${default-domain}
           metrics_forwarder:
