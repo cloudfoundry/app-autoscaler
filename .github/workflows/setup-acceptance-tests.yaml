@@ -1,4 +1,4 @@
-name: Create Org Manager User
+name: Setup Acceptance Tests
 
 on:
   workflow_dispatch:
@@ -23,8 +23,8 @@ env:
   AUTOSCALER_ORG: "${{ inputs.autoscaler_org }}"
 
 jobs:
-  create_org_manager_user:
-    name: Create Org Manager User
+  setup_acceptance_tests:
+    name: Setup Acceptance Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,9 +49,9 @@ jobs:
         with:
           ssh-key: ${{ secrets.BBL_SSH_KEY }}
 
-      - name: Create org manager user and store credentials
+      - name: Setup acceptance tests (create users, org, space)
         env:
           EXISTING_ORGANIZATION: ${{ inputs.existing_organization }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          make --directory="${AUTOSCALER_DIR}" create-org-manager-user
+          make --directory="${AUTOSCALER_DIR}" setup-acceptance-tests

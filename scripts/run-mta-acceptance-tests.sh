@@ -187,16 +187,6 @@ main() {
 	validate
 	bbl_login
 
-	# On PR branches, ensure org-manager-user has SpaceDeveloper (may have been lost
-	# between deploy and test execution if another workflow recreated the space).
-	if is_pr_deployment; then
-		step "Ensuring space roles for ${AUTOSCALER_ORG_MANAGER_USER}"
-		cf_login
-		if ! cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${autoscaler_org}" "${autoscaler_space}" SpaceDeveloper 2>&1; then
-			echo "WARNING: Could not set SpaceDeveloper role (may already exist or user/space issue)" >&2
-		fi
-	fi
-
 	cf_deployment_login
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
 
