@@ -34,7 +34,7 @@ cf create-space "${AUTOSCALER_SPACE}" || cf space "${AUTOSCALER_SPACE}" --guid >
 
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
-export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
+export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-autoscaler.app-runtime-interfaces.ci.cloudfoundry.org}"
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
 generate_deployment_secrets() {
