@@ -45,6 +45,16 @@
       "enabled": false
     },
     {
+      "description": "Disable fly version updates — must match deployed Concourse server version manually",
+      "matchManagers": [
+        "devbox"
+      ],
+      "matchDepNames": [
+        "fly"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Group Ginkgo CLI and library updates together",
       "groupName": "ginkgo",
       "matchPackageNames": [
