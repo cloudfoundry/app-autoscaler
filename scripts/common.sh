@@ -59,6 +59,10 @@ function cf_deployment_login(){
 	if [[ "${PR_NUMBER:-main}" == "main" ]]; then
 		cf_login
 	else
+		if [[ -z "${AUTOSCALER_ORG_MANAGER_USER:-}" ]]; then
+			echo "ERROR: AUTOSCALER_ORG_MANAGER_USER is not set" >&2
+			return 1
+		fi
 		if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
 			echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is not set" >&2
 			return 1
@@ -106,19 +110,33 @@ function cleanup_apps(){
 	# Don't use cf_target here — cleanup must not fail if the space doesn't exist yet.
 	# Use v3 API for existence check — OrgManager can query /v3/spaces without a direct space role.
 	local org_guid
-	org_guid=$(cf org "${autoscaler_org}" --guid 2>/dev/null || echo "")
-	if [[ -z "${org_guid}" ]]; then
-		echo "Org ${autoscaler_org} does not exist, nothing to clean up"
+	local org_output
+	if ! org_output=$(cf org "${autoscaler_org}" --guid 2>&1); then
+		if echo "${org_output}" | grep -qi "not found"; then
+			echo "Org ${autoscaler_org} does not exist, nothing to clean up"
+			return 0
+		fi
+		echo "WARNING: Failed to query org '${autoscaler_org}': ${org_output}" >&2
 		return 0
 	fi
+	org_guid="${org_output}"
 	local spaces_response
-	spaces_response=$(cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>/dev/null)
+	if ! spaces_response=$(cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>&1); then
+		echo "WARNING: Failed to query spaces API: ${spaces_response}" >&2
+		return 0
+	fi
+	if echo "${spaces_response}" | jq -e '.errors' >/dev/null 2>&1; then
+		echo "WARNING: CF API error querying spaces: $(echo "${spaces_response}" | jq -r '.errors[0].detail // "unknown"')" >&2
+		return 0
+	fi
 	space_guid=$(echo "${spaces_response}" | jq -r '.resources[0].guid // empty')
 	if [[ -z "${space_guid}" ]]; then
 		echo "Space ${autoscaler_space} does not exist, nothing to clean up"
 		return 0
 	fi
-	cf target -o "${autoscaler_org}" 2>/dev/null || true
+	if ! cf target -o "${autoscaler_org}" 2>/dev/null; then
+		echo "WARNING: Could not target org '${autoscaler_org}' — cleanup may be incomplete" >&2
+	fi
 	local mtas_response
 	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
 		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}")" || true

@@ -50,8 +50,6 @@ load_secrets() {
   # Map YAML keys → shell variable names, emitting `export VAR=value` lines
   local exports
   exports="$(yq '
-    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="  + (.eventgenerator_log_cache_uaa_client_id  | @sh),
-    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET=" + (.eventgenerator_log_cache_uaa_client_secret | @sh),
     "export CF_ADMIN_PASSWORD="                       + (.cf_admin_password                       | @sh),
     "export POSTGRES_IP="                             + (.postgres_ip                             | @sh),
     "export DATABASE_DB_USERNAME="                    + (.database_username                       | @sh),
@@ -100,6 +98,10 @@ export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
 # --- CF credentials for components using password grant ---
+if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
+  echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is required for component CF credentials" >&2
+  exit 1
+fi
 for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
   export "${component}_CF_GRANT_TYPE=password"
   export "${component}_CF_USERNAME=${AUTOSCALER_ORG_MANAGER_USER}"
