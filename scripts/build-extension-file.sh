@@ -99,28 +99,29 @@ export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroke
 
 # --- CF credentials for components ---
 # PR deployments use password grant with org-manager user.
-# Main deployments use client_credentials (configured in the template defaults).
+# Main deployments use client_credentials.
 if is_pr_deployment; then
   if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
     echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is required for component CF credentials" >&2
     exit 1
   fi
-  for component in APISERVER EVENTGENERATOR SCALINGENGINE OPERATOR; do
-    export "${component}_CF_GRANT_TYPE=password"
-    export "${component}_CF_CLIENT_ID=cf"
-    export "${component}_CF_SECRET="
-    export "${component}_CF_USERNAME=${AUTOSCALER_ORG_MANAGER_USER}"
-    export "${component}_CF_PASSWORD=${AUTOSCALER_ORG_MANAGER_PASSWORD}"
-  done
+  if [[ -z "${AUTOSCALER_OTHER_USER_PASSWORD:-}" ]]; then
+    echo "ERROR: AUTOSCALER_OTHER_USER_PASSWORD is required for acceptance test credentials" >&2
+    exit 1
+  fi
+  cf_grant_type="password" cf_client_id="cf" cf_secret=""
+  cf_username="${AUTOSCALER_ORG_MANAGER_USER}" cf_password="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 else
-  for component in APISERVER EVENTGENERATOR SCALINGENGINE OPERATOR; do
-    export "${component}_CF_GRANT_TYPE=client_credentials"
-    export "${component}_CF_CLIENT_ID=autoscaler_client_id"
-    export "${component}_CF_SECRET=autoscaler_client_secret"
-    export "${component}_CF_USERNAME="
-    export "${component}_CF_PASSWORD="
-  done
+  cf_grant_type="client_credentials" cf_client_id="autoscaler_client_id" cf_secret="autoscaler_client_secret"
+  cf_username="" cf_password=""
 fi
+for component in APISERVER EVENTGENERATOR SCALINGENGINE OPERATOR; do
+  export "${component}_CF_GRANT_TYPE=${cf_grant_type}"
+  export "${component}_CF_CLIENT_ID=${cf_client_id}"
+  export "${component}_CF_SECRET=${cf_secret}"
+  export "${component}_CF_USERNAME=${cf_username}"
+  export "${component}_CF_PASSWORD=${cf_password}"
+done
 
 # --- Event generator ---
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
