@@ -40,6 +40,11 @@ function create_cf_test_user() {
 function main() {
 	bbl_login
 	cf_login
+
+	# Ensure org and space exist (first-time setup for main deployments)
+	cf create-org "${AUTOSCALER_ORG}" || cf org "${AUTOSCALER_ORG}" --guid >/dev/null
+	cf target -o "${AUTOSCALER_ORG}"
+	cf create-space "${AUTOSCALER_SPACE}" || cf space "${AUTOSCALER_SPACE}" --guid >/dev/null
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	local repo
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"

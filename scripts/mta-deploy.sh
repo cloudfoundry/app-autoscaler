@@ -47,11 +47,17 @@ popd > /dev/null
 # Extract broker password from the generated extension file (baked in by build-extension-file.sh)
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
-set +e
-existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
+broker_response="$(cf curl v3/service_brokers 2>&1)" || {
+	echo "ERROR: Failed to query service brokers: ${broker_response}" >&2
+	exit 1
+}
+existing_service_broker="$(echo "${broker_response}" | jq --raw-output \
 	--arg service_broker_name "${deployment_name:-}" \
-	'.resources[] | select(.name == $service_broker_name) | .name')"
-set -e
+	'.resources[] | select(.name == $service_broker_name) | .name')" || {
+	echo "ERROR: Failed to parse service broker response" >&2
+	echo "  Response was: ${broker_response}" >&2
+	exit 1
+}
 
 if [[ -n "${existing_service_broker}" ]]; then
 	echo "Service Broker ${existing_service_broker} already exists"
