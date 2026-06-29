@@ -9,8 +9,20 @@ source "${script_dir}/vars.source.sh"
 # shellcheck source=scripts/common.sh
 source "${script_dir}/common.sh"
 
+# Shared orgs used by multiple PRs — must never be cleaned up by this script.
+# These orgs are long-lived and other deployments depend on them existing.
+PROTECTED_ORGS=("SAP_autoscaler_tests_OSS")
+
 function get_autoscaler_deployments(){
-	cf curl /v3/organizations | jq -r '.resources[] | select(.name | contains("autoscaler")) | .name'
+	local jq_filter
+	# Build jq filter that excludes protected orgs
+	jq_filter='.resources[] | select(.name | contains("autoscaler"))'
+	for org in "${PROTECTED_ORGS[@]}"; do
+		jq_filter="${jq_filter} | select(.name != \"${org}\")"
+	done
+	jq_filter="${jq_filter} | .name"
+
+	cf curl /v3/organizations | jq -r "${jq_filter}"
 }
 
 function main(){
