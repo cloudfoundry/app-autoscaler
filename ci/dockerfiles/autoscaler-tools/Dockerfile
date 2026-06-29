@@ -65,7 +65,7 @@ RUN apt-get update && \
 
 # Install bosh_cli
 # renovate: datasource=github-releases depName=bosh-cli lookupName=cloudfoundry/bosh-cli
-ARG BOSH_VERSION=7.9.11
+ARG BOSH_VERSION=7.10.6
 RUN wget -q https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_VERSION}/bosh-cli-${BOSH_VERSION}-linux-amd64 && \
   mv bosh-cli-* /usr/local/bin/bosh && \
   chmod +x /usr/local/bin/bosh

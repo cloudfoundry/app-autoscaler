@@ -561,99 +561,99 @@
         }
       }
     },
-    "fly@8.2.3": {
-      "last_modified": "2026-06-05T19:07:58Z",
-      "resolved": "github:NixOS/nixpkgs/891eaa77f0eed53352194677991bd30978f9b0ad#fly",
+    "fly@8.2.4": {
+      "last_modified": "2026-06-22T09:00:13Z",
+      "resolved": "github:NixOS/nixpkgs/b3c092d3c36d91e2f61f3dfb39a159f180a56659#fly",
       "source": "devbox-search",
-      "version": "8.2.3",
+      "version": "8.2.4",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/yjf8rqay7q11issdl9k4m77wkwgpp2pn-fly-8.2.3",
+              "path": "/nix/store/83mh61dwyw459b3d26766mq7qkhcs81f-fly-8.2.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/yjf8rqay7q11issdl9k4m77wkwgpp2pn-fly-8.2.3"
+          "store_path": "/nix/store/83mh61dwyw459b3d26766mq7qkhcs81f-fly-8.2.4"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/z05b9kjgn3zzw1wzbiys8wk9m0a18vab-fly-8.2.3",
+              "path": "/nix/store/ivanfvlhbnpvgvnhgaqapy7qb1nl5hz2-fly-8.2.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/z05b9kjgn3zzw1wzbiys8wk9m0a18vab-fly-8.2.3"
+          "store_path": "/nix/store/ivanfvlhbnpvgvnhgaqapy7qb1nl5hz2-fly-8.2.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/31i3wb99x8ddzrj5fx4ryiai8cxdak1j-fly-8.2.3",
+              "path": "/nix/store/53ivyxvxx14h7mhidm57hal4yws1ivq9-fly-8.2.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/31i3wb99x8ddzrj5fx4ryiai8cxdak1j-fly-8.2.3"
+          "store_path": "/nix/store/53ivyxvxx14h7mhidm57hal4yws1ivq9-fly-8.2.4"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/jr4il9bxf4prbr94qv978pfc28drys2f-fly-8.2.3",
+              "path": "/nix/store/kyf58620csarvdwbg58hh7jnrp3l2sh9-fly-8.2.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/jr4il9bxf4prbr94qv978pfc28drys2f-fly-8.2.3"
+          "store_path": "/nix/store/kyf58620csarvdwbg58hh7jnrp3l2sh9-fly-8.2.4"
         }
       }
     },
-    "gh@2.92.0": {
-      "last_modified": "2026-05-21T08:15:18Z",
-      "resolved": "github:NixOS/nixpkgs/4a29d733e8a7d5b824c3d8c958a946a9867b3eb2#gh",
+    "gh@2.95.0": {
+      "last_modified": "2026-06-22T09:00:13Z",
+      "resolved": "github:NixOS/nixpkgs/b3c092d3c36d91e2f61f3dfb39a159f180a56659#gh",
       "source": "devbox-search",
-      "version": "2.92.0",
+      "version": "2.95.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2wapk3dm2magc0lq8rx8yd5pam3xlacw-gh-2.92.0",
+              "path": "/nix/store/caf7iv1ab7hj6qaqrhp93crfv99843i7-gh-2.95.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2wapk3dm2magc0lq8rx8yd5pam3xlacw-gh-2.92.0"
+          "store_path": "/nix/store/caf7iv1ab7hj6qaqrhp93crfv99843i7-gh-2.95.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/63sx2manc3ny8l4zzppcvz9292vi3044-gh-2.92.0",
+              "path": "/nix/store/wq54s5hlnigpq6iayd9g3463z5gsahal-gh-2.95.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/63sx2manc3ny8l4zzppcvz9292vi3044-gh-2.92.0"
+          "store_path": "/nix/store/wq54s5hlnigpq6iayd9g3463z5gsahal-gh-2.95.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/arfkhrr2bcmdrg6ncgnk6vaqx6qfv3vl-gh-2.92.0",
+              "path": "/nix/store/zpnrc7napyn3zaygkpghrv8nxjlbs29h-gh-2.95.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/arfkhrr2bcmdrg6ncgnk6vaqx6qfv3vl-gh-2.92.0"
+          "store_path": "/nix/store/zpnrc7napyn3zaygkpghrv8nxjlbs29h-gh-2.95.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/d0r9xzcpv8xcjds6z1w03wyqi6iv30af-gh-2.92.0",
+              "path": "/nix/store/8ffjsm5lvpp7gmj8j2c93hzca4i7xz74-gh-2.95.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/d0r9xzcpv8xcjds6z1w03wyqi6iv30af-gh-2.92.0"
+          "store_path": "/nix/store/8ffjsm5lvpp7gmj8j2c93hzca4i7xz74-gh-2.95.0"
         }
       }
     },
@@ -1433,51 +1433,51 @@
         }
       }
     },
-    "markdownlint-cli2@0.21.0": {
-      "last_modified": "2026-05-21T08:15:18Z",
-      "resolved": "github:NixOS/nixpkgs/4a29d733e8a7d5b824c3d8c958a946a9867b3eb2#markdownlint-cli2",
+    "markdownlint-cli2@0.22.1": {
+      "last_modified": "2026-05-31T16:57:23Z",
+      "resolved": "github:NixOS/nixpkgs/3109eaae18e09d0b8aef23dc2579e7d94b8d4b4e#markdownlint-cli2",
       "source": "devbox-search",
-      "version": "0.21.0",
+      "version": "0.22.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5lgjl77s2wj8jdd1pb0ymaj8ii03wk2c-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/bwiszpj6037wzzlilkbyc4fir9i06lcg-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5lgjl77s2wj8jdd1pb0ymaj8ii03wk2c-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/bwiszpj6037wzzlilkbyc4fir9i06lcg-markdownlint-cli2-0.22.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/dwanbdfwzq5pry4brn8vlrl8dxn9jiml-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/0lz5gg9643x3yh23znqp4bmk8nz24nl1-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/dwanbdfwzq5pry4brn8vlrl8dxn9jiml-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/0lz5gg9643x3yh23znqp4bmk8nz24nl1-markdownlint-cli2-0.22.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/88fczhx8rv1gc1iy1ax56n7r6wkryalh-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/wsj40m8nqnpd80i9g5spdp8wi97743ms-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/88fczhx8rv1gc1iy1ax56n7r6wkryalh-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/wsj40m8nqnpd80i9g5spdp8wi97743ms-markdownlint-cli2-0.22.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/dnpp3hka3lgg13wbwbi325wyapwzkr0v-markdownlint-cli2-0.21.0",
+              "path": "/nix/store/8jk1k1d9kv2rmwqmqdz5f24in9sh1ai6-markdownlint-cli2-0.22.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/dnpp3hka3lgg13wbwbi325wyapwzkr0v-markdownlint-cli2-0.21.0"
+          "store_path": "/nix/store/8jk1k1d9kv2rmwqmqdz5f24in9sh1ai6-markdownlint-cli2-0.22.1"
         }
       }
     },
