@@ -45,17 +45,18 @@ validate_app() {
 
 	echo "  ✓ App found (GUID: ${APP_GUID:0:8})"
 
-	# Diagnostic: check app state and droplet
-	local app_state
-	app_state=$(cf curl "/v3/apps/${APP_GUID}" 2>/dev/null | jq -r '.state // "UNKNOWN"')
-	echo "  App state: ${app_state}"
+	if [[ "${DEBUG:-false}" == "true" ]]; then
+		local app_state
+		app_state=$(cf curl "/v3/apps/${APP_GUID}" 2>/dev/null | jq -r '.state // "UNKNOWN"')
+		echo "  App state: ${app_state}"
 
-	local droplet
-	droplet=$(cf curl "/v3/apps/${APP_GUID}/droplets/current" 2>/dev/null | jq -r '.guid // empty')
-	if [[ -n "${droplet}" ]]; then
-		echo "  ✓ Current droplet: ${droplet:0:8}"
-	else
-		echo "  ✗ WARNING: No current droplet assigned"
+		local droplet
+		droplet=$(cf curl "/v3/apps/${APP_GUID}/droplets/current" 2>/dev/null | jq -r '.guid // empty')
+		if [[ -n "${droplet}" ]]; then
+			echo "  ✓ Current droplet: ${droplet:0:8}"
+		else
+			echo "  ✗ WARNING: No current droplet assigned"
+		fi
 	fi
 }
 
@@ -98,8 +99,7 @@ get_pr_tasks() {
 }
 
 has_unfinished_tasks() {
-	local tasks
-	tasks=$(get_pr_tasks)
+	local tasks="${1:-$(get_pr_tasks)}"
 	if echo "$tasks" | grep -qE ":(RUNNING|PENDING)$"; then
 		return 0
 	fi
@@ -117,10 +117,8 @@ format_time() { printf "%dm%02ds" $(($1/60)) $(($1%60)); }
 
 show_status() {
 	local poll=$1
+	local tasks="${2:-$(get_pr_tasks)}"
 	local elapsed=$(($(date +%s) - script_start_time))
-
-	local tasks
-	tasks=$(get_pr_tasks)
 
 	# Build compact status line
 	local running=0 pending=0 succeeded=0 failed=0
@@ -246,14 +244,17 @@ main() {
 	# Poll until all tasks are finished
 	step "Monitoring tasks"
 	local poll=0
-	while has_unfinished_tasks; do
+	local current_tasks
+	current_tasks=$(get_pr_tasks)
+	while has_unfinished_tasks "${current_tasks}"; do
 		poll=$((poll + 1))
 		[[ $(($(date +%s) - script_start_time)) -gt ${MAX_WAIT_TIME} ]] && {
 			echo "ERROR: Timeout after ${MAX_WAIT_TIME}s"
 			break
 		}
-		show_status ${poll}
+		show_status ${poll} "${current_tasks}"
 		sleep ${POLL_INTERVAL}
+		current_tasks=$(get_pr_tasks)
 	done
 
 	# Final summary
