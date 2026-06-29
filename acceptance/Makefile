@@ -77,7 +77,7 @@ lint:
 .PHONY: acceptance-tests-config
 acceptance-tests-config:
 	@ACCEPTANCE_CONFIG_PATH='./acceptance_config.json' ${MAKEFILE_DIR}/../scripts/acceptance-tests-config.sh
-	@echo '✏️ Configuration for acceptance-tests written to file "${acceptance-config-path}"!'
+	@echo '✏️ Configuration for acceptance-tests written to file "./acceptance_config.json"!'
 
 
 .PHONY: run-acceptance-tests

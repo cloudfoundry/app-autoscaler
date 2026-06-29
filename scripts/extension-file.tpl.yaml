@@ -141,8 +141,10 @@ resources:
             metric_collector_url: https://log-cache.${default-domain}
             port: ""
             uaa:
-              client_id: ${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID}
-              client_secret: ${EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET}
+              client_id: ${EVENTGENERATOR_CF_CLIENT_ID}
+              grant_type: ${EVENTGENERATOR_CF_GRANT_TYPE}
+              username: ${EVENTGENERATOR_CF_USERNAME}
+              password: ${EVENTGENERATOR_CF_PASSWORD}
               url: https://uaa.${default-domain}
               skip_ssl_validation: true
           pool:
