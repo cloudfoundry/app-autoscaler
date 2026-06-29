@@ -17,10 +17,6 @@ on:
         required: false
         type: string
         default: ""
-      existing_organization:
-        required: false
-        type: string
-        default: ""
       autoscaler_org:
         required: false
         type: string
@@ -109,7 +105,6 @@ jobs:
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
           METRICSFORWARDER_METRICS_GATEWAY_URL: ${{ inputs.metricsforwarder_metrics_gateway_url }}
-          EXISTING_ORGANIZATION: ${{ inputs.existing_organization }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build
