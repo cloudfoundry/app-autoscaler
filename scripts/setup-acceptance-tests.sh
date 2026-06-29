@@ -50,6 +50,11 @@ function main() {
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
 	create_cf_test_user "${repo}" "${AUTOSCALER_ORG_MANAGER_USER}" AUTOSCALER_ORG_MANAGER_USER AUTOSCALER_ORG_MANAGER_PASSWORD "Creating org manager CF user"
 	create_cf_test_user "${repo}" "${AUTOSCALER_OTHER_USER}" AUTOSCALER_OTHER_USER AUTOSCALER_OTHER_USER_PASSWORD "Creating other-user for acceptance tests"
+
+	step "Setting METRICSFORWARDER_METRICS_GATEWAY_URL GitHub variable"
+	gh variable set METRICSFORWARDER_METRICS_GATEWAY_URL \
+		--body "https://system-production-metricsgateway.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org" \
+		--repo "${repo}"
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
