@@ -191,7 +191,7 @@ main() {
 
 	# On PR branches, ensure org-manager-user has SpaceDeveloper (may have been lost
 	# between deploy and test execution if another workflow recreated the space).
-	if [[ "${PR_NUMBER:-main}" != "main" ]]; then
+	if is_pr_deployment; then
 		step "Ensuring space roles for ${AUTOSCALER_ORG_MANAGER_USER}"
 		cf_login
 		if ! cf set-space-role "${AUTOSCALER_ORG_MANAGER_USER}" "${autoscaler_org}" "${autoscaler_space}" SpaceDeveloper 2>&1; then

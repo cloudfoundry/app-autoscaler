@@ -28,7 +28,7 @@ then
 fi
 
 # Use admin user for main branch, org-manager user for PRs
-if [[ "${PR_NUMBER:-main}" == "main" ]]; then
+if is_main_deployment; then
 	autoscaler_org_manager_user="admin"
 	autoscaler_org_manager_password="${cf_admin_password}"
 	skip_service_access_management="false"

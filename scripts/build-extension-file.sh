@@ -97,17 +97,30 @@ export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
 
-# --- CF credentials for components using password grant ---
-if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
-  echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is required for component CF credentials" >&2
-  exit 1
+# --- CF credentials for components ---
+# PR deployments use password grant with org-manager user.
+# Main deployments use client_credentials (configured in the template defaults).
+if is_pr_deployment; then
+  if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
+    echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is required for component CF credentials" >&2
+    exit 1
+  fi
+  for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
+    export "${component}_CF_GRANT_TYPE=password"
+    export "${component}_CF_CLIENT_ID=cf"
+    export "${component}_CF_SECRET="
+    export "${component}_CF_USERNAME=${AUTOSCALER_ORG_MANAGER_USER}"
+    export "${component}_CF_PASSWORD=${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+  done
+else
+  for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
+    export "${component}_CF_GRANT_TYPE=client_credentials"
+    export "${component}_CF_CLIENT_ID=autoscaler_client_id"
+    export "${component}_CF_SECRET=autoscaler_client_secret"
+    export "${component}_CF_USERNAME="
+    export "${component}_CF_PASSWORD="
+  done
 fi
-for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
-  export "${component}_CF_GRANT_TYPE=password"
-  export "${component}_CF_USERNAME=${AUTOSCALER_ORG_MANAGER_USER}"
-  export "${component}_CF_PASSWORD=${AUTOSCALER_ORG_MANAGER_PASSWORD}"
-  export "${component}_CF_CLIENT_ID=cf"
-done
 
 # --- Event generator ---
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
