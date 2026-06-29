@@ -554,9 +554,9 @@ mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 deploy-cleanup:
 	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
 
-.PHONY: create-org-manager-user
-create-org-manager-user:
-	DEBUG="${DEBUG}" ./scripts/create-org-manager-user.sh
+.PHONY: setup-acceptance-tests
+setup-acceptance-tests:
+	DEBUG="${DEBUG}" ./scripts/setup-acceptance-tests.sh
 
 .PHONY: deploy-apps
 deploy-apps:
