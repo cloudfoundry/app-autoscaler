@@ -105,7 +105,7 @@ if is_pr_deployment; then
     echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is required for component CF credentials" >&2
     exit 1
   fi
-  for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
+  for component in APISERVER EVENTGENERATOR SCALINGENGINE OPERATOR; do
     export "${component}_CF_GRANT_TYPE=password"
     export "${component}_CF_CLIENT_ID=cf"
     export "${component}_CF_SECRET="
@@ -113,7 +113,7 @@ if is_pr_deployment; then
     export "${component}_CF_PASSWORD=${AUTOSCALER_ORG_MANAGER_PASSWORD}"
   done
 else
-  for component in EVENTGENERATOR SCALINGENGINE OPERATOR; do
+  for component in APISERVER EVENTGENERATOR SCALINGENGINE OPERATOR; do
     export "${component}_CF_GRANT_TYPE=client_credentials"
     export "${component}_CF_CLIENT_ID=autoscaler_client_id"
     export "${component}_CF_SECRET=autoscaler_client_secret"
