@@ -115,8 +115,8 @@ function cleanup_apps(){
 	local mtar_app
 	local space_guid
 
-	# Don't use cf_target() here — cleanup must not create the space if it doesn't exist.
-	# Use v3 API for existence check — OrgManager can query /v3/spaces without a direct space role.
+	# Don't use cf_target() here — it errors if the space doesn't exist, and during
+	# cleanup the space may already be deleted. Use v3 API for safe existence check.
 	local org_guid
 	local org_output
 	if ! org_output=$(cf org "${autoscaler_org}" --guid 2>&1); then
