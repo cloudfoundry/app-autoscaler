@@ -27,6 +27,11 @@ fi
 
 bbl_login
 cf_deployment_login
+
+# Ensure space exists (create if needed)
+cf target -o "${AUTOSCALER_ORG}"
+cf create-space "${AUTOSCALER_SPACE}" || cf space "${AUTOSCALER_SPACE}" --guid >/dev/null
+
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
