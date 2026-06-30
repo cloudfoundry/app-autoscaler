@@ -16,6 +16,10 @@ function is_main_deployment() {
 	[[ -z "${PR_NUMBER:-}" || "${PR_NUMBER}" == "main" ]]
 }
 
+function is_oss_infrastructure() {
+	[[ "${INFRASTRUCTURE:-OSS}" == "OSS" ]]
+}
+
 function step(){
 	echo "# $1"
 }
