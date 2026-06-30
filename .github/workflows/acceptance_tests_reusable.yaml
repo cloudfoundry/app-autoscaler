@@ -192,6 +192,12 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
       - name: Perform deployment cleanup
+        env:
+          SYSTEM_DOMAIN: ${{ inputs.system_domain }}
+          AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
+          AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
+          AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
+          INFRASTRUCTURE: ${{ inputs.infrastructure }}
         run: |
           make --directory="${AUTOSCALER_DIR}" deploy-cleanup
 
