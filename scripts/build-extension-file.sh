@@ -25,12 +25,10 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
   exit 1
 fi
 
-bbl_login
+if is_oss_infrastructure; then
+  bbl_login
+fi
 cf_deployment_login
-
-# Ensure space exists (create if needed)
-cf target -o "${AUTOSCALER_ORG}"
-cf create-space "${AUTOSCALER_SPACE}" || cf space "${AUTOSCALER_SPACE}" --guid >/dev/null
 
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
@@ -75,7 +73,8 @@ escape_newlines() { printf '%s' "${1//$'\n'/\\n}"; return; }
 
 generate_deployment_secrets
 
-cat << EOF > /tmp/extension-file-secrets.yml.tpl
+if is_oss_infrastructure; then
+  cat << EOF > /tmp/extension-file-secrets.yml.tpl
 postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))
 
 eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
@@ -94,8 +93,9 @@ database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
 EOF
 
-credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
-load_secrets /tmp/mtar-secrets.yml
+  credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
+  load_secrets /tmp/mtar-secrets.yml
+fi
 
 # --- API server & broker ---
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
@@ -161,16 +161,18 @@ export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 # --- Database ---
-# Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
-export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
-DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
-DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
-DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
+if is_oss_infrastructure; then
+  # Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
+  export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
+  DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
+  DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
+  DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
 
-# --- Syslog client ---
-SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
-SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
-SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
+  # --- Syslog client ---
+  SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
+  SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
+  SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
+fi
 
 # --- Acceptance tests ---
 export SKIP_SSL_VALIDATION="${SKIP_SSL_VALIDATION:-true}"
@@ -201,6 +203,19 @@ fi
 
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
+
+# For non-OSS, replace the database UPS with an existing managed CF service
+if ! is_oss_infrastructure; then
+  yq --inplace '
+    (.resources[] | select(.name == "database")) = {
+      "name": "database",
+      "type": "org.cloudfoundry.existing-service",
+      "parameters": {
+        "service-name": env(DEPLOYMENT_NAME)
+      }
+    }
+  ' "${extension_file_path}"
+fi
 
 # When not using the metricsgateway, patch the generated file:
 # - metricsforwarder gets syslog-client binding (direct syslog path)

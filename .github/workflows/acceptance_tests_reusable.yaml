@@ -29,6 +29,18 @@ on:
         required: false
         type: string
         default: ""
+      infrastructure:
+        required: false
+        type: string
+        default: "OSS"
+      postgres_service_offering:
+        required: false
+        type: string
+        default: ""
+      postgres_service_plan:
+        required: false
+        type: string
+        default: ""
     secrets:
       bbl_ssh_key:
         required: true
@@ -74,9 +86,30 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
 
+      - name: Create Acceptance Space
+        shell: bash
+        env:
+          SYSTEM_DOMAIN: ${{ inputs.system_domain }}
+          AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
+          INFRASTRUCTURE: ${{ inputs.infrastructure }}
+        run: make --directory="${AUTOSCALER_DIR}" create-acceptance-space
+
       - name: Provision DB
+        if: inputs.infrastructure == 'OSS'
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" provision-db
+
+      - name: Provision DB Service
+        if: inputs.infrastructure != 'OSS'
+        shell: bash
+        env:
+          SYSTEM_DOMAIN: ${{ inputs.system_domain }}
+          AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
+          AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
+          AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
+          POSTGRES_SERVICE_OFFERING: ${{ inputs.postgres_service_offering }}
+          POSTGRES_SERVICE_PLAN: ${{ inputs.postgres_service_plan }}
+        run: make --directory="${AUTOSCALER_DIR}" provision-db-service
 
       - name: Deploy Apps
         shell: bash
@@ -88,6 +121,7 @@ jobs:
           AUTOSCALER_ORG_MANAGER_PASSWORD: ${{ secrets.autoscaler_org_manager_password }}
           AUTOSCALER_OTHER_USER: ${{ inputs.autoscaler_other_user }}
           AUTOSCALER_OTHER_USER_PASSWORD: ${{ secrets.autoscaler_other_user_password }}
+          INFRASTRUCTURE: ${{ inputs.infrastructure }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
           make --directory="${AUTOSCALER_DIR}" mta-build

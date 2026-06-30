@@ -230,9 +230,17 @@ target/init-db-${db_type}:
 	@mkdir -p target
 	@touch $@
 
+.PHONY: create-acceptance-space
+create-acceptance-space: ## Create the CF org/space for acceptance tests
+	@./scripts/create-acceptance-space.sh
+
 .PHONY: provision-db
 provision-db: ## Provision a database on a remote Postgres server (requires POSTGRES_IP)
 	@./scripts/provision_db.sh
+
+.PHONY: provision-db-service
+provision-db-service: ## Provision a CF service instance as the database (non-OSS)
+	@./scripts/provision-db-service.sh
 
 .PHONY: deprovision-db
 deprovision-db: ## Deprovision a database on a remote Postgres server (requires POSTGRES_IP)
