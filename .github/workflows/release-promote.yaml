@@ -2,15 +2,36 @@
 name: Promote Draft Release to Final
 
 on:
+  schedule:
+    - cron: '0 4 * * 4'  # 04:00 UTC / 06:00 CEST, Thursday
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  resume-ci-vms:
+    name: Resume CI VMs
+    uses: ./.github/workflows/resume-ci-vms.yml
+    secrets:
+      GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY: ${{ secrets.GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY }}
+      BBL_SSH_KEY: ${{ secrets.BBL_SSH_KEY }}
+
+  acceptance-tests:
+    name: Acceptance Tests
+    needs: resume-ci-vms
+    uses: ./.github/workflows/acceptance_tests_reusable.yaml
+    with:
+      deployment_name: autoscaler-mta-main
+    secrets:
+      bbl_ssh_key: ${{ secrets.BBL_SSH_KEY }}
+
   promote-release:
-    runs-on: ubuntu-latest
     name: Promote draft release to final
+    needs: acceptance-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
@@ -39,18 +60,16 @@ jobs:
 
       - name: Get release information
         id: get_release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Get the latest release (which was just published)
           RELEASE_INFO=$(gh release view --json tagName,name,url)
           {
             echo "tag_name=$(echo "$RELEASE_INFO" | jq -r '.tagName')"
             echo "release_name=$(echo "$RELEASE_INFO" | jq -r '.name')"
             echo "release_url=$(echo "$RELEASE_INFO" | jq -r '.url')"
-            # Get the actual commit SHA that was just pushed (the version bump commit)
             echo "commit_sha=$(git rev-parse HEAD)"
           } >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Notify parent repository
         uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
@@ -65,3 +84,11 @@ jobs:
               "release_url": "${{ steps.get_release.outputs.release_url }}",
               "commit_sha": "${{ steps.get_release.outputs.commit_sha }}"
             }
+
+  suspend-ci-vms:
+    name: Suspend CI VMs
+    needs: [ resume-ci-vms, promote-release ]
+    if: always()
+    uses: ./.github/workflows/suspend-ci-vms.yml
+    secrets:
+      GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY: ${{ secrets.GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY }}

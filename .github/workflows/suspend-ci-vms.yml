@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 17 * * 1-5'  # 17:00 UTC / 18:00 CET / 19:00 CEST, Monday to Friday
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      GCP_APP_RUNTIME_INTERFACES_AUTOSCALER_DEPLOYER_KEY:
+        required: true
 
 jobs:
   suspend:
