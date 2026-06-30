@@ -230,9 +230,17 @@ target/init-db-${db_type}:
 	@mkdir -p target
 	@touch $@
 
+.PHONY: create-acceptance-space
+create-acceptance-space: ## Create the CF org/space for acceptance tests
+	@./scripts/create-acceptance-space.sh
+
 .PHONY: provision-db
 provision-db: ## Provision a database on a remote Postgres server (requires POSTGRES_IP)
 	@./scripts/provision_db.sh
+
+.PHONY: provision-db-service
+provision-db-service: ## Provision a CF service instance as the database (non-OSS)
+	@./scripts/provision-db-service.sh
 
 .PHONY: deprovision-db
 deprovision-db: ## Deprovision a database on a remote Postgres server (requires POSTGRES_IP)
@@ -382,6 +390,10 @@ cf-login:
 		  'The necessary changes to the environment get lost when make exits its process.'
 	@${MAKEFILE_DIR}/scripts/os-infrastructure-login.sh
 
+.PHONY: deploy-cleanup
+deploy-cleanup:
+	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
+
 
 .PHONY: start-db
 start-db: check-db_type target/start-db-${db_type}_CI_${CI} waitfor_${db_type}_CI_${CI}
@@ -495,9 +507,6 @@ build-test-app:
 acceptance.build_tests:
 	@make --directory=acceptance build_tests
 
-.PHONY: acceptance.tests-cleanup
-acceptance.tests-cleanup:
-	@make --directory=acceptance acceptance-tests-cleanup
 
 # This target is defined here rather than directly in the component “scheduler” itself, because it depends on targets outside that component. In the future, it will be moved back to that component and reference a dependency to a Makefile on the same level – the one for the component it depends on.
 .PHONY: scheduler.test
@@ -537,9 +546,6 @@ build-acceptance-tests:
 acceptance-tests: build-test-app acceptance-tests-config ## Run acceptance tests against OSS dev environment (requrires a previous deployment of the autoscaler)
 	@make --directory='acceptance' run-acceptance-tests
 
-.PHONY: acceptance-cleanup
-acceptance-cleanup:
-	@make --directory='acceptance' acceptance-tests-cleanup
 
 .PHONY: acceptance-tests-config
 acceptance-tests-config:
@@ -556,9 +562,9 @@ mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 deploy-cleanup:
 	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
 
-.PHONY: create-org-manager-user
-create-org-manager-user:
-	DEBUG="${DEBUG}" ./scripts/create-org-manager-user.sh
+.PHONY: setup-acceptance-tests
+setup-acceptance-tests:
+	DEBUG="${DEBUG}" ./scripts/setup-acceptance-tests.sh
 
 .PHONY: deploy-apps
 deploy-apps:

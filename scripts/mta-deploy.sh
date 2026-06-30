@@ -35,8 +35,9 @@ fi
 pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
-	make -f metricsforwarder/Makefile set-security-group
-	make -f metricsgateway/Makefile set-security-group
+	cf_deployment_login
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
 	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
 
@@ -46,13 +47,17 @@ popd > /dev/null
 # Extract broker password from the generated extension file (baked in by build-extension-file.sh)
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
-cf_login
-
-set +e
-existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
+broker_response="$(cf curl v3/service_brokers 2>&1)" || {
+	echo "ERROR: Failed to query service brokers: ${broker_response}" >&2
+	exit 1
+}
+existing_service_broker="$(echo "${broker_response}" | jq --raw-output \
 	--arg service_broker_name "${deployment_name:-}" \
-	'.resources[] | select(.name == $service_broker_name) | .name')"
-set -e
+	'.resources[] | select(.name == $service_broker_name) | .name')" || {
+	echo "ERROR: Failed to parse service broker response" >&2
+	echo "  Response was: ${broker_response}" >&2
+	exit 1
+}
 
 if [[ -n "${existing_service_broker}" ]]; then
 	echo "Service Broker ${existing_service_broker} already exists"
@@ -65,6 +70,10 @@ if [[ -n "${existing_service_broker}" ]]; then
 fi
 
 echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
-cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}"
+space_scoped_flag=""
+if is_pr_deployment; then
+	space_scoped_flag="--space-scoped"
+fi
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}" ${space_scoped_flag}
 
 cf logout

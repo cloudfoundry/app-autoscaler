@@ -3,6 +3,23 @@
 #
 # This file is intended to be loaded via the source command.
 
+# Enable debug output if DEBUG=true
+if [[ "${DEBUG:-false}" == "true" ]]; then
+	set -x
+fi
+
+function is_pr_deployment() {
+	[[ -n "${PR_NUMBER:-}" && "${PR_NUMBER}" != "main" ]]
+}
+
+function is_main_deployment() {
+	[[ -z "${PR_NUMBER:-}" || "${PR_NUMBER}" == "main" ]]
+}
+
+function is_oss_infrastructure() {
+	[[ "${INFRASTRUCTURE:-OSS}" == "OSS" ]]
+}
+
 function step(){
 	echo "# $1"
 }
@@ -41,18 +58,30 @@ function bbl_login() {
 }
 
 function cf_login(){
-	step 'login to cf'
+	step 'login to cf as admin'
 	cf api "https://api.${system_domain}" --skip-ssl-validation
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 	cf auth admin "$cf_admin_password"
 }
 
-function uaa_login(){
-	step "login to uaa"
-	local uaa_client_secret
-	uaa_client_secret="$(credhub get --quiet --name='/bosh-autoscaler/cf/uaa_admin_client_secret')"
-	uaa target "https://uaa.${system_domain}" --skip-ssl-validation
-	uaa get-client-credentials-token admin -s "${uaa_client_secret}"
+# Login to CF with appropriate credentials for deployment operations
+# Uses admin on main branch, org-manager on PR branches
+function cf_deployment_login(){
+	step 'login to cf for deployment operations'
+	if is_main_deployment; then
+		cf_login
+	else
+		if [[ -z "${AUTOSCALER_ORG_MANAGER_USER:-}" ]]; then
+			echo "ERROR: AUTOSCALER_ORG_MANAGER_USER is not set" >&2
+			return 1
+		fi
+		if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
+			echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is not set" >&2
+			return 1
+		fi
+		cf api "https://api.${system_domain}" --skip-ssl-validation
+		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}" --origin uaa
+	fi
 }
 
 function cleanup_acceptance_run(){
@@ -71,24 +100,6 @@ function cleanup_service_broker(){
 	fi
 }
 
-function cleanup_bosh_deployment(){
-	step "deleting bosh deployment '${deployment_name}'"
-	retry 3 bosh delete-deployment -d "${deployment_name}" -n
-}
-
-function delete_releases(){
-	step "deleting releases"
-	if [ -n "${deployment_name}" ]
-	then
-		for release in $(bosh releases | grep -E "${deployment_name}\s+"  | awk '{print $2}')
-		do
-			 echo "- Deleting bosh release '${release}'"
-			 bosh delete-release -n "app-autoscaler/${release}" &
-		done
-		wait
-	fi
-}
-
 function cleanup_db(){
 	local script_dir
 	script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -97,31 +108,50 @@ function cleanup_db(){
 }
 
 
-function cleanup_bosh(){
-	step "cleaning up bosh"
-	retry 3 bosh clean-up --all -n
-}
-
 function cleanup_credhub(){
 	step "cleaning up credhub: '/bosh-autoscaler/${deployment_name}/*'"
 	retry 3 credhub delete --path="/bosh-autoscaler/${deployment_name}"
 }
+
 
 function cleanup_apps(){
 	step "cleaning up apps"
 	local mtar_app
 	local space_guid
 
-	cf_target "${autoscaler_org}" "${autoscaler_space}"
-
-	space_guid="$(cf space --guid "${autoscaler_space}")"
-
-	local deploy_service_url="https://deploy-service.${system_domain}"
+	# Don't use cf_target() here — it errors if the space doesn't exist, and during
+	# cleanup the space may already be deleted. Use v3 API for safe existence check.
+	local org_guid
+	local org_output
+	if ! org_output=$(cf org "${autoscaler_org}" --guid 2>&1); then
+		if echo "${org_output}" | grep -qi "not found"; then
+			echo "Org ${autoscaler_org} does not exist, nothing to clean up"
+			return 0
+		fi
+		echo "WARNING: Failed to query org '${autoscaler_org}': ${org_output}" >&2
+		return 0
+	fi
+	org_guid="${org_output}"
+	local spaces_response
+	if ! spaces_response=$(cf curl "/v3/spaces?names=${autoscaler_space}&organization_guids=${org_guid}" 2>&1); then
+		echo "WARNING: Failed to query spaces API: ${spaces_response}" >&2
+		return 0
+	fi
+	if echo "${spaces_response}" | jq -e '.errors' >/dev/null 2>&1; then
+		echo "WARNING: CF API error querying spaces: $(echo "${spaces_response}" | jq -r '.errors[0].detail // "unknown"')" >&2
+		return 0
+	fi
+	space_guid=$(echo "${spaces_response}" | jq -r '.resources[0].guid // empty')
+	if [[ -z "${space_guid}" ]]; then
+		echo "Space ${autoscaler_space} does not exist, nothing to clean up"
+		return 0
+	fi
+	if ! cf target -o "${autoscaler_org}" 2>/dev/null; then
+		echo "WARNING: Could not target org '${autoscaler_org}' — cleanup may be incomplete" >&2
+	fi
 	local mtas_response
-
-	# Fetch MTAs from deploy-service (--insecure for self-signed certs)
-	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "${deploy_service_url}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
-		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}" 2>/dev/null)" || true
+	if mtas_response="$(curl --silent --fail --insecure --header "Authorization: $(cf oauth-token)" "https://deploy-service.${system_domain}/api/v2/spaces/${space_guid}/mtas" 2>/dev/null)"; then
+		mtar_app="$(jq -r '.[] | .metadata.id' <<< "${mtas_response}")" || true
 	else
 		echo "Warning: Failed to fetch MTAs from deploy-service, skipping MTA cleanup"
 	fi
@@ -180,34 +210,11 @@ function unset_vars() {
 	unset GINKGO_OPTS
 }
 
-function find_or_create_org(){
-	step "finding or creating org"
-	local org_name="$1"
-	if ! cf orgs | grep --quiet --regexp="^${org_name}$"
-	then
-		cf create-org "${org_name}"
-	fi
-	echo "targeting org ${org_name}"
-	cf target -o "${org_name}"
-}
-
-function find_or_create_space(){
-	step "finding or creating space"
-	local space_name="$1"
-	if ! cf spaces | grep --quiet --regexp="^${space_name}$"
-	then
-		cf create-space "${space_name}"
-	fi
-	echo "targeting space ${space_name}"
-	cf target -s "${space_name}"
-}
-
 function cf_target(){
 	local org_name="$1"
 	local space_name="$2"
 
-	find_or_create_org "${org_name}"
-	find_or_create_space "${space_name}"
+	cf target -o "${org_name}" -s "${space_name}"
 }
 
 function check_database_exists(){

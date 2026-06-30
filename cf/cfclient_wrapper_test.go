@@ -203,6 +203,22 @@ var _ = Describe("CFClientWrapper", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(isAdmin).To(BeFalse())
 		})
+
+		Context("when using password grant", func() {
+			BeforeEach(func() {
+				conf.GrantType = cf.GrantTypePassword
+				conf.Username = "test-user"
+				conf.Password = "test-password"
+				conf.Secret = ""
+			})
+
+			It("returns false without calling introspect", func() {
+				// No mockServer.Add().Introspect() — any introspect call would fail the test
+				isAdmin, err := client.IsUserAdmin(ctx, "user-token")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isAdmin).To(BeFalse())
+			})
+		})
 	})
 
 	Describe("IsUserSpaceDeveloper", func() {

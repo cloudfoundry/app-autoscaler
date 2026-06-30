@@ -18,5 +18,14 @@ jobs:
     with:
       deployment_name: "autoscaler-mta-${{ github.event.pull_request.number || 'main' }}"
       use_metricsgateway: ${{ github.event_name == 'pull_request' }}
+      system_domain: "${{ vars.SYSTEM_DOMAIN }}"
+      autoscaler_org: "${{ vars.ACCEPTANCE_TESTS_EXISTING_ORG }}"
+      autoscaler_org_manager_user: "${{ vars.AUTOSCALER_ORG_MANAGER_USER }}"
+      autoscaler_other_user: "${{ vars.AUTOSCALER_OTHER_USER }}"
+      infrastructure: "${{ vars.INFRASTRUCTURE }}"
+      postgres_service_offering: "${{ vars.POSTGRES_SERVICE_OFFERING }}"
+      postgres_service_plan: "${{ vars.POSTGRES_SERVICE_PLAN }}"
     secrets:
       bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"
+      autoscaler_org_manager_password: "${{ secrets.AUTOSCALER_ORG_MANAGER_PASSWORD }}"
+      autoscaler_other_user_password: "${{ secrets.AUTOSCALER_OTHER_USER_PASSWORD }}"
