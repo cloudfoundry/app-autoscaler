@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
 	code.cloudfoundry.org/lager/v3 v3.76.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260622083525-327d7078f8a4
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260629083741-a193b4ca83f5
 	code.cloudfoundry.org/tlsconfig v0.60.0
 	github.com/apache/thrift v0.23.0
 	github.com/cenkalti/backoff/v5 v5.0.3
@@ -53,8 +53,8 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260610212136-7ab31c22f7ad
 
 require (
-	code.cloudfoundry.org/go-diodes v0.0.0-20260615142411-472d6bcdb3c6 // indirect
-	code.cloudfoundry.org/go-metric-registry v0.0.0-20260617164716-452ba9c14ce2 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20260629064500-85da08bf73ac // indirect
+	code.cloudfoundry.org/go-metric-registry v0.0.0-20260623070701-db77e56fa4e6 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/andybalholm/brotli v1.2.1 // indirect
@@ -93,7 +93,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.69.0 // indirect
-	github.com/prometheus/procfs v0.20.1 // indirect
+	github.com/prometheus/procfs v0.21.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -111,8 +111,8 @@ require (
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 	golang.org/x/tools v0.47.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260618152121-87f3d3e198d3 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260618152121-87f3d3e198d3 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260622175928-b703f567277d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260622175928-b703f567277d // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
