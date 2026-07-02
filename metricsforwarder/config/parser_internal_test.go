@@ -162,6 +162,57 @@ var _ = Describe("rawConfig validation", func() {
 			Expect(err).To(MatchError(MatchRegexp("RateLimit.ValidDuration is less than or equal to zero")))
 		})
 	})
+
+	// --- basic_auth_for_custom_metrics tests ---
+	When("basic_auth_for_custom_metrics is not set", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = ""
+		})
+
+		It("should succeed (default-value 'on' is assumed)", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+	When("basic_auth_for_custom_metrics is set to an invalid value", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "invalid_value"
+		})
+
+		It("should return an error", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+	When("basic_auth_for_custom_metrics is 'disabled' and cred_helper_impl is empty", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "disabled"
+			conf.CredHelperImpl = ""
+			conf.StoredProcedureConfig = nil
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+	When("basic_auth_for_custom_metrics is 'disabled' but cred_helper_impl is set", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "disabled"
+			conf.CredHelperImpl = "default"
+		})
+
+		It("should return an error (contradictory config)", func() {
+			Expect(err).To(HaveOccurred())
+		})
+	})
+	When("basic_auth_for_custom_metrics is 'enabled'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "enabled"
+			conf.CredHelperImpl = "default"
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
 
 var _ = Describe("toConfig credential helper conversion", func() {
@@ -211,18 +262,6 @@ var _ = Describe("toConfig credential helper conversion", func() {
 
 		It("should set CredentialHelperConfig to BasicAuthHandlingNative", func() {
 			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
-		})
-	})
-	When("cred_helper_impl is set to 'disabled'", func() {
-		BeforeEach(func() {
-			conf.CredHelperImpl = "disabled"
-		})
-
-		It("should not error", func() {
-			Expect(err).NotTo(HaveOccurred())
-		})
-		It("should set CredentialHelperConfig to nil", func() {
-			Expect(result.CredentialHelperConfig).To(BeNil())
 		})
 	})
 	When("cred_helper_impl is empty (not set)", func() {
@@ -282,6 +321,50 @@ var _ = Describe("toConfig credential helper conversion", func() {
 
 		It("should return an error", func() {
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// --- basic_auth_for_custom_metrics tests ---
+	When("basic_auth_for_custom_metrics is 'disabled'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "disabled"
+			conf.CredHelperImpl = ""
+			conf.StoredProcedureConfig = nil
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should set CredentialHelperConfig to nil", func() {
+			Expect(result.CredentialHelperConfig).To(BeNil())
+		})
+	})
+	When("basic_auth_for_custom_metrics is 'enabled' with cred_helper_impl 'default'", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = "enabled"
+			conf.CredHelperImpl = "default"
+			conf.StoredProcedureConfig = nil
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should set CredentialHelperConfig to BasicAuthHandlingNative", func() {
+			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
+		})
+	})
+	When("basic_auth_for_custom_metrics is empty (default 'enabled')", func() {
+		BeforeEach(func() {
+			conf.BasicAuthForCustomMetrics = ""
+			conf.CredHelperImpl = "default"
+			conf.StoredProcedureConfig = nil
+		})
+
+		It("should not error", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should set CredentialHelperConfig to BasicAuthHandlingNative (default-value 'on' is assumed)", func() {
+			Expect(result.CredentialHelperConfig).To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
 		})
 	})
 })

@@ -13,6 +13,13 @@ import (
 const NODE_APP = "../assets/app/nodeApp"
 const GO_APP = "../assets/app/go_app/build"
 
+// BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT is the default value applied when
+// "basic_auth_for_custom_metrics" is absent from the acceptance configuration
+// (or explicitly empty). The corresponding switch on the autoscaler side
+// controls whether fresh service bindings may declare
+// credential-type=binding-secret.
+const BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT = "enabled"
+
 type PerformanceConfig struct {
 	AppCount                      int  `json:"app_count"`
 	PercentageToScale             int  `json:"app_percentage_to_scale"`
@@ -85,6 +92,11 @@ type Config struct {
 
 	HealthEndpointsBasicAuthEnabled bool `json:"health_endpoints_basic_auth_enabled"`
 
+	// BasicAuthForCustomMetrics mirrors the apiserver/metricsforwarder option of
+	// the same name. Allowed values: "enabled", "only_existing_bindings", "disabled".
+	// An empty string is treated as "enabled" for backwards compatibility.
+	BasicAuthForCustomMetrics string `json:"basic_auth_for_custom_metrics"`
+
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
 
 	// MinLoadDurationMinutes is how long the test app sustains artificial load (CPU/disk/memory).
@@ -129,6 +141,7 @@ var defaults = Config{
 	NodeMemoryLimit:                 128, // MB
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
+	BasicAuthForCustomMetrics:       BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT,
 	CPUUpperThreshold:               100,
 	MinLoadDurationMinutes:          5,  // conservative default; our CI uses 4 via min_load_duration_minutes
 	ScaleEventTimeoutMinutes:        10, // conservative default; our CI uses 8 via scale_event_timeout_minutes
@@ -260,6 +273,18 @@ func validate(c *Config, terminateSuite TerminateSuite) {
 		c.SchedulerHealthEndpoint = normalizeURL(
 			c.SchedulerHealthEndpoint,
 			c.UseHttp,
+		)
+	}
+
+	switch c.BasicAuthForCustomMetrics {
+	case "":
+		c.BasicAuthForCustomMetrics = BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT
+	case "enabled", "only_existing_bindings", "disabled":
+		// allowed
+	default:
+		terminateSuite(
+			"invalid 'basic_auth_for_custom_metrics': " + c.BasicAuthForCustomMetrics +
+				" (allowed: enabled, only_existing_bindings, disabled)",
 		)
 	}
 }
@@ -449,4 +474,11 @@ func (c *Config) GetExistingClient() string {
 
 func (c *Config) GetExistingClientSecret() string {
 	return c.ExistingClientSecret
+}
+
+// BasicAuthForCustomMetricsAllowedForFreshBinding reports whether a fresh
+// service binding may declare credential-type=binding-secret. This is true
+// only for the "enabled" mode of the basic_auth_for_custom_metrics switch.
+func (c *Config) BasicAuthForCustomMetricsAllowedForFreshBinding() bool {
+	return c.BasicAuthForCustomMetrics == "enabled"
 }
