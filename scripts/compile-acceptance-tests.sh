@@ -4,7 +4,7 @@ set -euo pipefail
 mkdir -p build/acceptance
 
 # Allow environment variables to override for selective builds
-SUITES="${SUITES:-api app broker post_upgrade pre_upgrade run_performance setup_performance}"
+SUITES="${SUITES:-api app broker fips post_upgrade pre_upgrade run_performance setup_performance}"
 OPERATING_SYSTEMS="${TARGET_OS:-linux darwin}"
 ARCHITECTURES="${TARGET_ARCH:-amd64 arm64}"
 
