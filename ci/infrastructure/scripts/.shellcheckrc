@@ -1,0 +1,3 @@
+source-path=SCRIPTDIR
+shell=bash
+external-sources=true

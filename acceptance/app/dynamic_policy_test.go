@@ -18,24 +18,14 @@ import (
 
 var _ = Describe("AutoScaler dynamic policy", func() {
 	var (
-		policy             string
-		err                error
-		doneChan           chan bool
-		doneAcceptChan     chan bool
-		ticker             *time.Ticker
-		maxHeapLimitMb     int
-		memoryUtilScaleOut int64
-		reportedMiB        float64
+		policy         string
+		err            error
+		doneChan       chan bool
+		doneAcceptChan chan bool
+		ticker         *time.Ticker
 	)
 
 	const (
-		// cgroup v2 (Noble stemcell) counts kernel memory against the container limit,
-		// unlike cgroup v1 which tracked it separately. This requires more headroom.
-		minimalMemoryUsage = 35
-
-		// How long the test app holds resource usage before releasing (minutes).
-		holdMinutes = 5
-
 		// responsetime test: app sleeps 100ms per request, threshold at 50ms triggers scale-out.
 		responseTimeSlowDelayMs   = 100
 		responseTimeScaleOutMs    = 50
@@ -58,21 +48,12 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 
 		// memoryutil scale-in threshold (% quota); must stay below post-scale-out avg utilisation.
 		memoryUtilScaleIn        = 30
-		heapFractionOfLimit      = 0.80
-		decimalMBToMiB           = 1_000_000.0 / 1_048_576.0 // cgroup v2 reports binary MiB, Go allocates decimal MB
-		memoryUtilSafetyFactor   = 0.90
 		memoryUsedScaleOutFactor = 0.85
 		baselineMemoryMiB        = 10
 	)
-	BeforeEach(func() {
-		maxHeapLimitMb = int(float64(cfg.NodeMemoryLimit)*heapFractionOfLimit) - minimalMemoryUsage
-		reportedMiB = float64(maxHeapLimitMb) * decimalMBToMiB
-		expectedUtilPct := reportedMiB / float64(cfg.NodeMemoryLimit) * 100
-		memoryUtilScaleOut = int64(expectedUtilPct * memoryUtilSafetyFactor)
-	})
 	When("an ordinary service-binding is used", func() {
 		JustBeforeEach(func() {
-			appToScaleName = helpers.CreateTestApp(cfg, "dynamic-policy", initialInstanceCount)
+			appToScaleName = helpers.CreateTestAppFromDroplet(cfg, dropletPath, "dynamic-policy", initialInstanceCount)
 
 			appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
 			Expect(err).NotTo(HaveOccurred())
@@ -101,17 +82,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out and then back in.", func() {
-					By(fmt.Sprintf("Use heap %d MB of heap on app", maxHeapLimitMb))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", maxHeapLimitMb, holdMinutes))
-
-					By("wait for scale to 2")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
-
-					By("Drop memory used by app")
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
-
-					By("Wait for scale to minimum instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+					waitForMemoryScaling(appToScaleName, appToScaleGUID, maxHeapLimitMb, holdMinutes)
 				})
 			})
 		})
@@ -124,17 +95,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out and back in", func() {
-					By(fmt.Sprintf("use %d MB of memory in app", maxHeapLimitMb))
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, fmt.Sprintf("/memory/%d/%d", maxHeapLimitMb, holdMinutes))
-
-					By("Wait for scale to 2 instances")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
-
-					By("drop memory used")
-					helpers.CurlAppInstance(cfg, appToScaleName, 0, "/memory/close")
-
-					By("Wait for scale down to 1 instance")
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+					waitForMemoryScaling(appToScaleName, appToScaleGUID, maxHeapLimitMb, holdMinutes)
 				})
 			})
 		})
@@ -180,7 +141,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", Label(acceptance.LabelSmokeTests), func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+					waitForScaling(appToScaleGUID, 2)
 				})
 			})
 
@@ -211,7 +172,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale in", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+					waitForScaling(appToScaleGUID, 1)
 				})
 			})
 
@@ -258,7 +219,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				})
 
 				It("should scale out", func() {
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+					waitForScaling(appToScaleGUID, 2)
 				})
 			})
 
@@ -291,7 +252,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				It("should scale in", func() {
 					// because we are generating 20rps but starting with 2 instances,
 					// there should be on average 10rps per instance, which should trigger the scale in
-					helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+					waitForScaling(appToScaleGUID, 1)
 				})
 			})
 		})
@@ -309,13 +270,13 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				By("should scale out to 2 instances")
 				cpuUsage := int(float64(cfg.CPUUpperThreshold) * 0.9)
 				helpers.StartCPUUsage(cfg, appToScaleName, cpuUsage, holdMinutes)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
 
 				By("should scale in to 1 instance after cpu usage is reduced")
 				//only hit the one instance that was asked to run hot.
 				helpers.StopCPUUsage(cfg, appToScaleName, 0)
 
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 10*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
 			})
 		})
 		Context("when there is a scaling policy for cpuutil", func() {
@@ -343,11 +304,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				// cpuutil will be 100% if cpu usage is reaching the value of cpu entitlement
 				maxCPUUsage := cfg.CPUUtilScalingPolicyTest.AppCPUEntitlement
 				helpers.StartCPUUsage(cfg, appToScaleName, maxCPUUsage, holdMinutes)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
 
 				// only hit the one instance that was asked to run hot
 				helpers.StopCPUUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
 			})
 		})
 		Context("when there is a scaling policy for diskutil", func() {
@@ -360,11 +321,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
 				helpers.StartDiskUsage(cfg, appToScaleName, diskUsageMb, holdMinutes)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
 
 				// only hit the one instance that was asked to occupy disk space
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
 			})
 		})
 		Context("when there is a scaling policy for disk", func() {
@@ -377,11 +338,11 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.ScaleDisk(cfg, appToScaleName, "1GB")
 
 				helpers.StartDiskUsage(cfg, appToScaleName, diskUsageMb, holdMinutes)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
 
 				// only hit the one instance that was asked to occupy disk space
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
 			})
 		})
 	})
@@ -389,7 +350,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 		BeforeEach(func() {
 			initialInstanceCount = 1
 
-			appToScaleName = helpers.CreateTestApp(cfg, "dyn_policy_with_sk", initialInstanceCount)
+			appToScaleName = helpers.CreateTestAppFromDroplet(cfg, dropletPath, "dyn_policy_with_sk", initialInstanceCount)
 			appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
 			Expect(err).NotTo(HaveOccurred())
 			helpers.StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
@@ -458,7 +419,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.StartDiskUsage(cfg, appToScaleName, diskUsageMb, holdMinutes+1)
 
 				// Validation
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, 8*time.Minute)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
 
 				// Part-validation setup
 				By("Stopping disk usage to trigger scale in")
@@ -466,8 +427,7 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 				helpers.StopDiskUsage(cfg, appToScaleName, 0)
 
 				// Validation
-				waitingTime := 8 * time.Minute // This validation can take a bit longer for unknown reasons.
-				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, waitingTime)
+				helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
 			})
 		})
 	})
@@ -476,6 +436,25 @@ var _ = Describe("AutoScaler dynamic policy", func() {
 // ================================================================================
 // Helpers
 // ================================================================================
+
+func waitForScaling(appGUID string, instances int) {
+	GinkgoHelper()
+	waitForCustomMetricScaling(func() (int, error) {
+		return helpers.RunningInstances(appGUID, 5*time.Second)
+	}, instances)
+}
+
+func waitForMemoryScaling(appName string, appGUID string, heapMB int, holdMins int) {
+	GinkgoHelper()
+	By(fmt.Sprintf("allocate %d MB heap in app", heapMB))
+	helpers.CurlAppInstance(cfg, appName, 0, fmt.Sprintf("/memory/%d/%d", heapMB, holdMins))
+	By("wait for scale out to 2")
+	helpers.WaitForNInstancesRunning(appGUID, 2, cfg.ScaleEventTimeout())
+	By("release memory")
+	helpers.CurlAppInstance(cfg, appName, 0, "/memory/close")
+	By("wait for scale in to 1")
+	helpers.WaitForNInstancesRunning(appGUID, 1, cfg.ScaleEventTimeout())
+}
 
 func concurrentHttpGet(count int, url string) {
 	client := &http.Client{

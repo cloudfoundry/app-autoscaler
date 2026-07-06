@@ -1,0 +1,3 @@
+- type: replace
+  path: /instance_groups/name=singleton-blobstore/persistent_disk_type
+  value: 500GB

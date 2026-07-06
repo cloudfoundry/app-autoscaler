@@ -1,0 +1,19 @@
+- type: replace
+  path: /instance_groups/name=postgres/jobs/name=postgres/properties?/databases/databases/name=sandbox?
+  value:
+    name: multiapps_controller
+    citext: true
+
+- type: replace
+  path: /instance_groups/name=postgres/jobs/name=postgres/properties?/databases/roles/name=pgadmin?
+  value:
+    name: pgadmin
+    password: ((pgadmin_database_password))
+    permissions:
+    - "CONNECTION LIMIT 1000"
+
+- type: replace
+  path: /variables?/name=pgadmin_database_password?
+  value:
+    name: pgadmin_database_password
+    type: password

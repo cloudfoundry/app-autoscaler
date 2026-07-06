@@ -35,6 +35,16 @@ var (
 	metricProducerAppName string
 
 	metricProducerAppGUID string
+
+	// dropletPath holds the pre-built app droplet created once in BeforeSuite.
+	// All tests reuse it via CreateTestAppFromDropletByName instead of a full cf push.
+	dropletPath string
+
+	// Derived from cfg at suite-setup time; constant for all tests in this suite.
+	holdMinutes        int
+	maxHeapLimitMb     int
+	reportedMiB        float64
+	memoryUtilScaleOut int64
 )
 
 const componentName = "Application Scale Suite"
@@ -57,6 +67,19 @@ var _ = BeforeSuite(func() {
 	CheckServiceExists(cfg, setup.TestSpace.SpaceName(), cfg.ServiceName)
 	interval = cfg.AggregateInterval
 	client = GetHTTPClient(cfg)
+	dropletPath = CreateDroplet(cfg)
+
+	const (
+		minimalMemoryUsage     = 35
+		heapFractionOfLimit    = 0.80
+		decimalMBToMiB         = 1_000_000.0 / 1_048_576.0
+		memoryUtilSafetyFactor = 0.90
+	)
+	holdMinutes = cfg.MinLoadDuration()
+	maxHeapLimitMb = int(float64(cfg.NodeMemoryLimit)*heapFractionOfLimit) - minimalMemoryUsage
+	reportedMiB = float64(maxHeapLimitMb) * decimalMBToMiB
+	expectedUtilPct := reportedMiB / float64(cfg.NodeMemoryLimit) * 100
+	memoryUtilScaleOut = int64(expectedUtilPct * memoryUtilSafetyFactor)
 })
 
 func AppAfterEach() {
@@ -94,6 +117,24 @@ func getStartAndEndTime(location *time.Location, offset, duration time.Duration)
 	}
 	endTime := startTime.Add(duration)
 	return startTime, endTime
+}
+
+func setupCustomMetricTestApp() {
+	policy := GenerateDynamicScaleOutAndInPolicy(1, 2, "test_metric", 500, 500)
+	appToScaleName = CreateTestAppFromDroplet(cfg, dropletPath, "labeled-go_app", 1)
+	var err error
+	appToScaleGUID, err = GetAppGuid(cfg, appToScaleName)
+	Expect(err).NotTo(HaveOccurred())
+	instanceName = CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)
+	StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
+}
+
+func waitForCustomMetricScaling(fn func() (int, error), instances int) {
+	GinkgoHelper()
+	Eventually(fn).
+		WithTimeout(5 * time.Minute).
+		WithPolling(5 * time.Second).
+		Should(Equal(instances))
 }
 
 func DeletePolicyWithAPI(appGUID string) {

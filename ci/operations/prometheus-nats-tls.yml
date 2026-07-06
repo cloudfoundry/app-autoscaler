@@ -1,0 +1,58 @@
+
+- type: remove
+  path: /instance_groups/name=nginx/jobs/name=route_registrar/consumes/nats
+
+- type: replace
+  path: /instance_groups/name=nginx/jobs/name=route_registrar/consumes/nats-tls?
+  value:
+    deployment: cf
+    from: nats-tls
+
+- type: replace
+  path: /releases/-
+  value:
+    name: bosh-dns-aliases
+    version: latest
+
+- type: replace
+  path: /releases/name=routing
+  value:
+    name: routing
+    sha1: 75d14b365d44d5ac880499ce9f073d340c1fd87c
+    stemcell:
+      os: ubuntu-bionic
+      version: "1.97"
+    url: https://storage.googleapis.com/cf-deployment-compiled-releases/routing-0.238.0-ubuntu-bionic-1.97-20220906-171522-72054731.tgz
+    version: 0.238.0
+
+- type: replace
+  path: /instance_groups/name=nginx/jobs/name=route_registrar/properties/nats?
+  value:
+    tls:
+      enabled: true
+      client_cert: ((/bosh-autoscaler/cf/nats_client_cert.certificate))
+      client_key: ((/bosh-autoscaler/cf/nats_client_cert.private_key))
+
+- type: replace
+  path: /addons?/-
+  value:
+    name: bosh-dns-aliases
+    jobs:
+    - name: bosh-dns-aliases
+      release: bosh-dns-aliases
+      properties:
+        aliases:
+        - domain: nats.service.cf.internal
+          targets:
+          - query: '*'
+            instance_group: nats
+            deployment: cf
+            network: default
+            domain: bosh
+        - domain: _.nats.service.cf.internal
+          targets:
+          - query: '_'
+            instance_group: nats
+            deployment: cf
+            network: default
+            domain: bosh

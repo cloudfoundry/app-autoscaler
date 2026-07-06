@@ -40,6 +40,8 @@ type Config struct {
 	ShouldKeepUser                 bool    `json:"keep_user_at_suite_end"`
 	ExistingUser                   string  `json:"existing_user"`
 	ExistingUserPassword           string  `json:"existing_user_password"`
+	OtherExistingUser              string  `json:"other_existing_user"`
+	OtherExistingUserPassword      string  `json:"other_existing_user_password"`
 	UserOrigin                     string  `json:"user_origin"`
 	ConfigurableTestPassword       string  `json:"test_password"`
 	UseExistingOrganization        bool    `json:"use_existing_organization"`
@@ -78,8 +80,9 @@ type Config struct {
 	CfJavaTimeout   int `json:"cf_java_timeout"`
 	NodeMemoryLimit int `json:"node_memory_limit"`
 
-	ASApiEndpoint       string `json:"autoscaler_api"`
-	EnableServiceAccess bool   `json:"enable_service_access"`
+	ASApiEndpoint               string `json:"autoscaler_api"`
+	EnableServiceAccess         bool   `json:"enable_service_access"`
+	SkipServiceAccessManagement bool   `json:"skip_service_access_management"`
 
 	EventgeneratorHealthEndpoint   string `json:"eventgenerator_health_endpoint"`
 	ScalingengineHealthEndpoint    string `json:"scalingengine_health_endpoint"`
@@ -95,6 +98,13 @@ type Config struct {
 	BasicAuthForCustomMetrics string `json:"basic_auth_for_custom_metrics"`
 
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
+
+	// MinLoadDurationMinutes is how long the test app sustains artificial load (CPU/disk/memory).
+	// Must exceed aggregate_interval + breach_duration to guarantee autoscaler detects the breach.
+	MinLoadDurationMinutes int `json:"min_load_duration_minutes"`
+
+	// ScaleEventTimeoutMinutes is how long tests wait for autoscaler to detect and execute a scaling decision.
+	ScaleEventTimeoutMinutes int `json:"scale_event_timeout_minutes"`
 
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
 
@@ -133,6 +143,8 @@ var defaults = Config{
 	HealthEndpointsBasicAuthEnabled: true,
 	BasicAuthForCustomMetrics:       BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT,
 	CPUUpperThreshold:               100,
+	MinLoadDurationMinutes:          5,  // conservative default; our CI uses 4 via min_load_duration_minutes
+	ScaleEventTimeoutMinutes:        10, // conservative default; our CI uses 8 via scale_event_timeout_minutes
 
 	UseExistingOrganization: false,
 	ExistingOrganization:    "",
@@ -308,14 +320,13 @@ func loadConfigFromJSON(jsonContent string, config *Config) error {
 func (c *Config) Protocol() string {
 	if c.UseHttp {
 		return "http://"
-	} else {
-		return "https://"
 	}
+	return "https://"
 }
 
 func (c *Config) Clone() *Config {
-	copy := *c
-	return &copy
+	cloned := *c
+	return &cloned
 }
 
 func (c *Config) DefaultTimeoutDuration() time.Duration {
@@ -343,6 +354,14 @@ func (c *Config) BrokerStartTimeoutDuration() time.Duration {
 
 func (c *Config) AsyncServiceOperationTimeoutDuration() time.Duration {
 	return time.Duration(c.AsyncServiceOperationTimeout) * time.Minute
+}
+
+func (c *Config) MinLoadDuration() int {
+	return c.MinLoadDurationMinutes
+}
+
+func (c *Config) ScaleEventTimeout() time.Duration {
+	return time.Duration(c.ScaleEventTimeoutMinutes) * time.Minute
 }
 
 func (c *Config) CFJavaTimeoutDuration() time.Duration {
@@ -435,6 +454,10 @@ func (c *Config) GetApiEndpoint() string {
 
 func (c *Config) ShouldEnableServiceAccess() bool {
 	return c.EnableServiceAccess
+}
+
+func (c *Config) ShouldSkipServiceAccessManagement() bool {
+	return c.SkipServiceAccessManagement
 }
 
 func (c *Config) GetAdminClient() string {

@@ -23,7 +23,7 @@ modules:
       LOG_LEVEL: INFO
       DEBUG:
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
@@ -71,7 +71,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/api/cmd/api
       GOTOOLCHAIN: "local"
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:
@@ -96,7 +96,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/eventgenerator/cmd/eventgenerator
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:
@@ -120,7 +120,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cmd/metricsforwarder
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:
@@ -145,7 +145,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsgateway/cmd/metricsgateway
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:
@@ -169,7 +169,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/operator/cmd/operator
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:
@@ -193,7 +193,7 @@ modules:
       DT_RELEASE_BUILD_VERSION: ${mta-version}
       GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/cmd/scalingengine
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:
@@ -224,7 +224,7 @@ modules:
       JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{enabled: false}'
       DEBUG:
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     requires:
       - name: scheduler-config
       - name: database
@@ -249,7 +249,7 @@ modules:
       SKIP_TEARDOWN: false
       GINKGO_OPTS: ""
       GOTOOLCHAIN: local
-      GOVERSION: go1.25
+      GOVERSION: go1.26
     build-parameters:
       builder: custom
       commands:

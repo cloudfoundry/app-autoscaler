@@ -31,6 +31,11 @@ check-style:
 	@mvn -B --no-transfer-progress checkstyle:checkstyle
 	@go run fmt_chkstyle/format_checkstyle.go
 
+.PHONY: check-deprecations
+check-deprecations:
+	@echo "Checking for deprecated API usage..."
+	@mvn -B --no-transfer-progress test-compile -Dmaven.compiler.showDeprecation=true -Dmaven.compiler.compilerArg=-Xlint:deprecation -Dmaven.compiler.compilerArg=-Xlint:-options -Dmaven.compiler.compilerArg=-proc:none -Dmaven.compiler.failOnWarning=true
+
 # # 🚸 The following targets are commented out, because they have temporarily been
 # # moved to the top-level-Makefile. The reason is, they depend on targets outside this component. In the future, they will be moved back to this component and reference dependencies to Makefiles on the same level – the ones for the component they depend on.
 # .PHONY: start

@@ -39,9 +39,9 @@ function log(){
 script_dir="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # This environment-variable is used as the target-name for concourse that is used to communicate
-# with the concourse-instance that manages the os-pipelines of this repository under
+# with the concourse-instance that manages the infrastructure pipeline of this repository under
 # <concourse.app-runtime-interfaces.ci.cloudfoundry.org>
-CONCOURSE_AAS_RELEASE_TARGET="${CONCOURSE_AAS_RELEASE_TARGET:-app-autoscaler-release}"
+CONCOURSE_AAS_RELEASE_TARGET="${CONCOURSE_AAS_RELEASE_TARGET:-app-autoscaler}"
 debug "CONCOURSE_AAS_RELEASE_TARGET: ${CONCOURSE_AAS_RELEASE_TARGET}"
 
 export PR_NUMBER=${PR_NUMBER:-$(gh pr view --json number --jq '.number' )}

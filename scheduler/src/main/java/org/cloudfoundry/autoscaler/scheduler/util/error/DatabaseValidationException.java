@@ -1,8 +1,10 @@
 package org.cloudfoundry.autoscaler.scheduler.util.error;
 
+import java.io.Serial;
+
 public class DatabaseValidationException extends RuntimeException {
 
-  private static final long serialVersionUID = 1L;
+  @Serial private static final long serialVersionUID = 1L;
 
   public DatabaseValidationException() {
     super();

@@ -18,7 +18,7 @@ var _ = Describe("AutoScaler custom metrics", func() {
 	)
 	BeforeEach(func() {
 
-		appToScaleName = CreateTestApp(cfg, "go-custom-metric", 1)
+		appToScaleName = CreateTestAppFromDroplet(cfg, dropletPath, "go-custom-metric", 1)
 		appToScaleGUID, err = GetAppGuid(cfg, appToScaleName)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -56,18 +56,10 @@ var _ = Describe("AutoScaler custom metrics", func() {
 			})
 			It("should scale out and scale in", Label(acceptance.LabelSmokeTests), func() {
 				By("Scale out to 2 instances")
-				scaleOut := sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 550, false)
-				Eventually(scaleOut).
-					WithTimeout(5 * time.Minute).
-					WithPolling(15 * time.Second).
-					Should(Equal(2))
+				waitForCustomMetricScaling(sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 550, false), 2)
 
 				By("Scale in to 1 instances")
-				scaleIn := sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 100, false)
-				Eventually(scaleIn).
-					WithTimeout(5 * time.Minute).
-					WithPolling(15 * time.Second).
-					Should(Equal(1))
+				waitForCustomMetricScaling(sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 100, false), 1)
 			})
 		})
 
@@ -77,18 +69,10 @@ var _ = Describe("AutoScaler custom metrics", func() {
 			})
 			It("should scale out and scale in", Label(acceptance.LabelSmokeTests), func() {
 				By("Scale out to 2 instances")
-				scaleOut := sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 550, true)
-				Eventually(scaleOut).
-					WithTimeout(5 * time.Minute).
-					WithPolling(15 * time.Second).
-					Should(Equal(2))
+				waitForCustomMetricScaling(sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 550, true), 2)
 
 				By("Scale in to 1 instance")
-				scaleIn := sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 100, true)
-				Eventually(scaleIn).
-					WithTimeout(5 * time.Minute).
-					WithPolling(15 * time.Second).
-					Should(Equal(1))
+				waitForCustomMetricScaling(sendMetricToAutoscaler(cfg, appToScaleGUID, appToScaleName, 100, true), 1)
 			})
 		})
 	})
@@ -101,7 +85,7 @@ var _ = Describe("AutoScaler custom metrics", func() {
 			StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
 
 			// push producer app without policy
-			metricProducerAppName = CreateTestApp(cfg, "go-custom_metric_producer-app", 1)
+			metricProducerAppName = CreateTestAppFromDroplet(cfg, dropletPath, "go-custom_metric_producer-app", 1)
 			metricProducerAppGUID, err = GetAppGuid(cfg, metricProducerAppName)
 			Expect(err).NotTo(HaveOccurred())
 			err := BindServiceToAppWithPolicy(cfg, metricProducerAppName, instanceName, "")
@@ -116,18 +100,10 @@ var _ = Describe("AutoScaler custom metrics", func() {
 				})
 				It("should scale out and scale in app B", Label(acceptance.LabelSmokeTests), func() {
 					By(fmt.Sprintf("Scale out %s to 2 instance", appToScaleName))
-					scaleOut := sendMetricToAutoscaler(cfg, appToScaleGUID, metricProducerAppName, 550, true)
-					Eventually(scaleOut).
-						WithTimeout(5 * time.Minute).
-						WithPolling(15 * time.Second).
-						Should(Equal(2))
+					waitForCustomMetricScaling(sendMetricToAutoscaler(cfg, appToScaleGUID, metricProducerAppName, 550, true), 2)
 
 					By(fmt.Sprintf("Scale in %s to 1 instance", appToScaleName))
-					scaleIn := sendMetricToAutoscaler(cfg, appToScaleGUID, metricProducerAppName, 80, true)
-					Eventually(scaleIn).
-						WithTimeout(5 * time.Minute).
-						WithPolling(15 * time.Second).
-						Should(Equal(1))
+					waitForCustomMetricScaling(sendMetricToAutoscaler(cfg, appToScaleGUID, metricProducerAppName, 80, true), 1)
 				})
 			})
 		})

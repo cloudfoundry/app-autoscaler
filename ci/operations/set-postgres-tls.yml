@@ -1,0 +1,31 @@
+- type: replace
+  path: /instance_groups/name=postgres/jobs/name=postgres/properties/databases/tls?
+  value:
+    ca: ((postgres_ca.ca))
+    certificate: ((postgres_server.certificate))
+    private_key: ((postgres_server.private_key))
+
+- type: replace
+  path: /variables?/-
+  value:
+    name: postgres_ca
+    options:
+      common_name: postgresCA
+      is_ca: true
+      key_length: 4096
+    type: certificate
+
+- type: replace
+  path: /variables?/-
+  value:
+    name: postgres_server
+    options:
+      alternative_names:
+      - ((postgres_host_or_ip))
+      ca: postgres_ca
+      common_name: postgres
+      extended_key_usage:
+      - client_auth
+      - server_auth
+      key_length: 4096
+    type: certificate
