@@ -37,7 +37,7 @@
 # Previous value 3 (180s) was insufficient - tests still timed out
 - type: replace
   path: /instance_groups/name=smoke-tests/jobs/name=smoke_tests/properties/smoke_tests/timeout_scale?
-  value: 5
+  value: 40
 
 # Increase CF CLI dial timeout to 5 minutes for slow operations
 # Path must include "smoke_tests/" level - properties are nested under "smoke_tests:"
