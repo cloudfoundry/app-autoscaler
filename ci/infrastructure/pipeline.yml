@@ -52,7 +52,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/app-autoscaler
     private_key: ((autoscaler-deploy-key-private))
-    branch: worktree-APPAUTOSCALER-1033-move-ci-pipelines
+    branch: main
     fetch_tags: true
     paths:
       - ci/infrastructure
@@ -259,7 +259,7 @@ jobs:
       vars-files: autoscaler-env-vars-store
     params:
       SYSTEM_DOMAIN: autoscaler.app-runtime-interfaces.ci.cloudfoundry.org
-      OPS_FILES: "operations/cf/scale-to-one-az.yml operations/autoscaler/scale_out_cf_for_app-autoscaler.yaml operations/autoscaler/set-cpu-entitlement-per-share.yaml operations/autoscaler/add-trusted-certs.yaml operations/cf/use-compiled-releases.yml operations/autoscaler/enable_mtls.yml operations/autoscaler/add-eventgenerator-log-cache-uaa-client.yml operations/cf/experimental/disable-v2-api.yml operations/autoscaler/tag-vms-and-disks.yml operations/autoscaler/set-blobstore-disk.yml"
+      OPS_FILES: "operations/cf/scale-to-one-az.yml operations/autoscaler/scale_out_cf_for_app-autoscaler.yaml operations/autoscaler/set-cpu-entitlement-per-share.yaml operations/autoscaler/add-trusted-certs.yaml operations/cf/use-compiled-releases.yml operations/autoscaler/enable_mtls.yml operations/autoscaler/add-eventgenerator-log-cache-uaa-client.yml operations/cf/experimental/disable-v2-api.yml operations/autoscaler/tag-vms-and-disks.yml operations/autoscaler/set-blobstore-disk.yml operations/autoscaler/increase-smoke-test-cleanup-timeout.yml"
       BOSH_DEPLOY_ARGS: "-v diego_cell_instances=3 -v grafana_redirect_uri=https://grafana.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org/login/generic_oauth"
     ensure:
       put: autoscaler-env-vars-store
