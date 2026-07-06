@@ -17,18 +17,22 @@
 #   - Job 35d3cb0b-7a2e-4219-ab95-5f94d91d09a3 polled 13 times over 122 seconds
 #   - Actual org deletion: 11:57:32 - 12:03:19 = ~2 minutes
 #
+# Verified properties from cf-smoke-tests-release@42.0.263/jobs/smoke_tests/spec:
+#   - smoke_tests.timeout_scale: Scaling factor for all timeouts
+#   - smoke_tests.cf_dial_timeout_in_seconds: Sets the cli timeout (CF_DIAL_TIMEOUT)
+#
 # Apply after pin-cf-smoke-tests-v42.0.263.yml
 #
 # See: SMOKE_TEST_TIMEOUT_FIX.md, CORRECTION_CF_USES_MYSQL_NOT_POSTGRES.md
 
 # Scale all timeouts by 3x (60s becomes 180s, 30s becomes 90s, etc.)
-# This is the CORRECT property from cf-smoke-tests job spec
+# Path must include "smoke_tests/" level - properties are nested under "smoke_tests:"
 - type: replace
-  path: /instance_groups/name=smoke-tests/jobs/name=smoke_tests/properties/timeout_scale?
+  path: /instance_groups/name=smoke-tests/jobs/name=smoke_tests/properties/smoke_tests/timeout_scale?
   value: 3
 
-# Also increase CF CLI dial timeout to 5 minutes for slow operations
-# This affects CF_DIAL_TIMEOUT environment variable
+# Increase CF CLI dial timeout to 5 minutes for slow operations
+# Path must include "smoke_tests/" level - properties are nested under "smoke_tests:"
 - type: replace
-  path: /instance_groups/name=smoke-tests/jobs/name=smoke_tests/properties/cf_dial_timeout_in_seconds?
+  path: /instance_groups/name=smoke-tests/jobs/name=smoke_tests/properties/smoke_tests/cf_dial_timeout_in_seconds?
   value: 300
