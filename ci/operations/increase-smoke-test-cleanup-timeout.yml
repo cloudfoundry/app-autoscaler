@@ -1,21 +1,28 @@
 ---
 # Increase cf-smoke-tests cleanup timeout to handle slow org deletions
 #
-# Issue: With cf-deployment v58, org deletion takes ~120 seconds, but
+# Issue: With cf-deployment v58, org deletion is HIGHLY VARIABLE and can exceed 3 minutes.
 # cf-test-helpers has a 60-second timeout in SynchronizedAfterSuite cleanup.
 #
 # Symptoms:
-#   - Both SMOKE-1-ORG and SMOKE-2-ORG timeout after exactly 60s
-#   - Cloud Controller logs show actual deletion takes 120+ seconds
+#   - Attempt 1 (timeout_scale: 3): Both orgs timeout after exactly 180s (3 minutes)
+#   - Earlier test at 12:01 UTC: Job completed in ~122 seconds
+#   - Later test at 15:19 UTC: Still running at 180s timeout
 #   - CF CLI shows "OK" in 2ms (misleading - async job accepted, not completed)
 #
-# Root cause: UNKNOWN (NOT PostgreSQL - cf-deployment uses MySQL which didn't change)
-# Workaround: Use cf-smoke-tests' built-in timeout_scale property to multiply
-#             all test timeouts by 3x (60s → 180s).
+# Root cause: UNKNOWN - org deletion time is non-deterministic
+#   - Earlier observation: ~120 seconds (would pass with 180s timeout)
+#   - Latest observation: >180 seconds (fails even with 180s timeout)
+#   - NOT database-related (cf-deployment uses MySQL which didn't change)
+#   - Possibly load-dependent or background job queue saturation
 #
-# Evidence from Cloud Controller logs (ci/infrastructure/cf-delete-orgs.log):
-#   - Job 35d3cb0b-7a2e-4219-ab95-5f94d91d09a3 polled 13 times over 122 seconds
-#   - Actual org deletion: 11:57:32 - 12:03:19 = ~2 minutes
+# Workaround: Use cf-smoke-tests' built-in timeout_scale property to multiply
+#             all test timeouts by 5x (60s → 300s = 5 minutes).
+#
+# Evidence from Cloud Controller logs:
+#   - Job 35d3cb0b-7a2e-4219-ab95-5f94d91d09a3 polled from 12:01:17 to 12:03:19 = 122s
+#   - Smoke test failure at 15:19:17 to 15:22:17 = exactly 180s (timeout hit)
+#   - Need buffer: 122s observed, but variable up to >180s → use 300s (5min)
 #
 # Verified properties from cf-smoke-tests-release@42.0.263/jobs/smoke_tests/spec:
 #   - smoke_tests.timeout_scale: Scaling factor for all timeouts
@@ -25,11 +32,12 @@
 #
 # See: SMOKE_TEST_TIMEOUT_FIX.md, CORRECTION_CF_USES_MYSQL_NOT_POSTGRES.md
 
-# Scale all timeouts by 3x (60s becomes 180s, 30s becomes 90s, etc.)
+# Scale all timeouts by 5x (60s becomes 300s, 30s becomes 150s, etc.)
 # Path must include "smoke_tests/" level - properties are nested under "smoke_tests:"
+# Previous value 3 (180s) was insufficient - tests still timed out
 - type: replace
   path: /instance_groups/name=smoke-tests/jobs/name=smoke_tests/properties/smoke_tests/timeout_scale?
-  value: 3
+  value: 5
 
 # Increase CF CLI dial timeout to 5 minutes for slow operations
 # Path must include "smoke_tests/" level - properties are nested under "smoke_tests:"
