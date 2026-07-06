@@ -1,0 +1,18 @@
+---
+# Scale log-cache from 1 to 2 instances
+#
+# Issue: Single log-cache instance showing high CPU/memory usage
+# VM: log-cache/baec72be-72dc-4cfc-abde-2bf3a38b43c3
+# - CPU: 37% avg
+# - Memory: 59% (9.6 GB used)
+# - Disk (ephemeral): 47%
+# - Disk (persistent): 5%
+#
+# Solution: Scale to 2 instances for high availability and load distribution
+#
+# Default in cf-deployment v58.0.0: 1 instance
+# After this ops file: 2 instances across z1 and z2
+
+- type: replace
+  path: /instance_groups/name=log-cache/instances
+  value: 2
