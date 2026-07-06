@@ -43,24 +43,24 @@ public class ScheduleEntity {
   @JsonProperty(value = "default_instance_max_count")
   private Integer defaultInstanceMaxCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull
   @Column(name = "instance_min_count")
   @JsonProperty(value = "instance_min_count")
   private Integer instanceMinCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull
   @Column(name = "instance_max_count")
   @JsonProperty(value = "instance_max_count")
   private Integer instanceMaxCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @Column(name = "initial_min_instance_count")
   @JsonProperty(value = "initial_min_instance_count")
   private Integer initialMinInstanceCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @Column(name = "guid")
   @JsonProperty(value = "guid")
   private String guid;

@@ -29,6 +29,6 @@ jobs:
         run: |
           eval "$(devbox shellenv)"
           printenv >> "$GITHUB_ENV"
-      - name: Check Code Formatting
+      - name: Lint
         run: |
-          make --directory=scheduler check-format check-style
+          make scheduler.lint
