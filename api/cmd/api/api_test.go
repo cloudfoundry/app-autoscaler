@@ -225,7 +225,7 @@ var _ = Describe("Api", func() {
 	Describe("can start with default plugin", func() {
 		BeforeEach(func() {
 			pluginConfig := copyConfig(conf)
-			pluginConfig["basic_auth_for_custom_metrics"] = "on"
+			pluginConfig["basic_auth_for_custom_metrics"] = "enabled"
 			pluginConfig["cred_helper_impl"] = "default"
 			runner.configPath = writeConfigValue(pluginConfig).Name()
 		})

@@ -54,7 +54,7 @@ var (
 	ErrDeletePolicyForUnbinding     = errors.New("failed to delete policy for unbinding")
 	ErrDeleteServiceBinding         = errors.New("error deleting service binding")
 	ErrCredentialNotDeleted         = errors.New("failed to delete custom metrics credential for unbinding")
-	ErrInvalidCredentialType        = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]")
+	ErrInvalidCredentialType        = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]") // 🚧 To-do: Unused?
 	ErrInvalidConfigurations        = errors.New("invalid binding configurations provided")
 	ErrInvalidCustomMetricsStrategy = errors.New("error: custom metrics strategy not supported")
 )
