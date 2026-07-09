@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Sync one upstream release into origin/main.
 
 Called from .github/workflows/sync-upstream-release.yaml. Reads config from
