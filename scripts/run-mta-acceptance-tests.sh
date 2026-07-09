@@ -25,6 +25,9 @@ MAX_WAIT_TIME=3600
 script_start_time=$(date +%s)
 APP_GUID=""
 LAUNCHED_TASK_GUIDS=()
+# Cache of final task states — CF GCs SUCCEEDED tasks quickly, so we capture
+# state before it disappears rather than re-querying in show_final.
+FINAL_TASK_STATE=""
 
 validate() {
 	step "Validating prerequisites"
@@ -83,12 +86,16 @@ get_pr_tasks() {
 has_unfinished_tasks() {
 	local tasks
 	tasks=$(get_pr_tasks)
-	echo "$tasks" | grep -qE ":(RUNNING|PENDING)$"
+	if echo "$tasks" | grep -qE ":(RUNNING|PENDING)$"; then
+		return 0
+	fi
+	# Cache state now — CF GCs SUCCEEDED tasks quickly after completion
+	FINAL_TASK_STATE="$tasks"
+	return 1
 }
 
 has_failed_tasks() {
-	local tasks
-	tasks=$(get_pr_tasks)
+	local tasks="${FINAL_TASK_STATE:-$(get_pr_tasks)}"
 	[[ -n "$tasks" ]] && echo "$tasks" | grep -qvE ":SUCCEEDED$"
 }
 
@@ -122,8 +129,9 @@ show_final() {
 	echo -e "\n======= FINAL RESULTS ======="
 	echo "PR_NUMBER=${PR_NUMBER:-unknown}"
 
-	local tasks
-	tasks=$(get_pr_tasks)
+	# Use cached state from polling loop — CF GCs SUCCEEDED tasks quickly,
+	# so re-querying the API here would race against GC.
+	local tasks="${FINAL_TASK_STATE:-$(get_pr_tasks)}"
 
 	if [[ -z "$tasks" ]]; then
 		echo "ERROR: No tasks found for PR ${PR_NUMBER:-unknown}"

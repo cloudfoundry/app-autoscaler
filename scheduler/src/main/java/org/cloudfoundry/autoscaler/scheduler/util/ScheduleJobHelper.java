@@ -114,7 +114,7 @@ public class ScheduleJobHelper {
     String dayOfWeek = convertArrayToDayOfWeekString(recurringScheduleEntity.getDaysOfWeek());
     String dayOfMonth = convertArrayToDayOfMonthString(recurringScheduleEntity.getDaysOfMonth());
 
-    return String.format("00 %02d %02d %s * %s *", min, hour, dayOfMonth, dayOfWeek);
+    return "00 %02d %02d %s * %s *".formatted(min, hour, dayOfMonth, dayOfWeek);
   }
 
   private static String convertArrayToDayOfWeekString(int[] dayOfWeek) {

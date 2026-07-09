@@ -33,15 +33,16 @@ export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
 generate_deployment_secrets() {
-  local prefix="/bosh-autoscaler/${DEPLOYMENT_NAME}"
-  credhub generate --no-overwrite -n "${prefix}/autoscaler_metricsforwarder_health_password" --length 16 -t password
-  credhub generate --no-overwrite -n "${prefix}/autoscaler_metricsgateway_health_password"   --length 16 -t password
-  credhub generate --no-overwrite -n "${prefix}/autoscaler_operator_health_password"         --length 16 -t password
-  credhub generate --no-overwrite -n "${prefix}/autoscaler_eventgenerator_health_password"   --length 16 -t password
-  credhub generate --no-overwrite -n "${prefix}/autoscaler_scalingengine_health_password"    --length 16 -t password
-  credhub generate --no-overwrite -n "${prefix}/service_broker_password_blue"                --length 16 -t password
-  credhub generate --no-overwrite -n "${prefix}/service_broker_password"                     --length 16 -t password
-  return
+  METRICSFORWARDER_HEALTH_PASSWORD="$(openssl rand -base64 12)"
+  METRICSGATEWAY_HEALTH_PASSWORD="$(openssl rand -base64 12)"
+  OPERATOR_HEALTH_PASSWORD="$(openssl rand -base64 12)"
+  EVENTGENERATOR_HEALTH_PASSWORD="$(openssl rand -base64 12)"
+  SCALINGENGINE_HEALTH_PASSWORD="$(openssl rand -base64 12)"
+  SERVICE_BROKER_PASSWORD_BLUE="$(openssl rand -base64 12)"
+  SERVICE_BROKER_PASSWORD="$(openssl rand -base64 12)"
+  export METRICSFORWARDER_HEALTH_PASSWORD METRICSGATEWAY_HEALTH_PASSWORD
+  export OPERATOR_HEALTH_PASSWORD EVENTGENERATOR_HEALTH_PASSWORD
+  export SCALINGENGINE_HEALTH_PASSWORD SERVICE_BROKER_PASSWORD_BLUE SERVICE_BROKER_PASSWORD
 }
 
 load_secrets() {
@@ -49,13 +50,8 @@ load_secrets() {
   # Map YAML keys → shell variable names, emitting `export VAR=value` lines
   local exports
   exports="$(yq '
-    "export EVENTGENERATOR_HEALTH_PASSWORD="          + (.eventgenerator_health_password          | @sh),
     "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="  + (.eventgenerator_log_cache_uaa_client_id  | @sh),
     "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET=" + (.eventgenerator_log_cache_uaa_client_secret | @sh),
-    "export METRICSFORWARDER_HEALTH_PASSWORD="        + (.metricsforwarder_health_password        | @sh),
-    "export METRICSGATEWAY_HEALTH_PASSWORD="          + (.metricsgateway_health_password          | @sh),
-    "export SCALINGENGINE_HEALTH_PASSWORD="           + (.scalingengine_health_password           | @sh),
-    "export OPERATOR_HEALTH_PASSWORD="                + (.operator_health_password                | @sh),
     "export CF_ADMIN_PASSWORD="                       + (.cf_admin_password                       | @sh),
     "export POSTGRES_IP="                             + (.postgres_ip                             | @sh),
     "export DATABASE_DB_USERNAME="                    + (.database_username                       | @sh),
@@ -65,9 +61,7 @@ load_secrets() {
     "export DATABASE_DB_CLIENT_KEY="                  + (.database_client_key                     | @sh),
     "export SYSLOG_CLIENT_CA="                        + (.syslog_client_ca                        | @sh),
     "export SYSLOG_CLIENT_CERT="                      + (.syslog_client_cert                      | @sh),
-    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh),
-    "export SERVICE_BROKER_PASSWORD_BLUE="            + (.service_broker_password_blue            | @sh),
-    "export SERVICE_BROKER_PASSWORD="                 + (.service_broker_password                 | @sh)
+    "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh)
   ' "${secrets_file}")"
   eval "${exports}"
   return
@@ -93,14 +87,6 @@ database_password: ((/bosh-autoscaler/postgres/pgadmin_database_password))
 database_server_ca: ((/bosh-autoscaler/postgres/postgres_server.ca))
 database_client_cert: ((/bosh-autoscaler/postgres/postgres_server.certificate))
 database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
-
-metricsforwarder_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsforwarder_health_password))
-metricsgateway_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_metricsgateway_health_password))
-operator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_operator_health_password))
-eventgenerator_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_eventgenerator_health_password))
-scalingengine_health_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/autoscaler_scalingengine_health_password))
-service_broker_password_blue: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password_blue))
-service_broker_password: ((/bosh-autoscaler/${DEPLOYMENT_NAME}/service_broker_password))
 
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
 EOF

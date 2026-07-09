@@ -1,8 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
+import tools.jackson.databind.ObjectMapper;
 
 /** Service class to persist the schedule entity in the database and create scheduled job. */
 @Service
@@ -446,39 +444,33 @@ public class ScheduleManager {
     ObjectMapper mapper = new ObjectMapper();
     String policyJson = policyJsonEntity.getPolicyJson();
     ApplicationSchedules applicationSchedules = null;
-    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    try {
-      applicationSchedules = mapper.readValue(policyJson, ApplicationSchedules.class);
-      if (applicationSchedules != null
-          && applicationSchedules.getSchedules() != null
-          && applicationSchedules.getSchedules().hasSchedules()) {
-        Schedules schedules = applicationSchedules.getSchedules();
-        List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurringSchedule();
-        List<SpecificDateScheduleEntity> specificDateSchedules = schedules.getSpecificDate();
-        if (recurringSchedules != null) {
-          for (RecurringScheduleEntity recurring : recurringSchedules) {
-            recurring.setAppId(policyJsonEntity.getAppId());
-            recurring.setTimeZone(schedules.getTimeZone());
-            recurring.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
-            recurring.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
-            recurring.setGuid(policyJsonEntity.getGuid());
-          }
-        }
-        if (specificDateSchedules != null) {
-          for (SpecificDateScheduleEntity specificDate : specificDateSchedules) {
-            specificDate.setAppId(policyJsonEntity.getAppId());
-            specificDate.setTimeZone(schedules.getTimeZone());
-            specificDate.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
-            specificDate.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
-            specificDate.setGuid(policyJsonEntity.getGuid());
-          }
+    applicationSchedules = mapper.readValue(policyJson, ApplicationSchedules.class);
+    if (applicationSchedules != null
+        && applicationSchedules.getSchedules() != null
+        && applicationSchedules.getSchedules().hasSchedules()) {
+      Schedules schedules = applicationSchedules.getSchedules();
+      List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurringSchedule();
+      List<SpecificDateScheduleEntity> specificDateSchedules = schedules.getSpecificDate();
+      if (recurringSchedules != null) {
+        for (RecurringScheduleEntity recurring : recurringSchedules) {
+          recurring.setAppId(policyJsonEntity.getAppId());
+          recurring.setTimeZone(schedules.getTimeZone());
+          recurring.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
+          recurring.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
+          recurring.setGuid(policyJsonEntity.getGuid());
         }
       }
-
-    } catch (IOException e) {
-      logger.error("Failed to parse policy, policy_json:" + policyJson, e);
-      applicationSchedules = null;
+      if (specificDateSchedules != null) {
+        for (SpecificDateScheduleEntity specificDate : specificDateSchedules) {
+          specificDate.setAppId(policyJsonEntity.getAppId());
+          specificDate.setTimeZone(schedules.getTimeZone());
+          specificDate.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
+          specificDate.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
+          specificDate.setGuid(policyJsonEntity.getGuid());
+        }
+      }
     }
+
     return applicationSchedules;
   }
 

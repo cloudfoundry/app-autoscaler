@@ -42,7 +42,7 @@
       "valid_duration": "1s",
       "max_amount": 10
     },
-    "cred_helper_impl": "default",
-    "basic_auth_for_custom_metrics": "on"
+    "basic_auth_for_custom_metrics": "enabled",
+    "cred_helper_impl": "default"
   }
 }

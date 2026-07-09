@@ -13,89 +13,18 @@ jobs:
   sync:
     runs-on: [self-hosted, solinas]
     steps:
-      - name: Check for new upstream release
-        id: check
-        env:
-          GITHUB_COM_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_COM_TOKEN }}
-          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
-          GH_HOST: github.tools.sap
-        run: |
-          echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
-          upstream_tag=$(GH_TOKEN="${GITHUB_COM_TOKEN}" GH_HOST="github.com" gh release view --repo cloudfoundry/app-autoscaler --json tagName --jq '.tagName')
-          internal_tag=$(gh release view --repo ${{ github.repository }} --hostname github.tools.sap --json tagName --jq '.tagName' 2>/dev/null || echo "none")
-
-          echo "upstream_tag=${upstream_tag}" >> "$GITHUB_OUTPUT"
-          echo "internal_tag=${internal_tag}" >> "$GITHUB_OUTPUT"
-
-          if [ "${upstream_tag}" = "${internal_tag}" ]; then
-            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Nothing to do
-        if: steps.check.outputs.up_to_date == 'true'
-        run: echo "Already at upstream ${{ steps.check.outputs.upstream_tag }}, nothing to do."
-
       - name: Checkout
-        if: steps.check.outputs.up_to_date == 'false'
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
 
-      - name: Merge upstream release into main
-        if: steps.check.outputs.up_to_date == 'false'
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Sync upstream release into main
         env:
-          UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
-        run: |
-          git config user.email "dl_5ed0ca884687a4027d3f8880@global.corp.sap"
-          git config user.name "aas-serviceuser"
-
-          git remote add upstream https://github.com/cloudfoundry/app-autoscaler.git
-          git fetch upstream --tags --force
-
-          git merge "${UPSTREAM_TAG}" --no-edit -m "chore: merge upstream release ${UPSTREAM_TAG}"
-
-      - name: Generate mta.yaml
-        if: steps.check.outputs.up_to_date == 'false'
-        env:
-          UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
-        run: |
-          version="${UPSTREAM_TAG#v}"
-          sed "/^# /d" mta.tpl.yaml | sed "s/MTA_VERSION/${version}/" > mta.yaml
-          git add -f mta.yaml
-          git diff --cached --quiet || git commit -m "chore: generate mta.yaml for release ${UPSTREAM_TAG}"
-
-      - name: Disable renovate
-        if: steps.check.outputs.up_to_date == 'false'
-        run: |
-          echo '{ "$schema": "https://docs.renovatebot.com/renovate-schema.json", "enabled": false }' > renovate.json
-          git diff --quiet renovate.json || git commit -am "chore: disable renovate on internal repo"
-
-      - name: Remove upstream workflows
-        if: steps.check.outputs.up_to_date == 'false'
-        run: |
-          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
-            [ -f "$f" ] || continue
-            if ! grep -q 'runs-on:.*self-hosted.*solinas' "$f"; then
-              git rm "$f"
-            fi
-          done
-          git diff --cached --quiet || git commit -m "chore: remove upstream workflows not targeting internal runners"
-
-      - name: Push to main
-        if: steps.check.outputs.up_to_date == 'false'
-        run: git push origin main
-
-      - name: Create internal release
-        if: steps.check.outputs.up_to_date == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
-          UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
-        run: |
-          echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
-          gh release create "${UPSTREAM_TAG}" \
-            --title "${UPSTREAM_TAG}" \
-            --notes "Synced from upstream cloudfoundry/app-autoscaler release ${UPSTREAM_TAG}." \
-            --target main
+          INTERNAL_REPO: ${{ github.repository }}
+          INTERNAL_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
+          UPSTREAM_COM_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_COM_TOKEN }}
+        run: uv run .github/scripts/sync-upstream-release.py

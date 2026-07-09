@@ -52,7 +52,7 @@ var _ = Describe("Config", func() {
 						return nil
 					})
 				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
-					"basic_auth_for_custom_metrics": "off",
+					"basic_auth_for_custom_metrics": "disabled",
 
 					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
 					"catalog_schema_path": "../schemas/catalog.schema.json",
@@ -143,7 +143,7 @@ var _ = Describe("Config", func() {
 				})
 
 				It("returns an error", func() {
-					Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
+					Expect(err).To(MatchError(MatchRegexp("(yaml: |go-yaml ).*")))
 				})
 			})
 			Context("with valid yaml", func() {
@@ -209,9 +209,10 @@ var _ = Describe("Config", func() {
 					Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 					Expect(conf.CF).To(Equal(
 						cf.Config{
-							API:      "https://api.example.com",
-							ClientID: "client-id",
-							Secret:   "client-secret",
+							API:       "https://api.example.com",
+							ClientID:  "client-id",
+							Secret:    "client-secret",
+							GrantType: "client_credentials",
 							ClientConfig: cf.ClientConfig{
 								SkipSSLValidation: false,
 								MaxRetries:        3,
