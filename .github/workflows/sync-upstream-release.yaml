@@ -13,139 +13,19 @@ jobs:
   sync:
     runs-on: [self-hosted, solinas]
     steps:
-      - name: Check for new upstream release
-        id: check
-        env:
-          GITHUB_COM_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_COM_TOKEN }}
-          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
-          GH_HOST: github.tools.sap
-        run: |
-          echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
-          upstream_tag=$(GH_TOKEN="${GITHUB_COM_TOKEN}" GH_HOST="github.com" gh release view --repo cloudfoundry/app-autoscaler --json tagName --jq '.tagName')
-          internal_tag=$(gh release view --repo ${{ github.repository }} --hostname github.tools.sap --json tagName --jq '.tagName' 2>/dev/null || echo "none")
-
-          echo "upstream_tag=${upstream_tag}" >> "$GITHUB_OUTPUT"
-          echo "internal_tag=${internal_tag}" >> "$GITHUB_OUTPUT"
-
-          if [ "${upstream_tag}" = "${internal_tag}" ]; then
-            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Nothing to do
-        if: steps.check.outputs.up_to_date == 'true'
-        run: echo "Already at upstream ${{ steps.check.outputs.upstream_tag }}, nothing to do."
-
       - name: Checkout
-        if: steps.check.outputs.up_to_date == 'false'
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
 
-      - name: Merge upstream release into main
-        if: steps.check.outputs.up_to_date == 'false'
+      - name: Sync upstream release into main
+        uses: jannekem/run-python-script-action@9d8e2e0878d575fb6073277f38ce3f10ebf4f059 # v1.8
         env:
-          UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
-        run: |
-          git config user.email "dl_5ed0ca884687a4027d3f8880@global.corp.sap"
-          git config user.name "aas-serviceuser"
-
-          # Register the `ours` merge driver referenced by .gitattributes.
-          # It always resolves in our favor, so origin-only files
-          # (piper.yaml, mta.yaml, .pipeline/**, etc.) survive the merge.
-          git config merge.ours.driver true
-
-          git remote add upstream https://github.com/cloudfoundry/app-autoscaler.git
-          git fetch upstream --tags --force
-
-          # Allow the merge to leave conflicts on disk so we can resolve
-          # them programmatically below (modify/delete for upstream
-          # workflow files that we removed on our fork).
-          if ! git merge "${UPSTREAM_TAG}" --no-edit \
-                -m "chore: merge upstream release ${UPSTREAM_TAG}"; then
-            # Resolve upstream .github/workflows/* modify/delete conflicts
-            # by keeping the delete — those files are removed on our fork
-            # in the "Remove upstream workflows" step and must stay gone.
-            git status --porcelain | awk '/^(DU|UD) / {print $2}' | while read -r f; do
-              case "$f" in
-                .github/workflows/piper.yaml|.github/workflows/sync-upstream-release.yaml)
-                  # Owned by our fork — merge=ours in .gitattributes should
-                  # cover this, but keep the branch as a safety net.
-                  git checkout --ours -- "$f"
-                  git add -- "$f"
-                  ;;
-                .github/workflows/*)
-                  git rm -f -- "$f"
-                  ;;
-                *)
-                  echo "Unhandled modify/delete conflict: $f" >&2
-                  exit 1
-                  ;;
-              esac
-            done
-
-            # Anything still unmerged is a real conflict — fail loudly so
-            # a human resolves it in a follow-up PR.
-            if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
-              echo "Unresolved conflicts remain:" >&2
-              git diff --name-only --diff-filter=U >&2
-              exit 1
-            fi
-
-            git commit --no-edit \
-              -m "chore: merge upstream release ${UPSTREAM_TAG}"
-          fi
-
-      - name: Generate mta.yaml
-        if: steps.check.outputs.up_to_date == 'false'
-        env:
-          UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
-        run: |
-          uv run .github/scripts/generate-mta-yaml.py "${UPSTREAM_TAG#v}"
-          git add -f mta.yaml
-          git diff --cached --quiet || git commit -m "chore: generate mta.yaml for release ${UPSTREAM_TAG}"
-
-      - name: Disable renovate
-        if: steps.check.outputs.up_to_date == 'false'
-        run: |
-          echo '{ "$schema": "https://docs.renovatebot.com/renovate-schema.json", "enabled": false }' > renovate.json
-          git diff --quiet renovate.json || git commit -am "chore: disable renovate on internal repo"
-
-      - name: Remove upstream workflows
-        if: steps.check.outputs.up_to_date == 'false'
-        run: |
-          shopt -s nullglob
-          removed=0
-          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
-            case "$f" in
-              .github/workflows/piper.yaml|.github/workflows/sync-upstream-release.yaml)
-                continue
-                ;;
-            esac
-            if grep -q 'runs-on:.*self-hosted.*solinas' "$f"; then
-              continue
-            fi
-            git rm -f -- "$f"
-            removed=1
-          done
-          if [ "$removed" = "1" ]; then
-            git commit -m "chore: remove upstream workflows not targeting internal runners"
-          fi
-
-      - name: Push to main
-        if: steps.check.outputs.up_to_date == 'false'
-        run: git push origin main
-
-      - name: Create internal release
-        if: steps.check.outputs.up_to_date == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
-          UPSTREAM_TAG: ${{ steps.check.outputs.upstream_tag }}
-        run: |
-          echo "${GH_TOKEN}" | gh auth login --hostname github.tools.sap --with-token
-          gh release create "${UPSTREAM_TAG}" \
-            --title "${UPSTREAM_TAG}" \
-            --notes "Synced from upstream cloudfoundry/app-autoscaler release ${UPSTREAM_TAG}." \
-            --target main
+          INTERNAL_REPO: ${{ github.repository }}
+          INTERNAL_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_TOOLS_TOKEN_RW }}
+          UPSTREAM_COM_TOKEN: ${{ secrets.AUTOSCALER_GITHUB_COM_TOKEN }}
+        with:
+          script: |
+            import runpy
+            runpy.run_path(".github/scripts/sync-upstream-release.py", run_name="__main__")
