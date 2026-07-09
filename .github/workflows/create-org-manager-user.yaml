@@ -1,0 +1,53 @@
+name: Create CI Test Users
+
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        required: false
+        type: string
+        default: "SAP_autoscaler_tests_OSS"
+        description: "CF org to create the CI test users in"
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  AUTOSCALER_DIR: "${{ github.workspace }}/app-autoscaler"
+  BBL_STATE_PATH: "${{ github.workspace }}/bbl/bbl-state"
+  AUTOSCALER_ORG: "${{ inputs.org }}"
+  DEPLOYMENT_NAME: "autoscaler-mta-main"
+
+jobs:
+  create_ci_test_users:
+    name: Create CI Test Users
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          path: app-autoscaler
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
+        with:
+          enable-cache: 'true'
+          project-path: "${AUTOSCALER_DIR}"
+
+      - name: Make devbox shellenv available
+        run: |
+          cd "${AUTOSCALER_DIR}"
+          eval "$(devbox shellenv)"
+          printenv >> "$GITHUB_ENV"
+
+      - name: Setup environment
+        uses: ./app-autoscaler/.github/actions/setup-environment
+        with:
+          ssh-key: ${{ secrets.BBL_SSH_KEY }}
+
+      - name: Create CI test users and store credentials
+        env:
+          GH_TOKEN: ${{ secrets.APP_AUTOSCALER_CI_TOKEN }}
+        run: |
+          make --directory="${AUTOSCALER_DIR}" create-org-manager-user

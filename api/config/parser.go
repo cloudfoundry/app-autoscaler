@@ -90,14 +90,14 @@ func parseCMBasicAuthCfg(rawConfig rawConfig) *CustomMetricsBasicAuthCfg {
 	var basicAuthHandlingNeeded bool = true
 	var bah BasicAuthHandling = BasicAuthHandlingOn
 	switch rawConfig.BasicAuthForCustomMetrics {
-	case "on":
+	case "enabled":
 		// This is the default case and the variables above already are set to:
 		// basicAuthHandlingNeeded = true
 		// bah = BasicAuthHandlingOn
 	case "only_existing_bindings":
 		basicAuthHandlingNeeded = true
 		bah = BasicAuthHandlingOnlyExistingBindings
-	case "off":
+	case "disabled":
 		basicAuthHandlingNeeded = false
 	}
 
@@ -230,13 +230,13 @@ func (c *rawConfig) validate() error {
 		return fmt.Errorf("Configuration error: CatalogPath is empty")
 	}
 
-	// We allow as well the configuration to be not set. "" is mapped to the default-value "on".
-	validBasicAuthSwitches := []string{"", "on", "off", "only_existing_bindings"}
+	// We allow as well the configuration to be not set. "" is mapped to the default-value "enabled".
+	validBasicAuthSwitches := []string{"", "enabled", "disabled", "only_existing_bindings"}
 	if ba4cmCfgIsValid := slices.Contains(validBasicAuthSwitches, c.BasicAuthForCustomMetrics); !ba4cmCfgIsValid {
 		return fmt.Errorf("Configuration error: BasicAuthForCustomMetrics is invalid: \"%s\"", c.BasicAuthForCustomMetrics)
 	}
 
-	if noBasicAuthNeeded := c.BasicAuthForCustomMetrics == "off"; noBasicAuthNeeded {
+	if noBasicAuthNeeded := c.BasicAuthForCustomMetrics == "disabled"; noBasicAuthNeeded {
 		if c.CredHelperImpl != "" {
 			return fmt.Errorf("Configuration error: CredHelperImpl is set but basic authentication is switched off.")
 		}

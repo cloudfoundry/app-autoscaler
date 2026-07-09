@@ -116,8 +116,16 @@ func CreateTestApp(cfg *config.Config, appType string, initialInstanceCount int)
 	CreateTestAppByName(cfg, appName, initialInstanceCount)
 	return appName
 }
+
+func CreateTestAppFromDroplet(cfg *config.Config, dropletPath string, appType string, initialInstanceCount int) string {
+	appName := generator.PrefixedRandomName(cfg.Prefix, appType)
+	By(fmt.Sprintf("Creating test app %s from droplet", appName))
+	err := CreateTestAppFromDropletByName(cfg, dropletPath, appName, initialInstanceCount)
+	Expect(err).ToNot(HaveOccurred())
+	return appName
+}
 func CreateDroplet(cfg *config.Config) string {
-	appName := "deleteme"
+	appName := generator.PrefixedRandomName(cfg.Prefix, "droplet-seed")
 	tmpDir, err := os.CreateTemp("", "droplet")
 	dropletPath := fmt.Sprintf("%s.tgz", tmpDir.Name())
 	Expect(err).NotTo(HaveOccurred())

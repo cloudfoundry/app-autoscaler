@@ -41,3 +41,30 @@ pushd "${autoscaler_dir}" > /dev/null
 	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
 
 popd > /dev/null
+
+# --- Register service broker ---
+# Extract broker password from the generated extension file (baked in by build-extension-file.sh)
+SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
+
+cf_login
+
+set +e
+existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
+	--arg service_broker_name "${deployment_name:-}" \
+	'.resources[] | select(.name == $service_broker_name) | .name')"
+set -e
+
+if [[ -n "${existing_service_broker}" ]]; then
+	echo "Service Broker ${existing_service_broker} already exists"
+	echo " - cleaning up pr"
+	pushd "${autoscaler_dir}/acceptance" > /dev/null
+		./cleanup.sh
+	popd > /dev/null
+	echo ' - deleting broker'
+	cf delete-service-broker -f "${existing_service_broker}"
+fi
+
+echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}"
+
+cf logout

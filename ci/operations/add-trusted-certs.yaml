@@ -1,0 +1,5 @@
+# Add the router CA as a trusted certificate to all containers. This ensures that the containers within the
+# multiapps-controller can validate the cloud controller API's self-signed certificate.
+- type: replace
+  path: /instance_groups/name=diego-cell/jobs/name=cflinuxfs4-rootfs-setup/properties/cflinuxfs4-rootfs/trusted_certs/-
+  value: ((router_ca.ca))

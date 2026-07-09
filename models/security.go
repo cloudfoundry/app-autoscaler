@@ -25,13 +25,13 @@ func (t *TLSCerts) CreateClientConfig() (*tls.Config, error) {
 	}
 
 	if t.CACertFile != "" && t.CertFile == "" && t.KeyFile == "" {
-		clientTls := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults())
+		clientTls := tlsconfig.Build(tlsconfig.WithExternalServiceDefaults())
 		return clientTls.Client(tlsconfig.WithAuthorityFromFile(t.CACertFile))
 	}
 
 	if t.CertFile != "" && t.KeyFile != "" {
 		clientTls := tlsconfig.Build(
-			tlsconfig.WithInternalServiceDefaults(),
+			tlsconfig.WithExternalServiceDefaults(),
 			tlsconfig.WithIdentityFromFile(t.CertFile, t.KeyFile))
 		if t.CACertFile != "" {
 			return clientTls.Client(tlsconfig.WithAuthorityFromFile(t.CACertFile))
@@ -45,7 +45,7 @@ func (t *TLSCerts) CreateClientConfig() (*tls.Config, error) {
 func (t *TLSCerts) CreateServerConfig() (*tls.Config, error) {
 	if t != nil && t.CertFile != "" && t.KeyFile != "" {
 		serverTls := tlsconfig.Build(
-			tlsconfig.WithInternalServiceDefaults(),
+			tlsconfig.WithExternalServiceDefaults(),
 			tlsconfig.WithIdentityFromFile(t.CertFile, t.KeyFile))
 		if t.CACertFile != "" {
 			return serverTls.Server(tlsconfig.WithClientAuthenticationFromFile(t.CACertFile))

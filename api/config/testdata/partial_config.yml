@@ -1,4 +1,4 @@
-basic_auth_for_custom_metrics: "off"
+basic_auth_for_custom_metrics: "disabled"
 broker_credentials:
   - broker_username: broker_username
     broker_password: broker_password

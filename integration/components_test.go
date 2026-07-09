@@ -241,7 +241,7 @@ func DefaultGolangAPITestConfig() YamlValue {
 		"metrics_forwarder": YamlValue{
 			"metrics_forwarder_url": "https://127.0.0.1:8888",
 		},
-		"basic_auth_for_custom_metrics": "on",
+		"basic_auth_for_custom_metrics": "enabled",
 		"cred_helper_impl":              "default",
 	}
 }

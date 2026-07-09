@@ -108,6 +108,7 @@ fake-relevant-go-files = $(shell find . -type f -name '*.go' \
 autoscaler.generate-fakes: ${app-fakes-dir} ${app-fakes-files}
 ${app-fakes-dir} ${app-fakes-files} &: ./go.mod ./go.sum ${fake-relevant-go-files}
 	@echo '# Generating counterfeits'
+	go mod download
 	mkdir -p '${app-fakes-dir}'
 	echo 'package fakes' > '${app-fakes-dir}/doc.go' # Make the directory a real package.
 	COUNTERFEITER_NO_GENERATE_WARNING='true' GOFLAGS='-mod=mod' go generate './generate-fakes.go'
@@ -507,7 +508,11 @@ scheduler.test: check-db_type scheduler.test-certificates init-db
 scheduler.test-certificates:
 	make --directory=scheduler test-certificates
 
-lint: lint-go lint-actions lint-markdown
+lint: lint-go lint-actions lint-markdown scheduler.lint
+
+.PHONY: scheduler.lint
+scheduler.lint:
+	@make --directory=scheduler check-format check-style check-deprecations
 .PHONY: lint-go
 lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\
@@ -551,13 +556,13 @@ mta-acceptance-tests: ## Run MTA acceptance tests in parallel via CF tasks
 # 🚧 To-do: These targets don't exist here!
 .PHONY: deploy-autoscaler deploy-autoscaler-bosh
 
-.PHONY: deploy-register-cf
-deploy-register-cf:
-	DEBUG="${DEBUG}" ./scripts/register-broker.sh
-
 .PHONY: deploy-cleanup
 deploy-cleanup:
 	DEBUG="${DEBUG}" ./scripts/cleanup-autoscaler.sh
+
+.PHONY: create-org-manager-user
+create-org-manager-user:
+	DEBUG="${DEBUG}" ./scripts/create-org-manager-user.sh
 
 .PHONY: deploy-apps
 deploy-apps:

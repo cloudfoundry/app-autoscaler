@@ -13,6 +13,13 @@ import (
 const NODE_APP = "../assets/app/nodeApp"
 const GO_APP = "../assets/app/go_app/build"
 
+// BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT is the default value applied when
+// "basic_auth_for_custom_metrics" is absent from the acceptance configuration
+// (or explicitly empty). The corresponding switch on the autoscaler side
+// controls whether fresh service bindings may declare
+// credential-type=binding-secret.
+const BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT = "enabled"
+
 type PerformanceConfig struct {
 	AppCount                      int  `json:"app_count"`
 	PercentageToScale             int  `json:"app_percentage_to_scale"`
@@ -33,6 +40,8 @@ type Config struct {
 	ShouldKeepUser                 bool    `json:"keep_user_at_suite_end"`
 	ExistingUser                   string  `json:"existing_user"`
 	ExistingUserPassword           string  `json:"existing_user_password"`
+	OtherExistingUser              string  `json:"other_existing_user"`
+	OtherExistingUserPassword      string  `json:"other_existing_user_password"`
 	UserOrigin                     string  `json:"user_origin"`
 	ConfigurableTestPassword       string  `json:"test_password"`
 	UseExistingOrganization        bool    `json:"use_existing_organization"`
@@ -71,8 +80,9 @@ type Config struct {
 	CfJavaTimeout   int `json:"cf_java_timeout"`
 	NodeMemoryLimit int `json:"node_memory_limit"`
 
-	ASApiEndpoint       string `json:"autoscaler_api"`
-	EnableServiceAccess bool   `json:"enable_service_access"`
+	ASApiEndpoint               string `json:"autoscaler_api"`
+	EnableServiceAccess         bool   `json:"enable_service_access"`
+	SkipServiceAccessManagement bool   `json:"skip_service_access_management"`
 
 	EventgeneratorHealthEndpoint   string `json:"eventgenerator_health_endpoint"`
 	ScalingengineHealthEndpoint    string `json:"scalingengine_health_endpoint"`
@@ -82,7 +92,19 @@ type Config struct {
 
 	HealthEndpointsBasicAuthEnabled bool `json:"health_endpoints_basic_auth_enabled"`
 
+	// BasicAuthForCustomMetrics mirrors the apiserver/metricsforwarder option of
+	// the same name. Allowed values: "enabled", "only_existing_bindings", "disabled".
+	// An empty string is treated as "enabled" for backwards compatibility.
+	BasicAuthForCustomMetrics string `json:"basic_auth_for_custom_metrics"`
+
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
+
+	// MinLoadDurationMinutes is how long the test app sustains artificial load (CPU/disk/memory).
+	// Must exceed aggregate_interval + breach_duration to guarantee autoscaler detects the breach.
+	MinLoadDurationMinutes int `json:"min_load_duration_minutes"`
+
+	// ScaleEventTimeoutMinutes is how long tests wait for autoscaler to detect and execute a scaling decision.
+	ScaleEventTimeoutMinutes int `json:"scale_event_timeout_minutes"`
 
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
 
@@ -119,7 +141,10 @@ var defaults = Config{
 	NodeMemoryLimit:                 128, // MB
 	EnableServiceAccess:             true,
 	HealthEndpointsBasicAuthEnabled: true,
+	BasicAuthForCustomMetrics:       BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT,
 	CPUUpperThreshold:               100,
+	MinLoadDurationMinutes:          5,  // conservative default; our CI uses 4 via min_load_duration_minutes
+	ScaleEventTimeoutMinutes:        10, // conservative default; our CI uses 8 via scale_event_timeout_minutes
 
 	UseExistingOrganization: false,
 	ExistingOrganization:    "",
@@ -250,6 +275,18 @@ func validate(c *Config, terminateSuite TerminateSuite) {
 			c.UseHttp,
 		)
 	}
+
+	switch c.BasicAuthForCustomMetrics {
+	case "":
+		c.BasicAuthForCustomMetrics = BASIC_AUTH_FOR_CUSTOM_METRICS_DEFAULT
+	case "enabled", "only_existing_bindings", "disabled":
+		// allowed
+	default:
+		terminateSuite(
+			"invalid 'basic_auth_for_custom_metrics': " + c.BasicAuthForCustomMetrics +
+				" (allowed: enabled, only_existing_bindings, disabled)",
+		)
+	}
 }
 
 func normalizeURL(url string, useHttp bool) string {
@@ -283,14 +320,13 @@ func loadConfigFromJSON(jsonContent string, config *Config) error {
 func (c *Config) Protocol() string {
 	if c.UseHttp {
 		return "http://"
-	} else {
-		return "https://"
 	}
+	return "https://"
 }
 
 func (c *Config) Clone() *Config {
-	copy := *c
-	return &copy
+	cloned := *c
+	return &cloned
 }
 
 func (c *Config) DefaultTimeoutDuration() time.Duration {
@@ -318,6 +354,14 @@ func (c *Config) BrokerStartTimeoutDuration() time.Duration {
 
 func (c *Config) AsyncServiceOperationTimeoutDuration() time.Duration {
 	return time.Duration(c.AsyncServiceOperationTimeout) * time.Minute
+}
+
+func (c *Config) MinLoadDuration() int {
+	return c.MinLoadDurationMinutes
+}
+
+func (c *Config) ScaleEventTimeout() time.Duration {
+	return time.Duration(c.ScaleEventTimeoutMinutes) * time.Minute
 }
 
 func (c *Config) CFJavaTimeoutDuration() time.Duration {
@@ -412,6 +456,10 @@ func (c *Config) ShouldEnableServiceAccess() bool {
 	return c.EnableServiceAccess
 }
 
+func (c *Config) ShouldSkipServiceAccessManagement() bool {
+	return c.SkipServiceAccessManagement
+}
+
 func (c *Config) GetAdminClient() string {
 	return c.AdminClient
 }
@@ -426,4 +474,11 @@ func (c *Config) GetExistingClient() string {
 
 func (c *Config) GetExistingClientSecret() string {
 	return c.ExistingClientSecret
+}
+
+// BasicAuthForCustomMetricsAllowedForFreshBinding reports whether a fresh
+// service binding may declare credential-type=binding-secret. This is true
+// only for the "enabled" mode of the basic_auth_for_custom_metrics switch.
+func (c *Config) BasicAuthForCustomMetricsAllowedForFreshBinding() bool {
+	return c.BasicAuthForCustomMetrics == "enabled"
 }

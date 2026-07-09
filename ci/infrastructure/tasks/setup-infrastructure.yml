@@ -1,0 +1,35 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: cloudfoundry/cf-deployment-concourse-tasks
+    tag: v20.7.0
+
+inputs:
+- name: cf-deployment-concourse-tasks
+- name: ci
+- name: bbl-state
+
+outputs:
+- name: updated-bbl-state
+
+params:
+  BBL_IAAS:
+  BBL_ENV_NAME:
+  BBL_GCP_SERVICE_ACCOUNT_KEY:
+  BBL_GCP_PROJECT_ID:
+  BBL_GCP_REGION:
+  BBL_GCP_ZONE:
+  DEBUG_MODE: false
+  LB_DOMAIN:
+  BBL_LB_CERT:
+  BBL_LB_KEY:
+  TF_VAR_parent_dns_zone:
+  BBL_STATE_DIR: bbl-state
+  GIT_COMMIT_EMAIL: "app-autoscaler@cloudfoundry.org"
+  GIT_COMMIT_USERNAME: "App Autoscaler CI"
+
+run:
+  path: ci/ci/infrastructure/scripts/setup-infrastructure.sh
