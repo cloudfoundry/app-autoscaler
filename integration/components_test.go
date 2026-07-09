@@ -147,7 +147,7 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              EventGenerator,
 		AnsiColorCode:     "36m",
-		StartCheck:        `"eventgenerator.started"`,
+		StartCheck:        "eventgenerator.started",
 		StartCheckTimeout: 20 * time.Second,
 		// #nosec G204
 		Command: exec.Command(
@@ -163,7 +163,7 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              ScalingEngine,
 		AnsiColorCode:     "31m",
-		StartCheck:        `"scalingengine.started"`,
+		StartCheck:        "scalingengine.started",
 		StartCheckTimeout: 20 * time.Second,
 		// #nosec G204
 		Command: exec.Command(
@@ -179,7 +179,7 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 	return ginkgomon_v2.New(ginkgomon_v2.Config{
 		Name:              Operator,
 		AnsiColorCode:     "38m",
-		StartCheck:        `"operator.started"`,
+		StartCheck:        "operator.started",
 		StartCheckTimeout: 40 * time.Second,
 		// #nosec G204
 		Command: exec.Command(

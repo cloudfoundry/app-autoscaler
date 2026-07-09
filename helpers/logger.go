@@ -9,8 +9,8 @@ import (
 )
 
 type LoggingConfig struct {
-	Level         string `yaml:"level" json:"level"`
-	PlainTextSink bool   `yaml:"plaintext_sink" json:"plaintext_sink"`
+	Level    string `yaml:"level" json:"level"`
+	JsonSink bool   `yaml:"json_sink" json:"json_sink"`
 }
 
 func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
@@ -21,12 +21,12 @@ func InitLoggerFromConfig(conf *LoggingConfig, name string) lager.Logger {
 
 	logger := lager.NewLogger(name)
 
-	if conf.PlainTextSink {
-		plaintextFormatSink := createPlaintextSink(logLevel)
-		logger.RegisterSink(plaintextFormatSink)
-	} else {
+	if conf.JsonSink {
 		redactedSink := createRedactedSink(logLevel)
 		logger.RegisterSink(redactedSink)
+	} else {
+		plaintextFormatSink := createPlaintextSink(logLevel)
+		logger.RegisterSink(plaintextFormatSink)
 	}
 
 	return logger

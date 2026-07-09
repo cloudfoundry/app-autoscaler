@@ -132,9 +132,6 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 
 	tlsCerts := vcapReader.GetInstanceTLSCerts()
 
-	// enable plain text logging. See src/autoscaler/helpers/logger.go
-	conf.Logging.PlainTextSink = true
-
 	conf.Health.ServerConfig.Port = vcapReader.GetPort()
 
 	if err := configutil.LoadConfig(conf, vcapReader, "operator-config"); err != nil {

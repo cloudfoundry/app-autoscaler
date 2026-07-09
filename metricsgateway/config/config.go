@@ -48,7 +48,6 @@ func loadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		return nil
 	}
 
-	conf.Logging.PlainTextSink = true
 	conf.CFServer.Port = vcapReader.GetPort()
 	conf.Server.Port = 0
 
