@@ -52,10 +52,51 @@ jobs:
           git config user.email "dl_5ed0ca884687a4027d3f8880@global.corp.sap"
           git config user.name "aas-serviceuser"
 
+          # Register the `ours` merge driver referenced by .gitattributes.
+          # It always resolves in our favor, so origin-only files
+          # (piper.yaml, mta.yaml, .pipeline/**, etc.) survive the merge.
+          git config merge.ours.driver true
+
           git remote add upstream https://github.com/cloudfoundry/app-autoscaler.git
           git fetch upstream --tags --force
 
-          git merge "${UPSTREAM_TAG}" --no-edit -m "chore: merge upstream release ${UPSTREAM_TAG}"
+          # Allow the merge to leave conflicts on disk so we can resolve
+          # them programmatically below (modify/delete for upstream
+          # workflow files that we removed on our fork).
+          if ! git merge "${UPSTREAM_TAG}" --no-edit \
+                -m "chore: merge upstream release ${UPSTREAM_TAG}"; then
+            # Resolve upstream .github/workflows/* modify/delete conflicts
+            # by keeping the delete — those files are removed on our fork
+            # in the "Remove upstream workflows" step and must stay gone.
+            git status --porcelain | awk '/^(DU|UD) / {print $2}' | while read -r f; do
+              case "$f" in
+                .github/workflows/piper.yaml|.github/workflows/sync-upstream-release.yaml)
+                  # Owned by our fork — merge=ours in .gitattributes should
+                  # cover this, but keep the branch as a safety net.
+                  git checkout --ours -- "$f"
+                  git add -- "$f"
+                  ;;
+                .github/workflows/*)
+                  git rm -f -- "$f"
+                  ;;
+                *)
+                  echo "Unhandled modify/delete conflict: $f" >&2
+                  exit 1
+                  ;;
+              esac
+            done
+
+            # Anything still unmerged is a real conflict — fail loudly so
+            # a human resolves it in a follow-up PR.
+            if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+              echo "Unresolved conflicts remain:" >&2
+              git diff --name-only --diff-filter=U >&2
+              exit 1
+            fi
+
+            git commit --no-edit \
+              -m "chore: merge upstream release ${UPSTREAM_TAG}"
+          fi
 
       - name: Generate mta.yaml
         if: steps.check.outputs.up_to_date == 'false'
@@ -75,13 +116,23 @@ jobs:
       - name: Remove upstream workflows
         if: steps.check.outputs.up_to_date == 'false'
         run: |
+          shopt -s nullglob
+          removed=0
           for f in .github/workflows/*.yml .github/workflows/*.yaml; do
-            [ -f "$f" ] || continue
-            if ! grep -q 'runs-on:.*self-hosted.*solinas' "$f"; then
-              git rm "$f"
+            case "$f" in
+              .github/workflows/piper.yaml|.github/workflows/sync-upstream-release.yaml)
+                continue
+                ;;
+            esac
+            if grep -q 'runs-on:.*self-hosted.*solinas' "$f"; then
+              continue
             fi
+            git rm -f -- "$f"
+            removed=1
           done
-          git diff --cached --quiet || git commit -m "chore: remove upstream workflows not targeting internal runners"
+          if [ "$removed" = "1" ]; then
+            git commit -m "chore: remove upstream workflows not targeting internal runners"
+          fi
 
       - name: Push to main
         if: steps.check.outputs.up_to_date == 'false'

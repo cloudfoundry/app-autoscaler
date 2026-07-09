@@ -1,0 +1,13 @@
+# Files owned by this fork; upstream must never overwrite them during a
+# `Sync Upstream Release` merge. The `ours` driver is registered in the
+# sync workflow (git config merge.ours.driver true) and is a no-op that
+# always keeps our version.
+
+.gitattributes                                    merge=ours
+mta.yaml                                          merge=ours
+renovate.json                                     merge=ours
+sonar-project.properties                          merge=ours
+.pipeline/**                                      merge=ours
+.github/scripts/**                                merge=ours
+.github/workflows/piper.yaml                      merge=ours
+.github/workflows/sync-upstream-release.yaml      merge=ours
