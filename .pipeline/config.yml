@@ -9,7 +9,6 @@ general:
   nativeBuild: true
 stages:
   Build:
-    sonarExecuteScan: false
   Release:
     sapDownloadArtifact: false
   Post:
@@ -25,3 +24,5 @@ steps:
     profile: 'group-1724-default'
   sapCumulusUpload:
     pipelineId: '0a0a9ac2-ed98-4dc1-a0de-79bcc34874ad'
+  sonarExecuteScan:
+    serverUrl: 'https://sonar.tools.sap'
