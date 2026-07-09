@@ -153,19 +153,28 @@ def resolve_conflicts() -> None:
 
 def merge_upstream(tag: str) -> None:
     """Merge upstream tag into current branch, resolving known conflicts."""
-    try:
-        git(
-            "merge", tag,
-            "--no-edit",
-            "-m", f"chore: merge upstream release {tag}",
-            capture=False,
-        )
+    # Capture merge output so git's "Automatic merge failed; fix conflicts
+    # and then commit the result." doesn't land in the log on the happy path
+    # (we ARE fixing the conflicts and committing, right below). If the
+    # resolver can't handle something, we re-print the captured output as
+    # part of the failure diagnostics.
+    proc = subprocess.run(
+        ["git", "merge", tag, "--no-edit",
+         "-m", f"chore: merge upstream release {tag}"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
         return  # clean merge, we're done
-    except subprocess.CalledProcessError:
-        # Fall through to conflict resolution.
-        pass
 
-    resolve_conflicts()
+    try:
+        resolve_conflicts()
+    except SystemExit:
+        # Surface the git output that we swallowed above so a human can
+        # see the CONFLICT lines when they investigate.
+        sys.stderr.write(proc.stdout)
+        sys.stderr.write(proc.stderr)
+        raise
     git("commit", "--no-edit", "-m", f"chore: merge upstream release {tag}")
 
 
