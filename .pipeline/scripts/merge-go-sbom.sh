@@ -11,8 +11,8 @@
 #   Go SBOM with cyclonedx-gomod and merges it into that file, so the published SBOM
 #   covers both the Java and Go dependency graphs.
 #
-# It is wired as a Piper `shellExecute` step in the Build stage (see .pipeline/config.yml)
-# so it runs after mtaBuild and before the SBOM validation policy reads the file.
+# It is called from .pipeline/extensions/postBuild/action.yml (a Piper stage extension)
+# inside the pinned mbtci Docker image, which has cyclonedx-gomod and cyclonedx-cli.
 #
 # Tooling required (all present in the mtaBuild container image):
 #   - cyclonedx-gomod   (generate the Go SBOM from the root go.mod)
@@ -46,6 +46,13 @@ cyclonedx merge \
 	--output-file "${SBOM_FILE}.new" \
 	--input-format xml \
 	--output-format xml
+
+# cyclonedx merge drops the metadata.timestamp that mbt sets; the Hyperspace schema
+# requires it. Inject the current UTC time only when the merged file lacks one.
+TIMESTAMP="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+if ! grep -q '<timestamp>' "${SBOM_FILE}.new"; then
+	sed -i "s|<metadata>|<metadata><timestamp>${TIMESTAMP}</timestamp>|" "${SBOM_FILE}.new"
+fi
 mv "${SBOM_FILE}.new" "${SBOM_FILE}"
 
 echo "Validating merged SBOM ..."
