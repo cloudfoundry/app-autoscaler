@@ -32,3 +32,4 @@ jobs:
     with:
       languages: "go"
       go-version-file: "go.mod"
+      codeql-config-file: ".github/codeql/codeql-config.yml"

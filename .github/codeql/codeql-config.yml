@@ -1,0 +1,9 @@
+name: "app-autoscaler CodeQL config"
+
+# Directories excluded from CodeQL analysis. These hold test-only code
+# (mirrors the test exclusions in sonar-project.properties), so scanning them
+# produces alerts on non-production code.
+paths-ignore:
+  - integration
+  - acceptance
+  - ci
