@@ -36,6 +36,8 @@ from pathlib import Path
 FORK_OWNED_WORKFLOW_FILES = {
     ".github/workflows/piper.yaml",
     ".github/workflows/sync-upstream-release.yaml",
+    ".github/workflows/codeql-sast-analysis.yml",
+    ".github/workflows/secret-scanning-sast-analysis.yml",
 }
 
 # Marker used by the "keep only workflows targeting internal runners" step.
