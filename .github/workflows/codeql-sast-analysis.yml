@@ -31,3 +31,4 @@ jobs:
       id-token: write
     with:
       languages: "go"
+      go-version-file: "go.mod"
