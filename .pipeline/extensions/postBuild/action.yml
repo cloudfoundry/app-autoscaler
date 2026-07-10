@@ -1,0 +1,24 @@
+name: postBuild
+description: |
+  postBuild stage extension for the SAP Piper GitHub pipeline.
+
+  mbt sbom-gen (run by mtaBuild --create-bom) skips Go modules, so
+  sbom-gen/bom-mta.xml only covers the Java modules. This extension:
+    1. Merges the Go dependency SBOM into sbom-gen/bom-mta.xml.
+    2. Re-uploads it with sapCumulusUpload --stepResultType sbom so the
+       Hyperspace SBOM policy evaluates the complete (Java + Go) evidence.
+
+runs:
+  using: composite
+  steps:
+    - name: Merge Go SBOM into the MTA SBOM
+      shell: bash
+      working-directory: ${{ env.WORKING_DIR }}
+      run: bash .pipeline/scripts/merge-go-sbom.sh
+
+    - name: Re-upload merged SBOM to Cumulus
+      uses: piper/piper-action@497603ce53421a128a4b3fac5d87783bc46f3393 # v1.29
+      with:
+        step-name: sapCumulusUpload
+        flags: --filePattern **/bom-*.xml --stepResultType sbom
+        working-dir: ${{ env.WORKING_DIR }}

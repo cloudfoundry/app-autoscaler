@@ -9,6 +9,10 @@ on:
 jobs:
   piper:
     uses: "project-piper/piper-pipeline-github/.github/workflows/sap-piper-workflow.yml@v1"
+    # Enable stage extensions so the postBuild extension
+    # (.pipeline/extensions/postBuild) can merge the Go SBOM into the MTA SBOM.
+    with:
+      extensibility-enabled: true
     secrets: inherit
     permissions:
       contents: write

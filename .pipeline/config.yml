@@ -9,12 +9,6 @@ general:
   nativeBuild: true
 stages:
   Build:
-    # After mtaBuild writes the (Java/Node-only) SBOM to sbom-gen/bom-mta.xml, merge in
-    # the Go dependency SBOM. mbt does not generate SBOMs for Go modules, so without this
-    # the published SBOM would omit every Go dependency. See the script header for details.
-    shellExecute:
-      sources:
-        - ".pipeline/scripts/merge-go-sbom.sh"
   Release:
     sapDownloadArtifact: false
   Post:
