@@ -4,9 +4,12 @@ description: |
 
   mbt sbom-gen (run by mtaBuild --create-bom) skips Go modules, so
   sbom-gen/bom-mta.xml only covers the Java modules. This extension:
-    1. Merges the Go dependency SBOM into sbom-gen/bom-mta.xml.
+    1. Merges the Go dependency SBOM into sbom-gen/bom-mta.xml by running
+       the merge script inside the same mtaBuild container image (which has
+       cyclonedx-gomod and the cyclonedx CLI pre-installed).
     2. Re-uploads it with sapCumulusUpload --stepResultType sbom so the
-       Hyperspace SBOM policy evaluates the complete (Java + Go) evidence.
+       Hyperspace SBOM policy evaluates the complete (Java + Go) evidence
+       rather than the Java-only file uploaded by the Build stage itself.
 
 runs:
   using: composite
@@ -14,7 +17,17 @@ runs:
     - name: Merge Go SBOM into the MTA SBOM
       shell: bash
       working-directory: ${{ env.WORKING_DIR }}
-      run: bash .pipeline/scripts/merge-go-sbom.sh
+      # Run inside the mtaBuild container image so cyclonedx-gomod and the
+      # cyclonedx CLI are available (they are not on the runner's PATH).
+      # The image is already pulled by the time postBuild runs.
+      env:
+        MBTCI_IMAGE: devxci/mbtci-java21-node22@sha256:1f76a8031a9d1fcec4ff0c71cbcd648768c76712b2aa304356ffd212b820b477
+      run: |
+        docker run --rm \
+          -v "${GITHUB_WORKSPACE}:/work" \
+          --workdir /work \
+          "${MBTCI_IMAGE}" \
+          bash .pipeline/scripts/merge-go-sbom.sh
 
     - name: Re-upload merged SBOM to Cumulus
       uses: piper/piper-action@497603ce53421a128a4b3fac5d87783bc46f3393 # v1.29
