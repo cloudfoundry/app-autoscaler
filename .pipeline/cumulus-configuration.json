@@ -1,0 +1,19 @@
+{
+  "backlogIds": [
+    "APPAUTOSCALER"
+  ],
+  "jiraComponentPipelineMappings": [
+    {
+      "component": "service-177_application-autoscaler-service",
+      "pipelineKeys": [
+        "applicationautoscaler-app-autoscaler-2026-06-25"
+      ]
+    }
+  ],
+  "ignoredCentralPolicies": [
+    {
+      "key": "SDOL-005",
+      "reason": "Fulfilled via https://jira.tools.sap/browse/HIS-3041"
+    }
+  ]
+}
