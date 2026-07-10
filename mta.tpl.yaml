@@ -15,7 +15,11 @@ parameters:
 modules:
   - name: dbtasks
     type: java
-    path: .
+    # Per-submodule path so `mbt sbom-gen` runs cyclonedx makeAggregateBom against
+    # dbtasks/pom.xml alone (not the root reactor). Sharing `path: .` with the
+    # scheduler module makes mbt aggregate the whole reactor twice and merge two
+    # identical BOMs, which fails CycloneDX uniqueItems validation.
+    path: dbtasks
     properties:
       JBP_LOG_LEVEL:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
@@ -27,8 +31,10 @@ modules:
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
-        - make dbtasks.clean package-dbtasks
-      build-result: dbtasks/target/db-1.0-SNAPSHOT.jar
+        # `path: dbtasks` runs commands from dbtasks/; the make targets pushd into
+        # dbtasks/ and expect the repo root, so invoke make from the parent dir.
+        - make -C .. dbtasks.clean package-dbtasks
+      build-result: target/db-1.0-SNAPSHOT.jar
     requires:
       - name: database
     parameters:
@@ -212,12 +218,16 @@ modules:
       routes:
   - name: scheduler
     type: java
-    path: .
+    # Per-submodule path so SBOM generation aggregates scheduler/pom.xml alone.
+    # See the dbtasks module for why sharing `path: .` breaks SBOM validation.
+    path: scheduler
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
-        - make scheduler.clean build-scheduler
-      build-result: scheduler/target/scheduler-1.0-SNAPSHOT.war
+        # `path: scheduler` runs commands from scheduler/; the make targets pushd
+        # into scheduler/ and expect the repo root, so invoke make from the parent.
+        - make -C .. scheduler.clean build-scheduler
+      build-result: target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
