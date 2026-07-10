@@ -9,6 +9,7 @@ fakes/*
 keys
 mta.yaml
 mta_archives/
+sbom-gen/
 target/
 test-certs
 vendor
