@@ -7,3 +7,14 @@ paths-ignore:
   - integration
   - acceptance
   - ci
+
+# go/log-injection is a false positive across this codebase: user-provided
+# values are logged only via lager (code.cloudfoundry.org/lager/v3), and both
+# sinks in helpers/logger.go escape them so a newline cannot forge a log
+# record. The default sink (createRedactedSink) re-marshals each entry with
+# json.Marshal; the plaintext sink (createPlaintextSink -> slog.NewTextHandler)
+# quotes/escapes attribute and msg values. Revisit if non-lager logging (e.g.
+# fmt.Println, a raw writer) is ever introduced.
+query-filters:
+  - exclude:
+      id: go/log-injection
