@@ -11,7 +11,7 @@ copyright: Apache License 2.0
 version: MTA_VERSION
 parameters:
   enable-parallel-deployments: true
-  java-buildpack: java_buildpack_v5
+  java-buildpack: java_buildpack
 modules:
   - name: dbtasks
     type: java
