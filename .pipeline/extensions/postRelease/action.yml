@@ -1,0 +1,13 @@
+# Extension action to be executed after a release has been created
+# https://pages.github.tools.sap/project-piper/extensibility/#1-extend-individual-stages
+name: postRelease
+runs:
+  using: composite
+  steps:
+    - name: Set release status to `released`
+      uses: piper/piper-action@d40ad881370e905810ff6dcd338be4d248a69293 # v1
+      with:
+        step-name: writePipelineEnv
+        # Piper Docs:  https://pages.github.tools.sap/project-piper/steps/sapGenerateEnvironmentInfo/#releasestatus
+        # Setting releaseStatus: https://pages.github.tools.sap/Hyperspace-Documentation/cumulus/2--Getting-Started---Cumulus/2-6-Release-Status/Automatically-Set-Pipeline-Run-Release-Status-by-File-Upload/
+        flags: --value custom/releaseStatus={"releaseStatus":"released","selectionType":"latest-delivery-in-status-new"}
