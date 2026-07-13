@@ -77,8 +77,26 @@ def gh(*args: str, env_overrides: dict[str, str] | None = None) -> str:
     return result.stdout.strip()
 
 
+def gh_login(host: str, token: str) -> None:
+    """Authenticate `gh` for a host. Required for enterprise hosts on the
+    self-hosted runner, where env-var-only auth (GH_HOST/GH_TOKEN) is not
+    enough for `gh release view` to reach the host."""
+    subprocess.run(
+        ["gh", "auth", "login", "--hostname", host, "--with-token"],
+        input=token,
+        text=True,
+        check=True,
+    )
+
+
 def latest_release_tag(repo: str, *, host: str, token: str) -> str:
-    """Return the tagName of the latest release, or 'none' if there isn't one."""
+    """Return the tagName of the latest release, or 'none' if there isn't one.
+
+    Only the genuine "no releases yet" case maps to 'none'. Any other failure
+    (auth, network, host resolution) re-raises so it surfaces loudly — masking
+    it as 'none' would defeat the caller's "already synced" guard and provoke a
+    bogus release-create against an already-existing tag.
+    """
     try:
         return gh(
             "release", "view",
@@ -87,8 +105,11 @@ def latest_release_tag(repo: str, *, host: str, token: str) -> str:
             "--jq", ".tagName",
             env_overrides={"GH_HOST": host, "GH_TOKEN": token},
         )
-    except subprocess.CalledProcessError:
-        return "none"
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").lower()
+        if "release not found" in stderr or "no releases" in stderr:
+            return "none"
+        raise
 
 
 def configure_git_identity() -> None:
@@ -230,13 +251,13 @@ def push_main() -> None:
 
 
 def create_internal_release(tag: str, token: str) -> None:
-    subprocess.run(
-        ["gh", "auth", "login", "--hostname", INTERNAL_HOST, "--with-token"],
-        input=token,
-        text=True,
-        check=True,
-    )
-    subprocess.run(
+    """Create the internal release for `tag`.
+
+    Idempotent: if the release/tag already exists (HTTP 422), treat it as
+    success so re-runs recover cleanly instead of crashing. Assumes the
+    internal host is already authenticated (see gh_login in main()).
+    """
+    proc = subprocess.run(
         [
             "gh", "release", "create", tag,
             "--title", tag,
@@ -244,8 +265,20 @@ def create_internal_release(tag: str, token: str) -> None:
             f"Synced from upstream {UPSTREAM_REPO} release {tag}.",
             "--target", "main",
         ],
-        check=True,
+        capture_output=True,
+        text=True,
         env={**os.environ, "GH_HOST": INTERNAL_HOST, "GH_TOKEN": token},
+    )
+    if proc.returncode == 0:
+        return
+    stderr = (proc.stderr or "").lower()
+    if "already exists" in stderr:
+        print(f"Internal release {tag} already exists, nothing to do.")
+        return
+    sys.stderr.write(proc.stdout)
+    sys.stderr.write(proc.stderr)
+    raise subprocess.CalledProcessError(
+        proc.returncode, proc.args, output=proc.stdout, stderr=proc.stderr
     )
 
 
@@ -253,6 +286,11 @@ def main() -> int:
     internal_repo = os.environ["INTERNAL_REPO"]  # e.g. autoscaler/app-autoscaler
     internal_token = os.environ["INTERNAL_TOKEN"]
     upstream_com_token = os.environ["UPSTREAM_COM_TOKEN"]
+
+    # Authenticate the internal enterprise host up front: env-var-only auth is
+    # not enough for `gh release view` on the self-hosted runner, so without
+    # this the internal release lookup below silently returns 'none'.
+    gh_login(INTERNAL_HOST, internal_token)
 
     upstream_tag = latest_release_tag(
         UPSTREAM_REPO, host="github.com", token=upstream_com_token,
