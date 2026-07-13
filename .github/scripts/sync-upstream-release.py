@@ -80,12 +80,18 @@ def gh(*args: str, env_overrides: dict[str, str] | None = None) -> str:
 def gh_login(host: str, token: str) -> None:
     """Authenticate `gh` for a host. Required for enterprise hosts on the
     self-hosted runner, where env-var-only auth (GH_HOST/GH_TOKEN) is not
-    enough for `gh release view` to reach the host."""
+    enough for `gh release view` to reach the host.
+
+    Output is captured (not printed) so nothing `gh` echoes lands in the
+    workflow log; the token gets a trailing newline since `--with-token`
+    reads stdin as a line.
+    """
     subprocess.run(
         ["gh", "auth", "login", "--hostname", host, "--with-token"],
-        input=token,
+        input=token if token.endswith("\n") else token + "\n",
         text=True,
         check=True,
+        capture_output=True,
     )
 
 
@@ -272,11 +278,13 @@ def create_internal_release(tag: str, token: str) -> None:
     if proc.returncode == 0:
         return
     stderr = (proc.stderr or "").lower()
-    if "already exists" in stderr:
+    if "already exists" in stderr or "validation failed" in stderr:
         print(f"Internal release {tag} already exists, nothing to do.")
         return
-    sys.stderr.write(proc.stdout)
-    sys.stderr.write(proc.stderr)
+    if proc.stderr:
+        sys.stderr.write(proc.stderr)
+    if proc.stdout:
+        sys.stderr.write(proc.stdout)
     raise subprocess.CalledProcessError(
         proc.returncode, proc.args, output=proc.stdout, stderr=proc.stderr
     )
