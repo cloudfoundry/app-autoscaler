@@ -247,9 +247,9 @@ health:
 `)
 				})
 
-				It("should set logging to redacted by default", func() {
+				It("should default logging to plain sink", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(conf.Logging.PlainTextSink).To(BeFalse())
+					Expect(conf.Logging.JsonSink).To(BeFalse())
 				})
 				It("returns default values", func() {
 					Expect(err).NotTo(HaveOccurred())

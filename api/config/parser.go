@@ -313,9 +313,6 @@ func LoadVcapConfig(conf *rawConfig, vcapReader configutil.VCAPConfigurationRead
 
 	tlsCert := vcapReader.GetInstanceTLSCerts()
 
-	// enable plain text logging. See src/autoscaler/helpers/logger.go
-	conf.Logging.PlainTextSink = true
-
 	// Avoid port conflict: assign actual port to CF server, set BOSH server port to 0 (unused)
 	conf.CFServer.Port = vcapReader.GetPort()
 	conf.Server.Port = 0

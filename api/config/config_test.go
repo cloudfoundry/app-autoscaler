@@ -73,9 +73,9 @@ var _ = Describe("Config", func() {
 				conf, err = LoadConfig("", mockVCAPConfigurationReader)
 			})
 
-			It("should set logging to plain sink", func() {
+			It("should default logging to plain sink", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Logging.PlainTextSink).To(BeTrue())
+				Expect(conf.Logging.JsonSink).To(BeFalse())
 			})
 			It("send certs to scalingengineScalingEngine TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -237,9 +237,9 @@ var _ = Describe("Config", func() {
 				BeforeEach(func() {
 					configBytes = []byte(testhelpers.LoadFile("partial_config.yml"))
 				})
-				It("should set logging to redacted by default", func() {
+				It("should default logging to plain sink", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(conf.Logging.PlainTextSink).To(BeFalse())
+					Expect(conf.Logging.JsonSink).To(BeFalse())
 				})
 				It("It returns the default values", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -280,6 +280,18 @@ rate_limit:
 				})
 				It("should error", func() {
 					Expect(err).To(MatchError(MatchRegexp("failed to read config file")))
+				})
+			})
+			Context("when json_sink is enabled", func() {
+				BeforeEach(func() {
+					configBytes = append(
+						[]byte(testhelpers.LoadFile("partial_config.yml")),
+						[]byte("\nlogging:\n  json_sink: true\n")...,
+					)
+				})
+				It("selects the JSON sink", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.Logging.JsonSink).To(BeTrue())
 				})
 			})
 			Context("when valid_duration of rate_limit is not a time duration", func() {
