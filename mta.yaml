@@ -22,6 +22,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
+    - make -C .. vendor-changelogs
     - make -C .. dbtasks.clean package-dbtasks
     build-result: target/db-1.0-SNAPSHOT.jar
   requires:
@@ -52,7 +53,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - echo "ignoring scheduler and dbtasks" > /dev/null
+    - make go-mod-vendor-mta
     ignore:
     - acceptance
     - build
@@ -87,7 +88,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
+    - make go-mod-vendor-mta
     ignore:
     - acceptance
     - build
@@ -122,7 +123,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - echo "ignoring scheduler and dbtasks" > /dev/null
+    - make go-mod-vendor-mta
     ignore:
     - build
     - scheduler
@@ -156,7 +157,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - echo "ignoring scheduler and dbtasks" > /dev/null
+    - make go-mod-vendor-mta
     ignore:
     - acceptance
     - build
@@ -190,7 +191,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
+    - make go-mod-vendor-mta
     ignore:
     - acceptance
     - build
@@ -225,7 +226,7 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
+    - make go-mod-vendor-mta
     ignore:
     - acceptance
     - build
@@ -290,7 +291,8 @@ modules:
   build-parameters:
     builder: custom
     commands:
-    - bash -c "curl -fsSL -o /tmp/upstream.mtar https://github.com/cloudfoundry/app-autoscaler/releases/download/v16.0.0/app-autoscaler-release-v16.0.0.mtar && python3 -c \"import zipfile; zipfile.ZipFile('/tmp/upstream.mtar').extract('acceptance-tests/build/acceptance/data.zip', '/tmp/upstream-mtar')\" && mkdir -p build/acceptance && python3 -c \"import zipfile; zipfile.ZipFile('/tmp/upstream-mtar/acceptance-tests/build/acceptance/data.zip').extractall('build/acceptance/')\""
+    - echo "Building acceptance tests for version ${version}"
+    - bash -c "TARGET_OS=linux TARGET_ARCH=amd64 VERSION=${version} make acceptance-release"
     build-result: build/acceptance
     ignore:
     - build

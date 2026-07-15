@@ -13,12 +13,24 @@ read -ra SUITES <<< "$SUITES"
 read -ra OPERATING_SYSTEMS <<< "$OPERATING_SYSTEMS"
 read -ra ARCHITECTURES <<< "$ARCHITECTURES"
 
+# Build a host-native ginkgo tool from the version pinned in acceptance/go.mod
+# into the given path. Using `go build` (rather than a pre-installed `ginkgo` on
+# PATH) lets this run in any build image that has the go toolchain — e.g. the mbt
+# CI image — without ginkgo installed separately. The tool must be built for the
+# HOST platform (no GOOS/GOARCH override) so it can execute here; it cross-compiles
+# each suite for the target platform via the GOOS/GOARCH env passed to it.
+build_host_ginkgo() {
+  local out="${1}"
+  go build -C acceptance -o "${out}" github.com/onsi/ginkgo/v2/ginkgo
+}
+
 compile_suites() {
+  local ginkgo_bin="${1}"
   for suite in "${SUITES[@]}"; do
       mkdir -p "build/acceptance/${suite}"
       for os in "${OPERATING_SYSTEMS[@]}"; do
         for arch in "${ARCHITECTURES[@]}"; do
-          CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" ginkgo build "acceptance/${suite}"
+          ( cd acceptance && CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" "${ginkgo_bin}" build "${suite}" )
 
           # adjust binary name to include os and architecture information
           mv "acceptance/${suite}/${suite}.test" "build/acceptance/${suite}/${suite}_${os}_${arch}.test"
@@ -39,7 +51,15 @@ compile_ginkgo() {
 }
 
 main() {
-  compile_suites
+  # Build the ginkgo tool once for the host platform into a temp dir, then use it
+  # to cross-compile the suites. Absolute path so it works after `cd acceptance`.
+  local ginkgo_tmp ginkgo_bin
+  ginkgo_tmp="$(mktemp -d)"
+  trap 'rm -rf "${ginkgo_tmp}"' EXIT
+  ginkgo_bin="${ginkgo_tmp}/ginkgo"
+  build_host_ginkgo "${ginkgo_bin}"
+
+  compile_suites "${ginkgo_bin}"
   compile_ginkgo
   cp "acceptance/cleanup.sh" "build/acceptance/cleanup.sh"
 
