@@ -18,6 +18,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
+        <!-- 🚧 TEMPORARY: override Spring Boot BOM to pull a patched Tomcat.
+             Remove once the parent BOM ships a version at or above this. -->
+        <tomcat.version>11.0.24</tomcat.version>
         <io.prometheus.simpleclient.version>0.16.0</io.prometheus.simpleclient.version>
         <sonar.organization>cloudfoundry</sonar.organization>
         <sonar.projectKey>cloudfoundry_app-autoscaler-release</sonar.projectKey>
@@ -43,6 +46,15 @@
             <groupId>com.sun.xml.ws</groupId>
             <artifactId>jaxws-rt</artifactId>
             <version>2.3.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- 🚧 TEMPORARY: pin a patched Jakarta Mail to override the vulnerable
+             transitive version pulled in via jaxws-rt. Remove once jaxws-rt
+             is upgraded to a release that carries a fixed Jakarta Mail. -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>1.6.8</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
