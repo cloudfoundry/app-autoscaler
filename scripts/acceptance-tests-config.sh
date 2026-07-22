@@ -50,7 +50,7 @@ function write_app_config() {
 	"use_existing_space": ${use_existing_space},
 	"existing_space": "${existing_space}",
 	"aggregate_interval": 120,
-	"default_timeout": 60,
+	"default_timeout": 120,
 	"cpu_upper_threshold": ${cpu_upper_threshold},
 	"name_prefix": "${name_prefix}",
 	"autoscaler_api": "${deployment_name}.${system_domain}",
