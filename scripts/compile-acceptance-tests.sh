@@ -20,15 +20,14 @@ GINKGO_TMPDIR=""
 cleanup() { [[ -n "${GINKGO_TMPDIR}" ]] && rm -rf "${GINKGO_TMPDIR}"; }
 trap cleanup EXIT
 
-# Build a host-native ginkgo tool from the version pinned in acceptance/go.mod
-# into the given path. Using `go build` (rather than a pre-installed `ginkgo` on
-# PATH) lets this run in any build image that has the go toolchain — e.g. the mbt
-# CI image — without ginkgo installed separately. The tool must be built for the
-# HOST platform (no GOOS/GOARCH override) so it can execute here; it cross-compiles
-# each suite for the target platform via the GOOS/GOARCH env passed to it.
-build_host_ginkgo() {
-  local out="${1}"
-  go build -C acceptance -o "${out}" github.com/onsi/ginkgo/v2/ginkgo
+# Build the ginkgo tool from the version pinned in acceptance/go.mod into the
+# given path. Using `go build` (rather than a pre-installed `ginkgo` on PATH)
+# lets this run in any build image that has the go toolchain — e.g. the mbt CI
+# image — without ginkgo installed separately. Pass GOOS/GOARCH to cross-compile
+# for a target platform, or leave both empty to build for the host platform.
+build_ginkgo() {
+  local out="${1}" goos="${2:-}" goarch="${3:-}"
+  CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -C acceptance -o "${out}" github.com/onsi/ginkgo/v2/ginkgo
 }
 
 compile_suites() {
@@ -51,7 +50,7 @@ compile_ginkgo() {
     for arch in "${ARCHITECTURES[@]}"; do
       binary_name="ginkgo_v2_${os}_${arch}"
       output_path="build/acceptance/${binary_name}"
-      CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -C acceptance -o "../${output_path}" github.com/onsi/ginkgo/v2/ginkgo
+      build_ginkgo "../${output_path}" "${os}" "${arch}"
       chmod +x "${output_path}"
     done
   done
@@ -63,7 +62,7 @@ main() {
   local ginkgo_bin
   GINKGO_TMPDIR="$(mktemp -d)"
   ginkgo_bin="${GINKGO_TMPDIR}/ginkgo"
-  build_host_ginkgo "${ginkgo_bin}"
+  build_ginkgo "${ginkgo_bin}"
 
   compile_suites "${ginkgo_bin}"
   compile_ginkgo
