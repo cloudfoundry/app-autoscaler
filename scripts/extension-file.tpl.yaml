@@ -88,7 +88,7 @@ modules:
           "service_plan": "autoscaler-free-plan",
           "service_broker": "${DEPLOYMENT_NAME}",
           "aggregate_interval": 120,
-          "default_timeout": 60,
+          "default_timeout": 120,
           "cpu_upper_threshold": ${CPU_UPPER_THRESHOLD},
           "name_prefix": "${NAME_PREFIX}",
           "autoscaler_api": "${APISERVER_HOST}.${default-domain}",
