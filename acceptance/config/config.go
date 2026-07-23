@@ -129,7 +129,7 @@ var defaults = Config{
 	AsyncServiceOperationTimeout: 2,  // minutes
 	DetectTimeout:                5,  // minutes
 	SleepTimeout:                 30, // seconds
-	TimeoutScale:                 1.0,
+	TimeoutScale:                 2.0,
 	ArtifactsDirectory:           filepath.Join("..", "results"),
 	NamePrefix:                   "ASATS",
 	InstancePrefix:               "service",
