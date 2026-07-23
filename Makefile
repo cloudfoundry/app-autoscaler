@@ -53,7 +53,7 @@ binaries=$(shell find . -name "main.go" -exec dirname {} \; |  cut -d/ -f2 | sor
 test_dirs=$(shell find . -name "*_test.go" -exec dirname {} \; |  cut -d/ -f2 | sort | uniq)
 export GO111MODULE=on
 
-.PHONY: dbtasks.clean package-dbtasks vendor-changelogs scheduler.clean package-scheduler clean mta-deploy mta-undeploy mta-build mta-logs
+.PHONY: dbtasks.clean package-dbtasks vendor-changelogs scheduler.clean package-scheduler clean mta-deploy mta-undeploy mta-build mta-logs create-uaa-client
 
 GINKGO_OPTS = -r --race --require-suite --randomize-all ${OPTS}
 
@@ -299,6 +299,9 @@ mta-undeploy:
 
 build-extension-file:
 	$(MAKEFILE_DIR)/scripts/build-extension-file.sh
+
+create-uaa-client:
+	$(MAKEFILE_DIR)/scripts/create-autoscaler-uaa-client.sh
 
 mta-logs:
 	rm -rf mta-*
