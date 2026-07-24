@@ -8,7 +8,16 @@ DEST ?= /tmp/build
 TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
-AUTOSCALER_PLUGIN_VERSION ?= $(shell cf plugins --checksum 2>/dev/null | awk '/^AutoScaler/ {print $$2}')
+# Resolve the AutoScaler CLI plugin version from its single source of truth,
+# nix/packages.nix (the same pin the devbox env builds from), so the acceptance
+# release can be built in any environment with just awk — no running `cf` or a
+# pre-installed plugin required. Override by exporting AUTOSCALER_PLUGIN_VERSION.
+AUTOSCALER_PLUGIN_VERSION ?= $(shell awk '\
+	/app-autoscaler-cli-plugin = buildGoModule/{b=1} \
+	b && /major *=/{gsub(/[^0-9]/,"");maj=$$0} \
+	b && /minor *=/{gsub(/[^0-9]/,"");min=$$0} \
+	b && /patch *=/{gsub(/[^0-9]/,"");pat=$$0;print maj"."min"."pat;exit}' \
+	$(MAKEFILE_DIR)/nix/packages.nix)
 CI ?= false
 
 DEBUG := false
@@ -309,7 +318,10 @@ mta-logs:
 # the other dependencies. Instead we should rely on the dependencies being complete and updated
 # as needed.
 .PHONY: mta-build
-mta-build: mta-build-clean go-mod-vendor-mta vendor-changelogs
+# go-mod-vendor-mta and vendor-changelogs are invoked per-module by the custom
+# builders in mta.tpl.yaml, so `mbt build` (via mta-build.sh) is self-sufficient
+# and we don't run them here as well.
+mta-build: mta-build-clean
 	@$(MAKEFILE_DIR)/scripts/mta-build.sh
 
 .PHONY: mta-build-clean
@@ -366,7 +378,7 @@ acceptance-release: clean-acceptance generate-openapi-generated-clients-and-serv
 
 
 .PHONY: mta-release
-mta-release: generate-fakes mta-build
+mta-release: mta-build
 	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
 
 .PHONY: clean-acceptance

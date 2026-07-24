@@ -15,7 +15,11 @@ parameters:
 modules:
   - name: dbtasks
     type: java
-    path: .
+    # Per-submodule path so `mbt sbom-gen` runs cyclonedx makeAggregateBom against
+    # dbtasks/pom.xml alone (not the root reactor). Sharing `path: .` with the
+    # scheduler module makes mbt aggregate the whole reactor twice and merge two
+    # identical BOMs, which fails CycloneDX uniqueItems validation.
+    path: dbtasks
     properties:
       JBP_LOG_LEVEL:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
@@ -27,8 +31,17 @@ modules:
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
-        - make dbtasks.clean package-dbtasks
-      build-result: dbtasks/target/db-1.0-SNAPSHOT.jar
+        # `path: dbtasks` runs commands from dbtasks/; the make targets pushd into
+        # dbtasks/ and expect the repo root, so invoke make from the parent dir.
+        # `vendor-changelogs` copies the per-component *.db.changelog.{yml,yaml}
+        # into dbtasks/src/main/resources so `package` bundles them into the jar
+        # (they are .gitignored there, never committed). Running it here keeps a
+        # bare `mbt build` self-sufficient (rather than relying on it being run as
+        # an mta-build make prerequisite). Without it the apply-*-changelog deploy
+        # tasks fail with "BOOT-INF/classes/api.db.changelog.yml does not exist".
+        - make -C .. vendor-changelogs
+        - make -C .. dbtasks.clean package-dbtasks
+      build-result: target/db-1.0-SNAPSHOT.jar
     requires:
       - name: database
     parameters:
@@ -75,7 +88,15 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "ignoring scheduler and dbtasks" > /dev/null
+        # Go modules ship SOURCE; the CF Go buildpack compiles at staging. It
+        # needs (a) the generated ogen `apis/scalinghistory` package, which is
+        # .gitignored and produced by `generate-openapi-...`, and (b) a `vendor/`
+        # dir so staging compiles air-gapped (the buildpack auto-uses vendor and
+        # makes no network calls). `go-mod-vendor-mta` does both (generate +
+        # `go mod vendor`). Running it here keeps a bare `mbt build`
+        # self-sufficient. Without it, apiserver/scalingengine fail staging with
+        # "no required module provides package .../apis/scalinghistory".
+        - make go-mod-vendor-mta
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
@@ -100,7 +121,9 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
+        # See the apiserver module: ships generated code + vendor/ for the
+        # air-gapped CF Go buildpack compile.
+        - make go-mod-vendor-mta
       ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: eventgenerator-config
@@ -124,7 +147,9 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "ignoring scheduler and dbtasks" > /dev/null
+        # See the apiserver module: ships generated code + vendor/ for the
+        # air-gapped CF Go buildpack compile.
+        - make go-mod-vendor-mta
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsforwarder-config
@@ -149,7 +174,9 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "ignoring scheduler and dbtasks" > /dev/null
+        # See the apiserver module: ships generated code + vendor/ for the
+        # air-gapped CF Go buildpack compile.
+        - make go-mod-vendor-mta
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsgateway-config
@@ -173,7 +200,9 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
+        # See the apiserver module: ships generated code + vendor/ for the
+        # air-gapped CF Go buildpack compile.
+        - make go-mod-vendor-mta
       ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: operator-config
@@ -197,7 +226,9 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
+        # See the apiserver module: ships generated code + vendor/ for the
+        # air-gapped CF Go buildpack compile.
+        - make go-mod-vendor-mta
       ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: scalingengine-config
@@ -212,12 +243,16 @@ modules:
       routes:
   - name: scheduler
     type: java
-    path: .
+    # Per-submodule path so SBOM generation aggregates scheduler/pom.xml alone.
+    # See the dbtasks module for why sharing `path: .` breaks SBOM validation.
+    path: scheduler
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
-        - make scheduler.clean build-scheduler
-      build-result: scheduler/target/scheduler-1.0-SNAPSHOT.war
+        # `path: scheduler` runs commands from scheduler/; the make targets pushd
+        # into scheduler/ and expect the repo root, so invoke make from the parent.
+        - make -C .. scheduler.clean build-scheduler
+      build-result: target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
