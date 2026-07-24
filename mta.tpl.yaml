@@ -31,16 +31,7 @@ modules:
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
-        # `path: dbtasks` runs commands from dbtasks/; the make targets pushd into
-        # dbtasks/ and expect the repo root, so invoke make from the parent dir.
-        # `vendor-changelogs` copies the per-component *.db.changelog.{yml,yaml}
-        # into dbtasks/src/main/resources so `package` bundles them into the jar
-        # (they are .gitignored there, never committed). Running it here keeps a
-        # bare `mbt build` self-sufficient (rather than relying on it being run as
-        # an mta-build make prerequisite). Without it the apply-*-changelog deploy
-        # tasks fail with "BOOT-INF/classes/api.db.changelog.yml does not exist".
-        - make -C .. vendor-changelogs
-        - make -C .. dbtasks.clean package-dbtasks
+        - make dbtasks.clean package-dbtasks
       build-result: target/db-1.0-SNAPSHOT.jar
     requires:
       - name: database
@@ -88,15 +79,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        # Go modules ship SOURCE; the CF Go buildpack compiles at staging. It
-        # needs (a) the generated ogen `apis/scalinghistory` package, which is
-        # .gitignored and produced by `generate-openapi-...`, and (b) a `vendor/`
-        # dir so staging compiles air-gapped (the buildpack auto-uses vendor and
-        # makes no network calls). `go-mod-vendor-mta` does both (generate +
-        # `go mod vendor`). Running it here keeps a bare `mbt build`
-        # self-sufficient. Without it, apiserver/scalingengine fail staging with
-        # "no required module provides package .../apis/scalinghistory".
-        - make go-mod-vendor-mta
+        - echo "ignoring scheduler and dbtasks" > /dev/null
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
@@ -121,9 +104,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        # See the apiserver module: ships generated code + vendor/ for the
-        # air-gapped CF Go buildpack compile.
-        - make go-mod-vendor-mta
+        - echo "ignoring scheduler, dbtasks and scalingengine" > /dev/null
       ignore: ["acceptance", "build", "scheduler", "dbtasks", "scalingengine", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: eventgenerator-config
@@ -147,9 +128,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        # See the apiserver module: ships generated code + vendor/ for the
-        # air-gapped CF Go buildpack compile.
-        - make go-mod-vendor-mta
+        - echo "ignoring scheduler and dbtasks" > /dev/null
       ignore: ["build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsforwarder-config
@@ -174,9 +153,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        # See the apiserver module: ships generated code + vendor/ for the
-        # air-gapped CF Go buildpack compile.
-        - make go-mod-vendor-mta
+        - echo "ignoring scheduler and dbtasks" > /dev/null
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: metricsgateway-config
@@ -200,9 +177,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        # See the apiserver module: ships generated code + vendor/ for the
-        # air-gapped CF Go buildpack compile.
-        - make go-mod-vendor-mta
+        - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
       ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: operator-config
@@ -226,9 +201,7 @@ modules:
     build-parameters:
       builder: custom
       commands:
-        # See the apiserver module: ships generated code + vendor/ for the
-        # air-gapped CF Go buildpack compile.
-        - make go-mod-vendor-mta
+        - echo "ignoring scheduler, dbtasks and eventgenerator" > /dev/null
       ignore: ["acceptance", "build", "scheduler", "dbtasks", "eventgenerator", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: scalingengine-config
@@ -249,9 +222,7 @@ modules:
     build-parameters:
       builder: custom
       commands: # 🚧 To-do: embed me in the calling makefile
-        # `path: scheduler` runs commands from scheduler/; the make targets pushd
-        # into scheduler/ and expect the repo root, so invoke make from the parent.
-        - make -C .. scheduler.clean build-scheduler
+        - make scheduler.clean build-scheduler
       build-result: target/scheduler-1.0-SNAPSHOT.war
     properties:
       JBP_LOG_LEVEL:

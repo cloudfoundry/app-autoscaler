@@ -12,12 +12,8 @@ ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
 # nix/packages.nix (the same pin the devbox env builds from), so the acceptance
 # release can be built in any environment with just awk — no running `cf` or a
 # pre-installed plugin required. Override by exporting AUTOSCALER_PLUGIN_VERSION.
-AUTOSCALER_PLUGIN_VERSION ?= $(shell awk '\
-	/app-autoscaler-cli-plugin = buildGoModule/{b=1} \
-	b && /major *=/{gsub(/[^0-9]/,"");maj=$$0} \
-	b && /minor *=/{gsub(/[^0-9]/,"");min=$$0} \
-	b && /patch *=/{gsub(/[^0-9]/,"");pat=$$0;print maj"."min"."pat;exit}' \
-	$(MAKEFILE_DIR)/nix/packages.nix)
+AUTOSCALER_PLUGIN_VERSION ?= $(shell \
+	nix eval --raw '.#app-autoscaler-cli-plugin.version')
 CI ?= false
 
 DEBUG := false
