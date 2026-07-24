@@ -17,7 +17,7 @@ read -ra ARCHITECTURES <<< "$ARCHITECTURES"
 # top level (not inside a function) so the EXIT trap can reference it safely even
 # under `set -u`, since the trap fires after main() returns and its locals are gone.
 GINKGO_TMPDIR=""
-cleanup() { [[ -n "${GINKGO_TMPDIR}" ]] && rm -rf "${GINKGO_TMPDIR}"; }
+cleanup() { [[ -n "${GINKGO_TMPDIR}" ]] && rm --recursive --force "${GINKGO_TMPDIR}"; }
 trap cleanup EXIT
 
 # Build the ginkgo tool from the version pinned in acceptance/go.mod into the
@@ -60,7 +60,7 @@ main() {
   # Build the ginkgo tool once for the host platform into a temp dir, then use it
   # to cross-compile the suites. Absolute path so it works after `cd acceptance`.
   local ginkgo_bin
-  GINKGO_TMPDIR="$(mktemp -d)"
+  GINKGO_TMPDIR="$(mktemp --directory)"
   ginkgo_bin="${GINKGO_TMPDIR}/ginkgo"
   build_ginkgo "${ginkgo_bin}"
 
