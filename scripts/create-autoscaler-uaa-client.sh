@@ -42,7 +42,7 @@ echo ""
 echo "Retrieving UAA admin client secret from credhub..."
 UAA_ADMIN_SECRET="$(credhub get -n /bosh-autoscaler/cf/uaa_admin_client_secret -q)"
 
-if [ -z "${UAA_ADMIN_SECRET}" ]; then
+if [[ -z "${UAA_ADMIN_SECRET}" ]]; then
   echo "ERROR: Failed to retrieve UAA admin secret from credhub"
   exit 1
 fi
@@ -62,7 +62,6 @@ echo ""
 if uaa get-client "${UAA_CLIENT_ID}" &> /dev/null; then
   echo "Client '${UAA_CLIENT_ID}' already exists. Updating..."
   uaa update-client "${UAA_CLIENT_ID}" \
-    --client_secret "${UAA_CLIENT_SECRET}" \
     --authorized_grant_types "${GRANT_TYPES}" \
     --authorities "${UAA_AUTHORITIES}"
   echo "✓ Client '${UAA_CLIENT_ID}' updated successfully"
