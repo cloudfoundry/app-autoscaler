@@ -43,7 +43,7 @@ echo "Retrieving UAA admin client secret from credhub..."
 UAA_ADMIN_SECRET="$(credhub get -n /bosh-autoscaler/cf/uaa_admin_client_secret -q)"
 
 if [[ -z "${UAA_ADMIN_SECRET}" ]]; then
-  echo "ERROR: Failed to retrieve UAA admin secret from credhub"
+  echo "Failed to retrieve UAA admin secret from credhub"
   exit 1
 fi
 
@@ -64,14 +64,14 @@ if uaa get-client "${UAA_CLIENT_ID}" &> /dev/null; then
   uaa update-client "${UAA_CLIENT_ID}" \
     --authorized_grant_types "${GRANT_TYPES}" \
     --authorities "${UAA_AUTHORITIES}"
-  echo "✓ Client '${UAA_CLIENT_ID}' updated successfully"
+  echo "Client '${UAA_CLIENT_ID}' updated successfully"
 else
   echo "Creating new client '${UAA_CLIENT_ID}'..."
   uaa create-client "${UAA_CLIENT_ID}" \
     --client_secret "${UAA_CLIENT_SECRET}" \
     --authorized_grant_types "${GRANT_TYPES}" \
     --authorities "${UAA_AUTHORITIES}"
-  echo "✓ Client '${UAA_CLIENT_ID}' created successfully"
+  echo "Client '${UAA_CLIENT_ID}' created successfully"
 fi
 
 # Verify the client was created/updated
@@ -80,10 +80,4 @@ echo "Verifying client configuration..."
 uaa get-client "${UAA_CLIENT_ID}"
 
 echo ""
-echo "✓ UAA client setup complete!"
-echo ""
-echo "The Scaling Engine and Operator can now authenticate using:"
-echo "  Client ID: ${UAA_CLIENT_ID}"
-echo "  Client Secret: ${UAA_CLIENT_SECRET}"
-echo "  Grant Type: ${GRANT_TYPES}"
-echo "  Authorities: ${UAA_AUTHORITIES}"
+echo "UAA client setup complete!"
