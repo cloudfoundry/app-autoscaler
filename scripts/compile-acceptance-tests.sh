@@ -26,53 +26,53 @@ trap cleanup EXIT
 # image — without ginkgo installed separately. Pass GOOS/GOARCH to cross-compile
 # for a target platform, or leave both empty to build for the host platform.
 build_ginkgo() {
-  local out="${1}" goos="${2:-}" goarch="${3:-}"
-  CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -C acceptance -o "${out}" github.com/onsi/ginkgo/v2/ginkgo
+	local out="${1}" goos="${2:-}" goarch="${3:-}"
+	CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -C acceptance -o "${out}" github.com/onsi/ginkgo/v2/ginkgo
 }
 
 compile_suites() {
-  local ginkgo_bin="${1}"
-  for suite in "${SUITES[@]}"; do
-      mkdir -p "build/acceptance/${suite}"
-      for os in "${OPERATING_SYSTEMS[@]}"; do
-        for arch in "${ARCHITECTURES[@]}"; do
-          ( cd acceptance && CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" "${ginkgo_bin}" build "${suite}" )
+	local ginkgo_bin="${1}"
+	for suite in "${SUITES[@]}"; do
+			mkdir -p "build/acceptance/${suite}"
+			for os in "${OPERATING_SYSTEMS[@]}"; do
+				for arch in "${ARCHITECTURES[@]}"; do
+					( cd acceptance && CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" "${ginkgo_bin}" build "${suite}" )
 
-          # adjust binary name to include os and architecture information
-          mv "acceptance/${suite}/${suite}.test" "build/acceptance/${suite}/${suite}_${os}_${arch}.test"
-        done
-      done
-  done
+					# adjust binary name to include os and architecture information
+					mv "acceptance/${suite}/${suite}.test" "build/acceptance/${suite}/${suite}_${os}_${arch}.test"
+				done
+			done
+	done
 }
 
 compile_ginkgo() {
-  for os in "${OPERATING_SYSTEMS[@]}"; do
-    for arch in "${ARCHITECTURES[@]}"; do
-      binary_name="ginkgo_v2_${os}_${arch}"
-      output_path="build/acceptance/${binary_name}"
-      build_ginkgo "../${output_path}" "${os}" "${arch}"
-      chmod +x "${output_path}"
-    done
-  done
+	for os in "${OPERATING_SYSTEMS[@]}"; do
+		for arch in "${ARCHITECTURES[@]}"; do
+			binary_name="ginkgo_v2_${os}_${arch}"
+			output_path="build/acceptance/${binary_name}"
+			build_ginkgo "../${output_path}" "${os}" "${arch}"
+			chmod +x "${output_path}"
+		done
+	done
 }
 
 main() {
-  # Build the ginkgo tool once for the host platform into a temp dir, then use it
-  # to cross-compile the suites. Absolute path so it works after `cd acceptance`.
-  local ginkgo_bin
-  GINKGO_TMPDIR="$(mktemp -d)"
-  ginkgo_bin="${GINKGO_TMPDIR}/ginkgo"
-  build_ginkgo "${ginkgo_bin}"
+	# Build the ginkgo tool once for the host platform into a temp dir, then use it
+	# to cross-compile the suites. Absolute path so it works after `cd acceptance`.
+	local ginkgo_bin
+	GINKGO_TMPDIR="$(mktemp --directory)"
+	ginkgo_bin="${GINKGO_TMPDIR}/ginkgo"
+	build_ginkgo "${ginkgo_bin}"
 
-  compile_suites "${ginkgo_bin}"
-  compile_ginkgo
-  cp "acceptance/cleanup.sh" "build/acceptance/cleanup.sh"
+	compile_suites "${ginkgo_bin}"
+	compile_ginkgo
+	cp "acceptance/cleanup.sh" "build/acceptance/cleanup.sh"
 
-  # Copy test app assets
-  echo "Copying test app assets..."
-  mkdir -p "build/acceptance/assets/app/go_app/build"
-  cp -r "acceptance/assets/app/go_app/build/"* "build/acceptance/assets/app/go_app/build/"
-  cp -r "acceptance/assets/file/" "build/acceptance/assets/file/"
+	# Copy test app assets
+	echo "Copying test app assets..."
+	mkdir -p "build/acceptance/assets/app/go_app/build"
+	cp -r "acceptance/assets/app/go_app/build/"* "build/acceptance/assets/app/go_app/build/"
+	cp -r "acceptance/assets/file/" "build/acceptance/assets/file/"
 }
 
 main
