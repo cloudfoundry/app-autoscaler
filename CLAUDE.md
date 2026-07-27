@@ -22,7 +22,6 @@ make build                    # Build all Go services
 make scheduler.build          # Build Java scheduler component
 make build-test-app          # Build test application
 make build_all               # Build everything (programs + tests)
-make mta-build               # Build MTA archive for Cloud Foundry deployment
 ```
 
 ### Testing
