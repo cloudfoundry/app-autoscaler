@@ -50,7 +50,7 @@ require (
 	google.golang.org/grpc v1.82.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260724162435-b2f20204f0df
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260727163830-6c54dddc4772
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260629064500-85da08bf73ac // indirect
