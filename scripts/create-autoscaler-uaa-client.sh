@@ -9,8 +9,6 @@
 # - cloud_controller.read: Query application state and metadata
 # - cloud_controller.admin: Scale application instances up/down, sync schedules
 # - uaa.resource: Introspect user tokens via UAA /introspect endpoint (API server)
-# - routing.routes.{read,write}: Manage application routes
-# - routing.router_groups.read: Read router group information
 #
 # Usage:
 #   ./scripts/create-autoscaler-uaa-client.sh
@@ -26,7 +24,7 @@ source "${script_dir}/common.sh"
 # Configuration
 UAA_CLIENT_ID="autoscaler_client_id"
 UAA_CLIENT_SECRET="${AUTOSCALER_CLIENT_SECRET:-autoscaler_client_secret}"
-UAA_AUTHORITIES="cloud_controller.read,cloud_controller.admin,uaa.resource,routing.routes.write,routing.routes.read,routing.router_groups.read"
+UAA_AUTHORITIES="cloud_controller.read,cloud_controller.admin,uaa.resource"
 GRANT_TYPES="client_credentials"
 
 echo "Creating UAA client for App Autoscaler..."
