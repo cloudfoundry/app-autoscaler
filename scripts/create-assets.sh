@@ -29,7 +29,7 @@ function create_mtar() {
 	local artifact_dir=$2
 	echo " - creating autoscaler mtar artifact"
 	pushd "${autoscaler_dir}" > /dev/null
-		make mta-release VERSION="${version}" DEST="${artifact_dir}"
+		VERSION="${version}" DEST="${artifact_dir}" ./scripts/mta-build.sh
 	popd > /dev/null
 }
 

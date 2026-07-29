@@ -68,7 +68,7 @@ jobs:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
         run: |
           make --directory="${AUTOSCALER_DIR}" build-extension-file
-          make --directory="${AUTOSCALER_DIR}" mta-build
+          "${AUTOSCALER_DIR}/scripts/mta-build.sh"
           make --directory="${AUTOSCALER_DIR}" mta-deploy
 
   acceptance_tests:
