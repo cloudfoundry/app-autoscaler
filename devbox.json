@@ -22,6 +22,8 @@
     "cloudfoundry-cli":     "8.18.3",
     "coreutils":            "9.11",
     "credhub-cli":          "2.9.54",
+    "cyclonedx-cli":        "0.32.0",
+    "cyclonedx-gomod":      "1.10.0",
     "curl":                 "8.17.0",
     "delve":                "1.26.3",
     "gh":                   "2.95.0",
