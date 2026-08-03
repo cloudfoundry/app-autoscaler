@@ -8,19 +8,19 @@ import jakarta.validation.constraints.NotNull;
 /** */
 @Schema
 public class ApplicationSchedules {
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull
   @Min(value = 1)
   @JsonProperty(value = "instance_min_count")
   Integer instanceMinCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull
   @Min(value = 1)
   @JsonProperty(value = "instance_max_count")
   Integer instanceMaxCount;
 
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull
   Schedules schedules;
 

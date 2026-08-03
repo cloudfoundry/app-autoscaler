@@ -18,7 +18,7 @@ var _ = Describe("rawConfig validation", func() {
 
 	BeforeEach(func() {
 		conf = &rawConfig{
-			BasicAuthForCustomMetrics: "off",
+			BasicAuthForCustomMetrics: "disabled",
 		}
 		conf.Db = make(map[string]db.DatabaseConfig)
 		conf.Db[db.BindingDb] = db.DatabaseConfig{
@@ -330,7 +330,7 @@ var _ = Describe("toConfig credential helper and basic auth conversion", func() 
 
 		// Default valid state
 		conf.CredHelperImpl = "default"
-		conf.BasicAuthForCustomMetrics = "on"
+		conf.BasicAuthForCustomMetrics = "enabled"
 		conf.DefaultCustomMetricsCredentialType = "x509"
 	})
 
@@ -435,9 +435,9 @@ var _ = Describe("toConfig credential helper and basic auth conversion", func() 
 		})
 	})
 
-	When("basic_auth_for_custom_metrics is 'off'", func() {
+	When("basic_auth_for_custom_metrics is 'disabled'", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "off"
+			conf.BasicAuthForCustomMetrics = "disabled"
 			conf.CredHelperImpl = ""
 			conf.StoredProcedureConfig = nil
 			conf.DefaultCustomMetricsCredentialType = ""
@@ -452,9 +452,9 @@ var _ = Describe("toConfig credential helper and basic auth conversion", func() 
 		})
 	})
 
-	When("basic_auth_for_custom_metrics is 'off' but cred_helper_impl is set", func() {
+	When("basic_auth_for_custom_metrics is 'disabled' but cred_helper_impl is set", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "off"
+			conf.BasicAuthForCustomMetrics = "disabled"
 			conf.CredHelperImpl = "default"
 		})
 
@@ -463,9 +463,9 @@ var _ = Describe("toConfig credential helper and basic auth conversion", func() 
 		})
 	})
 
-	When("basic_auth_for_custom_metrics is 'off' but default_credential_type is set", func() {
+	When("basic_auth_for_custom_metrics is 'disabled' but default_credential_type is set", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "off"
+			conf.BasicAuthForCustomMetrics = "disabled"
 			conf.CredHelperImpl = ""
 			conf.DefaultCustomMetricsCredentialType = "binding-secret"
 		})
@@ -475,9 +475,9 @@ var _ = Describe("toConfig credential helper and basic auth conversion", func() 
 		})
 	})
 
-	When("basic_auth_for_custom_metrics is 'on'", func() {
+	When("basic_auth_for_custom_metrics is 'enabled'", func() {
 		BeforeEach(func() {
-			conf.BasicAuthForCustomMetrics = "on"
+			conf.BasicAuthForCustomMetrics = "enabled"
 			conf.CredHelperImpl = "default"
 			conf.DefaultCustomMetricsCredentialType = "binding-secret"
 		})

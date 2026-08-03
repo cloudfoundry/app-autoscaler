@@ -786,7 +786,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 
-			Context("when credential-helper is not set (basic auth off)", func() {
+			Context("when credential-helper is not set (basic auth disabled)", func() {
 				BeforeEach(func() {
 					conf.CustomMetricsAuthConfig = nil
 					fakeCredentials = nil
@@ -1501,7 +1501,7 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 
-			Context("when basic_auth_for_custom_metrics is 'off' (CustomMetricsAuthConfig is nil)", func() {
+			Context("when basic_auth_for_custom_metrics is 'disabled' (CustomMetricsAuthConfig is nil)", func() {
 				BeforeEach(func() {
 					conf.CustomMetricsAuthConfig = nil
 				})

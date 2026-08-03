@@ -28,10 +28,10 @@ jobs:
     name: Build and Push app-autoscaler-release-tools
     steps:
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Log in to the Container registry
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -39,7 +39,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-tools
 
@@ -69,7 +69,7 @@ jobs:
 
       - name: Build and push
         id: build-and-push
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: ci/dockerfiles/autoscaler-tools
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

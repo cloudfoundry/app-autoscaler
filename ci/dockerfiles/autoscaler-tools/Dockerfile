@@ -1,4 +1,4 @@
-FROM ubuntu@sha256:53958ec7b67c2c9355df922dd08dbf0360611f8c3cdb656875e81873db9ffdba
+FROM ubuntu@sha256:3131b4cc82a783df6c9df078f86e01819a13594b865c2cad47bd1bca2b7063bb
 LABEL maintainer="autoscaler-team"
 
 ENV DEBIAN_FRONTEND="noninteractive" TZ="Europe/London"
@@ -65,14 +65,14 @@ RUN apt-get update && \
 
 # Install bosh_cli
 # renovate: datasource=github-releases depName=bosh-cli lookupName=cloudfoundry/bosh-cli
-ARG BOSH_VERSION=7.10.6
+ARG BOSH_VERSION=7.10.8
 RUN wget -q https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_VERSION}/bosh-cli-${BOSH_VERSION}-linux-amd64 && \
   mv bosh-cli-* /usr/local/bin/bosh && \
   chmod +x /usr/local/bin/bosh
 
 # Install bbl
 # renovate: datasource=github-releases depName=bosh-bootloader lookupName=cloudfoundry/bosh-bootloader
-ARG BBL_VERSION=v9.0.45
+ARG BBL_VERSION=v9.0.46
 RUN wget -q https://github.com/cloudfoundry/bosh-bootloader/releases/download/${BBL_VERSION}/bbl-${BBL_VERSION}_linux_amd64 && \
   mv bbl-* /usr/local/bin/bbl &&\
   chmod +x /usr/local/bin/bbl &&\
@@ -101,7 +101,7 @@ RUN wget -q https://github.com/stedolan/jq/releases/download/${JQ_VERSION}/jq-li
 
 # install yq
 # renovate: datasource=github-releases depName=yq lookupName=mikefarah/yq
-ARG YQ_VERSION=v4.45.4
+ARG YQ_VERSION=v4.53.3
 RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 && \
 	chmod a+x /usr/local/bin/yq && \
 	yq --version
@@ -132,7 +132,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.
   gcloud version
 
 # renovate: datasource=github-releases depName=ginkgo lookupName=onsi/ginkgo
-ARG GINKGO_VERSION=v2.23.4
+ARG GINKGO_VERSION=v2.32.0
 RUN go install github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} && \
 	ginkgo version
 

@@ -5,16 +5,16 @@ go 1.26.2
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
 	code.cloudfoundry.org/cfhttp/v2 v2.79.0
-	code.cloudfoundry.org/clock v1.72.0
+	code.cloudfoundry.org/clock v1.78.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
-	code.cloudfoundry.org/lager/v3 v3.71.0
-	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260622083525-327d7078f8a4
-	code.cloudfoundry.org/tlsconfig v0.60.0
+	code.cloudfoundry.org/lager/v3 v3.76.0
+	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260708013224-99818eda7779
+	code.cloudfoundry.org/tlsconfig v0.61.0
 	github.com/apache/thrift v0.23.0
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cloud-gov/go-cfenv v1.19.1
-	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.20
+	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.2.0
@@ -27,7 +27,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
 	github.com/ogen-go/ogen v1.20.3
-	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
@@ -39,25 +39,25 @@ require (
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.57.0
-	go.opentelemetry.io/otel v1.43.0
-	go.opentelemetry.io/otel/metric v1.43.0
-	go.opentelemetry.io/otel/sdk v1.43.0
-	go.opentelemetry.io/otel/trace v1.43.0
+	go.opentelemetry.io/otel v1.44.0
+	go.opentelemetry.io/otel/metric v1.44.0
+	go.opentelemetry.io/otel/sdk v1.44.0
+	go.opentelemetry.io/otel/trace v1.44.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
-	golang.org/x/crypto v0.53.0
-	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
+	golang.org/x/crypto v0.54.0
+	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743
 	golang.org/x/time v0.15.0
-	google.golang.org/grpc v1.81.1
+	google.golang.org/grpc v1.82.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260610212136-7ab31c22f7ad
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260727163830-6c54dddc4772
 
 require (
-	code.cloudfoundry.org/go-diodes v0.0.0-20260615142411-472d6bcdb3c6 // indirect
-	code.cloudfoundry.org/go-metric-registry v0.0.0-20260617164716-452ba9c14ce2 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20260629064500-85da08bf73ac // indirect
+	code.cloudfoundry.org/go-metric-registry v0.0.0-20260630084347-8cab5693edd1 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
-	github.com/andybalholm/brotli v1.2.1 // indirect
+	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
@@ -81,7 +81,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/klauspost/compress v1.19.0 // indirect
 	github.com/martini-contrib/render v0.0.0-20150707142108-ec18f8345a11 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -93,26 +93,26 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.69.0 // indirect
-	github.com/prometheus/procfs v0.20.1 // indirect
+	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.71.0 // indirect
+	github.com/valyala/fasthttp v1.72.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
-	golang.org/x/tools v0.46.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260618152121-87f3d3e198d3 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260618152121-87f3d3e198d3 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260630182238-925bb5da69e7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

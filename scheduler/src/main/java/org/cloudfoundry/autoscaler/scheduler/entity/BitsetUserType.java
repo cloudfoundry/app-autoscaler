@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.hibernate.HibernateException;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.usertype.UserType;
 
@@ -41,10 +40,7 @@ public class BitsetUserType implements UserType<int[]> {
 
   @Override
   public void nullSafeSet(
-      PreparedStatement statement,
-      int[] ints,
-      int index,
-      SharedSessionContractImplementor sharedSessionContractImplementor)
+      PreparedStatement statement, int[] ints, int index, WrapperOptions wrapperOptions)
       throws HibernateException, SQLException {
     if (ints == null) {
       statement.setNull(index, SQLTYPE);

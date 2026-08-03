@@ -54,7 +54,6 @@ OpenAPI specifications are available in the [`openapi/`](./openapi/) directory:
 | `OPTS=--fix make lint`                                                | Check code style and apply auto-fixes                                      |
 | `make fmt`                                                            | Format Go code                                                             |
 | `make clean`                                                          | Remove build artifacts and generated code                                  |
-| `make mta-build`                                                      | Build MTA archive for deployment                                           |
 | `make mta-deploy`                                                     | Deploy to Cloud Foundry using MTA                                          |
 
 

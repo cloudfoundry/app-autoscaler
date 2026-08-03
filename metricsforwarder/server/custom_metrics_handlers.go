@@ -104,18 +104,18 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	}
 	err = mh.validateCustomMetricTypes(appID, metricsConsumer)
 	if err != nil {
-		mh.logger.Error("failed-validating-metric-types", err, lager.Data{"metrics": metricsConsumer})
+		mh.logger.Error("failed-validating-metric-types", err, lager.Data{"metrics": derefMetricsConsumer(metricsConsumer)})
 		return fmt.Errorf("metric validation Failed %w", err)
 	}
 
 	metrics := mh.getMetrics(appID, metricsConsumer)
 
 	if len(metrics) <= 0 {
-		mh.logger.Debug("failed-parsing-custom-metrics-request-body", lager.Data{"metrics": metrics})
+		mh.logger.Debug("failed-parsing-custom-metrics-request-body", lager.Data{"metrics": derefMetrics(metrics)})
 		return ErrorParsingBody
 	}
 
-	mh.logger.Debug("custom-metrics-parsed-successfully", lager.Data{"metrics": metrics})
+	mh.logger.Debug("custom-metrics-parsed-successfully", lager.Data{"metrics": derefMetrics(metrics)})
 	for _, metric := range metrics {
 		mh.metricForwarder.EmitMetric(metric)
 	}
@@ -196,6 +196,33 @@ func (mh *CustomMetricsHandler) isAppWithBoundStrategy(appGUID string) (bool, er
 		return true, nil
 	}
 	return false, nil
+}
+
+// derefMetrics returns metric values (not pointers), so lager's plain-text
+// formatter renders each metric's fields instead of a pointer address.
+func derefMetrics(metrics []*models.CustomMetric) []models.CustomMetric {
+	out := make([]models.CustomMetric, 0, len(metrics))
+	for _, m := range metrics {
+		if m != nil {
+			out = append(out, *m)
+		}
+	}
+	return out
+}
+
+// derefMetricsConsumer returns a MetricsConsumer whose CustomMetrics slice
+// has been dereferenced, for readable plain-text logging.
+func derefMetricsConsumer(mc *models.MetricsConsumer) any {
+	if mc == nil {
+		return nil
+	}
+	return struct {
+		InstanceIndex uint32
+		CustomMetrics []models.CustomMetric
+	}{
+		InstanceIndex: mc.InstanceIndex,
+		CustomMetrics: derefMetrics(mc.CustomMetrics),
+	}
 }
 
 func (mh *CustomMetricsHandler) getMetrics(appID string, metricsConsumer *models.MetricsConsumer) []*models.CustomMetric {

@@ -494,6 +494,9 @@ func setPolicyRecurringDate(policyByte []byte) []byte {
 			} else {
 				entry.StartTime = starttime.Format("15:04")
 				entry.EndTime = endtime.Format("15:04")
+				if starttime.Day() != now.Day() {
+					entry.StartDate = starttime.Format("2006-01-02")
+				}
 			}
 		}
 	}

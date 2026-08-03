@@ -58,7 +58,8 @@ func (a *Auth) CheckAuth(r *http.Request, appID string) error {
 	var errAuth error
 	errAuth = a.XFCCAuth(r, a.bindingDB, appID)
 	if errAuth != nil {
-		if errors.Is(errAuth, ErrXFCCHeaderNotFound) {
+		isBasicAuthAvailable := a.credentials != nil
+		if errors.Is(errAuth, ErrXFCCHeaderNotFound) && isBasicAuthAvailable {
 			a.logger.Info("Trying basic auth", lager.Data{"app_id": appID})
 			errAuth = a.BasicAuth(r, appID)
 		}

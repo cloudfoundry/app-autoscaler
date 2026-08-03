@@ -75,7 +75,7 @@ function write_app_config() {
 	"other_existing_user_password": "${other_existing_user_password}",
 	"skip_service_access_management": ${skip_service_access_management},
 	"aggregate_interval": 120,
-	"default_timeout": 60,
+	"default_timeout": 120,
 	"cpu_upper_threshold": ${cpu_upper_threshold},
 	"name_prefix": "${name_prefix}",
 	"autoscaler_api": "${deployment_name}.${system_domain}",

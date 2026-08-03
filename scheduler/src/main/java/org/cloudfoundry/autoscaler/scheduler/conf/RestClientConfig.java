@@ -7,8 +7,9 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.client5.http.ssl.HttpsSupport;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ssl.SslBundle;
@@ -47,10 +48,11 @@ public class RestClientConfig {
       throws Exception {
 
     HttpClientBuilder builder = HttpClientBuilder.create();
-    SSLConnectionSocketFactory sslsf =
-        new SSLConnectionSocketFactory(
+    TlsSocketStrategy tlsSocketStrategy =
+        new DefaultClientTlsStrategy(
             this.sslContext,
             new String[] {protocol},
+            null,
             null,
             HttpsSupport.getDefaultHostnameVerifier());
 
@@ -58,7 +60,7 @@ public class RestClientConfig {
         ConnectionConfig.custom().setConnectTimeout(Timeout.ofSeconds(httpClientTimeout)).build();
     HttpClientConnectionManager ccm =
         PoolingHttpClientConnectionManagerBuilder.create()
-            .setSSLSocketFactory(sslsf)
+            .setTlsSocketStrategy(tlsSocketStrategy)
             .setDefaultConnectionConfig(connectionConfig)
             .build();
     builder.setConnectionManager(ccm);

@@ -54,7 +54,7 @@ var (
 	ErrDeletePolicyForUnbinding     = errors.New("failed to delete policy for unbinding")
 	ErrDeleteServiceBinding         = errors.New("error deleting service binding")
 	ErrCredentialNotDeleted         = errors.New("failed to delete custom metrics credential for unbinding")
-	ErrInvalidCredentialType        = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]")
+	ErrInvalidCredentialType        = errors.New("invalid credential type provided: allowed values are [binding-secret, x509]") // 🚧 To-do: Unused?
 	ErrInvalidConfigurations        = errors.New("invalid binding configurations provided")
 	ErrInvalidCustomMetricsStrategy = errors.New("error: custom metrics strategy not supported")
 )
@@ -554,12 +554,29 @@ func (b *Broker) LastOperation(_ context.Context, instanceID string, details dom
 	return domain.LastOperation{}, apiresponses.NewFailureResponse(err, http.StatusBadRequest, "last-operation-is-not-implemented")
 }
 
+// formatBindDetails renders BindDetails as a lager.Data map with
+// json.RawMessage fields shown as strings (instead of []byte decimal arrays)
+// and *BindResource dereferenced (instead of a pointer address).
+func formatBindDetails(details domain.BindDetails) lager.Data {
+	data := lager.Data{
+		"AppGUID":       details.AppGUID,
+		"PlanID":        details.PlanID,
+		"ServiceID":     details.ServiceID,
+		"RawContext":    string(details.RawContext),
+		"RawParameters": string(details.RawParameters),
+	}
+	if details.BindResource != nil {
+		data["BindResource"] = *details.BindResource
+	}
+	return data
+}
+
 // Bind creates a new service binding
 // PUT /v2/service_instances/{instance_id}/service_bindings/{binding_id}
 func (b *Broker) Bind(
 	ctx context.Context, instanceID string, bindingID string, details domain.BindDetails, _ bool,
 ) (domain.Binding, error) {
-	logger := b.logger.Session("bind", lager.Data{"instanceID": instanceID, "bindingID": bindingID, "bindDetails": details})
+	logger := b.logger.Session("bind", lager.Data{"instanceID": instanceID, "bindingID": bindingID, "bindDetails": formatBindDetails(details)})
 	logger.Info("begin")
 	defer logger.Info("end")
 

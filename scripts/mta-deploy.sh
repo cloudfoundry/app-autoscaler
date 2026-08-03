@@ -20,7 +20,7 @@ EXTENSION_FILE="${DEST}/extension-file-${VERSION}.txt"
 # Check if mtar file exists
 if [ ! -f "${DEST}/${MTAR_FILENAME}" ]; then
 	echo "ERROR: MTAR file not found at: ${DEST}/${MTAR_FILENAME}"
-	echo "Please run 'make mta-build' first"
+	echo "Please run 'scripts/mta-build.sh' first"
 	exit 1
 fi
 

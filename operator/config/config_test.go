@@ -47,9 +47,9 @@ var _ = Describe("Config", func() {
 				conf, err = config.LoadConfig("", mockVCAPConfigurationReader)
 			})
 
-			It("should set logging to plain sink", func() {
+			It("should default logging to plain sink", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Logging.PlainTextSink).To(BeTrue())
+				Expect(conf.Logging.JsonSink).To(BeFalse())
 			})
 
 			It("sets env variable over config file", func() {

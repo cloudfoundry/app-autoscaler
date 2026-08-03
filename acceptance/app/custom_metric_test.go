@@ -27,15 +27,29 @@ var _ = Describe("AutoScaler custom metrics", func() {
 
 	Describe("custom metrics policy for same app", func() {
 		/*
-			Going forward, custom metrics submission should be possible via mTLS route only.This test can be removed in future if credential-type is set to X509 permanently.
-			Added test for rollback cases where custom metrics are still sent via basic auth route.
+			This test exercises scaling driven by custom metrics submitted via
+			Basic-Auth. Going forward, custom metrics submission should be possible
+			via mTLS only; this test can be removed in the future once
+			basic-authentication support is fully retired.
+
+			It is therefore only relevant when the autoscaler is deployed with
+			basic_auth_for_custom_metrics="enabled". The "only_existing_bindings"
+			and "disabled" modes are covered by unit tests:
+			  - api/brokerserver/broker_handler_test.go
+			  - metricsforwarder/server/auth/auth_test.go
+			  - api/config/parser_internal_test.go
 		*/
 		JustBeforeEach(func() {
 			instanceName = CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)
 			StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
 		})
-		Context("when scaling by custom metrics", func() {
+		Context("when scaling by custom metrics via basic-auth", func() {
 			BeforeEach(func() {
+				if !cfg.BasicAuthForCustomMetricsAllowedForFreshBinding() {
+					Skip(fmt.Sprintf(
+						"basic_auth_for_custom_metrics=%q: skipping Basic-Auth scaling test",
+						cfg.BasicAuthForCustomMetrics))
+				}
 				credentialType := "binding-secret"
 				policy = GeneratePolicyWithCredentialType(
 					1, 2, "test_metric", 500, 500, &credentialType)

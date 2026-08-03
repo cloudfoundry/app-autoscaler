@@ -3,16 +3,16 @@ module code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app
 go 1.26.2
 
 require (
-	github.com/cloudfoundry-community/go-cfenv v1.18.0
+	github.com/cloudfoundry-community/go-cfenv v1.19.1
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.2.0
 	github.com/json-iterator/go v1.1.12
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ogen-go/ogen v1.20.3
-	github.com/onsi/ginkgo/v2 v2.29.0
+	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
-	github.com/prometheus/procfs v0.20.1
+	github.com/prometheus/procfs v0.21.0
 	github.com/steinfletcher/apitest v1.6.0
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
@@ -30,6 +30,7 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect

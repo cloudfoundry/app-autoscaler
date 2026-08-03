@@ -31,14 +31,14 @@ var _ = Describe("AutoScaler custom metrics policy", func() {
 		It("should scale out and scale in", func() {
 			By("Scale out to 2 instances")
 			scaleOut := func() (int, error) {
-				SendMetric(cfg, appName, 550)
+				SendMetricMTLS(cfg, appGUID, appName, 550, 0)
 				return RunningInstances(appGUID, 5*time.Second)
 			}
 			Eventually(scaleOut, 5*time.Minute, 15*time.Second).Should(Equal(2))
 
 			By("Scale in to 1 instances")
 			scaleIn := func() (int, error) {
-				SendMetric(cfg, appName, 100)
+				SendMetricMTLS(cfg, appGUID, appName, 100, 0)
 				return RunningInstances(appGUID, 5*time.Second)
 			}
 			Eventually(scaleIn, 5*time.Minute, 15*time.Second).Should(Equal(1))

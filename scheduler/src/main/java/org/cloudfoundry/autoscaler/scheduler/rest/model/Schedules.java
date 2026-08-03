@@ -9,7 +9,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
 @Schema
 public class Schedules {
-  @Schema(required = true)
+  @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty(value = "timezone")
   @NotBlank
   String timeZone;

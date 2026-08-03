@@ -228,7 +228,7 @@ var _ = Describe("Authentication", func() {
 
 		})
 	})
-	Describe("CheckAuth with credentials present (basic auth 'on' or 'only_existing_bindings')", func() {
+	Describe("CheckAuth with credentials present (basic auth 'enabled' or 'only_existing_bindings')", func() {
 		Context("when mTLS fails (no XFCC header) and Basic Auth credentials are provided", func() {
 			BeforeEach(func() {
 				fakeCredentials.ValidateReturns(true, nil)
@@ -253,6 +253,66 @@ var _ = Describe("Authentication", func() {
 
 				err := authTest.CheckAuth(req, testAppId)
 				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+	Describe("CheckAuth with credentials nil (basic auth 'disabled')", func() {
+		// Override the outer JustBeforeEach to construct an Auth with a nil credentials provider,
+		// mimicking how main.go leaves the provider unset when basic-auth is globally disabled.
+		JustBeforeEach(func() {
+			logger := lager.NewLogger("auth-test")
+			var err error
+			authTest, err = auth.New(logger, nil, fakeBindingDB)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		Context("when a request with Basic-Auth header but no XFCC header arrives", func() {
+			It("should not panic and respond with HTTP 401", func() {
+				req = CreateRequest(body, testAppId)
+				req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+				vars["appid"] = testAppId
+				nextCalled := 0
+				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					nextCalled = nextCalled + 1
+				})
+
+				Expect(func() {
+					authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
+				}).NotTo(Panic())
+				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+				Expect(nextCalled).To(Equal(0))
+			})
+		})
+		Context("when a request without any auth header arrives", func() {
+			It("should respond with HTTP 401", func() {
+				req = CreateRequest(body, testAppId)
+				vars["appid"] = testAppId
+				nextCalled := 0
+				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					nextCalled = nextCalled + 1
+				})
+
+				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
+
+				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+				Expect(nextCalled).To(Equal(0))
+			})
+		})
+		Context("when a request with a valid mTLS/XFCC header arrives", func() {
+			const validClientCert1 = "../../../test-certs/validmtls_client-1.crt"
+			It("should respond with HTTP 200 (mTLS path is unaffected by nil credentials)", func() {
+				req = CreateRequest(body, testAppId)
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
+				vars["appid"] = testAppId
+				nextCalled := 0
+				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					nextCalled = nextCalled + 1
+				})
+
+				authTest.AuthenticateHandler(nextFunc)(resp, req, vars)
+
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(nextCalled).To(Equal(1))
 			})
 		})
 	})

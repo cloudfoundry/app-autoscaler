@@ -68,9 +68,9 @@ var _ = Describe("Config", func() {
 				conf, err = LoadConfig("", mockVCAPConfigurationReader)
 			})
 
-			It("should set logging to plain sink", func() {
+			It("should default logging to plain sink", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Logging.PlainTextSink).To(BeTrue())
+				Expect(conf.Logging.JsonSink).To(BeFalse())
 			})
 
 			It("sets env variable over config file", func() {
@@ -1450,7 +1450,7 @@ health:
 			Expect(credentialKey).To(Equal("eventgenerator-config"))
 
 			// Verify common configuration was applied
-			Expect(conf.Logging.PlainTextSink).To(BeTrue())
+			Expect(conf.Logging.JsonSink).To(BeFalse())
 			Expect(conf.CFServer.Port).To(Equal(8080))
 			Expect(conf.Server.Port).To(Equal(0))
 			Expect(conf.CFServer.XFCC.ValidSpaceGuid).To(Equal("space-guid"))

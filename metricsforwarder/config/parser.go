@@ -13,20 +13,22 @@ import (
 )
 
 type rawConfig struct {
-	Logging               helpers.LoggingConfig         `yaml:"logging"`
-	Server                helpers.ServerConfig          `yaml:"server"`
-	LoggregatorConfig     LoggregatorConfig             `yaml:"loggregator"`
-	SyslogConfig          SyslogConfig                  `yaml:"syslog"`
-	MetricsGateway        MetricsGatewayConfig          `yaml:"metrics_gateway" json:"metrics_gateway"`
-	InstanceTLSCerts      models.TLSCerts               `yaml:"-" json:"-"`
-	Db                    map[string]db.DatabaseConfig  `yaml:"db"`
-	CacheTTL              time.Duration                 `yaml:"cache_ttl"`
-	CacheCleanupInterval  time.Duration                 `yaml:"cache_cleanup_interval"`
-	PolicyPollerInterval  time.Duration                 `yaml:"policy_poller_interval"`
-	Health                helpers.HealthConfig          `yaml:"health"`
-	RateLimit             models.RateLimitConfig        `yaml:"rate_limit"`
-	CredHelperImpl        string                        `yaml:"cred_helper_impl"`
-	StoredProcedureConfig *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
+	Logging              helpers.LoggingConfig        `yaml:"logging"`
+	Server               helpers.ServerConfig         `yaml:"server"`
+	LoggregatorConfig    LoggregatorConfig            `yaml:"loggregator"`
+	SyslogConfig         SyslogConfig                 `yaml:"syslog"`
+	MetricsGateway       MetricsGatewayConfig         `yaml:"metrics_gateway" json:"metrics_gateway"`
+	InstanceTLSCerts     models.TLSCerts              `yaml:"-" json:"-"`
+	Db                   map[string]db.DatabaseConfig `yaml:"db"`
+	CacheTTL             time.Duration                `yaml:"cache_ttl"`
+	CacheCleanupInterval time.Duration                `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval time.Duration                `yaml:"policy_poller_interval"`
+	Health               helpers.HealthConfig         `yaml:"health"`
+	RateLimit            models.RateLimitConfig       `yaml:"rate_limit"`
+
+	BasicAuthForCustomMetrics string                        `yaml:"basic_auth_for_custom_metrics" json:"basic_auth_for_custom_metrics"`
+	CredHelperImpl            string                        `yaml:"cred_helper_impl"`
+	StoredProcedureConfig     *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config"`
 }
 
 func toConfig(rawConfig rawConfig) (Config, error) {
@@ -50,13 +52,16 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		RateLimit:            rawConfig.RateLimit,
 	}
 
-	switch rawConfig.CredHelperImpl {
-	case "stored_procedure":
-		result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc{
-			Config: *rawConfig.StoredProcedureConfig,
+	switch rawConfig.BasicAuthForCustomMetrics {
+	case "enabled", "":
+		switch rawConfig.CredHelperImpl {
+		case "stored_procedure":
+			result.CredentialHelperConfig = models.BasicAuthHandlingStoredProc{
+				Config: *rawConfig.StoredProcedureConfig,
+			}
+		case "default", "":
+			result.CredentialHelperConfig = models.BasicAuthHandlingNative{}
 		}
-	case "default", "":
-		result.CredentialHelperConfig = models.BasicAuthHandlingNative{}
 	case "disabled":
 		result.CredentialHelperConfig = nil
 	}
@@ -74,7 +79,7 @@ func (c *rawConfig) validate() error {
 	if err := c.validateRateLimit(); err != nil {
 		return err
 	}
-	if err := c.validateCredHelperImpl(); err != nil {
+	if err := c.validateBasicAuthConfig(); err != nil {
 		return err
 	}
 	return c.Health.Validate()
@@ -134,7 +139,18 @@ func (c *rawConfig) validateRateLimit() error {
 	return nil
 }
 
-func (c *rawConfig) validateCredHelperImpl() error {
+func (c *rawConfig) validateBasicAuthConfig() error {
+	validBasicAuthValues := []string{"", "enabled", "disabled"}
+	if !slices.Contains(validBasicAuthValues, c.BasicAuthForCustomMetrics) {
+		msg := fmt.Sprintf("basic_auth_for_custom_metrics is set to %s which is not a supported value", c.BasicAuthForCustomMetrics)
+		return errors.New(msg)
+	}
+
+	if c.BasicAuthForCustomMetrics == "disabled" && c.CredHelperImpl != "" {
+		msg := "Configuration error: CredHelperImpl is set but basic authentication is switched off."
+		return errors.New(msg)
+	}
+
 	switch c.CredHelperImpl {
 	case "stored_procedure":
 		if c.StoredProcedureConfig == nil {
@@ -166,8 +182,6 @@ func (c *rawConfig) validateCredHelperImpl() error {
 			msg := "CredHelperImpl is set to the default but there is a StoredProcedureConfig"
 			return errors.New(msg)
 		}
-	case "disabled":
-	// Nothing to validate if the credential helper is disabled.
 	default:
 		msg := fmt.Sprintf("CredHelperImpl is set to %s which is not a supported value", c.CredHelperImpl)
 		return errors.New(msg)

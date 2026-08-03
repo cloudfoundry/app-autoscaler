@@ -26,7 +26,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
     query = SpecificDateScheduleEntity.jpql_findDistinctAppIdAndGuidFromSpecificDateSchedule)
 public class SpecificDateScheduleEntity extends ScheduleEntity {
 
-  @Schema(example = DateHelper.DATE_TIME_FORMAT, required = true)
+  @Schema(example = DateHelper.DATE_TIME_FORMAT, requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
   @JsonDeserialize(using = DateTimeDeserializer.class)
   @JsonSerialize(using = DateTimeSerializer.class)
@@ -35,7 +35,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
   @JsonProperty("start_date_time")
   private LocalDateTime startDateTime;
 
-  @Schema(example = DateHelper.DATE_TIME_FORMAT, required = true)
+  @Schema(example = DateHelper.DATE_TIME_FORMAT, requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
   @JsonDeserialize(using = DateTimeDeserializer.class)
   @JsonSerialize(using = DateTimeSerializer.class)

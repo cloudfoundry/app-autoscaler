@@ -8,7 +8,21 @@ DEST ?= /tmp/build
 TARGET_DIR ?= ./build
 MTAR_FILENAME ?= app-autoscaler-release-v$(VERSION).mtar
 ACCEPTANCE_TESTS_FILE ?= ${DEST}/app-autoscaler-acceptance-tests-v$(VERSION).tgz
-AUTOSCALER_PLUGIN_VERSION ?= $(shell cf plugins --checksum 2>/dev/null | awk '/^AutoScaler/ {print $$2}')
+
+# Resolve the AutoScaler CLI plugin version from its single source of truth,
+# nix/packages.nix (the same pin the devbox env builds from), so the acceptance
+# release can be built in any environment with just awk — no running `cf` or a
+# pre-installed plugin required. Override by exporting AUTOSCALER_PLUGIN_VERSION.
+#
+# In the future we will replace it with something simpler:
+# AUTOSCALER_PLUGIN_VERSION ?= $(shell \
+#	nix eval --raw '$(MAKEFILE_DIR)#app-autoscaler-cli-plugin.version')
+AUTOSCALER_PLUGIN_VERSION ?= $(shell awk '\
+	/app-autoscaler-cli-plugin = buildGoModule/{b=1} \
+	b && /major *=/{gsub(/[^0-9]/,"");maj=$$0} \
+	b && /minor *=/{gsub(/[^0-9]/,"");min=$$0} \
+	b && /patch *=/{gsub(/[^0-9]/,"");pat=$$0;print maj"."min"."pat;exit}' \
+	$(MAKEFILE_DIR)/nix/packages.nix)
 CI ?= false
 
 DEBUG := false
@@ -317,8 +331,18 @@ mta-logs:
 # the other dependencies. Instead we should rely on the dependencies being complete and updated
 # as needed.
 .PHONY: mta-build
-mta-build: mta-build-clean go-mod-vendor-mta vendor-changelogs
-	@$(MAKEFILE_DIR)/scripts/mta-build.sh
+# go-mod-vendor-mta and vendor-changelogs are invoked per-module by the custom
+# builders in mta.tpl.yaml, so `mbt build` (via mta-build.sh) is self-sufficient
+# and we don't run them here as well.
+mta-build:
+	@echo -e \
+		'🚸 Responsible for the build of mtars is not GNUmake but mbt.' "\n" \
+		'mbt calls make to prepare its stage.' "\n" \
+		'Calling mbt via this Makefile is not intended and discouraged to keep responsibilities separated.' "\n" \
+		'You can invoke mbt by executing:' "\n" \
+		"\t" 'cp mta.tpl.yaml mta.yaml' "\n" \
+		"\t" 'sed --in-place "s/MTA_VERSION/$${VERSION}/g" mta.yaml' "\n" \
+		"\t" 'mbt build --target="<target-folder>" --mtar="<target-file-name>"'
 
 .PHONY: mta-build-clean
 mta-build-clean:
@@ -371,11 +395,6 @@ acceptance-release: clean-acceptance generate-openapi-generated-clients-and-serv
 	@chmod +x build/acceptance/bin/app-autoscaler-plugin
 	# Create tarball
 	@tar --create --auto-compress --file="${ACCEPTANCE_TESTS_FILE}" -C build acceptance
-
-
-.PHONY: mta-release
-mta-release: generate-fakes mta-build
-	@echo " - building mtar release '${VERSION}' to dir: '${DEST}' "
 
 .PHONY: clean-acceptance
 clean-acceptance:
@@ -517,7 +536,11 @@ scheduler.test: check-db_type scheduler.test-certificates init-db
 scheduler.test-certificates:
 	make --directory=scheduler test-certificates
 
-lint: lint-go lint-actions lint-markdown
+lint: lint-go lint-actions lint-markdown scheduler.lint
+
+.PHONY: scheduler.lint
+scheduler.lint:
+	@make --directory=scheduler check-format check-style check-deprecations
 .PHONY: lint-go
 lint-go: generate-openapi-generated-clients-and-servers generate-fakes acceptance.lint test-app.lint gorouterproxy.lint
 	readonly GOVERSION='${GO_VERSION}' ;\

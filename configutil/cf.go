@@ -335,7 +335,6 @@ func ToJSON(v any) (string, error) {
 // CommonVCAPConfiguration applies common VCAP configuration settings to any config struct.
 // It handles the repeated patterns found in component LoadVcapConfig functions.
 type CommonVCAPConfig interface {
-	SetLoggingPlainText()
 	SetPortsForCF(cfPort int)
 	SetXFCCValidation(spaceGuid, orgGuid string)
 	GetDatabaseConfig() *map[string]db.DatabaseConfig
@@ -360,11 +359,6 @@ func (c *BaseConfig) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
 }
 
-// SetLoggingPlainText implements configutil.CommonVCAPConfig
-func (c *BaseConfig) SetLoggingPlainText() {
-	c.Logging.PlainTextSink = true
-}
-
 // SetPortsForCF implements configutil.CommonVCAPConfig
 func (c *BaseConfig) SetPortsForCF(cfPort int) {
 	c.CFServer.Port = cfPort
@@ -387,9 +381,6 @@ func ApplyCommonVCAPConfiguration[T any, PT interface {
 	*T
 	CommonVCAPConfig
 }](conf PT, vcapReader VCAPConfigurationReader, serviceName string) error {
-	// enable plain text logging. See src/autoscaler/helpers/logger.go
-	conf.SetLoggingPlainText()
-
 	// Avoid port conflict: assign actual port to CF server, set BOSH server port to 0 (unused)
 	conf.SetPortsForCF(vcapReader.GetPort())
 
