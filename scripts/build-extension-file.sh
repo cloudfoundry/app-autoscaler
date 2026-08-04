@@ -25,11 +25,14 @@ if [ -z "${DEPLOYMENT_NAME}" ]; then
   exit 1
 fi
 
-bbl_login
-cf_login
+if is_oss_infrastructure; then
+  bbl_login
+fi
+cf_deployment_login
+
 cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
-export SYSTEM_DOMAIN="autoscaler.app-runtime-interfaces.ci.cloudfoundry.org"
+export SYSTEM_DOMAIN="${SYSTEM_DOMAIN:-autoscaler.app-runtime-interfaces.ci.cloudfoundry.org}"
 export CPU_LOWER_THRESHOLD="${CPU_LOWER_THRESHOLD:-"100"}"
 
 generate_deployment_secrets() {
@@ -50,8 +53,6 @@ load_secrets() {
   # Map YAML keys → shell variable names, emitting `export VAR=value` lines
   local exports
   exports="$(yq '
-    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="  + (.eventgenerator_log_cache_uaa_client_id  | @sh),
-    "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET=" + (.eventgenerator_log_cache_uaa_client_secret | @sh),
     "export CF_ADMIN_PASSWORD="                       + (.cf_admin_password                       | @sh),
     "export POSTGRES_IP="                             + (.postgres_ip                             | @sh),
     "export DATABASE_DB_USERNAME="                    + (.database_username                       | @sh),
@@ -72,7 +73,8 @@ escape_newlines() { printf '%s' "${1//$'\n'/\\n}"; return; }
 
 generate_deployment_secrets
 
-cat << EOF > /tmp/extension-file-secrets.yml.tpl
+if is_oss_infrastructure; then
+  cat << EOF > /tmp/extension-file-secrets.yml.tpl
 postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))
 
 eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
@@ -91,13 +93,40 @@ database_client_key: ((/bosh-autoscaler/postgres/postgres_server.private_key))
 cf_admin_password: ((/bosh-autoscaler/cf/cf_admin_password))
 EOF
 
-credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
-load_secrets /tmp/mtar-secrets.yml
+  credhub interpolate -f "/tmp/extension-file-secrets.yml.tpl" > /tmp/mtar-secrets.yml
+  load_secrets /tmp/mtar-secrets.yml
+fi
 
 # --- API server & broker ---
 export APISERVER_HOST="${APISERVER_HOST:-"${DEPLOYMENT_NAME}"}"
 export APISERVER_INSTANCES="${APISERVER_INSTANCES:-2}"
 export SERVICEBROKER_HOST="${SERVICEBROKER_HOST:-"${DEPLOYMENT_NAME}servicebroker"}"
+
+# --- CF credentials for components ---
+# PR deployments use password grant with org-manager user.
+# Main deployments use client_credentials.
+if is_pr_deployment; then
+  if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
+    echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is required for component CF credentials" >&2
+    exit 1
+  fi
+  if [[ -z "${AUTOSCALER_OTHER_USER_PASSWORD:-}" ]]; then
+    echo "ERROR: AUTOSCALER_OTHER_USER_PASSWORD is required for acceptance test credentials" >&2
+    exit 1
+  fi
+  cf_grant_type="password" cf_client_id="cf" cf_secret=""
+  cf_username="${AUTOSCALER_ORG_MANAGER_USER}" cf_password="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+else
+  cf_grant_type="client_credentials" cf_client_id="autoscaler_client_id" cf_secret="autoscaler_client_secret"
+  cf_username="" cf_password=""
+fi
+for component in APISERVER EVENTGENERATOR SCALINGENGINE OPERATOR; do
+  export "${component}_CF_GRANT_TYPE=${cf_grant_type}"
+  export "${component}_CF_CLIENT_ID=${cf_client_id}"
+  export "${component}_CF_SECRET=${cf_secret}"
+  export "${component}_CF_USERNAME=${cf_username}"
+  export "${component}_CF_PASSWORD=${cf_password}"
+done
 
 # --- Event generator ---
 export EVENTGENERATOR_CF_HOST="${EVENTGENERATOR_CF_HOST:-"${DEPLOYMENT_NAME}-cf-eventgenerator"}"
@@ -113,12 +142,11 @@ export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
 export USE_METRICSGATEWAY="${USE_METRICSGATEWAY:-true}"
 export METRICSGATEWAY_HOST="${METRICSGATEWAY_HOST:-"${DEPLOYMENT_NAME}-metricsgateway"}"
 export METRICSGATEWAY_INSTANCES="${METRICSGATEWAY_INSTANCES:-2}"
+export METRICSFORWARDER_METRICS_GATEWAY_URL="${METRICSFORWARDER_METRICS_GATEWAY_URL:-}"
 AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
 export AUTOSCALER_ORG_GUID
 
 # --- Scaling engine ---
-export SCALINGENGINE_CF_CLIENT_ID="autoscaler_client_id"
-export SCALINGENGINE_CF_CLIENT_SECRET="autoscaler_client_secret"
 export SCALINGENGINE_CF_HOST="${SCALINGENGINE_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scalingengine"}"
 export SCALINGENGINE_HOST="${SCALINGENGINE_HOST:-"${DEPLOYMENT_NAME}-scalingengine"}"
 export SCALINGENGINE_INSTANCES="${SCALINGENGINE_INSTANCES:-2}"
@@ -129,22 +157,22 @@ export SCHEDULER_CF_HOST="${SCHEDULER_CF_HOST:-"${DEPLOYMENT_NAME}-cf-scheduler"
 export SCHEDULER_INSTANCES="${SCHEDULER_INSTANCES:-2}"
 
 # --- Operator ---
-export OPERATOR_CF_CLIENT_ID="autoscaler_client_id"
-export OPERATOR_CF_CLIENT_SECRET="autoscaler_client_secret"
 export OPERATOR_HOST="${OPERATOR_HOST:-"${DEPLOYMENT_NAME}-operator"}"
 export OPERATOR_INSTANCES="${OPERATOR_INSTANCES:-2}"
 
 # --- Database ---
-# Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
-export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
-DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
-DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
-DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
+if is_oss_infrastructure; then
+  # Port 5524 is the bosh-deployed postgres proxy port (not the default 5432)
+  export POSTGRES_URI="postgres://${DATABASE_DB_USERNAME}:${DATABASE_DB_PASSWORD}@${POSTGRES_IP}:5524/${DEPLOYMENT_NAME}?sslmode=verify-ca"
+  DATABASE_DB_CLIENT_CERT="$(escape_newlines "${DATABASE_DB_CLIENT_CERT}")"; export DATABASE_DB_CLIENT_CERT
+  DATABASE_DB_CLIENT_KEY="$(escape_newlines "${DATABASE_DB_CLIENT_KEY}")";   export DATABASE_DB_CLIENT_KEY
+  DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     export DATABASE_DB_SERVER_CA
 
-# --- Syslog client ---
-SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
-SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
-SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
+  # --- Syslog client ---
+  SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
+  SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
+  SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
+fi
 
 # --- Acceptance tests ---
 export SKIP_SSL_VALIDATION="${SKIP_SSL_VALIDATION:-true}"
@@ -154,9 +182,40 @@ export PERFORMANCE_APP_COUNT="${PERFORMANCE_APP_COUNT:-100}"
 export PERFORMANCE_APP_PERCENTAGE_TO_SCALE="${PERFORMANCE_APP_PERCENTAGE_TO_SCALE:-30}"
 export PERFORMANCE_SETUP_WORKERS="${PERFORMANCE_SETUP_WORKERS:-50}"
 export PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA="${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}"
+export USE_EXISTING_ORGANIZATION="${USE_EXISTING_ORGANIZATION:-true}"
+export EXISTING_ORGANIZATION="${EXISTING_ORGANIZATION:-${AUTOSCALER_ORG}}"
+export SKIP_SERVICE_ACCESS_MANAGEMENT="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+export USE_EXISTING_USER="${USE_EXISTING_USER:-true}"
+export EXISTING_USER="${EXISTING_USER:-${AUTOSCALER_ORG_MANAGER_USER}}"
+export EXISTING_USER_PASSWORD="${EXISTING_USER_PASSWORD:-${AUTOSCALER_ORG_MANAGER_PASSWORD}}"
+export KEEP_USER_AT_SUITE_END="${KEEP_USER_AT_SUITE_END:-true}"
+# When using a shared existing org (not the deployment org), don't reuse a space from the
+# deployment org — let cf-test-helpers create a fresh space in the existing org instead.
+if [[ "${EXISTING_ORGANIZATION}" != "${AUTOSCALER_ORG}" ]]; then
+  export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-false}"
+  export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-false}"
+  export EXISTING_SPACE="${EXISTING_SPACE:-}"
+else
+  export ADD_EXISTING_USER_TO_EXISTING_SPACE="${ADD_EXISTING_USER_TO_EXISTING_SPACE:-true}"
+  export USE_EXISTING_SPACE="${USE_EXISTING_SPACE:-true}"
+  export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
+fi
 
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
+
+# For non-OSS, replace the database UPS with an existing managed CF service
+if ! is_oss_infrastructure; then
+  yq --inplace '
+    (.resources[] | select(.name == "database")) = {
+      "name": "database",
+      "type": "org.cloudfoundry.existing-service",
+      "parameters": {
+        "service-name": env(DEPLOYMENT_NAME)
+      }
+    }
+  ' "${extension_file_path}"
+fi
 
 # When not using the metricsgateway, patch the generated file:
 # - metricsforwarder gets syslog-client binding (direct syslog path)

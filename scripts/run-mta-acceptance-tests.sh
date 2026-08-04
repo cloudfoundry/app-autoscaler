@@ -44,6 +44,20 @@ validate_app() {
 	[[ -n "${APP_GUID}" ]] || { echo "ERROR: acceptance-tests app not found. Run: make mta-deploy"; exit 1; }
 
 	echo "  ✓ App found (GUID: ${APP_GUID:0:8})"
+
+	if [[ "${DEBUG:-false}" == "true" ]]; then
+		local app_state
+		app_state=$(cf curl "/v3/apps/${APP_GUID}" 2>/dev/null | jq -r '.state // "UNKNOWN"')
+		echo "  App state: ${app_state}"
+
+		local droplet
+		droplet=$(cf curl "/v3/apps/${APP_GUID}/droplets/current" 2>/dev/null | jq -r '.guid // empty')
+		if [[ -n "${droplet}" ]]; then
+			echo "  ✓ Current droplet: ${droplet:0:8}"
+		else
+			echo "  ✗ WARNING: No current droplet assigned"
+		fi
+	fi
 }
 
 launch_task() {
@@ -55,13 +69,18 @@ launch_task() {
 
 	local guid
 	local cf_output
-	cf_output=$(cf curl "/v3/apps/${APP_GUID}/tasks" -X POST -d "$(jq -n --arg n "${task_name}" --arg c "${cmd}" \
-		'{name:$n,command:$c,memory_in_mb:2048,disk_in_mb:2048}')" 2>&1)
-	guid=$(echo "$cf_output" | jq -r '.guid // empty')
+	local payload
+	payload=$(jq -n --arg n "${task_name}" --arg c "${cmd}" \
+		'{name:$n,command:$c,memory_in_mb:2048,disk_in_mb:2048}')
+	cf_output=$(cf curl "/v3/apps/${APP_GUID}/tasks" -X POST -d "${payload}" 2>&1)
+	guid=$(echo "$cf_output" | jq -r '.guid // empty' 2>/dev/null)
 	if [[ -n "${guid}" ]]; then
 		echo "${guid}"
 	else
 		echo "ERROR: Failed to launch task for ${suite}" >&2
+		echo "  API response: ${cf_output}" >&2
+		echo "  APP_GUID: ${APP_GUID}" >&2
+		echo "  Payload: ${payload}" >&2
 		echo "FAILED"
 	fi
 }
@@ -75,17 +94,12 @@ get_pr_tasks() {
 	guid_list="${LAUNCHED_TASK_GUIDS[*]}"
 
 	local tasks_json
-	if ! cf curl "/v3/tasks?guids=${guid_list}" >/dev/null 2>&1; then
-		return 0
-	fi
-
-	tasks_json=$(cf curl "/v3/tasks?guids=${guid_list}" 2>/dev/null)
+	tasks_json=$(cf curl "/v3/tasks?guids=${guid_list}" 2>/dev/null) || return 0
 	echo "$tasks_json" | jq -r '.resources[]? | "\(.name):\(.state)"' 2>/dev/null || true
 }
 
 has_unfinished_tasks() {
-	local tasks
-	tasks=$(get_pr_tasks)
+	local tasks="${1:-$(get_pr_tasks)}"
 	if echo "$tasks" | grep -qE ":(RUNNING|PENDING)$"; then
 		return 0
 	fi
@@ -96,17 +110,15 @@ has_unfinished_tasks() {
 
 has_failed_tasks() {
 	local tasks="${FINAL_TASK_STATE:-$(get_pr_tasks)}"
-	[[ -n "$tasks" ]] && echo "$tasks" | grep -qvE ":SUCCEEDED$"
+	echo "$tasks" | grep -v '^[[:space:]]*$' | grep -qvE ":SUCCEEDED$"
 }
 
 format_time() { printf "%dm%02ds" $(($1/60)) $(($1%60)); }
 
 show_status() {
 	local poll=$1
+	local tasks="${2:-$(get_pr_tasks)}"
 	local elapsed=$(($(date +%s) - script_start_time))
-
-	local tasks
-	tasks=$(get_pr_tasks)
 
 	# Build compact status line
 	local running=0 pending=0 succeeded=0 failed=0
@@ -174,8 +186,10 @@ main() {
 	step "Running MTA acceptance tests: ${SUITES}"
 	validate
 	bbl_login
-	cf_login
+
+	cf_deployment_login
 	cf_target "${autoscaler_org}" "${autoscaler_space}"
+
 	validate_app
 
 	# Launch tasks
@@ -220,14 +234,17 @@ main() {
 	# Poll until all tasks are finished
 	step "Monitoring tasks"
 	local poll=0
-	while has_unfinished_tasks; do
+	local current_tasks
+	current_tasks=$(get_pr_tasks)
+	while has_unfinished_tasks "${current_tasks}"; do
 		poll=$((poll + 1))
 		[[ $(($(date +%s) - script_start_time)) -gt ${MAX_WAIT_TIME} ]] && {
 			echo "ERROR: Timeout after ${MAX_WAIT_TIME}s"
 			break
 		}
-		show_status ${poll}
+		show_status ${poll} "${current_tasks}"
 		sleep ${POLL_INTERVAL}
+		current_tasks=$(get_pr_tasks)
 	done
 
 	# Final summary
