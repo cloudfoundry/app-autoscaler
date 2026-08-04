@@ -18,11 +18,17 @@ func DebugInfo(cfg *config.Config, setup *workflowhelpers.ReproducibleTestSuiteS
 		if os.Getenv("CF_PLUGIN_HOME") == "" {
 			_ = os.Setenv("CF_PLUGIN_HOME", os.Getenv("HOME"))
 		}
+		output := new(strings.Builder)
+		_, _ = fmt.Fprintf(output, "\n=============== DEBUG ===============\n")
+
+		// autoscaling-api writes the plugin's local config file that the other
+		// autoscaling-* commands read, so it must complete before they start.
+		waitAndPrint(command("cf", "autoscaling-api", cfg.ASApiEndpoint), output)
+
 		var commands []*Session
 		commands = append(commands, command("cf", "app", anApp))
 		commands = append(commands, command("cf", "events", anApp))
 		commands = append(commands, command("cf", "logs", "--recent", anApp))
-		commands = append(commands, command("cf", "autoscaling-api", cfg.ASApiEndpoint))
 		commands = append(commands, command("cf", "autoscaling-policy", anApp))
 		commands = append(commands, command("cf", "autoscaling-history", anApp))
 		commands = append(commands, command("cf", "autoscaling-metrics", anApp, "memoryused"))
@@ -34,17 +40,21 @@ func DebugInfo(cfg *config.Config, setup *workflowhelpers.ReproducibleTestSuiteS
 		commands = append(commands, command("cf", "autoscaling-metrics", anApp, "disk"))
 		commands = append(commands, command("cf", "autoscaling-metrics", anApp, "diskutil"))
 		commands = append(commands, command("cf", "autoscaling-metrics", anApp, "test_metric"))
-		output := new(strings.Builder)
-		_, _ = fmt.Fprintf(output, "\n=============== DEBUG ===============\n")
 		for _, command := range commands {
-			command.Wait(30 * time.Second)
-			_, _ = fmt.Fprintln(output, strings.Join(command.Command.Args, " ")+":")
-			_, _ = fmt.Fprintln(output, string(command.Out.Contents()))
-			_, _ = fmt.Fprintln(output, string(command.Err.Contents()))
+			waitAndPrint(command, output)
 		}
 		_, _ = fmt.Fprintf(output, "\n=====================================\n")
 		GinkgoWriter.Print(output.String())
 	}
+}
+
+// waitAndPrint waits for the command to finish and appends its invocation and
+// stdout/stderr to output.
+func waitAndPrint(command *Session, output *strings.Builder) {
+	command.Wait(30 * time.Second)
+	_, _ = fmt.Fprintln(output, strings.Join(command.Command.Args, " ")+":")
+	_, _ = fmt.Fprintln(output, string(command.Out.Contents()))
+	_, _ = fmt.Fprintln(output, string(command.Err.Contents()))
 }
 
 func command(name string, args ...string) *Session {
