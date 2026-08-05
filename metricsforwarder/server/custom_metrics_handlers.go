@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	mfcache "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cache"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -17,7 +17,6 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/handlers"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/patrickmn/go-cache"
 )
 
 var (
@@ -30,12 +29,12 @@ type CustomMetricsHandler struct {
 	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
 	bindingDB          db.BindingDB
-	allowedMetricCache cache.Cache
+	allowedMetricCache *mfcache.AllowedMetricCache
 	cacheTTL           time.Duration
 	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, bindingDB db.BindingDB, allowedMetricCache cache.Cache) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, bindingDB db.BindingDB, allowedMetricCache *mfcache.AllowedMetricCache) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
@@ -138,10 +137,8 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 	allowedMetricTypeSet := make(map[string]struct{})
 	res, found := mh.allowedMetricCache.Get(appGUID)
 	if found {
-		// AllowedMetrics found in cache. Clone into a locally-owned map: the
-		// cached instance must be treated as read-only, since a concurrent
-		// cache refresh may share or replace it while we read/marshal it.
-		allowedMetricTypeSet = maps.Clone(res.(map[string]struct{}))
+		// AllowedMetrics found in cache
+		allowedMetricTypeSet = res
 	} else {
 		// allow app with strategy as bound_app to submit metrics without policy
 		isAppWithBoundStrategy, err := mh.isAppWithBoundStrategy(appGUID)
@@ -166,9 +163,8 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		for _, metrictype := range scalingPolicy.ScalingRules {
 			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
 		}
-		// Cache a copy so later mutation of our local map cannot reach into
-		// the cached entry (and vice versa).
-		mh.allowedMetricCache.Set(appGUID, maps.Clone(allowedMetricTypeSet), mh.cacheTTL)
+		//update the cache
+		mh.allowedMetricCache.Set(appGUID, allowedMetricTypeSet, mh.cacheTTL)
 	}
 	mh.logger.Debug("allowed-metrics-types", lager.Data{"metrics": allowedMetricTypeSet})
 	for _, metric := range metricsConsumer.CustomMetrics {

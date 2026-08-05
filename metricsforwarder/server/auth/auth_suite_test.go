@@ -8,6 +8,7 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	mfcache "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cache"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -31,7 +32,7 @@ var (
 	fakeCredentials *fakes.FakeCredentials
 
 	credentialCache    cache.Cache
-	allowedMetricCache cache.Cache
+	allowedMetricCache *mfcache.AllowedMetricCache
 )
 
 func TestAuth(t *testing.T) {
@@ -78,7 +79,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	policyDB = &fakes.FakePolicyDB{}
 	fakeBindingDB = &fakes.FakeBindingDB{}
 	credentialCache = *cache.New(10*time.Minute, -1)
-	allowedMetricCache = *cache.New(10*time.Minute, -1)
+	allowedMetricCache = mfcache.New(10*time.Minute, -1)
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	rateLimiter = &fakes.FakeLimiter{}
 	fakeCredentials = &fakes.FakeCredentials{}

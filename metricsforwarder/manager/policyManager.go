@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	mfcache "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cache"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/patrickmn/go-cache"
 )
 
 type Consumer func(map[string]*models.AppPolicy, chan *models.AppMonitor)
@@ -18,7 +18,7 @@ type PolicyManager struct {
 	logger             lager.Logger
 	interval           time.Duration
 	cacheTTL           time.Duration
-	allowedMetricCache cache.Cache
+	allowedMetricCache *mfcache.AllowedMetricCache
 	database           db.PolicyDB
 	clock              clock.Clock
 	doneChan           chan bool
@@ -28,7 +28,7 @@ type PolicyManager struct {
 }
 
 func NewPolicyManager(logger lager.Logger, clock clock.Clock, interval time.Duration,
-	database db.PolicyDB, allowedMetricCache cache.Cache, cacheTTL time.Duration) *PolicyManager {
+	database db.PolicyDB, allowedMetricCache *mfcache.AllowedMetricCache, cacheTTL time.Duration) *PolicyManager {
 	return &PolicyManager{
 		logger:             logger.Session("PolicyManager"),
 		clock:              clock,
@@ -104,12 +104,9 @@ func (pm *PolicyManager) computePolicies(policyJsons []*models.PolicyJson) map[s
 func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.AppPolicy) error {
 	pm.mLock.Lock()
 	defer pm.mLock.Unlock()
-	allowedMetricMap := pm.allowedMetricCache.Items()
 	//Iterating over the cache and replace the allowed metrics for existing policy
-	for applicationId := range allowedMetricMap {
+	for _, applicationId := range pm.allowedMetricCache.AppIDs() {
 		if policy, ok := policies[applicationId]; ok {
-			// Build a fresh set per app: entries must not alias one shared map,
-			// which the loop would keep mutating while readers iterate it.
 			allowedMetricTypeSet := make(map[string]struct{})
 			scalingPolicy := policy.ScalingPolicy
 			for _, metrictype := range scalingPolicy.ScalingRules {
