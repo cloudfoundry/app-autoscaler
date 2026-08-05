@@ -35,6 +35,13 @@ fi
 pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
+
+	# Create UAA client for autoscaler (required for Scaling Engine and Operator)
+	echo ""
+	echo "=== Creating UAA Client for Autoscaler ==="
+	"${script_dir}/create-autoscaler-uaa-client.sh"
+	echo ""
+
 	make -f metricsforwarder/Makefile set-security-group
 	make -f metricsgateway/Makefile set-security-group
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
