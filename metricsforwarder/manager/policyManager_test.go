@@ -1,6 +1,8 @@
 package manager_test
 
 import (
+	"encoding/json"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
@@ -165,6 +167,83 @@ var _ = Describe("PolicyManager", func() {
 		It("stops the polling", func() {
 			clock.Increment(5 * testPolicyPollerInterval)
 			Consistently(database.RetrievePoliciesCallCount).Should(Or(Equal(1), Equal(2)))
+		})
+	})
+
+	Context("RefreshAllowedMetricCache concurrency", func() {
+		// Regression: RefreshAllowedMetricCache built a single allowedMetricTypeSet
+		// map and Replace'd that same instance into the cache for every app, so
+		// all entries aliased one shared map that the refresh loop kept mutating.
+		// A concurrent reader (e.g. json.Marshal of the set for logging) then
+		// iterated a map being written, crashing the process with
+		// "fatal error: concurrent map iteration and map write".
+		var (
+			appA = "app-a"
+			appB = "app-b"
+		)
+
+		BeforeEach(func() {
+			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, database, allowedMetricCache, 10*time.Minute)
+			// Seed two apps so the refresh loop iterates more than one entry.
+			allowedMetricCache.Set(appA, make(map[string]struct{}), 10*time.Minute)
+			allowedMetricCache.Set(appB, make(map[string]struct{}), 10*time.Minute)
+		})
+
+		It("gives each app its own metric set", func() {
+			policies := map[string]*models.AppPolicy{
+				appA: {AppId: appA, ScalingPolicy: &models.PolicyDefinition{
+					ScalingRules: []*models.ScalingRule{{MetricType: "metric-a"}}}},
+				appB: {AppId: appB, ScalingPolicy: &models.PolicyDefinition{
+					ScalingRules: []*models.ScalingRule{{MetricType: "metric-b"}}}},
+			}
+			Expect(policyManager.RefreshAllowedMetricCache(policies)).To(Succeed())
+
+			resA, foundA := allowedMetricCache.Get(appA)
+			Expect(foundA).To(BeTrue())
+			resB, foundB := allowedMetricCache.Get(appB)
+			Expect(foundB).To(BeTrue())
+
+			// Each entry must contain only its own app's metric, not a shared
+			// union of both.
+			Expect(resA.(map[string]struct{})).To(HaveKey("metric-a"))
+			Expect(resA.(map[string]struct{})).NotTo(HaveKey("metric-b"))
+			Expect(resB.(map[string]struct{})).To(HaveKey("metric-b"))
+			Expect(resB.(map[string]struct{})).NotTo(HaveKey("metric-a"))
+		})
+
+		It("does not race with a concurrent reader of the cached set", func() {
+			// Under `go test -race` this trips the detector (and the fatal
+			// "concurrent map iteration and map write") when the refresh loop
+			// mutates a map another goroutine is marshalling.
+			policies := map[string]*models.AppPolicy{
+				appA: {AppId: appA, ScalingPolicy: &models.PolicyDefinition{
+					ScalingRules: []*models.ScalingRule{{MetricType: "metric-a"}}}},
+				appB: {AppId: appB, ScalingPolicy: &models.PolicyDefinition{
+					ScalingRules: []*models.ScalingRule{{MetricType: "metric-b"}}}},
+			}
+
+			stop := make(chan struct{})
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for {
+					select {
+					case <-stop:
+						return
+					default:
+						if res, found := allowedMetricCache.Get(appA); found {
+							_, _ = json.Marshal(res)
+						}
+					}
+				}
+			}()
+
+			for i := 0; i < 1000; i++ {
+				Expect(policyManager.RefreshAllowedMetricCache(policies)).To(Succeed())
+			}
+			close(stop)
+			wg.Wait()
 		})
 	})
 })
