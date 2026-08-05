@@ -104,11 +104,13 @@ func (pm *PolicyManager) computePolicies(policyJsons []*models.PolicyJson) map[s
 func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.AppPolicy) error {
 	pm.mLock.Lock()
 	defer pm.mLock.Unlock()
-	allowedMetricTypeSet := make(map[string]struct{})
 	allowedMetricMap := pm.allowedMetricCache.Items()
 	//Iterating over the cache and replace the allowed metrics for existing policy
 	for applicationId := range allowedMetricMap {
 		if policy, ok := policies[applicationId]; ok {
+			// Build a fresh set per app: entries must not alias one shared map,
+			// which the loop would keep mutating while readers iterate it.
+			allowedMetricTypeSet := make(map[string]struct{})
 			scalingPolicy := policy.ScalingPolicy
 			for _, metrictype := range scalingPolicy.ScalingRules {
 				allowedMetricTypeSet[metrictype.MetricType] = struct{}{}

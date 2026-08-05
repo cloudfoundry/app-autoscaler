@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/forwarder"
@@ -137,8 +138,10 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 	allowedMetricTypeSet := make(map[string]struct{})
 	res, found := mh.allowedMetricCache.Get(appGUID)
 	if found {
-		// AllowedMetrics found in cache
-		allowedMetricTypeSet = res.(map[string]struct{})
+		// AllowedMetrics found in cache. Clone into a locally-owned map: the
+		// cached instance must be treated as read-only, since a concurrent
+		// cache refresh may share or replace it while we read/marshal it.
+		allowedMetricTypeSet = maps.Clone(res.(map[string]struct{}))
 	} else {
 		// allow app with strategy as bound_app to submit metrics without policy
 		isAppWithBoundStrategy, err := mh.isAppWithBoundStrategy(appGUID)
@@ -163,8 +166,9 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		for _, metrictype := range scalingPolicy.ScalingRules {
 			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
 		}
-		//update the cache
-		mh.allowedMetricCache.Set(appGUID, allowedMetricTypeSet, mh.cacheTTL)
+		// Cache a copy so later mutation of our local map cannot reach into
+		// the cached entry (and vice versa).
+		mh.allowedMetricCache.Set(appGUID, maps.Clone(allowedMetricTypeSet), mh.cacheTTL)
 	}
 	mh.logger.Debug("allowed-metrics-types", lager.Data{"metrics": allowedMetricTypeSet})
 	for _, metric := range metricsConsumer.CustomMetrics {
