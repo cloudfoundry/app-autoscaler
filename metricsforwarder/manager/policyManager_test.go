@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	mfcache "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cache"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/manager"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -13,7 +14,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/patrickmn/go-cache"
 )
 
 var _ = Describe("PolicyManager", func() {
@@ -22,7 +22,7 @@ var _ = Describe("PolicyManager", func() {
 		clock                    *fakeclock.FakeClock
 		policyManager            *PolicyManager
 		testPolicyPollerInterval time.Duration
-		allowedMetricCache       cache.Cache
+		allowedMetricCache       *mfcache.AllowedMetricCache
 		allowedMetricTypeSet     map[string]struct{}
 		policyMap                map[string]*models.AppPolicy
 		logger                   lager.Logger
@@ -50,7 +50,7 @@ var _ = Describe("PolicyManager", func() {
 		database = &fakes.FakePolicyDB{}
 		clock = fakeclock.NewFakeClock(time.Now())
 		testPolicyPollerInterval = 1 * time.Second
-		allowedMetricCache = *cache.New(10*time.Minute, -1)
+		allowedMetricCache = mfcache.New(10*time.Minute, -1)
 		logger = lager.NewLogger("policyManager-test")
 		policyMap = make(map[string]*models.AppPolicy)
 		allowedMetricTypeSet = make(map[string]struct{})
@@ -112,9 +112,9 @@ var _ = Describe("PolicyManager", func() {
 				allowedMetricCache.Set(testAppId, allowedMetricTypeSet, 10*time.Minute)
 
 				res, found := allowedMetricCache.Get(testAppId)
-				maps := res.(map[string]struct{})
+				allowedMetrics := res
 				Expect(found).To(BeTrue())
-				Expect(maps).Should(HaveKey("queuelength"))
+				Expect(allowedMetrics).Should(HaveKey("queuelength"))
 
 			})
 
@@ -130,11 +130,11 @@ var _ = Describe("PolicyManager", func() {
 					Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
 
 					res, found := allowedMetricCache.Get(testAppId)
-					maps := res.(map[string]struct{})
+					allowedMetrics := res
 
 					Expect(found).To(BeTrue())
-					Expect(maps).Should(HaveKey("test-metric-name"))
-					Expect(maps).ShouldNot(HaveKey("queuelength"))
+					Expect(allowedMetrics).Should(HaveKey("test-metric-name"))
+					Expect(allowedMetrics).ShouldNot(HaveKey("queuelength"))
 				})
 			})
 			When("the policy is deleted", func() {
@@ -205,10 +205,10 @@ var _ = Describe("PolicyManager", func() {
 
 			// Each entry must contain only its own app's metric, not a shared
 			// union of both.
-			Expect(resA.(map[string]struct{})).To(HaveKey("metric-a"))
-			Expect(resA.(map[string]struct{})).NotTo(HaveKey("metric-b"))
-			Expect(resB.(map[string]struct{})).To(HaveKey("metric-b"))
-			Expect(resB.(map[string]struct{})).NotTo(HaveKey("metric-a"))
+			Expect(resA).To(HaveKey("metric-a"))
+			Expect(resA).NotTo(HaveKey("metric-b"))
+			Expect(resB).To(HaveKey("metric-b"))
+			Expect(resB).NotTo(HaveKey("metric-a"))
 		})
 
 		It("does not race with a concurrent reader of the cached set", func() {

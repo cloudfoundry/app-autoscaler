@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
+	mfcache "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cache"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
@@ -17,8 +18,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-
-	"github.com/patrickmn/go-cache"
 )
 
 var _ = Describe("MetricHandler", func() {
@@ -26,7 +25,7 @@ var _ = Describe("MetricHandler", func() {
 	var (
 		handler *CustomMetricsHandler
 
-		allowedMetricCache cache.Cache
+		allowedMetricCache *mfcache.AllowedMetricCache
 
 		allowedMetricTypeSet map[string]struct{}
 
@@ -52,7 +51,7 @@ var _ = Describe("MetricHandler", func() {
 		policyDB = &fakes.FakePolicyDB{}
 		fakeBindingDB = &fakes.FakeBindingDB{}
 		metricsforwarder = &fakes.FakeMetricForwarder{}
-		allowedMetricCache = *cache.New(10*time.Minute, -1)
+		allowedMetricCache = mfcache.New(10*time.Minute, -1)
 		allowedMetricTypeSet = make(map[string]struct{})
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()

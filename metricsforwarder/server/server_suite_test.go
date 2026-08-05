@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	mfcache "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/cache"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/config"
 	. "code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -15,7 +16,6 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon_v2"
 
@@ -31,7 +31,7 @@ var (
 	rateLimiter     *fakes.FakeLimiter
 	fakeCredentials *fakes.FakeCredentials
 
-	allowedMetricCache cache.Cache
+	allowedMetricCache *mfcache.AllowedMetricCache
 )
 
 func TestServer(t *testing.T) {
@@ -86,7 +86,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	policyDB = &fakes.FakePolicyDB{}
 	fakeBindingDB = &fakes.FakeBindingDB{}
 
-	allowedMetricCache = *cache.New(10*time.Minute, -1)
+	allowedMetricCache = mfcache.New(10*time.Minute, -1)
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 
 	rateLimiter = &fakes.FakeLimiter{}
