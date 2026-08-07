@@ -180,6 +180,17 @@ go-mod-vendor: generate-fakes
 go-mod-vendor-mta: generate-openapi-generated-clients-and-servers
 	GOFLAGS="-tags=!test" go mod vendor -e
 
+# Generate the Go dependency SBOM from the root go.mod. mbt's sbom-gen has no
+# built-in BOM logic for custom builders, so our Go services produce no SBOM on
+# their own. This target is wired into the apiserver module's
+# `sbom-create-commands` in mta.tpl.yaml, so mbt collects the output and merges
+# it into the aggregate SBOM. Emitted as CycloneDX 1.4 for best compatibility.
+# GO_SBOM_FILE is passed in by mbt via its ${sbom-file-name} placeholder.
+GO_SBOM_FILE ?= bom-go-mod.xml
+.PHONY: go-sbom
+go-sbom:
+	cyclonedx-gomod mod -output-version 1.4 -licenses -output "$(GO_SBOM_FILE)" .
+
 
 # CGO_ENABLED := 1 is required to enforce dynamic linking which is a requirement of dynatrace.
 build-%: generate-openapi-generated-clients-and-servers
