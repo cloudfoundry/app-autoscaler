@@ -204,7 +204,7 @@ resources:
             basic_auth:
               password: ${OPERATOR_HEALTH_PASSWORD}
           cf:
-            api: https://api.${default-domain}
+            api: https://api.${SYSTEM_DOMAIN}
             grant_type: ${OPERATOR_CF_GRANT_TYPE}
             client_id: ${OPERATOR_CF_CLIENT_ID}
             secret: ${OPERATOR_CF_SECRET}
@@ -223,7 +223,7 @@ resources:
             basic_auth:
               password: ${SCALINGENGINE_HEALTH_PASSWORD}
           cf:
-            api: https://api.${default-domain}
+            api: https://api.${SYSTEM_DOMAIN}
             grant_type: ${SCALINGENGINE_CF_GRANT_TYPE}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
             secret: ${SCALINGENGINE_CF_SECRET}

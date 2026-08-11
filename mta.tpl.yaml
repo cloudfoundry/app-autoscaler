@@ -361,14 +361,17 @@ resources:
     #
     #
     parameters:
+      service-name: autoscaler-mta-1149 # TODO - make this dynamic
       service-tags:
-        - policy_db
         - binding_db
+        - database
+        - relational
+        - policy_db
+        - storedprocedure_db
         - appmetrics_db
         - scalingengine_db
-        - scheduler_db
         - lock_db
-        - relational
+        - scheduler_db
   - name: syslog-client
     type: org.cloudfoundry.user-provided-service
     parameters:
