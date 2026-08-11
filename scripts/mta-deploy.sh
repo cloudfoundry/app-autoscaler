@@ -36,14 +36,15 @@ pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
 	cf_deployment_login
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 	# Create UAA client for autoscaler (required for Scaling Engine and Operator)
-	echo ""
-	echo "=== Creating UAA Client for Autoscaler ==="
-	"${script_dir}/create-autoscaler-uaa-client.sh"
-	echo ""
+#	echo ""
+#	echo "=== Creating UAA Client for Autoscaler ==="
+#	"${script_dir}/create-autoscaler-uaa-client.sh"
+#	echo ""
 
-	cf_org_manager_login
+	# cf_org_manager_login
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
