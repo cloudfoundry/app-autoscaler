@@ -79,8 +79,8 @@ function cf_deployment_login(){
 			echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is not set" >&2
 			return 1
 		fi
-		cf api "https://api.${system_domain}" --skip-ssl-validation
-		cf auth "${AUTOSCALER_ORG_MANAGER_USER}" "${AUTOSCALER_ORG_MANAGER_PASSWORD}" --origin uaa
+		cf login -a "https://api.${system_domain}" --skip-ssl-validation \
+			-u "${AUTOSCALER_ORG_MANAGER_USER,,}" -p "${AUTOSCALER_ORG_MANAGER_PASSWORD}"
 	fi
 }
 
