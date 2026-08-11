@@ -100,12 +100,12 @@ jobs:
           INFRASTRUCTURE: ${{ inputs.infrastructure }}
         run: make --directory="${AUTOSCALER_DIR}" create-acceptance-space
 
-      - name: Provision DB
+      - name: Provision DB Service for OSS Infrastructure
         if: inputs.infrastructure == 'OSS'
         shell: bash
         run: make --directory="${AUTOSCALER_DIR}" provision-db
 
-      - name: Provision DB Service
+      - name: Provision DB Service for non-oss Infrastructures
         if: inputs.infrastructure != 'OSS'
         shell: bash
         env:

@@ -48,7 +48,7 @@ pushd "${autoscaler_dir}" > /dev/null
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
-	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
+	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f -e "${EXTENSION_FILE}" -m "${MODULES}"
 
 popd > /dev/null
 
