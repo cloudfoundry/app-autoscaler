@@ -355,7 +355,11 @@ resources:
       service-tags:
         - broker-catalog
   - name: database
-    type: org.cloudfoundry.user-provided-service
+    type: org.cloudfoundry.existing-service
+    # Reason: Updating service "scalingengine-config"...
+    # Error determining actions to execute on service "autoscaler-mta-1149": Service described by MTA resource "database" of type [user-provided-service] does not match already existing service "autoscaler-mta-1149" of type [postgresql-db/development] and needs to be recreated. Use command line option "--delete-services" to enable the deletion of the existing one.
+    #
+    #
     parameters:
       service-tags:
         - policy_db
