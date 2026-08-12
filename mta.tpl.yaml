@@ -106,7 +106,7 @@ modules:
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
-      memory: 1G
+      memory: 1500M
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
@@ -132,7 +132,7 @@ modules:
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
-      memory: 1G
+      memory: 1500M
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
@@ -159,7 +159,7 @@ modules:
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
-      memory: 1G
+      memory: 1500M
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
@@ -185,7 +185,7 @@ modules:
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
-      memory: 256M
+      memory: 1500M
       disk-quota: 512M
       stack: cflinuxfs4
       routes:
@@ -211,7 +211,7 @@ modules:
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
-      memory: 1G
+      memory: 1500M
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
@@ -237,7 +237,7 @@ modules:
       - name: app-autoscaler-dynatrace
     parameters:
       instances: 0 # overridden in build-extension-file.sh
-      memory: 1G
+      memory: 1500M
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
