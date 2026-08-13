@@ -143,6 +143,10 @@ export USE_METRICSGATEWAY="${USE_METRICSGATEWAY:-true}"
 export METRICSGATEWAY_HOST="${METRICSGATEWAY_HOST:-"${DEPLOYMENT_NAME}-metricsgateway"}"
 export METRICSGATEWAY_INSTANCES="${METRICSGATEWAY_INSTANCES:-2}"
 export METRICSFORWARDER_METRICS_GATEWAY_URL="${METRICSFORWARDER_METRICS_GATEWAY_URL:-}"
+# When external gateway URL is set, disable local (not main) metricsgateway (would crash on empty syslog-client certs)
+if [[ -n "${METRICSFORWARDER_METRICS_GATEWAY_URL}" ]]; then
+  export METRICSGATEWAY_INSTANCES=0
+fi
 AUTOSCALER_ORG_GUID="$(cf org "${AUTOSCALER_ORG}" --guid)"
 export AUTOSCALER_ORG_GUID
 
