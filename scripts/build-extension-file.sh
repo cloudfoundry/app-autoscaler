@@ -205,6 +205,20 @@ else
   export EXISTING_SPACE="${EXISTING_SPACE:-${AUTOSCALER_SPACE}}"
 fi
 
+# Escape passwords for JSON to prevent invalid escape sequences
+# (e.g., password "foo\8bar" would produce invalid JSON "\8")
+json_escape() {
+  local str="$1"
+  # Use Python's json.dumps to properly escape, then strip outer quotes
+  printf '%s' "$str" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read())[1:-1])'
+}
+
+ESCAPED_EXISTING_USER_PASSWORD="$(json_escape "${EXISTING_USER_PASSWORD}")"
+export EXISTING_USER_PASSWORD="$ESCAPED_EXISTING_USER_PASSWORD"
+
+ESCAPED_AUTOSCALER_OTHER_USER_PASSWORD="$(json_escape "${AUTOSCALER_OTHER_USER_PASSWORD:-}")"
+export AUTOSCALER_OTHER_USER_PASSWORD="$ESCAPED_AUTOSCALER_OTHER_USER_PASSWORD"
+
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
 

@@ -27,10 +27,16 @@ then
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 
+# Escape passwords for JSON to prevent invalid escape sequences
+json_escape() {
+	local str="$1"
+	printf '%s' "$str" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read())[1:-1])'
+}
+
 # Use admin user for main branch, org-manager user for PRs
 if is_main_deployment; then
 	autoscaler_org_manager_user="admin"
-	autoscaler_org_manager_password="${cf_admin_password}"
+	autoscaler_org_manager_password="$(json_escape "${cf_admin_password}")"
 	skip_service_access_management="false"
 else
 	# For PRs, use dedicated org manager user (password from GH secret)
@@ -39,7 +45,7 @@ else
 		exit 1
 	fi
 	autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
-	autoscaler_org_manager_password="${AUTOSCALER_ORG_MANAGER_PASSWORD}"
+	autoscaler_org_manager_password="$(json_escape "${AUTOSCALER_ORG_MANAGER_PASSWORD}")"
 	skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
 fi
 
@@ -90,8 +96,12 @@ function write_app_config() {
 EOF
 }
 
+# Escape passwords before passing to write_app_config
+ESCAPED_ORG_MGR_PASSWORD="$(json_escape "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}")"
+ESCAPED_OTHER_USER_PASSWORD="$(json_escape "${AUTOSCALER_OTHER_USER_PASSWORD:-}")"
+
 write_app_config \
 	"${ACCEPTANCE_CONFIG_PATH}" \
 	"${use_existing_organization}" "${use_existing_space}" "${existing_organization}" "${existing_space}" \
-	"${AUTOSCALER_ORG_MANAGER_USER:-}" "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" \
-	"${AUTOSCALER_OTHER_USER:-}" "${AUTOSCALER_OTHER_USER_PASSWORD:-}"
+	"${AUTOSCALER_ORG_MANAGER_USER:-}" "$ESCAPED_ORG_MGR_PASSWORD" \
+	"${AUTOSCALER_OTHER_USER:-}" "$ESCAPED_OTHER_USER_PASSWORD"
