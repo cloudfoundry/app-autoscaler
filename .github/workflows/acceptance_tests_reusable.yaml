@@ -121,6 +121,7 @@ jobs:
         shell: bash
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
+          METRICSFORWARDER_METRICS_GATEWAY_URL: ${{ vars.METRICSFORWARDER_METRICS_GATEWAY_URL }}
           SYSTEM_DOMAIN: ${{ inputs.system_domain }}
           AUTOSCALER_ORG: ${{ inputs.autoscaler_org }}
           AUTOSCALER_ORG_MANAGER_USER: ${{ inputs.autoscaler_org_manager_user }}
