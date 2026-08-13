@@ -188,7 +188,7 @@ main() {
 	bbl_login
 
 	cf_deployment_login
-	cf_target "${autoscaler_org}" "${autoscaler_space}"
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 	validate_app
 
