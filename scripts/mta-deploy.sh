@@ -78,11 +78,17 @@ if [[ -n "${existing_service_broker}" ]]; then
 	cf delete-service-broker -f "${existing_service_broker}"
 fi
 
-echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
+# Construct apps domain: non-OSS uses cfapps.X, OSS uses system_domain as-is
+if is_oss_infrastructure; then
+	apps_domain="${system_domain}"
+else
+	apps_domain="${system_domain/cf./cfapps.}"
+fi
+echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${apps_domain}'"
 space_scoped_flag=""
 if is_pr_deployment; then
 	space_scoped_flag="--space-scoped"
 fi
-cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}" ${space_scoped_flag}
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${apps_domain}" ${space_scoped_flag}
 
 cf logout
