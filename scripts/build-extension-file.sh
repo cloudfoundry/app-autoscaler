@@ -219,6 +219,9 @@ export EXISTING_USER_PASSWORD="$ESCAPED_EXISTING_USER_PASSWORD"
 ESCAPED_AUTOSCALER_OTHER_USER_PASSWORD="$(json_escape "${AUTOSCALER_OTHER_USER_PASSWORD:-}")"
 export AUTOSCALER_OTHER_USER_PASSWORD="$ESCAPED_AUTOSCALER_OTHER_USER_PASSWORD"
 
+# Derive apps domain (cfapps.* for SAP BTP, system domain for OSS)
+export APPS_DOMAIN="$(get_apps_domain "${SYSTEM_DOMAIN}")"
+
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
 

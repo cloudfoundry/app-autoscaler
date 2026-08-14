@@ -20,6 +20,17 @@ function is_oss_infrastructure() {
 	[[ "${INFRASTRUCTURE:-OSS}" == "OSS" ]]
 }
 
+function get_apps_domain() {
+	local system_domain="${1:-${SYSTEM_DOMAIN}}"
+	if is_oss_infrastructure; then
+		# OSS: apps domain = system domain
+		echo "$system_domain"
+	else
+		# SAP BTP: replace cf. with cfapps.
+		echo "${system_domain/cf./cfapps.}"
+	fi
+}
+
 function step(){
 	echo "# $1"
 }

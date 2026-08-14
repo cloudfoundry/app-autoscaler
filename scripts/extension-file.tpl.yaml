@@ -81,7 +81,7 @@ modules:
           "api": "api.${SYSTEM_DOMAIN}",
           "admin_user": "${EXISTING_USER}",
           "admin_password": "${EXISTING_USER_PASSWORD}",
-          "apps_domain": "${SYSTEM_DOMAIN}",
+          "apps_domain": "${APPS_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION},
           "use_http": false,
           "use_existing_user": ${USE_EXISTING_USER},

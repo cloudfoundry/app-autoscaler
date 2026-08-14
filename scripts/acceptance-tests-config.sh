@@ -49,6 +49,9 @@ else
 	skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
 fi
 
+# Derive apps domain (cfapps.* for SAP BTP, system domain for OSS)
+apps_domain="$(get_apps_domain "${system_domain}")"
+
 function write_app_config() {
 	local -r config_path="$1"
 	local -r use_existing_organization="$2"
@@ -65,7 +68,7 @@ function write_app_config() {
 	"api": "api.${system_domain}",
 	"admin_user": "${autoscaler_org_manager_user}",
 	"admin_password": "${autoscaler_org_manager_password}",
-	"apps_domain": "${system_domain}",
+	"apps_domain": "${apps_domain}",
 	"skip_ssl_validation": ${skip_ssl_validation},
 	"use_http": false,
 	"service_name": "${deployment_name}",
