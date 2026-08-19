@@ -37,7 +37,7 @@
     "jdt-language-server":  "1.58.0",
     "jq":                   "1.8.2",
     "markdownlint-cli2":    "0.22.1",
-    "maven":                "3.9.12",
+    "maven":                "3.9.16",
     "mysql":                "10.6.12",
     "oha":                  "1.14.0",
     "openssl":              "3.6.0",
