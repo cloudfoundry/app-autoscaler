@@ -10,7 +10,7 @@
       "buildpacks": [
         "nodejs_buildpack"
       ],
-      "stack": "cflinuxfs3"
+      "stack": "cflinuxfs5"
     }
   },
   "relationships": {

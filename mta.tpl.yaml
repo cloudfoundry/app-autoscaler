@@ -108,7 +108,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1500M
       disk-quota: 1G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       routes:
   - name: eventgenerator
     type: go
@@ -134,7 +134,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1500M
       disk-quota: 1G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       routes:
   - name: metricsforwarder
     type: go
@@ -161,7 +161,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1500M
       disk-quota: 1G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       routes:
   - name: metricsgateway
     type: go
@@ -187,7 +187,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1500M
       disk-quota: 512M
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       routes:
   - name: operator
     type: go
@@ -213,7 +213,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1500M
       disk-quota: 1G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       routes:
   - name: scalingengine
     type: go
@@ -239,7 +239,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1500M
       disk-quota: 1G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       routes:
   - name: scheduler
     type: java
@@ -269,7 +269,7 @@ modules:
       instances: 0 # overridden in build-extension-file.sh
       memory: 1G
       disk-quota: 1G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       buildpack: ${java-buildpack}
       routes:
   - name: acceptance-tests
@@ -299,7 +299,7 @@ modules:
       no-start: true
       memory: 2G
       disk-quota: 2G
-      stack: cflinuxfs4
+      stack: cflinuxfs5
       buildpack: binary_buildpack
       tasks:
         - name: run-acceptance-tests

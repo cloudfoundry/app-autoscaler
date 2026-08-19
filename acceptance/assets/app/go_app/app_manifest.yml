@@ -1,7 +1,7 @@
 ---
 applications:
   - name: ((app_name))
-    stack: cflinuxfs4
+    stack: cflinuxfs5
     command: ./app
     routes:
       - route: ((app_name)).((app_domain))
