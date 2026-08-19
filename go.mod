@@ -34,7 +34,7 @@ require (
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.6.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
+	github.com/tedsuo/ifrit v0.0.0-20260813155221-94822c932811
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -47,10 +47,19 @@ require (
 	golang.org/x/crypto v0.55.0
 	golang.org/x/exp v0.0.0-20260813180055-c1d0aacb2297
 	golang.org/x/time v0.15.0
-	google.golang.org/grpc v1.82.1
+	google.golang.org/grpc v1.83.0
 )
 
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260818201246-1b0934165a6f
+
+// Hold ginkgo at 2.32.0. The pinned ginkgo CLI in devbox.json (nixpkgs) lags the
+// library, and 2.32.1's "Defer AfterAll until repeated spec completes" change
+// (https://github.com/onsi/ginkgo/releases/tag/v2.32.1) makes the CLI/library
+// mismatch fatal under parallel runs ("Ginkgo timed out waiting for all parallel
+// procs to report back"), even though all specs pass. 2.32.1 is pulled in
+// transitively by github.com/tedsuo/ifrit. Remove this once the devbox ginkgo CLI
+// is updated past 2.32.1.
+exclude github.com/onsi/ginkgo/v2 v2.32.1
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260629064500-85da08bf73ac // indirect
@@ -68,7 +77,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
