@@ -62,6 +62,16 @@
       ]
     },
     {
+      "description": "Block the broken github.com/tedsuo/ifrit digest 94822c9: it log.Fatalf's on http server shutdown error, exiting the process and making unit tests on main flaky. Any other (e.g. fixed) digest is still allowed. See https://github.com/tedsuo/ifrit/issues/47 and reverted PR https://github.com/cloudfoundry/app-autoscaler/pull/1390",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/tedsuo/ifrit"
+      ],
+      "allowedVersions": "!/94822c932811/"
+    },
+    {
       "description": "Disable OpenTelemetry-relevant updates",
       "groupName": "opentelemetry",
       "matchPackageNames": [
