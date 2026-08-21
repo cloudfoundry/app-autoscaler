@@ -89,6 +89,12 @@
       ]
     },
     {
+      "description": "Prioritize Spring updates over others",
+      "matchManagers": ["maven"],
+      "matchPackageNames": ["/springframework/"],
+      "prPriority": 10
+    },
+    {
       "description": "Disable Liquibase updates due to Functional Source License (FSL)",
       "groupName": "Liquibase",
       "matchManagers": [
