@@ -71,8 +71,10 @@ function convert_to_pk8() {
   local -r in_file="$1"
   local -r out_file="$2"
   openssl pkcs8 -topk8 -outform DER -in "${in_file}" -out "${out_file}" -nocrypt
-  chgrp vcap "${out_file}"
-  chmod g+r "${out_file}"
+  # The PostgreSQL JDBC driver rejects a key owned by the current user unless it
+  # is 0600 (0640 is only allowed when the file is owned by root). The task reads
+  # this key as its owner (vcap), so group access is unnecessary.
+  chmod 600 "${out_file}"
 }
 
 
