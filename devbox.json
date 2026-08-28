@@ -21,7 +21,7 @@
     "bosh-cli":             "7.3.1",
     "cloudfoundry-cli":     "8.18.4",
     "coreutils":            "9.11",
-    "credhub-cli":          "2.9.54",
+    "credhub-cli":          "2.9.60",
     "curl":                 "8.17.0",
     "delve":                "1.26.3",
     "gh":                   "2.95.0",

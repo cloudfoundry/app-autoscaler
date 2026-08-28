@@ -341,51 +341,41 @@
         }
       }
     },
-    "credhub-cli@2.9.54": {
-      "last_modified": "2026-08-01T16:34:20Z",
-      "resolved": "github:NixOS/nixpkgs/a5cbcfe954791221bfffe2307f7d1a1bf61a871e#credhub-cli",
+    "credhub-cli@2.9.60": {
+      "last_modified": "2026-08-25T04:16:28Z",
+      "resolved": "github:NixOS/nixpkgs/ac6b2166e7a9375683b8e98f860f273222337b16#credhub-cli",
       "source": "devbox-search",
-      "version": "2.9.54",
+      "version": "2.9.60",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/s5549xh1ivd436fwhnl3pmka4z9b9yj2-credhub-cli-2.9.54",
+              "path": "/nix/store/5g839b7qgias0f3xdb61qjvxhb65ck4h-credhub-cli-2.9.60",
               "default": true
             }
           ],
-          "store_path": "/nix/store/s5549xh1ivd436fwhnl3pmka4z9b9yj2-credhub-cli-2.9.54"
+          "store_path": "/nix/store/5g839b7qgias0f3xdb61qjvxhb65ck4h-credhub-cli-2.9.60"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/g702may412ylwiqnilh2lrfpx7s1syif-credhub-cli-2.9.54",
+              "path": "/nix/store/c7qpcp6bmnx966f0bjzr0nm69pri06s8-credhub-cli-2.9.60",
               "default": true
             }
           ],
-          "store_path": "/nix/store/g702may412ylwiqnilh2lrfpx7s1syif-credhub-cli-2.9.54"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/26d9ivjq81rncn3dv9i1bqj8y5jyv744-credhub-cli-2.9.54",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/26d9ivjq81rncn3dv9i1bqj8y5jyv744-credhub-cli-2.9.54"
+          "store_path": "/nix/store/c7qpcp6bmnx966f0bjzr0nm69pri06s8-credhub-cli-2.9.60"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/zy2mj8ya0hyhwpmmngmyqldxdb7mlg0q-credhub-cli-2.9.54",
+              "path": "/nix/store/5zadnkin2y3b86c7i4df9vlb2cnvhmpj-credhub-cli-2.9.60",
               "default": true
             }
           ],
-          "store_path": "/nix/store/zy2mj8ya0hyhwpmmngmyqldxdb7mlg0q-credhub-cli-2.9.54"
+          "store_path": "/nix/store/5zadnkin2y3b86c7i4df9vlb2cnvhmpj-credhub-cli-2.9.60"
         }
       }
     },
