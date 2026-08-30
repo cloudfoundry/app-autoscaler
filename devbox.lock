@@ -513,6 +513,92 @@
         }
       }
     },
+    "cyclonedx-cli@0.32.0": {
+      "last_modified": "2026-07-23T05:10:05Z",
+      "resolved": "github:NixOS/nixpkgs/7525d999cd850b9a488817abc89c75dc733acf17#cyclonedx-cli",
+      "source": "devbox-search",
+      "version": "0.32.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/8fddy1afjjpk47imy8kxp3x0pkcr6bvx-cyclonedx-cli-0.32.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/8fddy1afjjpk47imy8kxp3x0pkcr6bvx-cyclonedx-cli-0.32.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/41rhi7nd4jczax3rlic182rfxpfxzcmg-cyclonedx-cli-0.32.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/41rhi7nd4jczax3rlic182rfxpfxzcmg-cyclonedx-cli-0.32.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/l25gpg1vbjqvgfsmzqlkydwmn3zh1axf-cyclonedx-cli-0.32.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/l25gpg1vbjqvgfsmzqlkydwmn3zh1axf-cyclonedx-cli-0.32.0"
+        }
+      }
+    },
+    "cyclonedx-gomod@1.10.0": {
+      "last_modified": "2026-07-23T05:10:05Z",
+      "resolved": "github:NixOS/nixpkgs/7525d999cd850b9a488817abc89c75dc733acf17#cyclonedx-gomod",
+      "source": "devbox-search",
+      "version": "1.10.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/bn4rd34368xd78bvw80hwscfgn4vmfab-cyclonedx-gomod-1.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/bn4rd34368xd78bvw80hwscfgn4vmfab-cyclonedx-gomod-1.10.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/isdi2qqp7xvkbqxh1banvbf6d4hpfgrr-cyclonedx-gomod-1.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/isdi2qqp7xvkbqxh1banvbf6d4hpfgrr-cyclonedx-gomod-1.10.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5j0iybwybqmqr976yd1yqwb18qq4gg8k-cyclonedx-gomod-1.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/5j0iybwybqmqr976yd1yqwb18qq4gg8k-cyclonedx-gomod-1.10.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hzqivlzqizb00h45a4z28vy217jn7f1y-cyclonedx-gomod-1.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hzqivlzqizb00h45a4z28vy217jn7f1y-cyclonedx-gomod-1.10.0"
+        }
+      }
+    },
     "delve@1.26.3": {
       "last_modified": "2026-06-27T07:37:20Z",
       "resolved": "github:NixOS/nixpkgs/3d46470bb3030020f7e1361f33514854f5bfa86d#delve",

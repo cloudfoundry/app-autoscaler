@@ -97,6 +97,16 @@ modules:
         # self-sufficient. Without it, apiserver/scalingengine fail staging with
         # "no required module provides package .../apis/scalinghistory".
         - make go-mod-vendor-mta
+      # mbt's sbom-gen has no built-in BOM logic for custom builders, so generate
+      # the Go dependency SBOM here. mbt substitutes ${sbom-file-name} with the
+      # per-module BOM path it collects and merges into the aggregate SBOM
+      # (--sbom-file-path). CycloneDX 1.4 is emitted for best compatibility.
+      #
+      # TODO: `sbom-create-commands` is only honoured by mbt master (unreleased as
+      # of 1.2.49; verified skipped there). Requires mbt > 1.2.49 pulled via the
+      # joergdw/prspkgs flake in devbox.json. Until then no Go SBOM is produced.
+      sbom-create-commands:
+        - make go-sbom GO_SBOM_FILE='${sbom-file-name}'
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
