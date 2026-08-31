@@ -12,7 +12,7 @@ source "${script_dir}/common.sh"
 
 DEST="${DEST:-/tmp/build}"
 MTAR_FILENAME="${MTAR_FILENAME:-app-autoscaler-release-v${VERSION}.mtar}"
-MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,acceptance-tests}"
+MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,activator,acceptance-tests}"
 
 # Compute extension file path
 EXTENSION_FILE="${DEST}/extension-file-${VERSION}.txt"
@@ -54,6 +54,19 @@ popd > /dev/null
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
 cf_login
+
+# --- Activator route-service UPSI ---
+# MTA cannot declare a user-provided service with a route_service_url, so the
+# activator route service is (re)created imperatively here. Route bindings to
+# individual app routes are managed at runtime by the activator, not here.
+# See docs/design/scale-to-zero.md §3.
+activator_route_service_url="https://${deployment_name:-}-activator.${system_domain:-}"
+echo "Ensuring activator route-service UPSI 'autoscaler-activator-rs' -> ${activator_route_service_url}"
+if cf service autoscaler-activator-rs > /dev/null 2>&1; then
+	cf update-user-provided-service autoscaler-activator-rs -r "${activator_route_service_url}"
+else
+	cf create-user-provided-service autoscaler-activator-rs -r "${activator_route_service_url}"
+fi
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \

@@ -45,6 +45,14 @@ modules:
         - route: ${METRICSFORWARDER_HOST}.${default-domain}
         - route: ${METRICSFORWARDER_MTLS_HOST}.${default-domain}
 
+  - name: activator
+    requires:
+      - name: activator-config
+    parameters:
+      instances: ${ACTIVATOR_INSTANCES}
+      routes:
+        - route: ${ACTIVATOR_HOST}.${default-domain}
+
   - name: metricsgateway
     requires:
       - name: metricsgateway-config
@@ -110,6 +118,13 @@ resources:
           health:
             basic_auth:
               password: ${METRICSFORWARDER_HEALTH_PASSWORD}
+
+  - name: activator-config
+    parameters:
+      config:
+        activator-config:
+          routing_api:
+            url: https://api.${default-domain}/routing/v1
 
   - name: metricsgateway-config
     parameters:
