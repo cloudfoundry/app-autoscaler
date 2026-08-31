@@ -12,7 +12,6 @@ import (
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 
-	"github.com/go-chi/chi/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon_v2"
@@ -509,8 +508,8 @@ var _ = Describe("PublicApiServer", func() {
 
 		When("calling broker endpoint", func() {
 			BeforeEach(func() {
-				router := chi.NewRouter()
-				router.Get("/v2/catalog", func(w http.ResponseWriter, r *http.Request) {
+				router := http.NewServeMux()
+				router.HandleFunc("GET /v2/catalog", func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusOK)
 					_, err := w.Write([]byte(`Service Broker`))
 					Expect(err).NotTo(HaveOccurred())

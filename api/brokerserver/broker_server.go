@@ -18,7 +18,6 @@ import (
 	"code.cloudfoundry.org/brokerapi/v13"
 	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"code.cloudfoundry.org/lager/v3"
-	"github.com/go-chi/chi/v5"
 	"github.com/tedsuo/ifrit"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -64,7 +63,7 @@ func (am *AuthMiddleware) authenticate(r *http.Request) bool {
 
 type BrokerServer interface {
 	CreateServer() (ifrit.Runner, error)
-	GetRouter() (*chi.Mux, error)
+	GetRouter() (*http.ServeMux, error)
 }
 
 type brokerServer struct {
@@ -140,7 +139,7 @@ func loadCatalog(path string, logger lager.Logger) ([]domain.Service, error) {
 	return catalog.Services, nil
 }
 
-func (s *brokerServer) GetRouter() (*chi.Mux, error) {
+func (s *brokerServer) GetRouter() (*http.ServeMux, error) {
 	credentialsList, err := prepareCredentials(s.logger, s.conf)
 	if err != nil {
 		return nil, err
@@ -158,10 +157,10 @@ func (s *brokerServer) GetRouter() (*chi.Mux, error) {
 		s.cfClient, s.bindingDB, s.policyDB,
 		catalog, s.credentials)
 
-	router := chi.NewRouter()
+	router := http.NewServeMux()
 
 	brokerAPI := brokerapi.NewWithOptions(autoscalerBroker, slog.New(lager.NewHandler(s.logger.Session("broker_handler"))), brokerapi.WithCustomAuth(authMiddleware.Middleware), brokerapi.WithAdditionalMiddleware(httpStatusMiddleware.Collect))
-	router.Handle(("/*"), brokerAPI)
+	router.Handle("/", brokerAPI)
 
 	router.HandleFunc(routes.HealthPath, GetHealth)
 
