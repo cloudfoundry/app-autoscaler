@@ -1,0 +1,11 @@
+server:
+  port: 8080
+cf_server:
+  port: 8082
+health:
+  server_config:
+    port: 8081
+logging:
+  level: info
+routing_api:
+  url: "https://api.cf.internal/routing/v1"
