@@ -87,11 +87,13 @@ components:
         instance_min_count:
           type: integer
           format: int64
-          description: minimal number of instance count
+          minimum: 0
+          description: minimal number of instance count (0 enables scale-to-zero)
           example: 2
         instance_max_count:
           type: integer
           format: int64
+          minimum: 1
           description: maximal number of instance count
           example: 4
         scaling_rules:
