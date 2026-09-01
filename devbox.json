@@ -41,7 +41,7 @@
     "mysql":                "10.6.12",
     "oha":                  "1.14.0",
     "openssl":              "3.6.0",
-    "postgresql":           "17.10",
+    "postgresql":           "18.6",
     "python":               "3.14.4",
     "redocly":              "2.17.0",
     "ripgrep":              "15.1.0",
