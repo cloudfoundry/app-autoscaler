@@ -46,11 +46,22 @@ var _ = Describe("AutoScaler scaletozero", func() {
 
 	Context("when scaling to and from zero by cpu", func() {
 		BeforeEach(func() {
-			// instance_min_count 0 enables scale-to-zero. A low-cpu scale-in
-			// rule drives the app down to zero when idle.
+			// instance_min_count 0 enables scale-to-zero and is only accepted by
+			// the v0.1 policy schema, so the policy must carry schema-version
+			// "0.1" (a policy without it defaults to the legacy schema, which
+			// still enforces a minimum of 1). A low-cpu scale-in rule drives the
+			// app down to zero when idle.
 			scaleInThreshold := int64(float64(cfg.CPUUpperThreshold) * 0.2)
 			scaleOutThreshold := int64(float64(cfg.CPUUpperThreshold) * 0.4)
-			policy = helpers.GenerateDynamicScaleOutAndInPolicy(0, 2, "cpu", scaleInThreshold, scaleOutThreshold)
+			policy = fmt.Sprintf(`{
+	"schema-version": "0.1",
+	"instance_min_count": 0,
+	"instance_max_count": 2,
+	"scaling_rules": [
+		{ "metric_type": "cpu", "threshold": %d, "operator": ">=", "adjustment": "+1" },
+		{ "metric_type": "cpu", "threshold": %d, "operator": "<", "adjustment": "-1" }
+	]
+}`, scaleOutThreshold, scaleInThreshold)
 			initialInstanceCount = 1
 		})
 
