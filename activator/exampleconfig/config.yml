@@ -21,7 +21,7 @@ scaling_engine:
     cert_file: "../testcerts/client.crt"
     ca_file: "../testcerts/ca.crt"
 routing_api:
-  url: https://api.cf.example.com/routing/v1
+  url: https://api.cf.example.com
   skip_ssl_validation: true
   uaa:
     url: https://uaa.cf.example.com

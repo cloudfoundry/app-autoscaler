@@ -130,7 +130,7 @@ resources:
           scaling_engine:
             scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
           routing_api:
-            url: https://api.${default-domain}/routing/v1
+            url: https://api.${default-domain}
             skip_ssl_validation: true
             uaa:
               url: https://uaa.${default-domain}

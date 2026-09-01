@@ -50,7 +50,9 @@ type ScalingEngineConfig struct {
 	TLSClientCerts   models.TLSCerts `yaml:"tls" json:"tls"`
 }
 
-// RoutingAPIConfig configures access to the CF routing-api.
+// RoutingAPIConfig configures access to the CF routing-api. URL must be the
+// base (e.g. https://api.<domain>) WITHOUT a /routing/v1 suffix — the routing-api
+// client appends the /routing/v1/events path itself.
 type RoutingAPIConfig struct {
 	URL               string          `yaml:"url" json:"url"`
 	SkipSSLValidation bool            `yaml:"skip_ssl_validation" json:"skip_ssl_validation"`

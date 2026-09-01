@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator/config"
@@ -51,27 +52,31 @@ func main() {
 }
 
 // watcherRunner runs the ReadinessWatcher's event loop (Loop B) until signaled.
+// A failure to reach the routing-api event stream must NOT crash the activator:
+// the health, park/unpark, and route-service surfaces stay useful, and the
+// watcher reconnects with backoff.
 func watcherRunner(logger lager.Logger, watcher activator.ReadinessWatcher) ifrit.Runner {
 	return ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		errCh := make(chan error, 1)
-		go func() { errCh <- watcher.Run(ctx) }()
+		go func() {
+			const retryInterval = 15 * time.Second
+			for {
+				if err := watcher.Run(ctx); err != nil && ctx.Err() == nil {
+					logger.Error("readiness-watcher-stopped-retrying", err, lager.Data{"retryIn": retryInterval.String()})
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(retryInterval):
+				}
+			}
+		}()
 
 		close(ready)
-
-		select {
-		case <-signals:
-			cancel()
-			return nil
-		case err := <-errCh:
-			// Log and keep the process alive on stream errors; the loop can be
-			// restarted. For the PoC we surface the error and exit the runner.
-			if err != nil {
-				logger.Error("readiness-watcher-stopped", err)
-			}
-			return err
-		}
+		<-signals
+		cancel()
+		return nil
 	})
 }

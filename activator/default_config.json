@@ -4,7 +4,7 @@
       "level": "info"
     },
     "routing_api": {
-      "url": "https://api.cf.internal/routing/v1"
+      "url": "https://api.cf.internal"
     }
   }
 }
