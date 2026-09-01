@@ -233,13 +233,17 @@ Target platform: **OSS cf-deployment**. Two external dependencies:
   `code.cloudfoundry.org/routing-api` (`SubscribeToEvents`). **Note:** with the route-service
   mechanism we likely need only `routing.routes.read` (readiness signal), *not*
   `routing.routes.write` — a smaller privilege footprint than the old `ip:port` design.
-- **Reachability probe (prerequisite):** confirm `routing-api` is reachable via Gorouter; if not,
-  open an application security group for egress (we already do this for log-cache —
-  `metricsforwarder/security-group.json`).
-- **Credentials:** UAA client with `routing.routes.read`, secret pulled from **credhub at build
-  time** (`scripts/build-extension-file.sh` via `credhub interpolate`) → `activator-config` UPSI →
-  read at runtime as VCAP creds. Mirrors the eventgenerator log-cache UAA plumbing
-  (`scripts/extension-file.tpl.yaml:124`, `models.UAACreds`).
+  The client appends `/routing/v1/events` itself, so the configured `routing_api.url` must be the
+  **base** (`https://api.<domain>`), NOT `.../routing/v1` (that doubles the path → 404).
+- **Reachability (verified on cf-deployment):** `https://api.<domain>/routing/v1/events` returns 200
+  with a `routing_api_client` token; the routing-api is a public IP, so app egress is already
+  covered by the platform's `public_networks` ASG — no custom security group is needed. (If a
+  foundation restricts egress, add an ASG as we do for log-cache — `metricsforwarder/security-group.json`.)
+- **Credentials:** UAA client `routing_api_client` (has `routing.routes.read`), secret pulled from
+  **credhub at build time** (`scripts/build-extension-file.sh` via `credhub interpolate`,
+  `/bosh-autoscaler/cf/uaa_clients_routing_api_client_secret`) → `activator-config` UPSI → read at
+  runtime as VCAP creds. Mirrors the eventgenerator log-cache UAA plumbing
+  (`scripts/extension-file.tpl.yaml`, `models.UAACreds`).
 
 ### 7.2 Who issues the bind: engine vs activator
 
@@ -250,6 +254,21 @@ Two implementation options for §5.1 step 3:
   (keeps route logic in one place; adds a handshake).
 PoC can start with whichever is simpler; the ordering contract (bind → confirm → scale-0) is the
 invariant.
+
+### 7.3 Control API vs route-service on one route (PoC-only)
+
+The activator's engine-facing park/unpark control API and the user-facing route-service catch-all
+are **co-hosted on the activator's single public route** (its CF server) in the PoC. A CF-app
+activator is only reachable via its public route through Gorouter, so the old mTLS server (a
+BOSH-era artifact where components had stable IPs) is vestigial and now a 404 stub. The two surfaces
+need opposite auth — the control API is XFCC-authed (only the scaling engine may park), the
+route-service must not be (it carries arbitrary end-user traffic) — which is achieved with a
+gorilla/mux subrouter: XFCC middleware is applied only to the control subrouter, registered before
+the unauthenticated catch-all so its specific `/v1/apps/{appid}/park` paths match first.
+
+**Revise for production:** split the control API onto a dedicated `cf-` route (XFCC) separate from
+the public route-service route, mirroring the scalingengine `HOST` vs `CF_HOST` split, to remove any
+path collision between `/v1/apps/*/park` and a real app's own routes.
 
 ## 8. Rejected alternative: direct `routing-api` ip:port registration
 

@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -42,22 +41,46 @@ func NewServer(logger lager.Logger, conf *config.Config, handler *activator.Hand
 	return &Server{logger: logger, conf: conf, handler: handler}
 }
 
-// CreateCFServer serves the route-service endpoint (catch-all: any path/method
-// the original app would serve). See docs/design/scale-to-zero.md §5.2.
+// CreateCFServer serves BOTH the engine-facing park/unpark control API and the
+// route-service catch-all on the activator's single public route.
+//
+// POC-ONLY: co-hosting these two surfaces on one route/server is a proof-of-
+// concept shortcut. The control API needs XFCC auth (only the scaling engine may
+// park an app); the route-service catch-all must NOT be XFCC-authed (it carries
+// arbitrary end-user traffic with X-CF-Forwarded-Url / X-CF-Proxy-* headers). We
+// achieve both with a gorilla/mux subrouter: XFCC middleware is applied ONLY to
+// the control subrouter (registered first so its specific /v1/apps/{appid}/park
+// paths match before the catch-all), leaving the catch-all unauthenticated.
+//
+// For a production implementation this should be split onto a dedicated cf-
+// route (control, XFCC) vs the public route (route-service), mirroring the
+// scalingengine HOST vs CF_HOST split, to avoid any path collision on
+// /v1/apps/*/park with a real app's own routes. See docs/design/scale-to-zero.md.
 func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
 	router := mux.NewRouter()
-	router.Use(am.XFCCAuthenticationMiddleware)
+
+	// Control API — XFCC-authed, specific paths, registered before the catch-all.
+	control := router.PathPrefix("/v1/apps").Subrouter()
+	control.Use(am.XFCCAuthenticationMiddleware)
+	control.Path("/{appid}/park").Methods(http.MethodPut).Handler(VarsFunc(s.handler.Park))
+	control.Path("/{appid}/park").Methods(http.MethodDelete).Handler(VarsFunc(s.handler.Unpark))
+
+	// Route-service catch-all — NOT XFCC-authed.
 	router.PathPrefix("/").HandlerFunc(s.handler.HandleRouteService)
+
 	return helpers.NewHTTPServer(s.logger.Session("cf-server"), s.conf.CFServer, router)
 }
 
-// CreateMtlsServer serves the park/unpark control endpoints for the engine.
+// CreateMtlsServer is vestigial (a leftover from the BOSH deployment model where
+// components were reachable by stable IP). A CF-app activator is reached only via
+// its public route, so the control API lives on the CF server (see
+// CreateCFServer). Kept as a 404 stub so the standard server group is unchanged.
 func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
-	router := routes.NewRouter()
-	activatorRouter := router.CreateActivatorRoutes()
-	activatorRouter.Get(routes.ActivatorParkRouteName).Handler(VarsFunc(s.handler.Park))
-	activatorRouter.Get(routes.ActivatorUnparkRouteName).Handler(VarsFunc(s.handler.Unpark))
-	return helpers.NewHTTPServer(s.logger.Session("mtls-server"), s.conf.Server, activatorRouter)
+	router := mux.NewRouter()
+	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+	return helpers.NewHTTPServer(s.logger.Session("mtls-server"), s.conf.Server, router)
 }
 
 func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
