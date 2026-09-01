@@ -54,11 +54,13 @@ popd > /dev/null
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
 cf_login
+cf_target "${autoscaler_org}" "${autoscaler_space}"
 
 # --- Activator route-service UPSI ---
 # MTA cannot declare a user-provided service with a route_service_url, so the
-# activator route service is (re)created imperatively here. Route bindings to
-# individual app routes are managed at runtime by the activator, not here.
+# activator route service is (re)created imperatively here. It lives in the
+# deployment's space (targeted above). Route bindings to individual app routes
+# are managed at runtime by the activator, not here.
 # See docs/design/scale-to-zero.md §3.
 activator_route_service_url="https://${deployment_name:-}-activator.${system_domain:-}"
 echo "Ensuring activator route-service UPSI 'autoscaler-activator-rs' -> ${activator_route_service_url}"
