@@ -49,7 +49,7 @@ require (
 	google.golang.org/grpc v1.82.1
 )
 
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260825221802-da73d73af1c5
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260831171406-18b4a7587f8a
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260629064500-85da08bf73ac // indirect
@@ -110,8 +110,8 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
