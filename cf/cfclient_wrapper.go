@@ -385,6 +385,72 @@ func (w *CFClientWrapper) GetSpaceDeveloperRoles(ctx context.Context, spaceId Sp
 	return mapResourceRoles(roles), nil
 }
 
+// GetAppRoutes returns all routes mapped to the given app.
+func (w *CFClientWrapper) GetAppRoutes(ctx context.Context, appId Guid) ([]Route, error) {
+	routes, err := w.cfClient.Routes.ListForAppAll(ctx, string(appId), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed GetAppRoutes(%s): %w", appId, MapCFClientError(err))
+	}
+	result := make([]Route, 0, len(routes))
+	for _, r := range routes {
+		result = append(result, Route{Guid: r.GUID, URL: r.URL})
+	}
+	return result, nil
+}
+
+// GetUserProvidedServiceInstanceGUID resolves a user-provided service instance
+// by name to its GUID (e.g. the activator route-service UPSI).
+func (w *CFClientWrapper) GetUserProvidedServiceInstanceGUID(ctx context.Context, name string) (string, error) {
+	opts := client.NewServiceInstanceListOptions()
+	opts.Names = client.Filter{Values: []string{name}}
+	opts.Type = "user-provided"
+	si, err := w.cfClient.ServiceInstances.Single(ctx, opts)
+	if err != nil {
+		return "", fmt.Errorf("failed GetUserProvidedServiceInstanceGUID(%s): %w", name, MapCFClientError(err))
+	}
+	return si.GUID, nil
+}
+
+// BindRouteService binds a route to a route-service service instance. For a
+// user-provided service instance the create is synchronous (no job to poll).
+func (w *CFClientWrapper) BindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error {
+	create := resource.NewServiceRouteBindingCreate(routeGUID, serviceInstanceGUID)
+	jobGUID, _, err := w.cfClient.ServiceRouteBindings.Create(ctx, create)
+	if err != nil {
+		return fmt.Errorf("failed BindRouteService(route=%s, si=%s): %w", routeGUID, serviceInstanceGUID, MapCFClientError(err))
+	}
+	if jobGUID != "" {
+		if err := w.cfClient.Jobs.PollComplete(ctx, jobGUID, nil); err != nil {
+			return fmt.Errorf("failed polling BindRouteService(route=%s): %w", routeGUID, MapCFClientError(err))
+		}
+	}
+	return nil
+}
+
+// UnbindRouteService removes the route binding between the given route and
+// route-service service instance. It is a no-op if no such binding exists.
+func (w *CFClientWrapper) UnbindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error {
+	opts := client.NewServiceRouteBindingListOptions()
+	opts.RouteGUIDs = client.Filter{Values: []string{routeGUID}}
+	opts.ServiceInstanceGUIDs = client.Filter{Values: []string{serviceInstanceGUID}}
+	bindings, err := w.cfClient.ServiceRouteBindings.ListAll(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("failed listing route bindings(route=%s): %w", routeGUID, MapCFClientError(err))
+	}
+	for _, b := range bindings {
+		jobGUID, err := w.cfClient.ServiceRouteBindings.Delete(ctx, b.GUID)
+		if err != nil {
+			return fmt.Errorf("failed UnbindRouteService(binding=%s): %w", b.GUID, MapCFClientError(err))
+		}
+		if jobGUID != "" {
+			if err := w.cfClient.Jobs.PollComplete(ctx, jobGUID, nil); err != nil {
+				return fmt.Errorf("failed polling UnbindRouteService(binding=%s): %w", b.GUID, MapCFClientError(err))
+			}
+		}
+	}
+	return nil
+}
+
 func mapRootToEndpoints(root *resource.Root) Endpoints {
 	return Endpoints{
 		CloudControllerV3: Href{Url: root.Links.CloudControllerV3.Href},

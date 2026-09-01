@@ -1,3 +1,8 @@
+cf:
+  api: https://api.cf.example.com
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
+  skip_ssl_validation: true
 server:
   port: 8080
 cf_server:
@@ -7,5 +12,19 @@ health:
     port: 8081
 logging:
   level: info
+route_service_upsi_name: autoscaler-activator-rs
+readiness_timeout: 30s
+scaling_engine:
+  scaling_engine_url: https://scalingengine.cf.example.com
+  tls:
+    key_file: "../testcerts/client.key"
+    cert_file: "../testcerts/client.crt"
+    ca_file: "../testcerts/ca.crt"
 routing_api:
-  url: "https://api.cf.internal/routing/v1"
+  url: https://api.cf.example.com/routing/v1
+  skip_ssl_validation: true
+  uaa:
+    url: https://uaa.cf.example.com
+    client_id: routing_api_client
+    client_secret: routing_api_secret
+    grant_type: client_credentials

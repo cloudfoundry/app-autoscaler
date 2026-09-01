@@ -46,13 +46,17 @@ type Registry interface {
 	MarkParked(appID string, routes []string)
 	MarkUnparked(appID string)
 	ParkedApps() []string
+	// RoutesFor returns the route URLs the activator bound for a parked app.
+	RoutesFor(appID string) []string
 }
 
 // ReadinessWatcher is Loop B: it consumes route-registration (Upsert) events
 // and signals when a parked app's real endpoint has come up.
 type ReadinessWatcher interface {
-	// WaitForReady blocks until the app is observed ready or ctx is done.
-	WaitForReady(ctx context.Context, appID string) error
+	// WaitForReady returns a channel that receives nil when the app is observed
+	// ready, or ctx.Err() if ctx is done first. Register the waiter before
+	// triggering the scale-up to avoid missing a fast Upsert.
+	WaitForReady(ctx context.Context, appID string) <-chan error
 	// Run consumes the event stream until ctx is done, un-parking apps whose
 	// Upsert arrives regardless of what caused the scale-up.
 	Run(ctx context.Context) error

@@ -154,6 +154,12 @@ type Roles []Role
 type SpaceId string
 type UserId string
 
+// Route is a minimal view of a CF route, used for route-service binding.
+type Route struct {
+	Guid string `json:"guid"`
+	URL  string `json:"url"`
+}
+
 func (r Roles) HasRole(roleType RoleType) bool {
 	for _, role := range r {
 		if role.Type == roleType {

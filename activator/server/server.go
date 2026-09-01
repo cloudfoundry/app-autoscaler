@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator/config"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/healthendpoint"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/routes"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,40 +19,45 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 )
 
+// VarsFunc adapts a mux-vars handler to http.Handler.
+type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
+
+func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	vh(w, r, mux.Vars(r))
+}
+
 // Server hosts the activator's HTTP surfaces:
-//   - the CF (route-service) server, which receives Gorouter-forwarded requests
-//     for parked apps (Loop A entry point);
-//   - the mTLS server, reserved for internal control endpoints;
-//   - the health server.
+//   - CF (route-service) server: receives Gorouter-forwarded requests for
+//     parked apps (Loop A);
+//   - mTLS server: park/unpark control endpoints called by the scaling engine;
+//   - health server.
 type Server struct {
 	logger       lager.Logger
 	conf         *config.Config
+	handler      *activator.Handler
 	healthRouter *mux.Router
 }
 
-func NewServer(logger lager.Logger, conf *config.Config) *Server {
-	return &Server{logger: logger, conf: conf}
+func NewServer(logger lager.Logger, conf *config.Config, handler *activator.Handler) *Server {
+	return &Server{logger: logger, conf: conf, handler: handler}
 }
 
-// CreateCFServer serves the route-service endpoint. Gorouter forwards requests
-// for parked (zero-instance) apps here, carrying X-CF-Forwarded-Url and the
-// X-CF-Proxy-* headers. See docs/design/scale-to-zero.md §5.2 (Loop A).
+// CreateCFServer serves the route-service endpoint (catch-all: any path/method
+// the original app would serve). See docs/design/scale-to-zero.md §5.2.
 func (s *Server) CreateCFServer(am auth.XFCCAuthMiddleware) (ifrit.Runner, error) {
 	router := mux.NewRouter()
 	router.Use(am.XFCCAuthenticationMiddleware)
-	// Route service is a catch-all: it must accept any path/method the original
-	// app would have served.
-	router.PathPrefix("/").HandlerFunc(s.handleRouteService)
+	router.PathPrefix("/").HandlerFunc(s.handler.HandleRouteService)
 	return helpers.NewHTTPServer(s.logger.Session("cf-server"), s.conf.CFServer, router)
 }
 
-// CreateMtlsServer is reserved for internal control endpoints (none yet).
+// CreateMtlsServer serves the park/unpark control endpoints for the engine.
 func (s *Server) CreateMtlsServer() (ifrit.Runner, error) {
-	router := mux.NewRouter()
-	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	})
-	return helpers.NewHTTPServer(s.logger.Session("mtls-server"), s.conf.Server, router)
+	router := routes.NewRouter()
+	activatorRouter := router.CreateActivatorRoutes()
+	activatorRouter.Get(routes.ActivatorParkRouteName).Handler(VarsFunc(s.handler.Park))
+	activatorRouter.Get(routes.ActivatorUnparkRouteName).Handler(VarsFunc(s.handler.Unpark))
+	return helpers.NewHTTPServer(s.logger.Session("mtls-server"), s.conf.Server, activatorRouter)
 }
 
 func (s *Server) CreateHealthServer() (ifrit.Runner, error) {
@@ -69,21 +76,4 @@ func (s *Server) setupHealthRouter() error {
 	}
 	s.healthRouter = healthRouter
 	return nil
-}
-
-// handleRouteService is the Loop A entry point. For the PoC scaffold it returns
-// 503 + Retry-After (the documented cold-start-timeout response). Wiring the
-// scale-up call + readiness wait + forward-to-X-CF-Forwarded-Url follows.
-func (s *Server) handleRouteService(w http.ResponseWriter, r *http.Request) {
-	forwardedURL := r.Header.Get("X-CF-Forwarded-Url")
-	s.logger.Info("route-service-request", lager.Data{
-		"forwardedURL": forwardedURL,
-		"method":       r.Method,
-	})
-	// TODO(scale-to-zero): identify the parked app, hold the request, trigger a
-	// scale-up via the scaling engine, wait for the readiness Upsert, then
-	// forward to forwardedURL with the X-CF-Proxy-* headers intact.
-	w.Header().Set("Retry-After", "5")
-	w.WriteHeader(http.StatusServiceUnavailable)
-	_, _ = w.Write([]byte("app is waking up, please retry"))
 }

@@ -1,9 +1,13 @@
 package config
 
 import (
+	"time"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 const (
@@ -11,6 +15,8 @@ const (
 	DefaultServerPort       = 8080
 	DefaultHealthServerPort = 8081
 	DefaultCFServerPort     = 8082
+	DefaultReadinessTimeout = 30 * time.Second
+	DefaultRouteServiceUPSI = "autoscaler-activator-rs"
 )
 
 // Config is the activator service configuration. The activator parks apps
@@ -19,16 +25,36 @@ const (
 type Config struct {
 	configutil.BaseConfig `yaml:",inline" json:",inline"`
 
-	// RoutingAPI holds the credentials/endpoint the activator uses to subscribe
-	// to route-registration events (readiness signal for scale-from-zero).
-	// Left minimal for the PoC scaffold; wired up as the loops are implemented.
+	// CF is used to bind/unbind app routes to the activator route-service.
+	CF cf.Config `yaml:"cf" json:"cf"`
+
+	// RouteServiceUPSIName is the name of the user-provided service instance
+	// (created at deploy time) whose route_service_url points at this activator.
+	RouteServiceUPSIName string `yaml:"route_service_upsi_name" json:"route_service_upsi_name"`
+
+	// ReadinessTimeout bounds how long a held request waits for the app to
+	// become ready before returning 503 + Retry-After.
+	ReadinessTimeout time.Duration `yaml:"readiness_timeout" json:"readiness_timeout"`
+
+	// ScalingEngine is used to wake parked apps.
+	ScalingEngine ScalingEngineConfig `yaml:"scaling_engine" json:"scaling_engine"`
+
+	// RoutingAPI configures access to the CF routing-api event stream
+	// (GET /routing/v1/events), the app-readiness signal.
 	RoutingAPI RoutingAPIConfig `yaml:"routing_api" json:"routing_api"`
 }
 
-// RoutingAPIConfig configures access to the CF routing-api event stream
-// (GET /routing/v1/events), used as the app-readiness signal.
+// ScalingEngineConfig points the activator at the scaling engine.
+type ScalingEngineConfig struct {
+	ScalingEngineURL string          `yaml:"scaling_engine_url" json:"scaling_engine_url"`
+	TLSClientCerts   models.TLSCerts `yaml:"tls" json:"tls"`
+}
+
+// RoutingAPIConfig configures access to the CF routing-api.
 type RoutingAPIConfig struct {
-	URL string `yaml:"url" json:"url"`
+	URL               string          `yaml:"url" json:"url"`
+	SkipSSLValidation bool            `yaml:"skip_ssl_validation" json:"skip_ssl_validation"`
+	UAACreds          models.UAACreds `yaml:"uaa" json:"uaa"`
 }
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {
@@ -40,6 +66,7 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		if err := configutil.ApplyCommonVCAPConfiguration(conf, vcapReader, "activator-config"); err != nil {
 			return err
 		}
+		conf.ScalingEngine.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
 	}
 	return nil
 }
@@ -63,6 +90,8 @@ func defaultConfig() Config {
 			},
 			Db: make(map[string]db.DatabaseConfig),
 		},
+		RouteServiceUPSIName: DefaultRouteServiceUPSI,
+		ReadinessTimeout:     DefaultReadinessTimeout,
 	}
 }
 

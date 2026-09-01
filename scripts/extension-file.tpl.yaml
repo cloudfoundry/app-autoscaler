@@ -123,8 +123,20 @@ resources:
     parameters:
       config:
         activator-config:
+          cf:
+            api: https://api.${default-domain}
+            client_id: ${SCALINGENGINE_CF_CLIENT_ID}
+            secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          scaling_engine:
+            scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
           routing_api:
             url: https://api.${default-domain}/routing/v1
+            skip_ssl_validation: true
+            uaa:
+              url: https://uaa.${default-domain}
+              client_id: ${ACTIVATOR_ROUTING_API_UAA_CLIENT_ID}
+              client_secret: ${ACTIVATOR_ROUTING_API_UAA_CLIENT_SECRET}
+              grant_type: client_credentials
 
   - name: metricsgateway-config
     parameters:
@@ -221,6 +233,8 @@ resources:
             api: https://api.${default-domain}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
             secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          activator:
+            activator_url: https://${ACTIVATOR_HOST}.${default-domain}
 
   - name: database
     parameters:
