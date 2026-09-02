@@ -106,7 +106,7 @@
       "enabled": false
     },
     {
-      "description": "Group together clis that are likely to have no impact on the result of the acceptance-tests. This is for speed-increase and to reduce the traffic-jam in the renovate-dependecy-dashboard <https://github.com/cloudfoundry/app-autoscaler/issues/832>.",
+      "description": "Group together dependencies that are likely to have no impact on the result of the acceptance-tests. This is for speed-increase and to reduce the traffic-jam in the renovate-dependecy-dashboard <https://github.com/cloudfoundry/app-autoscaler/issues/832>.",
       "groupName": "Low risk cli-updates",
       "matchManagers": ["devbox"],
       "prPriority": -1,
@@ -122,9 +122,11 @@
         "gnused",
         "gnutar",
         "gopls",
+        "gum",
         "jdt-language-server",
         "jq",
         "maven",
+        "oha",
         "openssl",
         "python",
         "ripgrep",
