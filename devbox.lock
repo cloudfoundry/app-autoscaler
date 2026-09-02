@@ -1932,51 +1932,41 @@
         }
       }
     },
-    "ripgrep@15.1.0": {
-      "last_modified": "2026-07-08T21:13:06Z",
-      "resolved": "github:NixOS/nixpkgs/389ed85304b281ca7f306cf8a1eb4378651ca44e#ripgrep",
+    "ripgrep@15.2.0": {
+      "last_modified": "2026-08-27T07:16:00Z",
+      "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#ripgrep",
       "source": "devbox-search",
-      "version": "15.1.0",
+      "version": "15.2.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1865hssfvs2wi32cmhrn5hr5xccls4c4-ripgrep-15.1.0",
+              "path": "/nix/store/lmrkq2dixahzmvb7gb9ivr8hdlj9w7cy-ripgrep-15.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1865hssfvs2wi32cmhrn5hr5xccls4c4-ripgrep-15.1.0"
+          "store_path": "/nix/store/lmrkq2dixahzmvb7gb9ivr8hdlj9w7cy-ripgrep-15.2.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/7hin6l67s0nccvxc2k0933m71sism7g1-ripgrep-15.1.0",
+              "path": "/nix/store/l02znzqak7gnap7jh95d794gxcwbc2il-ripgrep-15.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/7hin6l67s0nccvxc2k0933m71sism7g1-ripgrep-15.1.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/anpnnwglxciyg2brq503b2amkdq1wfw8-ripgrep-15.1.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/anpnnwglxciyg2brq503b2amkdq1wfw8-ripgrep-15.1.0"
+          "store_path": "/nix/store/l02znzqak7gnap7jh95d794gxcwbc2il-ripgrep-15.2.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/806nba32b0dw0y96j8bvgz07li9p5qz9-ripgrep-15.1.0",
+              "path": "/nix/store/zc6fy62c341aibk36p4ywff7rf9wn4wx-ripgrep-15.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/806nba32b0dw0y96j8bvgz07li9p5qz9-ripgrep-15.1.0"
+          "store_path": "/nix/store/zc6fy62c341aibk36p4ywff7rf9wn4wx-ripgrep-15.2.0"
         }
       }
     },
