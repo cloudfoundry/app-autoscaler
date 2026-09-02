@@ -23,7 +23,7 @@
     "coreutils":            "9.11",
     "credhub-cli":          "2.9.60",
     "curl":                 "8.17.0",
-    "delve":                "1.26.3",
+    "delve":                "1.27.1",
     "gh":                   "2.98.0",
     "ginkgo":               "2.28.1",
     "gnumake":              "4.4.1",
