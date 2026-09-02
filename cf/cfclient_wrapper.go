@@ -398,6 +398,26 @@ func (w *CFClientWrapper) GetAppRoutes(ctx context.Context, appId Guid) ([]Route
 	return result, nil
 }
 
+// GetAppSpaceGUID returns the GUID of the space the app belongs to.
+func (w *CFClientWrapper) GetAppSpaceGUID(ctx context.Context, appId Guid) (string, error) {
+	app, err := w.cfClient.Applications.Get(ctx, string(appId))
+	if err != nil {
+		return "", fmt.Errorf("failed GetAppSpaceGUID(%s): %w", appId, MapCFClientError(err))
+	}
+	return app.Relationships.Space.Data.GUID, nil
+}
+
+// ShareServiceInstanceWithSpace shares a service instance into the given space
+// so its routes (which live in that space) can be bound to it. Sharing an
+// already-shared instance is a no-op.
+func (w *CFClientWrapper) ShareServiceInstanceWithSpace(ctx context.Context, serviceInstanceGUID, spaceGUID string) error {
+	_, err := w.cfClient.ServiceInstances.ShareWithSpace(ctx, serviceInstanceGUID, spaceGUID)
+	if err != nil {
+		return fmt.Errorf("failed ShareServiceInstanceWithSpace(si=%s, space=%s): %w", serviceInstanceGUID, spaceGUID, MapCFClientError(err))
+	}
+	return nil
+}
+
 // GetUserProvidedServiceInstanceGUID resolves a user-provided service instance
 // by name to its GUID (e.g. the activator route-service UPSI).
 func (w *CFClientWrapper) GetUserProvidedServiceInstanceGUID(ctx context.Context, name string) (string, error) {

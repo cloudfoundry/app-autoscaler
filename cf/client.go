@@ -43,7 +43,9 @@ type (
 		// Route-service support for scale-to-zero (activator). See
 		// docs/design/scale-to-zero.md.
 		GetAppRoutes(ctx context.Context, appId Guid) ([]Route, error)
+		GetAppSpaceGUID(ctx context.Context, appId Guid) (string, error)
 		GetUserProvidedServiceInstanceGUID(ctx context.Context, name string) (string, error)
+		ShareServiceInstanceWithSpace(ctx context.Context, serviceInstanceGUID, spaceGUID string) error
 		BindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 		UnbindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 	}

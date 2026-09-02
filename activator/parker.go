@@ -14,7 +14,9 @@ import (
 // by cf.CFClient.
 type RouteBinder interface {
 	GetAppRoutes(ctx context.Context, appId cf.Guid) ([]cf.Route, error)
+	GetAppSpaceGUID(ctx context.Context, appId cf.Guid) (string, error)
 	GetUserProvidedServiceInstanceGUID(ctx context.Context, name string) (string, error)
+	ShareServiceInstanceWithSpace(ctx context.Context, serviceInstanceGUID, spaceGUID string) error
 	BindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 	UnbindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 }
@@ -67,6 +69,17 @@ func (p *cfParker) Park(ctx context.Context, appID string) error {
 	if len(routeList) == 0 {
 		p.logger.Info("no-routes-to-park", lager.Data{"appID": appID})
 		return nil
+	}
+
+	// The route-service UPSI lives in the activator's own space, but an app's
+	// routes live in the app's space; CF forbids binding a route to a service
+	// instance in a different space. Share the UPSI into the app's space first.
+	spaceGUID, err := p.cfClient.GetAppSpaceGUID(ctx, cf.Guid(appID))
+	if err != nil {
+		return fmt.Errorf("failed getting space for app %s: %w", appID, err)
+	}
+	if err := p.cfClient.ShareServiceInstanceWithSpace(ctx, upsiGUID, spaceGUID); err != nil {
+		return fmt.Errorf("failed sharing route-service into space %s for app %s: %w", spaceGUID, appID, err)
 	}
 
 	boundURLs := make([]string, 0, len(routeList))
