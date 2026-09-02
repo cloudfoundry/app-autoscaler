@@ -28,9 +28,14 @@ type Config struct {
 	// CF is used to bind/unbind app routes to the activator route-service.
 	CF cf.Config `yaml:"cf" json:"cf"`
 
-	// RouteServiceUPSIName is the name of the user-provided service instance
-	// (created at deploy time) whose route_service_url points at this activator.
+	// RouteServiceUPSIName is the name of the user-provided route-service
+	// instance the activator ensures (per app space) and binds app routes to.
 	RouteServiceUPSIName string `yaml:"route_service_upsi_name" json:"route_service_upsi_name"`
+
+	// RouteServiceURL is the activator's own public HTTPS route, used as the
+	// route_service_url of the per-space UPSI so Gorouter forwards parked-app
+	// traffic here.
+	RouteServiceURL string `yaml:"route_service_url" json:"route_service_url"`
 
 	// ReadinessTimeout bounds how long a held request waits for the app to
 	// become ready before returning 503 + Retry-After.

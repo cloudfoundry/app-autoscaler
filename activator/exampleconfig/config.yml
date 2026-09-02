@@ -13,6 +13,7 @@ health:
 logging:
   level: info
 route_service_upsi_name: autoscaler-activator-rs
+route_service_url: https://activator.cf.example.com
 readiness_timeout: 30s
 scaling_engine:
   scaling_engine_url: https://scalingengine.cf.example.com

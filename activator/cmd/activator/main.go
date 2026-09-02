@@ -24,7 +24,7 @@ func main() {
 	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger)
 
 	registry := activator.NewInMemoryRegistry()
-	parker := activator.NewCFParker(logger, cfClient, conf.RouteServiceUPSIName, registry)
+	parker := activator.NewCFParker(logger, cfClient, conf.RouteServiceUPSIName, conf.RouteServiceURL, registry)
 
 	// Activator -> scaling engine (wake) client.
 	engineHTTPClient, err := helpers.CreateHTTPSClient(&conf.ScalingEngine.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("scaling_engine_client"))

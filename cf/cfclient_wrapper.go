@@ -407,26 +407,28 @@ func (w *CFClientWrapper) GetAppSpaceGUID(ctx context.Context, appId Guid) (stri
 	return app.Relationships.Space.Data.GUID, nil
 }
 
-// ShareServiceInstanceWithSpace shares a service instance into the given space
-// so its routes (which live in that space) can be bound to it. Sharing an
-// already-shared instance is a no-op.
-func (w *CFClientWrapper) ShareServiceInstanceWithSpace(ctx context.Context, serviceInstanceGUID, spaceGUID string) error {
-	_, err := w.cfClient.ServiceInstances.ShareWithSpace(ctx, serviceInstanceGUID, spaceGUID)
-	if err != nil {
-		return fmt.Errorf("failed ShareServiceInstanceWithSpace(si=%s, space=%s): %w", serviceInstanceGUID, spaceGUID, MapCFClientError(err))
-	}
-	return nil
-}
-
-// GetUserProvidedServiceInstanceGUID resolves a user-provided service instance
-// by name to its GUID (e.g. the activator route-service UPSI).
-func (w *CFClientWrapper) GetUserProvidedServiceInstanceGUID(ctx context.Context, name string) (string, error) {
+// EnsureRouteServiceInstance finds a user-provided route-service instance by
+// name in the given space, creating it (with the given route_service_url) if it
+// does not exist, and returns its GUID. This co-locates the route-service with
+// the app's routes so binding does not require cross-space service sharing
+// (which may be disabled on the foundation).
+func (w *CFClientWrapper) EnsureRouteServiceInstance(ctx context.Context, name, spaceGUID, routeServiceURL string) (string, error) {
 	opts := client.NewServiceInstanceListOptions()
 	opts.Names = client.Filter{Values: []string{name}}
+	opts.SpaceGUIDs = client.Filter{Values: []string{spaceGUID}}
 	opts.Type = "user-provided"
-	si, err := w.cfClient.ServiceInstances.Single(ctx, opts)
+	existing, err := w.cfClient.ServiceInstances.First(ctx, opts)
+	if err == nil && existing != nil {
+		return existing.GUID, nil
+	}
+	if err != nil && !errors.Is(err, client.ErrNoResultsReturned) {
+		return "", fmt.Errorf("failed looking up route-service %q in space %s: %w", name, spaceGUID, MapCFClientError(err))
+	}
+
+	create := resource.NewServiceInstanceCreateUserProvided(name, spaceGUID).WithRouteServiceURL(routeServiceURL)
+	si, err := w.cfClient.ServiceInstances.CreateUserProvided(ctx, create)
 	if err != nil {
-		return "", fmt.Errorf("failed GetUserProvidedServiceInstanceGUID(%s): %w", name, MapCFClientError(err))
+		return "", fmt.Errorf("failed creating route-service %q in space %s: %w", name, spaceGUID, MapCFClientError(err))
 	}
 	return si.GUID, nil
 }

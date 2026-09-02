@@ -123,6 +123,7 @@ resources:
     parameters:
       config:
         activator-config:
+          route_service_url: https://${ACTIVATOR_HOST}.${default-domain}
           cf:
             api: https://api.${default-domain}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}

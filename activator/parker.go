@@ -3,7 +3,6 @@ package activator
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
@@ -15,53 +14,38 @@ import (
 type RouteBinder interface {
 	GetAppRoutes(ctx context.Context, appId cf.Guid) ([]cf.Route, error)
 	GetAppSpaceGUID(ctx context.Context, appId cf.Guid) (string, error)
-	GetUserProvidedServiceInstanceGUID(ctx context.Context, name string) (string, error)
-	ShareServiceInstanceWithSpace(ctx context.Context, serviceInstanceGUID, spaceGUID string) error
+	EnsureRouteServiceInstance(ctx context.Context, name, spaceGUID, routeServiceURL string) (string, error)
 	BindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 	UnbindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 }
 
-// cfParker binds/unbinds an app's routes to the activator route-service UPSI.
-// The UPSI GUID is resolved once (by name) and cached.
+// cfParker binds/unbinds an app's routes to a route-service user-provided
+// service instance that lives in the SAME space as the app. The activator
+// ensures a per-space UPSI (pointing at its own route) rather than sharing one
+// global UPSI across spaces, because cross-space service sharing may be disabled
+// on the foundation. See docs/design/scale-to-zero.md.
 type cfParker struct {
-	logger     lager.Logger
-	cfClient   RouteBinder
-	upsiName   string
-	registry   Registry
-	upsiGUIDMu sync.Mutex
-	upsiGUID   string
+	logger          lager.Logger
+	cfClient        RouteBinder
+	upsiName        string
+	routeServiceURL string
+	registry        Registry
 }
 
-// NewCFParker returns a Parker that binds app routes to the named route-service
-// UPSI (e.g. "autoscaler-activator-rs"). Bound routes are recorded in registry.
-func NewCFParker(logger lager.Logger, cfClient RouteBinder, upsiName string, registry Registry) Parker {
+// NewCFParker returns a Parker that ensures a route-service UPSI named upsiName
+// (with route_service_url = routeServiceURL, the activator's own route) in each
+// app's space and binds the app's routes to it.
+func NewCFParker(logger lager.Logger, cfClient RouteBinder, upsiName, routeServiceURL string, registry Registry) Parker {
 	return &cfParker{
-		logger:   logger.Session("cf-parker"),
-		cfClient: cfClient,
-		upsiName: upsiName,
-		registry: registry,
+		logger:          logger.Session("cf-parker"),
+		cfClient:        cfClient,
+		upsiName:        upsiName,
+		routeServiceURL: routeServiceURL,
+		registry:        registry,
 	}
-}
-
-func (p *cfParker) resolveUPSIGUID(ctx context.Context) (string, error) {
-	p.upsiGUIDMu.Lock()
-	defer p.upsiGUIDMu.Unlock()
-	if p.upsiGUID != "" {
-		return p.upsiGUID, nil
-	}
-	guid, err := p.cfClient.GetUserProvidedServiceInstanceGUID(ctx, p.upsiName)
-	if err != nil {
-		return "", fmt.Errorf("failed resolving route-service UPSI %q: %w", p.upsiName, err)
-	}
-	p.upsiGUID = guid
-	return guid, nil
 }
 
 func (p *cfParker) Park(ctx context.Context, appID string) error {
-	upsiGUID, err := p.resolveUPSIGUID(ctx)
-	if err != nil {
-		return err
-	}
 	routeList, err := p.cfClient.GetAppRoutes(ctx, cf.Guid(appID))
 	if err != nil {
 		return fmt.Errorf("failed getting routes for app %s: %w", appID, err)
@@ -71,15 +55,9 @@ func (p *cfParker) Park(ctx context.Context, appID string) error {
 		return nil
 	}
 
-	// The route-service UPSI lives in the activator's own space, but an app's
-	// routes live in the app's space; CF forbids binding a route to a service
-	// instance in a different space. Share the UPSI into the app's space first.
-	spaceGUID, err := p.cfClient.GetAppSpaceGUID(ctx, cf.Guid(appID))
+	upsiGUID, err := p.ensureUPSI(ctx, appID)
 	if err != nil {
-		return fmt.Errorf("failed getting space for app %s: %w", appID, err)
-	}
-	if err := p.cfClient.ShareServiceInstanceWithSpace(ctx, upsiGUID, spaceGUID); err != nil {
-		return fmt.Errorf("failed sharing route-service into space %s for app %s: %w", spaceGUID, appID, err)
+		return err
 	}
 
 	boundURLs := make([]string, 0, len(routeList))
@@ -95,13 +73,18 @@ func (p *cfParker) Park(ctx context.Context, appID string) error {
 }
 
 func (p *cfParker) Unpark(ctx context.Context, appID string) error {
-	upsiGUID, err := p.resolveUPSIGUID(ctx)
-	if err != nil {
-		return err
-	}
 	routeList, err := p.cfClient.GetAppRoutes(ctx, cf.Guid(appID))
 	if err != nil {
 		return fmt.Errorf("failed getting routes for app %s: %w", appID, err)
+	}
+	if len(routeList) == 0 {
+		p.registry.MarkUnparked(appID)
+		return nil
+	}
+
+	upsiGUID, err := p.ensureUPSI(ctx, appID)
+	if err != nil {
+		return err
 	}
 	for _, r := range routeList {
 		if err := p.cfClient.UnbindRouteService(ctx, r.Guid, upsiGUID); err != nil {
@@ -111,4 +94,18 @@ func (p *cfParker) Unpark(ctx context.Context, appID string) error {
 	p.registry.MarkUnparked(appID)
 	p.logger.Info("unparked", lager.Data{"appID": appID})
 	return nil
+}
+
+// ensureUPSI resolves the app's space and ensures the route-service UPSI exists
+// there, returning its GUID.
+func (p *cfParker) ensureUPSI(ctx context.Context, appID string) (string, error) {
+	spaceGUID, err := p.cfClient.GetAppSpaceGUID(ctx, cf.Guid(appID))
+	if err != nil {
+		return "", fmt.Errorf("failed getting space for app %s: %w", appID, err)
+	}
+	upsiGUID, err := p.cfClient.EnsureRouteServiceInstance(ctx, p.upsiName, spaceGUID, p.routeServiceURL)
+	if err != nil {
+		return "", fmt.Errorf("failed ensuring route-service in space %s for app %s: %w", spaceGUID, appID, err)
+	}
+	return upsiGUID, nil
 }

@@ -15,13 +15,12 @@ import (
 // fakeBinder is a scripted activator.RouteBinder.
 type fakeBinder struct {
 	upsiGUID  string
-	upsiErr   error
+	ensureErr error
 	routes    []cf.Route
 	routesErr error
 	spaceGUID string
 	spaceErr  error
-	shared    []string // space GUIDs shared into
-	shareErr  error
+	ensuredIn []string // space GUIDs a UPSI was ensured in
 	bound     []string // route GUIDs bound
 	unbound   []string // route GUIDs unbound
 	bindErr   error
@@ -36,15 +35,12 @@ func (f *fakeBinder) GetAppSpaceGUID(_ context.Context, _ cf.Guid) (string, erro
 	}
 	return f.spaceGUID, f.spaceErr
 }
-func (f *fakeBinder) GetUserProvidedServiceInstanceGUID(_ context.Context, _ string) (string, error) {
-	return f.upsiGUID, f.upsiErr
-}
-func (f *fakeBinder) ShareServiceInstanceWithSpace(_ context.Context, _, spaceGUID string) error {
-	if f.shareErr != nil {
-		return f.shareErr
+func (f *fakeBinder) EnsureRouteServiceInstance(_ context.Context, _, spaceGUID, _ string) (string, error) {
+	if f.ensureErr != nil {
+		return "", f.ensureErr
 	}
-	f.shared = append(f.shared, spaceGUID)
-	return nil
+	f.ensuredIn = append(f.ensuredIn, spaceGUID)
+	return f.upsiGUID, nil
 }
 func (f *fakeBinder) BindRouteService(_ context.Context, routeGUID, _ string) error {
 	if f.bindErr != nil {
@@ -75,13 +71,13 @@ var _ = Describe("CFParker", func() {
 		}
 		registry = activator.NewInMemoryRegistry()
 		logger := lagertest.NewTestLogger("parker-test")
-		parker = activator.NewCFParker(logger, binder, "autoscaler-activator-rs", registry)
+		parker = activator.NewCFParker(logger, binder, "autoscaler-activator-rs", "https://activator.example.com", registry)
 	})
 
 	Describe("Park", func() {
-		It("binds every app route to the route-service UPSI and records them", func() {
+		It("ensures a route-service UPSI in the app's space and binds every route", func() {
 			Expect(parker.Park(context.Background(), "app-1")).To(Succeed())
-			Expect(binder.shared).To(ConsistOf("app-space"))
+			Expect(binder.ensuredIn).To(ConsistOf("app-space"))
 			Expect(binder.bound).To(ConsistOf("route-1", "route-2"))
 			Expect(registry.IsParked("app-1")).To(BeTrue())
 			Expect(registry.RoutesFor("app-1")).To(ConsistOf("https://app-1.example.com", "https://app-1-alt.example.com"))
@@ -99,8 +95,8 @@ var _ = Describe("CFParker", func() {
 			Expect(parker.Park(context.Background(), "app-1")).To(MatchError(ContainSubstring("bind boom")))
 		})
 
-		It("fails when the UPSI cannot be resolved", func() {
-			binder.upsiErr = errors.New("no upsi")
+		It("fails when the route-service UPSI cannot be ensured", func() {
+			binder.ensureErr = errors.New("no upsi")
 			Expect(parker.Park(context.Background(), "app-1")).To(MatchError(ContainSubstring("no upsi")))
 		})
 	})

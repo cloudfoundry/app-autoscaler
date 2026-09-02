@@ -82,18 +82,24 @@ service. This is the behavior scale-from-zero depends on.
 
 ## 3. Interception mechanism: bind only while parked
 
-The route service is a single, long-lived **user-provided service instance** (UPSI) created once
-at deploy time:
+The route service is a **user-provided service instance** (UPSI) whose
+`route_service_url` is the activator's own public route. A route binding can only reference a
+service instance **in the same space as the route**, and cross-space service *sharing* may be
+disabled on the foundation (`service_instance_sharing` feature flag — observed disabled on
+cf-deployment). Therefore the activator ensures a **per-space UPSI on demand**: when it parks an
+app, it resolves the app's space and finds-or-creates a UPSI named `autoscaler-activator-rs` in
+that space (pointing at the activator's route), then binds the app's routes to it. No global,
+deploy-time UPSI and no cross-space sharing are needed.
 
 ```
-cf create-user-provided-service autoscaler-activator-rs -r https://autoscaler-activator.<sys-domain>
+# conceptually, per app-space, done by the activator at park time:
+cf create-user-provided-service autoscaler-activator-rs -r https://<activator-route>   # if absent in that space
 ```
 
-The UPSI is never recreated per app — only **bindings** to it churn, via the CF v3 API on the
-**route** (not the app):
+Bindings churn via the CF v3 API on the **route** (not the app):
 
-- Bind:   `POST /v3/service_route_bindings` (route guid + UPSI guid). **Async** (`202` + job).
-- Unbind: `DELETE /v3/service_route_bindings/:guid`. **Async**.
+- Bind:   `POST /v3/service_route_bindings` (route guid + UPSI guid). Synchronous for a UPSI.
+- Unbind: `DELETE /v3/service_route_bindings/:guid`. Synchronous for a UPSI.
 - List:   `GET /v3/service_route_bindings` (used for reconcile, §5.4).
 
 Bind/unbind cycles on the same route are supported and repeatable.
