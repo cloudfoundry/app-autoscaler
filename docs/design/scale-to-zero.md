@@ -75,10 +75,48 @@ The `route_service_url` is a normal HTTPS URL, so it can be **the activator's ow
 (`https://autoscaler-activator.<sys-domain>`). This solves the reachability problem: the
 activator is reached the normal CF way, via its route — no self-IP discovery.
 
-**Confirmed:** Gorouter evaluates the route-service binding **before** endpoint selection, as long
-as the route mapping still exists. Scaling to 0 empties the endpoint pool but does **not** remove
-the route mapping, so a request to a parked (0-instance) app **is** forwarded to the route
-service. This is the behavior scale-from-zero depends on.
+**⚠️ DISPROVEN BY LIVE VALIDATION (2026-09-02).** The assumption above — that a route survives
+scale-to-zero and a bound route service still receives traffic — is **false on standard CF**. See
+§2.1.
+
+## 2.1 Findings from live validation (blocking) — READ BEFORE IMPLEMENTING
+
+The route-service interception design was implemented and exercised end-to-end against a
+bosh-deployed cf-deployment foundation (`autoscaler-mta-*`). Results:
+
+- **Scale-to-zero works up to the last step:** policy with `instance_min_count: 0` (v0.1 schema)
+  binds; the eventgenerator fires the scale-in trigger; the scaling engine parks the app (calls the
+  activator, which binds the route service in the app's space) and scales the web process to 0.
+  All confirmed in logs.
+- **But the wake request returns HTTP 404** — `Requested route does not exist`. When a CF app scales
+  to **0 running instances, route-emitter deregisters the route from Gorouter entirely** (404, not
+  503). A bound route service only receives traffic **while the route remains mapped**; it does
+  **not** keep an otherwise-unmapped route alive. So there is nothing for the route service to
+  intercept once instances hit 0. **The route-service approach cannot implement scale-from-zero on
+  standard CF.**
+
+To keep a zero-instance route routable, the activator must be a **live backend** of that route. Every
+way to achieve that was evaluated and is blocked on this foundation:
+
+| Mechanism | Keeps route alive at 0? | mTLS to activator? | Blocker |
+|---|---|---|---|
+| Route-service binding (built) | ❌ (route deregisters → 404) | n/a | fundamental — doesn't keep route alive |
+| Add activator app as route **destination** | ✅ | ✅ (identity-verified) | needs `route_sharing` flag — **disabled** here (cross-space) |
+| Route-service UPSI shared cross-space | ✅ | ✅ | needs `service_instance_sharing` flag — **disabled** here |
+| **routing-api** HTTP `ip:port` registration | ✅ | ❌ **plaintext only** (no `tls_port`/SAN in HTTP route model) | mTLS is mandatory → rejected |
+| **NATS** `router.register` direct (route-registrar style) | ✅ | ✅ (schema has `tls_port`+`server_cert_domain_san`) | NATS unreachable from app (ASG); and a CF app can only self-register its **overlay** container IP, which **Gorouter cannot reach** (Gorouter is on the BOSH net, not the silk overlay). A CF app is not a BOSH VM with a Gorouter-routable address. |
+
+**Conclusion.** The only mTLS-preserving, space-correct mechanism is **CF route destinations**
+(share the parked route into the activator's space, add the activator app as a destination — it
+becomes a healthy backend that keeps the route mapped and receives traffic over identity-verified
+mTLS; on wake, remove the destination). This is gated solely on the **`route_sharing` feature flag**,
+which is currently **disabled** on the target foundation. Enabling it is a foundation-operator
+decision. Direct-to-Gorouter registration (routing-api / NATS) is not viable for a CF-app activator:
+either plaintext-only or physically unreachable over the overlay.
+
+The activator implementation below (route-service binding) is retained as the scaffolding but its
+interception mechanism must be replaced with route-destination mapping once `route_sharing` is
+enabled.
 
 ## 3. Interception mechanism: bind only while parked
 
