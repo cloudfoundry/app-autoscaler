@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -16,7 +17,6 @@ const (
 	DefaultHealthServerPort = 8081
 	DefaultCFServerPort     = 8082
 	DefaultReadinessTimeout = 30 * time.Second
-	DefaultRouteServiceUPSI = "autoscaler-activator-rs"
 )
 
 // Config is the activator service configuration. The activator parks apps
@@ -25,17 +25,12 @@ const (
 type Config struct {
 	configutil.BaseConfig `yaml:",inline" json:",inline"`
 
-	// CF is used to bind/unbind app routes to the activator route-service.
+	// CF is used to list an app's routes.
 	CF cf.Config `yaml:"cf" json:"cf"`
 
-	// RouteServiceUPSIName is the name of the user-provided route-service
-	// instance the activator ensures (per app space) and binds app routes to.
-	RouteServiceUPSIName string `yaml:"route_service_upsi_name" json:"route_service_upsi_name"`
-
-	// RouteServiceURL is the activator's own public HTTPS route, used as the
-	// route_service_url of the per-space UPSI so Gorouter forwards parked-app
-	// traffic here.
-	RouteServiceURL string `yaml:"route_service_url" json:"route_service_url"`
+	// Nats configures the connection used to register the activator as a route
+	// backend on the Gorouter NATS bus (keeps parked routes routable).
+	Nats activator.NatsConfig `yaml:"nats" json:"nats"`
 
 	// ReadinessTimeout bounds how long a held request waits for the app to
 	// become ready before returning 503 + Retry-After.
@@ -74,6 +69,14 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 			return err
 		}
 		conf.ScalingEngine.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
+
+		// NATS client mTLS certs come from the bound nats-client service
+		// (materialized to files), mirroring the syslog-client pattern.
+		natsTLS, err := vcapReader.MaterializeTLSConfigFromService("nats-client")
+		if err != nil {
+			return err
+		}
+		conf.Nats.TLS = natsTLS
 	}
 	return nil
 }
@@ -97,8 +100,7 @@ func defaultConfig() Config {
 			},
 			Db: make(map[string]db.DatabaseConfig),
 		},
-		RouteServiceUPSIName: DefaultRouteServiceUPSI,
-		ReadinessTimeout:     DefaultReadinessTimeout,
+		ReadinessTimeout: DefaultReadinessTimeout,
 	}
 }
 

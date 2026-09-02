@@ -153,6 +153,7 @@ modules:
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: activator-config
+      - name: nats-client
       - name: app-autoscaler-application-logs
       - name: app-autoscaler-dynatrace
     parameters:
@@ -401,6 +402,11 @@ resources:
     parameters:
       service-tags:
         - syslog-client
+  - name: nats-client
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - nats-client
   - name: app-autoscaler-application-logs
     active: false
     type: org.cloudfoundry.managed-service

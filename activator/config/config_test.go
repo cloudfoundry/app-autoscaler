@@ -48,7 +48,6 @@ var _ = Describe("Config", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(conf.RoutingAPI.URL).To(Equal("https://api.cf.example.com"))
 			Expect(conf.ScalingEngine.ScalingEngineURL).To(Equal("https://scalingengine.cf.example.com"))
-			Expect(conf.RouteServiceUPSIName).To(Equal("autoscaler-activator-rs"))
 			Expect(conf.Validate()).To(Succeed())
 		})
 	})

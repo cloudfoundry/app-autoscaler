@@ -40,13 +40,9 @@ type (
 		GetServiceInstance(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error)
 		GetServicePlan(ctx context.Context, servicePlanGuid string) (*ServicePlan, error)
 
-		// Route-service support for scale-to-zero (activator). See
-		// docs/design/scale-to-zero.md.
+		// Route listing for scale-to-zero (activator registers itself as a NATS
+		// backend for these route URIs). See docs/design/scale-to-zero.md.
 		GetAppRoutes(ctx context.Context, appId Guid) ([]Route, error)
-		GetAppSpaceGUID(ctx context.Context, appId Guid) (string, error)
-		EnsureRouteServiceInstance(ctx context.Context, name, spaceGUID, routeServiceURL string) (string, error)
-		BindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
-		UnbindRouteService(ctx context.Context, routeGUID, serviceInstanceGUID string) error
 	}
 )
 

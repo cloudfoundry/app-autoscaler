@@ -123,7 +123,6 @@ resources:
     parameters:
       config:
         activator-config:
-          route_service_url: https://${ACTIVATOR_HOST}.${default-domain}
           cf:
             api: https://api.${default-domain}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
@@ -138,6 +137,11 @@ resources:
               client_id: ${ACTIVATOR_ROUTING_API_UAA_CLIENT_ID}
               client_secret: ${ACTIVATOR_ROUTING_API_UAA_CLIENT_SECRET}
               grant_type: client_credentials
+          nats:
+            urls:
+              - nats-mtls://nats.service.cf.internal:4224
+            refresh_seconds: 20
+            stale_seconds: 120
 
   - name: metricsgateway-config
     parameters:
@@ -251,6 +255,13 @@ resources:
         client_cert: "${SYSLOG_CLIENT_CERT}"
         client_key: "${SYSLOG_CLIENT_KEY}"
         server_ca: "${SYSLOG_CLIENT_CA}"
+
+  - name: nats-client
+    parameters:
+      config:
+        client_cert: "${NATS_CLIENT_CERT}"
+        client_key: "${NATS_CLIENT_KEY}"
+        server_ca: "${NATS_CA}"
 
   - name: broker-catalog
     parameters:

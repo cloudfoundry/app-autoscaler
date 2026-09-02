@@ -154,10 +154,10 @@ type Roles []Role
 type SpaceId string
 type UserId string
 
-// Route is a minimal view of a CF route, used for route-service binding.
+// Route is a minimal view of a CF route, used by the activator to register
+// itself as a NATS backend for the route's URL.
 type Route struct {
-	Guid string `json:"guid"`
-	URL  string `json:"url"`
+	URL string `json:"url"`
 }
 
 func (r Roles) HasRole(roleType RoleType) bool {

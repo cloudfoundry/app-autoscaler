@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -69,20 +70,26 @@ func (h *Handler) Unpark(w http.ResponseWriter, _ *http.Request, vars map[string
 	w.WriteHeader(http.StatusOK)
 }
 
-// HandleRouteService is Loop A: hold the request, wake the app, wait for
-// readiness (routing-api Upsert), then forward to X-CF-Forwarded-Url so
-// Gorouter delivers it to the now-live app. On timeout: 503 + Retry-After.
+// HandleRouteService is Loop A. The activator is registered (via NATS) as a
+// backend of the parked app's route, so a request for a zero-instance app lands
+// here directly (on the app's Host header — there is NO X-CF-Forwarded-Url,
+// unlike a route service). We hold the request, wake the app, wait for
+// readiness, then forward to the app's real route. On timeout: 503 + Retry-After.
+//
+// Loop-break: while parked, the activator is still a registered backend for the
+// app's host, so forwarding to https://<host> could loop back here. The
+// ReadinessWatcher (Loop B) Unparks the app on the readiness Upsert — which
+// deregisters the activator — so by the time `ready` fires, Gorouter has only
+// the real app as a backend and the forward reaches it.
 func (h *Handler) HandleRouteService(w http.ResponseWriter, r *http.Request) {
-	forwardedURL := r.Header.Get("X-CF-Forwarded-Url")
-	appID := h.appForForwardedURL(forwardedURL)
+	appID := h.appForHost(r.Host)
 	if appID == "" {
-		// Not a parked app we know about; nothing we can do but signal retry.
-		h.logger.Info("no-parked-app-for-request", lager.Data{"forwardedURL": forwardedURL})
+		h.logger.Info("no-parked-app-for-request", lager.Data{"host": r.Host})
 		writeRetry(w)
 		return
 	}
 
-	logger := h.logger.Session("wake", lager.Data{"appID": appID})
+	logger := h.logger.Session("wake", lager.Data{"appID": appID, "host": r.Host})
 	logger.Info("waking")
 
 	// Register the readiness waiter BEFORE triggering the scale-up, so an Upsert
@@ -103,14 +110,26 @@ func (h *Handler) HandleRouteService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info("ready-forwarding")
-	h.forward(w, r, forwardedURL, logger)
+	// The app is up and Loop B has deregistered the activator for this host, so
+	// forwarding to the app's own URL now reaches the real app, not the activator.
+	target := requestURL(r)
+	logger.Info("ready-forwarding", lager.Data{"target": target})
+	h.forward(w, r, target, logger)
 }
 
-// forward proxies the held request to forwardedURL, preserving the CF proxy
-// headers so Gorouter delivers straight to the live app.
-func (h *Handler) forward(w http.ResponseWriter, r *http.Request, forwardedURL string, logger lager.Logger) {
-	outReq, err := http.NewRequestWithContext(r.Context(), r.Method, forwardedURL, r.Body)
+// requestURL reconstructs the absolute URL for the incoming (route-served)
+// request from its Host and path.
+func requestURL(r *http.Request) string {
+	scheme := "https"
+	if fproto := r.Header.Get("X-Forwarded-Proto"); fproto != "" {
+		scheme = fproto
+	}
+	return fmt.Sprintf("%s://%s%s", scheme, r.Host, r.URL.RequestURI())
+}
+
+// forward proxies the held request to targetURL (the woken app's route).
+func (h *Handler) forward(w http.ResponseWriter, r *http.Request, targetURL string, logger lager.Logger) {
+	outReq, err := http.NewRequestWithContext(r.Context(), r.Method, targetURL, r.Body)
 	if err != nil {
 		logger.Error("build-forward-request-failed", err)
 		writeRetry(w)
@@ -135,23 +154,31 @@ func (h *Handler) forward(w http.ResponseWriter, r *http.Request, forwardedURL s
 	_, _ = io.Copy(w, resp.Body)
 }
 
-// appForForwardedURL matches the forwarded request URL to a parked app by host.
-func (h *Handler) appForForwardedURL(forwardedURL string) string {
-	if forwardedURL == "" {
-		return ""
-	}
-	reqHost := hostOf(forwardedURL)
-	if reqHost == "" {
+// appForHost matches the incoming request Host to a parked app by route host.
+func (h *Handler) appForHost(reqHost string) string {
+	host := hostOnly(reqHost)
+	if host == "" {
 		return ""
 	}
 	for _, appID := range h.registry.ParkedApps() {
 		for _, routeURL := range h.registry.RoutesFor(appID) {
-			if hostOf(routeURL) == reqHost {
+			if hostOf(routeURL) == host {
 				return appID
 			}
 		}
 	}
 	return ""
+}
+
+// hostOnly strips any port from a request Host header.
+func hostOnly(hostport string) string {
+	if hostport == "" {
+		return ""
+	}
+	if h, _, err := net.SplitHostPort(hostport); err == nil {
+		return h
+	}
+	return hostport
 }
 
 func hostOf(raw string) string {

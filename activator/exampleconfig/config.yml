@@ -12,9 +12,16 @@ health:
     port: 8081
 logging:
   level: info
-route_service_upsi_name: autoscaler-activator-rs
-route_service_url: https://activator.cf.example.com
 readiness_timeout: 30s
+nats:
+  urls:
+    - nats-mtls://nats.service.cf.internal:4224
+  refresh_seconds: 20
+  stale_seconds: 120
+  tls:
+    key_file: "../testcerts/nats-client.key"
+    cert_file: "../testcerts/nats-client.crt"
+    ca_file: "../testcerts/nats-ca.crt"
 scaling_engine:
   scaling_engine_url: https://scalingengine.cf.example.com
   tls:
