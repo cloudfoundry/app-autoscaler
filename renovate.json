@@ -104,6 +104,35 @@
         "/^org\\.liquibase:.*/"
       ],
       "enabled": false
+    },
+    {
+      "description": "Group together clis that are likely to have no impact on the result of the acceptance-tests. This is for speed-increase and to reduce the traffic-jam in the renovate-dependecy-dashboard <https://github.com/cloudfoundry/app-autoscaler/issues/832>.",
+      "groupName": "Low risk cli-updates",
+      "matchManagers": ["devbox"],
+      "prPriority": -1,
+      "matchDepNames": [
+        "bash-language-server",
+        "cloudfoundry-cli",
+        "coreutils",
+        "credhub-cli",
+        "curl",
+        "delve",
+        "gh",
+        "gnumake",
+        "gnused",
+        "gnutar",
+        "gopls",
+        "jdt-language-server",
+        "jq",
+        "maven",
+        "openssl",
+        "python",
+        "ripgrep",
+        "shellcheck",
+        "which",
+        "xq-xml",
+        "yq-go"
+      ]
     }
   ],
   "nix": {
