@@ -140,6 +140,8 @@ resources:
           nats:
             urls:
               - nats-mtls://nats.service.cf.internal:4224
+            username: nats
+            password: ${NATS_PASSWORD}
             refresh_seconds: 20
             stale_seconds: 120
 

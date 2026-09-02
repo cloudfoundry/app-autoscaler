@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -70,9 +71,19 @@ type NatsConfig struct {
 // NewNatsRegistrar dials NATS (mTLS) and returns a Registrar that advertises the
 // given self backend tuple for parked routes.
 func NewNatsRegistrar(logger lager.Logger, conf NatsConfig, self SelfBackend) (Registrar, error) {
+	log := logger.Session("nats-registrar")
 	opts := []nats.Option{
 		nats.Name("autoscaler-activator"),
 		nats.MaxReconnects(-1),
+		// Do not crash the activator if NATS is briefly unavailable: keep
+		// retrying the initial connect and all reconnects in the background.
+		nats.RetryOnFailedConnect(true),
+		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
+			log.Error("nats-disconnected", err)
+		}),
+		nats.ReconnectHandler(func(c *nats.Conn) {
+			log.Info("nats-reconnected", lager.Data{"url": c.ConnectedUrl()})
+		}),
 	}
 	if conf.Username != "" {
 		opts = append(opts, nats.UserInfo(conf.Username, conf.Password))
@@ -87,9 +98,12 @@ func NewNatsRegistrar(logger lager.Logger, conf NatsConfig, self SelfBackend) (R
 		opts = append(opts, nats.Secure(&tls.Config{MinVersion: tls.VersionTLS12})) //nolint:gosec // MinVersion set
 	}
 
+	// With RetryOnFailedConnect, Connect returns a usable (reconnecting) conn
+	// even if the server is down right now, so a NATS outage never fails
+	// activator startup — only genuine option errors do.
 	conn, err := nats.Connect(joinURLs(conf.URLs), opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed connecting to NATS: %w", err)
+		return nil, fmt.Errorf("failed initialising NATS connection: %w", err)
 	}
 
 	refresh := defaultRefreshInterval
@@ -102,7 +116,7 @@ func NewNatsRegistrar(logger lager.Logger, conf NatsConfig, self SelfBackend) (R
 	}
 
 	return &natsRegistrar{
-		logger:          logger.Session("nats-registrar"),
+		logger:          log,
 		conn:            conn,
 		self:            self,
 		refreshInterval: refresh,
@@ -177,12 +191,5 @@ func (r *natsRegistrar) publish(subject string, uris []string) error {
 }
 
 func joinURLs(urls []string) string {
-	out := ""
-	for i, u := range urls {
-		if i > 0 {
-			out += ","
-		}
-		out += u
-	}
-	return out
+	return strings.Join(urls, ",")
 }

@@ -66,6 +66,7 @@ load_secrets() {
     "export NATS_CA="                                 + (.nats_ca                                 | @sh),
     "export NATS_CLIENT_CERT="                        + (.nats_client_cert                        | @sh),
     "export NATS_CLIENT_KEY="                         + (.nats_client_key                         | @sh),
+    "export NATS_PASSWORD="                           + (.nats_password                           | @sh),
     "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh)
   ' "${secrets_file}")"
   eval "${exports}"
@@ -93,6 +94,7 @@ syslog_client_key: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.private_key)
 nats_ca: ((/bosh-autoscaler/cf/nats_client_cert.ca))
 nats_client_cert: ((/bosh-autoscaler/cf/nats_client_cert.certificate))
 nats_client_key: ((/bosh-autoscaler/cf/nats_client_cert.private_key))
+nats_password: ((/bosh-autoscaler/cf/nats_password))
 
 database_username: pgadmin
 database_password: ((/bosh-autoscaler/postgres/pgadmin_database_password))
