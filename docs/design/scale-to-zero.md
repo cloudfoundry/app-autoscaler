@@ -324,24 +324,43 @@ avoids the always-possible route-service latency hop.
 
 ## 9. Open questions / risks to resolve during PoC
 
-1. **Route-service bind/unbind latency** — measure async job completion time; confirm park isn't
-   sluggish and woken apps don't linger behind the hop. (Bind is on the park critical path; unbind
-   is lazy/off-path.)
-2. **Cooldown vs wake** — the engine's DB cooldown could suppress a cold-start scale-up; the wake
-   path likely needs a bypass or distinct path so cold starts aren't treated as oscillation.
-3. **Activator HA** — multiple activator instances: the held request lives on the instance Gorouter
-   chose; any instance must be able to complete the forward (route-service forward goes back through
-   Gorouter, so this is naturally fine). Parked-app registry should be reconstructable via reconcile
-   (§5.4) rather than shared in-memory state.
-4. **Route-service "Experimental" edges** — validate zero-instance forwarding and header handling on
-   the actual target deployment.
-5. **Multiple / path-based routes per app** — bind all of an app's routes; handle path routes.
+1. **Wake timeout — how long to hold a request while the app cold-starts (unresolved design
+   decision).** The activator holds the incoming request until the app is ready, bounded by
+   `ReadinessTimeout` (currently 120s). There is real tension here:
+   - **Too short** → we return 503/Retry-After before an app that legitimately takes a while to
+     start has come up, defeating the "client only notices a slower request" goal. The right upper
+     bound should arguably **respect the app's / platform's configured startup + readiness health
+     check timeouts** (CF `health-check-invocation-timeout`, `timeout`, and the platform default),
+     since those already express "how long this app is allowed to take to become healthy". Reading
+     those per-app and sizing the wait accordingly (rather than a fixed activator constant) is the
+     principled approach.
+   - **Too long** → we hold client connections (and the activator's own resources) for the full
+     window; the client/Gorouter may time out anyway, and a crash-looping app would tie up held
+     requests. Need an upper cap regardless of the app's configured timeout.
+   Decide: fixed cap vs. derived-from-app-config vs. min(app-config, hard-cap); and what the held
+   request sees on timeout (503 + Retry-After today). **Not yet designed — flagged for follow-up.**
+2. **Cooldown vs wake — RESOLVED.** The scale-to-zero set a cooldown that suppressed the immediate
+   wake scale-up (observed live: "scaling ignored: App in cooldown"). Fixed via
+   `Trigger.BypassCooldown`, which the activator's wake sets so the engine scales up despite the
+   cooldown. Keep in mind for re-park stability (item 8).
+3. **Activator HA** — multiple activator instances register as backends for a parked route (Gorouter
+   load-balances across them); the held request lives on the instance Gorouter chose. Parked-app
+   registry must be reconstructable via reconcile (§5.4) rather than shared in-memory state, and each
+   instance must publish its own tuple.
+4. **NATS registration correctness on the target** — validated live that Gorouter accepts the
+   cross-app `router.register` and routes to the activator over mTLS. Confirm behaviour holds across
+   Gorouter/route-emitter restarts and the route-emitter's own (real-app) registrations after wake
+   (last-writer / load-balance handoff — see §3).
+5. **Multiple / path-based routes per app** — register all of an app's route URIs; handle path routes.
 6. **Non-HTTP / no-route apps** — PoC scopes to HTTP routes. Apps with no routes: scale-to-zero is
    fine but only a schedule can wake them (no request trigger).
-7. **Security** — activator forwards arbitrary app traffic; lock down (mTLS to engine, scoped UAA
-   creds, ASG egress only) and forward strictly per `X-CF-Forwarded-Url`.
+7. **Security** — the activator holds the NATS route-registration cert = ability to register routes
+   for ANY app on the foundation (Gorouter trusts NATS unconditionally). Real trust escalation for
+   operator/security review. Also lock down the engine↔activator mTLS and the ASG egress. (Deferred
+   to a GitHub issue.)
 8. **Re-park loop stability** — avoid flapping between park and wake for bursty-but-idle apps
-   (respect cooldown / a minimum-parked dwell time).
+   (respect cooldown / a minimum-parked dwell time). Note this interacts with the BypassCooldown of
+   item 2 — the wake bypasses cooldown, but the subsequent idle-driven re-park should not thrash.
 
 ## 10. Out of scope for PoC
 
