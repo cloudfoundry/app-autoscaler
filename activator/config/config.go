@@ -16,7 +16,7 @@ const (
 	DefaultServerPort       = 8080
 	DefaultHealthServerPort = 8081
 	DefaultCFServerPort     = 8082
-	DefaultReadinessTimeout = 30 * time.Second
+	DefaultReadinessTimeout = 120 * time.Second
 )
 
 // Config is the activator service configuration. The activator parks apps

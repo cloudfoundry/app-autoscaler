@@ -141,7 +141,10 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		return nil, err
 	}
 	result.CooldownExpiredAt = expiredAt
-	if !ok {
+	// The activator's scale-from-zero wake sets BypassCooldown: it must scale up
+	// immediately even though the scale-to-zero that just parked the app set a
+	// cooldown window.
+	if !ok && !trigger.BypassCooldown {
 		logger.Info("scaling ignored: App in cooldown")
 		history.Status = models.ScalingStatusIgnored
 		history.NewInstances = instances

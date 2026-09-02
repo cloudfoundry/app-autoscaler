@@ -37,9 +37,10 @@ func NewScalingEngineClient(logger lager.Logger, httpClient *http.Client, engine
 // The scaling engine has no absolute "scale to N", so "+1" is the wake step.
 func (c *scalingEngineClient) ScaleUp(ctx context.Context, appID string) error {
 	trigger := &models.Trigger{
-		AppId:      appID,
-		MetricType: "scale-from-zero",
-		Adjustment: "+1",
+		AppId:          appID,
+		MetricType:     "scale-from-zero",
+		Adjustment:     "+1",
+		BypassCooldown: true,
 	}
 	body, err := json.Marshal(trigger)
 	if err != nil {

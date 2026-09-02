@@ -234,6 +234,24 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("when app is in cooldown but the trigger bypasses cooldown (scale-from-zero wake)", func() {
+			BeforeEach(func() {
+				setAppAndProcesses(0, appState)
+				scalingEngineDB.CanScaleAppReturns(false, clock.Now().Add(30*time.Second).UnixNano(), nil)
+				policyDB.GetAppPolicyReturns(&models.PolicyDefinition{InstanceMin: 0, InstanceMax: 6}, nil)
+				trigger.Adjustment = "+1"
+				trigger.BypassCooldown = true
+			})
+
+			It("scales up despite the cooldown", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfc.ScaleAppWebProcessCallCount()).To(Equal(1))
+				_, _, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				Expect(num).To(Equal(1))
+				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
+			})
+		})
+
 		Context("when app instances not changed", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+1"
