@@ -65,6 +65,7 @@ func NewSyslogWriter(conf SyslogConfig) (egress.WriteCloser, error) {
 			netConf,
 			&noopCounter{},
 			syslog.NewConverter(),
+			nil,
 		)
 	case "syslog-tls":
 		writer = syslog.NewTLSWriter(
@@ -73,6 +74,7 @@ func NewSyslogWriter(conf SyslogConfig) (egress.WriteCloser, error) {
 			tlsConfig,
 			&noopCounter{},
 			syslog.NewConverter(),
+			nil,
 		)
 	default:
 		return nil, fmt.Errorf("unsupported syslog scheme: %s", binding.URL.Scheme)
