@@ -13,7 +13,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	github.com/prometheus/procfs v0.21.0
-	github.com/steinfletcher/apitest v1.6.0
+	github.com/steinfletcher/apitest v1.6.1
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
 	go.opentelemetry.io/otel/trace v1.42.0
