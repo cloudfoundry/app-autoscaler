@@ -129,14 +129,6 @@ resources:
             secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
           scaling_engine:
             scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
-          routing_api:
-            url: https://api.${default-domain}
-            skip_ssl_validation: true
-            uaa:
-              url: https://uaa.${default-domain}
-              client_id: ${ACTIVATOR_ROUTING_API_UAA_CLIENT_ID}
-              client_secret: ${ACTIVATOR_ROUTING_API_UAA_CLIENT_SECRET}
-              grant_type: client_credentials
           nats:
             urls:
               - nats-mtls://nats.service.cf.internal:4224

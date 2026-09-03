@@ -38,8 +38,11 @@ func main() {
 	startup.ExitOnError(err, logger, "failed to create scaling engine http client")
 	engineClient := activator.NewScalingEngineClient(logger, engineHTTPClient, conf.ScalingEngine.ScalingEngineURL)
 
-	// routing-api event subscriber (readiness signal) + Loop B watcher.
-	subscriber := activator.NewRoutingAPISubscriber(logger, conf.RoutingAPI.URL, conf.RoutingAPI.SkipSSLValidation, conf.RoutingAPI.UAACreds)
+	// readiness signal + Loop B watcher. Readiness comes from the SAME NATS bus
+	// used for route keep-alive: when route-emitter registers the real app's
+	// backend for a parked route, the watcher observes it (filtering out the
+	// activator's own registrations) and un-parks the app.
+	subscriber := activator.NewNatsRouteEventSubscriber(logger, registrar.Conn(), selfBackend)
 	watcher := activator.NewReadinessWatcher(logger, subscriber, registry, parker)
 
 	// Client used to forward held requests to the woken app (via Gorouter).
@@ -73,9 +76,9 @@ func registrarRunner(registrar activator.Registrar) ifrit.Runner {
 }
 
 // watcherRunner runs the ReadinessWatcher's event loop (Loop B) until signaled.
-// A failure to reach the routing-api event stream must NOT crash the activator:
-// the health, park/unpark, and route-service surfaces stay useful, and the
-// watcher reconnects with backoff.
+// A failure to consume the NATS route-event stream must NOT crash the activator:
+// the health, park/unpark, and request surfaces stay useful, and the watcher
+// reconnects with backoff.
 func watcherRunner(logger lager.Logger, watcher activator.ReadinessWatcher) ifrit.Runner {
 	return ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		ctx, cancel := context.WithCancel(context.Background())

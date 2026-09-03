@@ -28,11 +28,3 @@ scaling_engine:
     key_file: "../testcerts/client.key"
     cert_file: "../testcerts/client.crt"
     ca_file: "../testcerts/ca.crt"
-routing_api:
-  url: https://api.cf.example.com
-  skip_ssl_validation: true
-  uaa:
-    url: https://uaa.cf.example.com
-    client_id: routing_api_client
-    client_secret: routing_api_secret
-    grant_type: client_credentials

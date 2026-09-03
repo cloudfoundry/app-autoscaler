@@ -118,6 +118,46 @@ The activator implementation below (route-service binding) is retained as the sc
 interception mechanism must be replaced with route-destination mapping once `route_sharing` is
 enabled.
 
+### 2.1.1 Update (2026-09-03): NATS backend registration works — for both keep-alive and readiness
+
+The pessimistic conclusion above (line "Direct-to-Gorouter registration … not viable") was **wrong
+about NATS** and is **superseded**. The overlay-IP objection does not apply: the activator does **not**
+register its silk overlay IP. It registers the tuple its own cell's route-emitter already advertises
+for the activator's route — `host = CF_INSTANCE_IP` (the Diego **cell** IP, on the BOSH net and
+Gorouter-reachable), `tls_port = external_tls_proxy` from `CF_INSTANCE_PORTS`, `server_cert_domain_san
+= CF_INSTANCE_GUID`. Publishing `router.register` with `uris=[parkedapp.domain]` and that tuple makes
+Gorouter route the parked hostname to the activator **over mTLS with route integrity** (the backend
+cert SAN matches the activator's real instance GUID). Gorouter does no ownership validation on
+`router.register`. This is **live-validated**: a parked app's route resolves to the activator; the
+wake request reaches it over mTLS. NATS reachability needs only an operator-settable ASG (done).
+
+So the chosen mechanism is **NATS `router.register` (backend-only)**, not route destinations. The
+route-service binding scaffolding is fully removed; §3–§5 below describe route-service mechanics and
+are **historical** — read §3.1 / §5.x "NATS" notes for the shipped design.
+
+**Readiness signal — routing-api was tried and abandoned.** The first cut used the CF routing-api
+event stream (`GET /routing/v1/events`) as the "app is up" signal (Loop B). Live CI showed the
+subscription returns **`401 Unauthorized`** from the event source even with a valid `routing_api_client`
+token carrying `routing.routes.read` — so no `Upsert` ever arrived, the wake handler timed out at the
+120 s readiness cap (`app-not-ready-in-time`), the held request was never forwarded, and the client
+`curl` hung. (This was the actual CI failure — **not** the cooldown gate; the `BypassCooldown` fix
+worked: the wake `POST /scale` returned 200 with no cooldown rejection.)
+
+**Resolution — readiness over the same NATS bus.** route-emitter publishes `router.register` for a
+real app instance's backend on the **same** bus the activator is already connected to (confirmed from
+gorouter source `mbus/subscriber.go`: Gorouter subscribes to `router.*`; there is one route bus; since
+the activator's own `router.register` reaches Gorouter on it, route-emitter's do too). The readiness
+watcher now **subscribes to `router.register`** on the registrar's existing NATS connection and treats
+"a registration for a parked URI from a backend that is **not** the activator (filtered by
+`private_instance_id` / `server_cert_domain_san`, or host+`tls_port`)" as the readiness edge. This
+removes the routing-api HTTP stream, the UAA `routing_api_client` dependency + credhub secret, and the
+second transport entirely — one NATS connection now serves both keep-alive and readiness. Trade-off:
+readiness latency is bounded by route-emitter's register cadence (worst case ~one emit cycle), and the
+subscriber must self-filter its own keep-alive registrations. On the readiness Upsert the watcher
+**deregisters the activator's own backend before releasing the held request**, so the forward to
+`https://<host>` reaches the real app and cannot load-balance back to the activator during the window
+both backends are pooled.
+
 ## 3. Interception mechanism: bind only while parked
 
 The route service is a **user-provided service instance** (UPSI) whose

@@ -2,25 +2,26 @@
 // the autoscaler. It is the counterpart to the scaling engine's Activator seam
 // (see scalingengine/activator.go and docs/design/scale-to-zero.md).
 //
-// The activator is a CF app bound as a route service. While an app is parked
-// (scaled to zero), its routes are bound to the activator route-service so
-// Gorouter forwards requests here instead of to the zero-instance app. The
-// activator then runs two decoupled loops:
+// While an app is parked (scaled to zero), the activator registers itself as an
+// mTLS backend for the app's routes on the Gorouter NATS bus (router.register),
+// keeping the routes alive so Gorouter forwards requests to the activator
+// instead of returning 404 for the zero-instance app. It then runs two decoupled
+// loops:
 //
 //   - Loop A (request handling): hold the incoming request, ask the scaling
 //     engine to scale the app to 1, wait for the app's readiness signal, then
-//     forward the held request back to X-CF-Forwarded-Url so Gorouter delivers
-//     it to the now-live app. On timeout, return 503 + Retry-After.
+//     forward the held request to the app's real route so Gorouter delivers it
+//     to the now-live app. On timeout, return 503 + Retry-After.
 //
-//   - Loop B (unpark): driven by the routing-api Upsert event stream. When an
-//     app the activator has parked registers its real endpoint (from any cause
-//     — request-driven, scheduled, or manual `cf scale`), unbind its route
-//     service. A periodic reconcile against CF is the safety net for missed
-//     events / activator restarts.
+//   - Loop B (unpark): driven by the same NATS bus. When route-emitter registers
+//     an app's real backend for a route the activator has parked (from any cause
+//     — request-driven, scheduled, or manual `cf scale`), the activator
+//     deregisters its own backend for that route and releases held requests. A
+//     periodic reconcile against CF is the safety net for missed events /
+//     activator restarts.
 //
-// This file is the PoC scaffold: the loops are defined as seams with stub
-// implementations so the service compiles and runs. Real routing-api and CF
-// route-service integration lands as the loops are implemented.
+// Park/Unpark drive the NATS registration; the readiness signal is a
+// router.register for a parked route from a backend other than the activator.
 package activator
 
 import (
@@ -29,10 +30,10 @@ import (
 	"code.cloudfoundry.org/lager/v3"
 )
 
-// Parker binds and unbinds an app's routes to the activator route-service.
-// Park is the operation the scaling engine's Activator.Park ultimately drives
-// (bind -> confirm -> scale-to-0). Unpark is invoked by Loop B once an app is
-// observed to be up again.
+// Parker registers and unregisters an app's routes with the activator as their
+// mTLS backend on the NATS bus. Park is the operation the scaling engine's
+// Activator.Park ultimately drives (register -> confirm -> scale-to-0). Unpark
+// is invoked by Loop B once an app is observed to be up again.
 type Parker interface {
 	Park(ctx context.Context, appID string) error
 	Unpark(ctx context.Context, appID string) error
@@ -51,14 +52,15 @@ type Registry interface {
 }
 
 // ReadinessWatcher is Loop B: it consumes route-registration (Upsert) events
-// and signals when a parked app's real endpoint has come up.
+// from the NATS bus and signals when a parked app's real endpoint has come up
+// (a router.register from a backend other than the activator).
 type ReadinessWatcher interface {
 	// WaitForReady returns a channel that receives nil when the app is observed
 	// ready, or ctx.Err() if ctx is done first. Register the waiter before
-	// triggering the scale-up to avoid missing a fast Upsert.
+	// triggering the scale-up to avoid missing a fast registration.
 	WaitForReady(ctx context.Context, appID string) <-chan error
 	// Run consumes the event stream until ctx is done, un-parking apps whose
-	// Upsert arrives regardless of what caused the scale-up.
+	// registration arrives regardless of what caused the scale-up.
 	Run(ctx context.Context) error
 }
 

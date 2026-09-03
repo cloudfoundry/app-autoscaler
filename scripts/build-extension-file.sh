@@ -52,8 +52,6 @@ load_secrets() {
   exports="$(yq '
     "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_ID="  + (.eventgenerator_log_cache_uaa_client_id  | @sh),
     "export EVENTGENERATOR_LOG_CACHE_UAA_CLIENT_SECRET=" + (.eventgenerator_log_cache_uaa_client_secret | @sh),
-    "export ACTIVATOR_ROUTING_API_UAA_CLIENT_ID="     + (.activator_routing_api_uaa_client_id     | @sh),
-    "export ACTIVATOR_ROUTING_API_UAA_CLIENT_SECRET=" + (.activator_routing_api_uaa_client_secret | @sh),
     "export CF_ADMIN_PASSWORD="                       + (.cf_admin_password                       | @sh),
     "export POSTGRES_IP="                             + (.postgres_ip                             | @sh),
     "export DATABASE_DB_USERNAME="                    + (.database_username                       | @sh),
@@ -83,9 +81,6 @@ postgres_ip: ((/bosh-autoscaler/postgres/postgres_host_or_ip))
 
 eventgenerator_log_cache_uaa_client_id: eventgenerator_log_cache
 eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_eventgenerator_log_cache_secret))
-
-activator_routing_api_uaa_client_id: routing_api_client
-activator_routing_api_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_routing_api_client_secret))
 
 syslog_client_ca: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.ca))
 syslog_client_cert: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.certificate))

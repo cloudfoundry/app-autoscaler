@@ -2,27 +2,28 @@ package activator
 
 import (
 	"context"
+	"slices"
 	"sync"
 
 	"code.cloudfoundry.org/lager/v3"
 )
 
-// RouteEvent is a route-registration event from the routing-api stream,
-// decoupled from the concrete client type for testability.
+// RouteEvent is a route-registration event observed on the NATS bus,
+// decoupled from the concrete transport for testability.
 type RouteEvent struct {
 	RouteURL string
 	Action   string // "Upsert" or "Delete"
 }
 
-// RouteEventStream is the subset of routing-api's EventSource we consume.
+// RouteEventStream is the stream of route-registration events consumed by Loop B.
 type RouteEventStream interface {
 	Next() (RouteEvent, error)
 	Close() error
 }
 
 // RouteEventSubscriber opens a route-registration event stream. The real
-// implementation wraps routing_api.Client.SubscribeToEvents (see
-// routing_events.go); tests supply a fake.
+// implementation subscribes to router.register on the Gorouter NATS bus (see
+// nats_route_events.go); tests supply a fake.
 type RouteEventSubscriber interface {
 	Subscribe() (RouteEventStream, error)
 }
@@ -30,9 +31,10 @@ type RouteEventSubscriber interface {
 const actionUpsert = "Upsert"
 
 // readinessWatcher is Loop B: it consumes route-registration events and, when a
-// parked app's route is (re)registered by route-emitter (an Upsert), treats the
-// app as ready — releasing held requests and un-parking it. See
-// docs/design/scale-to-zero.md §5.3.
+// parked app's route is (re)registered by route-emitter with a real backend (an
+// Upsert observed on the NATS bus, filtered to exclude the activator's own
+// registrations), treats the app as ready — un-parking it and releasing held
+// requests. See docs/design/scale-to-zero.md §5.3.
 type readinessWatcher struct {
 	logger     lager.Logger
 	subscriber RouteEventSubscriber
@@ -126,20 +128,21 @@ func (w *readinessWatcher) handleUpsert(ctx context.Context, routeURL string) {
 	}
 	w.logger.Info("app-ready-upsert", lager.Data{"appID": appID, "route": routeURL})
 
-	// Wake held requests first, then un-park (unbind route service) lazily so a
-	// slow unbind never drops traffic.
-	w.wakeWaiters(appID)
+	// Un-park (deregister the activator's own backend for this route) BEFORE
+	// releasing held requests. On the NATS bus the real app's backend and the
+	// activator are momentarily both registered for the same URI; deregistering
+	// ourselves first ensures a released request forwarded to https://<host>
+	// reaches the real app and cannot load-balance back to the activator.
 	if err := w.parker.Unpark(ctx, appID); err != nil {
 		w.logger.Error("failed-to-unpark", err, lager.Data{"appID": appID})
 	}
+	w.wakeWaiters(appID)
 }
 
 func (w *readinessWatcher) appForRoute(routeURL string) string {
 	for _, appID := range w.registry.ParkedApps() {
-		for _, u := range w.registry.RoutesFor(appID) {
-			if u == routeURL {
-				return appID
-			}
+		if slices.Contains(w.registry.RoutesFor(appID), routeURL) {
+			return appID
 		}
 	}
 	return ""

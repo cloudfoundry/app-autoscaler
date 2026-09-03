@@ -47,8 +47,8 @@ func NewHandler(
 	}
 }
 
-// Park binds the app's routes to the activator route-service. Called by the
-// scaling engine before it scales the app to zero.
+// Park registers the app's routes with the activator as their NATS backend.
+// Called by the scaling engine before it scales the app to zero.
 func (h *Handler) Park(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	appID := vars["appid"]
 	if err := h.parker.Park(context.Background(), appID); err != nil {
@@ -59,7 +59,7 @@ func (h *Handler) Park(w http.ResponseWriter, _ *http.Request, vars map[string]s
 	w.WriteHeader(http.StatusOK)
 }
 
-// Unpark unbinds the app's routes from the activator route-service.
+// Unpark deregisters the app's routes from the activator's NATS backend.
 func (h *Handler) Unpark(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	appID := vars["appid"]
 	if err := h.parker.Unpark(context.Background(), appID); err != nil {

@@ -44,9 +44,9 @@ var _ = Describe("Config", func() {
 			configFile = "../exampleconfig/config.yml"
 		})
 
-		It("reads the routing_api url and scaling engine url", func() {
+		It("reads the nats urls and scaling engine url", func() {
 			Expect(err).NotTo(HaveOccurred())
-			Expect(conf.RoutingAPI.URL).To(Equal("https://api.cf.example.com"))
+			Expect(conf.Nats.URLs).To(ContainElement("nats-mtls://nats.service.cf.internal:4224"))
 			Expect(conf.ScalingEngine.ScalingEngineURL).To(Equal("https://scalingengine.cf.example.com"))
 			Expect(conf.Validate()).To(Succeed())
 		})

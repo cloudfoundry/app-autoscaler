@@ -32,6 +32,9 @@ type Registrar interface {
 	Unregister(uris []string) error
 	// Run keeps all currently-registered URIs fresh until the context is done.
 	Run(stop <-chan struct{})
+	// Conn exposes the underlying NATS connection so the readiness watcher can
+	// subscribe to router.register on the same bus (see readiness_watcher.go).
+	Conn() *nats.Conn
 }
 
 // registerMessage is the router.register / router.unregister NATS payload
@@ -123,6 +126,10 @@ func NewNatsRegistrar(logger lager.Logger, conf NatsConfig, self SelfBackend) (R
 		staleThreshold:  stale,
 		uris:            make(map[string]struct{}),
 	}, nil
+}
+
+func (r *natsRegistrar) Conn() *nats.Conn {
+	return r.conn
 }
 
 func (r *natsRegistrar) Register(uris []string) error {

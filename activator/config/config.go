@@ -19,9 +19,10 @@ const (
 	DefaultReadinessTimeout = 120 * time.Second
 )
 
-// Config is the activator service configuration. The activator parks apps
-// behind a route service while they are scaled to zero and wakes them on the
-// first incoming request. See docs/design/scale-to-zero.md.
+// Config is the activator service configuration. The activator keeps a
+// zero-instance app's route routable (by registering itself as an mTLS backend
+// on the Gorouter NATS bus) and wakes the app on the first incoming request.
+// See docs/design/scale-to-zero.md.
 type Config struct {
 	configutil.BaseConfig `yaml:",inline" json:",inline"`
 
@@ -38,25 +39,12 @@ type Config struct {
 
 	// ScalingEngine is used to wake parked apps.
 	ScalingEngine ScalingEngineConfig `yaml:"scaling_engine" json:"scaling_engine"`
-
-	// RoutingAPI configures access to the CF routing-api event stream
-	// (GET /routing/v1/events), the app-readiness signal.
-	RoutingAPI RoutingAPIConfig `yaml:"routing_api" json:"routing_api"`
 }
 
 // ScalingEngineConfig points the activator at the scaling engine.
 type ScalingEngineConfig struct {
 	ScalingEngineURL string          `yaml:"scaling_engine_url" json:"scaling_engine_url"`
 	TLSClientCerts   models.TLSCerts `yaml:"tls" json:"tls"`
-}
-
-// RoutingAPIConfig configures access to the CF routing-api. URL must be the
-// base (e.g. https://api.<domain>) WITHOUT a /routing/v1 suffix — the routing-api
-// client appends the /routing/v1/events path itself.
-type RoutingAPIConfig struct {
-	URL               string          `yaml:"url" json:"url"`
-	SkipSSLValidation bool            `yaml:"skip_ssl_validation" json:"skip_ssl_validation"`
-	UAACreds          models.UAACreds `yaml:"uaa" json:"uaa"`
 }
 
 func LoadConfig(filepath string, vcapReader configutil.VCAPConfigurationReader) (*Config, error) {

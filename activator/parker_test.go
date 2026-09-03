@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
 	"code.cloudfoundry.org/lager/v3/lagertest"
+	"github.com/nats-io/nats.go"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -41,6 +42,7 @@ func (f *fakeRegistrar) Unregister(uris []string) error {
 	return nil
 }
 func (f *fakeRegistrar) Run(_ <-chan struct{}) {}
+func (f *fakeRegistrar) Conn() *nats.Conn      { return nil }
 
 var _ = Describe("CFParker", func() {
 	var (
