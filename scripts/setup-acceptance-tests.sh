@@ -21,7 +21,12 @@ function create_cf_test_user() {
 	cf delete-user -f "${username}" || true
 	cf create-user "${username}" "${password}"
 	cf set-org-role "${username}" "${AUTOSCALER_ORG}" OrgManager
-	cf set-space-role "${username}" "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}" SpaceDeveloper
+
+	local existing_org="${EXISTING_ORGANIZATION:-}"
+	if [[ -n "${existing_org}" && "${existing_org}" != "${AUTOSCALER_ORG}" ]]; then
+		log "Granting OrgManager role in existing org: ${existing_org}"
+		cf set-org-role "${username}" "${existing_org}" OrgManager
+	fi
 
 	log "Writing username to GitHub repo variable ${var_name}"
 	gh variable set "${var_name}" --body "${username}" --repo "${repo}"
@@ -35,11 +40,21 @@ function create_cf_test_user() {
 function main() {
 	bbl_login
 	cf_login
+
+	# Ensure org and space exist (first-time setup for main deployments)
+	cf create-org "${AUTOSCALER_ORG}" || cf org "${AUTOSCALER_ORG}" --guid >/dev/null
+	cf target -o "${AUTOSCALER_ORG}"
+	cf create-space "${AUTOSCALER_SPACE}" || cf space "${AUTOSCALER_SPACE}" --guid >/dev/null
 	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 	local repo
 	repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
 	create_cf_test_user "${repo}" "${AUTOSCALER_ORG_MANAGER_USER}" AUTOSCALER_ORG_MANAGER_USER AUTOSCALER_ORG_MANAGER_PASSWORD "Creating org manager CF user"
 	create_cf_test_user "${repo}" "${AUTOSCALER_OTHER_USER}" AUTOSCALER_OTHER_USER AUTOSCALER_OTHER_USER_PASSWORD "Creating other-user for acceptance tests"
+
+	step "Setting METRICSFORWARDER_METRICS_GATEWAY_URL GitHub variable"
+	gh variable set METRICSFORWARDER_METRICS_GATEWAY_URL \
+		--body "https://system-production-metricsgateway.autoscaler.app-runtime-interfaces.ci.cloudfoundry.org" \
+		--repo "${repo}"
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
