@@ -31,7 +31,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
-	github.com/steinfletcher/apitest v1.6.0
+	github.com/steinfletcher/apitest v1.6.1
 	github.com/stretchr/testify v1.12.1
 	github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
