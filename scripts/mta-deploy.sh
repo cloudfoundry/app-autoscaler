@@ -12,7 +12,7 @@ source "${script_dir}/common.sh"
 
 DEST="${DEST:-/tmp/build}"
 MTAR_FILENAME="${MTAR_FILENAME:-app-autoscaler-release-v${VERSION}.mtar}"
-MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,acceptance-tests}"
+MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,activator,acceptance-tests}"
 
 # Compute extension file path
 EXTENSION_FILE="${DEST}/extension-file-${VERSION}.txt"
@@ -44,6 +44,7 @@ pushd "${autoscaler_dir}" > /dev/null
 
 	make -f metricsforwarder/Makefile set-security-group
 	make -f metricsgateway/Makefile set-security-group
+	make -f activator/Makefile set-security-group
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
 	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
 
@@ -54,6 +55,12 @@ popd > /dev/null
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
 cf_login
+cf_target "${autoscaler_org}" "${autoscaler_space}"
+
+# NOTE: the activator route-service is no longer created here. The activator
+# creates a per-space user-provided route-service instance on demand (in each
+# app's space) when it parks an app, avoiding cross-space service sharing (which
+# may be disabled on the foundation). See docs/design/scale-to-zero.md.
 
 set +e
 existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \

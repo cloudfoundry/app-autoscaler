@@ -106,9 +106,10 @@ var _ = Describe("PolicyValidator", func() {
 			})
 		})
 
-		Context("when instance_min_count is < 1", func() {
+		Context("when instance_min_count is 0 (scale-to-zero)", func() {
 			BeforeEach(func() {
 				policyString = `{
+					"schema-version":"0.1",
 					"instance_min_count":0,
 					"instance_max_count":4,
 					"scaling_rules":[
@@ -120,9 +121,31 @@ var _ = Describe("PolicyValidator", func() {
 					}]
 				}`
 			})
+			It("should succeed", func() {
+				Expect(errResult).To(BeNil())
+				Expect(policyDefinition.InstanceMin).To(Equal(0))
+				Expect(policyDefinition.InstanceMax).To(Equal(4))
+			})
+		})
+
+		Context("when instance_max_count is < 1", func() {
+			BeforeEach(func() {
+				policyString = `{
+					"schema-version":"0.1",
+					"instance_min_count":0,
+					"instance_max_count":0,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryused",
+						"threshold":30,
+						"operator":"<",
+						"adjustment":"-1"
+					}]
+				}`
+			})
 			It("should fail", func() {
 				Expect(errResult).To(ContainElement(PolicyValidationErrors{
-					Context:     "(root).instance_min_count",
+					Context:     "(root).instance_max_count",
 					Description: "Must be greater than or equal to 1",
 				}))
 			})

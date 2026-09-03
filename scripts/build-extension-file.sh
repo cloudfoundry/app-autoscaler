@@ -61,6 +61,10 @@ load_secrets() {
     "export DATABASE_DB_CLIENT_KEY="                  + (.database_client_key                     | @sh),
     "export SYSLOG_CLIENT_CA="                        + (.syslog_client_ca                        | @sh),
     "export SYSLOG_CLIENT_CERT="                      + (.syslog_client_cert                      | @sh),
+    "export NATS_CA="                                 + (.nats_ca                                 | @sh),
+    "export NATS_CLIENT_CERT="                        + (.nats_client_cert                        | @sh),
+    "export NATS_CLIENT_KEY="                         + (.nats_client_key                         | @sh),
+    "export NATS_PASSWORD="                           + (.nats_password                           | @sh),
     "export SYSLOG_CLIENT_KEY="                       + (.syslog_client_key                       | @sh)
   ' "${secrets_file}")"
   eval "${exports}"
@@ -81,6 +85,11 @@ eventgenerator_log_cache_uaa_client_secret: ((/bosh-autoscaler/cf/uaa_clients_ev
 syslog_client_ca: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.ca))
 syslog_client_cert: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.certificate))
 syslog_client_key: ((/bosh-autoscaler/cf/syslog_agent_log_cache_tls.private_key))
+
+nats_ca: ((/bosh-autoscaler/cf/nats_client_cert.ca))
+nats_client_cert: ((/bosh-autoscaler/cf/nats_client_cert.certificate))
+nats_client_key: ((/bosh-autoscaler/cf/nats_client_cert.private_key))
+nats_password: ((/bosh-autoscaler/cf/nats_password))
 
 database_username: pgadmin
 database_password: ((/bosh-autoscaler/postgres/pgadmin_database_password))
@@ -108,6 +117,10 @@ export EVENTGENERATOR_INSTANCES="${EVENTGENERATOR_INSTANCES:-2}"
 export METRICSFORWARDER_HOST="${METRICSFORWARDER_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder"}"
 export METRICSFORWARDER_MTLS_HOST="${METRICSFORWARDER_MTLS_HOST:-"${DEPLOYMENT_NAME}-metricsforwarder-mtls"}"
 export METRICSFORWARDER_INSTANCES="${METRICSFORWARDER_INSTANCES:-2}"
+
+# --- Activator (scale-from-zero) ---
+export ACTIVATOR_HOST="${ACTIVATOR_HOST:-"${DEPLOYMENT_NAME}-activator"}"
+export ACTIVATOR_INSTANCES="${ACTIVATOR_INSTANCES:-1}"
 
 # --- Metrics gateway ---
 export USE_METRICSGATEWAY="${USE_METRICSGATEWAY:-true}"
@@ -145,6 +158,11 @@ DATABASE_DB_SERVER_CA="$(escape_newlines "${DATABASE_DB_SERVER_CA}")";     expor
 SYSLOG_CLIENT_CERT="$(escape_newlines "${SYSLOG_CLIENT_CERT}")"; export SYSLOG_CLIENT_CERT
 SYSLOG_CLIENT_KEY="$(escape_newlines "${SYSLOG_CLIENT_KEY}")";   export SYSLOG_CLIENT_KEY
 SYSLOG_CLIENT_CA="$(escape_newlines "${SYSLOG_CLIENT_CA}")";     export SYSLOG_CLIENT_CA
+
+# --- NATS client (activator route registration) ---
+NATS_CLIENT_CERT="$(escape_newlines "${NATS_CLIENT_CERT}")"; export NATS_CLIENT_CERT
+NATS_CLIENT_KEY="$(escape_newlines "${NATS_CLIENT_KEY}")";   export NATS_CLIENT_KEY
+NATS_CA="$(escape_newlines "${NATS_CA}")";                   export NATS_CA
 
 # --- Acceptance tests ---
 export SKIP_SSL_VALIDATION="${SKIP_SSL_VALIDATION:-true}"

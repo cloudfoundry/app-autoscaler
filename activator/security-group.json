@@ -1,0 +1,8 @@
+[
+  {
+    "protocol": "tcp",
+    "destination": "10.0.0.0/16",
+    "ports": "4222,4224",
+    "description": "Allow the activator to reach the CF NATS bus (route registration)"
+  }
+]

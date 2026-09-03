@@ -257,6 +257,15 @@ cf logs acceptance-tests --recent | grep "SUCCESS\|FAILED"
 
 ## Tracking Deferred Findings
 
-Code review/simplify/analysis find issues we skip in current PR → make GitHub issue. One issue per PR/session for all deferred findings. Include file, line, severity, brief fix description.
+File GitHub issues **only** for findings in existing, already-merged code — pre-existing bugs,
+tech debt, or risks that live on `main` independent of the current work. One issue per PR/session
+for all such deferred findings. Include file, line, severity, brief fix description.
 
-No TODO comments in code for deferred findings — GitHub issues only.
+Do **not** file GitHub issues for deferred items that concern the current in-progress branch / an
+unmerged PR (e.g. "we skipped X in this feature", "revisit Y before productionizing this new
+component"). Those belong in the design doc and/or the PR description until the PR is review-ready —
+filing repo issues for not-yet-merged work is premature noise. Once the PR is up for review, its own
+follow-ups can be captured in the PR or as issues then.
+
+No TODO comments in code for deferred findings.
+

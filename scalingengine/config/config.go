@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 )
 
 var (
@@ -24,12 +25,21 @@ type SynchronizerConfig struct {
 	ActiveScheduleSyncInterval time.Duration `yaml:"active_schedule_sync_interval"`
 }
 
+// ActivatorConfig points the scaling engine at the activator service so it can
+// park apps before scaling them to zero. When ActivatorURL is empty,
+// scale-to-zero parking is disabled (a no-op activator is used).
+type ActivatorConfig struct {
+	ActivatorURL   string          `yaml:"activator_url" json:"activator_url"`
+	TLSClientCerts models.TLSCerts `yaml:"tls" json:"tls"`
+}
+
 type Config struct {
 	configutil.BaseConfig `yaml:",inline"`
-	CF                    cf.Config     `yaml:"cf"`
-	DefaultCoolDownSecs   int           `yaml:"defaultCoolDownSecs"`
-	LockSize              int           `yaml:"lockSize"`
-	HttpClientTimeout     time.Duration `yaml:"http_client_timeout"`
+	CF                    cf.Config       `yaml:"cf"`
+	DefaultCoolDownSecs   int             `yaml:"defaultCoolDownSecs"`
+	LockSize              int             `yaml:"lockSize"`
+	HttpClientTimeout     time.Duration   `yaml:"http_client_timeout"`
+	Activator             ActivatorConfig `yaml:"activator"`
 }
 
 func defaultConfig() Config {
@@ -69,6 +79,7 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 		if err := configutil.ApplyCommonVCAPConfiguration(conf, vcapReader, "scalingengine-config"); err != nil {
 			return err
 		}
+		conf.Activator.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
 	}
 
 	return nil

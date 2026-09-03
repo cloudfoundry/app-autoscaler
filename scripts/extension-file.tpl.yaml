@@ -45,6 +45,14 @@ modules:
         - route: ${METRICSFORWARDER_HOST}.${default-domain}
         - route: ${METRICSFORWARDER_MTLS_HOST}.${default-domain}
 
+  - name: activator
+    requires:
+      - name: activator-config
+    parameters:
+      instances: ${ACTIVATOR_INSTANCES}
+      routes:
+        - route: ${ACTIVATOR_HOST}.${default-domain}
+
   - name: metricsgateway
     requires:
       - name: metricsgateway-config
@@ -110,6 +118,24 @@ resources:
           health:
             basic_auth:
               password: ${METRICSFORWARDER_HEALTH_PASSWORD}
+
+  - name: activator-config
+    parameters:
+      config:
+        activator-config:
+          cf:
+            api: https://api.${default-domain}
+            client_id: ${SCALINGENGINE_CF_CLIENT_ID}
+            secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          scaling_engine:
+            scaling_engine_url: https://${SCALINGENGINE_CF_HOST}.${default-domain}
+          nats:
+            urls:
+              - nats-mtls://nats.service.cf.internal:4224
+            username: nats
+            password: ${NATS_PASSWORD}
+            refresh_seconds: 20
+            stale_seconds: 120
 
   - name: metricsgateway-config
     parameters:
@@ -206,6 +232,8 @@ resources:
             api: https://api.${default-domain}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
             secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          activator:
+            activator_url: https://${ACTIVATOR_HOST}.${default-domain}
 
   - name: database
     parameters:
@@ -221,6 +249,13 @@ resources:
         client_cert: "${SYSLOG_CLIENT_CERT}"
         client_key: "${SYSLOG_CLIENT_KEY}"
         server_ca: "${SYSLOG_CLIENT_CA}"
+
+  - name: nats-client
+    parameters:
+      config:
+        client_cert: "${NATS_CLIENT_CERT}"
+        client_key: "${NATS_CLIENT_KEY}"
+        server_ca: "${NATS_CA}"
 
   - name: broker-catalog
     parameters:

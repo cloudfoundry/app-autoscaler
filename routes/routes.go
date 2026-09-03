@@ -59,6 +59,10 @@ const (
 	PublicApiInfoRouteName = "GetPublicApiInfo"
 
 	PublicApiHealthRouteName = "GetPublicApiHealth"
+
+	ActivatorParkPath        = "/v1/apps/{appid}/park"
+	ActivatorParkRouteName   = "ActivatorPark"
+	ActivatorUnparkRouteName = "ActivatorUnpark"
 )
 
 type Router struct {
@@ -77,6 +81,8 @@ func (r *Router) RegisterRoutes() {
 
 	r.CreateScalingEngineRoutes()
 
+	r.CreateActivatorRoutes()
+
 	r.CreateEventGeneratorSubrouter()
 	r.CreateApiPublicSubrouter()
 	r.CreateApiSubrouter()
@@ -92,6 +98,12 @@ func (r *Router) CreateScalingEngineRoutes() *mux.Router {
 	r.router.Path(SyncActiveSchedulesPath).Methods(http.MethodPut).Name(SyncActiveSchedulesRouteName)
 	r.router.Path(LivenessPath).Methods(http.MethodGet).Name(LivenessRouteName)
 
+	return r.router
+}
+
+func (r *Router) CreateActivatorRoutes() *mux.Router {
+	r.router.Path(ActivatorParkPath).Methods(http.MethodPut).Name(ActivatorParkRouteName)
+	r.router.Path(ActivatorParkPath).Methods(http.MethodDelete).Name(ActivatorUnparkRouteName)
 	return r.router
 }
 

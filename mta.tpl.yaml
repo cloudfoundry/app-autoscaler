@@ -136,6 +136,32 @@ modules:
       disk-quota: 1G
       stack: cflinuxfs4
       routes:
+  - name: activator
+    type: go
+    path: .
+    properties:
+      DT_RELEASE_BUILD_VERSION: ${mta-version}
+      GO_INSTALL_PACKAGE_SPEC: code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator/cmd/activator
+      GOTOOLCHAIN: local
+      GOVERSION: go1.26
+    build-parameters:
+      builder: custom
+      commands:
+        # See the apiserver module: ships generated code + vendor/ for the
+        # air-gapped CF Go buildpack compile.
+        - make go-mod-vendor-mta
+      ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
+    requires:
+      - name: activator-config
+      - name: nats-client
+      - name: app-autoscaler-application-logs
+      - name: app-autoscaler-dynatrace
+    parameters:
+      instances: 0 # overridden in build-extension-file.sh
+      memory: 1500M
+      disk-quota: 1G
+      stack: cflinuxfs4
+      routes:
   - name: metricsforwarder
     type: go
     path: .
@@ -313,6 +339,12 @@ resources:
       service-tags:
         - metricsforwarder-config
       path: metricsforwarder/default_config.json
+  - name: activator-config
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - activator-config
+      path: activator/default_config.json
   - name: metricsgateway-config
     type: org.cloudfoundry.user-provided-service
     parameters:
@@ -370,6 +402,11 @@ resources:
     parameters:
       service-tags:
         - syslog-client
+  - name: nats-client
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-tags:
+        - nats-client
   - name: app-autoscaler-application-logs
     active: false
     type: org.cloudfoundry.managed-service
