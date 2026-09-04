@@ -9,7 +9,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/ogen-go/ogen v1.20.3
+	github.com/ogen-go/ogen v1.24.0
 	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	github.com/prometheus/procfs v0.21.0
