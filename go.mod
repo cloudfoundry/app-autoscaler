@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
 	code.cloudfoundry.org/cfhttp/v2 v2.93.0
-	code.cloudfoundry.org/clock v1.83.0
+	code.cloudfoundry.org/clock v1.86.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
 	code.cloudfoundry.org/lager/v3 v3.85.0
@@ -33,7 +33,7 @@ require (
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/steinfletcher/apitest v1.6.1
 	github.com/stretchr/testify v1.12.1
-	github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
+	github.com/tedsuo/ifrit v0.0.0-20260813155221-94822c932811
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -67,7 +67,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
