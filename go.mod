@@ -64,8 +64,8 @@ replace github.com/onsi/ginkgo/v2 => github.com/onsi/ginkgo/v2 v2.32.0
 replace github.com/tedsuo/ifrit => github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
 
 require (
-	code.cloudfoundry.org/go-diodes v0.0.0-20260818081020-5f89c9327272 // indirect
-	code.cloudfoundry.org/go-metric-registry v0.0.0-20260824172628-6c444af08690 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20260831145205-e8366a756183 // indirect
+	code.cloudfoundry.org/go-metric-registry v0.0.0-20260901100552-589270c3b9ea // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/andybalholm/brotli v1.2.3 // indirect
@@ -85,13 +85,13 @@ require (
 	github.com/go-martini/martini v0.0.0-20170121215854-22fa46961aab // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260830191439-4932ad3515ea // indirect
+	github.com/google/pprof v0.0.0-20260903180319-d6c3cb2f37ec // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/martini-contrib/render v0.0.0-20150707142108-ec18f8345a11 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
@@ -100,8 +100,8 @@ require (
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
-	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.70.1 // indirect
+	github.com/prometheus/client_model v0.6.3 // indirect
+	github.com/prometheus/common v0.71.0 // indirect
 	github.com/prometheus/procfs v0.22.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
@@ -121,8 +121,8 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260904194346-d0f1323225a4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260904194346-d0f1323225a4 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
