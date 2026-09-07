@@ -49,6 +49,13 @@ require (
 	google.golang.org/grpc v1.83.2
 )
 
+// Pin Ginkgo to v2.32.0: v2.32.1 makes our unit tests flaky while the Ginkgo CLI
+// shipped via devbox is still on an older version (CLI/library must match). CF
+// transitive deps (lager, clock, cfhttp, loggregator, …) require v2.32.1, so a plain
+// require edit gets bumped back by MVS on every `go mod tidy`; this replace holds it.
+// Remove once the devbox Ginkgo CLI catches up. See renovate.json ginkgo rule.
+replace github.com/onsi/ginkgo/v2 => github.com/onsi/ginkgo/v2 v2.32.0
+
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260818081020-5f89c9327272 // indirect
 	code.cloudfoundry.org/go-metric-registry v0.0.0-20260824172628-6c444af08690 // indirect
