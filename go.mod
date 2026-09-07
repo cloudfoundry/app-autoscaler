@@ -61,7 +61,7 @@ replace github.com/onsi/ginkgo/v2 => github.com/onsi/ginkgo/v2 v2.32.0
 // (tedsuo/ifrit#47, still open). clock v1.86.0 transitively requires the broken 94822c9,
 // so a plain require gets bumped back by MVS on every `go mod tidy`; this replace holds it.
 // Remove once tedsuo/ifrit#47 is fixed upstream. See renovate.json ifrit rule.
-replace github.com/tedsuo/ifrit => github.com/tedsuo/ifrit v0.0.0-20260813155221-94822c932811
+replace github.com/tedsuo/ifrit => github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
 
 require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20260818081020-5f89c9327272 // indirect
