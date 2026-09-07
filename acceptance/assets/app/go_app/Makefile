@@ -33,7 +33,8 @@ openapi-specs-list = $(wildcard ${openapi-spec-path}/*.openapi.yaml)
 app-fakes-dir := ./internal/app/appfakes
 app-fakes-files = $(wildcard ${app-fakes-dir}/*.go)
 go_deps_without_fakes = $(shell find . -type f -name '*.go' \
-									| grep --invert-match --regexp='${app-fakes-dir}')
+									| grep --invert-match --extended-regexp \
+											--regexp='${app-fakes-dir}|${openapi-generated-clients-dir}')
 
 .PHONY: help
 help: ## Show this help
