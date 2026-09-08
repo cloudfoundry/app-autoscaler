@@ -5,16 +5,17 @@ go 1.26.4
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
 	code.cloudfoundry.org/cfhttp/v2 v2.94.0
-	code.cloudfoundry.org/clock v1.86.0
+	code.cloudfoundry.org/clock v1.87.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
-	code.cloudfoundry.org/lager/v3 v3.85.0
+	code.cloudfoundry.org/lager/v3 v3.86.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260906200638-e65d4fea7678
-	code.cloudfoundry.org/tlsconfig v0.65.0
+	code.cloudfoundry.org/tlsconfig v0.66.0
 	github.com/apache/thrift v0.24.0
 	github.com/cenkalti/backoff/v7 v7.0.0
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
 	github.com/go-logr/logr v1.4.4
@@ -22,7 +23,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
 	github.com/ogen-go/ogen v1.24.0

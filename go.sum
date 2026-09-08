@@ -596,8 +596,8 @@ code.cloudfoundry.org/brokerapi/v13 v13.0.25 h1:mpQkk2SJd6olzE4QhvYLDfgK2BmDsIRa
 code.cloudfoundry.org/brokerapi/v13 v13.0.25/go.mod h1:MlGn59Dys13Ww6CXlSM3eTiVvKyQm9X71RGDrUb1b6c=
 code.cloudfoundry.org/cfhttp/v2 v2.94.0 h1:Ucka/FRAXCN5tgYbNpgqasZYs4C9ziintkLAKjIppbg=
 code.cloudfoundry.org/cfhttp/v2 v2.94.0/go.mod h1:q4ZmifScc5baTNZLHxDEGkxAr0oyxqJNJf94SgytFMc=
-code.cloudfoundry.org/clock v1.86.0 h1:+n03i5ExRv/lab8XWoQgIo+dOXQAIzqmIldA9MnKSUY=
-code.cloudfoundry.org/clock v1.86.0/go.mod h1:eQZi+T5TaJ7gbyJF1Ov6BzgOnAFzW6f7FJKnvTitsp0=
+code.cloudfoundry.org/clock v1.87.0 h1:7TzMbR9GnHpz0qhFeUyfXUbIXnuBME22nxVTosOhLL4=
+code.cloudfoundry.org/clock v1.87.0/go.mod h1:toNQtpynOC/zweoB7xecA0No8dM0/RnjE8SJELOa99Y=
 code.cloudfoundry.org/go-diodes v0.0.0-20260831145205-e8366a756183 h1:LUSKGl8Wyfomxk6oX166AzJLObAeQbtjNfBuEcnKnbs=
 code.cloudfoundry.org/go-diodes v0.0.0-20260831145205-e8366a756183/go.mod h1:/1BMivaq1Chyx2UC+T3cXrPZJnFjZ60vz5BYE9h/TNU=
 code.cloudfoundry.org/go-log-cache/v3 v3.1.2 h1:VtYzWJhTQfopm8MSwm6T+KYURUKnzlpYEIi7Z37679w=
@@ -606,12 +606,12 @@ code.cloudfoundry.org/go-loggregator/v10 v10.3.1 h1:iuAoFA4ajpH1pBmVGQlUNRMvVAHC
 code.cloudfoundry.org/go-loggregator/v10 v10.3.1/go.mod h1:Md5WIfzcFSiT//dNHTS6Zfj4MCmO+Zz9d/2ihZjaj+0=
 code.cloudfoundry.org/go-metric-registry v0.0.0-20260901100552-589270c3b9ea h1:eZ9QKrUi8u0oCxXfSzTPyb+4QAfZUX8CXbw3lIoAAVo=
 code.cloudfoundry.org/go-metric-registry v0.0.0-20260901100552-589270c3b9ea/go.mod h1:MT0lKYQZdFeUuglzJsvHa+1n3C/NG+o9NOcS5O1XQGw=
-code.cloudfoundry.org/lager/v3 v3.85.0 h1:4AebS51o+48Pxaba53K7ehogN8XJoKuW9ZEtq6Kjm4Y=
-code.cloudfoundry.org/lager/v3 v3.85.0/go.mod h1:R04ztm9KdIqZ0XaZa8q9+dt7+jgdmgiunKWINfNvPc0=
+code.cloudfoundry.org/lager/v3 v3.86.0 h1:VL/d2whyzaUixVeqktrfoadUnszHGPSxlRyM0XL2wIU=
+code.cloudfoundry.org/lager/v3 v3.86.0/go.mod h1:pNoj2tmVKLSPChEBi95l8b0raJVdgU/zI1uWlC3xdcA=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260906200638-e65d4fea7678 h1:WgAWuMoebRCD76j9Xns82qxvNAy9sNStIrFE85K+Xhs=
 code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260906200638-e65d4fea7678/go.mod h1:WLB/j89Mbc4srQ/sMeAUeXIFJcgrtj6dk08bTmcMLY8=
-code.cloudfoundry.org/tlsconfig v0.65.0 h1:mPga0pCfQp9nTHgXizFrfpsWmmcGHIUgD+cYb8KPpmw=
-code.cloudfoundry.org/tlsconfig v0.65.0/go.mod h1:orvSwt5ytEO49rjIY+JLGcbIoCCbVbcowHHTbheYToI=
+code.cloudfoundry.org/tlsconfig v0.66.0 h1:/r6OaSt7Br6+DZux5QH2G7GxCVzyxgAIKQQcpfROFuU=
+code.cloudfoundry.org/tlsconfig v0.66.0/go.mod h1:fCnjCg1EIb5JKHRfmM2luoVzyFioAiknnPaiTOLqEhw=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 filippo.io/edwards25519 v1.2.0 h1:crnVqOiS4jqYleHd9vaKZ+HKtHfllngJIiOpNpoJsjo=
@@ -739,6 +739,8 @@ github.com/gkampitakis/go-diff v1.3.2 h1:Qyn0J9XJSDTgnsgHRdz9Zp24RaJeKMUHg2+PDZZ
 github.com/gkampitakis/go-diff v1.3.2/go.mod h1:LLgOrpqleQe26cte8s36HTWcTmMEur6OPYerdAAS9tk=
 github.com/gkampitakis/go-snaps v0.5.15 h1:amyJrvM1D33cPHwVrjo9jQxX8g/7E2wYdZ+01KS3zGE=
 github.com/gkampitakis/go-snaps v0.5.15/go.mod h1:HNpx/9GoKisdhw9AFOBT1N7DBs9DiHo/hGheFGBZ+mc=
+github.com/go-chi/chi/v5 v5.3.2 h1:5YQkICvTCSZ25hoRsyJazN0scjzKGiu4VAUc7H1o1nY=
+github.com/go-chi/chi/v5 v5.3.2/go.mod h1:R+tYY2hNuVUUjxoPtqUdgBqevM9s9njzkTLutVsOCto=
 github.com/go-faster/errors v0.8.0 h1:9T9eJrM+72dFk7n4DfhuaDDe6cyuFCSW2oNUkN77Yqc=
 github.com/go-faster/errors v0.8.0/go.mod h1:5ySTjWFiphBs07IKuiL69nxdfd5+fzh1u7FPGZP2quo=
 github.com/go-faster/jx v1.2.0 h1:T2YHJPrFaYu21fJtUxC9GzmluKu8rVIFDwwGBKTDseI=
@@ -906,8 +908,8 @@ github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsI
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761/go.mod h1:5TJZWKEWniPve33vlWYSoGYefn3gLQRzjfDlhSJ9ZKM=
-github.com/jackc/pgx/v5 v5.10.0 h1:VhSvgU2jSli8o3AqIEOTJr7rZwAEUVo4E4XhR94Zfr0=
-github.com/jackc/pgx/v5 v5.10.0/go.mod h1:mal1tBGAFfLHvZzaYh77YS/eC6IX9OWbRV1QIIM0Jn4=
+github.com/jackc/pgx/v5 v5.11.0 h1:IzBBtyK9AHqf98cctWFifYSci2hgQR/cd56wB4p+ogg=
+github.com/jackc/pgx/v5 v5.11.0/go.mod h1:mal1tBGAFfLHvZzaYh77YS/eC6IX9OWbRV1QIIM0Jn4=
 github.com/jackc/puddle/v2 v2.2.2 h1:PR8nw+E/1w0GLuRFSmiioY6UooMp6KJv0/61nB7icHo=
 github.com/jackc/puddle/v2 v2.2.2/go.mod h1:vriiEXHvEE654aYKXXjOvZM39qJ0q+azkZFrfEOc3H4=
 github.com/jmoiron/sqlx v1.4.0 h1:1PLqN7S1UYp5t4SrVVnt4nUVNemrDAtxlulVe+Qgm3o=
