@@ -16,9 +16,7 @@ DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-autoscaler}"
 DB_USER="${DB_USER:-vcap}"
 APP_DB_USER="${APP_DB_USER:-pgadmin}"
 
-if [ -n "${BBL_STATE_PATH:-}" ]; then
-  bbl_login
-fi
+bbl_login
 
 echo "Provisioning database '${DEPLOYMENT_NAME}' on Postgres instance ${POSTGRES_INSTANCE} in deployment ${BOSH_DEPLOYMENT}"
 

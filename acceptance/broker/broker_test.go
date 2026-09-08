@@ -352,21 +352,19 @@ type ServicePlans []ServicePlan
 type BoolOrInt bool
 
 func (b *BoolOrInt) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 && (data[0] == 't' || data[0] == 'f') {
-		var boolVal bool
-		if err := json.Unmarshal(data, &boolVal); err != nil {
-			return err
-		}
+	var boolVal bool
+	if err := json.Unmarshal(data, &boolVal); err == nil {
 		*b = BoolOrInt(boolVal)
 		return nil
 	}
 
 	var intVal int
-	if err := json.Unmarshal(data, &intVal); err != nil {
-		return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
+	if err := json.Unmarshal(data, &intVal); err == nil {
+		*b = BoolOrInt(intVal != 0)
+		return nil
 	}
-	*b = BoolOrInt(intVal != 0)
-	return nil
+
+	return fmt.Errorf("cannot unmarshal %s into BoolOrInt", string(data))
 }
 
 type (
@@ -411,7 +409,7 @@ func GetServicePlans(cfg *config.Config) ServicePlans {
 }
 
 func (p ServicePlan) isUpdatable() bool {
-	return p.BrokerCatalog.Features.PlanUpdateable.Bool()
+	return bool(p.BrokerCatalog.Features.PlanUpdateable)
 }
 
 func (b BoolOrInt) Bool() bool { return bool(b) }

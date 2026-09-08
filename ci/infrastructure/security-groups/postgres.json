@@ -2,14 +2,8 @@
   {
     "protocol": "tcp",
     "destination": "10.0.1.0/24",
-    "ports": "6067",
-    "description": "Allow syslog traffic from"
-  },
-  {
-    "protocol": "tcp",
-    "destination": "10.0.1.0/24",
     "ports": "5432",
-    "description": "Allow postgres traffic from"
+    "description": "Allow postgres traffic from SAP_autoscaler_tests_OSS"
   },
   {
     "protocol": "tcp",

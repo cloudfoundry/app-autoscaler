@@ -43,23 +43,10 @@ function deploy () {
 }
 
 function setup_postgres_security_group() {
-  postgres_ip="$(credhub get -n /bosh-autoscaler/postgres/postgres_host_or_ip --quiet)"
-
-  security_group_json_path="$(mktemp)"
-  cat <<EOF > "${security_group_json_path}"
-[
-  {
-    "protocol": "tcp",
-    "destination": "${postgres_ip}/32",
-    "ports": "5524",
-    "description": "allow egress to the internal postgres IP"
-  }
-]
-EOF
-
+  local sg_file="${script_dir}/../security-groups/postgres.json"
   cf_login "${system_domain}"
-  cf create-security-group postgres "${security_group_json_path}" || true
-  cf update-security-group postgres "${security_group_json_path}"
+  cf create-security-group postgres "${sg_file}" || true
+  cf update-security-group postgres "${sg_file}"
   cf bind-running-security-group postgres
 }
 
