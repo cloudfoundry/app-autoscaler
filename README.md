@@ -9,7 +9,7 @@ The Application Autoscaler provides the capability to adjust the computation res
 This repository contains the core Application Autoscaler source code, extracted and refactored from [app-autoscaler-release](https://github.com/cloudfoundry/app-autoscaler-release).
 
 ## Architecture
-
+ 
 The Application Autoscaler consists of several microservices and are deployed as CF Applications
 
 | Component         | Description                                                                 |
