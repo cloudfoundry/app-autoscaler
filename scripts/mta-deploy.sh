@@ -20,7 +20,7 @@ EXTENSION_FILE="${DEST}/extension-file-${VERSION}.txt"
 # Check if mtar file exists
 if [ ! -f "${DEST}/${MTAR_FILENAME}" ]; then
 	echo "ERROR: MTAR file not found at: ${DEST}/${MTAR_FILENAME}"
-	echo "Please run 'scripts/mta-build.sh' first"
+	echo "Please run 'make mta-build' first"
 	exit 1
 fi
 
@@ -35,17 +35,20 @@ fi
 pushd "${autoscaler_dir}" > /dev/null
 
 	bbl_login
+	cf_deployment_login
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
 
 	# Create UAA client for autoscaler (required for Scaling Engine and Operator)
-	echo ""
-	echo "=== Creating UAA Client for Autoscaler ==="
-	"${script_dir}/create-autoscaler-uaa-client.sh"
-	echo ""
+#	echo ""
+#	echo "=== Creating UAA Client for Autoscaler ==="
+#	"${script_dir}/create-autoscaler-uaa-client.sh"
+#	echo ""
 
-	make -f metricsforwarder/Makefile set-security-group
-	make -f metricsgateway/Makefile set-security-group
+	# cf_org_manager_login
+	cf_target "${AUTOSCALER_ORG}" "${AUTOSCALER_SPACE}"
+	echo "Deploying as user: $(cf target | grep 'user:' | awk '{print $2}')"
 	echo "Deploying with extension file: ${EXTENSION_FILE}"
-	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f --delete-services -e "${EXTENSION_FILE}" -m "${MODULES}"
+	cf deploy "${DEST}/${MTAR_FILENAME}" --version-rule ALL -f -e "${EXTENSION_FILE}" -m "${MODULES}"
 
 popd > /dev/null
 
@@ -53,13 +56,17 @@ popd > /dev/null
 # Extract broker password from the generated extension file (baked in by build-extension-file.sh)
 SERVICE_BROKER_PASSWORD="$(yq '.resources[] | select(.name == "apiserver-config") | .parameters.config."apiserver-config".broker_credentials[0].broker_password' "${EXTENSION_FILE}")"
 
-cf_login
-
-set +e
-existing_service_broker="$(cf curl v3/service_brokers | jq --raw-output \
+broker_response="$(cf curl v3/service_brokers 2>&1)" || {
+	echo "ERROR: Failed to query service brokers: ${broker_response}" >&2
+	exit 1
+}
+existing_service_broker="$(echo "${broker_response}" | jq --raw-output \
 	--arg service_broker_name "${deployment_name:-}" \
-	'.resources[] | select(.name == $service_broker_name) | .name')"
-set -e
+	'.resources[] | select(.name == $service_broker_name) | .name')" || {
+	echo "ERROR: Failed to parse service broker response" >&2
+	echo "  Response was: ${broker_response}" >&2
+	exit 1
+}
 
 if [[ -n "${existing_service_broker}" ]]; then
 	echo "Service Broker ${existing_service_broker} already exists"
@@ -71,7 +78,17 @@ if [[ -n "${existing_service_broker}" ]]; then
 	cf delete-service-broker -f "${existing_service_broker}"
 fi
 
-echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${system_domain:-}'"
-cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${system_domain:-}"
+# Construct apps domain: non-OSS uses cfapps.X, OSS uses system_domain as-is
+if is_oss_infrastructure; then
+	apps_domain="${system_domain}"
+else
+	apps_domain="${system_domain/cf./cfapps.}"
+fi
+echo "Creating service broker ${deployment_name:-} at 'https://${service_broker_name:-}.${apps_domain}'"
+space_scoped_flag=""
+if is_pr_deployment; then
+	space_scoped_flag="--space-scoped"
+fi
+cf create-service-broker "${deployment_name:-}" autoscaler-broker-user "${SERVICE_BROKER_PASSWORD}" "https://${service_broker_name:-}.${apps_domain}" ${space_scoped_flag}
 
 cf logout

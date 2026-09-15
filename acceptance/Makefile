@@ -20,8 +20,7 @@ export GOWORK := off
 
 .PHONY: clean
 clean:
-	rm --recursive --force './build' './vendor' './ginkgo_v2' './results'
-	@make --directory='./assets/app/go_app' clean
+	rm --recursive --force './vendor'
 
 
 .PHONY: go-mod-tidy
@@ -86,6 +85,3 @@ run-acceptance-tests: acceptance-tests-config
 	@${MAKEFILE_DIR}/../scripts/run-acceptance-tests.sh
 
 
-.PHONY: acceptance-tests-cleanup
-acceptance-tests-cleanup: acceptance-tests-config
-	@${MAKEFILE_DIR}/../scripts/cleanup-acceptance.sh

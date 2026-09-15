@@ -114,6 +114,13 @@ func (w *CFClientWrapper) Login(ctx context.Context) error {
 }
 
 func (w *CFClientWrapper) IsUserAdmin(ctx context.Context, userToken string) (bool, error) {
+	// Password grant uses the public "cf" client (no secret). UAA /introspect requires
+	// confidential client credentials, so it would always fail. On password-grant deployments
+	// (PR environments) the caller is an OrgManager, never a CC admin, so returning false is correct.
+	if w.conf.IsPasswordGrant() {
+		return false, nil
+	}
+
 	resp, err := w.introspectToken(ctx, userToken)
 	if err != nil {
 		return false, err

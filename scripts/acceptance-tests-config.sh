@@ -27,19 +27,48 @@ then
 	cf_admin_password="$(credhub get --quiet --name='/bosh-autoscaler/cf/cf_admin_password')"
 fi
 
+# Escape passwords for JSON to prevent invalid escape sequences
+json_escape() {
+	local str="$1"
+	printf '%s' "$str" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read())[1:-1])'
+}
+
+# Use admin user for main branch, org-manager user for PRs
+if is_main_deployment; then
+	autoscaler_org_manager_user="admin"
+	autoscaler_org_manager_password="$(json_escape "${cf_admin_password}")"
+	skip_service_access_management="false"
+else
+	# For PRs, use dedicated org manager user (password from GH secret)
+	if [[ -z "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}" ]]; then
+		echo "ERROR: AUTOSCALER_ORG_MANAGER_PASSWORD is not set (required for PR deployments)" >&2
+		exit 1
+	fi
+	autoscaler_org_manager_user="${AUTOSCALER_ORG_MANAGER_USER}"
+	autoscaler_org_manager_password="$(json_escape "${AUTOSCALER_ORG_MANAGER_PASSWORD}")"
+	skip_service_access_management="${SKIP_SERVICE_ACCESS_MANAGEMENT:-true}"
+fi
+
+# Derive apps domain (cfapps.* for SAP BTP, system domain for OSS)
+apps_domain="$(get_apps_domain "${system_domain}")"
+
 function write_app_config() {
 	local -r config_path="$1"
 	local -r use_existing_organization="$2"
 	local -r use_existing_space="$3"
 	local -r existing_org="$4"
 	local -r existing_space="$5"
+	local -r existing_user="$6"
+	local -r existing_user_password="$7"
+	local -r other_existing_user="$8"
+	local -r other_existing_user_password="$9"
 
 	cat > "${config_path}" << EOF
 {
 	"api": "api.${system_domain}",
-	"admin_user": "admin",
-	"admin_password": "${cf_admin_password}",
-	"apps_domain": "${system_domain}",
+	"admin_user": "${autoscaler_org_manager_user}",
+	"admin_password": "${autoscaler_org_manager_password}",
+	"apps_domain": "${apps_domain}",
 	"skip_ssl_validation": ${skip_ssl_validation},
 	"use_http": false,
 	"service_name": "${deployment_name}",
@@ -49,6 +78,11 @@ function write_app_config() {
 	"existing_organization": "${existing_org}",
 	"use_existing_space": ${use_existing_space},
 	"existing_space": "${existing_space}",
+	"existing_user": "${existing_user}",
+	"existing_user_password": "${existing_user_password}",
+	"other_existing_user": "${other_existing_user}",
+	"other_existing_user_password": "${other_existing_user_password}",
+	"skip_service_access_management": ${skip_service_access_management},
 	"aggregate_interval": 120,
 	"default_timeout": 120,
 	"cpu_upper_threshold": ${cpu_upper_threshold},
@@ -65,6 +99,12 @@ function write_app_config() {
 EOF
 }
 
+# Escape passwords before passing to write_app_config
+ESCAPED_ORG_MGR_PASSWORD="$(json_escape "${AUTOSCALER_ORG_MANAGER_PASSWORD:-}")"
+ESCAPED_OTHER_USER_PASSWORD="$(json_escape "${AUTOSCALER_OTHER_USER_PASSWORD:-}")"
+
 write_app_config \
 	"${ACCEPTANCE_CONFIG_PATH}" \
-	"${use_existing_organization}" "${use_existing_space}" "${existing_organization}" "${existing_space}"
+	"${use_existing_organization}" "${use_existing_space}" "${existing_organization}" "${existing_space}" \
+	"${AUTOSCALER_ORG_MANAGER_USER:-}" "$ESCAPED_ORG_MGR_PASSWORD" \
+	"${AUTOSCALER_OTHER_USER:-}" "$ESCAPED_OTHER_USER_PASSWORD"
