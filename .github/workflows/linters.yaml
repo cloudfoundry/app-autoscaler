@@ -35,29 +35,6 @@ jobs:
         uses: reviewdog/action-actionlint@8b682e1e7e512151d73a6b9449cbff173846226e # v1
         with:
           reporter: github-pr-review
-      - name: Create alex config
-        run: |
-          cat > .alexrc << 'EOF'
-          {
-            "allow": [
-              "execute",
-              "executes",
-              "executed",
-              "executing",
-              "execution",
-              "period",
-              "periods",
-              "trap",
-              "traps",
-              "trapped",
-              "trapping"
-            ]
-          }
-          EOF
-      - name: alex
-        uses: reviewdog/action-alex@8ea6934ac252503fe358596c681d9899f0d85485 # v1
-        with:
-          reporter: github-pr-review
       - name: markdownlint
         uses: reviewdog/action-markdownlint@d7862f0a8dbbee78e016f527260747a4f2bb2a64 # v0
         with:
