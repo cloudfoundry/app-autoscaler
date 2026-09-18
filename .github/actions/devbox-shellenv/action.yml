@@ -14,5 +14,6 @@ runs:
         while IFS= read -r -d '' var; do
           key="${var%%=*}"
           value="${var#*=}"
+          # GITHUB_ENV only supports single-line values; multiline ones (e.g. buildPhase from Nix) cause a parse error.
           [[ "$value" != *$'\n'* ]] && echo "$key=$value" >> "$GITHUB_ENV"
         done < <(env -0)
