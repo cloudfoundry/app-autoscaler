@@ -20,7 +20,7 @@ jobs:
           enable-cache: 'true'
       - name: Make devbox shellenv available
         run: |
-          eval "$(devbox shellenv)"
+          eval "$(devbox shellenv --quiet)"
           printenv >> "$GITHUB_ENV"
 
       - name: Run Go linter
