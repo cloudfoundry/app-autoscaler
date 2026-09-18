@@ -13,3 +13,4 @@ runs:
         echo "GOPATH=$GOPATH" >> "$GITHUB_ENV"
         echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
         echo "NIX_SSL_CERT_FILE=$NIX_SSL_CERT_FILE" >> "$GITHUB_ENV"
+        echo "SSL_CERT_FILE=$NIX_SSL_CERT_FILE" >> "$GITHUB_ENV"
