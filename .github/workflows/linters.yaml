@@ -19,9 +19,7 @@ jobs:
         with:
           enable-cache: 'true'
       - name: Make devbox shellenv available
-        run: |
-          eval "$(devbox shellenv)"
-          printenv | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' >> "$GITHUB_ENV"
+        uses: ./.github/actions/devbox-shellenv
 
       - name: Run Go linter
         run: |

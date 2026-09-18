@@ -1,0 +1,26 @@
+name: Make devbox shellenv available
+description: Exports required devbox env vars to GITHUB_ENV
+
+inputs:
+  project-path:
+    description: Directory containing devbox.json (defaults to current directory)
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Export devbox env vars
+      shell: bash
+      working-directory: ${{ inputs.project-path }}
+      run: |
+        eval "$(devbox shellenv)"
+        # env -0 reads all settings separated by invisible walls (NUL bytes) so we can
+        # see each setting as a whole, including any newlines inside.
+        # We then throw away any setting that contains a newline and write the rest to GitHub Actions.
+        while IFS= read -r -d '' var; do
+          key="${var%%=*}"
+          value="${var#*=}"
+          # GITHUB_ENV only supports single-line values; multiline ones (e.g. buildPhase from Nix) cause a parse error.
+          [[ "$value" != *$'\n'* ]] && echo "$key=$value" >> "$GITHUB_ENV"
+        done < <(env -0)
