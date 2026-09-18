@@ -52,7 +52,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' >> "$GITHUB_ENV"
       - name: Setup environment for deployment
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -93,7 +93,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' >> "$GITHUB_ENV"
       - name: Setup environment for acceptance tests
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -123,7 +123,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' >> "$GITHUB_ENV"
       - name: Setup environment for deployment cleanup
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:

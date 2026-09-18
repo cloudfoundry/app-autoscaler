@@ -28,7 +28,7 @@ jobs:
       - name: Make devbox shellenv available
         run: |
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' >> "$GITHUB_ENV"
       - name: Lint
         run: |
           make scheduler.lint

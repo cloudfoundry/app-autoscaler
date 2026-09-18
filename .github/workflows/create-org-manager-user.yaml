@@ -39,7 +39,7 @@ jobs:
         run: |
           cd "${AUTOSCALER_DIR}"
           eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+          printenv | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' >> "$GITHUB_ENV"
 
       - name: Setup environment
         uses: ./app-autoscaler/.github/actions/setup-environment
