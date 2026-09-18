@@ -36,10 +36,7 @@ jobs:
           project-path: "${AUTOSCALER_DIR}"
 
       - name: Make devbox shellenv available
-        run: |
-          cd "${AUTOSCALER_DIR}"
-          eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+        uses: ./app-autoscaler/.github/actions/devbox-shellenv
 
       - name: Setup environment
         uses: ./app-autoscaler/.github/actions/setup-environment

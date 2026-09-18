@@ -1,0 +1,15 @@
+name: Make devbox shellenv available
+description: Exports required devbox env vars to GITHUB_ENV
+
+runs:
+  using: composite
+  steps:
+    - name: Export devbox env vars
+      shell: bash
+      run: |
+        eval "$(devbox shellenv)"
+        echo "PATH=$PATH" >> "$GITHUB_ENV"
+        echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
+        echo "GOPATH=$GOPATH" >> "$GITHUB_ENV"
+        echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+        echo "NIX_SSL_CERT_FILE=$NIX_SSL_CERT_FILE" >> "$GITHUB_ENV"
