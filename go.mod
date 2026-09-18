@@ -27,7 +27,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.13.0
 	github.com/ogen-go/ogen v1.24.0
 	github.com/onsi/ginkgo/v2 v2.32.2
-	github.com/onsi/gomega v1.43.0
+	github.com/onsi/gomega v1.43.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
