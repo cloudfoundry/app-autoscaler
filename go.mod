@@ -46,7 +46,7 @@ require (
 	golang.org/x/crypto v0.57.0
 	golang.org/x/exp v0.0.0-20260908205506-85c1c2202aba
 	golang.org/x/time v0.16.0
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.84.0
 )
 
 // Pin Ginkgo to v2.32.0: v2.32.1 makes our unit tests flaky while the Ginkgo CLI
