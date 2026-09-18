@@ -1,11 +1,18 @@
 name: Make devbox shellenv available
 description: Exports required devbox env vars to GITHUB_ENV
 
+inputs:
+  project-path:
+    description: Directory containing devbox.json (defaults to current directory)
+    required: false
+    default: '.'
+
 runs:
   using: composite
   steps:
     - name: Export devbox env vars
       shell: bash
+      working-directory: ${{ inputs.project-path }}
       run: |
         eval "$(devbox shellenv)"
         # env -0 reads all settings separated by invisible walls (NUL bytes) so we can

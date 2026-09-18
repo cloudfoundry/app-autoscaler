@@ -37,6 +37,8 @@ jobs:
 
       - name: Make devbox shellenv available
         uses: ./app-autoscaler/.github/actions/devbox-shellenv
+        with:
+          project-path: ${{ env.AUTOSCALER_DIR }}
 
       - name: Setup environment
         uses: ./app-autoscaler/.github/actions/setup-environment
