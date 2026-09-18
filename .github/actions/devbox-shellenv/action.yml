@@ -8,6 +8,9 @@ runs:
       shell: bash
       run: |
         eval "$(devbox shellenv)"
+        # env -0 reads all settings separated by invisible walls (NUL bytes) so we can
+        # see each setting as a whole, including any newlines inside.
+        # We then throw away any setting that contains a newline and write the rest to GitHub Actions.
         while IFS= read -r -d '' var; do
           key="${var%%=*}"
           value="${var#*=}"
