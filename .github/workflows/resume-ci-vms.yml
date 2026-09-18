@@ -40,9 +40,7 @@ jobs:
           enable-cache: true
 
       - name: make devbox shellenv available
-        run: |
-          eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+        uses: ./.github/actions/devbox-shellenv
 
       - name: checkout app-autoscaler-env-bbl-state
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

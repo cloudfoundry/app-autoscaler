@@ -49,10 +49,9 @@ jobs:
           enable-cache: 'true'
           project-path: "${AUTOSCALER_DIR}"
       - name: Make devbox shellenv available
-        run: |
-          cd "${AUTOSCALER_DIR}"
-          eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+        uses: ./app-autoscaler/.github/actions/devbox-shellenv
+        with:
+          project-path: ${{ env.AUTOSCALER_DIR }}
       - name: Setup environment for deployment
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -90,10 +89,9 @@ jobs:
           enable-cache: 'true'
           project-path: "${AUTOSCALER_DIR}"
       - name: Make devbox shellenv available
-        run: |
-          cd "${AUTOSCALER_DIR}"
-          eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+        uses: ./app-autoscaler/.github/actions/devbox-shellenv
+        with:
+          project-path: ${{ env.AUTOSCALER_DIR }}
       - name: Setup environment for acceptance tests
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:
@@ -120,10 +118,9 @@ jobs:
           enable-cache: 'true'
           project-path: "${AUTOSCALER_DIR}"
       - name: Make devbox shellenv available
-        run: |
-          cd "${AUTOSCALER_DIR}"
-          eval "$(devbox shellenv)"
-          printenv >> "$GITHUB_ENV"
+        uses: ./app-autoscaler/.github/actions/devbox-shellenv
+        with:
+          project-path: ${{ env.AUTOSCALER_DIR }}
       - name: Setup environment for deployment cleanup
         uses: ./app-autoscaler/.github/actions/setup-environment
         with:

@@ -55,9 +55,7 @@ jobs:
         with:
           enable-cache: 'true'
       - name: Make devbox shellenv available
-        run: |
-          eval "$(devbox shellenv)"
-          printenv >> "${GITHUB_ENV}"
+        uses: ./.github/actions/devbox-shellenv
 
       - name: go-mod-tidy and make package-specs
         shell: bash
