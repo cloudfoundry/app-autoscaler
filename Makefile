@@ -213,7 +213,7 @@ test: autoscaler.test scheduler.test test-acceptance-unit ## Run all unit tests
 .PHONY: autoscaler.test
 autoscaler.test: check-db_type init-db test-certs generate-openapi-generated-clients-and-servers generate-fakes build-gorouterproxy
 	@echo ' - using DBURL=${DBURL} TEST=${TEST}'
-	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance' ${TEST}
+	APP_AUTOSCALER_TEST_RUN='true' DBURL='${DBURL}' ginkgo run -p ${GINKGO_OPTS} --skip-package='integration,acceptance,ci' ${TEST}
 
 .PHONY: test-autoscaler-suite
 test-autoscaler-suite: check-db_type init-db test-certs build-gorouterproxy
