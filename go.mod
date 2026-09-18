@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/clock v1.87.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
-	code.cloudfoundry.org/lager/v3 v3.86.0
+	code.cloudfoundry.org/lager/v3 v3.87.0
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260914180529-0a1602ec501a
 	code.cloudfoundry.org/tlsconfig v0.66.0
 	github.com/apache/thrift v0.24.0
