@@ -12,5 +12,9 @@ runs:
         echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
         echo "GOPATH=$GOPATH" >> "$GITHUB_ENV"
         echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+        # NIX_SSL_CERT_FILE may be unset depending on the nixpkgs snapshot; fall back to the
+        # well-known Nix profile path so curl and OpenSSL can verify TLS in downstream actions.
+        NIX_SSL_CERT_FILE="${NIX_SSL_CERT_FILE:-/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt}"
         echo "NIX_SSL_CERT_FILE=$NIX_SSL_CERT_FILE" >> "$GITHUB_ENV"
         echo "SSL_CERT_FILE=$NIX_SSL_CERT_FILE" >> "$GITHUB_ENV"
+        echo "CURL_CA_BUNDLE=$NIX_SSL_CERT_FILE" >> "$GITHUB_ENV"
