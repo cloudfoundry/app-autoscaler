@@ -2,6 +2,7 @@
 name: Promote Draft Release to Final
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

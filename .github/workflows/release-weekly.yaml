@@ -1,0 +1,19 @@
+---
+name: Weekly Automatic Release
+
+on:
+  schedule:
+    - cron: '0 5 * * 4'  # Thursday 05:00 UTC
+      timezone: "Etc/UTC"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    uses: ./.github/workflows/release-draft.yaml
+
+  promote:
+    needs: draft
+    uses: ./.github/workflows/release-promote.yaml
