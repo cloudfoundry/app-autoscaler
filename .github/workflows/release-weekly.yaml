@@ -13,7 +13,9 @@ permissions:
 jobs:
   draft:
     uses: ./.github/workflows/release-draft.yaml
+    secrets: inherit
 
   promote:
     needs: draft
     uses: ./.github/workflows/release-promote.yaml
+    secrets: inherit
