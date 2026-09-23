@@ -1,4 +1,4 @@
-FROM ubuntu@sha256:9559ceb7c21e528e233e8dff26a0fb2682f4094cce06176eeb075d87a22b31de
+FROM ubuntu@sha256:da6fc2be547864451aa253836dd926da33623312df4a9a243e35dc877c378a78
 LABEL maintainer="autoscaler-team"
 
 ENV DEBIAN_FRONTEND="noninteractive" TZ="Europe/London"
