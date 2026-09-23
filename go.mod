@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
-	code.cloudfoundry.org/cfhttp/v2 v2.95.0
+	code.cloudfoundry.org/cfhttp/v2 v2.96.0
 	code.cloudfoundry.org/clock v1.88.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
