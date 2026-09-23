@@ -3,7 +3,7 @@ module code.cloudfoundry.org/app-autoscaler/acceptance/assets/app/go_app
 go 1.26.4
 
 require (
-	github.com/cloudfoundry-community/go-cfenv v1.24.2
+	github.com/cloudfoundry-community/go-cfenv v1.24.3
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
 	github.com/json-iterator/go v1.1.12
