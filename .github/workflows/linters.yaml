@@ -25,15 +25,15 @@ jobs:
         run: |
           make lint-go
       - name: shellcheck
-        uses: reviewdog/action-shellcheck@a94d585085f1f5215ae65f4de34e7bbd0523d550 # v1
+        uses: reviewdog/action-shellcheck@0a90156c6e0553996a217f0a9e09be6b0f6bee4c # v1
         with:
           reporter: github-pr-check
           fail_level: error
       - name: actionlint
-        uses: reviewdog/action-actionlint@0f79693de552e66b9934daa63513584415a955e4 # v1
+        uses: reviewdog/action-actionlint@2085657ab2c7f48c58edcc767fba576f63bea76b # v1
         with:
           reporter: github-pr-review
       - name: markdownlint
-        uses: reviewdog/action-markdownlint@d7862f0a8dbbee78e016f527260747a4f2bb2a64 # v0
+        uses: reviewdog/action-markdownlint@a223028b797326efe9d3c9b55e24d740480c3352 # v0
         with:
           reporter: github-pr-review

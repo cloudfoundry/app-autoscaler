@@ -676,8 +676,8 @@
       }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2026-09-13T01:58:51Z",
-      "resolved": "github:NixOS/nixpkgs/02f5696b0e6097e589076d886b317b83ff0437d7?lastModified=1789264731&narHash=sha256-llGJbC0CcU8DfROr6mZjRJgMLQd%2FSKwfpzxJH%2F2lHO4%3D"
+      "last_modified": "2026-09-19T10:20:31Z",
+      "resolved": "github:NixOS/nixpkgs/c80073788adf88abfdc443465311f00e7a231600?lastModified=1789813231&narHash=sha256-dsU%2BUU4X3ND95E%2FO6Z33qK5jPxIeB%2F7akn%2F%2BNfAk%2BnY%3D"
     },
     "github:joergdw/prspkgs#cloud-mta-build-tool": {
       "last_modified": "2026-07-27T11:57:25Z",
@@ -1572,24 +1572,24 @@
       }
     },
     "path:.#app-autoscaler-cli-plugin": {
-      "last_modified": "2026-09-14T18:00:54Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789408854&narHash=sha256-O9Scvf9HjLs3dfSsJSr8joA4meW6%2FJKxKWmKlzlW6TY%3D#app-autoscaler-cli-plugin"
+      "last_modified": "2026-09-21T10:45:37Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789987537&narHash=sha256-N8jDabZYxTUWtBa1HBkcrhY3dpSpXMLRWgEFQ7FhgZQ%3D#app-autoscaler-cli-plugin"
     },
     "path:.#bosh-bootloader": {
-      "last_modified": "2026-09-14T18:00:54Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789408854&narHash=sha256-O9Scvf9HjLs3dfSsJSr8joA4meW6%2FJKxKWmKlzlW6TY%3D#bosh-bootloader"
+      "last_modified": "2026-09-21T10:45:37Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789987537&narHash=sha256-N8jDabZYxTUWtBa1HBkcrhY3dpSpXMLRWgEFQ7FhgZQ%3D#bosh-bootloader"
     },
     "path:.#flatten_json-schema": {
-      "last_modified": "2026-09-14T18:00:54Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789408854&narHash=sha256-O9Scvf9HjLs3dfSsJSr8joA4meW6%2FJKxKWmKlzlW6TY%3D#flatten_json-schema"
+      "last_modified": "2026-09-21T10:45:37Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789987537&narHash=sha256-N8jDabZYxTUWtBa1HBkcrhY3dpSpXMLRWgEFQ7FhgZQ%3D#flatten_json-schema"
     },
     "path:.#log-cache-cli-plugin": {
-      "last_modified": "2026-09-14T18:00:54Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789408854&narHash=sha256-O9Scvf9HjLs3dfSsJSr8joA4meW6%2FJKxKWmKlzlW6TY%3D#log-cache-cli-plugin"
+      "last_modified": "2026-09-21T10:45:37Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789987537&narHash=sha256-N8jDabZYxTUWtBa1HBkcrhY3dpSpXMLRWgEFQ7FhgZQ%3D#log-cache-cli-plugin"
     },
     "path:.#uaa-cli": {
-      "last_modified": "2026-09-14T18:00:54Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789408854&narHash=sha256-O9Scvf9HjLs3dfSsJSr8joA4meW6%2FJKxKWmKlzlW6TY%3D#uaa-cli"
+      "last_modified": "2026-09-21T10:45:37Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1789987537&narHash=sha256-N8jDabZYxTUWtBa1HBkcrhY3dpSpXMLRWgEFQ7FhgZQ%3D#uaa-cli"
     },
     "postgresql@18.6": {
       "last_modified": "2026-08-29T00:50:12Z",
