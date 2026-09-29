@@ -20,7 +20,7 @@
         <java.version>17</java.version>
         <!-- 🚧 TEMPORARY: override Spring Boot BOM to pull a patched Tomcat.
              Remove once the parent BOM ships a version at or above this. -->
-        <tomcat.version>11.0.24</tomcat.version>
+        <tomcat.version>11.0.26</tomcat.version>
         <io.prometheus.simpleclient.version>0.16.0</io.prometheus.simpleclient.version>
         <sonar.organization>cloudfoundry</sonar.organization>
         <sonar.projectKey>cloudfoundry_app-autoscaler-release</sonar.projectKey>
