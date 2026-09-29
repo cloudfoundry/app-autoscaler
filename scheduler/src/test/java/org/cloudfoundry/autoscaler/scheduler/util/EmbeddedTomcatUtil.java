@@ -67,13 +67,13 @@ public class EmbeddedTomcatUtil {
       String appId, Long scheduleId, int statusCode, String message) {
     String url = "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
     Tomcat.addServlet(appContext, appId, new ScalingEngineMock(statusCode, message));
-    appContext.addServletMappingDecoded(url, appId);
+    appContext.addServletMapping(url, appId);
   }
 
   public void addScalingEngineMockForAppId(String appId, int statusCode, String message) {
     String url = "/v1/apps/" + appId + "/active_schedules/*";
     Tomcat.addServlet(appContext, appId, new ScalingEngineMock(statusCode, message));
-    appContext.addServletMappingDecoded(url, appId);
+    appContext.addServletMapping(url, appId);
   }
 
   private void setupSslConfig(Connector httpsConnector) {
