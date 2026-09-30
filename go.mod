@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
-	code.cloudfoundry.org/cfhttp/v2 v2.96.0
+	code.cloudfoundry.org/cfhttp/v2 v2.97.0
 	code.cloudfoundry.org/clock v1.89.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
@@ -27,7 +27,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.13.0
 	github.com/ogen-go/ogen v1.24.0
 	github.com/onsi/ginkgo/v2 v2.33.0
-	github.com/onsi/gomega v1.43.1
+	github.com/onsi/gomega v1.44.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
@@ -84,7 +84,7 @@ require (
 	github.com/go-martini/martini v0.0.0-20170121215854-22fa46961aab // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260906184651-6331bc6350fe // indirect
+	github.com/google/pprof v0.0.0-20260926063103-aaccee046517 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
