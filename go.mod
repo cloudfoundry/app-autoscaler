@@ -12,7 +12,7 @@ require (
 	code.cloudfoundry.org/loggregator-agent-release/src v0.0.0-20260928210547-bb76b86751f9
 	code.cloudfoundry.org/tlsconfig v0.67.0
 	github.com/apache/thrift v0.24.0
-	github.com/cenkalti/backoff/v7 v7.0.0
+	github.com/cenkalti/backoff/v7 v7.0.1
 	github.com/cloud-gov/go-cfenv v1.19.1
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
 	github.com/go-faster/errors v0.8.0
