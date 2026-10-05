@@ -47,7 +47,7 @@ jobs:
         uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
         with:
           enable-cache: 'true'
-          project-path: "${AUTOSCALER_DIR}"
+          project-path: ${{ env.AUTOSCALER_DIR }}
       - name: Make devbox shellenv available
         uses: ./app-autoscaler/.github/actions/devbox-shellenv
         with:
@@ -87,7 +87,7 @@ jobs:
         uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
         with:
           enable-cache: 'true'
-          project-path: "${AUTOSCALER_DIR}"
+          project-path: ${{ env.AUTOSCALER_DIR }}
       - name: Make devbox shellenv available
         uses: ./app-autoscaler/.github/actions/devbox-shellenv
         with:
@@ -116,7 +116,7 @@ jobs:
         uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
         with:
           enable-cache: 'true'
-          project-path: "${AUTOSCALER_DIR}"
+          project-path: ${{ env.AUTOSCALER_DIR }}
       - name: Make devbox shellenv available
         uses: ./app-autoscaler/.github/actions/devbox-shellenv
         with:
