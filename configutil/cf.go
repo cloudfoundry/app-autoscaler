@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
-	"github.com/cloud-gov/go-cfenv"
+	"github.com/cloudfoundry-community/go-cfenv"
 	"go.yaml.in/yaml/v4"
 )
 
