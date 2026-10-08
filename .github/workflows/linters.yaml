@@ -30,7 +30,7 @@ jobs:
           reporter: github-pr-check
           fail_level: error
       - name: actionlint
-        uses: reviewdog/action-actionlint@1758727be30241166609dad4c97588b6ad411f32 # v1
+        uses: reviewdog/action-actionlint@a8ac3eea598697a830f7d8e701fc9fcbfde88974 # v1
         with:
           reporter: github-pr-review
       - name: markdownlint
