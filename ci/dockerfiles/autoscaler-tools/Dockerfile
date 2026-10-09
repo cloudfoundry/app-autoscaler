@@ -49,7 +49,7 @@ RUN wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O- | gpg --dearm
 
 # install golang
 # renovate: datasource=golang-version depName=golang
-ARG GO_VERSION=1.27.1
+ARG GO_VERSION=1.27.2
 ENV GOPATH /usr/local/go-workspace
 ENV PATH /usr/local/go-workspace/bin:/usr/local/go/bin:$PATH
 RUN wget -q https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz -P /tmp &&\
