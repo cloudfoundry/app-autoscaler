@@ -36,7 +36,7 @@
     "gum":                  "2.0.0",
     "jdt-language-server":  "1.60.0",
     "jq":                   "1.8.2",
-    "markdownlint-cli2":    "0.23.2",
+    "markdownlint-cli2":    "0.23.3",
     "maven":                "3.9.16",
     "mysql":                "10.6.12",
     "oha":                  "1.16.0",
