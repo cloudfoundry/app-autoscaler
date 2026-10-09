@@ -145,6 +145,11 @@
         "xq-xml",
         "yq-go"
       ]
+    },
+    {
+      "description": "Use new devbox registry, see also https://github.com/jetify-com/devbox/issues/2965",
+      "matchDatasources": ["devbox"],
+      "registryUrls": ["https://www.nixsearch.com/v2/"]
     }
   ],
   "nix": {
