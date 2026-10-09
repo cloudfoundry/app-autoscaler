@@ -46,7 +46,7 @@
     "redocly":              "2.17.0",
     "ripgrep":              "15.2.0",
     "shellcheck":           "0.11.0",
-    "temurin-bin-21":       "21.0.3",
+    "temurin-bin-21":       "21.0.12",
     "which":                "2.23",
     "xq-xml":               "1.5.0",
     "yq-go":                "4.53.3",
