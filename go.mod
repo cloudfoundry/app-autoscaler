@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	code.cloudfoundry.org/brokerapi/v13 v13.0.25
-	code.cloudfoundry.org/cfhttp/v2 v2.97.0
+	code.cloudfoundry.org/cfhttp/v2 v2.98.0
 	code.cloudfoundry.org/clock v1.90.0
 	code.cloudfoundry.org/go-log-cache/v3 v3.1.2
 	code.cloudfoundry.org/go-loggregator/v10 v10.3.1
@@ -85,7 +85,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20261003200830-ebaad5f31b4d // indirect
+	github.com/google/pprof v0.0.0-20261005154351-639476b4d215 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
