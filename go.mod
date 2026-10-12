@@ -49,13 +49,6 @@ require (
 	google.golang.org/grpc v1.84.0
 )
 
-// Pin Ginkgo to v2.32.0: v2.32.1 makes our unit tests flaky while the Ginkgo CLI
-// shipped via devbox is still on an older version (CLI/library must match). CF
-// transitive deps (lager, clock, cfhttp, loggregator, …) require v2.32.1, so a plain
-// require edit gets bumped back by MVS on every `go mod tidy`; this replace holds it.
-// Remove once the devbox Ginkgo CLI catches up. See renovate.json ginkgo rule.
-replace github.com/onsi/ginkgo/v2 => github.com/onsi/ginkgo/v2 v2.32.0
-
 // Pin ifrit to the last-good digest 8468681: the newer 94822c9 log.Fatalf's on http
 // server shutdown error, exiting the process and making our unit tests flaky
 // (tedsuo/ifrit#47, still open). clock v1.86.0 transitively requires the broken 94822c9,

@@ -62,16 +62,6 @@
       ]
     },
     {
-      "description": "Temporarily pin Ginkgo to v2.32.0: v2.32.1 makes our unit tests flaky while the devbox Ginkgo CLI lags the library (CLI/library must match). The root go.mod uses a `replace` to hold v2.32.0 against CF transitive deps that require v2.32.1. Remove this rule and the go.mod replace once the devbox CLI catches up.",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchPackageNames": [
-        "github.com/onsi/ginkgo/v2"
-      ],
-      "allowedVersions": "<=2.32.0"
-    },
-    {
       "description": "Freeze github.com/tedsuo/ifrit: digest 94822c9 log.Fatalf's on http server shutdown error, exiting the process and making unit tests flaky (tedsuo/ifrit#47, still open). The root go.mod pins the last-good digest 8468681 via `replace`; clock v1.86.0's transitive edge keeps rewriting the require line to 94822c9, which Renovate's digest-update flow then re-proposes (and even tries to bump the replace target forward). allowedVersions is a version-range filter and does not suppress an already-pinned digest, so we disable ifrit updates entirely. Re-enable and drop the go.mod replace once tedsuo/ifrit#47 is fixed. See https://github.com/tedsuo/ifrit/issues/47 and reverted PR https://github.com/cloudfoundry/app-autoscaler/pull/1390",
       "matchManagers": [
         "gomod"
