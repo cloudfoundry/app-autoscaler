@@ -365,11 +365,6 @@ func (c *BaseConfig) GetFipsMode() bool {
 	return c.FipsMode
 }
 
-// SetLoggingPlainText implements configutil.CommonVCAPConfig
-func (c *BaseConfig) SetLoggingPlainText() {
-	c.Logging.PlainTextSink = true
-}
-
 // SetPortsForCF implements configutil.CommonVCAPConfig
 func (c *BaseConfig) SetPortsForCF(cfPort int) {
 	c.CFServer.Port = cfPort

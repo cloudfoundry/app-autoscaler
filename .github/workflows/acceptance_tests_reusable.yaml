@@ -74,7 +74,7 @@ jobs:
           if [ "${{ inputs.build_fips_extension }}" = "true" ]; then
             make --directory="${AUTOSCALER_DIR}" build-extension-file-fips
           fi
-          make --directory="${AUTOSCALER_DIR}" mta-build
+          "${AUTOSCALER_DIR}/scripts/mta-build.sh"
           make --directory="${AUTOSCALER_DIR}" mta-deploy
 
   acceptance_tests:
