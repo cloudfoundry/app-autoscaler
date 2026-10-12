@@ -11,9 +11,9 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.autoscaler.scheduler.conf.CfHttpConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.conf.CfServerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @Order(0)
 @RequiredArgsConstructor
+@Slf4j
 public class HttpAuthFilter extends OncePerRequestFilter {
 
   private static final String AUTHORIZATION_HEADER = "Authorization";
@@ -28,8 +29,8 @@ public class HttpAuthFilter extends OncePerRequestFilter {
   private static final String XFCC_HEADER = "X-Forwarded-Client-Cert";
   private static final String HEALTH_ENDPOINT = "/health";
 
-  private Logger logger = LoggerFactory.getLogger(this.getClass());
   private final CfServerConfiguration cfServerConfiguration;
+  private final CfHttpConfiguration cfHttpConfiguration;
 
   @Override
   protected void doFilterInternal(
@@ -38,69 +39,92 @@ public class HttpAuthFilter extends OncePerRequestFilter {
 
     String forwardedProto = request.getHeader("X-Forwarded-Proto");
     boolean isHealthEndpoint = request.getRequestURI().contains(HEALTH_ENDPOINT);
+    boolean isCfPort = isCfPort(request);
 
-    logger.info(
-        "Received {} request, scheme={},X-Forwarded-Proto={}, isHealthEndpoint={}, username={}",
+    log.info(
+        "Received {} request, scheme={},X-Forwarded-Proto={}, isHealthEndpoint={}, isCfPort={},"
+            + " username={}",
         request.getMethod(),
         request.getScheme(),
         forwardedProto,
         isHealthEndpoint,
+        isCfPort,
         cfServerConfiguration.getHealthserver().getUsername());
 
     if (isHealthEndpoint) {
       handleHealthEndpoint(request, response);
       return;
     }
-    // Check for XFCC header
-    String xfccHeader = request.getHeader(XFCC_HEADER);
-    if (xfccHeader == null || xfccHeader.isEmpty()) {
-      logger.warn("Missing X-Forwarded-Client-Cert header, URI={}", request.getRequestURI());
+
+    // XFCC authorization only applies to the CF server port, which sits behind the gorouter that
+    // injects the X-Forwarded-Client-Cert header. The BOSH (main) port is a direct mTLS listener
+    // (client-auth: NEED), so the TLS handshake already authenticates the peer and no XFCC header
+    // is present.
+    if (!isCfPort) {
       filterChain.doFilter(request, response);
       return;
     }
-    validateOrganizationAndSpace(xfccHeader, response);
+
+    String xfccHeader = request.getHeader(XFCC_HEADER);
+    if (xfccHeader == null || xfccHeader.isEmpty()) {
+      log.warn("Missing X-Forwarded-Client-Cert header, URI={}", request.getRequestURI());
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing X-Forwarded-Client-Cert");
+      return;
+    }
+    if (!isAuthorized(xfccHeader, response)) {
+      // isAuthorized already sent the appropriate error response.
+      return;
+    }
     filterChain.doFilter(request, response);
   }
 
-  private void validateOrganizationAndSpace(String xfccHeader, HttpServletResponse response)
-      throws IOException {
-    logger.info(
+  private boolean isCfPort(HttpServletRequest request) {
+    int cfPort = cfHttpConfiguration.getPort();
+    // cfPort == 0 means no CF connector is configured (pure BOSH deployment)
+    return cfPort != 0 && request.getLocalPort() == cfPort;
+  }
+
+  private boolean isAuthorized(String xfccHeader, HttpServletResponse response) throws IOException {
+    log.info(
         "X-Forwarded-Client-Cert header received ... checking authorized cf organization and space"
             + " in Organizational Unit");
     try {
       String organizationalUnit = extractOrganizationalUnit(xfccHeader);
       // Validate both key-value pairs in OrganizationalUnit
       if (!isValidOrganizationalUnit(organizationalUnit)) {
-        logger.warn("Unauthorized OrganizationalUnit: " + organizationalUnit);
+        log.warn("Unauthorized OrganizationalUnit: {}", organizationalUnit);
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized OrganizationalUnit");
+        return false;
       }
-    } catch (CertificateException e) {
-      logger.warn("Invalid certificate: " + e.getMessage());
+      return true;
+    } catch (CertificateException | IllegalArgumentException e) {
+      log.warn("Invalid certificate: {}", e.getMessage());
       response.sendError(
           HttpServletResponse.SC_BAD_REQUEST, "Invalid certificate: " + e.getMessage());
+      return false;
     }
   }
 
   private void handleHealthEndpoint(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
-    logger.info("Handling health check request with Basic Auth");
+    log.info("Handling health check request with Basic Auth");
     String authHeader = request.getHeader(AUTHORIZATION_HEADER);
-    logger.info("Authorization header: {}", authHeader != null ? "present" : "missing");
+    log.info("Authorization header: {}", authHeader != null ? "present" : "missing");
 
     if (authHeader == null || !authHeader.startsWith(BASIC_AUTH_PREFIX)) {
-      logger.warn("Missing or invalid Authorization header for health check request");
+      log.warn("Missing or invalid Authorization header for health check request");
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
       return;
     }
     String[] credentials = decodeBasicAuth(authHeader);
-    if (credentials.length != 2) {
-      logger.warn("Invalid Authorization header format for health check request");
+    if (credentials == null || credentials.length != 2) {
+      log.warn("Invalid Authorization header format for health check request");
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
       return;
     }
     if (!credentials[0].equals(cfServerConfiguration.getHealthserver().getUsername())
         || !credentials[1].equals(cfServerConfiguration.getHealthserver().getPassword())) {
-      logger.warn("Invalid credentials for health check request");
+      log.warn("Invalid credentials for health check request");
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
       return;
     }
@@ -117,8 +141,8 @@ public class HttpAuthFilter extends OncePerRequestFilter {
               Base64.getDecoder().decode(authHeader.substring(BASIC_AUTH_PREFIX.length())))
           .split(":");
     } catch (IllegalArgumentException e) {
-      logger.warn("Failed to decode Basic Auth header: {}", e.getMessage());
-      return null;
+      log.warn("Failed to decode Basic Auth header: {}", e.getMessage());
+      return new String[0];
     }
   }
 

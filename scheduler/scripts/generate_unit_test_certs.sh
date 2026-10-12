@@ -24,6 +24,22 @@ ${CERTSTRAP} --depot-path "${depot_path}" sign test-scalingengine --CA test-ca
 ${CERTSTRAP} --depot-path "${depot_path}" request-cert --passphrase '' --common-name test-scheduler --domain localhost
 ${CERTSTRAP} --depot-path "${depot_path}" sign test-scheduler --CA test-ca
 
+# XFCC client certificate for HttpAuthFilter tests.
+# The filter authenticates by substring-matching the Subject OU against
+# "space:<guid>" and "organization:<guid>"; the CF app-identity cert carries
+# both in a single OU value literally formatted as
+# "OU=space:<space>+OU=organization:<org>" (see testhelpers/certs.go). The
+# space/org GUIDs below match cfserver.validSpaceGuid/validOrgGuid used by the
+# filter tests.
+${CERTSTRAP} --depot-path "${depot_path}" request-cert --passphrase '' \
+	--common-name localhost \
+	--organization 'My Organization' \
+	--organizational-unit 'OU=space:validspace+OU=organization:validorg' \
+	--domain localhost
+${CERTSTRAP} --depot-path "${depot_path}" sign localhost --CA test-ca
+mv -f "${depot_path}"/localhost.crt "${depot_path}"/xfcc-valid.crt
+mv -f "${depot_path}"/localhost.key "${depot_path}"/xfcc-valid.key
+
 keytool -importcert -alias autoscaler -file "${depot_path}"/test-ca.crt -keystore "${depot_path}"/test.truststore -storeType pkcs12 -storepass 123456 -noprompt
 
 openssl pkcs12 -export -in "${depot_path}"/test-scheduler.crt -inkey "${depot_path}"/test-scheduler.key -out "${depot_path}"/test-scheduler.p12 -name test-scheduler -password pass:123456
