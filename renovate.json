@@ -13,6 +13,7 @@
   "platformAutomerge": true,
   "automergeStrategy": "squash",
   "prConcurrentLimit": 5,
+  "prHourlyLimit": 0,
   "packageRules": [
     {
       "description": "Opt-out minimum Go version updates: https://github.com/renovatebot/renovate/issues/16715",
