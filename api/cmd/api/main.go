@@ -36,7 +36,7 @@ func main() {
 
 	policyDb := sqldb.CreatePolicyDb(conf.Db[db.PolicyDb], logger)
 	defer func() { _ = policyDb.Close() }()
-	logger.Debug("Connected to PolicyDB", lager.Data{"dbConfig": conf.Db[db.PolicyDb]})
+	logger.Debug("Connected to PolicyDB")
 
 	var credentialProvider cred_helper.Credentials
 	if conf.CustomMetricsAuthConfig != nil {
@@ -56,7 +56,7 @@ func main() {
 	logger.Debug("Successfully logged into CF", lager.Data{"API": conf.CF.API})
 
 	bindingDb, err := sqldb.NewBindingSQLDB(conf.Db[db.BindingDb], logger.Session("bindingdb-db"))
-	startup.ExitOnError(err, logger, "failed to connect bindingdb database", lager.Data{"dbConfig": conf.Db[db.BindingDb]})
+	startup.ExitOnError(err, logger, "failed to connect bindingdb database")
 	defer func() { _ = bindingDb.Close() }()
 	checkBindingFunc := func(appId string) bool {
 		return bindingDb.CheckServiceBinding(appId)

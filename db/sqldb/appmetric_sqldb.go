@@ -30,14 +30,14 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 
 	sqldb, err := otelsqlx.Open(database.DriverName, database.DataSourceName, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
-		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("open-AppMetric-db", err)
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		_ = sqldb.Close()
-		logger.Error("ping-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("ping-AppMetric-db", err)
 		return nil, err
 	}
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)

@@ -32,14 +32,14 @@ func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger)
 
 	sqldb, err := otelsqlx.Open(database.DriverName, database.DataSourceName, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
-		logger.Error("open-lock-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("open-lock-db", err)
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		_ = sqldb.Close()
-		logger.Error("ping-lock-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("ping-lock-db", err)
 		return nil, err
 	}
 
@@ -59,7 +59,7 @@ func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger)
 func (ldb *LockSQLDB) Close() error {
 	err := ldb.sqldb.Close()
 	if err != nil {
-		ldb.logger.Error("close-lock-db", err, lager.Data{"dbConfig": ldb.dbConfig})
+		ldb.logger.Error("close-lock-db", err)
 		return err
 	}
 	return nil

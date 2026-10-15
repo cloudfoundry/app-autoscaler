@@ -42,7 +42,7 @@ func CredentialsProvider(implConfig models.BasicAuthHandlingImplConfig, dbConf m
 	case models.BasicAuthHandlingStoredProc:
 		storedProcedureDb, err := sqldb.NewStoredProcedureSQLDb(impl.Config, dbConf[db.StoredProcedureDb], logger.Session("storedprocedure-db"))
 		if err != nil {
-			logger.Fatal("failed to connect to storedProcedureDb database", err, lager.Data{"dbConfig": dbConf[db.StoredProcedureDb]})
+			logger.Fatal("failed to connect to storedProcedureDb database", err)
 			os.Exit(1)
 		}
 		credentials = NewStoredProcedureCredHelper(storedProcedureDb, MaxRetry, logger.Session("storedprocedure-cred-helper"))
