@@ -54,7 +54,7 @@ jobs:
       - name: make ${{ matrix.suite }}
         # Retries only this matrix cell's failed run (up to 3 attempts); other
         # suite/postgres combinations run in their own jobs and are not re-run.
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         env:
           DB_HOST: localhost
           CI: true
