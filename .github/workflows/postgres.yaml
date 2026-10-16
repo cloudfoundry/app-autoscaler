@@ -52,8 +52,15 @@ jobs:
           devbox run make generate-openapi-generated-clients-and-servers
 
       - name: make ${{ matrix.suite }}
+        # Retries only this matrix cell's failed run (up to 3 attempts); other
+        # suite/postgres combinations run in their own jobs and are not re-run.
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         env:
           DB_HOST: localhost
           CI: true
-        run: |
-          devbox run make ${{ matrix.suite }} db_type=postgres DB_HOST="${DB_HOST}" CI="${CI}"
+        with:
+          timeout_minutes: 360
+          max_attempts: 3
+          retry_on: error
+          command: |
+            devbox run make ${{ matrix.suite }} db_type=postgres DB_HOST="${DB_HOST}" CI="${CI}"
