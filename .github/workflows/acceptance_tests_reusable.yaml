@@ -62,13 +62,17 @@ jobs:
         run: make --directory="${AUTOSCALER_DIR}" provision-db
 
       - name: Deploy Apps
-        shell: bash
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
-        run: |
-          make --directory="${AUTOSCALER_DIR}" build-extension-file
-          "${AUTOSCALER_DIR}/scripts/mta-build.sh"
-          make --directory="${AUTOSCALER_DIR}" mta-deploy
+        with:
+          timeout_minutes: 360
+          max_attempts: 3
+          retry_on: error
+          command: |
+            make --directory="${AUTOSCALER_DIR}" build-extension-file
+            "${AUTOSCALER_DIR}/scripts/mta-build.sh"
+            make --directory="${AUTOSCALER_DIR}" mta-deploy
 
   acceptance_tests:
     name: Acceptance Tests - ${{ matrix.suite }}
@@ -97,10 +101,14 @@ jobs:
         with:
           ssh-key: ${{ secrets.bbl_ssh_key}}
       - name: Run acceptance tests via CF tasks - ${{ matrix.suite }}
-        shell: bash
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         env:
           SUITES: ${{ matrix.suite }}
-        run: make --directory="${AUTOSCALER_DIR}" mta-acceptance-tests
+        with:
+          timeout_minutes: 360
+          max_attempts: 3
+          retry_on: error
+          command: make --directory="${AUTOSCALER_DIR}" mta-acceptance-tests
 
   deployment_cleanup:
     needs: [ deploy_autoscaler, acceptance_tests ]
