@@ -24,7 +24,7 @@ func CreatePolicyDB(dbConfig db.DatabaseConfig, logger lager.Logger) *DatabaseCo
 // CreateAppMetricDB creates and connects to app metric database
 func CreateAppMetricDB(dbConfig db.DatabaseConfig, logger lager.Logger) *DatabaseConnection[db.AppMetricDB] {
 	appMetricDB, err := sqldb.NewAppMetricSQLDB(dbConfig, logger.Session("appmetric-db"))
-	ExitOnError(err, logger, "failed to connect appmetrics db", lager.Data{"dbConfig": dbConfig})
+	ExitOnError(err, logger, "failed to connect appmetrics db")
 	return &DatabaseConnection[db.AppMetricDB]{
 		DB:     appMetricDB,
 		Closer: appMetricDB.Close,
@@ -34,7 +34,7 @@ func CreateAppMetricDB(dbConfig db.DatabaseConfig, logger lager.Logger) *Databas
 // CreateScalingEngineDB creates and connects to scaling engine database
 func CreateScalingEngineDB(dbConfig db.DatabaseConfig, logger lager.Logger) *DatabaseConnection[db.ScalingEngineDB] {
 	scalingEngineDB, err := sqldb.NewScalingEngineSQLDB(dbConfig, logger.Session("scalingengine-db"))
-	ExitOnError(err, logger, "failed to connect scalingengine db", lager.Data{"dbConfig": dbConfig})
+	ExitOnError(err, logger, "failed to connect scalingengine db")
 	return &DatabaseConnection[db.ScalingEngineDB]{
 		DB:     scalingEngineDB,
 		Closer: scalingEngineDB.Close,
@@ -44,7 +44,7 @@ func CreateScalingEngineDB(dbConfig db.DatabaseConfig, logger lager.Logger) *Dat
 // CreateSchedulerDB creates and connects to scheduler database
 func CreateSchedulerDB(dbConfig db.DatabaseConfig, logger lager.Logger) *DatabaseConnection[db.SchedulerDB] {
 	schedulerDB, err := sqldb.NewSchedulerSQLDB(dbConfig, logger.Session("scheduler-db"))
-	ExitOnError(err, logger, "failed to connect scheduler database", lager.Data{"dbConfig": dbConfig})
+	ExitOnError(err, logger, "failed to connect scheduler database")
 	return &DatabaseConnection[db.SchedulerDB]{
 		DB:     schedulerDB,
 		Closer: schedulerDB.Close,
@@ -63,7 +63,7 @@ func CreateBindingDB(dbConfig db.DatabaseConfig, logger lager.Logger) *DatabaseC
 // CreateLockDB creates and connects to lock database
 func CreateLockDB(dbConfig db.DatabaseConfig, lockTableName string, logger lager.Logger) *DatabaseConnection[db.LockDB] {
 	lockDB, err := sqldb.NewLockSQLDB(dbConfig, lockTableName, logger.Session("lock-db"))
-	ExitOnError(err, logger, "failed-to-connect-lock-database", lager.Data{"dbConfig": dbConfig})
+	ExitOnError(err, logger, "failed-to-connect-lock-database")
 	return &DatabaseConnection[db.LockDB]{
 		DB:     lockDB,
 		Closer: lockDB.Close,

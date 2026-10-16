@@ -33,14 +33,14 @@ func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Sc
 
 	sqldb, err := otelsqlx.Open(database.DriverName, database.DataSourceName, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
-		logger.Error("open-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("open-scaling-engine-db", err)
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		_ = sqldb.Close()
-		logger.Error("ping-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("ping-scaling-engine-db", err)
 		return nil, err
 	}
 
@@ -59,7 +59,7 @@ func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Sc
 func (sdb *ScalingEngineSQLDB) Close() error {
 	err := sdb.sqldb.Close()
 	if err != nil {
-		sdb.logger.Error("close-scaling-engine-db", err, lager.Data{"dbConfig": sdb.dbConfig})
+		sdb.logger.Error("close-scaling-engine-db", err)
 		return err
 	}
 	return nil
