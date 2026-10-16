@@ -12,9 +12,8 @@ import (
 type FakeBrokerServer struct {
 	CreateServerStub        func() (ifrit.Runner, error)
 	createServerMutex       sync.RWMutex
-	createServerArgsForCall []struct {
-	}
-	createServerReturns struct {
+	createServerArgsForCall []struct{}
+	createServerReturns     struct {
 		result1 ifrit.Runner
 		result2 error
 	}
@@ -24,9 +23,8 @@ type FakeBrokerServer struct {
 	}
 	GetRouterStub        func() (*http.ServeMux, error)
 	getRouterMutex       sync.RWMutex
-	getRouterArgsForCall []struct {
-	}
-	getRouterReturns struct {
+	getRouterArgsForCall []struct{}
+	getRouterReturns     struct {
 		result1 *http.ServeMux
 		result2 error
 	}
@@ -35,14 +33,14 @@ type FakeBrokerServer struct {
 		result2 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
 }
 
 func (fake *FakeBrokerServer) CreateServer() (ifrit.Runner, error) {
 	fake.createServerMutex.Lock()
 	ret, specificReturn := fake.createServerReturnsOnCall[len(fake.createServerArgsForCall)]
-	fake.createServerArgsForCall = append(fake.createServerArgsForCall, struct {
-	}{})
+	fake.createServerArgsForCall = append(fake.createServerArgsForCall, struct{}{})
 	stub := fake.CreateServerStub
 	fakeReturns := fake.createServerReturns
 	fake.recordInvocation("CreateServer", []interface{}{})
@@ -97,8 +95,7 @@ func (fake *FakeBrokerServer) CreateServerReturnsOnCall(i int, result1 ifrit.Run
 func (fake *FakeBrokerServer) GetRouter() (*http.ServeMux, error) {
 	fake.getRouterMutex.Lock()
 	ret, specificReturn := fake.getRouterReturnsOnCall[len(fake.getRouterArgsForCall)]
-	fake.getRouterArgsForCall = append(fake.getRouterArgsForCall, struct {
-	}{})
+	fake.getRouterArgsForCall = append(fake.getRouterArgsForCall, struct{}{})
 	stub := fake.GetRouterStub
 	fakeReturns := fake.getRouterReturns
 	fake.recordInvocation("GetRouter", []interface{}{})
@@ -160,9 +157,18 @@ func (fake *FakeBrokerServer) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *FakeBrokerServer) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *FakeBrokerServer) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}
