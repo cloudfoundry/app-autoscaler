@@ -25,14 +25,14 @@ func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Schedu
 	}
 	sqldb, err := sql.Open(database.DriverName, database.DataSourceName)
 	if err != nil {
-		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("failed-open-scheduler-db", err)
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		sqldb.Close()
-		logger.Error("failed-ping-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("failed-ping-scheduler-db", err)
 		return nil, err
 	}
 
@@ -51,7 +51,7 @@ func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Schedu
 func (sdb *SchedulerSQLDB) Close() error {
 	err := sdb.sqldb.Close()
 	if err != nil {
-		sdb.logger.Error("failed-close-scheduler-db", err, lager.Data{"dbConfig": sdb.dbConfig})
+		sdb.logger.Error("failed-close-scheduler-db", err)
 		return err
 	}
 	return nil

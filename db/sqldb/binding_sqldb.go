@@ -35,14 +35,14 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 
 	sqldb, err := otelsqlx.Open(database.DriverName, database.DataSourceName, otelsql.WithAttributes(database.OTELAttribute))
 	if err != nil {
-		logger.Error("open-binding-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("open-binding-db", err)
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		_ = sqldb.Close()
-		logger.Error("ping-binding-db", err, lager.Data{"dbConfig": dbConfig})
+		logger.Error("ping-binding-db", err)
 		return nil, err
 	}
 
@@ -61,7 +61,7 @@ func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingS
 func (bdb *BindingSQLDB) Close() error {
 	err := bdb.sqldb.Close()
 	if err != nil {
-		bdb.logger.Error("Close-binding-db", err, lager.Data{"dbConfig": bdb.dbConfig})
+		bdb.logger.Error("Close-binding-db", err)
 		return err
 	}
 	return nil

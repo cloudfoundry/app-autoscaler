@@ -149,5 +149,6 @@
   "lockFileMaintenance": {
     "enabled": true
   },
-  "timezone": "UTC"
+  "timezone": "UTC",
+  "schedule": ["* 6-16 * * 1-5"]
 }
