@@ -1,9 +1,9 @@
 module acceptance
 
-go 1.26.5
+go 1.26.8
 
 require (
-	github.com/cloudfoundry/cf-test-helpers/v2 v2.13.0
+	github.com/cloudfoundry/cf-test-helpers/v2 v2.15.0
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 )
