@@ -902,41 +902,41 @@
         }
       }
     },
-    "go-tools@2026.2.1": {
-      "last_modified": "2026-09-28T04:45:22Z",
-      "resolved": "github:NixOS/nixpkgs/419fe0f449b3fbe3bdd53d9840288db4509ec32e#go-tools",
+    "go-tools@2026.2.2": {
+      "last_modified": "2026-10-20T14:23:57Z",
+      "resolved": "github:NixOS/nixpkgs/5adc50831c259f87faeb09ddf930d43597197473#go-tools",
       "source": "devbox-search",
-      "version": "2026.2.1",
+      "version": "2026.2.2",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8krraz910jasj09dxyvh7y42b0ds4n9f-go-tools-2026.2.1",
+              "path": "/nix/store/qdnqy7d0mlv3rramnakpb359gwrjhnm2-go-tools-2026.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8krraz910jasj09dxyvh7y42b0ds4n9f-go-tools-2026.2.1"
+          "store_path": "/nix/store/qdnqy7d0mlv3rramnakpb359gwrjhnm2-go-tools-2026.2.2"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/sbxv2mcyp50sa8kxc51w2wdc07kszg48-go-tools-2026.2.1",
+              "path": "/nix/store/xsk6c5nagsdm4a5lp166b737nvv046n2-go-tools-2026.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/sbxv2mcyp50sa8kxc51w2wdc07kszg48-go-tools-2026.2.1"
+          "store_path": "/nix/store/xsk6c5nagsdm4a5lp166b737nvv046n2-go-tools-2026.2.2"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/xm3fmq7cqp3jf7q81i7lacz0y4n29v97-go-tools-2026.2.1",
+              "path": "/nix/store/60fai9v3f1gw9rx25zyn11r674iq756i-go-tools-2026.2.2",
               "default": true
             }
           ],
-          "store_path": "/nix/store/xm3fmq7cqp3jf7q81i7lacz0y4n29v97-go-tools-2026.2.1"
+          "store_path": "/nix/store/60fai9v3f1gw9rx25zyn11r674iq756i-go-tools-2026.2.2"
         }
       }
     },
