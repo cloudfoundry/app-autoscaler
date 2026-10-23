@@ -156,7 +156,7 @@ class HttpAuthFilterTest {
     httpAuthFilter.doFilterInternal(request, response, filterChain);
 
     assertThat(response.getStatus()).isEqualTo(400);
-    assertThat(response.getErrorMessage()).contains("Invalid certificate");
+    assertThat(response.getErrorMessage()).contains("Invalid certificate:");
     verify(filterChain, never()).doFilter(request, response);
   }
 

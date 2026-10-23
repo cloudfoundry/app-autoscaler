@@ -41,6 +41,7 @@ func main() {
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB.DB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDb.DB),
 		httpStatusCollector,
+		helpers.FipsEnabledGauge,
 	}, true, logger.Session("eventgenerator-prometheus"))
 
 	appManager := aggregator.NewAppManager(logger, clock, *conf.Aggregator, *conf.Pool, policyDb.DB, appMetricDB.DB)

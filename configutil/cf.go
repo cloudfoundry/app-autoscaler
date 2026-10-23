@@ -347,6 +347,7 @@ type BaseConfig struct {
 	CFServer helpers.ServerConfig         `yaml:"cf_server" json:"cf_server"`
 	Health   helpers.HealthConfig         `yaml:"health" json:"health"`
 	Db       map[string]db.DatabaseConfig `yaml:"db" json:"db"`
+	FipsMode bool                         `yaml:"fips_mode" json:"fips_mode"`
 }
 
 // SetLoggingLevel implements configutil.Configurable
@@ -357,6 +358,18 @@ func (c *BaseConfig) SetLoggingLevel() {
 // GetLogging returns the logging configuration
 func (c *BaseConfig) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
+}
+
+// GetFipsMode returns whether FIPS 140-3 mode is configured
+func (c *BaseConfig) GetFipsMode() bool {
+	return c.FipsMode
+}
+
+// SetLoggingPlainText implements configutil.CommonVCAPConfig
+func (c *BaseConfig) SetLoggingPlainText() {
+	// main reworked LoggingConfig (commit d40e7990): the old PlainTextSink flag
+	// was replaced by JsonSink, so plain text is expressed as JsonSink = false.
+	c.Logging.JsonSink = false
 }
 
 // SetPortsForCF implements configutil.CommonVCAPConfig
