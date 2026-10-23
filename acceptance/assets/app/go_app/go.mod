@@ -12,7 +12,7 @@ require (
 	github.com/ogen-go/ogen v1.24.0
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
-	github.com/prometheus/procfs v0.22.0
+	github.com/prometheus/procfs v0.23.0
 	github.com/steinfletcher/apitest v1.6.2
 	go.opentelemetry.io/otel v1.45.0
 	go.opentelemetry.io/otel/metric v1.45.0
