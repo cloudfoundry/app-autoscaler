@@ -119,6 +119,7 @@ func createPrometheusRegistry(policyDB db.PolicyDB, appMetricsDB db.AppMetricDB,
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "appMetricsDB", appMetricsDB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "scalingEngineDB", scalingEngineDB),
+		helpers.FipsEnabledGauge,
 	}, true, logger.Session("operator-prometheus"))
 	return promRegistry
 }

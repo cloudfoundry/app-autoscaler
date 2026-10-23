@@ -1,0 +1,26 @@
+name: Acceptance Tests - FIPS
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [ opened, synchronize ]
+    paths:
+      - '**/*fips*'
+      - '**/*Fips*'
+      - 'startup/startup.go'
+      - 'scheduler/src/main/java/**/SchedulerApplication.java'
+      - '.github/workflows/acceptance_tests_fips.yaml'
+
+concurrency:
+  group: "${{ github.workflow }}/${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  acceptance_tests_fips:
+    name: "${{ github.workflow }}"
+    uses: ./.github/workflows/acceptance_tests_reusable.yaml
+    with:
+      deployment_name: "autoscaler-fips-${{ github.event.pull_request.number || github.run_number }}"
+      build_fips_extension: true
+      suites: "[ 'api', 'app', 'broker', 'fips' ]"
+    secrets:
+      bbl_ssh_key: "${{ secrets.BBL_SSH_KEY }}"

@@ -45,3 +45,6 @@ keytool -importcert -alias autoscaler -file "${depot_path}"/test-ca.crt -keystor
 openssl pkcs12 -export -in "${depot_path}"/test-scheduler.crt -inkey "${depot_path}"/test-scheduler.key -out "${depot_path}"/test-scheduler.p12 -name test-scheduler -password pass:123456
 openssl pkcs12 -export -in "${depot_path}"/test-scalingengine.crt -inkey "${depot_path}"/test-scalingengine.key -out "${depot_path}"/fake-scalingengine.p12 -name fake-scalingengine -password pass:123456
 
+# EC and PKCS8 private keys for Spring Boot PEM compatibility tests.
+openssl ecparam -name prime256v1 -genkey -noout -out "${depot_path}"/test-ec.key
+openssl pkcs8 -topk8 -nocrypt -in "${depot_path}"/test-scheduler.key -out "${depot_path}"/test-rsa-pkcs8.key
