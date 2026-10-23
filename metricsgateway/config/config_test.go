@@ -55,6 +55,9 @@ var _ = Describe("Config", func() {
 cf_server:
   xfcc:
     valid_org_guid: "explicit-org-guid-from-config"
+    verification_mode: shadow
+    system_cert_path: /platform/roots
+    instance_cert_path: /platform/instance.crt
 `), nil)
 			})
 
@@ -62,6 +65,9 @@ cf_server:
 				conf, err = config.LoadConfig("", mockVCAPConfigurationReader)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(conf.CFServer.XFCC.ValidOrgGuid).To(Equal("explicit-org-guid-from-config"))
+				Expect(conf.CFServer.XFCC.VerificationMode).To(Equal("shadow"))
+				Expect(conf.CFServer.XFCC.SystemCertPath).To(Equal("/platform/roots"))
+				Expect(conf.CFServer.XFCC.InstanceCertPath).To(Equal("/platform/instance.crt"))
 			})
 
 			It("does not call GetOrgGuid", func() {

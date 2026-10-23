@@ -17,9 +17,13 @@ func TestConfigSuite(t *testing.T) {
 }
 
 var _ = Describe("LoadConfig", func() {
+	BeforeEach(func() {
+		GinkgoT().Setenv("CONFIG", "")
+	})
+
 	When("CONFIG env var not set", func() {
 		It("terminates suite", func() {
-			loadConfigExpectSuiteTerminationWith("Must set $CONFIG to point to a json file or $ACCEPTANCE_CONFIG_JSON with JSON content")
+			loadConfigExpectSuiteTerminationWith("Must set $CONFIG to point to a json file")
 		})
 	})
 
@@ -88,6 +92,34 @@ var _ = Describe("LoadConfig", func() {
 
 		When("all required fields set", func() {
 			var cfg = &Config{}
+
+			It("defaults to non-FIPS mode", func() {
+				writeAndExpectValueSetTo(config(), configFile, cfg, &cfg.FipsModeExpected, false)
+			})
+
+			It("does not override the file with environment or service configuration", func() {
+				GinkgoT().Setenv("ACCEPTANCE_CONFIG_JSON", `{"fips_mode_expected": true}`)
+				GinkgoT().Setenv("VCAP_SERVICES", `{"user-provided": [{
+					"tags": ["acceptance-tests-config"],
+					"credentials": {"acceptance-tests-config": {"fips_mode_expected": true}}
+				}]}`)
+				writeAndExpectValueSetTo(config(), configFile, cfg, &cfg.FipsModeExpected, false)
+			})
+
+			It("loads FIPS mode and health endpoint credentials from the file", func() {
+				write(configWith(`"fips_mode_expected": true,
+					"health_endpoints": {"scheduler": {
+						"endpoint": "https://scheduler.example.com/health",
+						"username": "test-user", "password": "test-password"
+					}}`), configFile)
+				cfg := LoadConfig(AbortSuite)
+				Expect(cfg.FipsModeExpected).To(BeTrue())
+				Expect(cfg.HealthEndpoints).To(HaveLen(1))
+				Expect(cfg.HealthEndpoints["scheduler"]).To(Equal(HealthEndpointConfig{
+					Endpoint: "https://scheduler.example.com/health",
+					Username: "test-user", Password: "test-password",
+				}))
+			})
 
 			When("timeout_scale not set correctly", func() {
 				It("falls back to a correct value", func() {

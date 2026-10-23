@@ -26,18 +26,23 @@ SKIP_TEARDOWN="${SKIP_TEARDOWN:-false}"
 GINKGO_OPTS="${GINKGO_OPTS:-}"
 
 # Exit early if no suites specified (skip tests)
-if [ -z "$SUITES" ]; then
+if [[ -z "$SUITES" ]]; then
     echo "No test suites specified (SUITES is empty)"
     echo "Skipping acceptance tests"
     exit 0
 fi
 
-# Validate required environment variables
-if [ -z "${ACCEPTANCE_CONFIG_JSON:-}" ]; then
-    echo "ERROR: ACCEPTANCE_CONFIG_JSON environment variable is required"
-    echo "It should contain the full JSON configuration for the acceptance tests"
+# The environment variable transports the generated config to CF tasks.
+# Go tests always load a file via CONFIG, just like local acceptance runs.
+if [[ -z "${ACCEPTANCE_CONFIG_JSON:-}" ]]; then
+    echo "ERROR: No acceptance test configuration found" >&2
+    echo "Set ACCEPTANCE_CONFIG_JSON env var" >&2
     exit 1
 fi
+CONFIG="$(mktemp)"
+export CONFIG
+trap 'rm -f "${CONFIG}"' EXIT
+printf '%s\n' "${ACCEPTANCE_CONFIG_JSON}" > "${CONFIG}"
 
 # Set working directory (already in /home/vcap/app with test files)
 cd /home/vcap/app
@@ -47,8 +52,8 @@ export PATH="/home/vcap/app/bin:$PATH"
 
 # Verify CF CLI is available
 if ! command -v cf &> /dev/null; then
-    echo "ERROR: CF CLI not found in PATH"
-    echo "Expected location: /home/vcap/app/bin/cf"
+    echo "ERROR: CF CLI not found in PATH" >&2
+    echo "Expected location: /home/vcap/app/bin/cf" >&2
     ls -la /home/vcap/app/bin/ 2>/dev/null || echo "Directory /home/vcap/app/bin does not exist"
     exit 1
 fi
@@ -70,8 +75,8 @@ fi
 
 # Set ginkgo binary path based on platform
 GINKGO_BINARY="./ginkgo_v2_${GOOS}_${GOARCH}"
-if [ ! -x "$GINKGO_BINARY" ]; then
-    echo "ERROR: Ginkgo binary not found at $GINKGO_BINARY"
+if [[ ! -x "$GINKGO_BINARY" ]]; then
+    echo "ERROR: Ginkgo binary not found at $GINKGO_BINARY" >&2
     echo "Expected platform: ${GOOS}_${GOARCH}"
     ls -la ginkgo_v2_* 2>/dev/null || echo "No ginkgo binaries found"
     exit 1
@@ -82,7 +87,7 @@ export GINKGO_BINARY
 SUITE_ARGS=""
 for suite in $SUITES; do
     suite_binary="${suite}/${suite}_${GOOS}_${GOARCH}.test"
-    if [ ! -f "$suite_binary" ]; then
+    if [[ ! -f "$suite_binary" ]]; then
         echo "WARNING: Test suite binary not found: $suite_binary"
         echo "Available suites:"
         find . -name "*.test" -type f 2>/dev/null | sed 's|^\./||' || echo "  No test binaries found"
@@ -94,8 +99,8 @@ done
 # Trim leading whitespace
 SUITE_ARGS="${SUITE_ARGS# }"
 
-if [ -z "$SUITE_ARGS" ]; then
-    echo "ERROR: No valid test suites found to run"
+if [[ -z "$SUITE_ARGS" ]]; then
+    echo "ERROR: No valid test suites found to run" >&2
     echo "Requested: $SUITES"
     exit 1
 fi
@@ -114,7 +119,7 @@ export SKIP_TEARDOWN
 export DEBUG=true
 
 # Run the tests using the Ginkgo wrapper
-# The config will be automatically picked up from ACCEPTANCE_CONFIG_JSON
+# The config will be picked up from CONFIG
 # Test binaries are built without coverage support (ginkgo build)
 # shellcheck disable=SC2086
 eval "$GINKGO_BINARY -race -nodes=\"$NODES\" -trace $GINKGO_OPTS $SUITE_ARGS"

@@ -34,6 +34,9 @@ func (a *Auth) XFCCAuth(r *http.Request, bindingDB db.BindingDB, appToScaleID st
 	if err != nil {
 		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
+	if err := a.verifier.Verify(cert); err != nil {
+		return err
+	}
 
 	submitterAppIDFromCert := readAppIdFromCert(cert)
 

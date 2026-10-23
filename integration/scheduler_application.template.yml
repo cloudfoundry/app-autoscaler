@@ -35,6 +35,8 @@ server:
         bundle: "server"
         client-auth: NEED
 cfserver:
+  # These integration fixtures use single-level TLS, not CF instance identity.
+  xfccVerificationMode: OFF
   validOrgGuid: some-org-guid
   validSpaceGuid: some-space-guid
   healthserver:

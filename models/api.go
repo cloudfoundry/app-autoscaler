@@ -6,8 +6,11 @@ import (
 )
 
 type XFCCAuth struct {
-	ValidOrgGuid   string `yaml:"valid_org_guid" json:"valid_org_guid"`
-	ValidSpaceGuid string `yaml:"valid_space_guid" json:"valid_space_guid"`
+	ValidOrgGuid     string `yaml:"valid_org_guid" json:"valid_org_guid"`
+	ValidSpaceGuid   string `yaml:"valid_space_guid" json:"valid_space_guid"`
+	VerificationMode string `yaml:"verification_mode" json:"verification_mode"`
+	SystemCertPath   string `yaml:"system_cert_path" json:"system_cert_path"`
+	InstanceCertPath string `yaml:"instance_cert_path" json:"instance_cert_path"`
 }
 
 type BrokerContext struct {

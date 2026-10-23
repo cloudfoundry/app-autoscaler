@@ -77,34 +77,16 @@ modules:
     properties:
       SUITES: ""
       ACCEPTANCE_CONFIG_JSON: |
-        {
-          "api": "api.${SYSTEM_DOMAIN}",
-          "admin_user": "admin",
-          "admin_password": "${CF_ADMIN_PASSWORD}",
-          "apps_domain": "${SYSTEM_DOMAIN}",
-          "skip_ssl_validation": ${SKIP_SSL_VALIDATION},
-          "use_http": false,
-          "service_name": "${DEPLOYMENT_NAME}",
-          "service_plan": "autoscaler-free-plan",
-          "service_broker": "${DEPLOYMENT_NAME}",
-          "aggregate_interval": 120,
-          "default_timeout": 120,
-          "cpu_upper_threshold": ${CPU_UPPER_THRESHOLD},
-          "name_prefix": "${NAME_PREFIX}",
-          "autoscaler_api": "${APISERVER_HOST}.${default-domain}",
-          "performance": {
-            "app_count": ${PERFORMANCE_APP_COUNT},
-            "app_percentage_to_scale": ${PERFORMANCE_APP_PERCENTAGE_TO_SCALE},
-            "setup_workers": ${PERFORMANCE_SETUP_WORKERS},
-            "update_existing_org_quota": ${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA}
-          }
-        }
+        ${ACCEPTANCE_CONFIG_JSON}
 
 resources:
   - name: metricsforwarder-config
     parameters:
       config:
         metricsforwarder-config:
+          server:
+            xfcc:
+              verification_mode: shadow
           metrics_gateway:
             url: https://${METRICSGATEWAY_HOST}.${default-domain}
           health:
@@ -115,8 +97,10 @@ resources:
     parameters:
       config:
         metricsgateway-config:
-          xfcc:
-            valid_org_guid: ${AUTOSCALER_ORG_GUID}
+          cf_server:
+            xfcc:
+              valid_org_guid: ${AUTOSCALER_ORG_GUID}
+              verification_mode: shadow
           health:
             basic_auth:
               password: ${METRICSGATEWAY_HEALTH_PASSWORD}
@@ -125,6 +109,9 @@ resources:
     parameters:
       config:
         eventgenerator-config:
+          cf_server:
+            xfcc:
+              verification_mode: shadow
           metricCollector:
             metric_collector_url: https://log-cache.${default-domain}
             port: ""
@@ -172,6 +159,7 @@ resources:
     parameters:
       config:
         cfserver:
+          xfccVerificationMode: SHADOW
           healthserver:
             password: test-password
             username: test-user
@@ -199,6 +187,9 @@ resources:
     parameters:
       config:
         scalingengine-config:
+          cf_server:
+            xfcc:
+              verification_mode: shadow
           health:
             basic_auth:
               password: ${SCALINGENGINE_HEALTH_PASSWORD}

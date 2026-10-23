@@ -97,6 +97,8 @@ type Config struct {
 	// An empty string is treated as "enabled" for backwards compatibility.
 	BasicAuthForCustomMetrics string `json:"basic_auth_for_custom_metrics"`
 
+	HealthEndpoints map[string]HealthEndpointConfig `json:"health_endpoints"`
+
 	CPUUpperThreshold int64 `json:"cpu_upper_threshold"`
 
 	// MinLoadDurationMinutes is how long the test app sustains artificial load (CPU/disk/memory).
@@ -108,12 +110,20 @@ type Config struct {
 
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
 
+	FipsModeExpected bool `json:"fips_mode_expected"`
+
 	Performance PerformanceConfig `json:"performance"`
 }
 
 type CPUUtilScalingPolicyTest struct {
 	AppMemory         string `json:"app_memory"`
 	AppCPUEntitlement int    `json:"app_cpu_entitlement"`
+}
+
+type HealthEndpointConfig struct {
+	Endpoint string `json:"endpoint"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 var defaults = Config{
@@ -177,24 +187,12 @@ type TerminateSuite func(message string, callerSkip ...int)
 var DefaultTerminateSuite TerminateSuite = ginkgo.AbortSuite
 
 func LoadConfig(terminateSuite TerminateSuite) *Config {
-	// First check for direct JSON config in environment variable
-	configJSON := os.Getenv("ACCEPTANCE_CONFIG_JSON")
-
 	config := defaults
-	var err error
-
-	if configJSON != "" {
-		// Parse JSON directly from env var
-		err = loadConfigFromJSON(configJSON, &config)
-	} else {
-		// Fall back to file-based config (existing behavior)
-		path := os.Getenv("CONFIG")
-		if path == "" {
-			terminateSuite("Must set $CONFIG to point to a json file or $ACCEPTANCE_CONFIG_JSON with JSON content")
-		}
-		err = loadConfigFromPath(path, &config)
+	path := os.Getenv("CONFIG")
+	if path == "" {
+		terminateSuite("Must set $CONFIG to point to a json file")
 	}
-
+	err := loadConfigFromPath(path, &config)
 	if err != nil {
 		terminateSuite(err.Error())
 	}
@@ -309,11 +307,6 @@ func loadConfigFromPath(path string, config *Config) error {
 	defer func() { _ = configFile.Close() }()
 
 	decoder := json.NewDecoder(configFile)
-	return decoder.Decode(config)
-}
-
-func loadConfigFromJSON(jsonContent string, config *Config) error {
-	decoder := json.NewDecoder(strings.NewReader(jsonContent))
 	return decoder.Decode(config)
 }
 

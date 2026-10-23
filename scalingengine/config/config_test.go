@@ -63,6 +63,25 @@ var _ = Describe("Config", func() {
 				Expect(conf.CFServer.XFCC.ValidSpaceGuid).To(Equal("some-space-id"))
 			})
 
+			When("the service config includes XFCC verification settings", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{
+						"cf_server": {"xfcc": {
+							"verification_mode": "shadow",
+							"system_cert_path": "/platform/roots",
+							"instance_cert_path": "/platform/instance.crt"
+						}}
+					}`), nil)
+				})
+				It("preserves verification settings when applying the deployment identity", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.CFServer.XFCC.VerificationMode).To(Equal("shadow"))
+					Expect(conf.CFServer.XFCC.SystemCertPath).To(Equal("/platform/roots"))
+					Expect(conf.CFServer.XFCC.InstanceCertPath).To(Equal("/platform/instance.crt"))
+					Expect(conf.CFServer.XFCC.ValidOrgGuid).To(Equal("some-org-id"))
+				})
+			})
+
 			When("handling available databases", func() {
 				It("calls vcapReader ConfigureDatabases with the right arguments", func() {
 					testhelpers.ExpectConfigureDatabasesCalledOnce(err, mockVCAPConfigurationReader)

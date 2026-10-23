@@ -180,6 +180,8 @@ func (s *PublicApiServer) createPrometheusRegistry() *prometheus.Registry {
 			healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "policyDB", s.policyDB),
 			healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", s.bindingDB),
 			s.httpStatusCollector,
+			helpers.FipsEnabledGauge,
+			helpers.FipsEnforcedGauge,
 		},
 		true, s.logger.Session("golangapiserver-prometheus"))
 	return promRegistry
