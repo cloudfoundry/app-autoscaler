@@ -117,7 +117,7 @@ public class HttpAuthFilter extends OncePerRequestFilter {
       return;
     }
     String[] credentials = decodeBasicAuth(authHeader);
-    if (credentials == null || credentials.length != 2) {
+    if (credentials.length != 2) {
       log.warn("Invalid Authorization header format for health check request");
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
       return;
