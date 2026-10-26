@@ -1295,51 +1295,41 @@
         }
       }
     },
-    "maven@3.9.16": {
-      "last_modified": "2026-09-28T04:45:22Z",
-      "resolved": "github:NixOS/nixpkgs/419fe0f449b3fbe3bdd53d9840288db4509ec32e#maven",
+    "maven@3.10.0": {
+      "last_modified": "2026-10-24T03:22:33Z",
+      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#maven",
       "source": "devbox-search",
-      "version": "3.9.16",
+      "version": "3.10.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/09xs4wjsfh7yl3lq4zklby8wiqfcsin2-maven-3.9.16",
+              "path": "/nix/store/a9n0m81rg4hfr78pr7s94fhbdpr3hgi9-maven-3.10.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/09xs4wjsfh7yl3lq4zklby8wiqfcsin2-maven-3.9.16"
+          "store_path": "/nix/store/a9n0m81rg4hfr78pr7s94fhbdpr3hgi9-maven-3.10.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qi5ivhs02c0lxaa9dpgv4jczm107g58g-maven-3.9.16",
+              "path": "/nix/store/jafzza8dyvwwf35bya0jkrbndp2kszrw-maven-3.10.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qi5ivhs02c0lxaa9dpgv4jczm107g58g-maven-3.9.16"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/334davh2hdmg5ma9pxxz5vpz39dji3vs-maven-3.9.16",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/334davh2hdmg5ma9pxxz5vpz39dji3vs-maven-3.9.16"
+          "store_path": "/nix/store/jafzza8dyvwwf35bya0jkrbndp2kszrw-maven-3.10.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nsk2zqwkrq9z67q9pwpwi25pf06s13rp-maven-3.9.16",
+              "path": "/nix/store/n7s3qz30dd48md7blc87f9ww8ycbnwap-maven-3.10.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nsk2zqwkrq9z67q9pwpwi25pf06s13rp-maven-3.9.16"
+          "store_path": "/nix/store/n7s3qz30dd48md7blc87f9ww8ycbnwap-maven-3.10.0"
         }
       }
     },
