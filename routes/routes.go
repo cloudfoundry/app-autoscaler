@@ -7,6 +7,9 @@ import (
 )
 
 const (
+	AppsWithPolicyPath         = "/v1/spaces/{spaceGuid}/apps_with_policy"
+	GetAppsWithPolicyRouteName = "GetAppsWithPolicy"
+
 	MetricHistoriesPath         = "/v1/apps/{appid}/metric_histories/{metrictype}"
 	GetMetricHistoriesRouteName = "GetMetricHistories"
 
