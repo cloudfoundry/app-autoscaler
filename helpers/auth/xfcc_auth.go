@@ -51,13 +51,19 @@ func (c *Cert) GetXFCCHeader() string {
 type xfccAuthMiddleware struct {
 	logger   lager.Logger
 	xfccAuth *models.XFCCAuth
+	verifier *ChainVerifier
 }
 
-func NewXfccAuthMiddleware(logger lager.Logger, xfccAuth models.XFCCAuth) XFCCAuthMiddleware {
+func NewXfccAuthMiddleware(logger lager.Logger, xfccAuth models.XFCCAuth) (XFCCAuthMiddleware, error) {
+	verifier, err := NewChainVerifier(logger, xfccAuth)
+	if err != nil {
+		return nil, err
+	}
 	return &xfccAuthMiddleware{
 		logger:   logger,
 		xfccAuth: &xfccAuth,
-	}
+		verifier: verifier,
+	}, nil
 }
 
 func (m *xfccAuthMiddleware) XFCCAuthenticationMiddleware(next http.Handler) http.Handler {
@@ -90,12 +96,18 @@ func parseCertFromXFCC(r *http.Request) (*x509.Certificate, error) {
 	return cert, nil
 }
 
+// CheckAuth checks certificate identity only; production middleware additionally
+// verifies the certificate chain before trusting this identity.
 func CheckAuth(r *http.Request, org, space string) error {
 	cert, err := parseCertFromXFCC(r)
 	if err != nil {
 		return err
 	}
 
+	return checkIdentity(cert, org, space)
+}
+
+func checkIdentity(cert *x509.Certificate, org, space string) error {
 	if space != "" && getSpaceGuid(cert) != space {
 		return ErrorWrongSpace
 	}
@@ -108,7 +120,14 @@ func CheckAuth(r *http.Request, org, space string) error {
 }
 
 func (m *xfccAuthMiddleware) checkAuth(r *http.Request) error {
-	return CheckAuth(r, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
+	cert, err := parseCertFromXFCC(r)
+	if err != nil {
+		return err
+	}
+	if err := m.verifier.Verify(cert); err != nil {
+		return err
+	}
+	return checkIdentity(cert, m.xfccAuth.ValidOrgGuid, m.xfccAuth.ValidSpaceGuid)
 }
 
 func getSpaceGuid(cert *x509.Certificate) string {

@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"math/big"
@@ -12,8 +13,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 )
 
 func GenerateClientCertWithPrivateKeyExpiring(orgGUID, spaceGUID string, privateKey *rsa.PrivateKey, notAfter time.Time) ([]byte, error) {
@@ -79,9 +78,8 @@ func SetXFCCCertHeader(req *http.Request, orgGuid, spaceGuid string) error {
 		return err
 	}
 
-	cert := auth.NewCert(string(xfccClientCert))
-
-	req.Header.Add("X-Forwarded-Client-Cert", cert.GetXFCCHeader())
+	block, _ := pem.Decode(xfccClientCert)
+	req.Header.Add("X-Forwarded-Client-Cert", base64.StdEncoding.EncodeToString(block.Bytes))
 	return nil
 }
 

@@ -25,6 +25,7 @@ type rawConfig struct {
 	PolicyPollerInterval time.Duration                `yaml:"policy_poller_interval"`
 	Health               helpers.HealthConfig         `yaml:"health"`
 	RateLimit            models.RateLimitConfig       `yaml:"rate_limit"`
+	FipsMode             bool                         `yaml:"fips_mode" json:"fips_mode"`
 
 	BasicAuthForCustomMetrics string                        `yaml:"basic_auth_for_custom_metrics" json:"basic_auth_for_custom_metrics"`
 	CredHelperImpl            string                        `yaml:"cred_helper_impl"`
@@ -50,6 +51,7 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		PolicyPollerInterval: rawConfig.PolicyPollerInterval,
 		Health:               rawConfig.Health,
 		RateLimit:            rawConfig.RateLimit,
+		FipsMode:             rawConfig.FipsMode,
 	}
 
 	switch rawConfig.BasicAuthForCustomMetrics {

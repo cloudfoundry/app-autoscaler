@@ -33,6 +33,7 @@ var _ = Describe("Config", func() {
 
 	Describe("Load Config", func() {
 		When("runnning in a cf container", func() {
+			var serviceConfig []byte
 			var expectedDbUrl = "postgres://foo:bar@postgres.example.com:5432/policy_db?sslcert=%2Ftmp%2Fclient_cert.sslcert&sslkey=%2Ftmp%2Fclient_key.sslkey&sslrootcert=%2Ftmp%2Fserver_ca.sslrootcert" // #nosec G101
 			var expectedTLSConfig = models.TLSCerts{
 				KeyFile:    "some/path/in/container/cfcert.key",
@@ -51,7 +52,7 @@ var _ = Describe("Config", func() {
 						(*confDb)[db.BindingDb] = db.DatabaseConfig{URL: "postgres://localhost/binding"}
 						return nil
 					})
-				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
+				serviceConfig = []byte(`{
 					"basic_auth_for_custom_metrics": "disabled",
 
 					"policy_schema_path": "../broker/binding_request_parser/meta.schema.json",
@@ -64,7 +65,8 @@ var _ = Describe("Config", func() {
 					"cf": {"api": "https://api.example.com", "client_id": "client-id", "secret": "secret"},
 					"rate_limit": {"max_amount": 10, "valid_duration": "1s"},
 					"broker_credentials": [{"broker_username": "user", "broker_password": "pass"}]
-				}`), nil)
+				}`)
+				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, serviceConfig, nil)
 				mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(1, []byte(`{
 					"services": [{"id":"1","name":"autoscaler","description":"Autoscaler service","bindable":true,"plans":[{"id":"1","name":"standard","description":"Standard plan"}]}]
 				}`), nil)
@@ -76,6 +78,22 @@ var _ = Describe("Config", func() {
 			It("should default logging to plain sink", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.Logging.JsonSink).To(BeFalse())
+			})
+
+			It("defaults to not requiring FIPS when the service config omits it", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.GetFipsMode()).To(BeFalse())
+			})
+
+			When("FIPS mode is required", func() {
+				BeforeEach(func() {
+					serviceConfig = append([]byte(`{"fips_mode": true,`), serviceConfig[1:]...)
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, serviceConfig, nil)
+				})
+				It("propagates the service flag to the runtime config", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.GetFipsMode()).To(BeTrue())
+				})
 			})
 			It("send certs to scalingengineScalingEngine TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -149,6 +167,21 @@ var _ = Describe("Config", func() {
 			Context("with valid yaml", func() {
 				BeforeEach(func() {
 					configBytes = []byte(testhelpers.LoadFile("valid_config.yml"))
+				})
+
+				It("defaults to not requiring FIPS when the file omits it", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.GetFipsMode()).To(BeFalse())
+				})
+
+				When("FIPS mode is required", func() {
+					BeforeEach(func() {
+						configBytes = append(configBytes, []byte("\nfips_mode: true\n")...)
+					})
+					It("propagates the file flag to the runtime config", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(conf.GetFipsMode()).To(BeTrue())
+					})
 				})
 
 				It("It returns the config", func() {
