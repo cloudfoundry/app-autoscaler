@@ -19,7 +19,7 @@
     "actionlint":           "1.7.12",
     "bash-language-server": "5.8.1",
     "bosh-cli":             "7.3.1",
-    "cloudfoundry-cli":     "8.19.0",
+    "cloudfoundry-cli":     "8.19.1",
     "coreutils":            "9.11",
     "credhub-cli":          "2.9.60",
     "curl":                 "8.22.0",
