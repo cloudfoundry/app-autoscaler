@@ -23,7 +23,7 @@
     "coreutils":            "9.11",
     "credhub-cli":          "2.9.60",
     "cyclonedx-cli":        "0.32.0",
-    "cyclonedx-gomod":      "1.10.0",
+    "cyclonedx-gomod":      "1.12.0",
     "curl":                 "8.22.0",
     "delve":                "1.27.2",
     "gh":                   "2.103.2",
