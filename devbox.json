@@ -1,7 +1,7 @@
 {
   "packages": {
     "github:joergdw/prspkgs#multiapps-cli-plugin": "",
-    "github:joergdw/prspkgs#cloud-mta-build-tool": "",
+    "github:silvestre/prspkgs#cloud-mta-build-tool": "",
 
     "path:.#app-autoscaler-cli-plugin": "",
     "path:.#log-cache-cli-plugin":      "",
@@ -22,6 +22,8 @@
     "cloudfoundry-cli":     "8.19.1",
     "coreutils":            "9.11",
     "credhub-cli":          "2.9.60",
+    "cyclonedx-cli":        "0.32.0",
+    "cyclonedx-gomod":      "1.10.0",
     "curl":                 "8.22.0",
     "delve":                "1.27.2",
     "gh":                   "2.103.2",

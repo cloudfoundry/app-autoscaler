@@ -15,10 +15,6 @@ parameters:
 modules:
   - name: dbtasks
     type: java
-    # Per-submodule path so `mbt sbom-gen` runs cyclonedx makeAggregateBom against
-    # dbtasks/pom.xml alone (not the root reactor). Sharing `path: .` with the
-    # scheduler module makes mbt aggregate the whole reactor twice and merge two
-    # identical BOMs, which fails CycloneDX uniqueItems validation.
     path: dbtasks
     properties:
       JBP_LOG_LEVEL:
@@ -97,6 +93,12 @@ modules:
         # self-sufficient. Without it, apiserver/scalingengine fail staging with
         # "no required module provides package .../apis/scalinghistory".
         - make go-mod-vendor-mta
+      # mbt's sbom-gen has no built-in BOM logic for custom builders, so generate
+      # the Go dependency SBOM here. mbt substitutes ${sbom-file-name} with the
+      # per-module BOM path it collects and merges into the aggregate SBOM
+      # (--sbom-file-path). CycloneDX 1.4 is emitted for best compatibility.
+      sbom-create-commands:
+        - make go-sbom GO_SBOM_FILE='${sbom-file-name}'
       ignore: ["acceptance", "build", "scheduler", "dbtasks", ".devbox", ".git", ".github", "nix", ".venv", ".claude"]
     requires:
       - name: apiserver-config
