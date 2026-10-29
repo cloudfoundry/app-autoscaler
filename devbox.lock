@@ -494,51 +494,41 @@
         }
       }
     },
-    "cyclonedx-gomod@1.10.0": {
-      "last_modified": "2026-07-23T05:10:05Z",
-      "resolved": "github:NixOS/nixpkgs/7525d999cd850b9a488817abc89c75dc733acf17#cyclonedx-gomod",
+    "cyclonedx-gomod@1.12.0": {
+      "last_modified": "2026-10-27T21:33:45Z",
+      "resolved": "github:NixOS/nixpkgs/f05535a0efcb2134c478d1e88434fadf486d42b5#cyclonedx-gomod",
       "source": "devbox-search",
-      "version": "1.10.0",
+      "version": "1.12.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/bn4rd34368xd78bvw80hwscfgn4vmfab-cyclonedx-gomod-1.10.0",
+              "path": "/nix/store/y2cb5pb3b8spqrjb018lg5zm61fpj652-cyclonedx-gomod-1.12.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/bn4rd34368xd78bvw80hwscfgn4vmfab-cyclonedx-gomod-1.10.0"
+          "store_path": "/nix/store/y2cb5pb3b8spqrjb018lg5zm61fpj652-cyclonedx-gomod-1.12.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/isdi2qqp7xvkbqxh1banvbf6d4hpfgrr-cyclonedx-gomod-1.10.0",
+              "path": "/nix/store/p2v10qx0m8zs42s88wpb5015lk49mfpw-cyclonedx-gomod-1.12.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/isdi2qqp7xvkbqxh1banvbf6d4hpfgrr-cyclonedx-gomod-1.10.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/5j0iybwybqmqr976yd1yqwb18qq4gg8k-cyclonedx-gomod-1.10.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/5j0iybwybqmqr976yd1yqwb18qq4gg8k-cyclonedx-gomod-1.10.0"
+          "store_path": "/nix/store/p2v10qx0m8zs42s88wpb5015lk49mfpw-cyclonedx-gomod-1.12.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/hzqivlzqizb00h45a4z28vy217jn7f1y-cyclonedx-gomod-1.10.0",
+              "path": "/nix/store/hr9jvdy0z64vi6v0f5w0q2w579bgamfb-cyclonedx-gomod-1.12.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/hzqivlzqizb00h45a4z28vy217jn7f1y-cyclonedx-gomod-1.10.0"
+          "store_path": "/nix/store/hr9jvdy0z64vi6v0f5w0q2w579bgamfb-cyclonedx-gomod-1.12.0"
         }
       }
     },
