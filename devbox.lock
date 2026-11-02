@@ -447,8 +447,8 @@
       }
     },
     "cyclonedx-cli@0.32.0": {
-      "last_modified": "2026-07-23T05:10:05Z",
-      "resolved": "github:NixOS/nixpkgs/7525d999cd850b9a488817abc89c75dc733acf17#cyclonedx-cli",
+      "last_modified": "2026-11-01T00:57:29Z",
+      "resolved": "github:NixOS/nixpkgs/d357a2b54f0b6dc4aeb4e993190a52cf151b6f24#cyclonedx-cli",
       "source": "devbox-search",
       "version": "0.32.0",
       "systems": {
@@ -456,31 +456,31 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8fddy1afjjpk47imy8kxp3x0pkcr6bvx-cyclonedx-cli-0.32.0",
+              "path": "/nix/store/l4imli4vlq1vq2szxiwjhdmy52ywzd2b-cyclonedx-cli-0.32.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8fddy1afjjpk47imy8kxp3x0pkcr6bvx-cyclonedx-cli-0.32.0"
+          "store_path": "/nix/store/l4imli4vlq1vq2szxiwjhdmy52ywzd2b-cyclonedx-cli-0.32.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/41rhi7nd4jczax3rlic182rfxpfxzcmg-cyclonedx-cli-0.32.0",
+              "path": "/nix/store/7kaj5yjv9856c3mvvraijzrykd8zhvry-cyclonedx-cli-0.32.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/41rhi7nd4jczax3rlic182rfxpfxzcmg-cyclonedx-cli-0.32.0"
+          "store_path": "/nix/store/7kaj5yjv9856c3mvvraijzrykd8zhvry-cyclonedx-cli-0.32.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/l25gpg1vbjqvgfsmzqlkydwmn3zh1axf-cyclonedx-cli-0.32.0",
+              "path": "/nix/store/xz605pq12zma5wwkcr814k36chamkfbk-cyclonedx-cli-0.32.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/l25gpg1vbjqvgfsmzqlkydwmn3zh1axf-cyclonedx-cli-0.32.0"
+          "store_path": "/nix/store/xz605pq12zma5wwkcr814k36chamkfbk-cyclonedx-cli-0.32.0"
         }
       }
     },
@@ -693,8 +693,8 @@
       }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1?lastModified=1792812153&narHash=sha256-T2%2BXBfNbf9pecLUWS4%2BRtuVNZ3W8K5taG5QdV71mWlk%3D"
+      "last_modified": "2026-11-01T00:57:29Z",
+      "resolved": "github:NixOS/nixpkgs/d357a2b54f0b6dc4aeb4e993190a52cf151b6f24?lastModified=1793494649&narHash=sha256-Thn0OE71NF80ZfOMGCgJvKtbCcnnz0fToT%2Fqsvb%2FGtc%3D"
     },
     "github:joergdw/prspkgs#multiapps-cli-plugin": {
       "last_modified": "2026-07-27T11:57:25Z",
@@ -1045,8 +1045,8 @@
       }
     },
     "golangci-lint@2.15.0": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#golangci-lint",
+      "last_modified": "2026-11-01T00:57:29Z",
+      "resolved": "github:NixOS/nixpkgs/d357a2b54f0b6dc4aeb4e993190a52cf151b6f24#golangci-lint",
       "source": "devbox-search",
       "version": "2.15.0",
       "systems": {
@@ -1054,31 +1054,31 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/fqs2vmc1byxf6c66yvl8d7hdhbf48grf-golangci-lint-2.15.0",
+              "path": "/nix/store/858pfyzissfrlcspn1whpcvlcyhcdrn3-golangci-lint-2.15.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/fqs2vmc1byxf6c66yvl8d7hdhbf48grf-golangci-lint-2.15.0"
+          "store_path": "/nix/store/858pfyzissfrlcspn1whpcvlcyhcdrn3-golangci-lint-2.15.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/zvplx6lc4dg5pxrmpkgl3ch1x37zpr6p-golangci-lint-2.15.0",
+              "path": "/nix/store/6jczr694l11llm2szd2arikq3b4mg5lp-golangci-lint-2.15.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/zvplx6lc4dg5pxrmpkgl3ch1x37zpr6p-golangci-lint-2.15.0"
+          "store_path": "/nix/store/6jczr694l11llm2szd2arikq3b4mg5lp-golangci-lint-2.15.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/igxlgznd0xbmn0qjdq4jl88ahcbs4bd2-golangci-lint-2.15.0",
+              "path": "/nix/store/4ifdzaja36bkb7x7za9lz9z7nckv80wj-golangci-lint-2.15.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/igxlgznd0xbmn0qjdq4jl88ahcbs4bd2-golangci-lint-2.15.0"
+          "store_path": "/nix/store/4ifdzaja36bkb7x7za9lz9z7nckv80wj-golangci-lint-2.15.0"
         }
       }
     },
@@ -1542,24 +1542,24 @@
       }
     },
     "path:.#app-autoscaler-cli-plugin": {
-      "last_modified": "2026-10-26T09:09:20Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793005760&narHash=sha256-uh3ln16jFtNllTehgzagcqnb2u%2FWRJEnnxMh%2Bj4HJN4%3D#app-autoscaler-cli-plugin"
+      "last_modified": "2026-11-02T03:00:29Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793588429&narHash=sha256-6W1CIY8h0LwHSj11ukcQs65eqa%2B7cLCeRzkFCHVX3zw%3D#app-autoscaler-cli-plugin"
     },
     "path:.#bosh-bootloader": {
-      "last_modified": "2026-10-26T09:09:20Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793005760&narHash=sha256-uh3ln16jFtNllTehgzagcqnb2u%2FWRJEnnxMh%2Bj4HJN4%3D#bosh-bootloader"
+      "last_modified": "2026-11-02T03:00:29Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793588429&narHash=sha256-6W1CIY8h0LwHSj11ukcQs65eqa%2B7cLCeRzkFCHVX3zw%3D#bosh-bootloader"
     },
     "path:.#flatten_json-schema": {
-      "last_modified": "2026-10-26T09:09:20Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793005760&narHash=sha256-uh3ln16jFtNllTehgzagcqnb2u%2FWRJEnnxMh%2Bj4HJN4%3D#flatten_json-schema"
+      "last_modified": "2026-11-02T03:00:29Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793588429&narHash=sha256-6W1CIY8h0LwHSj11ukcQs65eqa%2B7cLCeRzkFCHVX3zw%3D#flatten_json-schema"
     },
     "path:.#log-cache-cli-plugin": {
-      "last_modified": "2026-10-26T09:09:20Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793005760&narHash=sha256-uh3ln16jFtNllTehgzagcqnb2u%2FWRJEnnxMh%2Bj4HJN4%3D#log-cache-cli-plugin"
+      "last_modified": "2026-11-02T03:00:29Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793588429&narHash=sha256-6W1CIY8h0LwHSj11ukcQs65eqa%2B7cLCeRzkFCHVX3zw%3D#log-cache-cli-plugin"
     },
     "path:.#uaa-cli": {
-      "last_modified": "2026-10-26T09:09:20Z",
-      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793005760&narHash=sha256-uh3ln16jFtNllTehgzagcqnb2u%2FWRJEnnxMh%2Bj4HJN4%3D#uaa-cli"
+      "last_modified": "2026-11-02T03:00:29Z",
+      "resolved": "path:/tmp/renovate/repos/github/cloudfoundry/app-autoscaler?lastModified=1793588429&narHash=sha256-6W1CIY8h0LwHSj11ukcQs65eqa%2B7cLCeRzkFCHVX3zw%3D#uaa-cli"
     },
     "postgresql@18.6": {
       "last_modified": "2026-10-24T03:22:33Z",
@@ -1935,8 +1935,8 @@
       }
     },
     "temurin-bin-21@21.0.12": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#temurin-bin-21",
+      "last_modified": "2026-11-01T00:57:29Z",
+      "resolved": "github:NixOS/nixpkgs/d357a2b54f0b6dc4aeb4e993190a52cf151b6f24#temurin-bin-21",
       "source": "devbox-search",
       "version": "21.0.12",
       "systems": {
@@ -1954,21 +1954,21 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ypkybv9wif4iv6z4ih7zbk2aksh548n0-temurin-bin-21.0.12",
+              "path": "/nix/store/anlqq9gj4j0kkx4ci3b2iq7kybcx05qd-temurin-bin-21.0.12",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ypkybv9wif4iv6z4ih7zbk2aksh548n0-temurin-bin-21.0.12"
+          "store_path": "/nix/store/anlqq9gj4j0kkx4ci3b2iq7kybcx05qd-temurin-bin-21.0.12"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nicryd9qg7cgjym9nb107ppjva0xmv66-temurin-bin-21.0.12",
+              "path": "/nix/store/1lisy18np6mmcw4gqq6xhcrij006i9zs-temurin-bin-21.0.12",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nicryd9qg7cgjym9nb107ppjva0xmv66-temurin-bin-21.0.12"
+          "store_path": "/nix/store/1lisy18np6mmcw4gqq6xhcrij006i9zs-temurin-bin-21.0.12"
         }
       }
     },

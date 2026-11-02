@@ -2,15 +2,15 @@
 # Manual edits may be lost in future updates.
 
 provider "registry.terraform.io/terraform-provider-concourse/concourse" {
-  version = "8.1.2"
+  version = "8.2.0"
   hashes = [
-    "h1:JbGdRHLhLXpIUPQlFKdbD5RDu0CMn/8O4i/+oPxKNxw=",
-    "h1:KOBRCcAJo2aK0Zhyc4wJG9ZWB4Fwklnl/K4We09o7TA=",
-    "h1:R3Yc191YKHh1rpQAZNZrDumrKAj+9Cqq50xkXC7lD8Q=",
-    "h1:tg3J3bPTqLF/nLsbobKeuTHpaYpGqoXxahZgeGYvH8g=",
-    "zh:133a8fc5dd0b926c664dca26006623fbb25cadb2d8c2063985c2e2c4768199da",
-    "zh:6c2345929ed61cf422d75de8a4fd39611086cef803c1f10f2f65baaa50860aaf",
-    "zh:8a6e0622d52f94cc3b96f2111b85b5ba5f2f4b0d585e8c8ea4034c1aad6ca969",
-    "zh:eef2dbfbfe131822d85ae2cbb4ee086535e825a94c46e6adf470505c4d9f0c9a",
+    "h1:ITkOZKgB7nT8136zY9dzS1fjpg2ExLNwG4SbC4u3VCk=",
+    "h1:NZ3b5x+nbgTtheKk3aE0HIPgLVqu/3jAaqVahNUbJR8=",
+    "h1:WVG+8jwEje+KLooyjc+TQYWbZVnsMcHfW96BebUyN0I=",
+    "h1:WoQjokYpB0EsQRbXCwxanfNPiYDQzAC1aY/047tbGfM=",
+    "zh:0d90c667b5209442862c6abd87dbfac6bd865049b9e259f702152a727515c120",
+    "zh:58cef2d2d946f01cda72bee23d8be07fe12d02fb64d29cdeab65993818203501",
+    "zh:aac1bfc0ccfe0753f8d48ec2ee378116af864d951db2f22654c360f9e2e3663e",
+    "zh:be535c9100a4da61ed860c754ae2d72e48ceb7f881c580d31ea7122acbe7ccc3",
   ]
 }
