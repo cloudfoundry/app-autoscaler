@@ -1,0 +1,97 @@
+openapi: 3.0.3
+info:
+  title: Autoscaler Policy API
+  version: 1.0.0
+
+paths:
+  /v1/apps/{space_guid}:
+    get:
+      summary: Returns GUIDs of apps that are bound to Autoscaler and have a policy applied
+      description: |
+        Only returns app GUIDs where all three conditions are met:
+        - App exists in the CF space
+        - App is bound to Autoscaler
+        - App has a policy applied
+
+        Apps that only exist in the CF space or are bound but have no policy are not included.
+      parameters:
+        - name: space_guid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+
+      responses:
+        '200':
+          description: |
+            Apps that are bound to Autoscaler and have a policy applied.
+            Resources follow the CF API v3 convention, see
+            https://v3-apidocs.cloudfoundry.org/version/3.236.0/index.html#list-apps
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        guid:
+                          type: string
+                          format: uuid
+              example:
+                resources:
+                  - guid: "3d6f4e2a-91bc-4f07-b3e5-7c8a2d1f0e94"
+                  - guid: "a82c1b74-3e5f-4d90-8c2a-6b1e9f7d3a05"
+        '400':
+          description: Invalid space GUID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Invalid space_guid format"
+        '401':
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Unauthorized: missing or invalid bearer token"
+        '403':
+          description: |
+            Token is valid but is missing the required OAuth scope.
+            Note: lacking a space role (space_developer / space_manager) surfaces as 404,
+            not 403, because CF v3 hides resources the caller cannot see.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "You are not authorized to perform the requested action"
+        '404':
+          description: |
+            Space not found, or the caller has no role in the space.
+            CF v3 returns the same response for both to avoid leaking existence.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Space not found"
