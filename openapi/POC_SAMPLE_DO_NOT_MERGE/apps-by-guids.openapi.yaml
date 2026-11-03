@@ -20,12 +20,20 @@ paths:
         - name: guids
           in: query
           required: true
-          description: Comma-separated list of app GUIDs to check (CF API v3 filter convention)
+          description: |
+            Comma-separated list of app GUIDs to check (CF API v3 filter convention).
+
+            ⚠️ LIMITATION: The list is sent in the URL query string, so it is bounded by
+            URL/header length limits (browsers ~2 KB, nginx/Apache/Gorouter ~8 KB default).
+            At ~37 chars per GUID this caps the request at roughly 50 GUIDs (browser-safe)
+            to ~200 GUIDs (server default) before risking HTTP 414 URI Too Long.
+            Recommended: cap at 100 GUIDs per request and batch client-side for larger sets.
           schema:
             type: array
             items:
               type: string
               format: uuid
+            maxItems: 100
           style: form
           explode: false
           example: "3d6f4e2a-91bc-4f07-b3e5-7c8a2d1f0e94,a82c1b74-3e5f-4d90-8c2a-6b1e9f7d3a05"
