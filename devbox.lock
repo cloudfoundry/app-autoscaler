@@ -654,41 +654,41 @@
         }
       }
     },
-    "ginkgo@2.33.1": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#ginkgo",
+    "ginkgo@2.34.0": {
+      "last_modified": "2026-11-03T03:15:56Z",
+      "resolved": "github:NixOS/nixpkgs/9a6cbf4722bdbbef65f9e0400452ca088e31dc4b#ginkgo",
       "source": "devbox-search",
-      "version": "2.33.1",
+      "version": "2.34.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/f9kj6s95xkxz4w6wx2bmq8l71lbcndh7-ginkgo-2.33.1",
+              "path": "/nix/store/kygdmrv4gmqh9ksahrd5s5fa0k4v5blc-ginkgo-2.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/f9kj6s95xkxz4w6wx2bmq8l71lbcndh7-ginkgo-2.33.1"
+          "store_path": "/nix/store/kygdmrv4gmqh9ksahrd5s5fa0k4v5blc-ginkgo-2.34.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n37x35h7pgm6wjqxgi8srqdi9cfy5zna-ginkgo-2.33.1",
+              "path": "/nix/store/mqh49zdm9v6d5hj8pd5ygjvh2shdly6b-ginkgo-2.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n37x35h7pgm6wjqxgi8srqdi9cfy5zna-ginkgo-2.33.1"
+          "store_path": "/nix/store/mqh49zdm9v6d5hj8pd5ygjvh2shdly6b-ginkgo-2.34.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0fwg361mfdsbxjmf1x5y14vcf5az7j3j-ginkgo-2.33.1",
+              "path": "/nix/store/jshlg0w8f80siy1z9gyjr2hpgm37cshf-ginkgo-2.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0fwg361mfdsbxjmf1x5y14vcf5az7j3j-ginkgo-2.33.1"
+          "store_path": "/nix/store/jshlg0w8f80siy1z9gyjr2hpgm37cshf-ginkgo-2.34.0"
         }
       }
     },
