@@ -4,7 +4,7 @@ info:
   version: 1.0.0
 
 paths:
-  /v1/apps/{space_guid}:
+  /v1/apps:
     get:
       summary: Returns GUIDs of apps that are bound to Autoscaler and have a policy applied
       description: |
@@ -16,13 +16,13 @@ paths:
         Apps that only exist in the CF space or are bound but have no policy are not included.
       parameters:
         - name: space_guid
-          in: path
+          in: query
           required: true
+          description: GUID of the CF space to list bound apps with a policy for
           schema:
             type: string
             format: uuid
           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-
       responses:
         '200':
           description: |
@@ -47,7 +47,10 @@ paths:
                   - guid: "3d6f4e2a-91bc-4f07-b3e5-7c8a2d1f0e94"
                   - guid: "a82c1b74-3e5f-4d90-8c2a-6b1e9f7d3a05"
         '400':
-          description: Invalid space GUID format
+          description: |
+            Request is malformed. Causes include:
+            - `space_guid` query parameter missing
+            - `space_guid` is not a valid GUID
           content:
             application/json:
               schema:
@@ -56,7 +59,7 @@ paths:
                   error:
                     type: string
               example:
-                error: "Invalid space_guid format"
+                error: "The query parameter 'space_guid' is required and must be a valid GUID"
         '401':
           description: Missing or invalid bearer token
           content:
