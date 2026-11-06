@@ -1082,41 +1082,41 @@
         }
       }
     },
-    "google-java-format@1.37.0": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#google-java-format",
+    "google-java-format@2.0.0": {
+      "last_modified": "2026-11-04T12:32:54Z",
+      "resolved": "github:NixOS/nixpkgs/13e53762c5afaf384d4614e94527a9ccfafe41d0#google-java-format",
       "source": "devbox-search",
-      "version": "1.37.0",
+      "version": "2.0.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/fmhcwa5mrzqnzjmmqz5myfkvxvnhj6v3-google-java-format-1.37.0",
+              "path": "/nix/store/fd6vbz6v50v92bxrnd319cifx2ps38k4-google-java-format-2.0.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/fmhcwa5mrzqnzjmmqz5myfkvxvnhj6v3-google-java-format-1.37.0"
+          "store_path": "/nix/store/fd6vbz6v50v92bxrnd319cifx2ps38k4-google-java-format-2.0.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/rflz0pfmcy40bkgdznf36kw8d1g8p7hx-google-java-format-1.37.0",
+              "path": "/nix/store/45694ql9hz4v3gaa85vj0ijwyx8d9mih-google-java-format-2.0.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/rflz0pfmcy40bkgdznf36kw8d1g8p7hx-google-java-format-1.37.0"
+          "store_path": "/nix/store/45694ql9hz4v3gaa85vj0ijwyx8d9mih-google-java-format-2.0.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vap6sdbib97fnf01k3yr00j7ly8d0nl1-google-java-format-1.37.0",
+              "path": "/nix/store/ny95n0y2xk5q14d8awhssvz7fq0g9zpw-google-java-format-2.0.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vap6sdbib97fnf01k3yr00j7ly8d0nl1-google-java-format-1.37.0"
+          "store_path": "/nix/store/ny95n0y2xk5q14d8awhssvz7fq0g9zpw-google-java-format-2.0.0"
         }
       }
     },
