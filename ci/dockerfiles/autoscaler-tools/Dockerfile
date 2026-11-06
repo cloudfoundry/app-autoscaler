@@ -80,7 +80,7 @@ RUN wget -q https://github.com/cloudfoundry/bosh-bootloader/releases/download/${
 
 # Install credhub
 # renovate: datasource=github-releases depName=credhub-cli lookupName=cloudfoundry/credhub-cli
-ARG CREDHUB_VERSION=2.9.62
+ARG CREDHUB_VERSION=2.9.63
 RUN wget -q https://github.com/cloudfoundry/credhub-cli/releases/download/${CREDHUB_VERSION}/credhub-linux-amd64-${CREDHUB_VERSION}.tgz && \
   tar xvfz credhub-linux-amd64-${CREDHUB_VERSION}.tgz && \
   mv credhub /usr/local/bin/credhub &&\
@@ -132,7 +132,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.
   gcloud version
 
 # renovate: datasource=github-releases depName=ginkgo lookupName=onsi/ginkgo
-ARG GINKGO_VERSION=v2.33.1
+ARG GINKGO_VERSION=v2.34.0
 RUN go install github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION} && \
 	ginkgo version
 
