@@ -111,6 +111,7 @@ type Config struct {
 	Health                   helpers.HealthConfig
 	RateLimit                models.RateLimitConfig
 	ScalingRules             ScalingRulesConfig
+	FipsMode                 bool
 
 	CustomMetricsAuthConfig *CustomMetricsBasicAuthCfg
 }
@@ -145,6 +146,11 @@ func (c *Config) SetLoggingLevel() {
 // GetLogging returns the logging configuration
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
+}
+
+// GetFipsMode returns whether FIPS 140-3 mode is configured
+func (c *Config) GetFipsMode() bool {
+	return c.FipsMode
 }
 
 type PlanCheckConfig struct {

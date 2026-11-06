@@ -32,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	startup.SetupEnvironment()
+	startup.SetupEnvironment(conf.FipsMode)
 
 	logger := startup.InitLogger(&conf.Logging, "metricsforwarder")
 	mfClock := clock.NewClock()

@@ -20,6 +20,7 @@ type ConfigValidator interface {
 type ConfigWithLogging interface {
 	ConfigValidator
 	GetLogging() *helpers.LoggingConfig
+	GetFipsMode() bool
 }
 
 type ConfigLoader[T ConfigWithLogging] func(path string, vcapConfigReader configutil.VCAPConfigurationReader) (T, error)
@@ -56,7 +57,8 @@ func LoadAndValidateConfig[T ConfigWithLogging](path string, vcapConfig configut
 	return conf, nil
 }
 
-func SetupEnvironment() {
+func SetupEnvironment(fipsEnabled bool) {
+	helpers.AssertFIPSMode(fipsEnabled)
 	helpers.SetupOpenTelemetry()
 }
 
@@ -97,7 +99,7 @@ func Bootstrap[T ConfigWithLogging](serviceName string, configLoader ConfigLoade
 		os.Exit(1)
 	}
 
-	SetupEnvironment()
+	SetupEnvironment(conf.GetFipsMode())
 	logger := InitLogger(conf.GetLogging(), serviceName)
 
 	return conf, logger

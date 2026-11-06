@@ -11,6 +11,15 @@ public class CfServerConfiguration {
   private String validOrgGuid;
   private String validSpaceGuid;
   private HealthServer healthserver;
+  private String systemCertPath;
+  private String instanceCertPath;
+  private VerificationMode xfccVerificationMode = VerificationMode.ENFORCE;
+
+  public enum VerificationMode {
+    ENFORCE,
+    SHADOW,
+    OFF
+  }
 
   @Data
   public static class HealthServer {

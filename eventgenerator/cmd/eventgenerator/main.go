@@ -41,6 +41,8 @@ func main() {
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB.DB),
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDb.DB),
 		httpStatusCollector,
+		helpers.FipsEnabledGauge,
+		helpers.FipsEnforcedGauge,
 	}, true, logger.Session("eventgenerator-prometheus"))
 
 	appManager := aggregator.NewAppManager(logger, clock, *conf.Aggregator, *conf.Pool, policyDb.DB, appMetricDB.DB)
@@ -69,7 +71,8 @@ func main() {
 
 	// Server setup
 	eventgeneratorServer := server.NewServer(logger.Session("http_server"), conf, appMetricDB.DB, policyDb.DB, appManager.QueryAppMetrics, httpStatusCollector)
-	xm := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
+	xm, err := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
+	startup.ExitOnError(err, logger, "failed-to-create-xfcc-middleware")
 
 	// Start services
 	startup.StartService(logger,

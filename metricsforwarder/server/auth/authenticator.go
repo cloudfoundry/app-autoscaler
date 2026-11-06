@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	xfcc "code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cred_helper"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/common"
@@ -20,13 +21,19 @@ type Auth struct {
 	logger      lager.Logger
 	credentials cred_helper.Credentials
 	bindingDB   db.BindingDB
+	verifier    *xfcc.ChainVerifier
 }
 
-func New(logger lager.Logger, credentials cred_helper.Credentials, bindingDB db.BindingDB) (*Auth, error) {
+func New(logger lager.Logger, credentials cred_helper.Credentials, bindingDB db.BindingDB, config models.XFCCAuth) (*Auth, error) {
+	verifier, err := xfcc.NewChainVerifier(logger, config)
+	if err != nil {
+		return nil, err
+	}
 	return &Auth{
 		logger:      logger,
 		credentials: credentials,
 		bindingDB:   bindingDB,
+		verifier:    verifier,
 	}, nil
 }
 

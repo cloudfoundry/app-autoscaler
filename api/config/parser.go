@@ -39,6 +39,7 @@ type rawConfig struct {
 	Health                   helpers.HealthConfig         `yaml:"health" json:"health"`
 	RateLimit                models.RateLimitConfig       `yaml:"rate_limit" json:"rate_limit,omitempty"`
 	ScalingRules             ScalingRulesConfig           `yaml:"scaling_rules" json:"scaling_rules"`
+	FipsMode                 bool                         `yaml:"fips_mode" json:"fips_mode"`
 
 	CredHelperImpl                     string                        `yaml:"cred_helper_impl" json:"cred_helper_impl"`
 	StoredProcedureConfig              *models.StoredProcedureConfig `yaml:"stored_procedure_binding_credential_config" json:"stored_procedure_binding_credential_config"`
@@ -76,6 +77,7 @@ func toConfig(rawConfig rawConfig) (Config, error) {
 		Health:                   rawConfig.Health,
 		RateLimit:                rawConfig.RateLimit,
 		ScalingRules:             rawConfig.ScalingRules,
+		FipsMode:                 rawConfig.FipsMode,
 	}
 
 	cmBasicAuthCfg := parseCMBasicAuthCfg(rawConfig)

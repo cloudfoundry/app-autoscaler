@@ -20,7 +20,7 @@ jobs:
     env:
       DB_DATABASE: autoscaler
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: postgres-fips-pass
     runs-on: "ubuntu-latest"
     continue-on-error: true
     name: Build suite=${{ matrix.suite }}, postgres=${{ matrix.postgres }}
@@ -29,7 +29,7 @@ jobs:
         image: postgres:${{ matrix.postgres }}
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: postgres-fips-pass
           POSTGRES_DB: autoscaler
         options: >-
           --health-cmd pg_isready

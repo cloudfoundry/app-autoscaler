@@ -210,13 +210,13 @@ var _ = Describe("Main", func() {
 				req, err := http.NewRequest(http.MethodGet, cfServerURL.String(), nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = SetXFCCCertHeader(req, conf.CFServer.XFCC.ValidOrgGuid, conf.CFServer.XFCC.ValidSpaceGuid)
-				Expect(err).NotTo(HaveOccurred())
+				req.Header.Set("X-Forwarded-Client-Cert", xfccHeader)
 
 				rsp, err := healthHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				Expect(rsp.Body.Close()).To(Succeed())
 			})
 		})
 	})

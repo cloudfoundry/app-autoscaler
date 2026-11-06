@@ -79,6 +79,25 @@ var _ = Describe("Config", func() {
 				Expect(conf.Server.Port).To(Equal(0))
 			})
 
+			When("the service config includes XFCC verification settings", func() {
+				BeforeEach(func() {
+					mockVCAPConfigurationReader.GetServiceCredentialContentReturns([]byte(`{
+						"cf_server": {"xfcc": {
+							"verification_mode": "shadow",
+							"system_cert_path": "/platform/roots",
+							"instance_cert_path": "/platform/instance.crt"
+						}}
+					}`), nil)
+				})
+				It("preserves verification settings when applying the deployment identity", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(conf.CFServer.XFCC.VerificationMode).To(Equal("shadow"))
+					Expect(conf.CFServer.XFCC.SystemCertPath).To(Equal("/platform/roots"))
+					Expect(conf.CFServer.XFCC.InstanceCertPath).To(Equal("/platform/instance.crt"))
+					Expect(conf.CFServer.XFCC.ValidOrgGuid).To(Equal("some-org-id"))
+				})
+			})
+
 			It("send certs to scalingengineScalingEngine TlSClientCert", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.ScalingEngine.TLSClientCerts).To(Equal(expectedTLSConfig))

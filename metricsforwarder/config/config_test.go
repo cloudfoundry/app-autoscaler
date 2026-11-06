@@ -116,6 +116,12 @@ var _ = Describe("Config", func() {
 			When("VCAP_SERVICES has metricsforwarder config", func() {
 				BeforeEach(func() {
 					mockVCAPConfigurationReader.GetServiceCredentialContentReturnsOnCall(0, []byte(`{
+                                    "fips_mode": true,
+                                    "server": {"xfcc": {
+                                        "verification_mode": "shadow",
+                                        "system_cert_path": "/platform/roots",
+                                        "instance_cert_path": "/platform/instance.crt"
+                                    }},
                                     "cache_cleanup_interval":"10h",
                                     "cache_ttl":"90s",
                                     "cred_helper_impl": "default",
@@ -139,7 +145,16 @@ var _ = Describe("Config", func() {
 					Expect(conf.Logging.Level).To(Equal("debug"))
 					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("metron-vcap-addrs:3457"))
 					Expect(conf.CacheTTL).To(Equal(90 * time.Second))
+					Expect(conf.GetFipsMode()).To(BeTrue())
+					Expect(conf.Server.XFCC.VerificationMode).To(Equal("shadow"))
+					Expect(conf.Server.XFCC.SystemCertPath).To(Equal("/platform/roots"))
+					Expect(conf.Server.XFCC.InstanceCertPath).To(Equal("/platform/instance.crt"))
 				})
+			})
+
+			It("defaults to not requiring FIPS when the service config omits it", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.GetFipsMode()).To(BeFalse())
 			})
 		})
 		When("config is read from file", func() {
@@ -178,6 +193,10 @@ loggregator
 					configBytes = []byte(`
 server:
   port: 8081
+  xfcc:
+    verification_mode: enforce
+    system_cert_path: /platform/roots
+    instance_cert_path: /platform/instance.crt
 logging:
   level: debug
 loggregator:
@@ -209,6 +228,9 @@ cred_helper_impl: default
 
 				It("returns the config", func() {
 					Expect(conf.Server.Port).To(Equal(8081))
+					Expect(conf.Server.XFCC.VerificationMode).To(Equal("enforce"))
+					Expect(conf.Server.XFCC.SystemCertPath).To(Equal("/platform/roots"))
+					Expect(conf.Server.XFCC.InstanceCertPath).To(Equal("/platform/instance.crt"))
 					Expect(conf.Logging.Level).To(Equal("debug"))
 					Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
 					Expect(conf.Db[db.PolicyDb]).To(Equal(
@@ -220,6 +242,16 @@ cred_helper_impl: default
 						}))
 					Expect(conf.CredentialHelperConfig).
 						To(BeAssignableToTypeOf(models.BasicAuthHandlingNative{}))
+					Expect(conf.GetFipsMode()).To(BeFalse())
+				})
+
+				When("FIPS mode is required", func() {
+					BeforeEach(func() {
+						configBytes = append(configBytes, []byte("\nfips_mode: true\n")...)
+					})
+					It("propagates the file flag to the runtime config", func() {
+						Expect(conf.GetFipsMode()).To(BeTrue())
+					})
 				})
 			})
 			Context("with partial config", func() {
