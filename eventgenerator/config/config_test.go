@@ -287,7 +287,7 @@ defaultBreachDurationSecs: 600
 				})
 
 				It("returns an error", func() {
-					Expect(err).To(MatchError(MatchRegexp(".*field level not found in type config.Config*")))
+					Expect(err).To(MatchError(ContainSubstring("did not find expected <document start>")))
 				})
 			})
 			Context("with partial config", func() {
