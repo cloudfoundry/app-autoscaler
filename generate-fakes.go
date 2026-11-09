@@ -6,6 +6,7 @@ package fakes
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_scalingengine_db.go ./db ScalingEngineDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_scheduler_db.go ./db SchedulerDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_scalingengine.go ./scalingengine ScalingEngine
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_activator.go ./scalingengine Activator
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_binding_db.go ./db BindingDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_app_metric_db.go ./db AppMetricDB
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o ./fakes/fake_credentials.go ./cred_helper Credentials

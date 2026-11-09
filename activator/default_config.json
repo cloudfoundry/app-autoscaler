@@ -1,0 +1,10 @@
+{
+  "activator-config": {
+    "logging": {
+      "level": "info"
+    },
+    "routing_api": {
+      "url": "https://api.cf.internal"
+    }
+  }
+}
