@@ -385,6 +385,19 @@ func (w *CFClientWrapper) GetSpaceDeveloperRoles(ctx context.Context, spaceId Sp
 	return mapResourceRoles(roles), nil
 }
 
+// GetAppRoutes returns all routes mapped to the given app.
+func (w *CFClientWrapper) GetAppRoutes(ctx context.Context, appId Guid) ([]Route, error) {
+	routes, err := w.cfClient.Routes.ListForAppAll(ctx, string(appId), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed GetAppRoutes(%s): %w", appId, MapCFClientError(err))
+	}
+	result := make([]Route, 0, len(routes))
+	for _, r := range routes {
+		result = append(result, Route{URL: r.URL})
+	}
+	return result, nil
+}
+
 func mapRootToEndpoints(root *resource.Root) Endpoints {
 	return Endpoints{
 		CloudControllerV3: Href{Url: root.Links.CloudControllerV3.Href},

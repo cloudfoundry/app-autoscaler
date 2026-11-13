@@ -107,6 +107,51 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("when scaling to zero", func() {
+			var activator *fakes.FakeActivator
+
+			BeforeEach(func() {
+				activator = &fakes.FakeActivator{}
+				logger := lagertest.NewTestLogger("scale-to-zero-test")
+				buffer = logger.Buffer()
+				scalingEngine = NewScalingEngine(logger, cfc, policyDB, scalingEngineDB, clock, 300, 32, WithActivator(activator))
+
+				trigger.Adjustment = "-1"
+				setAppAndProcesses(1, appState)
+				scalingEngineDB.CanScaleAppReturns(true, clock.Now().Add(0-30*time.Second).UnixNano(), nil)
+				policyDB.GetAppPolicyReturns(&models.PolicyDefinition{InstanceMin: 0, InstanceMax: 6}, nil)
+			})
+
+			It("parks the app before scaling it to zero", func() {
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(activator.ParkCallCount()).To(Equal(1))
+				_, parkedApp := activator.ParkArgsForCall(0)
+				Expect(parkedApp).To(Equal("an-app-id"))
+
+				_, guid, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				Expect(guid.String()).To(Equal("an-app-id"))
+				Expect(num).To(Equal(0))
+
+				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
+			})
+
+			Context("when parking fails", func() {
+				BeforeEach(func() {
+					activator.ParkReturns(errors.New("park-failed"))
+				})
+
+				It("fails the scaling and does not scale the app to zero", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(cfc.ScaleAppWebProcessCallCount()).To(Equal(0))
+
+					history := scalingEngineDB.SaveScalingHistoryArgsForCall(0)
+					Expect(history.Status).To(Equal(models.ScalingStatusFailed))
+					Expect(history.Error).To(ContainSubstring("failed to park app for scale-to-zero"))
+				})
+			})
+		})
+
 		Context("When app is not started", func() {
 			BeforeEach(func() {
 				setAppAndProcesses(2, "test-state")
@@ -186,6 +231,24 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
+			})
+		})
+
+		Context("when app is in cooldown but the trigger bypasses cooldown (scale-from-zero wake)", func() {
+			BeforeEach(func() {
+				setAppAndProcesses(0, appState)
+				scalingEngineDB.CanScaleAppReturns(false, clock.Now().Add(30*time.Second).UnixNano(), nil)
+				policyDB.GetAppPolicyReturns(&models.PolicyDefinition{InstanceMin: 0, InstanceMax: 6}, nil)
+				trigger.Adjustment = "+1"
+				trigger.BypassCooldown = true
+			})
+
+			It("scales up despite the cooldown", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfc.ScaleAppWebProcessCallCount()).To(Equal(1))
+				_, _, num := cfc.ScaleAppWebProcessArgsForCall(0)
+				Expect(num).To(Equal(1))
+				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 			})
 		})
 

@@ -1,0 +1,9 @@
+MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
+PHONY: set-security-group
+set-security-group:
+	$(eval ORG := $(shell cf target |grep "org:" |cut -d':' -f2 | xargs))
+
+	cf create-security-group activator $(MAKEFILE_DIR)/security-group.json
+	cf update-security-group activator $(MAKEFILE_DIR)/security-group.json
+	cf bind-security-group activator $(ORG)

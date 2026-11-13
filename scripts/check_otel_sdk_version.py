@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from packaging.version import Version
 
 
@@ -47,17 +47,32 @@ def get_supported_version_ranges() -> list[str]:
     resp = requests.get(DOCS_URL, timeout=30)
     resp.raise_for_status()
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    return parse_supported_version_ranges(resp.text)
+
+
+def parse_supported_version_ranges(html: str) -> list[str]:
+    """Read the Go prerequisites table in both tabbed and heading-based docs."""
+    soup = BeautifulSoup(html, "html.parser")
 
     go_panel = soup.find(attrs={"aria-labelledby": "prereq--go"})
-    if not go_panel:
-        print("::error::Go tab panel not found on the Dynatrace docs page")
-        sys.exit(1)
-
-    table = go_panel.find("table")
+    if go_panel:
+        table = go_panel.find("table")
+    else:
+        go_heading = soup.find(["h2", "h3", "h4"], id="prereq-go")
+        table = None
+        if go_heading:
+            # Stop at the next heading so another language's versions cannot
+            # accidentally be interpreted as Go support.
+            for sibling in go_heading.next_siblings:
+                if not isinstance(sibling, Tag):
+                    continue
+                if sibling.name in {"h2", "h3", "h4"}:
+                    break
+                table = sibling if sibling.name == "table" else sibling.find("table")
+                if table:
+                    break
     if not table:
-        print("::error::Version table not found in Go tab panel")
-        sys.exit(1)
+        raise ValueError("Version table not found in Go prerequisites section")
 
     version_spans = table.select(
         'span[aria-label="Show Dynatrace OneAgent version support info"]'
@@ -69,8 +84,7 @@ def get_supported_version_ranges() -> list[str]:
             versions.append(text_el.get_text(strip=True))
 
     if not versions:
-        print("::error::No version ranges found in the Dynatrace docs")
-        sys.exit(1)
+        raise ValueError("No version ranges found in the Dynatrace Go prerequisites")
 
     return versions
 
@@ -93,7 +107,11 @@ def main() -> None:
     sdk_version = get_otel_sdk_version(go_mod_path)
     print(f"OTel SDK version in go.mod: {sdk_version}")
 
-    supported_ranges = get_supported_version_ranges()
+    try:
+        supported_ranges = get_supported_version_ranges()
+    except (requests.RequestException, ValueError) as error:
+        print(f"::error::Could not determine Dynatrace Go support: {error}")
+        sys.exit(1)
     print(f"Supported version ranges from Dynatrace docs: {supported_ranges}")
 
     for version_range in supported_ranges:

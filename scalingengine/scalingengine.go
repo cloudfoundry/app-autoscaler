@@ -28,6 +28,7 @@ type scalingEngine struct {
 	appLock             *StripedLock
 	clock               clock.Clock
 	defaultCoolDownSecs int
+	activator           Activator
 }
 
 type ActiveScheduleNotFoundError struct {
@@ -39,16 +40,31 @@ func (ase *ActiveScheduleNotFoundError) Error() string {
 	return "active schedule not found"
 }
 
-func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int) ScalingEngine {
-	return &scalingEngine{
-		logger:              logger.Session("scalingEngine"),
+// Option configures a scalingEngine at construction time.
+type Option func(*scalingEngine)
+
+// WithActivator injects the Activator used to park apps before scaling them to
+// zero. When omitted, a NoopActivator is used so the engine runs standalone.
+func WithActivator(activator Activator) Option {
+	return func(s *scalingEngine) { s.activator = activator }
+}
+
+func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int, opts ...Option) ScalingEngine {
+	engineLogger := logger.Session("scalingEngine")
+	s := &scalingEngine{
+		logger:              engineLogger,
 		cfClient:            cfClient,
 		policyDB:            policyDB,
 		scalingEngineDB:     scalingEngineDB,
 		appLock:             NewStripedLock(lockSize),
 		clock:               clock,
 		defaultCoolDownSecs: defaultCoolDownSecs,
+		activator:           NewNoopActivator(engineLogger),
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models.Trigger) (*models.AppScalingResult, error) {
@@ -125,7 +141,10 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		return nil, err
 	}
 	result.CooldownExpiredAt = expiredAt
-	if !ok {
+	// The activator's scale-from-zero wake sets BypassCooldown: it must scale up
+	// immediately even though the scale-to-zero that just parked the app set a
+	// cooldown window.
+	if !ok && !trigger.BypassCooldown {
 		logger.Info("scaling ignored: App in cooldown")
 		history.Status = models.ScalingStatusIgnored
 		history.NewInstances = instances
@@ -192,6 +211,18 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		result.Adjustment = 0
 		result.CooldownExpiredAt = 0
 		return result, nil
+	}
+
+	if newInstances == 0 {
+		// Scale-to-zero: park the app behind the activator BEFORE removing its
+		// last instance, so its routes are covered for scale-from-zero and there
+		// is no window with zero instances and no route coverage.
+		if err = s.activator.Park(ctx, appId); err != nil {
+			logger.Error("failed-to-park-app", err)
+			history.Status = models.ScalingStatusFailed
+			history.Error = "failed to park app for scale-to-zero: " + err.Error()
+			return nil, err
+		}
 	}
 
 	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
