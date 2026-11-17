@@ -1,41 +1,41 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "act@0.2.92": {
-      "last_modified": "2026-10-28T22:04:29Z",
-      "resolved": "github:NixOS/nixpkgs/e62746b0b472753ef019baceab6f1e2e52014980#act",
+    "act@0.2.97": {
+      "last_modified": "2026-11-14T08:26:23Z",
+      "resolved": "github:NixOS/nixpkgs/5d2b81a7a3be3e2f832879028e4d60abbf58e9a0#act",
       "source": "devbox-search",
-      "version": "0.2.92",
+      "version": "0.2.97",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0nx0hqq2883mhksxw2jp84mg481mk6dp-act-0.2.92",
+              "path": "/nix/store/lbd0i4khdlgqykl1w1r98jc5j6513hzg-act-0.2.97",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0nx0hqq2883mhksxw2jp84mg481mk6dp-act-0.2.92"
+          "store_path": "/nix/store/lbd0i4khdlgqykl1w1r98jc5j6513hzg-act-0.2.97"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/lpnmwwhizlxlnjchs8dzwdvxxsybsnfh-act-0.2.92",
+              "path": "/nix/store/5jwg5wn5gfqnbl8x24zj7zsphg1g7fiq-act-0.2.97",
               "default": true
             }
           ],
-          "store_path": "/nix/store/lpnmwwhizlxlnjchs8dzwdvxxsybsnfh-act-0.2.92"
+          "store_path": "/nix/store/5jwg5wn5gfqnbl8x24zj7zsphg1g7fiq-act-0.2.97"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/gyvwp6d5kdsfj4hkjcgf012a0d3zn229-act-0.2.92",
+              "path": "/nix/store/71l1m3fcsh1y3yjiz9k89k2jfy1y4n0l-act-0.2.97",
               "default": true
             }
           ],
-          "store_path": "/nix/store/gyvwp6d5kdsfj4hkjcgf012a0d3zn229-act-0.2.92"
+          "store_path": "/nix/store/71l1m3fcsh1y3yjiz9k89k2jfy1y4n0l-act-0.2.97"
         }
       }
     },
