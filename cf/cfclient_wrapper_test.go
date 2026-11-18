@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
@@ -12,6 +13,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("CFClientWrapper", func() {
@@ -56,6 +58,34 @@ var _ = Describe("CFClientWrapper", func() {
 
 	AfterEach(func() {
 		mockServer.Close()
+	})
+
+	Describe("bulk audit journal", func() {
+		It("filters a bounded time window and follows pagination", func() {
+			from := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+			until := from.Add(time.Minute)
+			mockServer.RouteToHandler("GET", "/v3/audit_events", func(w http.ResponseWriter, r *http.Request) {
+				Expect(r.URL.Query().Get("created_ats[gte]")).To(Equal(from.Format(time.RFC3339)))
+				Expect(r.URL.Query().Get("created_ats[lte]")).To(Equal(until.Format(time.RFC3339)))
+				Expect(r.URL.Query().Get("types")).To(ContainSubstring("audit.app.process.scale"))
+				Expect(r.Header.Get("Authorization")).To(Equal("Bearer test-access-token"))
+				if r.URL.Query().Get("page") == "1" {
+					ghttp.RespondWith(http.StatusOK, `{"pagination":{"next":{"href":"`+mockServer.URL()+`/v3/audit_events?page=2"}},"resources":[{"guid":"event-1","target":{"guid":"app-1","type":"app"}}]}`)(w, r)
+				} else {
+					ghttp.RespondWith(http.StatusOK, `{"pagination":{"next":null},"resources":[{"guid":"event-2","target":{"guid":"app-2","type":"app"}}]}`)(w, r)
+				}
+			})
+			events, err := client.(cf.AuditEventSource).ListAuditEvents(ctx, from, until)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(events).To(HaveLen(2))
+			Expect(events[0].TargetGUID).To(Equal("app-1"))
+			Expect(events[1].GUID).To(Equal("event-2"))
+		})
+		It("does not silently truncate an oversized window", func() {
+			mockServer.RouteToHandler("GET", "/v3/audit_events", ghttp.RespondWith(http.StatusOK, `{"pagination":{"next":{"href":"`+mockServer.URL()+`/v3/audit_events?page=2"}},"resources":[]}`))
+			_, err := client.(cf.AuditEventSource).ListAuditEvents(ctx, time.Now().Add(-time.Minute), time.Now())
+			Expect(err).To(MatchError(ContainSubstring("exceeds 20000 events")))
+		})
 	})
 
 	Describe("NewCFClientWrapper", func() {

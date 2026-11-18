@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: appstateobserver-1
+      author: autoscaler
+      dbms: postgresql
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE appstate_meta (
+                id integer PRIMARY KEY CHECK (id = 1),
+                checkpoint timestamptz NOT NULL,
+                checked_at timestamptz NOT NULL,
+                revision bigint NOT NULL DEFAULT 0
+              );
+              INSERT INTO appstate_meta(id, checkpoint, checked_at)
+                VALUES(1, CURRENT_TIMESTAMP - interval '2 minutes', 'epoch');
+              CREATE TABLE appstate_observations (
+                app_id varchar PRIMARY KEY,
+                revision bigint NOT NULL,
+                managed boolean NOT NULL,
+                dirty boolean NOT NULL,
+                verified_at timestamptz NOT NULL,
+                retry_at timestamptz NOT NULL DEFAULT 'epoch',
+                observation jsonb NOT NULL
+              );
+              CREATE INDEX appstate_revision ON appstate_observations(revision);
+              CREATE INDEX appstate_pending ON appstate_observations(managed, dirty, verified_at);
+              CREATE TABLE appstate_seen(guid varchar PRIMARY KEY, created_at timestamptz NOT NULL);
+              CREATE INDEX appstate_seen_created ON appstate_seen(created_at);

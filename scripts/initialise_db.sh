@@ -45,6 +45,7 @@ files="api.db.changelog.yml
        metricscollector.db.changelog.yml
        dataaggregator.db.changelog.yml
        scalingengine.db.changelog.yml
+       appstateobserver.db.changelog.yml
        operator.db.changelog.yml"
 
 class_path="$ROOT/dbtasks/target/lib/*:\
@@ -54,6 +55,7 @@ $ROOT/servicebroker/db/:\
 $ROOT/metricsserver/db/:\
 $ROOT/eventgenerator/db/:\
 $ROOT/scalingengine/db/:\
+$ROOT/appstateobserver/db/:\
 $ROOT/operator/db/"
 
 [ -e "${LOG_FILE}" ] && rm "${LOG_FILE}"
@@ -76,4 +78,3 @@ for file in ${files}; do
     ${PASSWORD_OPT} \
     update >> "${LOG_FILE}"
 done
-

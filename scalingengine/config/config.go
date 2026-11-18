@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/appstate"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -40,6 +41,7 @@ type Config struct {
 	LockSize              int             `yaml:"lockSize"`
 	HttpClientTimeout     time.Duration   `yaml:"http_client_timeout"`
 	Activator             ActivatorConfig `yaml:"activator"`
+	AppState              appstate.Config `yaml:"app_state"`
 }
 
 func defaultConfig() Config {
@@ -80,6 +82,7 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 			return err
 		}
 		conf.Activator.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
+		conf.AppState.TLS = vcapReader.GetInstanceTLSCerts()
 	}
 
 	return nil

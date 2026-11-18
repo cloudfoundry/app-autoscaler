@@ -49,7 +49,7 @@ test-certs: target/autoscaler_test_certs scheduler/src/test/resources/certs
 build_all: build_programs build_tests
 build_programs: build db.java-libs scheduler.build build-test-app
 
-MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,acceptance-tests
+MODULES ?= dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,activator,appstateobserver,acceptance-tests
 
 db_type ?= postgres
 DB_HOST ?= localhost
@@ -284,6 +284,7 @@ vendor-changelogs:
 	cp $(MAKEFILE_DIR)/eventgenerator/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/operator/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/scalingengine/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
+	cp $(MAKEFILE_DIR)/appstateobserver/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 	cp $(MAKEFILE_DIR)/scheduler/db/* $(MAKEFILE_DIR)/dbtasks/src/main/resources/.
 
 clean: dbtasks.clean mta-build-clean scheduler.clean

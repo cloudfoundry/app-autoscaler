@@ -2,6 +2,7 @@ package activator
 
 import (
 	"encoding/json"
+	"sync"
 
 	"github.com/nats-io/nats.go"
 
@@ -38,6 +39,7 @@ func (s *natsRouteEventSubscriber) Subscribe() (RouteEventStream, error) {
 	stream := &natsRouteEventStream{
 		events: make(chan RouteEvent, 64),
 		errs:   make(chan error, 1),
+		done:   make(chan struct{}),
 	}
 	sub, err := s.conn.Subscribe(natsRegisterSubject, func(msg *nats.Msg) {
 		s.handle(msg, stream)
@@ -90,6 +92,11 @@ func decodeReadinessEvents(data []byte, self SelfBackend) ([]RouteEvent, error) 
 // server_cert_domain_san) is the authoritative identity; host+tls_port is a
 // fallback for messages that omit it.
 func isSelfBackend(rm registerMessage, self SelfBackend) bool {
+	// Every replica advertises the same app identity, so a peer activator is
+	// never mistaken for a real app backend during manual or request-driven wake.
+	if self.AppGUID != "" && rm.App == self.AppGUID {
+		return true
+	}
 	if self.InstanceGUID != "" &&
 		(rm.PrivateInstanceID == self.InstanceGUID || rm.ServerCertDomainSAN == self.ServerCertDomainSAN) {
 		return true
@@ -99,9 +106,11 @@ func isSelfBackend(rm registerMessage, self SelfBackend) bool {
 
 // natsRouteEventStream adapts a NATS subscription to RouteEventStream.
 type natsRouteEventStream struct {
-	sub    *nats.Subscription
-	events chan RouteEvent
-	errs   chan error
+	sub       *nats.Subscription
+	events    chan RouteEvent
+	errs      chan error
+	done      chan struct{}
+	closeOnce sync.Once
 }
 
 func (s *natsRouteEventStream) Next() (RouteEvent, error) {
@@ -110,12 +119,18 @@ func (s *natsRouteEventStream) Next() (RouteEvent, error) {
 		return e, nil
 	case err := <-s.errs:
 		return RouteEvent{}, err
+	case <-s.done:
+		return RouteEvent{}, nats.ErrConnectionClosed
 	}
 }
 
 func (s *natsRouteEventStream) Close() error {
-	if s.sub != nil {
-		return s.sub.Unsubscribe()
-	}
-	return nil
+	var err error
+	s.closeOnce.Do(func() {
+		close(s.done)
+		if s.sub != nil {
+			err = s.sub.Unsubscribe()
+		}
+	})
+	return err
 }

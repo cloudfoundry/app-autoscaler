@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/appstate"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/configutil"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
@@ -39,6 +40,7 @@ type Config struct {
 
 	// ScalingEngine is used to wake parked apps.
 	ScalingEngine ScalingEngineConfig `yaml:"scaling_engine" json:"scaling_engine"`
+	AppState      appstate.Config     `yaml:"app_state" json:"app_state"`
 }
 
 // ScalingEngineConfig points the activator at the scaling engine.
@@ -57,6 +59,7 @@ func LoadVcapConfig(conf *Config, vcapReader configutil.VCAPConfigurationReader)
 			return err
 		}
 		conf.ScalingEngine.TLSClientCerts = vcapReader.GetInstanceTLSCerts()
+		conf.AppState.TLS = vcapReader.GetInstanceTLSCerts()
 
 		// NATS client mTLS certs come from the bound nats-client service
 		// (materialized to files), mirroring the syslog-client pattern.

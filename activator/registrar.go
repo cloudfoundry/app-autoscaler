@@ -182,6 +182,7 @@ func (r *natsRegistrar) publish(subject string, uris []string) error {
 	msg := registerMessage{
 		URIs:                    uris,
 		Host:                    r.self.Host,
+		App:                     r.self.AppGUID,
 		TLSPort:                 r.self.TLSPort,
 		PrivateInstanceID:       r.self.InstanceGUID,
 		ServerCertDomainSAN:     r.self.ServerCertDomainSAN,

@@ -3,15 +3,21 @@ package app_test
 import (
 	"acceptance"
 	"acceptance/helpers"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/cloudfoundry/cf-test-helpers/v2/cf"
 	cfh "github.com/cloudfoundry/cf-test-helpers/v2/helpers"
+	"github.com/cloudfoundry/cf-test-helpers/v2/workflowhelpers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gexec"
 )
 
 // Scale-to-zero / scale-from-zero acceptance test.
@@ -22,8 +28,7 @@ import (
 //
 // or by label: --label-filter='scaletozero'.
 //
-// It requires the activator to be deployed and the app's route bound to the
-// activator route-service on scale-to-zero (see docs/design/scale-to-zero.md).
+// Requires the activator, appstateobserver and routing NATS connectivity.
 var _ = Describe("AutoScaler scaletozero", func() {
 	var policy string
 
@@ -89,7 +94,89 @@ var _ = Describe("AutoScaler scaletozero", func() {
 				"expected the woken app to serve /health with 200")
 		})
 	})
+
+	Context("when instance counts are changed manually", func() {
+		BeforeEach(func() {
+			// No scaling rules: only the CLI and an explicit wake request can
+			// change this app's instance count.
+			policy = `{"schema-version":"0.1","instance_min_count":0,"instance_max_count":3}`
+			initialInstanceCount = 1
+		})
+
+		It("scaletozero: parks a manually zero-scaled app and wakes it on request", func() {
+			By("manually scaling the web process to zero")
+			Expect(cf.Cf("scale", appToScaleName, "-i", "0").Wait(cfg.DefaultTimeoutDuration())).To(Exit(0))
+			helpers.WaitForNInstancesRunning(appToScaleGUID, 0, cfg.ScaleEventTimeout())
+			waitForActivatorEvent("cf-parker.parked")
+
+			By("waking the manually parked app through its unchanged route")
+			Eventually(func() int { return getHealthStatus(appToScaleName) }).
+				WithTimeout(cfg.ScaleEventTimeout()).WithPolling(5 * time.Second).Should(Equal(http.StatusOK))
+			helpers.WaitForNInstancesRunning(appToScaleGUID, 1, cfg.ScaleEventTimeout())
+			waitForActivatorEvent("cf-parker.unparked")
+		})
+
+		It("scaletozero: unparks after manual scale-back-up without a wake request", func() {
+			By("manually scaling to zero and waiting for parking without HTTP traffic")
+			Expect(cf.Cf("scale", appToScaleName, "-i", "0").Wait(cfg.DefaultTimeoutDuration())).To(Exit(0))
+			helpers.WaitForNInstancesRunning(appToScaleGUID, 0, cfg.ScaleEventTimeout())
+			waitForActivatorEvent("cf-parker.parked")
+
+			By("manually scaling back up to two instances")
+			Expect(cf.Cf("scale", appToScaleName, "-i", "2").Wait(cfg.DefaultTimeoutDuration())).To(Exit(0))
+			helpers.WaitForNInstancesRunning(appToScaleGUID, 2, cfg.ScaleEventTimeout())
+			// This must happen before any HTTP request: the routing readiness
+			// event, rather than request-driven activation, causes un-parking.
+			waitForActivatorEvent("cf-parker.unparked")
+			Eventually(func() int { return getHealthStatus(appToScaleName) }).
+				WithTimeout(cfg.ScaleEventTimeout()).WithPolling(5 * time.Second).Should(Equal(http.StatusOK))
+		})
+	})
 }, Label(acceptance.LabelScaleToZero))
+
+// The parking registry is deliberately an authenticated internal surface.
+// Foundation-admin access to the activator's existing structured logs lets the
+// acceptance test prove parking/unparking without issuing a wake request or
+// adding an unauthenticated test-only application endpoint.
+func waitForActivatorEvent(event string) {
+	GinkgoHelper()
+	workflowhelpers.AsUser(setup.AdminUserContext(), cfg.DefaultTimeoutDuration(), func() {
+		name := cfg.ActivatorAppName
+		if name == "" {
+			name = "activator"
+		}
+		apps := cf.Cf("curl", "/v3/apps?names="+url.QueryEscape(name)+"&include=space.organization").Wait(cfg.DefaultTimeoutDuration())
+		Expect(apps).To(Exit(0))
+		var response struct {
+			Included struct {
+				Spaces []struct {
+					Name string `json:"name"`
+				} `json:"spaces"`
+				Organizations []struct {
+					Name string `json:"name"`
+				} `json:"organizations"`
+			} `json:"included"`
+		}
+		Expect(json.Unmarshal(apps.Out.Contents(), &response)).To(Succeed())
+		Expect(response.Included.Spaces).To(HaveLen(1))
+		Expect(response.Included.Organizations).To(HaveLen(1))
+		Expect(cf.Cf("target", "-o", response.Included.Organizations[0].Name, "-s", response.Included.Spaces[0].Name).
+			Wait(cfg.DefaultTimeoutDuration())).To(Exit(0))
+		Eventually(func() bool {
+			logs := cf.Cf("logs", name, "--recent").Wait(cfg.DefaultTimeoutDuration())
+			if logs.ExitCode() != 0 {
+				return false
+			}
+			for _, line := range strings.Split(string(logs.Out.Contents()), "\n") {
+				if strings.Contains(line, event) && strings.Contains(line, appToScaleGUID) {
+					return true
+				}
+			}
+			return false
+		}).WithTimeout(cfg.ScaleEventTimeout()).WithPolling(5*time.Second).Should(BeTrue(),
+			"expected activator event %s for app %s", event, appToScaleGUID)
+	})
+}
 
 // getHealthStatus GETs the app's /health route and returns the HTTP status
 // code, retrying the wake path until the app is reachable.

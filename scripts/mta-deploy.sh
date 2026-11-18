@@ -12,7 +12,7 @@ source "${script_dir}/common.sh"
 
 DEST="${DEST:-/tmp/build}"
 MTAR_FILENAME="${MTAR_FILENAME:-app-autoscaler-release-v${VERSION}.mtar}"
-MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,activator,acceptance-tests}"
+MODULES="${MODULES:-dbtasks,apiserver,eventgenerator,metricsforwarder,metricsgateway,operator,scheduler,scalingengine,activator,appstateobserver,acceptance-tests}"
 
 # Compute extension file path
 EXTENSION_FILE="${DEST}/extension-file-${VERSION}.txt"

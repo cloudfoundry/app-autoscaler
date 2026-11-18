@@ -86,6 +86,18 @@ var _ = Describe("CFParker", func() {
 			Expect(parker.Park(context.Background(), "app-1")).To(MatchError(ContainSubstring("nats boom")))
 		})
 
+		It("removes old route registrations when parked routes change", func() {
+			Expect(parker.Park(context.Background(), "app-1")).To(Succeed())
+			lister.routes = []cf.Route{{URL: "https://new.example.com"}}
+			Expect(parker.Park(context.Background(), "app-1")).To(Succeed())
+			Expect(registrar.unregistered).To(HaveLen(1))
+			Expect(registrar.unregistered[0]).To(HaveLen(2))
+			Expect(registry.RoutesFor("app-1")).To(Equal([]string{"https://new.example.com"}))
+			lister.routes = nil
+			Expect(parker.Park(context.Background(), "app-1")).To(Succeed())
+			Expect(registry.IsParked("app-1")).To(BeFalse())
+		})
+
 		It("fails when route lookup fails", func() {
 			lister.routesErr = errors.New("cf boom")
 			Expect(parker.Park(context.Background(), "app-1")).To(MatchError(ContainSubstring("cf boom")))

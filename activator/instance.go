@@ -22,6 +22,7 @@ type SelfBackend struct {
 	TLSPort             int
 	ServerCertDomainSAN string
 	InstanceGUID        string
+	AppGUID             string
 }
 
 // cfInstancePort mirrors the entries of the CF_INSTANCE_PORTS JSON array.
@@ -70,11 +71,20 @@ func SelfBackendFromEnv() (SelfBackend, error) {
 		return SelfBackend{}, fmt.Errorf("no external_tls_proxy port found in CF_INSTANCE_PORTS %q", portsRaw)
 	}
 
+	var application struct {
+		GUID string `json:"application_id"`
+	}
+	if raw := os.Getenv("VCAP_APPLICATION"); raw != "" {
+		if err := json.Unmarshal([]byte(raw), &application); err != nil {
+			return SelfBackend{}, fmt.Errorf("invalid VCAP_APPLICATION: %w", err)
+		}
+	}
 	return SelfBackend{
 		Host:                ip,
 		TLSPort:             tlsPort,
 		ServerCertDomainSAN: guid,
 		InstanceGUID:        guid,
+		AppGUID:             application.GUID,
 	}, nil
 }
 

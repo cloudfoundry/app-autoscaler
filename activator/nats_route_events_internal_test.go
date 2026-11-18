@@ -1,7 +1,13 @@
 package activator
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
+
+	"code.cloudfoundry.org/lager/v3/lagertest"
+	"github.com/nats-io/nats.go"
 )
 
 // TestDecodeReadinessEvents covers the router.register filtering logic that
@@ -15,6 +21,7 @@ func TestDecodeReadinessEvents(t *testing.T) {
 		TLSPort:             61032,
 		ServerCertDomainSAN: "activator-guid",
 		InstanceGUID:        "activator-guid",
+		AppGUID:             "activator-app-guid",
 	}
 
 	cases := []struct {
@@ -32,6 +39,10 @@ func TestDecodeReadinessEvents(t *testing.T) {
 			name:     "multi-route registration -> one Upsert per URI",
 			payload:  `{"uris":["a.example.com","b.example.com"],"host":"10.0.1.99","tls_port":61099,"private_instance_id":"real-app"}`,
 			wantURIs: []string{"a.example.com", "b.example.com"},
+		},
+		{
+			name:    "peer activator registration -> dropped",
+			payload: `{"uris":["app-1.example.com"],"host":"10.0.1.25","tls_port":61033,"app":"activator-app-guid","private_instance_id":"peer-guid"}`,
 		},
 		{
 			name:     "self by instance GUID -> dropped",
@@ -79,5 +90,66 @@ func TestDecodeReadinessEvents(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+type guardParker struct {
+	calls int
+	err   error
+}
+
+func (*guardParker) Park(context.Context, string) error     { return nil }
+func (p *guardParker) Unpark(context.Context, string) error { p.calls++; return p.err }
+
+func TestReadinessGuardAndUnparkFailure(t *testing.T) {
+	registry := NewInMemoryRegistry()
+	registry.MarkParked("app", []string{"app.example.com"})
+	parker := &guardParker{}
+	ready := false
+	watcher := NewReadinessWatcher(lagertest.NewTestLogger("guard"), nil, registry, parker, func(context.Context, string) (bool, error) { return ready, nil }).(*readinessWatcher)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	waiter := watcher.WaitForReady(ctx, "app")
+	watcher.handleUpsert(ctx, "app.example.com")
+	if parker.calls != 0 {
+		t.Fatal("retiring backend unparked a zero-desired app")
+	}
+	ready = true
+	parker.err = errors.New("registration failure")
+	watcher.handleUpsert(ctx, "app.example.com")
+	select {
+	case err := <-waiter:
+		t.Fatalf("failed unpark released a held request: %v", err)
+	default:
+	}
+	parker.err = nil
+	watcher.handleUpsert(ctx, "app.example.com")
+	select {
+	case err := <-waiter:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("manual scale-up readiness did not release waiter")
+	}
+}
+
+func TestRouteStreamCloseUnblocksNext(t *testing.T) {
+	stream := &natsRouteEventStream{events: make(chan RouteEvent), errs: make(chan error), done: make(chan struct{})}
+	done := make(chan error, 1)
+	go func() { _, err := stream.Next(); done <- err }()
+	if err := stream.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := stream.Close(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, nats.ErrConnectionClosed) {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("stream Next remained blocked after shutdown")
 	}
 }

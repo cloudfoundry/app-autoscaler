@@ -3,6 +3,8 @@ package activator
 import (
 	"context"
 	"fmt"
+	"slices"
+	"sync"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 
@@ -25,6 +27,7 @@ type cfParker struct {
 	cfClient  RouteLister
 	registrar Registrar
 	registry  Registry
+	mu        sync.Mutex
 }
 
 func NewCFParker(logger lager.Logger, cfClient RouteLister, registrar Registrar, registry Registry) Parker {
@@ -37,16 +40,31 @@ func NewCFParker(logger lager.Logger, cfClient RouteLister, registrar Registrar,
 }
 
 func (p *cfParker) Park(ctx context.Context, appID string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	uris, err := p.appRouteURIs(ctx, appID)
 	if err != nil {
 		return err
 	}
-	if len(uris) == 0 {
-		p.logger.Info("no-routes-to-park", lager.Data{"appID": appID})
-		return nil
+	if len(uris) > 0 {
+		if err := p.registrar.Register(uris); err != nil {
+			return fmt.Errorf("failed registering activator for app %s routes: %w", appID, err)
+		}
 	}
-	if err := p.registrar.Register(uris); err != nil {
-		return fmt.Errorf("failed registering activator for app %s routes: %w", appID, err)
+	var removed []string
+	for _, old := range p.registry.RoutesFor(appID) {
+		if !slices.Contains(uris, old) {
+			removed = append(removed, old)
+		}
+	}
+	if len(removed) > 0 {
+		if err := p.registrar.Unregister(removed); err != nil {
+			return fmt.Errorf("remove old parked routes: %w", err)
+		}
+	}
+	if len(uris) == 0 {
+		p.registry.MarkUnparked(appID)
+		return nil
 	}
 	p.registry.MarkParked(appID, uris)
 	p.logger.Info("parked", lager.Data{"appID": appID, "routes": uris})
@@ -54,6 +72,8 @@ func (p *cfParker) Park(ctx context.Context, appID string) error {
 }
 
 func (p *cfParker) Unpark(ctx context.Context, appID string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	// Prefer the URIs recorded at park time (the app's live routes may already
 	// differ); fall back to a fresh lookup if the registry has none.
 	uris := p.registry.RoutesFor(appID)

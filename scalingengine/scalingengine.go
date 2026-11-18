@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/appstate"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
@@ -29,6 +30,8 @@ type scalingEngine struct {
 	clock               clock.Clock
 	defaultCoolDownSecs int
 	activator           Activator
+	stateCache          *appstate.Cache
+	stateSource         appstate.Source
 }
 
 type ActiveScheduleNotFoundError struct {
@@ -47,6 +50,12 @@ type Option func(*scalingEngine)
 // zero. When omitted, a NoopActivator is used so the engine runs standalone.
 func WithActivator(activator Activator) Option {
 	return func(s *scalingEngine) { s.activator = activator }
+}
+
+// WithAppState enables bounded, event-invalidated no-op decisions. All writes
+// still use freshly read CF state; absence/failure of the observer is safe.
+func WithAppState(cache *appstate.Cache, source appstate.Source) Option {
+	return func(s *scalingEngine) { s.stateCache = cache; s.stateSource = source }
 }
 
 func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int, opts ...Option) ScalingEngine {
@@ -96,6 +105,13 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		CooldownExpiredAt: 0,
 	}
 
+	if s.cachedNoop(ctx, appId, trigger, history, result) {
+		return result, nil
+	}
+	var token uint64
+	if s.stateCache != nil {
+		token = s.stateCache.Token()
+	}
 	appAndProcesses, err := s.cfClient.GetAppAndProcesses(ctx, cf.Guid(appId))
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
@@ -104,6 +120,9 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		return nil, err
 	}
 	instances := appAndProcesses.Processes.GetInstances()
+	if s.stateCache != nil {
+		s.stateCache.Remember(appId, appAndProcesses, now, token)
+	}
 	history.OldInstances = instances
 
 	if strings.ToUpper(appAndProcesses.App.State) != models.AppStatusStarted {
@@ -225,6 +244,7 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		}
 	}
 
+	s.invalidateState(ctx, appId)
 	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err, lager.Data{"newInstances": newInstances})
@@ -232,6 +252,7 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		history.Error = "failed to set app instances: " + err.Error()
 		return nil, err
 	}
+	s.invalidateState(ctx, appId)
 
 	history.Status = models.ScalingStatusSucceeded
 	result.Status = history.Status
@@ -242,6 +263,55 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		logger.Error("failed-to-update-scaling-cool-down-expire-time", err, lager.Data{"newInstances": newInstances})
 	}
 	return result, nil
+}
+
+func (s *scalingEngine) cachedNoop(ctx context.Context, appID string, trigger *models.Trigger, history *models.AppScalingHistory, result *models.AppScalingResult) bool {
+	if s.stateCache == nil || trigger.BypassCooldown {
+		return false
+	}
+	instances, fresh := s.stateCache.Instances(appID, s.clock.Now())
+	if !fresh {
+		return false
+	}
+	target, err := s.ComputeNewInstances(instances, trigger.Adjustment)
+	if err != nil {
+		return false
+	}
+	schedule, err := s.scalingEngineDB.GetActiveSchedule(appID)
+	if err != nil {
+		return false
+	}
+	var minimum, maximum int
+	if schedule != nil {
+		minimum, maximum = schedule.InstanceMin, schedule.InstanceMax
+	} else {
+		policy, err := s.policyDB.GetAppPolicy(ctx, appID)
+		if err != nil || policy == nil {
+			return false
+		}
+		minimum, maximum = policy.InstanceMin, policy.InstanceMax
+	}
+	target = max(minimum, min(maximum, target))
+	if target != instances {
+		return false
+	}
+	history.OldInstances = instances
+	history.NewInstances = instances
+	history.Status = models.ScalingStatusIgnored
+	history.Message = "scaling is a no-op (fresh observed instance count)"
+	result.Status = history.Status
+	return true
+}
+
+func (s *scalingEngine) invalidateState(ctx context.Context, appID string) {
+	if s.stateCache != nil {
+		s.stateCache.Invalidate(appID)
+	}
+	if s.stateSource != nil {
+		if err := s.stateSource.Invalidate(ctx, appID); err != nil {
+			s.logger.Error("observer-invalidation-failed", err)
+		}
+	}
 }
 
 func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment string) (int, error) {
@@ -346,6 +416,14 @@ func (s *scalingEngine) SetActiveSchedule(ctx context.Context, appId string, sch
 		return nil
 	}
 
+	if newInstances == 0 {
+		if err := s.activator.Park(ctx, appId); err != nil {
+			history.Status = models.ScalingStatusFailed
+			history.Error = "failed to park app: " + err.Error()
+			return err
+		}
+	}
+	s.invalidateState(ctx, appId)
 	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
@@ -353,6 +431,7 @@ func (s *scalingEngine) SetActiveSchedule(ctx context.Context, appId string, sch
 		history.Error = "failed to set app instances: " + err.Error()
 		return err
 	}
+	s.invalidateState(ctx, appId)
 	history.Status = models.ScalingStatusSucceeded
 	return nil
 }
@@ -443,6 +522,14 @@ func (s *scalingEngine) RemoveActiveSchedule(ctx context.Context, appId string, 
 		return nil
 	}
 
+	if newInstances == 0 {
+		if err := s.activator.Park(ctx, appId); err != nil {
+			history.Status = models.ScalingStatusFailed
+			history.Error = "failed to park app: " + err.Error()
+			return err
+		}
+	}
+	s.invalidateState(ctx, appId)
 	err = s.cfClient.ScaleAppWebProcess(ctx, cf.Guid(appId), newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
@@ -450,6 +537,7 @@ func (s *scalingEngine) RemoveActiveSchedule(ctx context.Context, appId string, 
 		history.Error = "failed to set app instances: " + err.Error()
 		return err
 	}
+	s.invalidateState(ctx, appId)
 	history.Status = models.ScalingStatusSucceeded
 	return nil
 }

@@ -75,6 +75,7 @@ type Config struct {
 	ServiceBroker     string `json:"service_broker"`
 	ServiceName       string `json:"service_name"`
 	ServicePlan       string `json:"service_plan"`
+	ActivatorAppName  string `json:"activator_app_name"`
 	AggregateInterval int    `json:"aggregate_interval"`
 
 	CfJavaTimeout   int `json:"cf_java_timeout"`

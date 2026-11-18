@@ -9,6 +9,9 @@ import (
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator/config"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/activator/server"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/appstate"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/startup"
@@ -43,7 +46,23 @@ func main() {
 	// backend for a parked route, the watcher observes it (filtering out the
 	// activator's own registrations) and un-parks the app.
 	subscriber := activator.NewNatsRouteEventSubscriber(logger, registrar.Conn(), selfBackend)
-	watcher := activator.NewReadinessWatcher(logger, subscriber, registry, parker)
+	watcher := activator.NewReadinessWatcher(logger, subscriber, registry, parker, func(ctx context.Context, appID string) (bool, error) {
+		app, err := cfClient.GetAppAndProcesses(ctx, cf.Guid(appID))
+		if err != nil {
+			return false, err
+		}
+		return app.App.State == "STARTED" && app.Processes.GetInstances() > 0, nil
+	})
+	var reconcileRunner ifrit.Runner
+	if conf.AppState.URL != "" {
+		policyDB := startup.CreatePolicyDB(conf.Db[db.PolicyDb], logger)
+		defer func() { _ = policyDB.Closer() }()
+		client, err := helpers.CreateHTTPSClient(&conf.AppState.TLS, helpers.DefaultClientConfig(), logger.Session("app-state-client"))
+		startup.ExitOnError(err, logger, "create observer client")
+		reconciler := &activator.Reconciler{Source: appstate.NewClient(client, conf.AppState.URL), CF: cfClient,
+			Policies: policyDB.DB, Parker: parker, Registry: registry, MaxAge: conf.AppState.Freshness()}
+		reconcileRunner = appstate.Runner(logger.Session("parking-reconciler"), conf.AppState.Interval(), reconciler.Poll)
+	}
 
 	// Client used to forward held requests to the woken app (via Gorouter).
 	forwardClient := &http.Client{}
@@ -56,13 +75,17 @@ func main() {
 	activatorServer := server.NewServer(logger.Session("http_server"), conf, handler)
 	xm := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
 
-	startup.StartService(logger,
+	services := []startup.ServerBuilder{
 		startup.Server("nats_registrar", func() (ifrit.Runner, error) { return registrarRunner(registrar), nil }),
 		startup.Server("readiness_watcher", func() (ifrit.Runner, error) { return watcherRunner(logger, watcher), nil }),
 		startup.Server("https_server", activatorServer.CreateMtlsServer),
 		startup.Server("health_server", activatorServer.CreateHealthServer),
 		startup.Server("cf_server", func() (ifrit.Runner, error) { return activatorServer.CreateCFServer(xm) }),
-	)
+	}
+	if reconcileRunner != nil {
+		services = append(services, startup.Server("parking-reconciler", func() (ifrit.Runner, error) { return reconcileRunner, nil }))
+	}
+	startup.StartService(logger, services...)
 }
 
 // registrarRunner runs the NATS registrar's refresh loop (keeps parked routes

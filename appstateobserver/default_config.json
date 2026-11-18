@@ -1,0 +1,5 @@
+{
+  "appstateobserver-config": {
+    "logging": { "level": "info" }
+  }
+}

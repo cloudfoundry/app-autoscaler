@@ -40,19 +40,24 @@ type readinessWatcher struct {
 	subscriber RouteEventSubscriber
 	registry   Registry
 	parker     Parker
+	guard      func(context.Context, string) (bool, error)
 
 	mu      sync.Mutex
 	waiters map[string][]chan struct{} // appID -> readiness waiters
 }
 
-func NewReadinessWatcher(logger lager.Logger, subscriber RouteEventSubscriber, registry Registry, parker Parker) ReadinessWatcher {
-	return &readinessWatcher{
+func NewReadinessWatcher(logger lager.Logger, subscriber RouteEventSubscriber, registry Registry, parker Parker, guards ...func(context.Context, string) (bool, error)) ReadinessWatcher {
+	w := &readinessWatcher{
 		logger:     logger.Session("readiness-watcher"),
 		subscriber: subscriber,
 		registry:   registry,
 		parker:     parker,
 		waiters:    make(map[string][]chan struct{}),
 	}
+	if len(guards) > 0 {
+		w.guard = guards[0]
+	}
+	return w
 }
 
 // WaitForReady returns a channel that receives nil when the app's route is
@@ -126,6 +131,16 @@ func (w *readinessWatcher) handleUpsert(ctx context.Context, routeURL string) {
 	if appID == "" {
 		return // not a route we parked
 	}
+	if w.guard != nil {
+		ready, err := w.guard(ctx, appID)
+		if err != nil {
+			w.logger.Error("readiness-state-check-failed", err)
+			return
+		}
+		if !ready {
+			return
+		} // a retiring backend is not a scale-from-zero signal
+	}
 	w.logger.Info("app-ready-upsert", lager.Data{"appID": appID, "route": routeURL})
 
 	// Un-park (deregister the activator's own backend for this route) BEFORE
@@ -135,6 +150,7 @@ func (w *readinessWatcher) handleUpsert(ctx context.Context, routeURL string) {
 	// reaches the real app and cannot load-balance back to the activator.
 	if err := w.parker.Unpark(ctx, appID); err != nil {
 		w.logger.Error("failed-to-unpark", err, lager.Data{"appID": appID})
+		return
 	}
 	w.wakeWaiters(appID)
 }

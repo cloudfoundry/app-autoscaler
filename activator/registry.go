@@ -25,7 +25,7 @@ func (r *inMemoryRegistry) IsParked(appID string) bool {
 func (r *inMemoryRegistry) MarkParked(appID string, routes []string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.parked[appID] = routes
+	r.parked[appID] = append([]string(nil), routes...)
 }
 
 func (r *inMemoryRegistry) MarkUnparked(appID string) {
@@ -47,5 +47,5 @@ func (r *inMemoryRegistry) ParkedApps() []string {
 func (r *inMemoryRegistry) RoutesFor(appID string) []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.parked[appID]
+	return append([]string(nil), r.parked[appID]...)
 }

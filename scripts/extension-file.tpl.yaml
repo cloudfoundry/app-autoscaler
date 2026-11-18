@@ -45,9 +45,19 @@ modules:
         - route: ${METRICSFORWARDER_HOST}.${default-domain}
         - route: ${METRICSFORWARDER_MTLS_HOST}.${default-domain}
 
+  - name: appstateobserver
+    requires:
+      - name: appstateobserver-config
+      - name: database
+    parameters:
+      instances: ${APPSTATEOBSERVER_INSTANCES}
+      routes:
+        - route: ${APPSTATEOBSERVER_HOST}.${default-domain}
+
   - name: activator
     requires:
       - name: activator-config
+      - name: database
     parameters:
       instances: ${ACTIVATOR_INSTANCES}
       routes:
@@ -92,7 +102,8 @@ modules:
           "apps_domain": "${SYSTEM_DOMAIN}",
           "skip_ssl_validation": ${SKIP_SSL_VALIDATION},
           "use_http": false,
-          "service_name": "${DEPLOYMENT_NAME}",
+           "service_name": "${DEPLOYMENT_NAME}",
+           "activator_app_name": "activator",
           "service_plan": "autoscaler-free-plan",
           "service_broker": "${DEPLOYMENT_NAME}",
           "aggregate_interval": 120,
@@ -109,6 +120,17 @@ modules:
         }
 
 resources:
+  - name: appstateobserver-config
+    parameters:
+      config:
+        appstateobserver-config:
+          cf:
+            api: https://api.${default-domain}
+            client_id: ${SCALINGENGINE_CF_CLIENT_ID}
+            secret: ${SCALINGENGINE_CF_CLIENT_SECRET}
+          poll_interval: 5s
+          reconcile_interval: 5m
+          window: 1m
   - name: metricsforwarder-config
     parameters:
       config:
@@ -123,6 +145,8 @@ resources:
     parameters:
       config:
         activator-config:
+          app_state:
+            url: https://${APPSTATEOBSERVER_HOST}.${default-domain}
           cf:
             api: https://api.${default-domain}
             client_id: ${SCALINGENGINE_CF_CLIENT_ID}
@@ -225,6 +249,8 @@ resources:
     parameters:
       config:
         scalingengine-config:
+          app_state:
+            url: https://${APPSTATEOBSERVER_HOST}.${default-domain}
           health:
             basic_auth:
               password: ${SCALINGENGINE_HEALTH_PASSWORD}
