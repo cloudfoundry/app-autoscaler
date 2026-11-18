@@ -1,0 +1,16 @@
+---
+applications:
+  - name: ((app_name))
+    path: web
+    stack: cflinuxfs4
+    buildpacks:
+      - staticfile_buildpack
+    command: null
+    instances: 1
+    memory: 64M
+    disk_quota: 128M
+    health-check-type: http
+    health-check-http-endpoint: /health
+    timeout: 120
+    routes:
+      - route: ((app_host)).((app_domain))

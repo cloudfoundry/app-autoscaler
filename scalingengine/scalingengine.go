@@ -543,6 +543,9 @@ func (s *scalingEngine) RemoveActiveSchedule(ctx context.Context, appId string, 
 }
 
 func getDynamicScalingReason(trigger *models.Trigger) string {
+	if trigger.MetricType == "scale-from-zero" {
+		return fmt.Sprintf("%s instance(s) because a request to the sleeping app was received", trigger.Adjustment)
+	}
 	return fmt.Sprintf("%s instance(s) because %s %s %d%s for %d seconds",
 		trigger.Adjustment,
 		trigger.MetricType,

@@ -14,7 +14,7 @@ source "${script_dir}/vars.source.sh"
 source "${script_dir}/common.sh"
 
 # Configuration
-SUITES="${SUITES:-api app broker}"
+SUITES="${SUITES:-scaletozero api app broker}"
 NODES="${NODES:-4}"
 GINKGO_OPTS="${GINKGO_OPTS:-}"
 SKIP_TEARDOWN="${SKIP_TEARDOWN:-false}"

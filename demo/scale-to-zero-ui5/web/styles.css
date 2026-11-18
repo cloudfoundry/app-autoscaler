@@ -1,0 +1,236 @@
+:root {
+  color-scheme: dark;
+  --camp-muted: #a9bfd5;
+  --camp-accent: #79ddff;
+}
+
+html,
+body,
+#ui5-root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body,
+.campPage {
+  background: radial-gradient(ellipse at 50% 12%, #11385b 0%, transparent 55%), #071528;
+}
+
+.campHeader.sapMOTB {
+  height: 4.5rem;
+  padding: 0 2rem;
+  background: #071528d9;
+  border-bottom: 1px solid #ffffff12;
+}
+
+.campMark.sapMText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-right: 0.6rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #008dff, #0070f2);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.campBrand.sapMTitle {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.headerBadge .sapMObjStatusText,
+.headerBadge .sapMObjStatusIcon {
+  color: var(--camp-muted);
+  font-size: 0.85rem;
+}
+
+.campContent {
+  max-width: 1120px;
+  margin: auto;
+  padding: 3.5rem 2rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.hero {
+  text-align: center;
+}
+
+.eyebrow.sapMText {
+  color: var(--camp-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+}
+
+.cloudHalo {
+  position: relative;
+  width: 7rem;
+  height: 7rem;
+  margin: 2rem auto;
+  border: 1px solid #79ddff33;
+  border-radius: 2rem;
+  background: linear-gradient(145deg, #128bde33, #7f6aff15);
+  box-shadow: 0 0 90px #00aaff24, inset 0 1px 0 #ffffff18;
+  animation: float 6s ease-in-out infinite;
+}
+
+.cloudHalo::before {
+  position: absolute;
+  inset: -0.65rem;
+  border: 1px solid #79ddff0c;
+  border-radius: 2.6rem;
+  content: "";
+}
+
+.heroCloud.sapUiIcon {
+  color: #a2e7ff;
+  font-size: 3.25rem;
+  text-shadow: 0 0 32px #00aaff66;
+}
+
+.heroTitle.sapMTitle {
+  color: #fff;
+  font-size: clamp(2.5rem, 6vw, 4.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+}
+
+.heroLead.sapMText {
+  margin-top: 1.1rem;
+  color: #d9edff;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.heroDescription.sapMText {
+  max-width: 34rem;
+  margin-top: 0.7rem;
+  color: var(--camp-muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.helloButton {
+  margin-top: 1.75rem;
+}
+
+.helloButton .sapMBtnInner {
+  padding: 0 1.4rem;
+  border-radius: 0.7rem;
+  box-shadow: 0 6px 30px #0070f233;
+}
+
+.heroHint.sapMText {
+  margin-top: 0.8rem;
+  color: #8eaac4;
+  font-size: 0.8rem;
+}
+
+.features {
+  gap: 1rem;
+  margin-top: 3rem;
+}
+
+.features > .sapMFlexItem {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.featureCard {
+  width: 100%;
+  height: 100%;
+  padding: 1.5rem;
+  border: 1px solid #a8d6ff1c;
+  border-radius: 1rem;
+  background: linear-gradient(145deg, #ffffff08, #ffffff03);
+  box-sizing: border-box;
+}
+
+.featureNumber.sapMText {
+  color: #87a6c4;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.featureIcon.sapUiIcon {
+  color: var(--camp-accent);
+  font-size: 1.25rem;
+}
+
+.featureTitle.sapMTitle {
+  margin-top: 1.2rem;
+  color: #eef6ff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.featureDescription.sapMText {
+  margin-top: 0.6rem;
+  color: var(--camp-muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.campFooter.sapMText {
+  display: block;
+  margin-top: 2rem;
+  color: #819ab3;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.fallback {
+  max-width: 700px;
+  margin: auto;
+  padding: 20vh 2rem 3rem;
+  color: var(--camp-muted);
+  font-family: "72", Arial, sans-serif;
+  text-align: center;
+}
+
+.fallback[hidden] {
+  display: none;
+}
+
+.fallbackBadge {
+  color: var(--camp-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+}
+
+.fallback h1 {
+  color: #fff;
+  font-size: clamp(2.5rem, 6vw, 4.6rem);
+  letter-spacing: -0.055em;
+}
+
+.fallbackLead {
+  color: #d9edff;
+  font-size: 1.4rem;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@media (max-width: 600px) {
+  .campHeader.sapMOTB { padding: 0 1rem; }
+  .campContent { padding: 2.5rem 1.25rem 1.5rem; }
+  .features { margin-top: 2rem; }
+  .features > .sapMFlexItem { flex-basis: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloudHalo { animation: none; }
+}

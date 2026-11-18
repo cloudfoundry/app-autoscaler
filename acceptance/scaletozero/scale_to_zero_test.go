@@ -1,4 +1,4 @@
-package app_test
+package scaletozero_test
 
 import (
 	"acceptance"
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -24,7 +23,7 @@ import (
 //
 // Run just this test against a deployed autoscaler with:
 //
-//	SUITES=app GINKGO_OPTS='--focus=scaletozero' make acceptance-tests
+//	SUITES=scaletozero make mta-acceptance-tests
 //
 // or by label: --label-filter='scaletozero'.
 //
@@ -38,15 +37,8 @@ var _ = Describe("AutoScaler scaletozero", func() {
 		appToScaleGUID, err = helpers.GetAppGuid(cfg, appToScaleName)
 		Expect(err).NotTo(HaveOccurred())
 		helpers.StartApp(appToScaleName, cfg.CfPushTimeoutDuration())
-		instanceName = helpers.CreatePolicy(cfg, appToScaleName, appToScaleGUID, policy)
-	})
-
-	AfterEach(func() {
-		if os.Getenv("SKIP_TEARDOWN") == "true" {
-			fmt.Println("Skipping Teardown...")
-			return
-		}
-		AppAfterEach()
+		instanceName, err = helpers.CreatePolicyWithErr(cfg, appToScaleName, policy)
+		Expect(err).NotTo(HaveOccurred(), "the scale-to-zero policy must be bound before scaling")
 	})
 
 	Context("when scaling to and from zero by cpu", func() {
@@ -97,9 +89,11 @@ var _ = Describe("AutoScaler scaletozero", func() {
 
 	Context("when instance counts are changed manually", func() {
 		BeforeEach(func() {
-			// No scaling rules: only the CLI and an explicit wake request can
-			// change this app's instance count.
-			policy = `{"schema-version":"0.1","instance_min_count":0,"instance_max_count":3}`
+			// The schema requires a rule or schedule. This metric is never
+			// emitted by the test app, so only the CLI and a wake request can
+			// change its instance count.
+			policy = `{"schema-version":"0.1","instance_min_count":0,"instance_max_count":3,
+				"scaling_rules":[{"metric_type":"manual_scaletozero_unused","threshold":1,"operator":">","adjustment":"+1"}]}`
 			initialInstanceCount = 1
 		})
 

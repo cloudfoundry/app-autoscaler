@@ -241,6 +241,7 @@ var _ = Describe("ScalingEngine", func() {
 				policyDB.GetAppPolicyReturns(&models.PolicyDefinition{InstanceMin: 0, InstanceMax: 6}, nil)
 				trigger.Adjustment = "+1"
 				trigger.BypassCooldown = true
+				trigger.MetricType = "scale-from-zero"
 			})
 
 			It("scales up despite the cooldown", func() {
@@ -249,6 +250,12 @@ var _ = Describe("ScalingEngine", func() {
 				_, _, num := cfc.ScaleAppWebProcessArgsForCall(0)
 				Expect(num).To(Equal(1))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
+			})
+
+			It("records a human-readable reason for request-driven wake-up", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0).Reason).
+					To(Equal("+1 instance(s) because a request to the sleeping app was received"))
 			})
 		})
 

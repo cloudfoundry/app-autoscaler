@@ -167,7 +167,7 @@ check, independently of HTTP liveness.
 - PostgreSQL tests execute the actual migration in isolated temporary schemas:
   transaction rollback, reader election, GUID deduplication, revision fencing,
   compacted pagination, tombstones and manual zero/up refresh.
-- Acceptance: rule-free policies exercise manual zero with request-driven wake
+- Acceptance: policies with a rule for an unreported custom metric exercise manual zero with request-driven wake
   and manual zero followed by manual scale to two, verifying unpark before any
   HTTP request. Authenticated foundation-admin log access verifies routing-side
   parking without adding a public test-only endpoint.
@@ -176,7 +176,7 @@ check, independently of HTTP liveness.
 APPSTATE_TEST_DB_URL='postgres://postgres:postgres@localhost/postgres?sslmode=disable' \
   go test ./appstateobserver/...
 go test ./appstate/... ./scalingengine ./activator ./cf
-SUITES=app GINKGO_OPTS='--label-filter=scaletozero' make acceptance-tests
+SUITES=scaletozero make mta-acceptance-tests
 ```
 
 Acceptance uses `activator_app_name` (default `activator`, the MTA module's app
