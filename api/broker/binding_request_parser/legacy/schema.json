@@ -4,6 +4,10 @@
   "type": "object",
 
   "properties": {
+    "min_memory_mb": {"$ref": "../../../policyvalidator/json-schema/vertical-scaling.schema.json#/definitions/memory_bound"},
+    "max_memory_mb": {"$ref": "../../../policyvalidator/json-schema/vertical-scaling.schema.json#/definitions/memory_bound"},
+    "scaling_priority": {"$ref": "../../../policyvalidator/json-schema/vertical-scaling.schema.json#/definitions/priority"},
+    "vertical_scaling_rules": {"$ref": "../../../policyvalidator/json-schema/vertical-scaling.schema.json#/definitions/rules"},
     "schema-version": {
       "type": "null"
     },
@@ -939,6 +943,7 @@
     "instance_max_count"
   ],
   "anyOf": [
+    {"required": ["vertical_scaling_rules"]},
     {
       "required": [
         "scaling_rules"

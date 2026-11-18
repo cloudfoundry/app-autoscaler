@@ -61,7 +61,12 @@ func (p BindingRequestParser) Parse(
 		return models.AppScalingConfig{}, err
 	}
 
-	return p.toBindingParameters(parsedParameters, ccAppGuid)
+	config, err := p.toBindingParameters(parsedParameters, ccAppGuid)
+	if err != nil { return models.AppScalingConfig{}, err }
+	policy, err := models.ScalingPolicyFromRawJSON(json.RawMessage(bindingReqParams))
+	if err != nil { return models.AppScalingConfig{}, err }
+	if err := policy.GetPolicyDefinition().ValidateVerticalScaling(); err != nil { return models.AppScalingConfig{}, err }
+	return *models.NewAppScalingConfig(*config.GetConfiguration(), *policy), nil
 }
 
 func (p BindingRequestParser) Validate(bindingReqParams string) error {
