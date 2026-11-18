@@ -109,6 +109,8 @@ type Config struct {
 	CPUUtilScalingPolicyTest CPUUtilScalingPolicyTest `json:"cpuutil_scaling_policy_test"`
 
 	Performance PerformanceConfig `json:"performance"`
+
+	VerticalScaling VerticalScalingConfig `json:"vertical_scaling_test"`
 }
 
 type CPUUtilScalingPolicyTest struct {
@@ -199,6 +201,7 @@ func LoadConfig(terminateSuite TerminateSuite) *Config {
 		terminateSuite(err.Error())
 	}
 	validate(&config, terminateSuite)
+	config.VerticalScaling.validate(terminateSuite)
 	return &config
 }
 

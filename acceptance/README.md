@@ -170,3 +170,68 @@ To see verbose output from `ginkgo`, use the `-v` or '-vv' flag.
 ```
 
 Most of these flags and options can also be passed to the `bin/test_default` scripts as well.
+
+### Opt-in vertical scaling
+
+The `app` suite contains specs labelled `VerticalScaling`. They are skipped by
+default. Run them **only on a disposable test foundation**, never on production.
+The existing app-suite setup still runs; use a dedicated test organization/space
+and pre-enabled service access (`skip_service_access_management: true`) rather
+than changing access, quotas, cells, or any existing application.
+
+Before opting in, confirm capi-release **1.205.0 or later** supports deployment
+memory options, Diego supports HTTP readiness/routability, and Autoscaler exposes
+vertical policies, `entitlementutil`, and the extended public scaling history.
+Do not confuse capi-release versions with CAPI V3 API versions. Provide capacity
+and quota for an old 512 MiB container and its replacement (up to 1024 MiB).
+Missing explicit foundation confirmation skips the specs; missing CAPI readiness
+or Diego routability also skips them. A deployment-options rejection on a
+confirmed foundation is a failure, never a direct-memory-scale fallback.
+
+Add this object to the usual acceptance configuration:
+
+```json
+"vertical_scaling_test": {
+  "enabled": true,
+  "deployment_scaling_supported": true,
+  "safety_scenarios_enabled": false,
+  "breach_duration_secs": 60,
+  "cool_down_secs": 60
+}
+```
+
+Durations must satisfy the existing policy validation bounds (60–3600 seconds).
+Increase timeouts for longer durations or slower foundations. CPU load uses the
+existing `cpuutil_scaling_policy_test.app_cpu_entitlement`; configure it to breach
+80% CPU-entitlement utilisation at the fixture's 512 MiB initial limit. No cell
+configuration is changed by these tests. Rebuild the test app (`make build-test-app`)
+before executing the opt-in suite:
+
+```bash
+./bin/test app --label-filter='VerticalScaling && !VerticalScalingSafety'
+```
+
+The memory- and CPU-load cases grow 512→1024 MiB (`+512`) and shrink back to
+512 MiB (`-50%`), within integer policy limits 256–1024 MiB. They observe CAPI
+rolling deployments, `max_in_flight=1`, unchanged desired instance count and disk,
+current-droplet reuse, overlapping old-ready/new-unready containers, and public
+history Pending (3)→Success (0) only after `FINALIZED/DEPLOYED`, including the
+completion timestamp and cooldown before shrink. An opt-in startup fixture gates
+both HTTP health and readiness on `/vertical/ready` for 45 seconds per container.
+Continuous requests to `/` and `/vertical/ready` retain every timeout, non-200 or
+invalid response; redirects/retries do not mask planned route outages. This is a
+sampled availability check, not an unconditional end-to-end availability guarantee.
+
+The separately labelled `VerticalScalingSafety` specs require
+`safety_scenarios_enabled: true`. They deliberately stall **only their newly
+created app**: one rejects a 256 MiB replacement against a declared 384 MiB
+readiness requirement (without provoking OOM), the other never becomes ready.
+Both verify old-container HTTP availability, one ACTIVE deployment, and persistent
+Pending/no completion through multiple checker intervals and another breach window.
+They never abort or retry a deployment automatically. Cleanup always deletes their
+own app and binding/service, even with `SKIP_TEARDOWN=true`; no quota or existing
+application is modified. They do not test physical OOM or quota exhaustion.
+
+```bash
+./bin/test app --label-filter='VerticalScalingSafety'
+```

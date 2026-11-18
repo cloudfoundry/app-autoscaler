@@ -19,6 +19,7 @@ func main() {
 	address := os.Getenv("SERVER_ADDRESS") + ":" + getPort(logger)
 	logger.Info("Starting test-app", slog.String("address", address))
 	server := app.New(logger, address)
+	server.Handler = app.VerticalReadinessHandler(server.Handler)
 	enableGracefulShutdown(logger, server)
 	err := server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
