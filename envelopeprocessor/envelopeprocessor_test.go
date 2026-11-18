@@ -87,7 +87,9 @@ var _ = Describe("Envelopeprocessor", func() {
 			It("sends standard app instance metrics to channel", func() {
 				timestamp := time.Now().UnixNano()
 				metrics := processor.GetGaugeMetrics(envelopes, timestamp)
-				Expect(len(metrics)).To(Equal(18))
+				// Untagged legacy container envelopes still produce the same 18
+				// standard metrics, plus four explicitly invalid entitlement points.
+				Expect(len(metrics)).To(Equal(22))
 				Expect(metrics).To(ContainElement(models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,

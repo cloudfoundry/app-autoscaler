@@ -28,6 +28,7 @@ type AppManager struct {
 	nodeIndex             int
 	metricCacheSizePerApp int
 	metricCache           map[string]*collection.TSDCache
+	entitlementSources    map[string]string
 	policyDB              db.PolicyDB
 	appMetricDB           db.AppMetricDB
 	clock                 clock.Clock
@@ -46,6 +47,7 @@ func NewAppManager(logger lager.Logger, clock clock.Clock, aggregator config.Agg
 		nodeIndex:             pool.InstanceIndex,
 		metricCacheSizePerApp: aggregator.MetricCacheSizePerApp,
 		metricCache:           make(map[string]*collection.TSDCache),
+		entitlementSources:    make(map[string]string),
 		policyDB:              policyDB,
 		appMetricDB:           appMetricDB,
 		doneChan:              make(chan bool),
@@ -129,6 +131,7 @@ func (am *AppManager) refreshMetricCache(policies map[string]*models.AppPolicy) 
 		_, exist := policies[id]
 		if !exist {
 			delete(am.metricCache, id)
+			delete(am.entitlementSources, id)
 		}
 	}
 
@@ -141,9 +144,21 @@ func (am *AppManager) refreshMetricCache(policies map[string]*models.AppPolicy) 
 }
 
 func (am *AppManager) SaveMetricToCache(metric *models.AppMetric) bool {
-	am.mLock.RLock()
+	am.mLock.Lock()
 	appCache := am.metricCache[metric.AppId]
-	am.mLock.RUnlock()
+	if metric.MetricType == models.MetricNameEntitlementUtil && metric.Value != "" {
+		previous := am.entitlementSources[metric.AppId]
+		if appCache == nil || metric.SourceID == "" || previous != metric.SourceID {
+			// Persist the same empty boundary point as the cache receives.
+			// A first observation after restart must not join pre-restart
+			// measurements of an unverified cohort into one breach interval.
+			metric.Value = ""
+		}
+		if appCache != nil && metric.SourceID != "" {
+			am.entitlementSources[metric.AppId] = metric.SourceID
+		}
+	}
+	am.mLock.Unlock()
 
 	if appCache != nil {
 		appCache.Put(metric)
