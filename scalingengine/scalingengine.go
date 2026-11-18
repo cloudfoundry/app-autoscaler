@@ -52,6 +52,15 @@ func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.Pol
 }
 
 func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models.Trigger) (*models.AppScalingResult, error) {
+	if trigger == nil {
+		return nil, fmt.Errorf("scaling trigger is required")
+	}
+	if trigger.ScalingDimension == models.ScalingDimensionVertical {
+		return s.scaleVertical(ctx, appId, trigger)
+	}
+	if trigger.ScalingDimension != "" && trigger.ScalingDimension != models.ScalingDimensionHorizontal {
+		return nil, fmt.Errorf("unknown scaling dimension %q", trigger.ScalingDimension)
+	}
 	logger := s.logger.WithData(lager.Data{"appId": appId})
 
 	s.appLock.GetLock(appId).Lock()
@@ -117,6 +126,21 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		return result, nil
 	}
 
+	blocked, err := s.deploymentBlockReason(ctx, appId)
+	if err != nil {
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to check deployment state: " + err.Error()
+		return nil, err
+	}
+	if blocked != "" {
+		history.Status = models.ScalingStatusIgnored
+		history.NewInstances = instances
+		history.Message = blocked
+		result.Status = history.Status
+		result.Reason = blocked
+		return result, nil
+	}
+
 	ok, expiredAt, err := s.scalingEngineDB.CanScaleApp(appId)
 	if err != nil {
 		logger.Error("failed-to-check-cooldown", err)
@@ -131,6 +155,7 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		history.NewInstances = instances
 		history.Message = "app in cooldown period"
 		result.Status = history.Status
+		result.Reason = "cooldown"
 		return result, nil
 	}
 
@@ -151,12 +176,13 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 	}
 
 	var instanceMin, instanceMax int
+	var policy *models.PolicyDefinition
 
 	if schedule != nil {
 		instanceMin = schedule.InstanceMin
 		instanceMax = schedule.InstanceMax
 	} else {
-		policy, err := s.policyDB.GetAppPolicy(ctx, appId)
+		policy, err = s.policyDB.GetAppPolicy(ctx, appId)
 		if err != nil {
 			logger.Error("failed-to-get-app-policy", err)
 			history.Status = models.ScalingStatusFailed
@@ -184,6 +210,31 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		history.Message = fmt.Sprintf("limited by max instances %d", instanceMax)
 	}
 	history.NewInstances = newInstances
+	if schedule != nil {
+		policy, err = s.policyDB.GetAppPolicy(ctx, appId)
+		if err != nil {
+			history.Status = models.ScalingStatusFailed
+			history.Error = "failed to get scaling policy"
+			return nil, err
+		}
+	}
+	if policy != nil && policy.ScalingPriority != "" && newInstances != instances {
+		memory := appAndProcesses.Processes.GetMemoryMB()
+		if memory <= 0 {
+			history.Status = models.ScalingStatusFailed
+			history.Error = "web memory limit is missing or ambiguous"
+			return nil, fmt.Errorf("%s", history.Error)
+		}
+		if reason := scalingPriorityBlockReason(policy.ScalingPriority, models.ScalingDimensionHorizontal,
+			newInstances > instances, memory, instances, policy.MinMemoryMB, policy.MaxMemoryMB, instanceMin, instanceMax); reason != "" {
+			history.Status = models.ScalingStatusIgnored
+			history.Message = reason
+			result.Status = history.Status
+			result.Reason = reason
+			result.CooldownExpiredAt = 0
+			return result, nil
+		}
+	}
 
 	if newInstances == instances {
 		logger.Info(fmt.Sprintf("ignoring scale app:%s already has %d instances", appId, newInstances))
@@ -191,6 +242,7 @@ func (s *scalingEngine) Scale(ctx context.Context, appId string, trigger *models
 		result.Status = history.Status
 		result.Adjustment = 0
 		result.CooldownExpiredAt = 0
+		result.Reason = "unchanged_target"
 		return result, nil
 	}
 
@@ -260,6 +312,10 @@ func (s *scalingEngine) SetActiveSchedule(ctx context.Context, appId string, sch
 			return nil
 		}
 		logger.Info("set-active-schedule", lager.Data{"message": "an active schedule exists in database", "currentSchedule": currentSchedule})
+	}
+
+	if err := s.checkScheduleDeployment(ctx, appId, getScheduledScalingReason(schedule)); err != nil {
+		return err
 	}
 
 	err = s.scalingEngineDB.SetActiveSchedule(appId, schedule)
@@ -341,6 +397,10 @@ func (s *scalingEngine) RemoveActiveSchedule(ctx context.Context, appId string, 
 	if (currentSchedule == nil) || (currentSchedule.ScheduleId != scheduleId) {
 		logger.Info("active-schedule-not-found", lager.Data{"appId": appId, "scheduleId": scheduleId})
 		return nil
+	}
+
+	if err := s.checkScheduleDeployment(ctx, appId, "schedule ends"); err != nil {
+		return err
 	}
 
 	err = s.scalingEngineDB.RemoveActiveSchedule(appId)

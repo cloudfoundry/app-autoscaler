@@ -40,6 +40,10 @@ func main() {
 
 	// Start services
 	startup.StartService(logger,
+		startup.Server("deployment_completion", func() (ifrit.Runner, error) {
+			return scalingengine.NewDeploymentCompletionRunner(logger.Session("deployment-completion"), scalingEngine, clock,
+				conf.DeploymentCheckInterval, synchronizer.Sync), nil
+		}),
 		startup.Server("http_server", srv.CreateMtlsServer),
 		startup.Server("health_server", srv.CreateHealthServer),
 		startup.Server("cf_server", func() (ifrit.Runner, error) { return srv.CreateCFServer(xm) }),

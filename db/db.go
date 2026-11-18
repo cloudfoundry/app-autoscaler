@@ -98,7 +98,19 @@ type AppMetricDB interface {
 
 type ScalingEngineDB interface {
 	healthendpoint.DatabaseStatus
+	// SaveScalingHistory must succeed for an open vertical request before the
+	// non-idempotent deployment POST. Only one open request per app is allowed.
 	SaveScalingHistory(history *models.AppScalingHistory) error
+	GetOpenScalingHistories(ctx context.Context) ([]*models.AppScalingHistory, error)
+	HasOpenScalingHistory(ctx context.Context, appId string) (bool, error)
+	// SetScalingDeployment is idempotent for the same GUID; a different assigned
+	// GUID returns ErrConflict and cannot silently replace the original reference.
+	SetScalingDeployment(ctx context.Context, correlationID string, deploymentGUID string) error
+	// MarkScalingRequestUnknown must not downgrade an acknowledged or completed request.
+	MarkScalingRequestUnknown(ctx context.Context, correlationID string, errorMessage string) error
+	// CompleteScalingHistory returns true only for the winning terminal transition.
+	// Successful completion atomically starts cooldown using the persisted duration.
+	CompleteScalingHistory(ctx context.Context, correlationID string, status models.ScalingStatus, completedAt int64, message string, errorMessage string) (bool, error)
 
 	CountScalingHistories(ctx context.Context, appId string, start int64, end int64, includeAll bool) (int, error)
 	RetrieveScalingHistories(ctx context.Context, appId string, start int64, end int64, orderType OrderType, includeAll bool, page int, resultsPerPAge int) ([]*models.AppScalingHistory, error)

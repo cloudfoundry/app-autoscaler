@@ -66,11 +66,40 @@ func (sdb *ScalingEngineSQLDB) Close() error {
 }
 
 func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHistory) error {
+	if history == nil {
+		return fmt.Errorf("scaling history is nil")
+	}
+	var correlationID, openAppID any
+	if history.CorrelationID != "" {
+		if len(history.CorrelationID) > 36 {
+			return fmt.Errorf("scaling history correlation ID exceeds 36 characters")
+		}
+		correlationID = history.CorrelationID
+	}
+	if len(history.DeploymentGUID) > 36 {
+		return fmt.Errorf("scaling history deployment GUID exceeds 36 characters")
+	}
+	if isOpenScalingStatus(history.Status) {
+		if history.ScalingDimension != models.ScalingDimensionVertical || history.AppId == "" || len(history.AppId) > 255 || history.CorrelationID == "" || history.CompletedAt != 0 {
+			return fmt.Errorf("open vertical history requires app ID, correlation ID and no completion time")
+		}
+		if err := validateScalingCooldown(history.CoolDownSeconds); err != nil {
+			return err
+		}
+		openAppID = history.AppId
+	}
+	reason, message, errorMessage := history.Reason, history.Message, history.Error
+	if history.ScalingDimension == models.ScalingDimensionVertical {
+		reason, message, errorMessage = truncateHistoryText(reason), truncateHistoryText(message), truncateHistoryText(errorMessage)
+	}
 	query := sdb.sqldb.Rebind("INSERT INTO scalinghistory" +
-		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
-		" VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error, " +
+		"scalingdimension, correlationid, deploymentguid, oldmemorymb, newmemorymb, cooldownsecs, completedat, openappid) " +
+		" VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	_, err := sdb.sqldb.Exec(query, history.AppId, history.Timestamp, history.ScalingType, history.Status,
-		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
+		history.OldInstances, history.NewInstances, reason, message, errorMessage,
+		history.ScalingDimension, correlationID, history.DeploymentGUID, history.OldMemoryMB, history.NewMemoryMB,
+		history.CoolDownSeconds, history.CompletedAt, openAppID)
 
 	if err != nil {
 		return fmt.Errorf("saveScalingHistory failed appId(%s) scalingtype(%d) reason(%s): %w", history.AppId, history.ScalingType, history.Reason, err)
@@ -97,7 +126,7 @@ func (sdb *ScalingEngineSQLDB) CountScalingHistories(ctx context.Context, appId 
 }
 
 func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(ctx context.Context, appId string, start int64, end int64, orderType db.OrderType, includeAll bool, page int, resultsPerPage int) ([]*models.AppScalingHistory, error) {
-	query := sdb.sqldb.Rebind("SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
+	query := sdb.sqldb.Rebind("SELECT " + scalingHistoryColumns + " FROM scalinghistory WHERE" +
 		" appid = ? " +
 		" AND timestamp >= ?" +
 		" AND timestamp <= ?" +
@@ -119,28 +148,13 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(ctx context.Context, app
 
 	defer func() { _ = rows.Close() }()
 
-	var timestamp int64
-	var scalingType, status, oldInstances, newInstances int
-	var reason, message, errorMsg string
-
 	for rows.Next() {
-		if err = rows.Scan(&timestamp, &scalingType, &status, &oldInstances, &newInstances, &reason, &message, &errorMsg); err != nil {
-			sdb.logger.Error("retrieve-scaling-history-scan", err)
-			return nil, err
+		history, scanErr := scanScalingHistory(rows)
+		if scanErr != nil {
+			sdb.logger.Error("retrieve-scaling-history-scan", scanErr)
+			return nil, scanErr
 		}
-
-		history := models.AppScalingHistory{
-			AppId:        appId,
-			Timestamp:    timestamp,
-			ScalingType:  models.ScalingType(scalingType),
-			Status:       models.ScalingStatus(status),
-			OldInstances: oldInstances,
-			NewInstances: newInstances,
-			Reason:       reason,
-			Message:      message,
-			Error:        errorMsg,
-		}
-		histories = append(histories, &history)
+		histories = append(histories, history)
 	}
 	return histories, rows.Err()
 }
@@ -162,8 +176,8 @@ func orderTypeToString(orderType db.OrderType) string {
 }
 
 func (sdb *ScalingEngineSQLDB) PruneScalingHistories(ctx context.Context, before int64) error {
-	query := sdb.sqldb.Rebind("DELETE FROM scalinghistory WHERE timestamp <= ?")
-	_, err := sdb.sqldb.ExecContext(ctx, query, before)
+	query := sdb.sqldb.Rebind("DELETE FROM scalinghistory WHERE timestamp <= ? AND openappid IS NULL AND status NOT IN (?, ?)")
+	_, err := sdb.sqldb.ExecContext(ctx, query, before, models.ScalingStatusPending, models.ScalingStatusUnknown)
 	if err != nil {
 		sdb.logger.Error("failed-prune-scaling-histories-from-scalinghistory-table", err, lager.Data{"query": query, "before": before})
 	}
@@ -204,18 +218,16 @@ func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
 }
 
 func (sdb *ScalingEngineSQLDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
-	_, err := sdb.sqldb.Exec(sdb.sqldb.Rebind("DELETE FROM scalingcooldown WHERE appid = ?"), appId)
+	ctx := context.Background()
+	tx, err := sdb.sqldb.BeginTxx(ctx, nil)
 	if err != nil {
-		sdb.logger.Error("update-scaling-cooldown-time-delete", err, lager.Data{"appid": appId})
 		return err
 	}
-
-	_, err = sdb.sqldb.Exec(sdb.sqldb.Rebind("INSERT INTO scalingcooldown(appid, expireat) values(?, ?)"), appId, expireAt)
-	if err != nil {
-		sdb.logger.Error("update-scaling-cooldown-time-insert", err, lager.Data{"appid": appId, "expireAt": expireAt})
+	defer func() { _ = tx.Rollback() }()
+	if err = updateScalingCooldown(ctx, tx, appId, expireAt); err != nil {
 		return err
 	}
-	return nil
+	return tx.Commit()
 }
 
 func (sdb *ScalingEngineSQLDB) GetActiveSchedule(appId string) (*models.ActiveSchedule, error) {

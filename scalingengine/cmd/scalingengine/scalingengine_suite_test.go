@@ -59,6 +59,7 @@ var _ = SynchronizedBeforeSuite(
 			GetApp(models.AppStatusStarted, http.StatusOK, "test_space_guid").
 			GetAppProcesses(2).
 			ScaleAppWebProcess().
+			NoActiveDeployments().
 			OauthToken("test-token")
 
 		conf.CF = cf.Config{

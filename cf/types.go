@@ -68,6 +68,30 @@ func (p Processes) GetInstances() int {
 	return instances
 }
 
+// GetMemoryMB returns the web process limit, not the sum of instance limits.
+// A missing web process is represented by zero, which is not a valid target.
+func (p Processes) GetMemoryMB() int {
+	memoryMB := 0
+	found := false
+	for _, process := range p {
+		if process.Type == ProcessTypeWeb {
+			if found {
+				return 0
+			}
+			found = true
+			memoryMB = process.MemoryInMb
+		}
+	}
+	return memoryMB
+}
+
+// Deployment exposes the CAPI status needed to reconcile an open scaling request.
+type Deployment struct {
+	GUID         string
+	StatusValue  string
+	StatusReason string
+}
+
 type (
 	ServicePlanData struct {
 		Guid string `json:"guid"`

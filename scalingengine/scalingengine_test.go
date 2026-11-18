@@ -341,7 +341,8 @@ var _ = Describe("ScalingEngine", func() {
 
 				It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(policyDB.GetAppPolicyCallCount()).To(BeZero())
+					// Schedules still supply the bounds; policy supplies any scaling priority.
+					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
 
 					_, id, num := cfc.ScaleAppWebProcessArgsForCall(0)
 					Expect(id.String()).To(Equal("an-app-id"))
@@ -374,7 +375,7 @@ var _ = Describe("ScalingEngine", func() {
 
 				It("updates the app instance with min instances and stores the succeeded scaling history", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(policyDB.GetAppPolicyCallCount()).To(BeZero())
+					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
 
 					_, id, num := cfc.ScaleAppWebProcessArgsForCall(0)
 					Expect(id.String()).To(Equal("an-app-id"))

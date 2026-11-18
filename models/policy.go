@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -20,7 +21,8 @@ import (
 // ⛔ Do not create `ScalingPolicy` values directly via `ScalingPolicy{}` because it can lead to
 // undefined behaviour due to bypassing all validations. Use the constructor-functions instead!
 type ScalingPolicy struct {
-	policyCfg policyConfiguration
+	policyCfg        policyConfiguration
+	rawConfiguration json.RawMessage
 
 	// True if and only if there has not been set any policy for that app. If true, then the content
 	// of the field `policyDef` is meaningless.
@@ -126,61 +128,53 @@ type scalingPolicyJsonRawRepr struct {
 }
 
 func (sp ScalingPolicy) ToRawJSON() (json.RawMessage, error) {
-	var policyCfg *policyConfiguration
-	if sp.policyCfg == defaultPolicyConfiguration() {
-		// If the policy configuration is the default one, we do not serialize it.
-		policyCfg = nil
-	} else {
-		policyCfg = &sp.policyCfg
-	}
-
-	var policy *PolicyDefinition
-	if sp.useDefaultPolicyDef {
-		policy = nil // ScalingPolicy{} // Gets not serialized, which is equivalent to null in JSON.
-	} else {
-		policy = &sp.policyDef
-	}
-
-	spRaw := scalingPolicyJsonRawRepr{
-		PolicyConfiguration: policyCfg,
-		PolicyDefinition:    policy,
-	}
-
-	var data json.RawMessage
-	// If both fields are nil (i.e. they represent just the default), we return an empty JSON
-	// object.
-	definitionAndConfigAreBothDefault := spRaw.PolicyConfiguration == nil && spRaw.PolicyDefinition == nil
-	if definitionAndConfigAreBothDefault {
-		data = nil
-	} else {
-		var err error
-		var buf bytes.Buffer
-		encoder := json.NewEncoder(&buf)
-		encoder.SetEscapeHTML(false)
-
-		err = encoder.Encode(spRaw)
+	object := map[string]json.RawMessage{}
+	if !sp.useDefaultPolicyDef {
+		data, err := sp.policyDef.ToRawJSON()
 		if err != nil {
 			return nil, err
 		}
-
-		data = json.RawMessage(bytes.TrimSpace(buf.Bytes()))
+		if err := json.Unmarshal(data, &object); err != nil {
+			return nil, err
+		}
 	}
-
-	return data, nil
+	if len(sp.rawConfiguration) != 0 {
+		object["configuration"] = sp.rawConfiguration
+	} else if sp.policyCfg != defaultPolicyConfiguration() {
+		data, err := json.Marshal(sp.policyCfg)
+		if err != nil {
+			return nil, err
+		}
+		object["configuration"] = data
+	}
+	if len(object) == 0 {
+		return nil, nil
+	}
+	return encodePolicyJSON(object)
 }
 
 func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
-	// If the data is nil, we return a default ScalingPolicy with default configuration.
-	if noPolicyData := len(data) <= 0 ||
-		// In case we have policy-data we can rely on the presence of "instance_min_count" due to
-		// the json-schema.
-		!strings.Contains(string(data), `instance_min_count`); noPolicyData {
+	if len(data) == 0 {
 		return NewScalingPolicy(DefaultCustomMetricsStrategy, nil), nil
 	}
-
-	var spRaw scalingPolicyJsonRawRepr
+	// Decode configuration separately: an embedded PolicyDefinition's JSON methods would
+	// otherwise consume the configuration as well.
+	var spRaw struct {
+		PolicyConfiguration *policyConfiguration `json:"configuration"`
+	}
 	if err := json.Unmarshal(data, &spRaw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal ScalingPolicy: %w", err)
+	}
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(data, &object); err != nil {
+		return nil, err
+	}
+	var definition *PolicyDefinition
+	if _, present := object["instance_min_count"]; present {
+		definition = &PolicyDefinition{}
+		if err := json.Unmarshal(data, definition); err != nil {
+			return nil, err
+		}
 	}
 
 	var cms CustomMetricsStrategy
@@ -191,7 +185,28 @@ func ScalingPolicyFromRawJSON(data json.RawMessage) (*ScalingPolicy, error) {
 		cms = spRaw.PolicyConfiguration.CustomMetricsCfg.MetricSubmissionStrategy.AllowFrom
 	}
 
-	return NewScalingPolicy(cms, spRaw.PolicyDefinition), nil
+	policy := NewScalingPolicy(cms, definition)
+	// Preserve extension fields in configuration without retaining binding-only app_guid.
+	if raw := object["configuration"]; len(raw) != 0 {
+		var configuration map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &configuration); err != nil {
+			return nil, err
+		}
+		delete(configuration, "app_guid")
+		canonical, _ := json.Marshal(policy.policyCfg)
+		var known map[string]any
+		var actual map[string]any
+		_ = json.Unmarshal(canonical, &known)
+		cleaned, err := encodePolicyJSON(configuration)
+		if err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal(cleaned, &actual)
+		if configurationHasExtensions(actual, known) {
+			policy.rawConfiguration = cleaned
+		}
+	}
+	return policy, nil
 }
 
 func (sp ScalingPolicy) MarshalJSON() ([]byte, error) {
@@ -303,10 +318,15 @@ func (s *CustomMetricsStrategy) UnmarshalJSON(data []byte) error {
 // It can be created/deleted/retrieved by the user via the binding process and public api. If a change is required in the policy,
 // the corresponding endpoints should be also be updated in the public api server.
 type PolicyDefinition struct {
-	InstanceMin  int               `json:"instance_min_count"`
-	InstanceMax  int               `json:"instance_max_count"`
-	ScalingRules []*ScalingRule    `json:"scaling_rules,omitempty"`
-	Schedules    *ScalingSchedules `json:"schedules,omitempty"`
+	additionalFields     map[string]json.RawMessage
+	InstanceMin          int               `json:"instance_min_count"`
+	InstanceMax          int               `json:"instance_max_count"`
+	ScalingRules         []*ScalingRule    `json:"scaling_rules,omitempty"`
+	Schedules            *ScalingSchedules `json:"schedules,omitempty"`
+	MinMemoryMB          int               `json:"min_memory_mb,omitempty"`
+	MaxMemoryMB          int               `json:"max_memory_mb,omitempty"`
+	VerticalScalingRules []*ScalingRule    `json:"vertical_scaling_rules,omitempty"`
+	ScalingPriority      ScalingDimension  `json:"scaling_priority,omitempty"`
 }
 
 func (pd PolicyDefinition) ToRawJSON() (json.RawMessage, error) {
@@ -333,6 +353,7 @@ func (pd PolicyDefinition) String() string {
 var _ fmt.Stringer = &PolicyDefinition{}
 
 type ScalingRule struct {
+	additionalFields      map[string]json.RawMessage
 	MetricType            string `json:"metric_type"`
 	BreachDurationSeconds int    `json:"breach_duration_secs,omitempty"`
 	Threshold             int64  `json:"threshold"`
@@ -342,6 +363,7 @@ type ScalingRule struct {
 }
 
 type ScalingSchedules struct {
+	additionalFields      map[string]json.RawMessage
 	Timezone              string                  `json:"timezone"`
 	RecurringSchedules    []*RecurringSchedule    `json:"recurring_schedule,omitempty"`
 	SpecificDateSchedules []*SpecificDateSchedule `json:"specific_date,omitempty"`
@@ -361,6 +383,7 @@ func (s *ScalingSchedules) IsEmpty() bool {
 }
 
 type RecurringSchedule struct {
+	additionalFields      map[string]json.RawMessage
 	StartTime             string `json:"start_time"`
 	EndTime               string `json:"end_time"`
 	DaysOfWeek            []int  `json:"days_of_week,omitempty"`
@@ -373,6 +396,7 @@ type RecurringSchedule struct {
 }
 
 type SpecificDateSchedule struct {
+	additionalFields      map[string]json.RawMessage
 	StartDateTime         string `json:"start_date_time"`
 	EndDateTime           string `json:"end_date_time"`
 	ScheduledInstanceMin  int    `json:"instance_min_count"`
@@ -394,15 +418,25 @@ func (r *ScalingRule) CoolDown(defaultCoolDownSecs int) time.Duration {
 	return time.Duration(r.CoolDownSeconds) * time.Second
 }
 
+// ScalingDimension identifies the resource changed by a scaling action.
+// An omitted dimension in legacy triggers and history means horizontal scaling.
+type ScalingDimension string
+
+const (
+	ScalingDimensionHorizontal ScalingDimension = "horizontal"
+	ScalingDimensionVertical   ScalingDimension = "vertical"
+)
+
 type Trigger struct {
-	AppId                 string `json:"app_id"`
-	MetricType            string `json:"metric_type"`
-	MetricUnit            string `json:"metric_unit"`
-	BreachDurationSeconds int    `json:"breach_duration_secs"`
-	Threshold             int64  `json:"threshold"`
-	Operator              string `json:"operator"`
-	CoolDownSeconds       int    `json:"cool_down_secs"`
-	Adjustment            string `json:"adjustment"`
+	ScalingDimension      ScalingDimension `json:"scaling_dimension,omitempty"`
+	AppId                 string           `json:"app_id"`
+	MetricType            string           `json:"metric_type"`
+	MetricUnit            string           `json:"metric_unit"`
+	BreachDurationSeconds int              `json:"breach_duration_secs"`
+	Threshold             int64            `json:"threshold"`
+	Operator              string           `json:"operator"`
+	CoolDownSeconds       int              `json:"cool_down_secs"`
+	Adjustment            string           `json:"adjustment"`
 }
 
 func (t Trigger) BreachDuration() time.Duration {
@@ -426,6 +460,201 @@ type ActiveSchedule struct {
 // ================================================================================
 // 🏚️ Legacy-definitions
 // ================================================================================
+
+// ValidateVerticalScaling validates relationships shared by public policies, binding
+// requests and default policies. JSON schemas validate the individual field types.
+func (pd *PolicyDefinition) ValidateVerticalScaling() error {
+	if pd == nil {
+		return nil
+	}
+	horizontal, vertical := len(pd.ScalingRules) > 0, len(pd.VerticalScalingRules) > 0
+	if pd.ScalingPriority != "" {
+		if pd.ScalingPriority != ScalingDimensionHorizontal && pd.ScalingPriority != ScalingDimensionVertical {
+			return fmt.Errorf("scaling_priority must be horizontal or vertical")
+		}
+		if !horizontal || !vertical {
+			return fmt.Errorf("scaling_priority requires nonempty scaling_rules and vertical_scaling_rules")
+		}
+	} else if horizontal && vertical {
+		return fmt.Errorf("scaling_priority is required when both dynamic rule classes are nonempty")
+	}
+	if vertical || pd.MinMemoryMB != 0 || pd.MaxMemoryMB != 0 {
+		if pd.MinMemoryMB <= 0 || pd.MaxMemoryMB <= 0 || pd.MinMemoryMB > pd.MaxMemoryMB {
+			return fmt.Errorf("memory bounds must be positive and min_memory_mb must not exceed max_memory_mb")
+		}
+	}
+	for i, rule := range pd.VerticalScalingRules {
+		if rule == nil {
+			return fmt.Errorf("vertical_scaling_rules[%d] must be an object", i)
+		}
+		if rule.MetricType != "entitlementutil" {
+			return fmt.Errorf("vertical_scaling_rules[%d].metric_type must be entitlementutil", i)
+		}
+		if rule.Threshold < 0 {
+			return fmt.Errorf("vertical_scaling_rules[%d].threshold must be nonnegative", i)
+		}
+		switch rule.Operator {
+		case "<", "<=", ">", ">=":
+		default:
+			return fmt.Errorf("vertical_scaling_rules[%d].operator is invalid", i)
+		}
+		if rule.BreachDurationSeconds < 0 || rule.CoolDownSeconds < 0 {
+			return fmt.Errorf("vertical_scaling_rules[%d] durations must be positive or omitted", i)
+		}
+		if !verticalAdjustmentPattern.MatchString(rule.Adjustment) {
+			return fmt.Errorf("vertical_scaling_rules[%d].adjustment must be a signed positive integer, optionally followed by %%", i)
+		}
+		if strings.HasPrefix(rule.Adjustment, "-") && strings.HasSuffix(rule.Adjustment, "%") {
+			magnitude := strings.TrimSuffix(rule.Adjustment[1:], "%")
+			// Compare decimal strings to avoid overflow for arbitrarily large inputs.
+			if len(magnitude) > 3 || len(magnitude) == 3 && magnitude > "100" {
+				return fmt.Errorf("vertical_scaling_rules[%d].adjustment must not shrink by more than 100%%", i)
+			}
+		}
+	}
+	return nil
+}
+
+var verticalAdjustmentPattern = regexp.MustCompile(`^[-+][1-9][0-9]*%?$`)
+
+func configurationHasExtensions(actual, known map[string]any) bool {
+	for key, value := range actual {
+		canonical, present := known[key]
+		if !present {
+			return true
+		}
+		if child, ok := value.(map[string]any); ok {
+			if reference, ok := canonical.(map[string]any); !ok || configurationHasExtensions(child, reference) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func encodePolicyJSON(value any) ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(value); err != nil {
+		return nil, err
+	}
+	return bytes.TrimSpace(buf.Bytes()), nil
+}
+
+func unmarshalPolicyObject(data []byte, value any, known ...string) (map[string]json.RawMessage, error) {
+	if err := json.Unmarshal(data, value); err != nil {
+		return nil, err
+	}
+	var extra map[string]json.RawMessage
+	if err := json.Unmarshal(data, &extra); err != nil {
+		return nil, err
+	}
+	for _, key := range known {
+		delete(extra, key)
+	}
+	if len(extra) == 0 {
+		return nil, nil
+	}
+	return extra, nil
+}
+
+func marshalPolicyObject(value any, extra map[string]json.RawMessage) ([]byte, error) {
+	data, err := encodePolicyJSON(value)
+	if err != nil || len(extra) == 0 {
+		return data, err
+	}
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(data, &object); err != nil {
+		return nil, err
+	}
+	for key, value := range extra {
+		if _, known := object[key]; !known {
+			object[key] = value
+		}
+	}
+	return encodePolicyJSON(object)
+}
+
+func (pd *PolicyDefinition) UnmarshalJSON(data []byte) error {
+	type plain PolicyDefinition
+	var value plain
+	extra, err := unmarshalPolicyObject(data, &value, "instance_min_count", "instance_max_count", "scaling_rules", "schedules", "min_memory_mb", "max_memory_mb", "vertical_scaling_rules", "scaling_priority", "configuration", "schema-version", "credential-type", "role", "is_admin", "is_sso")
+	if err == nil {
+		*pd = PolicyDefinition(value)
+		pd.additionalFields = extra
+	}
+	return err
+}
+
+func (pd PolicyDefinition) MarshalJSON() ([]byte, error) {
+	type plain PolicyDefinition
+	return marshalPolicyObject(plain(pd), pd.additionalFields)
+}
+
+func (r *ScalingRule) UnmarshalJSON(data []byte) error {
+	type plain ScalingRule
+	var value plain
+	extra, err := unmarshalPolicyObject(data, &value, "metric_type", "breach_duration_secs", "threshold", "operator", "cool_down_secs", "adjustment", "stats_window_secs")
+	if err == nil {
+		*r = ScalingRule(value)
+		r.additionalFields = extra
+	}
+	return err
+}
+
+func (r ScalingRule) MarshalJSON() ([]byte, error) {
+	type plain ScalingRule
+	return marshalPolicyObject(plain(r), r.additionalFields)
+}
+
+func (s *ScalingSchedules) UnmarshalJSON(data []byte) error {
+	type plain ScalingSchedules
+	var value plain
+	extra, err := unmarshalPolicyObject(data, &value, "timezone", "recurring_schedule", "specific_date")
+	if err == nil {
+		*s = ScalingSchedules(value)
+		s.additionalFields = extra
+	}
+	return err
+}
+
+func (s ScalingSchedules) MarshalJSON() ([]byte, error) {
+	type plain ScalingSchedules
+	return marshalPolicyObject(plain(s), s.additionalFields)
+}
+
+func (s *RecurringSchedule) UnmarshalJSON(data []byte) error {
+	type plain RecurringSchedule
+	var value plain
+	extra, err := unmarshalPolicyObject(data, &value, "start_time", "end_time", "days_of_week", "days_of_month", "start_date", "end_date", "instance_min_count", "instance_max_count", "initial_min_instance_count")
+	if err == nil {
+		*s = RecurringSchedule(value)
+		s.additionalFields = extra
+	}
+	return err
+}
+
+func (s RecurringSchedule) MarshalJSON() ([]byte, error) {
+	type plain RecurringSchedule
+	return marshalPolicyObject(plain(s), s.additionalFields)
+}
+
+func (s *SpecificDateSchedule) UnmarshalJSON(data []byte) error {
+	type plain SpecificDateSchedule
+	var value plain
+	extra, err := unmarshalPolicyObject(data, &value, "start_date_time", "end_date_time", "instance_min_count", "instance_max_count", "initial_min_instance_count")
+	if err == nil {
+		*s = SpecificDateSchedule(value)
+		s.additionalFields = extra
+	}
+	return err
+}
+
+func (s SpecificDateSchedule) MarshalJSON() ([]byte, error) {
+	type plain SpecificDateSchedule
+	return marshalPolicyObject(plain(s), s.additionalFields)
+}
 
 type AppPolicy struct {
 	AppId         string
