@@ -116,7 +116,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	evaluators := make([]*generator.Evaluator, count)
 	for i := range evaluators {
 		evaluators[i] = generator.NewEvaluator(logger, seClient, conf.ScalingEngine.ScalingEngineURL, triggersChan,
-			conf.DefaultBreachDurationSecs, queryMetrics, getBreaker, setCoolDownExpired)
+			conf.DefaultBreachDurationSecs, queryMetrics, getBreaker, setCoolDownExpired, conf.Aggregator.AggregatorExecuteInterval)
 	}
 
 	return evaluators, nil

@@ -155,6 +155,10 @@ func (pv *PolicyValidator) validateAttributes(policy *models.PolicyDefinition, r
 	}
 
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
+	if validationErr := policy.ValidateVerticalScaling(); validationErr != nil {
+		details := gojsonschema.ErrorDetails{}
+		result.AddError(newPolicyValidationError(rootContext, validationErr.Error(), details), details)
+	}
 
 	//check InstanceMinCount and InstanceMaxCount
 	if policy.InstanceMin > policy.InstanceMax {

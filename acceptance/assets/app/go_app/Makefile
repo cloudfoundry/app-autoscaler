@@ -82,7 +82,7 @@ go-mod-tidy: ./go.mod ./go.sum ${go_deps_without_fakes} ## run go mod tidy
 
 .PHONY: build
 build: ./build/app ./build/manifest.yml ## build the app
-./build/app ./build/manifest.yml: ./go.mod ${app-fakes-dir} ${app-fakes-files}
+./build/app ./build/manifest.yml: ./go.mod ${go_deps_without_fakes} ./app_manifest.yml ${app-fakes-dir} ${app-fakes-files}
 	echo '# building  test-app'
 	mkdir -p build
 	CGO_ENABLED='${CGO_ENABLED}' GOOS='linux' GOARCH='amd64' go build -o './build/app'

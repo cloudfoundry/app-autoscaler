@@ -37,6 +37,10 @@ type (
 		GetAppProcesses(ctx context.Context, appId Guid, processTypes ...string) (Processes, error)
 		GetAppAndProcesses(ctx context.Context, appId Guid) (*AppAndProcesses, error)
 		ScaleAppWebProcess(ctx context.Context, appId Guid, numberOfProcesses int) error
+		HasActiveDeployment(ctx context.Context, appId Guid) (bool, error)
+		CreateRollingMemoryDeployment(ctx context.Context, appId Guid, memoryMB int, correlationID string) (*Deployment, error)
+		GetDeployment(ctx context.Context, guid string) (*Deployment, error)
+		FindDeployment(ctx context.Context, appId Guid, correlationID string) (*Deployment, error)
 		GetServiceInstance(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error)
 		GetServicePlan(ctx context.Context, servicePlanGuid string) (*ServicePlan, error)
 	}
@@ -54,8 +58,31 @@ func RetryClient(config ClientConfig, client *http.Client, logger lager.Logger) 
 	}
 	retryClient.Logger = LeveledLoggerAdapter{logger.Session("retryablehttp")}
 	retryClient.HTTPClient = client
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		if noRetry, _ := ctx.Value(deploymentPostContextKey{}).(bool); noRetry {
+			return false, nil
+		}
+		return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+	}
 	retryClient.ErrorHandler = func(resp *http.Response, err error, _ int) (*http.Response, error) {
 		return resp, err
 	}
-	return retryClient.StandardClient()
+	standardClient := retryClient.StandardClient()
+	standardClient.Transport = deploymentPostRetryGuard{transport: standardClient.Transport}
+	return standardClient
+}
+
+// The retry policy receives no request on transport errors. Mark deployment
+// creation before entering retryablehttp so even a lost response cannot resend it.
+type deploymentPostContextKey struct{}
+
+type deploymentPostRetryGuard struct {
+	transport http.RoundTripper
+}
+
+func (t deploymentPostRetryGuard) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Method == http.MethodPost && req.URL.Path == "/v3/deployments" {
+		req = req.WithContext(context.WithValue(req.Context(), deploymentPostContextKey{}, true))
+	}
+	return t.transport.RoundTrip(req)
 }

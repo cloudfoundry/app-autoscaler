@@ -122,6 +122,25 @@ func IsNotFound(err error) bool {
 	return errors.As(err, &cfError) && cfError.IsNotFound()
 }
 
+// IsDeploymentRequestRejected is true only for a definitive HTTP 4xx response.
+// Timeouts (including HTTP 408), transport errors and 5xx responses leave the
+// outcome unknown; callers must reconcile by correlation ID instead of resending.
+func IsDeploymentRequestRejected(err error) bool {
+	var cfError *CfError
+	if errors.As(err, &cfError) && cfError != nil {
+		return isDefinitiveDeploymentRejection(cfError.StatusCode)
+	}
+	var httpError resource.CloudFoundryHTTPError
+	if errors.As(err, &httpError) {
+		return isDefinitiveDeploymentRejection(httpError.StatusCode)
+	}
+	return false
+}
+
+func isDefinitiveDeploymentRejection(status int) bool {
+	return status >= http.StatusBadRequest && status < http.StatusInternalServerError && status != http.StatusRequestTimeout
+}
+
 func MapCFClientError(err error) error {
 	if err == nil {
 		return nil

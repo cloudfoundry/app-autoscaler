@@ -63,16 +63,27 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 			}
 		}
 		triggers := []*models.Trigger{}
-		for _, rule := range policy.ScalingPolicy.ScalingRules {
-			triggers = append(triggers, &models.Trigger{
-				AppId:                 appID,
-				MetricType:            rule.MetricType,
-				BreachDurationSeconds: rule.BreachDurationSeconds,
-				CoolDownSeconds:       rule.CoolDownSeconds,
-				Threshold:             rule.Threshold,
-				Operator:              rule.Operator,
-				Adjustment:            rule.Adjustment,
-			})
+		appendRules := func(rules []*models.ScalingRule, dimension models.ScalingDimension) {
+			for _, rule := range rules {
+				triggers = append(triggers, &models.Trigger{
+					AppId:                 appID,
+					MetricType:            rule.MetricType,
+					BreachDurationSeconds: rule.BreachDurationSeconds,
+					CoolDownSeconds:       rule.CoolDownSeconds,
+					Threshold:             rule.Threshold,
+					Operator:              rule.Operator,
+					Adjustment:            rule.Adjustment,
+					ScalingDimension:      dimension,
+				})
+			}
+		}
+		if policy.ScalingPolicy.ScalingPriority == models.ScalingDimensionVertical {
+			appendRules(policy.ScalingPolicy.VerticalScalingRules, models.ScalingDimensionVertical)
+			appendRules(policy.ScalingPolicy.ScalingRules, "")
+		} else {
+			// Leave legacy horizontal triggers byte-for-byte compatible.
+			appendRules(policy.ScalingPolicy.ScalingRules, "")
+			appendRules(policy.ScalingPolicy.VerticalScalingRules, models.ScalingDimensionVertical)
 		}
 		triggersByApp[appID] = triggers
 	}

@@ -50,7 +50,8 @@ func (a *Aggregator) getAppMonitors(policyMap map[string]*models.AppPolicy) map[
 	}
 	appMonitors := map[string]*models.AppMonitor{}
 	for appID, appPolicy := range policyMap {
-		for _, rule := range appPolicy.ScalingPolicy.ScalingRules {
+		rules := append(append([]*models.ScalingRule{}, appPolicy.ScalingPolicy.ScalingRules...), appPolicy.ScalingPolicy.VerticalScalingRules...)
+		for _, rule := range rules {
 			appMonitors[fmt.Sprintf("%s-%s", appID, rule.MetricType)] = &models.AppMonitor{
 				AppId:      appID,
 				MetricType: rule.MetricType,

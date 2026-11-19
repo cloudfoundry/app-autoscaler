@@ -64,6 +64,11 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 
 	metrics, err := m.metricClient.FetchMetrics(appId, metricType, startTime, endTime)
 	if err != nil {
+		if metricType == models.MetricNameEntitlementUtil {
+			// Keep an invalid point in the cache/DB so an outage cannot be
+			// silently skipped when checking the complete breach duration.
+			m.appMetricChan <- m.aggregate(appId, metricType, nil)
+		}
 		return fmt.Errorf("retrieveMetric Failed: %w", err)
 	}
 	m.logger.Debug("received metrics from metricClient", lager.Data{"retrievedMetrics": metrics})
@@ -74,6 +79,9 @@ func (m *MetricPoller) retrieveMetric(appMonitor *models.AppMonitor) error {
 }
 
 func (m *MetricPoller) aggregate(appId string, metricType string, metrics []models.AppInstanceMetric) *models.AppMetric {
+	if metricType == models.MetricNameEntitlementUtil {
+		return aggregateEntitlement(appId, metrics)
+	}
 	var count int64
 	var sum int64
 	var unit string

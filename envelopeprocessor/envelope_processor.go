@@ -10,6 +10,7 @@ import (
 	"code.cloudfoundry.org/go-loggregator/v10/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/v3"
 	"golang.org/x/exp/maps"
+	"google.golang.org/protobuf/proto"
 )
 
 type EnvelopeProcessorCreator interface {
@@ -36,7 +37,7 @@ func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, current
 	p.logger.Debug("GetGaugeMetrics")
 	compactedEnvelopes := p.CompactEnvelopes(envelopes)
 	p.logger.Debug("Compacted envelopes", lager.Data{"compactedEnvelopes": compactedEnvelopes})
-	return GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp)
+	return append(GetGaugeInstanceMetrics(compactedEnvelopes, currentTimeStamp), GetEntitlementInstanceMetrics(envelopes, currentTimeStamp)...)
 }
 
 // Log cache returns instance metrics such as cpu and memory in serparate envelopes, this was not the case with
@@ -44,10 +45,13 @@ func (p Processor) GetGaugeMetrics(envelopes []*loggregator_v2.Envelope, current
 func (p Processor) CompactEnvelopes(envelopes []*loggregator_v2.Envelope) []*loggregator_v2.Envelope {
 	result := map[string]*loggregator_v2.Envelope{}
 	for i := range envelopes {
-		key := fmt.Sprintf("%s-%s-%d", envelopes[i].SourceId, envelopes[i].InstanceId, envelopes[i].Timestamp)
+		if envelopes[i] == nil || envelopes[i].GetGauge() == nil {
+			continue
+		}
+		key := fmt.Sprintf("%q-%q-%d-%q-%q-%q", envelopes[i].SourceId, envelopes[i].InstanceId, envelopes[i].Timestamp,
+			sourceTag(envelopes[i], "process_type"), sourceTag(envelopes[i], "process_id"), containerID(envelopes[i]))
 		if result[key] == nil {
-			result[key] = &loggregator_v2.Envelope{}
-			result[key] = envelopes[i]
+			result[key] = proto.Clone(envelopes[i]).(*loggregator_v2.Envelope)
 		} else {
 			metrics := envelopes[i].GetGauge().GetMetrics()
 			for k, v := range metrics {
@@ -108,7 +112,7 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
-	if memoryQuota, exist := g.GetMetrics()["memory_quota"]; exist && memoryQuota.GetValue() != 0 {
+	if memoryQuota, exist := g.GetMetrics()["memory_quota"]; exist && memoryQuota.GetValue() > 0 && g.GetMetrics()["memory"] != nil {
 		appInstanceMetric := getMemoryQuotaInstanceMetric(g.GetMetrics()["memory"].GetValue(), memoryQuota.GetValue())
 		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)
@@ -126,7 +130,7 @@ func processContainerMetrics(e *loggregator_v2.Envelope, currentTimeStamp int64)
 		metrics = append(metrics, appInstanceMetric)
 	}
 
-	if diskQuota, exist := g.GetMetrics()["disk_quota"]; exist && diskQuota.GetValue() != 0 {
+	if diskQuota, exist := g.GetMetrics()["disk_quota"]; exist && diskQuota.GetValue() > 0 && g.GetMetrics()["disk"] != nil {
 		appInstanceMetric := getDiskQuotaInstanceMetric(g.GetMetrics()["disk"].GetValue(), diskQuota.GetValue())
 		copyBaseAttributes(&appInstanceMetric, &baseAppInstanceMetric)
 		metrics = append(metrics, appInstanceMetric)

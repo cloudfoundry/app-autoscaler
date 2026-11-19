@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "memory_bound": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Memory limit per web process instance in MiB."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["horizontal", "vertical"]
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["metric_type", "threshold", "operator", "adjustment"],
+        "properties": {
+          "metric_type": {"type": "string", "enum": ["entitlementutil"]},
+          "threshold": {"type": "integer", "minimum": 0},
+          "operator": {"type": "string", "enum": ["<", "<=", ">", ">="]},
+          "breach_duration_secs": {"type": "integer", "minimum": 1},
+          "cool_down_secs": {"type": "integer", "minimum": 1},
+          "adjustment": {
+            "type": "string",
+            "description": "Signed MiB change or percentage of current memory; reductions cannot exceed 100 percent.",
+            "pattern": "^([+][1-9][0-9]*%?|-[1-9][0-9]*|-(100|[1-9][0-9]?)%)$"
+          }
+        }
+      }
+    }
+  }
+}

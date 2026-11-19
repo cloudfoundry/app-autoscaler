@@ -25,11 +25,12 @@ type SynchronizerConfig struct {
 }
 
 type Config struct {
-	configutil.BaseConfig `yaml:",inline"`
-	CF                    cf.Config     `yaml:"cf"`
-	DefaultCoolDownSecs   int           `yaml:"defaultCoolDownSecs"`
-	LockSize              int           `yaml:"lockSize"`
-	HttpClientTimeout     time.Duration `yaml:"http_client_timeout"`
+	configutil.BaseConfig   `yaml:",inline"`
+	CF                      cf.Config     `yaml:"cf"`
+	DefaultCoolDownSecs     int           `yaml:"defaultCoolDownSecs"`
+	LockSize                int           `yaml:"lockSize"`
+	HttpClientTimeout       time.Duration `yaml:"http_client_timeout"`
+	DeploymentCheckInterval time.Duration `yaml:"deployment_check_interval,omitempty"`
 }
 
 func defaultConfig() Config {
@@ -54,9 +55,10 @@ func defaultConfig() Config {
 		CF: cf.Config{
 			ClientConfig: cf.ClientConfig{SkipSSLValidation: false},
 		},
-		DefaultCoolDownSecs: 300,
-		LockSize:            100,
-		HttpClientTimeout:   DefaultHttpClientTimeout,
+		DefaultCoolDownSecs:     300,
+		LockSize:                100,
+		HttpClientTimeout:       DefaultHttpClientTimeout,
+		DeploymentCheckInterval: 15 * time.Second,
 	}
 }
 
@@ -102,6 +104,9 @@ func (c *Config) Validate() error {
 
 	if c.HttpClientTimeout <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
+	}
+	if c.DeploymentCheckInterval <= 0 {
+		return fmt.Errorf("Configuration error: deployment_check_interval must be positive")
 	}
 
 	if err := c.Health.Validate(); err != nil {

@@ -50,6 +50,14 @@ func (s *logCacheFetcherCreator) NewLogCacheFetcher(logger lager.Logger, client 
 }
 
 func (l *logCacheFetcher) FetchMetrics(appId string, metricType string, startTime time.Time, endTime time.Time) ([]models.AppInstanceMetric, error) {
+	if metricType == models.MetricNameEntitlementUtil && l.collectionInterval > 0 {
+		// A common polling interval, not the larger horizontal statistics
+		// window, supplies the latest observation of each web container.
+		intervalStart := endTime.Add(-l.collectionInterval)
+		if intervalStart.After(startTime) {
+			startTime = intervalStart
+		}
+	}
 	// the log-cache REST API only return max. 1000 envelopes: https://github.com/cloudfoundry/log-cache-release/tree/main/src#get-apiv1readsource-id.
 	// receiving a limited set of envelopes breaks throughput and responsetime, because all envelopes are required to calculate these metric types properly.
 	// pagination via `start_time` and `end_time` could be done but is very error-prone.
@@ -155,6 +163,9 @@ func (l *logCacheFetcher) getMetricsRestAPI(appId string, metricType string, sta
 		return []models.AppInstanceMetric{}, fmt.Errorf("fail to Read %s metric from %s GoLogCache client: %w", logcache_v1.EnvelopeType_GAUGE, appId, err)
 	}
 	l.logger.Info("received-rest-api-result", lager.Data{"numEnvelopes": len(envelopes)})
+	if metricType == models.MetricNameEntitlementUtil && len(envelopes) >= 1000 {
+		return nil, fmt.Errorf("entitlementutil read reached the envelope limit; incomplete web cohort")
+	}
 
 	metrics := l.envelopeProcessor.GetGaugeMetrics(envelopes, time.Now().UnixNano())
 
@@ -174,6 +185,8 @@ func (l *logCacheFetcher) readOptions(endTime time.Time, metricType string) (rea
 		readOptions = append(readOptions, logcache.WithNameFilter("cpu"))
 	case models.MetricNameCPUUtil:
 		readOptions = append(readOptions, logcache.WithNameFilter("cpu_entitlement"))
+	case models.MetricNameEntitlementUtil:
+		readOptions = append(readOptions, logcache.WithNameFilter("^(memory|memory_quota|cpu_entitlement)$"))
 	case models.MetricNameDisk:
 		readOptions = append(readOptions, logcache.WithNameFilter("disk"))
 	case models.MetricNameDiskUtil:

@@ -14,6 +14,10 @@ const (
 	ScalingStatusSucceeded ScalingStatus = iota
 	ScalingStatusFailed
 	ScalingStatusIgnored
+	ScalingStatusPending
+	ScalingStatusUnknown
+	ScalingStatusSuperseded
+	ScalingStatusAborted
 )
 
 const (
@@ -22,15 +26,22 @@ const (
 )
 
 type AppScalingHistory struct {
-	AppId        string        `json:"app_id"`
-	Timestamp    int64         `json:"timestamp"`
-	ScalingType  ScalingType   `json:"scaling_type"`
-	Status       ScalingStatus `json:"status"`
-	OldInstances int           `json:"old_instances"`
-	NewInstances int           `json:"new_instances"`
-	Reason       string        `json:"reason"`
-	Message      string        `json:"message"`
-	Error        string        `json:"error"`
+	ScalingDimension ScalingDimension `json:"scaling_dimension,omitempty"`
+	CorrelationID    string           `json:"correlation_id,omitempty"`
+	DeploymentGUID   string           `json:"deployment_guid,omitempty"`
+	OldMemoryMB      int              `json:"old_memory_mb,omitempty"`
+	NewMemoryMB      int              `json:"new_memory_mb,omitempty"`
+	CoolDownSeconds  int              `json:"cool_down_secs,omitempty"`
+	CompletedAt      int64            `json:"completed_at,omitempty"`
+	AppId            string           `json:"app_id"`
+	Timestamp        int64            `json:"timestamp"`
+	ScalingType      ScalingType      `json:"scaling_type"`
+	Status           ScalingStatus    `json:"status"`
+	OldInstances     int              `json:"old_instances"`
+	NewInstances     int              `json:"new_instances"`
+	Reason           string           `json:"reason"`
+	Message          string           `json:"message"`
+	Error            string           `json:"error"`
 }
 
 type AppMonitor struct {
@@ -40,8 +51,11 @@ type AppMonitor struct {
 }
 
 type AppScalingResult struct {
-	AppId             string        `json:"app_id"`
-	Status            ScalingStatus `json:"status"`
-	Adjustment        int           `json:"adjustment"`
-	CooldownExpiredAt int64         `json:"cool_down_expired_at"`
+	Reason            string           `json:"reason,omitempty"`
+	ScalingDimension  ScalingDimension `json:"scaling_dimension,omitempty"`
+	DeploymentGUID    string           `json:"deployment_guid,omitempty"`
+	AppId             string           `json:"app_id"`
+	Status            ScalingStatus    `json:"status"`
+	Adjustment        int              `json:"adjustment"`
+	CooldownExpiredAt int64            `json:"cool_down_expired_at"`
 }

@@ -267,6 +267,7 @@ health:
 				conf.DefaultCoolDownSecs = 300
 				conf.LockSize = 32
 				conf.HttpClientTimeout = 10 * time.Second
+				conf.DeploymentCheckInterval = 15 * time.Second
 			})
 
 			JustBeforeEach(func() {
@@ -276,6 +277,13 @@ health:
 			When("all the configs are valid", func() {
 				It("should not error", func() {
 					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			When("the deployment check interval is not positive", func() {
+				BeforeEach(func() { conf.DeploymentCheckInterval = 0 })
+				It("rejects the configuration", func() {
+					Expect(err).To(MatchError(ContainSubstring("deployment_check_interval")))
 				})
 			})
 

@@ -266,3 +266,43 @@ databaseChangeLog:
             constraintName: "pk_history"
             tableName: scalinghistory
 
+  - changeSet:
+      id: vertical-scaling-history-v1
+      author: app-autoscaler
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
+      changes:
+        - addColumn:
+            tableName: scalinghistory
+            columns:
+              - column:
+                  name: scalingdimension
+                  type: varchar(16)
+              - column:
+                  name: correlationid
+                  type: varchar(36)
+              - column:
+                  name: deploymentguid
+                  type: varchar(36)
+              - column:
+                  name: oldmemorymb
+                  type: int
+              - column:
+                  name: newmemorymb
+                  type: int
+              - column:
+                  name: cooldownsecs
+                  type: int
+              - column:
+                  name: completedat
+                  type: bigint
+              - column:
+                  name: openappid
+                  type: varchar(255)
+        - addUniqueConstraint:
+            tableName: scalinghistory
+            columnNames: correlationid
+            constraintName: scalinghistory_correlation_unique
+        - addUniqueConstraint:
+            tableName: scalinghistory
+            columnNames: openappid
+            constraintName: scalinghistory_open_app_unique
