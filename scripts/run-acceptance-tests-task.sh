@@ -4,7 +4,7 @@ set -euo pipefail
 # This script runs acceptance tests as a CloudFoundry task
 # It expects the following environment variables:
 # - ACCEPTANCE_CONFIG_JSON: JSON configuration (required)
-# - SUITES: Space-separated list of test suites to run (default: "api app broker")
+# - SUITES: Space-separated list of test suites to run (required; e.g. "scaletozero api app broker")
 # - GINKGO_OPTS: Additional ginkgo options (optional)
 # - NODES: Number of parallel nodes (default: 3)
 # - SKIP_TEARDOWN: Skip cleanup after tests (default: false)

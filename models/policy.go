@@ -403,6 +403,10 @@ type Trigger struct {
 	Operator              string `json:"operator"`
 	CoolDownSeconds       int    `json:"cool_down_secs"`
 	Adjustment            string `json:"adjustment"`
+	// BypassCooldown skips the scaling-engine cooldown gate for this scaling
+	// request. Used by the activator's scale-from-zero wake, which must scale up
+	// immediately even though the just-completed scale-to-zero set a cooldown.
+	BypassCooldown bool `json:"bypass_cooldown,omitempty"`
 }
 
 func (t Trigger) BreachDuration() time.Duration {

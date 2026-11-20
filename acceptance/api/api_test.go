@@ -103,9 +103,14 @@ var _ = Describe("AutoScaler Public API", func() {
 			Expect(string(newPolicy)).Should(MatchJSON(validPolicy))
 		})
 		It("should fail to create an invalid policy", func() {
-			response, status := createPolicy(GenerateDynamicScaleOutPolicy(0, 2, "memoryused", 30))
+			var policy map[string]any
+			Expect(json.Unmarshal([]byte(GenerateDynamicScaleOutPolicy(-1, 2, "memoryused", 30)), &policy)).To(Succeed())
+			policy["schema-version"] = "0.1"
+			body, err := json.Marshal(policy)
+			Expect(err).NotTo(HaveOccurred())
+			response, status := createPolicy(string(body))
 			Expect(status).To(Equal(400))
-			Expect(string(response)).Should(ContainSubstring(`{"context":"(root).instance_min_count","description":"Must be greater than or equal to 1"}`))
+			Expect(string(response)).Should(ContainSubstring(`{"context":"(root).instance_min_count","description":"Must be greater than or equal to 0"}`))
 		})
 		It("should fail to create an invalid custom metrics submission", func() {
 			By("creating custom metrics submission with invalid string")

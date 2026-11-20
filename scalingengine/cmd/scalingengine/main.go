@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/appstate"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/db"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/scalingengine/config"
@@ -30,8 +34,27 @@ func main() {
 	// CF Client
 	cfClient := startup.CreateAndLoginCFClient(&conf.CF, logger)
 
+	// Optional activator wiring for scale-to-zero. When no activator URL is
+	// configured, the engine uses its default no-op activator.
+	var engineOpts []scalingengine.Option
+	var stateRunner ifrit.Runner
+	if conf.AppState.URL != "" {
+		client, err := helpers.CreateHTTPSClient(&conf.AppState.TLS, helpers.DefaultClientConfig(), logger.Session("app-state-client"))
+		startup.ExitOnError(err, logger, "create observer client")
+		source := appstate.NewClient(client, conf.AppState.URL)
+		cache := appstate.NewCache(conf.AppState.Freshness())
+		engineOpts = append(engineOpts, scalingengine.WithAppState(cache, source))
+		stateRunner = appstate.Runner(logger.Session("app-state-cache"), conf.AppState.Interval(), func(ctx context.Context) error { return cache.Poll(ctx, source) })
+	}
+	if conf.Activator.ActivatorURL != "" {
+		activatorClient, err := helpers.CreateHTTPSClient(&conf.Activator.TLSClientCerts, helpers.DefaultClientConfig(), logger.Session("activator_client"))
+		startup.ExitOnError(err, logger, "failed to create activator http client")
+		engineOpts = append(engineOpts, scalingengine.WithActivator(
+			scalingengine.NewHTTPActivator(logger, activatorClient, conf.Activator.ActivatorURL)))
+	}
+
 	// Business logic
-	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDb.DB, scalingEngineDB.DB, clock, conf.DefaultCoolDownSecs, conf.LockSize)
+	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDb.DB, scalingEngineDB.DB, clock, conf.DefaultCoolDownSecs, conf.LockSize, engineOpts...)
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB.DB, scalingEngineDB.DB, scalingEngine)
 
 	// Server setup
@@ -39,9 +62,13 @@ func main() {
 	xm := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
 
 	// Start services
-	startup.StartService(logger,
+	services := []startup.ServerBuilder{
 		startup.Server("http_server", srv.CreateMtlsServer),
 		startup.Server("health_server", srv.CreateHealthServer),
 		startup.Server("cf_server", func() (ifrit.Runner, error) { return srv.CreateCFServer(xm) }),
-	)
+	}
+	if stateRunner != nil {
+		services = append(services, startup.Server("app-state-cache", func() (ifrit.Runner, error) { return stateRunner, nil }))
+	}
+	startup.StartService(logger, services...)
 }

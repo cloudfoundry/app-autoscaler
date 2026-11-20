@@ -20,12 +20,13 @@
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
       "type": "integer",
-      "minimum": 1,
-      "title": "Minimum number of application instance always runs"
+      "minimum": 0,
+      "title": "Minimum number of application instances always running (0 enables scale-to-zero)"
     },
     "instance_max_count": {
       "$id": "#/properties/instance_max_count",
       "type": "integer",
+      "minimum": 1,
       "title": "Maximum how many instances of application can be provisioned as part of application scaling"
     },
     "scaling_rules": {

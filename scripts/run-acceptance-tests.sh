@@ -9,7 +9,7 @@ source "${script_dir}/vars.source.sh"
 source "${script_dir}/common.sh"
 
 skip_teardown="${SKIP_TEARDOWN:-false}"
-suites="${SUITES:-"api app broker"}"
+suites="${SUITES:-"scaletozero api app broker"}"
 ginkgo_opts="${GINKGO_OPTS:-}"
 nodes="${NODES:-3}"
 

@@ -49,6 +49,11 @@ require (
 	google.golang.org/grpc v1.85.0
 )
 
+require (
+	github.com/nats-io/nkeys v0.4.15 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
+)
+
 // Pin ifrit to the last-good digest 8468681: the newer 94822c9 log.Fatalf's on http
 // server shutdown error, exiting the process and making our unit tests flaky
 // (tedsuo/ifrit#47, still open). clock v1.86.0 transitively requires the broken 94822c9,
@@ -90,6 +95,7 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/molecule-man/go-brrr v1.3.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/nats-io/nats.go v1.53.1
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect

@@ -34,13 +34,16 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
 
+      - name: Test documentation parser
+        run: uv run --with 'beautifulsoup4>=4.14.3' --with 'packaging>=26.0' --with 'requests>=2.33.1' python -m unittest discover -s scripts -p check_otel_sdk_version_test.py
+
       - name: Check OTel SDK version compatibility
         id: check
         run: uv run scripts/check_otel_sdk_version.py go.mod
         continue-on-error: true
 
       - name: Request changes on PR
-        if: steps.check.outcome == 'failure' && github.event_name == 'pull_request'
+        if: steps.check.outcome == 'failure' && steps.check.outputs.comment_body != '' && github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           COMMENT_BODY: ${{ steps.check.outputs.comment_body }}

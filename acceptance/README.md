@@ -163,6 +163,20 @@ To execute the acceptance tests for a specific suite, e.g. `broker`, run the fol
 
 The suite names correspond to directory names.
 
+Scale-to-zero tests run independently in the `scaletozero` suite, including CPU
+scale-to-zero, manual scale-to-zero with request-driven wake, and manual
+scale-back-up. CI runs this suite in its own matrix job alongside `api`, `app`,
+and `broker`, so its results do not wait for the general application suite.
+It requires the activator, app-state observer, and routing NATS connectivity.
+
+```bash
+# Run against an existing MTA deployment (from the repository root):
+SUITES=scaletozero make mta-acceptance-tests
+
+# Run locally with CONFIG set (from acceptance/):
+./bin/test scaletozero
+```
+
 To see verbose output from `ginkgo`, use the `-v` or '-vv' flag.
 
 ```bash

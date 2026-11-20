@@ -39,6 +39,10 @@ type (
 		ScaleAppWebProcess(ctx context.Context, appId Guid, numberOfProcesses int) error
 		GetServiceInstance(ctx context.Context, serviceInstanceGuid string) (*ServiceInstance, error)
 		GetServicePlan(ctx context.Context, servicePlanGuid string) (*ServicePlan, error)
+
+		// Route listing for scale-to-zero (activator registers itself as a NATS
+		// backend for these route URIs). See docs/design/scale-to-zero.md.
+		GetAppRoutes(ctx context.Context, appId Guid) ([]Route, error)
 	}
 )
 
