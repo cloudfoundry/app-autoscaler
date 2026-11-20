@@ -250,6 +250,16 @@ var _ = Describe("toConfig credential helper conversion", func() {
 		result, err = toConfig(conf)
 	})
 
+	DescribeTable("preserves FIPS requirement during conversion", func(required bool) {
+		conf.FipsMode = required
+		result, err := toConfig(conf)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.GetFipsMode()).To(Equal(required))
+	},
+		Entry("required", true),
+		Entry("not required", false),
+	)
+
 	When("cred_helper_impl is set to 'default'", func() {
 		BeforeEach(func() {
 			conf.CredHelperImpl = "default"

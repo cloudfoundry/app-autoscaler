@@ -41,7 +41,7 @@ import org.springframework.context.event.EventListener;
     })
 public class SchedulerApplication {
 
-  private Logger logger = LoggerFactory.getLogger(this.getClass());
+  private static final Logger logger = LoggerFactory.getLogger(SchedulerApplication.class);
 
   @EventListener
   public void onApplicationReady(ApplicationReadyEvent event) {

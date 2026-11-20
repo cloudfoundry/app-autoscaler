@@ -155,6 +155,11 @@ export PERFORMANCE_APP_PERCENTAGE_TO_SCALE="${PERFORMANCE_APP_PERCENTAGE_TO_SCAL
 export PERFORMANCE_SETUP_WORKERS="${PERFORMANCE_SETUP_WORKERS:-50}"
 export PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA="${PERFORMANCE_UPDATE_EXISTING_ORG_QUOTA:-true}"
 
+ACCEPTANCE_CONFIG_PATH="${DEST}/acceptance-config-${VERSION}.json" \
+  "${script_dir}/acceptance-tests-config.sh"
+ACCEPTANCE_CONFIG_JSON="$(jq -c . "${DEST}/acceptance-config-${VERSION}.json")"
+export ACCEPTANCE_CONFIG_JSON
+
 # ${default-domain} contains a hyphen so envsubst leaves it untouched (hyphens are invalid in shell variable names)
 envsubst < "${script_dir}/extension-file.tpl.yaml" > "${extension_file_path}"
 

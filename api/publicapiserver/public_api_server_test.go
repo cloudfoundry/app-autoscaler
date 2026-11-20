@@ -469,6 +469,8 @@ var _ = Describe("PublicApiServer", func() {
 		It("should succeed", func() {
 			res := verifyResponse(httpClient, healthUrl, "/health", nil, http.MethodGet, "", http.StatusOK)
 			Expect(res).To(ContainSubstring("autoscaler_golangapiserver_bindingDB_idle"))
+			Expect(res).To(ContainSubstring("autoscaler_fips_enabled"))
+			Expect(res).To(ContainSubstring("autoscaler_fips_enforced"))
 		})
 	})
 

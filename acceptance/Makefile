@@ -59,7 +59,8 @@ build_test-%:
 check: lint build_tests
 
 test-unit:
-	ginkgo --race run helpers config
+	ginkgo run --race helpers config
+	ginkgo run --race --label-filter=unit fips
 
 test:
 	bin/test $(filter-out $@,$(MAKECMDGOALS))

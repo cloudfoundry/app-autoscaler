@@ -1,11 +1,12 @@
 package auth_test
 
 import (
+	"encoding/pem"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/helpers/auth"
-	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/lager/v3/lagertest"
@@ -17,6 +18,17 @@ import (
 var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 })
+
+func generateTrustedXFCCLeaf(pki *testhelpers.XFCCPKI, org, space string) ([]byte, error) {
+	template := *pki.Leaf
+	template.RawSubject = nil
+	template.Subject.OrganizationalUnit = []string{fmt.Sprintf("OU=space:%s+OU=organization:%s", space, org)}
+	certificate, err := pki.Sign(&template, pki.Issuer)
+	if err != nil {
+		return nil, err
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certificate.Raw}), nil
+}
 
 func doRequest(server *httptest.Server, xfccClientCert []byte) *http.Response {
 	server.Start()
@@ -47,12 +59,16 @@ var _ = Describe("XfccAuthMiddleware", func() {
 		expectedOrgGuid   = "validorg"
 		expectedSpaceGuid = "validspace"
 		server            *httptest.Server
+		pki               *testhelpers.XFCCPKI
 	)
 
 	BeforeEach(func() {
 		logger := lagertest.NewTestLogger("xfcc-auth-test")
 		buffer = logger.Buffer()
-		xm = auth.NewXfccAuthMiddleware(logger, models.XFCCAuth{ValidOrgGuid: expectedOrgGuid, ValidSpaceGuid: expectedSpaceGuid})
+		pki, err = testhelpers.GenerateXFCCPKI(GinkgoT().TempDir())
+		Expect(err).NotTo(HaveOccurred())
+		xm, err = auth.NewXfccAuthMiddleware(logger, pki.Config)
+		Expect(err).NotTo(HaveOccurred())
 
 		server = httptest.NewUnstartedServer(xm.XFCCAuthenticationMiddleware(handler))
 	})
@@ -74,7 +90,7 @@ var _ = Describe("XfccAuthMiddleware", func() {
 
 	When("xfcc cert matches org and space guids", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert(expectedOrgGuid, expectedSpaceGuid)
+			xfccClientCert, err = generateTrustedXFCCLeaf(pki, expectedOrgGuid, expectedSpaceGuid)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -85,7 +101,7 @@ var _ = Describe("XfccAuthMiddleware", func() {
 
 	When("xfcc cert does not match org guid", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert("wrong-org-guid", expectedSpaceGuid)
+			xfccClientCert, err = generateTrustedXFCCLeaf(pki, "wrong-org-guid", expectedSpaceGuid)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -97,7 +113,7 @@ var _ = Describe("XfccAuthMiddleware", func() {
 
 	When("xfcc cert does not match space guid", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert(expectedOrgGuid, "wrong-space-guid")
+			xfccClientCert, err = generateTrustedXFCCLeaf(pki, expectedOrgGuid, "wrong-space-guid")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -116,6 +132,7 @@ var _ = Describe("XfccAuthMiddleware org-only mode", func() {
 		logBuffer *gbytes.Buffer
 		xm        auth.XFCCAuthMiddleware
 		server    *httptest.Server
+		pki       *testhelpers.XFCCPKI
 
 		orgGuid = "validorg"
 	)
@@ -124,13 +141,18 @@ var _ = Describe("XfccAuthMiddleware org-only mode", func() {
 		logger := lagertest.NewTestLogger("xfcc-auth-test-org-only")
 		logBuffer = logger.Buffer()
 		// ValidSpaceGuid is empty: any space in the org should be accepted.
-		xm = auth.NewXfccAuthMiddleware(logger, models.XFCCAuth{ValidOrgGuid: orgGuid, ValidSpaceGuid: ""})
+		pki, err = testhelpers.GenerateXFCCPKI(GinkgoT().TempDir())
+		Expect(err).NotTo(HaveOccurred())
+		config := pki.Config
+		config.ValidSpaceGuid = ""
+		xm, err = auth.NewXfccAuthMiddleware(logger, config)
+		Expect(err).NotTo(HaveOccurred())
 		server = httptest.NewUnstartedServer(xm.XFCCAuthenticationMiddleware(handler))
 	})
 
 	When("xfcc cert matches org but has any space guid", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert(orgGuid, "any-space-guid")
+			xfccClientCert, err = generateTrustedXFCCLeaf(pki, orgGuid, "any-space-guid")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -141,7 +163,7 @@ var _ = Describe("XfccAuthMiddleware org-only mode", func() {
 
 	When("xfcc cert does not match org guid", func() {
 		BeforeEach(func() {
-			xfccClientCert, err = testhelpers.GenerateClientCert("wrong-org-guid", "any-space-guid")
+			xfccClientCert, err = generateTrustedXFCCLeaf(pki, "wrong-org-guid", "any-space-guid")
 			Expect(err).NotTo(HaveOccurred())
 		})
 

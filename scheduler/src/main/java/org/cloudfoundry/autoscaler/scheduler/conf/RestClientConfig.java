@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
+import java.nio.file.Path;
 import javax.net.ssl.SSLContext;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.ConnectionConfig;
@@ -11,13 +12,17 @@ import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.client5.http.ssl.HttpsSupport;
 import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 import org.apache.hc.core5.util.Timeout;
+import org.cloudfoundry.autoscaler.scheduler.util.CfTrustStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ssl.SslBundle;
 import org.springframework.boot.ssl.SslBundles;
+import org.springframework.boot.ssl.SslStoreBundle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,9 +30,21 @@ import org.springframework.web.client.RestTemplate;
 public class RestClientConfig {
   private final SSLContext sslContext;
 
-  public RestClientConfig(SslBundles sslBundles) {
-    SslBundle sslBundle = sslBundles.getBundle("scalingengine");
-    this.sslContext = sslBundle.createSslContext();
+  @Autowired
+  public RestClientConfig(
+      SslBundles sslBundles,
+      @Value("${client.ssl.protocol}") String protocol,
+      @Value("${CF_CA_CERTS:}") String cfCaCerts) {
+    SslBundle bundle = sslBundles.getBundle("scalingengine");
+    SslStoreBundle stores = bundle.getStores();
+    var trustStore =
+        CfTrustStore.compose(
+            stores.getTrustStore(), StringUtils.hasText(cfCaCerts) ? Path.of(cfCaCerts) : null);
+    var clientStores =
+        SslStoreBundle.of(stores.getKeyStore(), stores.getKeyStorePassword(), trustStore);
+    this.sslContext =
+        SslBundle.of(clientStores, bundle.getKey(), bundle.getOptions(), protocol)
+            .createSslContext();
   }
 
   @Bean

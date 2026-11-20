@@ -6,10 +6,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
+	"path/filepath"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/metricsforwarder/server/auth"
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/models"
+	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/fakes"
 	"code.cloudfoundry.org/lager/v3"
@@ -23,14 +26,17 @@ import (
 var _ = Describe("Authentication", func() {
 
 	var (
-		authTest        *auth.Auth
-		fakeCredentials *fakes.FakeCredentials
-		fakeBindingDB   *fakes.FakeBindingDB
-		resp            *httptest.ResponseRecorder
-		req             *http.Request
-		body            []byte
-		vars            map[string]string
-		testAppId       string
+		authTest                  *auth.Auth
+		fakeCredentials           *fakes.FakeCredentials
+		fakeBindingDB             *fakes.FakeBindingDB
+		resp                      *httptest.ResponseRecorder
+		req                       *http.Request
+		body                      []byte
+		vars                      map[string]string
+		testAppId                 string
+		pki                       *testhelpers.XFCCPKI
+		instanceIdentityChainPath string
+		additionalCallerCertPath  string
 	)
 
 	BeforeEach(func() {
@@ -39,11 +45,22 @@ var _ = Describe("Authentication", func() {
 		vars = make(map[string]string)
 		testAppId = "an-app-id"
 		resp = httptest.NewRecorder()
+		var err error
+		pki, err = testhelpers.GenerateXFCCPKI(GinkgoT().TempDir())
+		Expect(err).NotTo(HaveOccurred())
+		instanceIdentityChainPath = pki.Config.InstanceCertPath
+		additionalCallerCertPath = filepath.Join(filepath.Dir(instanceIdentityChainPath), "additional-caller.pem")
+		// Issue another certificate for the same app under the instance-identity intermediate.
+		callerCertTemplate := *pki.Leaf
+		callerCertTemplate.SerialNumber = big.NewInt(4)
+		additionalCallerCert, err := pki.Sign(&callerCertTemplate, pki.Issuer)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(testhelpers.WriteXFCCCertificates(additionalCallerCertPath, additionalCallerCert)).To(Succeed())
 	})
 	JustBeforeEach(func() {
 		logger := lager.NewLogger("auth-test")
 		var err error
-		authTest, err = auth.New(logger, fakeCredentials, fakeBindingDB)
+		authTest, err = auth.New(logger, fakeCredentials, fakeBindingDB, pki.Config)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -107,11 +124,10 @@ var _ = Describe("Authentication", func() {
 		})
 	})
 	Describe("MTLS Auth tests for publish metrics endpoint", func() {
-		const validClientCert1 = "../../../test-certs/validmtls_client-1.crt"
-		Context("correct xfcc header with correct CA is supplied for cert 1", func() {
+		Context("XFCC contains the trusted leaf from the instance-identity chain", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body, testAppId)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(instanceIdentityChainPath))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -126,11 +142,10 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 
-		Context("correct xfcc header with correct CA is supplied for cert 2", func() {
+		Context("XFCC contains another trusted caller certificate for the same app", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body, testAppId)
-				const validClientCert2 = "../../../test-certs/validmtls_client-2.crt"
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(additionalCallerCertPath))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +163,7 @@ var _ = Describe("Authentication", func() {
 		Context("correct xfcc header including \"'s around the cert", func() {
 			It("should call next handler", func() {
 				req = CreateRequest(body, testAppId)
-				req.Header.Add("X-Forwarded-Client-Cert", fmt.Sprintf("%q", MustReadXFCCcert(validClientCert1)))
+				req.Header.Add("X-Forwarded-Client-Cert", fmt.Sprintf("%q", MustReadXFCCcert(instanceIdentityChainPath)))
 				vars["appid"] = "an-app-id"
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -166,7 +181,7 @@ var _ = Describe("Authentication", func() {
 		Context("valid cert with wrong app-id is supplied", func() {
 			It("should return status code 403", func() {
 				req = CreateRequest(body, testAppId)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(instanceIdentityChainPath))
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					nextCalled = nextCalled + 1
@@ -183,13 +198,12 @@ var _ = Describe("Authentication", func() {
 		})
 
 		Context("Request from neighbour (different) app arrives for app B", func() {
-			const validClientCert2 = "../../../test-certs/validmtls_client-2.crt"
 			When("custom-metrics-submission-strategy is not set in the scaling policy", func() {
 				It("It should not call next handler and return with status code 403", func() {
 					testAppId = "app-to-scale-id"
 					req = CreateRequest(body, testAppId)
 					vars["appid"] = testAppId
-					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
+					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(additionalCallerCertPath))
 					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns(models.CustomMetricsSameApp, nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +223,7 @@ var _ = Describe("Authentication", func() {
 					req = CreateRequest(body, testAppId)
 					testAppId = "app-to-scale-id"
 					vars["appid"] = testAppId
-					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert2))
+					req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(additionalCallerCertPath))
 					fakeBindingDB.GetCustomMetricStrategyByAppIdReturns(models.CustomMetricsBoundApp, nil)
 					nextCalled := 0
 					nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -262,7 +276,7 @@ var _ = Describe("Authentication", func() {
 		JustBeforeEach(func() {
 			logger := lager.NewLogger("auth-test")
 			var err error
-			authTest, err = auth.New(logger, nil, fakeBindingDB)
+			authTest, err = auth.New(logger, nil, fakeBindingDB, pki.Config)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -299,10 +313,9 @@ var _ = Describe("Authentication", func() {
 			})
 		})
 		Context("when a request with a valid mTLS/XFCC header arrives", func() {
-			const validClientCert1 = "../../../test-certs/validmtls_client-1.crt"
 			It("should respond with HTTP 200 (mTLS path is unaffected by nil credentials)", func() {
 				req = CreateRequest(body, testAppId)
-				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(validClientCert1))
+				req.Header.Add("X-Forwarded-Client-Cert", MustReadXFCCcert(instanceIdentityChainPath))
 				vars["appid"] = testAppId
 				nextCalled := 0
 				nextFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

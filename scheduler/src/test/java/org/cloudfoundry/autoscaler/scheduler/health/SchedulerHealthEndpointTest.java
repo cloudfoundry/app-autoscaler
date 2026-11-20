@@ -19,7 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
 @ActiveProfiles("HealthAuth")
-public class SchedulerHealthEndpointTest {
+ class SchedulerHealthEndpointTest {
 
   @Autowired private TestRestTemplate restTemplate;
 
@@ -28,7 +28,7 @@ public class SchedulerHealthEndpointTest {
   @Autowired private CfHttpConfiguration cfHttpConfiguration;
 
   @Test
-  public void givenCorrectCredentialsStandardMetricsShouldBeAvailable() {
+   void givenCorrectCredentialsStandardMetricsShouldBeAvailable() {
 
     ResponseEntity<String> response =
         this.restTemplate
@@ -56,7 +56,7 @@ public class SchedulerHealthEndpointTest {
   }
 
   @Test
-  public void givenIncorrectCredentials401ResultShouldBeGiven() {
+   void givenIncorrectCredentials401ResultShouldBeGiven() {
     ResponseEntity<String> response =
         this.restTemplate.withBasicAuth("bad", "auth").getForEntity(metricsUrl(), String.class);
     assertThat(response.getStatusCode().value()).isEqualTo(401);
@@ -67,13 +67,13 @@ public class SchedulerHealthEndpointTest {
   }
 
   @Test
-  public void givenNoCredentials401ResultShouldBeGiven() {
+   void givenNoCredentials401ResultShouldBeGiven() {
     ResponseEntity<String> response = this.restTemplate.getForEntity(metricsUrl(), String.class);
     assertThat(response.getStatusCode().value()).isEqualTo(401);
   }
 
   @Test
-  public void givenCorrectPasswordAndWrongUsernameFailsWith401() {
+   void givenCorrectPasswordAndWrongUsernameFailsWith401() {
     ResponseEntity<String> response =
         this.restTemplate.withBasicAuth("bad", "someHash").getForEntity(metricsUrl(), String.class);
     assertThat(response.getStatusCode().value()).isEqualTo(401);
@@ -83,18 +83,20 @@ public class SchedulerHealthEndpointTest {
    * /Health API Tests
    */
   @Test
-  public void testHealthEndpointWithValidBasicAuthReturns200() {
+   void testHealthEndpointWithValidBasicAuthReturns200() {
     ResponseEntity<String> response =
         restTemplate
             .withBasicAuth("health-username", "health-password")
             .getForEntity(getHealthUrl(), String.class);
 
     assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).contains("\"status\":\"UP\"");
+    assertThat(response.getBody())
+        .contains("autoscaler_fips_enabled 0.0")
+        .contains("autoscaler_fips_enforced 0.0");
   }
 
   @Test
-  public void testHealthEndpointWithInvalidValidBasicAuthReturns401() {
+   void testHealthEndpointWithInvalidValidBasicAuthReturns401() {
     ResponseEntity<String> response =
         restTemplate
             .withBasicAuth("wrong-user", "wrong-password")
@@ -104,7 +106,7 @@ public class SchedulerHealthEndpointTest {
   }
 
   @Test
-  public void testHealthEndpointWithoutBasicAuthReturns401() {
+   void testHealthEndpointWithoutBasicAuthReturns401() {
     ResponseEntity<String> response = restTemplate.getForEntity(getHealthUrl(), String.class);
     assertThat(response.getStatusCode().value()).isEqualTo(401);
   }

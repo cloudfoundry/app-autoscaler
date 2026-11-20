@@ -22,12 +22,12 @@ spring:
     ############################################################
     datasource:
         driverClassName: org.postgresql.Driver
-        password: "${DB_PASSWORD:postgres}"
+        password: "${DB_PASSWORD:postgres-fips-pass}"
         url: jdbc:postgresql://${DB_HOST}/autoscaler
         username: "${DB_USERNAME:postgres}"
     policy-db-datasource:
         driverClassName: org.postgresql.Driver
-        password: "${DB_PASSWORD:postgres}"
+        password: "${DB_PASSWORD:postgres-fips-pass}"
         url: jdbc:postgresql://${DB_HOST}/autoscaler
         username: "${DB_USERNAME:postgres}"
 

@@ -24,7 +24,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon_v2"
-	"go.yaml.in/yaml/v4"
+	yaml "go.yaml.in/yaml/v4"
 )
 
 const (
@@ -364,6 +364,8 @@ func (components *Components) PrepareEventGeneratorConfig(dbURI string, port int
 			},
 			CFServer: helpers.ServerConfig{
 				Port: components.Ports[CfEventGenerator],
+				// integration fixtures do not model the CF instance chain.
+				XFCC: models.XFCCAuth{VerificationMode: "off"},
 			},
 			Server: helpers.ServerConfig{
 				Port: port,
@@ -422,6 +424,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbURI string, port int
 func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := seConfig.Config{
 		BaseConfig: configutil.BaseConfig{
+			CFServer: helpers.ServerConfig{XFCC: models.XFCCAuth{VerificationMode: "off"}},
 			Logging: helpers.LoggingConfig{
 				Level: LOGLEVEL,
 			},

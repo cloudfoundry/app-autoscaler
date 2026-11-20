@@ -1,2 +1,3 @@
 org.springframework.boot.EnvironmentPostProcessor=\
-org.cloudfoundry.autoscaler.scheduler.conf.CloudFoundryConfigurationProcessor
+org.cloudfoundry.autoscaler.scheduler.conf.CloudFoundryConfigurationProcessor,\
+org.cloudfoundry.autoscaler.scheduler.conf.FipsEnvironmentPostProcessor

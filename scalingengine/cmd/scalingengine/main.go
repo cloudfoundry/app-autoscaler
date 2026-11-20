@@ -36,7 +36,8 @@ func main() {
 
 	// Server setup
 	srv := server.NewServer(logger.Session("http-server"), conf, policyDb.DB, scalingEngineDB.DB, schedulerDB.DB, scalingEngine, synchronizer)
-	xm := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
+	xm, err := auth.NewXfccAuthMiddleware(logger, conf.CFServer.XFCC)
+	startup.ExitOnError(err, logger, "failed-to-create-xfcc-middleware")
 
 	// Start services
 	startup.StartService(logger,

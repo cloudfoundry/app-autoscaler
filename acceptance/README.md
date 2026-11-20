@@ -60,6 +60,28 @@ export CONFIG=$PWD/integration_config.json
 
 The full set of config parameters is explained below:
 
+Local tests load the JSON file specified by `CONFIG`. MTA deployments use the
+same generator (`scripts/acceptance-tests-config.sh`) and transport its JSON in
+`ACCEPTANCE_CONFIG_JSON`; the CF task runner writes it to a temporary `CONFIG`
+file before starting the tests.
+
+The FIPS suite requires `health_endpoints`, a map of service names to objects
+containing `endpoint`, `username`, and `password`. The generator populates it
+from the MTA deployment hosts and health credentials. `fips_mode_expected`
+defaults to `false`; set `FIPS_MODE_EXPECTED=true` when generating configuration
+for a FIPS deployment. Both MTA workflows run the FIPS suite to verify their
+respective expected mode.
+
+The suite checks both `autoscaler_fips_enabled` (runtime crypto state) and
+`autoscaler_fips_enforced` (FIPS required by configuration and verified at
+startup). Both must match `fips_mode_expected`. In Java, runtime state means
+BCFIPS approved-only mode and BCJSSE FIPS mode are active at startup; it is not
+a JVM-wide guarantee about every crypto operation.
+
+The generated MTA map covers eventgenerator, scalingengine, metricsforwarder,
+operator, and scheduler. Apiserver is not included: its public `/health` is a
+liveness response, while its Prometheus health server has no public MTA route.
+
 | Parameter                                           | Optionality |      Default       | Description                                                                                                                                                                                                                                                                                                                  |
 |:----------------------------------------------------|:-----------:|:------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **service_name**                                    |  required   |                    | The name of the registered auto-scaler service, use `cf marketplace` to determine the name.                                                                                                                                                                                                                                  |

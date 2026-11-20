@@ -79,6 +79,7 @@ type Config struct {
 	AppSyncer         AppSyncerConfig              `yaml:"app_syncer"`
 	DBLock            DBLockConfig                 `yaml:"db_lock"`
 	HttpClientTimeout time.Duration                `yaml:"http_client_timeout"`
+	FipsMode          bool                         `yaml:"fips_mode" json:"fips_mode"`
 }
 
 // SetLoggingLevel implements configutil.Configurable
@@ -89,6 +90,11 @@ func (c *Config) SetLoggingLevel() {
 // GetLogging returns the logging configuration
 func (c *Config) GetLogging() *helpers.LoggingConfig {
 	return &c.Logging
+}
+
+// GetFipsMode returns whether FIPS 140-3 mode is configured
+func (c *Config) GetFipsMode() bool {
+	return c.FipsMode
 }
 
 func defaultConfig() Config {

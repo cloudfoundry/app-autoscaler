@@ -30,7 +30,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDb db.PolicyDB, b
 	}
 
 	mh := NewCustomMetricsHandler(logger, *metricForwarder, policyDb, bindingDB, allowedMetricCache)
-	authenticator, err := auth.New(logger, credentials, bindingDB)
+	authenticator, err := auth.New(logger, credentials, bindingDB, conf.Server.XFCC)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth middleware: %w", err)
 	}
@@ -87,6 +87,8 @@ func createPrometheusRegistry(policyDb db.PolicyDB, httpStatusCollector healthen
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsforwarder", "policyDB", policyDb),
 		httpStatusCollector,
+		helpers.FipsEnabledGauge,
+		helpers.FipsEnforcedGauge,
 	}, true, logger.Session("metricsforwarder-prometheus"))
 	return promRegistry
 }

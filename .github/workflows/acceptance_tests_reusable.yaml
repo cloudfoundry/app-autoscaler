@@ -5,11 +5,15 @@ on:
       suites:
         required: false
         type: string
-        default: "[ 'api', 'app', 'broker' ]"
+        default: "[ 'api', 'app', 'broker', 'fips' ]"
       deployment_name:
         required: true
         type: string
       use_metricsgateway:
+        required: false
+        type: boolean
+        default: false
+      build_fips_extension:
         required: false
         type: boolean
         default: false
@@ -65,12 +69,16 @@ jobs:
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         env:
           USE_METRICSGATEWAY: ${{ inputs.use_metricsgateway }}
+          FIPS_MODE_EXPECTED: ${{ inputs.build_fips_extension }}
         with:
           timeout_minutes: 360
           max_attempts: 3
           retry_on: error
           command: |
             make --directory="${AUTOSCALER_DIR}" build-extension-file
+            if [ "${{ inputs.build_fips_extension }}" = "true" ]; then
+              make --directory="${AUTOSCALER_DIR}" build-extension-file-fips
+            fi
             "${AUTOSCALER_DIR}/scripts/mta-build.sh"
             make --directory="${AUTOSCALER_DIR}" mta-deploy
 

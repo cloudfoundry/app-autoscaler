@@ -226,6 +226,8 @@ var _ = Describe("CustomMetricsConfig Server", func() {
 					healthData := string(raw)
 					Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_concurrent_http_request"))
 					Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_policyDB"))
+					Expect(healthData).To(ContainSubstring("autoscaler_fips_enabled"))
+					Expect(healthData).To(ContainSubstring("autoscaler_fips_enforced"))
 					Expect(healthData).To(ContainSubstring("go_goroutines"))
 					Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
 					rsp.Body.Close()

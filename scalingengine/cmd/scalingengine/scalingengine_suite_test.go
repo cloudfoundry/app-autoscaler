@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"encoding/base64"
 	"path/filepath"
 
 	"code.cloudfoundry.org/app-autoscaler/src/autoscaler/cf/mocks"
@@ -41,6 +42,7 @@ var (
 	appId            string
 	httpClient       *http.Client
 	healthHttpClient *http.Client
+	xfccHeader       string
 )
 
 var _ = SynchronizedBeforeSuite(
@@ -75,8 +77,10 @@ var _ = SynchronizedBeforeSuite(
 		conf.Server.Port = 7000 + GinkgoParallelProcess()
 		conf.Health.ServerConfig.Port = 8000 + GinkgoParallelProcess()
 		conf.CFServer.Port = 9000 + GinkgoParallelProcess()
-		conf.CFServer.XFCC.ValidOrgGuid = "org-guid"
-		conf.CFServer.XFCC.ValidSpaceGuid = "space-guid"
+		pki, err := GenerateXFCCPKI(GinkgoT().TempDir())
+		Expect(err).NotTo(HaveOccurred())
+		conf.CFServer.XFCC = pki.Config
+		xfccHeader = base64.StdEncoding.EncodeToString(pki.Leaf.Raw)
 
 		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")

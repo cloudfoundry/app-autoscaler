@@ -5,9 +5,11 @@ import org.cloudfoundry.autoscaler.scheduler.health.DbStatusCollector;
 import org.cloudfoundry.autoscaler.scheduler.health.HealthExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 @Configuration
 public class HealthConfig {
@@ -23,8 +25,11 @@ public class HealthConfig {
   }
 
   @Bean(initMethod = "init")
-  public HealthExporter healthExporter(@Autowired DbStatusCollector dbStatusCollector) {
-    HealthExporter healthExporter = new HealthExporter();
+  public HealthExporter healthExporter(
+      @Autowired DbStatusCollector dbStatusCollector, Environment environment) {
+    boolean fipsRequired =
+        Binder.get(environment).bind("autoscaler.fips-mode", Boolean.class).orElse(false);
+    HealthExporter healthExporter = new HealthExporter(fipsRequired);
     healthExporter.setDbStatusCollector(dbStatusCollector);
     return healthExporter;
   }

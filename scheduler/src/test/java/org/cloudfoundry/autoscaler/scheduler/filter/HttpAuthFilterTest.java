@@ -1,6 +1,8 @@
 package org.cloudfoundry.autoscaler.scheduler.filter;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -10,6 +12,8 @@ import jakarta.servlet.FilterChain;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.stream.Stream;
 import org.cloudfoundry.autoscaler.scheduler.conf.CfHttpConfiguration;
@@ -52,6 +56,7 @@ class HttpAuthFilterTest {
 
   private CfServerConfiguration cfServerConfiguration;
   private CfHttpConfiguration cfHttpConfiguration;
+  private XfccChainVerifier chainVerifier;
 
   private static String readCertResource(String resourcePath) {
     try (InputStream in = HttpAuthFilterTest.class.getResourceAsStream(resourcePath)) {
@@ -89,11 +94,26 @@ class HttpAuthFilterTest {
     // the BOSH port override the local port explicitly.
     request.setLocalPort(CF_PORT);
 
-    httpAuthFilter = new HttpAuthFilter(cfServerConfiguration, cfHttpConfiguration);
+    chainVerifier = mock(XfccChainVerifier.class);
+    httpAuthFilter = new HttpAuthFilter(cfServerConfiguration, cfHttpConfiguration, chainVerifier);
   }
 
   private static String basicAuth(String raw) {
     return "Basic " + Base64.getEncoder().encodeToString(raw.getBytes());
+  }
+
+  @Test
+  void testChainCertificateExceptionReturnsUnauthorizedNotBadRequest() throws Exception {
+    request.setRequestURI("/v1/apps/an-app-guid/schedules");
+    request.addHeader("X-Forwarded-Client-Cert", VALID_OU_CERT);
+    doThrow(new CertificateException("Untrusted chain"))
+        .when(chainVerifier)
+        .verify(any(X509Certificate.class));
+
+    httpAuthFilter.doFilterInternal(request, response, filterChain);
+
+    assertThat(response.getStatus()).isEqualTo(401);
+    verify(filterChain, never()).doFilter(request, response);
   }
 
   @Test
@@ -156,7 +176,7 @@ class HttpAuthFilterTest {
     httpAuthFilter.doFilterInternal(request, response, filterChain);
 
     assertThat(response.getStatus()).isEqualTo(400);
-    assertThat(response.getErrorMessage()).contains("Invalid certificate");
+    assertThat(response.getErrorMessage()).contains("Invalid certificate:");
     verify(filterChain, never()).doFilter(request, response);
   }
 
@@ -232,8 +252,7 @@ class HttpAuthFilterTest {
   }
 
   @Test
-  void testDoFilterHttpHealthMissingAuthorizationHeaderReturnsUnauthorized()
-      throws Exception {
+  void testDoFilterHttpHealthMissingAuthorizationHeaderReturnsUnauthorized() throws Exception {
     request.setRequestURI("/health");
     request.setMethod("GET");
 
@@ -244,8 +263,7 @@ class HttpAuthFilterTest {
   }
 
   @Test
-  void testDoFilterHttpHealthNonBasicAuthorizationHeaderReturnsUnauthorized()
-      throws Exception {
+  void testDoFilterHttpHealthNonBasicAuthorizationHeaderReturnsUnauthorized() throws Exception {
     request.setRequestURI("/health");
     request.setMethod("GET");
     request.addHeader("Authorization", "Bearer some-token");
