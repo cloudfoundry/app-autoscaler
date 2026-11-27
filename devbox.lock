@@ -1361,41 +1361,41 @@
         }
       }
     },
-    "maven@3.10.0": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#maven",
+    "maven@3.10.1": {
+      "last_modified": "2026-11-22T18:15:35Z",
+      "resolved": "github:NixOS/nixpkgs/619c39f6eac5d1ed6b8f073a9414baf7034b2356#maven",
       "source": "devbox-search",
-      "version": "3.10.0",
+      "version": "3.10.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/a9n0m81rg4hfr78pr7s94fhbdpr3hgi9-maven-3.10.0",
+              "path": "/nix/store/jpn894qya51m9cr93zwmp813q475c5q5-maven-3.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/a9n0m81rg4hfr78pr7s94fhbdpr3hgi9-maven-3.10.0"
+          "store_path": "/nix/store/jpn894qya51m9cr93zwmp813q475c5q5-maven-3.10.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/jafzza8dyvwwf35bya0jkrbndp2kszrw-maven-3.10.0",
+              "path": "/nix/store/29rgk3lh321646gd283bhisshqkhjsjy-maven-3.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/jafzza8dyvwwf35bya0jkrbndp2kszrw-maven-3.10.0"
+          "store_path": "/nix/store/29rgk3lh321646gd283bhisshqkhjsjy-maven-3.10.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n7s3qz30dd48md7blc87f9ww8ycbnwap-maven-3.10.0",
+              "path": "/nix/store/zm8hng40v403d11mz4ssngpjvrymmzkx-maven-3.10.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n7s3qz30dd48md7blc87f9ww8ycbnwap-maven-3.10.0"
+          "store_path": "/nix/store/zm8hng40v403d11mz4ssngpjvrymmzkx-maven-3.10.1"
         }
       }
     },
